@@ -13,7 +13,7 @@ import 'package:fstapp/components/timeline/advanced_timeline_controller.dart';
 import 'package:fstapp/components/timeline/advanced_timeline_day_list.dart';
 import 'package:fstapp/components/timeline/advanced_timeline_view.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -139,10 +139,10 @@ class _SchedulePageState extends State<SchedulePage>
   }
 
   Future<void> _reloadProjectedEvents() async {
-    final events = await OfflineDataService.getAllEvents();
+    var events = await OfflineDataService.getAllEvents();
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(events);
+      events = await OfflineDataService.updateEventsWithMySchedule(events);
     }
     final dots = events
         .filterRootEvents()
@@ -224,7 +224,7 @@ class _SchedulePageState extends State<SchedulePage>
 
   Future<void> _loadOfflineDataThenFast() async {
     if (_events.isEmpty) {
-      final offline = await OfflineDataService.getAllEvents();
+      var offline = await OfflineDataService.getAllEvents();
       _events = offline;
       for (var e in _events) {
         if (e.id != null) _eventDescriptions[e.id!] = e.description;
@@ -238,7 +238,7 @@ class _SchedulePageState extends State<SchedulePage>
 
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(_events);
+      _events = await OfflineDataService.updateEventsWithMySchedule(_events);
       _dots = _events
           .filterRootEvents()
           .where((e) => !e.isCounselingSlot)
@@ -257,18 +257,18 @@ class _SchedulePageState extends State<SchedulePage>
 
     _lastQuickLoadTime = DateTime.now();
 
-    for (var e in fast) {
+    for (final entry in fast.asMap().entries) {
+      final e = entry.value;
       if (e.id != null && _eventDescriptions.containsKey(e.id!)) {
-        e.description = _eventDescriptions[e.id!];
+        fast[entry.key] = e.copyWith(description: _eventDescriptions[e.id!]);
       }
     }
 
     _events = fast;
     if (!AuthService.isLoggedIn()) {
       final saved = await OfflineDataService.getMyScheduleData();
-      for (var e in _events) {
-        e.isInMySchedule = e.id != null && saved.contains(e.id);
-      }
+      _events = _events.map((event) => event.copyWith(
+        isInMySchedule: event.id != null && saved.contains(event.id))).toList();
     }
     _dots = _events
         .filterRootEvents()
@@ -293,7 +293,7 @@ class _SchedulePageState extends State<SchedulePage>
 
     if (!AuthService.isLoggedIn() &&
         AppConfig.isOwnProgramSupportedWithoutSignIn) {
-      await OfflineDataService.updateEventsWithMySchedule(_events);
+      _events = await OfflineDataService.updateEventsWithMySchedule(_events);
     }
 
     _dots = _events
@@ -350,31 +350,22 @@ class _SchedulePageState extends State<SchedulePage>
 
   Future<void> _handleCompanionButtonPressed(
       BuildContext context, TimeBlockItem timeBlockItem) async {
-    List<CompanionModel> companions = await DbCompanions.getAllCompanions();
+    final companions = await DbCompanions.getAllCompanions();
+    if (!mounted || !context.mounted) return;
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(builder: (bCtx, setDialogState) {
-          return CompanionAttendanceDialog(
-            eventId: timeBlockItem.id,
-            companions: companions,
-            refreshData: () async {
-              await loadData();
-              var refreshedCompanions = await DbCompanions.getAllCompanions();
-              if (mounted) {
-                setDialogState(() {
-                  companions = refreshedCompanions;
-                });
-              }
-            },
-            canSignIn: () {
-              final currentItem = _dots.firstWhereOrNull(
-                  (element) => element.id == timeBlockItem.id);
-              return currentItem?.canSignIn() ?? false;
-            },
-          );
-        });
-      },
+      builder: (dialogContext) => CompanionAttendanceDialog(
+        eventId: timeBlockItem.id,
+        companions: companions,
+        refreshData: () async {
+          await loadData();
+        },
+        canSignIn: () {
+          final currentItem = _dots.firstWhereOrNull(
+              (element) => element.id == timeBlockItem.id);
+          return currentItem?.canSignIn() ?? false;
+        },
+      ),
     );
   }
 

@@ -47,6 +47,10 @@ BEGIN
       v_own_org, v_own_unit)
   RETURNING id INTO v_own_occasion;
 
+  INSERT INTO public.occasion_link_reservations(slug,occasion) VALUES(v_link,NULL);
+  INSERT INTO public.legacy_occasion_link_bindings(slug,organization,occasion)
+    VALUES(v_link,v_foreign_org,v_foreign_occasion),(v_link,v_own_org,v_own_occasion);
+
   INSERT INTO public.occasion_users
     (occasion, "user", is_editor_order_view)
   VALUES (v_own_occasion, v_user, true);

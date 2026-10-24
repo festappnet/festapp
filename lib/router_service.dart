@@ -1,3 +1,4 @@
+import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:auto_route/auto_route.dart';
@@ -28,6 +29,39 @@ class RouterService {
   static const linkPath = "/:$link";
   static String currentOccasionLink = "";
 
+  // One pending startup navigation, consumed after the successful online
+  // context load. This is not persisted or reused as an alias cache.
+  static ({String requested, String canonical})? _initialCanonicalOccasion;
+
+  static String consumeCanonicalInitialPath(String path) {
+    final pending = _initialCanonicalOccasion;
+    _initialCanonicalOccasion = null;
+    return pending == null
+        ? path
+        : canonicalPublicPath(
+            path, 'occasion', pending.requested, pending.canonical);
+  }
+
+  static void canonicalizePublicLink(
+      String kind, String? requested, String? canonical) {
+    if (requested == null || canonical == null || requested == canonical)
+      return;
+    if (router.navigatorKey.currentContext == null && kind == 'occasion') {
+      _initialCanonicalOccasion = (requested: requested, canonical: canonical);
+      return;
+    }
+    final current = router.urlState.uri.toString();
+    final target = canonicalPublicPath(current, kind, requested, canonical);
+    if (target == current) return;
+    // Reuse the existing route matches and their mounted pages. Updating the
+    // browser address alone would let the next tab navigation restore the alias.
+    final matches = router.matcher.match(target, includePrefixMatches: false);
+    if (matches != null) {
+      router.markUrlStateForReplace();
+      unawaited(router.navigateAll(matches));
+    }
+  }
+
   //todo temporary fix
   static String getCurrentLink() => currentOccasionLink.isNotEmpty
       ? "/$currentOccasionLink/"
@@ -35,6 +69,12 @@ class RouterService {
 
   static Future<T?> navigatePageInfo<T extends Object?>(
       BuildContext context, PageRouteInfo route) {
+    if (kIsWeb && route is CheckRoute) {
+      unawaited(LaunchUrlService.openExternalUrl(
+          '${AppConfig.webLink}/scan/program/${route.args!.id}',
+          inCurrentWindow: true));
+      return Future.value(null);
+    }
     return context.router.push(route);
   }
 
@@ -362,7 +402,10 @@ class RouterService {
   static void pushOverlayState(String overlayTag) {
     if (kIsWeb) {
       final currentUrl = _js.getCurrentUrl();
-      _js.pushState('$currentUrl#$overlayTag');
+      final uri = Uri.parse(currentUrl);
+      final personal = uri.fragment.startsWith('waitlist?') ||
+          uri.fragment.startsWith('order?');
+      _js.pushState(personal ? currentUrl : '$currentUrl#$overlayTag');
     }
   }
 
@@ -406,8 +449,17 @@ class RouterService {
             segments[2] == 'edit');
   }
 
+  static bool isStripeConnectionReturnPath(String? path) =>
+      path == '/stripe/connect/callback';
+
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    // OAuth completion is process-local and must run before the generic unit
+    // landing. Its code/state stay in the callback owner, never this redirect.
+    if (isStripeConnectionReturnPath(fallbackPath)) {
+      await replaceRootPath(context.router.root, '/stripe/connect/callback');
+      return;
+    }
     // An explicit protected destination has priority over the generic unit landing.
     if (isAdministrationReturnPath(fallbackPath)) {
       final target = Uri.parse(fallbackPath!);

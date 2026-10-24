@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';

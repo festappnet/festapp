@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -6,12 +7,11 @@ import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/map/db_places.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/speakers/admin/counseling_slot_dialog.dart';
 import 'package:fstapp/components/speakers/db_speakers.dart';
 import 'package:fstapp/components/speakers/speaker_model.dart';
@@ -49,7 +49,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   late final TextEditingController _nameController;
   late final TextEditingController _subtitleController;
@@ -104,8 +104,9 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
   }
 
   Future<void> _save() async {
-    await ExceptionHandler.guardVoid(context, futureFunction: () =>
-      _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
   Future<void> _performHtmlSave() async {
@@ -116,16 +117,25 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       return;
     }
 
-    _description = await _htmlSave.prepare(_description ?? '', HtmlMediaOwner.occasion(_occasionId));
+    _description = await _htmlSave.prepare(
+        _description ?? '', HtmlMediaOwner.occasion(_occasionId));
+    if (!mounted) return;
     final subtitle = _subtitleController.text.trim();
-    final model = widget.speaker
-      ..title = name
-      ..subtitle = subtitle.isEmpty ? null : subtitle
-      ..description = _description
-      ..image = _image
-      ..order = int.tryParse(_orderController.text.trim()) ?? 0
-      ..isHidden = _isHidden
-      ..topics = _selectedTopics.toList();
+    // Keep edits private until the command returns a persisted entity.
+    final original = widget.speaker;
+    final model = SpeakerModel(
+      id: original.id,
+      aggregateVersion: original.aggregateVersion,
+      data: Map<String, dynamic>.from(original.data),
+      events: List<SpeakerEventRef>.from(original.events),
+      title: name,
+      subtitle: subtitle.isEmpty ? null : subtitle,
+      description: _description,
+      image: _image,
+      order: int.tryParse(_orderController.text.trim()) ?? 0,
+      isHidden: _isHidden,
+      topics: _selectedTopics.toList(),
+    );
 
     final saved = await ExceptionHandler.guard<SpeakerModel>(
       context,
@@ -203,15 +213,15 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       return;
     }
 
-    event
-      ..startTime = res.start
-      ..endTime = res.end
-      ..maxParticipants = res.capacity
-      ..place = _places.firstWhereOrNull((p) => p.id == res.placeId);
+    final draft = event.copyWith(
+        startTime: res.start,
+        endTime: res.end,
+        maxParticipants: res.capacity,
+        place: _places.firstWhereOrNull((place) => place.id == res.placeId));
 
     final saved = await ExceptionHandler.guard<EventModel>(
       context,
-      futureFunction: () => DbEvents.updateEvent(event),
+      futureFunction: () => DbEvents.updateEvent(draft),
     );
     if (saved != null && mounted) {
       _changed = true;
@@ -258,10 +268,13 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
     }
   }
 
-
   Widget _buildHtmlParent(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () async {
+        if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+          Navigator.of(context).pop(_changed);
+      },
       title: Text(_isExisting
           ? SpeakersStrings.editSpeaker
           : SpeakersStrings.addSpeaker),
@@ -297,10 +310,10 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
                 onFileSelected: (file) async {
                   try {
                     final bytes = await file.readAsBytes();
-                    final compressed =
-                        await ImageCompressionHelper.compress(bytes, 400);
+
                     final url = await DbImages.uploadImage(
-                        compressed, RightsService.currentOccasionId(), null);
+                        bytes, RightsService.currentOccasionId(), null,
+                        profile: ImageUploadProfile.portrait);
                     if (mounted) setState(() => _image = url);
                     return url;
                   } catch (e) {
@@ -330,9 +343,11 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
               ),
               const SizedBox(height: 16),
               Text(SpeakersStrings.bio, style: theme.textTheme.labelMedium),
-              EditableHtmlField(html: _description, coordinator: _htmlSave,
-                owner: HtmlMediaOwner.occasion(_occasionId),
-                onChanged: (html) => setState(() => _description = html)),
+              EditableHtmlField(
+                  html: _description,
+                  coordinator: _htmlSave,
+                  owner: HtmlMediaOwner.occasion(_occasionId),
+                  onChanged: (html) => setState(() => _description = html)),
               const SizedBox(height: 16),
               // Counseling competence areas only matter when counseling is on (R5).
               if (FeatureService.isCounselingEnabled()) ...[
@@ -374,7 +389,10 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () async { if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted) Navigator.of(context).pop(_changed); },
+          onPressed: () async {
+            if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+              Navigator.of(context).pop(_changed);
+          },
           child: Text(CommonStrings.storno),
         ),
         FilledButton(

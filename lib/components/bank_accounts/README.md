@@ -53,3 +53,20 @@ Updating a connected account commits its Festapp details and a durable `update_d
 Connected physical account identity remains immutable: add/select a new account for future orders rather than reassigning historical bank transactions. Creation and token/email setup are separate operations; API ingestion currently supports Fio. BankSync's public API supports Fio and Air Bank adapters, not arbitrary bank API providers.
 
 A bank cooldown or transient failure after the full persisted-token digest check is a deferred verification, not failed storage. Complete the saved-token operation, re-enable polling and show `token_saved: true` with the verification error. Leaving it uncertain and polling disabled falsely reported failure on a normal concurrent poll.
+
+### Administrator synchronization control
+
+The connection tab exposes an automatic synchronization switch to account admins.
+`bank-sync-manage` uses fenced `resume` / `suspend` operations to change BankSync
+ingress and API polling together, with readback before committing local state.
+Resume preserves the token and recorded expiry; bank verification failures show
+`degraded` while retries remain enabled. A stored expiry date does not block an
+explicit administrator resume. Read-only viewers cannot change synchronization.
+
+## Local payment-reference reservations
+
+Festapp owns reference issuance independently of BankSync ingestion. Activated
+scopes use the private SQL registry in `eshop_payment_references/` in the existing
+order transaction. Account aliases share canonical receiving identity; committed
+symbols and form watermarks survive order deletion. Enrollment freezes receiving
+identity and starts locked. See the [scope/import/activation runbook](../../../docs/operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).

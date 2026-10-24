@@ -1,0 +1,136 @@
+{
+  "activePlanClips": [
+    "layout-build",
+    "layout-refine",
+    "layout-grid"
+  ],
+  "targetedTests": "7 passed: host seams + orthogonal surface gestures",
+  "canvasFill": "#00000000",
+  "nativeWorkspaceRgb": [
+    235,
+    241,
+    246
+  ],
+  "files": {
+    "web/organizers-media/layout-build.mp4": {
+      "sha256": "fcc29b32843b4e8cfb7fd78cc31f69b9d7db03823243214d6de9336f2e378827",
+      "bytes": 737732
+    },
+    "web/organizers-media/layout-build.jpg": {
+      "sha256": "9776460cb2edf38dcdd6baee7d92e3611baf47fabe715fc391343ec6f81df7d0",
+      "bytes": 59989
+    },
+    "web/organizers-media/layout-build.webp": {
+      "sha256": "a7c82e9068ccf7096c62d4e141f27b4bf8e838ba2a933ca2470c53749772bc74",
+      "bytes": 71702
+    },
+    "web/organizers-media/layout-build-mobile.mp4": {
+      "sha256": "db2a1eeb6db18896486153669cfa7f15d6fa4f7b9878122c76d23e0f4f28b556",
+      "bytes": 433996
+    },
+    "web/organizers-media/layout-build-mobile.jpg": {
+      "sha256": "a20a7c3c9af228ab21d9cb63a32eb54159473ef060640656a95763f8409ec671",
+      "bytes": 42317
+    },
+    "web/organizers-media/layout-build-mobile.webp": {
+      "sha256": "ea93a608822fdf3bc2413ac94296009d0def85dc30d52fa02e966106e9d4373d",
+      "bytes": 50636
+    },
+    "web/organizers-media/layout-refine.mp4": {
+      "sha256": "ee140d219cf8e8880260d63a581630aab95b650b4bad2ce172708e4cab74030c",
+      "bytes": 424547
+    },
+    "web/organizers-media/layout-refine.jpg": {
+      "sha256": "d05cefd65cbf17cd5ef3af7fb9ab2aeef787a1c9f579d67491e4f288f78c16dd",
+      "bytes": 57951
+    },
+    "web/organizers-media/layout-refine.webp": {
+      "sha256": "c745e12d752651664c425cb369e6fec2fd5746d326782d416edeec084818f5e0",
+      "bytes": 69092
+    },
+    "web/organizers-media/layout-refine-mobile.mp4": {
+      "sha256": "957d3f2f6446df5b43e67c9c42f89e6d28ee70b6d2d6aa0275ba3f272ef9076f",
+      "bytes": 249931
+    },
+    "web/organizers-media/layout-refine-mobile.jpg": {
+      "sha256": "3d74b10c33de9e198e5855c7cb0e941d2cd7c86c434d298de11c19ebfd4e9f93",
+      "bytes": 44082
+    },
+    "web/organizers-media/layout-refine-mobile.webp": {
+      "sha256": "da5dffd5a67b3521686c1566f07c12b794e1fc472df4b7fe0e981eb5be03ec89",
+      "bytes": 48382
+    },
+    "web/organizers-media/layout-grid.mp4": {
+      "sha256": "cef542208ad2bd7755e092fe7e0c8248055bb2e76b5bb6722a3398d6396fa0ae",
+      "bytes": 662721
+    },
+    "web/organizers-media/layout-grid.jpg": {
+      "sha256": "719239c5b44dae830d91655da224027a748ab7cb4661b68451517e8ce4e73d49",
+      "bytes": 36456
+    },
+    "web/organizers-media/layout-grid.webp": {
+      "sha256": "eac40a018df58537198ac7f80fa830943e419182a80796168ef0eed4bdb6d6cb",
+      "bytes": 27500
+    },
+    "web/organizers-media/layout-grid-mobile.mp4": {
+      "sha256": "fb23697b641dfd842a875040a53da37f0112ac7631e49b1481d1d2e89973755e",
+      "bytes": 395497
+    },
+    "web/organizers-media/layout-grid-mobile.jpg": {
+      "sha256": "6aebd3fd3a4205403002bf4b694511bfa73bc4b614148564bb8f4b195a8493c2",
+      "bytes": 24903
+    },
+    "web/organizers-media/layout-grid-mobile.webp": {
+      "sha256": "04dc0795491932bb060675253b02180957f0a242c0c2ca56b5d1a914cd988b4f",
+      "bytes": 18334
+    },
+    "web/organizers-media/seat-select.mp4": {
+      "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8",
+      "bytes": 544685
+    },
+    "web/organizers-media/seat-select.jpg": {
+      "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905",
+      "bytes": 27405
+    },
+    "web/organizers-media/seat-select.webp": {
+      "sha256": "5d8dbe413181c1d83a1639214eb945d3740b579ea5f5e8ca11a365bf67720f03",
+      "bytes": 24696
+    },
+    "web/organizers-media/seat-select-mobile.mp4": {
+      "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8",
+      "bytes": 544685
+    },
+    "web/organizers-media/seat-select-mobile.jpg": {
+      "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905",
+      "bytes": 27405
+    },
+    "web/organizers-media/seat-select-mobile.webp": {
+      "sha256": "5d8dbe413181c1d83a1639214eb945d3740b579ea5f5e8ca11a365bf67720f03",
+      "bytes": 24696
+    },
+    "web/organizers-media/check-in.mp4": {
+      "sha256": "468d23b6b1c6d454c724f5889d079f02dcedd5c9b4f540a0509bd24bb58c0391",
+      "bytes": 80092
+    },
+    "web/organizers-media/check-in.jpg": {
+      "sha256": "abe0f6f58557bd0f3b93a5f4d801cf6c7575285899fba14095f5329b525f803e",
+      "bytes": 21621
+    },
+    "web/organizers-media/check-in.webp": {
+      "sha256": "148219adc82f2c9fb84d8278e7e2accf3ec35508ab231c47e7598a8cfb3fdd3a",
+      "bytes": 17606
+    },
+    "web/organizers-media/check-in-mobile.mp4": {
+      "sha256": "56270c23d2d18b5a7cf2f16b28bb64cb0f348d610776482241d1399e1d9c1a8d",
+      "bytes": 92276
+    },
+    "web/organizers-media/check-in-mobile.jpg": {
+      "sha256": "3f2b5194c885434a2216bbe70fe58206eecb5623358f2606ed13daaf8a9a71c3",
+      "bytes": 21740
+    },
+    "web/organizers-media/check-in-mobile.webp": {
+      "sha256": "0fd9063a0a842dd71f03e0429fdf5a752d4997b523c7106969f8004f03347b19",
+      "bytes": 20660
+    }
+  }
+}

@@ -1,7 +1,7 @@
+import '../ticket_batch_strings.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'report_text.dart';
-import '../models/report_period.dart';
-import '../models/report_exchange_rates.dart';
+import 'package:festapp_core/eshop.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -19,7 +19,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
-import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
 import 'package:fstapp/components/eshop/report_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
@@ -45,7 +44,8 @@ class ReportTab extends StatefulWidget {
 class _ReportTabState extends State<ReportTab> {
   bool _tabActive = true;
   bool _onlyValid = true;
-  OccasionReport? get _visibleReport => _onlyValid ? _report?.onlyValid() : _report;
+  OccasionReport? get _visibleReport =>
+      _onlyValid ? _report?.onlyValid() : _report;
   OccasionReport? _report;
   StreamSubscription<AuthState>? _authSubscription;
   String? _key, _link;
@@ -249,9 +249,10 @@ class _ReportTabState extends State<ReportTab> {
       );
 
   List<Widget> _timelines(OccasionReport report) {
-    if (!report.hasTimeline) return [Text(ReportStrings.timelineUnavailable)];
+    if (!report.hasTicketTimeline)
+      return [Text(ReportStrings.timelineUnavailable)];
     final dates = [
-      ...report.orderDays.where((d) => d.count > 0).map((d) => d.day),
+      ...report.ticketDays.where((d) => d.count > 0).map((d) => d.day),
       ...report.paymentDays
           .where((d) =>
               reportMinorUnits(d.received) > BigInt.zero ||
@@ -279,7 +280,7 @@ class _ReportTabState extends State<ReportTab> {
         : end.subtract(Duration(days: _rangeDays - 1));
     final colors = Theme.of(context).colorScheme;
     final currencies = {
-      ...report.orderDays.map((d) => d.currency),
+      ...report.ticketDays.map((d) => d.currency),
       ...report.money.map((m) => m.currency),
       ...report.paymentDays.map((d) => d.currency),
     }.toList()
@@ -291,7 +292,7 @@ class _ReportTabState extends State<ReportTab> {
             : currencies.first;
     final visible = selected == '*' ? currencies : [selected];
     final orders = <DateTime, BigInt>{};
-    for (final d in report.orderDays.where(
+    for (final d in report.ticketDays.where(
       (d) => visible.contains(d.currency),
     )) {
       orders.update(
@@ -371,7 +372,7 @@ class _ReportTabState extends State<ReportTab> {
             cumulative: _cumulative,
             series: [
               ReportTimelineSeries(
-                ReportStrings.orders,
+                ReportStrings.timelineItems,
                 colors.primary,
                 orders,
               ),
@@ -471,7 +472,8 @@ class _ReportTabState extends State<ReportTab> {
           }
           return Table(
             defaultColumnWidth: const FlexColumnWidth(),
-            defaultVerticalAlignment: TableCellVerticalAlignment.intrinsicHeight,
+            defaultVerticalAlignment:
+                TableCellVerticalAlignment.intrinsicHeight,
             columnWidths: {
               for (var i = 1; i < children.length * 2 - 1; i += 2)
                 i: const FixedColumnWidth(12),
@@ -543,7 +545,19 @@ class _ReportTabState extends State<ReportTab> {
   Widget _overview(OccasionReport report) => LayoutBuilder(
         builder: (context, constraints) {
           final orders = _states(ReportStrings.orders, report.orders);
-          final tickets = _states(ReportStrings.tickets, report.tickets);
+          final tickets = Column(children: [
+            _states(ReportStrings.tickets, report.tickets),
+            if ((report.ticketBatches['total'] ?? 0) > 0)
+              _section(TicketBatchStrings.title,
+                  TicketBatchStrings.text('explanation'), [
+                _value(TicketBatchStrings.available,
+                    '${report.ticketBatches['available']}'),
+                _value(TicketBatchStrings.sold,
+                    '${report.ticketBatches['sold_active']}'),
+                _value(TicketBatchStrings.voided,
+                    '${report.ticketBatches['voided_unsold']}'),
+              ]),
+          ]);
           final spots = report.spotsTotal == 0
               ? null
               : _section(ReportStrings.spots, ReportStrings.spotsHelp, [
@@ -687,10 +701,18 @@ class _ReportTabState extends State<ReportTab> {
                             toggled: _onlyValid,
                             child: TextButton.icon(
                               key: const ValueKey('reportValidityFilter'),
-                              onPressed: () => setState(() => _onlyValid = !_onlyValid),
-                              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                              icon: Icon(_onlyValid ? Icons.check_box_outlined : Icons.check_box_outline_blank, size: 18),
-                              label: Text(_onlyValid ? ReportStrings.onlyValid : ReportStrings.includingCancelled),
+                              onPressed: () =>
+                                  setState(() => _onlyValid = !_onlyValid),
+                              style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 48)),
+                              icon: Icon(
+                                  _onlyValid
+                                      ? Icons.check_box_outlined
+                                      : Icons.check_box_outline_blank,
+                                  size: 18),
+                              label: Text(_onlyValid
+                                  ? ReportStrings.onlyValid
+                                  : ReportStrings.includingCancelled),
                             ),
                           ),
                         TextButton.icon(

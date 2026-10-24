@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
-RETURNS json LANGUAGE plpgsql
+RETURNS json LANGUAGE plpgsql STABLE
 SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -15,7 +15,7 @@ BEGIN
   SELECT id
     INTO occ_id
   FROM public.occasions
-  WHERE link = occasion_link
+  WHERE id = public.resolve_occasion_link_internal(occasion_link)
     AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
 
   -- If the occasion link is invalid, raise an exception.
@@ -44,6 +44,7 @@ BEGIN
   SELECT json_agg(
            json_build_object(
              'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
              'title', p.title,
              'description', p.description,
              'short_title', p.data->>'short_title',
@@ -56,6 +57,7 @@ BEGIN
                FROM eshop.planned_changes pc WHERE pc.subject_id=p.id AND pc.change_type='products.is_hidden' AND NOT pc.applied),
              'currency_code', p.currency_code,
              'is_hidden', p.is_hidden,
+             'is_used_in_blueprint', EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product=p.id AND s.occasion=occ_id),
              'order', p."order",
              'maximum', p.maximum,
              'form_ids', (

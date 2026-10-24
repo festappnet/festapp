@@ -370,7 +370,7 @@ packages:
     source: hosted
     version: "6.0.0"
   cupertino_icons:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: cupertino_icons
       sha256: "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
@@ -489,14 +489,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.2"
-  executor_lib:
-    dependency: transitive
-    description:
-      name: executor_lib
-      sha256: "95ddf2957d9942d9702855b38dd49677f0ee6a8b77d7b16c0e509c7669d17386"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2"
   extended_image:
     dependency: transitive
     description:
@@ -521,6 +513,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.3"
+  festapp_core:
+    dependency: "direct main"
+    description:
+      path: "packages/festapp_core"
+      relative: true
+    source: path
+    version: "0.0.0"
   ffi:
     dependency: transitive
     description:
@@ -567,7 +566,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_animate:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_animate
       sha256: "7befe2d3252728afb77aecaaea1dec88a89d35b9b1d2eea6d04479e8af9117b5"
@@ -743,7 +742,7 @@ packages:
     source: hosted
     version: "0.17.4"
   flutter_widget_from_html_core:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_widget_from_html_core
       sha256: "530f2e3cc57be1a00f8bfae1b0000064e8a6df0cf1fb4d48a80f85afde9b39b7"
@@ -1283,14 +1282,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
-  mbtiles:
-    dependency: "direct main"
-    description:
-      name: mbtiles
-      sha256: "0d9e5b35815a9292e51ffeac04bc885365511c8f985590d41f03894b7d43f1a2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.1"
   meta:
     dependency: transitive
     description:
@@ -1611,14 +1602,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "68645b24e0716782e58948f8467fd42a880f255096a821f9e7d0ec625b00c84d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   provider:
     dependency: transitive
     description:
@@ -1749,7 +1732,7 @@ packages:
     source: hosted
     version: "0.55.1"
   shared_preferences:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: shared_preferences
       sha256: c3025c5534b01739267eb7d76959bbc25a6d10f6988e1c2a3036940133dd10bf
@@ -1937,14 +1920,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
-  sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: "4c7fe79840389aaeaf05fd093f795b631b5a98e2bd28d54e555c100f4a9c7a1c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.2"
   stack_trace:
     dependency: transitive
     description:
@@ -1986,7 +1961,7 @@ packages:
     source: hosted
     version: "1.4.1"
   supabase:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: supabase
       sha256: "3662449640972335e50d075a1fceb000b9217e403564305d129a4d287ff4b4c9"
@@ -2074,7 +2049,7 @@ packages:
     source: hosted
     version: "1.2.2"
   test:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: test
       sha256: ca578dc12bb8b2f40b67b7d3bd2fac4f31c01a6ff7130a14e2597b919934507f
@@ -2249,14 +2224,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.5"
-  url_strategy:
-    dependency: "direct main"
-    description:
-      name: url_strategy
-      sha256: "6eff69fa0900b731a23552b38b54389f399d247dbb0998f2cbdf25bef6790a7c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
   uuid:
     dependency: "direct main"
     description:
@@ -2289,24 +2256,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
-  vector_map_tiles:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: "429de4cda07a6dfa7141a9f044aa5f7576765c5b"
-      resolved-ref: "429de4cda07a6dfa7141a9f044aa5f7576765c5b"
-      url: "https://github.com/miakh/flutter-vector-map-tiles.git"
-    source: git
-    version: "9.0.0-beta.13"
-  vector_map_tiles_mbtiles:
-    dependency: "direct main"
-    description:
-      path: vector_map_tiles_mbtiles
-      ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
-      resolved-ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
-      url: "https://github.com/miakh/flutter_map_plugins.git"
-    source: git
-    version: "1.2.2"
   vector_math:
     dependency: transitive
     description:
@@ -2315,39 +2264,19 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.2"
-  vector_tile:
-    dependency: transitive
-    description:
-      name: vector_tile
-      sha256: "7ae290246e3a8734422672dbe791d3f7b8ab631734489fc6d405f1cc2080e38c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.1"
-  vector_tile_renderer:
-    dependency: "direct main"
-    description:
-      name: vector_tile_renderer
-      sha256: "982ae5d8f0ab285463a4cd62e711c8f9a36b9b3112b5a471ae8d4f4838f31537"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   venue_layout_core:
     dependency: "direct overridden"
     description:
-      path: "packages/venue_layout_core"
-      ref: 143026c6c733662d417471a3eb448dee0b0d7252
-      resolved-ref: 143026c6c733662d417471a3eb448dee0b0d7252
-      url: "https://github.com/festappnet/venue_seat_picker.git"
-    source: git
+      path: "../venue_seat_picker/packages/venue_layout_core"
+      relative: true
+    source: path
     version: "0.1.0"
   venue_seat_picker:
     dependency: "direct main"
     description:
-      path: "."
-      ref: 143026c6c733662d417471a3eb448dee0b0d7252
-      resolved-ref: 143026c6c733662d417471a3eb448dee0b0d7252
-      url: "https://github.com/festappnet/venue_seat_picker.git"
-    source: git
+      path: "../venue_seat_picker"
+      relative: true
+    source: path
     version: "0.2.0"
   video_player:
     dependency: transitive

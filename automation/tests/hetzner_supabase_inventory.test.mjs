@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import { readHistoricalSql } from '../lib/historical_sql.mjs';
 import test from 'node:test';
 import path from 'node:path';
 import {
@@ -56,18 +58,20 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   const report = evaluateRuntimeWriterPolicy(policy);
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
-  assert.equal(report.edge_functions, 30);
-  assert.equal(report.worker_entrypoints, 6);
-  assert.equal(report.mutating_surfaces, 25);
+  assert.equal(report.edge_functions, 34);
+  assert.equal(report.worker_entrypoints, 5);
+  assert.equal(report.mutating_surfaces, 28);
   for (const name of ['bank-sync-webhook', 'bank-sync-manage', 'bank-sync-reconcile']) {
     assert.equal(policy.edge_functions[name].mutates_authority, true);
   }
   assert.equal(policy.edge_functions['preview-ticket-layout'].mutates_authority, false);
-  for (const name of ['google-auth-start', 'google-auth-callback', 'google-auth-complete']) {
+  for (const name of ['google-auth-start', 'google-auth-callback', 'google-auth-complete', 'exchange-sign-in-code']) {
     assert.equal(policy.edge_functions[name].mutates_authority, true);
   }
   assert.equal(report.canonical_security_blockers.length, 0);
   assert.match(report.canonical_exclusions[0], /instance-install/);
+  assert.equal(policy.edge_functions['instance-install'], undefined);
+  assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, 'supabase/functions/instance-install/index.ts')), false);
   assert.equal(report.activation_requirements.length, 7);
 
   const incomplete = structuredClone(policy);
@@ -740,14 +744,9 @@ test('repository cutover preflight separates local readiness from live blockers'
   assert.match(dirty.blockers[0], /working tree/);
 });
 
-test('RPC search-path hardening is exhaustive, fail-closed and non-destructive', () => {
-  const policy = loadWriteAuthorityPolicy();
-  const expected = auditLegacyAdapters(policy).rpc_names;
-  const migrationPath = path.join(
-    REPOSITORY_ROOT,
-    'supabase/migrations/20260827120000_harden_client_sync_rpc_search_paths.sql',
-  );
-  const migration = fs.readFileSync(migrationPath, 'utf8');
+test('historical RPC search-path hardening covers its frozen signature set and is non-destructive', () => {
+  const migration = readHistoricalSql('supabase/migrations/20260827120000_harden_client_sync_rpc_search_paths.sql');
+  const expected = [...migration.match(/v_names constant text\[\] := ARRAY\[([\s\S]*?)\]/)[1].matchAll(/'([a-z0-9_]+)'/g)].map(match => match[1]).sort();
   const altered = [...migration.matchAll(
     /ALTER FUNCTION public\.([a-z0-9_]+)\([^;]+?\)\s+SET search_path TO public, extensions;/g,
   )].map((match) => match[1]).sort();
@@ -760,10 +759,7 @@ test('RPC search-path hardening is exhaustive, fail-closed and non-destructive',
 });
 
 test('canonical notification webhook is secret-authenticated and starts disabled', () => {
-  const migration = fs.readFileSync(path.join(
-    REPOSITORY_ROOT,
-    'supabase/migrations/20260902190000_authenticate_notification_webhook.sql',
-  ), 'utf8');
+  const migration = readHistoricalSql('supabase/migrations/20260902190000_authenticate_notification_webhook.sql');
   assert.match(migration, /SECURITY DEFINER/);
   assert.match(migration, /SET search_path = ''/);
   assert.match(migration, /festapp_notify_webhook_token_v1/);
@@ -773,4 +769,20 @@ test('canonical notification webhook is secret-authenticated and starts disabled
   assert.match(migration, /deliver_log_notification_v1\(%L\)/);
   assert.doesNotMatch(migration, /supabase_functions\.http_request/);
   assert.doesNotMatch(migration, /Bearer [A-Za-z0-9_-]{32}/);
+});
+
+
+test('canonical-only adapter audit blocks a reintroduced direct DML fallback', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-adapter-audit-'));
+  try {
+    fs.mkdirSync(path.join(root, 'lib'));
+    const policy = { selection_contract: 'ClientSyncRuntime.isV1Selected', legacy_adapters: [
+      { path: 'lib/adapter.dart', canonical_only: true, command_modules: ['lib/commands.dart'] },
+    ] };
+    fs.writeFileSync(path.join(root, 'lib/adapter.dart'), 'return commands.save(value);');
+    fs.writeFileSync(path.join(root, 'lib/commands.dart'), "ClientCommandTransport transport; invoke('save_profile_client_sync_v1');");
+    assert.equal(auditLegacyAdapters(policy, root).seam_detected_adapters, 1);
+    fs.writeFileSync(path.join(root, 'lib/adapter.dart'), "return supabase.from('users').delete();");
+    assert.equal(auditLegacyAdapters(policy, root).seam_detected_adapters, 0);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

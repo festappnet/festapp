@@ -1,0 +1,45 @@
+{
+  "source": "actual read-only captureLayoutDocument after native18tablegrowth",
+  "styles": {
+    "kinds": {
+      "seat": {
+        "cornerRadius": 20,
+        "fill": "#253759FF",
+        "material": "simple",
+        "seatStyle": "plain",
+        "stroke": "#253759FF",
+        "strokeWidth": 0
+      },
+      "table": {
+        "cornerRadius": 0,
+        "fill": "#80BDF2FF",
+        "label": {
+          "color": "#253759FF",
+          "fontFamilyId": "font-family:1ad255e344dade3427a6baaaf48aaaca6b18061a7476c73ebd27d8966dd37ea3",
+          "lineHeight": 1,
+          "size": 70,
+          "weight": 400
+        },
+        "material": "simple",
+        "stroke": "#253759FF",
+        "strokeWidth": 3
+      },
+      "text": {
+        "label": {
+          "color": "#000000FF"
+        }
+      }
+    },
+    "label": {
+      "color": "#253759FF",
+      "fontFamilyId": "font-family:1ad255e344dade3427a6baaaf48aaaca6b18061a7476c73ebd27d8966dd37ea3",
+      "weight": 400
+    }
+  },
+  "nodeCount": 144,
+  "tableCount": 18,
+  "seatCount": 112,
+  "architectureStrokeWidths": [
+    3
+  ]
+}

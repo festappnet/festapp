@@ -8,8 +8,12 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-BACKEND = ROOT.parent / 'festapp-wizard-local'
-PROJECT = 'festapp-wizard-local'
+from baseline import load_manifest
+
+BACKEND = Path(os.environ.get('FESTAPP_WIZARD_WORKSPACE', str(ROOT.parent / 'festapp-wizard-local'))).resolve()
+PROJECT = BACKEND.name
+if not PROJECT.startswith('festapp-wizard-'):
+    raise RuntimeError('Wizard workspace must have a festapp-wizard- name')
 DB_URL = 'postgresql://postgres:postgres@127.0.0.1:56822/postgres'
 LOG = BACKEND / 'setup.log'
 
@@ -58,29 +62,33 @@ def prepare():
     containers = subprocess.check_output(['docker', 'ps', '--format', '{{.Names}} {{.Ports}}'], text=True)
     if not any(line.startswith('supabase_db_' + PROJECT + ' ') and ':56822->5432/' in line for line in containers.splitlines()):
         raise RuntimeError('Owned database container is not listening on the expected port')
+    run(['docker', 'exec', '-e', 'PGPASSWORD=postgres', 'supabase_db_' + PROJECT,
+         'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-q',
+         '-c', 'ALTER SYSTEM SET cron.launch_active_jobs = off', '-c', 'SELECT pg_reload_conf()'])
     marker = BACKEND / 'bootstrap-complete'
     if not marker.exists():
         existing = subprocess.check_output(['psql', DB_URL, '-Atc', "select to_regclass('public.units') is not null"], text=True).strip()
         if existing == 't':
             raise RuntimeError('Unmarked database already contains app data; refusing to bootstrap over it')
-        pre = 'CREATE SCHEMA IF NOT EXISTS eshop;'
-        for extension, schema in [('dblink','public'),('http','extensions'),('moddatetime','extensions'),
-                                  ('pg_cron','pg_catalog'),('pg_trgm','extensions'),('pgaudit','extensions'),
-                                  ('pgjwt','extensions'),('unaccent','extensions')]:
-            pre += f'CREATE EXTENSION IF NOT EXISTS {extension} WITH SCHEMA {schema};'
-        for schema in ['public', 'eshop']:
-            for kind in ['TABLES', 'SEQUENCES', 'FUNCTIONS']:
-                pre += f'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA {schema} REVOKE ALL ON {kind} FROM anon, authenticated, service_role;'
-        sql('-c', pre)
-        sql('-f', str(ROOT / 'supabase/baseline/20260805230000_production_schema.sql'))
-        for migration in sorted((ROOT / 'supabase/migrations').glob('*.sql')):
-            if migration.name[:14] > '20260805230000':
-                sql('-f', str(migration))
+        baseline = load_manifest(ROOT)
+        sql('-c', 'CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;')
+        for key in ['bootstrap', 'schema', 'referenceSeed']:
+            sql('-f', str(ROOT / baseline[key]['path']))
+        ledger = subprocess.check_output(['python3', str(ROOT / 'automation/baseline.py'), 'ledger-sql'], text=True)
+        sql('-c', ledger)
+        run(['python3', str(ROOT / 'automation/baseline.py'), 'upgrade-local',
+             '--database-url', DB_URL + '?sslmode=disable'])
         sql('-f', str(ROOT / 'supabase/seed.sql'))
         marker.write_text('Canonical baseline and forward migrations loaded.\n')
-    # Draft functions may change while iterating; the canonical file is idempotent.
-    sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'))
+    # Draft functions may change while iterating; canonical sources are idempotent.
+    sql('-f', str(ROOT / 'database/functions/user_permissions/get_is_manager_on_unit.sql'))
+    sql('-f', str(ROOT / 'database/functions/public_links/registry.sql'))
+    sql('-f', str(ROOT / 'database/functions/others/ticket_layout.sql'))
     sql('-f', str(ROOT / 'database/functions/occasion_setup/sources.sql'))
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'))
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/finalize.sql'))
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/form_link.sql'))
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/email_preview.sql'))
     sql('-c', "NOTIFY pgrst, 'reload schema'")
     status = json.loads(subprocess.check_output(['supabase', 'status', '--workdir', str(BACKEND), '--output', 'json'], stderr=subprocess.DEVNULL))
     if status['API_URL'] != 'http://127.0.0.1:56821':
@@ -90,7 +98,8 @@ def prepare():
     with os.fdopen(descriptor, 'w') as stream:
         json.dump({'FESTAPP_SUPABASE_URL': status['API_URL'],
                    'FESTAPP_SUPABASE_ANON_KEY': status['ANON_KEY'],
-                   'FESTAPP_OCCASION_SETUP': 'true'}, stream)
+                   'FESTAPP_OCCASION_SETUP': '--enable-wizard' in sys.argv,
+                   'FESTAPP_APP_SUPPORTED': '--app-supported' in sys.argv}, stream)
     os.chmod(defines, 0o600)
     functions = BACKEND / 'supabase/functions'
     expected = ROOT / 'supabase/functions'
@@ -105,7 +114,7 @@ def prepare():
     text = config.read_text()
     if '[functions.preview-ticket-layout]' not in text:
         config.write_text(text + '\n[functions.preview-ticket-layout]\n'
-                          'static_files = ["./functions/_shared/ticket-assets/*"]\n')
+                          'static_files = ["./functions/_shared/ticket-assets/**/*.ttf", "./functions/_shared/ticket-assets/**/*.json", "./functions/_shared/ticket-assets/**/*.png", "./functions/_shared/ticket-assets/**/*.jpg"]\n')
     return defines
 
 
@@ -121,7 +130,7 @@ if __name__ == '__main__':
             if edge.returncode != 0 or edge.stdout.strip() != 'true':
                 with LOG.open('a') as log:
                     subprocess.Popen(
-                        ['supabase', 'functions', 'serve', 'preview-ticket-layout',
+                        ['supabase', 'functions', 'serve',
                          '--workdir', str(BACKEND)],
                         stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                         start_new_session=True)

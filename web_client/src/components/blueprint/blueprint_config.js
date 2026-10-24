@@ -13,6 +13,7 @@ export const BlueprintConfig = {
     maxScale: 5,
     overscrollLimit: 150,
     tapThreshold: 10,
+    seatHitSlop: 8, // CSS pixels on screen, independent of map zoom
     panMargin: 24,
 
     // Animation

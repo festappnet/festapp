@@ -4,6 +4,7 @@ import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'field_holder.dart';
 
 class FormTicketModel {
+  int? ticketId;
   BlueprintSeat? seat;
   final List<FieldHolder> ticketValues;
   final GlobalKey<FormBuilderState> ticketKey;
@@ -12,6 +13,7 @@ class FormTicketModel {
     required this.ticketValues,
     required this.ticketKey,
     this.seat,
+    this.ticketId,
   });
 
   @override

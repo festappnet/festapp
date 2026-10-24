@@ -11,6 +11,8 @@ export type EmailAttachment = {
   content: unknown;
   contentType: string;
   encoding: string;
+  disposition?: "ATTACHMENT" | "INLINE";
+  contentId?: string;
 };
 
 export type EmailTemplate = {
@@ -36,6 +38,7 @@ export type DeliverEmailInput = {
   templateCode?: string;
   context: EmailContext;
   substitutions: Record<string, unknown>;
+  subjectSubstitutions?: Record<string, unknown>;
   attachments?: EmailAttachment[];
   from?: string;
   replyTo?: string;
@@ -46,6 +49,8 @@ export type DeliverEmailInput = {
    * resolved centrally from templateCode and context.
    */
   template?: EmailTemplate;
+  /** Trusted system block, composed once before the inherited wrapper. */
+  ticketBlock?: string;
 };
 
 export type EmailDeliveryResult = {
@@ -80,6 +85,8 @@ export type PreparedEmail = {
       content: string;
       contentType: string;
       encoding: "base64";
+      disposition?: "ATTACHMENT" | "INLINE";
+      contentId?: string;
     }
   >;
 };
@@ -111,8 +118,20 @@ export async function renderEmail(
     !template || typeof template.subject !== "string" ||
     typeof template.html !== "string"
   ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
-  const subject = substitute(template.subject, input.substitutions);
-  let html = substitute(template.html, input.substitutions);
+  const subject = substitute(
+    template.subject,
+    input.subjectSubstitutions ?? input.substitutions,
+  );
+  let body = template.html;
+  const ticketBlock = input.ticketBlock ??
+    (input.templateCode === "TICKET_ORDER_PAYMENT_DONE" ? "" : undefined);
+  if (ticketBlock !== undefined) {
+    const marker = "{{tickets}}";
+    const first = body.indexOf(marker);
+    body = first < 0 ? body + ticketBlock : body.slice(0, first) + ticketBlock +
+      body.slice(first + marker.length).replaceAll(marker, "");
+  }
+  let html = substitute(body, input.substitutions);
   if (resolved?.wrapper?.html) {
     html = resolved.wrapper.html.replace("{{content}}", html);
   }
@@ -127,6 +146,8 @@ export async function renderEmail(
       content: encodeAttachment(a.content, a.encoding),
       contentType: a.contentType,
       encoding: "base64",
+      ...(a.disposition ? { disposition: a.disposition } : {}),
+      ...(a.contentId ? { contentId: a.contentId } : {}),
     })),
   };
 }

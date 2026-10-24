@@ -23,13 +23,13 @@ deno test \
   supabase/functions/exchange-login-qr/exchange_test.ts \
   supabase/functions/cancel-reception-registration/cancel_test.ts
 
-echo "[3/4] Flutter feature, model and login-payload contracts"
-fvm flutter test \
-  test/components/reception/login_qr_payload_test.dart \
-  test/components/reception/manual_login_code_field_test.dart \
-  test/components/reception/reception_gating_test.dart \
-  test/components/users/occasion_user_grid_test.dart \
-  test/components/users/login_feedback_test.dart
+echo "[3/4] Dart payload and Flutter feature/model contracts"
+"$SCRIPT_DIR/test_client.sh" core
+CLIENT_TEST_WORKERS="$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from test_client import client_concurrency; print(client_concurrency())' "$SCRIPT_DIR")"
+fvm flutter test --concurrency="$CLIENT_TEST_WORKERS" \
+  test/sessions/shared_default_3_test.dart \
+  test/sessions/shared_default_1_test.dart \
+  test/components/users/login_feedback_cases.dart
 
 echo "[4/4] Static contract and secret-absence checks"
 fvm flutter analyze --no-fatal-infos \

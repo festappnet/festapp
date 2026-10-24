@@ -15,7 +15,11 @@ Future<void> copyOccasionMedia(
       features: occasion.features);
   if (ticketDetails is TicketFeature &&
       ticketDetails.ticketBackground != null &&
-      ticketDetails.ticketBackground!.isNotEmpty) {
+      ticketDetails.ticketBackground!.isNotEmpty &&
+      // Versioned gallery artwork is shared, immutable and bundled by the PDF
+      // renderer. It is not an occasion-owned object to download and re-upload.
+      !ticketDetails.ticketBackground!
+          .startsWith('https://img.festapp.net/ticket-presets/v1/')) {
     ticketDetails.ticketBackground =
         await copyImage(ticketDetails.ticketBackground!, occasionId, null);
   }

@@ -1,0 +1,269 @@
+{
+  "manifestSHA256": "bb12b6862ed0e854684076a4316ef2543d2d571ca57110c39be74932de73c3a6",
+  "artifacts": [
+    {
+      "asset": "web/organizers-media/layout-build.mp4",
+      "sha256": "28c7fbe062901391fdf7a36231736005466a767877bc4b0206140ac59643feb0",
+      "decode": "pass",
+      "width": 1140,
+      "height": 824,
+      "duration": 30.499674
+    },
+    {
+      "asset": "web/organizers-media/layout-build-mobile.mp4",
+      "sha256": "ad4e9ac7214948d4d2ce08fbb1068c8e6d1ed1a008944999deb20c5ee9e8c3a3",
+      "decode": "pass",
+      "width": 820,
+      "height": 824,
+      "duration": 30.5
+    },
+    {
+      "asset": "web/organizers-media/layout-style.mp4",
+      "sha256": "bd6ce92801d69b270865ae41cca95006f48ed5502246d83dc7bf78226e72d6e3",
+      "decode": "pass",
+      "width": 1140,
+      "height": 824,
+      "duration": 6.833333
+    },
+    {
+      "asset": "web/organizers-media/layout-style-mobile.mp4",
+      "sha256": "5273177a74c0131b8c0d7858dca3a90d0f2bb0125136b6fe869a4d71961973c1",
+      "decode": "pass",
+      "width": 820,
+      "height": 824,
+      "duration": 6.833333
+    },
+    {
+      "asset": "web/organizers-media/form-build.mp4",
+      "sha256": "97a33f810ce5d1019adb26fb93703d63f4301c82a8c4c7e380fb63ba7876e254",
+      "decode": "pass",
+      "width": 1200,
+      "height": 804,
+      "duration": 22.5
+    },
+    {
+      "asset": "web/organizers-media/form-build-mobile.mp4",
+      "sha256": "bd7eec024eb6c8c43d9e81d66376d7bb6c3f1a792987f0e1239b9b77811c01d3",
+      "decode": "pass",
+      "width": 720,
+      "height": 638,
+      "duration": 22.5
+    },
+    {
+      "asset": "web/organizers-media/form-style.mp4",
+      "sha256": "72657f41e53c39e9fc4db105540f0a12ff3ec070f85b8ac6d1e0c7720fb4967b",
+      "decode": "pass",
+      "width": 1200,
+      "height": 804,
+      "duration": 5.0
+    },
+    {
+      "asset": "web/organizers-media/form-style-mobile.mp4",
+      "sha256": "d6dfb3dd8c94ff80eb030125fa7784d0cd97f547a67aea638e14255012adc419",
+      "decode": "pass",
+      "width": 720,
+      "height": 638,
+      "duration": 5.0
+    },
+    {
+      "asset": "web/organizers-media/ticket-design.mp4",
+      "sha256": "cb50d4ae3a8d4d8036b967deeed308a48c6024333c64ee72c0b2b7c8dfa59763",
+      "decode": "pass",
+      "width": 1200,
+      "height": 822,
+      "duration": 8.833333
+    },
+    {
+      "asset": "web/organizers-media/ticket-design-mobile.mp4",
+      "sha256": "7de402bb47d6240f3f0f9f600d76ee3f13fb39b0e4bbe11d3bd9d1b1abe364ed",
+      "decode": "pass",
+      "width": 900,
+      "height": 720,
+      "duration": 8.833333
+    },
+    {
+      "asset": "web/organizers-media/seat-select.mp4",
+      "sha256": "ac3f6e6649bf8dcd76180f8a62c3c5be43ec682807077f9a43ca293660292582",
+      "decode": "pass",
+      "width": 426,
+      "height": 900,
+      "duration": 9.566667
+    },
+    {
+      "asset": "web/organizers-media/seat-select-mobile.mp4",
+      "sha256": "ac3f6e6649bf8dcd76180f8a62c3c5be43ec682807077f9a43ca293660292582",
+      "decode": "pass",
+      "width": 426,
+      "height": 900,
+      "duration": 9.566667
+    },
+    {
+      "asset": "web/organizers-media/payment-qr.mp4",
+      "sha256": "4478578efe33528fe53a2e042b67de44aa029cf5f6a4179fd4d7d86cc9304a4b",
+      "decode": "pass",
+      "width": 1440,
+      "height": 900,
+      "duration": 5.6
+    },
+    {
+      "asset": "web/organizers-media/payment-qr-mobile.mp4",
+      "sha256": "149c877030ef84a8e16ac856b432ae144007288ba64b0627f5f90829cfcf408f",
+      "decode": "pass",
+      "width": 390,
+      "height": 844,
+      "duration": 5.633333
+    },
+    {
+      "asset": "web/organizers-media/check-in.mp4",
+      "sha256": "f260cc144542ee12310386ae9e90853ffb4325b657836f5cdb8319e1095345ad",
+      "decode": "pass",
+      "width": 1200,
+      "height": 800,
+      "duration": 8.5
+    },
+    {
+      "asset": "web/organizers-media/check-in-mobile.mp4",
+      "sha256": "40e280f9a32440b3b0bb08ce2f775480979fdbd1e527eb206762017ca2875b95",
+      "decode": "pass",
+      "width": 500,
+      "height": 1000,
+      "duration": 8.5
+    },
+    {
+      "asset": "web/organizers-media/orders-overview.mp4",
+      "sha256": "6e7219c00a9f069788ed827ec8170a3d15787985aad102c468f373e362797ef6",
+      "decode": "pass",
+      "width": 1200,
+      "height": 760,
+      "duration": 13.1
+    },
+    {
+      "asset": "web/organizers-media/orders-overview-mobile.mp4",
+      "sha256": "ab0244859eadcb270ba93e2ab6c32c2fd24dcf852c12b8f78e56d5d68454c8f6",
+      "decode": "pass",
+      "width": 720,
+      "height": 900,
+      "duration": 13.1
+    },
+    {
+      "asset": "web/organizers-media/check-in-mobile.webp",
+      "sha256": "a4f14b2d565cc78b9f596ba5593afc1b92c4d6d43fb84a55895a663304cf7e56"
+    },
+    {
+      "asset": "web/organizers-media/check-in.webp",
+      "sha256": "090160faf38b72c3aa94980c7593a31c321084a1c70009ed270ba5e6c1141d4c"
+    },
+    {
+      "asset": "web/organizers-media/form-build-mobile.jpg",
+      "sha256": "7412344ab647dc32e8d483f3249857223ad3f13a73b85d0c38bf251f24a51143"
+    },
+    {
+      "asset": "web/organizers-media/form-build.jpg",
+      "sha256": "5608854ffb60230ba16b7148a43ebc7edf4ee7eb2c8f9985785617c807fda733"
+    },
+    {
+      "asset": "web/organizers-media/form-style-mobile.jpg",
+      "sha256": "eb4cbff3efba8ea19dc00c9a617bf3508168190fb80515a126f4f4a35c2d250d"
+    },
+    {
+      "asset": "web/organizers-media/form-style.jpg",
+      "sha256": "b5c1d8f73e3fb5a96358e78f05d2981e40d359710493d8bea5b4db7bac1d3acd"
+    },
+    {
+      "asset": "web/organizers-media/layout-build-mobile.jpg",
+      "sha256": "cdf5c9d71bb6af9a723b41d93762bd64ec2402458adc07d04ff407ae325d2273"
+    },
+    {
+      "asset": "web/organizers-media/layout-build.jpg",
+      "sha256": "71bc792775b03caecde26339a416921494b3d631f24b6b6a7f163623bf1856a4"
+    },
+    {
+      "asset": "web/organizers-media/layout-cinema.jpg",
+      "sha256": "d98c13e6b618d4707df04526eb4ef9bdcf4ecb3ada12c9255008361dda8c7e45"
+    },
+    {
+      "asset": "web/organizers-media/layout-scout.jpg",
+      "sha256": "ab720c95bc21e4bce9224a31a6ddd9b8b9914dc5d440a8d996ffa105c8c7ce39"
+    },
+    {
+      "asset": "web/organizers-media/layout-style-mobile.jpg",
+      "sha256": "441f40334840317cd264d10d56acd5382dc1815b7ab7fd0f3b11fd887f169c7b"
+    },
+    {
+      "asset": "web/organizers-media/layout-style.jpg",
+      "sha256": "5cfcce94b2f70d0bdb7bbed6d0a0d43c315aa78a6ebb95ec96ea18b736023bc6"
+    },
+    {
+      "asset": "web/organizers-media/layout-theatre.jpg",
+      "sha256": "6d817d590d58b1ab0888479371fc6b181d8ba6a37f360affe64b412e799ece69"
+    },
+    {
+      "asset": "web/organizers-media/orders-overview-mobile.webp",
+      "sha256": "2951c8e95f2400cbcc55af792fd98f3abbe12a720f0b2a9fbe449043bde4940e"
+    },
+    {
+      "asset": "web/organizers-media/orders-overview.webp",
+      "sha256": "c6745f65383638ff3f05575dec360755f19feb67053f0cd59f8248be3cc4952a"
+    },
+    {
+      "asset": "web/organizers-media/payment-qr-mobile.jpg",
+      "sha256": "e08d4e4b9deba80be37f6ff2536bda0cdfb84fb25c0aa6d7c73f95930d2ae2a7"
+    },
+    {
+      "asset": "web/organizers-media/payment-qr.jpg",
+      "sha256": "5e053afabff54dee6b74cc5170b0d0209a94f5cc8532999f2f240c5221145f60"
+    },
+    {
+      "asset": "web/organizers-media/seat-select-mobile.jpg",
+      "sha256": "76aa84f57535a346c2c0f5faad960cfc32e1b6de00cac01c6bfcfcc4aa2f17e6"
+    },
+    {
+      "asset": "web/organizers-media/seat-select.jpg",
+      "sha256": "76aa84f57535a346c2c0f5faad960cfc32e1b6de00cac01c6bfcfcc4aa2f17e6"
+    },
+    {
+      "asset": "web/organizers-media/ticket-ball.jpg",
+      "sha256": "96618f2800b2b8200a8a62c0cf7eab9c998075308b12e8c18789a955fdc6ddca"
+    },
+    {
+      "asset": "web/organizers-media/ticket-concert.jpg",
+      "sha256": "6efcb30e325104c500442f30bb6235d9d231bfaede9ced334004c5eace0f4224"
+    },
+    {
+      "asset": "web/organizers-media/ticket-design-mobile.jpg",
+      "sha256": "f8a290cbf523e95c3934442d76d7e218956ed1f63e9618d5e2140a28c83dad67"
+    },
+    {
+      "asset": "web/organizers-media/ticket-design.jpg",
+      "sha256": "f423c9fab4c208b7b8b0065446f51b6856fd15f1a782163417b243afc11e0484"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-boarding-pass.webp",
+      "sha256": "6489a4e65ae027e7233a19e56bc8f478ee7541e5c57822cbfa9a98f2dc13cf57"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-cinema-strip.webp",
+      "sha256": "b85ed4c5ba5c3f7e98d6ee2b6d96b1d991bad1f29bcbdc9befadfd1f8518066e"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-festival-poster.webp",
+      "sha256": "840ddc5dbd283568f921180bb4e2d6096f8876782c04873e8e0df5ae4a047cdc"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-gallery-square.webp",
+      "sha256": "0f65477b6d71810fdae5ca37075a7de5887a46153a7fed9d8e09ec7d9c84798f"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-sports-arena.webp",
+      "sha256": "2b5c197b53489a2535bc79160a327164a2e6b37876933db144067d1336ce3c13"
+    },
+    {
+      "asset": "web/organizers-media/ticket-showcase-workshop-card.webp",
+      "sha256": "b8ae5fd22a01742a5e78029bd5cc5396b3b9bea6346d74e61999ceaceca9d031"
+    },
+    {
+      "asset": "web/organizers-media/ticket-theatre.jpg",
+      "sha256": "12014cd39972d69f0c7a47cf2ec5a04aceb4ed0d62c192774ce1643ad130f495"
+    }
+  ]
+}

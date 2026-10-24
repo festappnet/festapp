@@ -1,4 +1,15 @@
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
+import 'dart:async';
+import 'dart:typed_data';
+import 'package:cross_file/cross_file.dart';
+import '../../_shared/editor_file_drop_region.dart';
+import '../../_shared/editor_file_drop_strings.dart';
+import '../../images/db_images.dart';
+import '../../images/image_file_format.dart';
+import '../../images/image_upload_limits.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:festapp_core/eshop.dart';
 import 'dart:convert';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:auto_route/auto_route.dart';
@@ -17,6 +28,7 @@ import 'package:collection/collection.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 import '../../_shared/common_strings.dart';
+import '../../occasion/setup/occasion_setup_strings.dart';
 import '../../eshop/db_tickets.dart';
 import '../blueprint_seat.dart';
 import '../seat_reservation/widgets/seat_reservation_widget.dart';
@@ -26,6 +38,7 @@ import 'blueprint_groups_panel.dart';
 import 'blueprint_legend.dart';
 import 'blueprint_mobile_scroll_view.dart';
 import 'blueprint_product_dialogs.dart';
+import 'blueprint_viewport.dart';
 
 enum BlueprintSelectionMode {
   none,
@@ -38,17 +51,32 @@ enum BlueprintSelectionMode {
 
 class BlueprintTab extends StatefulWidget {
   const BlueprintTab(
-      {super.key, this.prototypeBlueprint, this.onPrototypeSave});
+      {super.key,
+      this.prototypeBlueprint,
+      this.onPrototypeSave,
+      this.onPrototypeComplete,
+      this.loadBlueprint,
+      this.uploadBackground,
+      this.saveBlueprint});
 
-  /// Runs the existing editor against an in-memory plan for the setup demo.
+  /// Runs the existing editor against a setup draft and its persistence callback.
   const BlueprintTab.prototype({
     super.key,
     required this.prototypeBlueprint,
     required this.onPrototypeSave,
-  });
+    this.onPrototypeComplete,
+  })  : loadBlueprint = null,
+        uploadBackground = null,
+        saveBlueprint = null;
 
+  final Future<BlueprintModel?> Function()? loadBlueprint;
+  final Future<void> Function(BlueprintModel)? saveBlueprint;
+  final Future<String> Function(Uint8List, int?)? uploadBackground;
   final BlueprintModel? prototypeBlueprint;
-  final ValueChanged<BlueprintModel>? onPrototypeSave;
+  final FutureOr<void> Function(BlueprintModel)? onPrototypeSave;
+
+  /// Called only after the prototype is durably saved and its baseline accepted.
+  final VoidCallback? onPrototypeComplete;
 
   @override
   State<BlueprintTab> createState() => _BlueprintTabState();
@@ -83,6 +111,18 @@ class _BlueprintTabState extends State<BlueprintTab> {
   // State for Create New Order feature
   final Set<BlueprintSeat> _selectedSeatsForOrder = {};
   bool _initialLoadStarted = false;
+  bool _backgroundBusy = false;
+  bool _loading = false;
+  bool _saving = false;
+  bool _allowPrototypePop = false;
+  bool get _canImport =>
+      mounted &&
+      _canEdit &&
+      blueprint != null &&
+      !_backgroundBusy &&
+      !_loading &&
+      !_saving &&
+      editorFileDropIsActive(context);
   Map<String, dynamic> _prototypeData(BlueprintModel plan) => {
         ...plan.toJson(),
         BlueprintModel.metaSpots: (plan.objects ?? [])
@@ -113,7 +153,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_isPrototype) {
+    if (_isPrototype || widget.loadBlueprint != null) {
       if (!_initialLoadStarted) {
         _initialLoadStarted = true;
         loadData();
@@ -125,16 +165,14 @@ class _BlueprintTabState extends State<BlueprintTab> {
       occasionLink = context.routeData.inheritedPathParams
           .getString(AppRouter.linkFormatted);
     }
-    loadData();
+    if (!_initialLoadStarted) {
+      _initialLoadStarted = true;
+      loadData();
+    }
   }
 
   @override
   void dispose() {
-    if (_isPrototype && blueprint != null) {
-      blueprint!.objects =
-          _seatLayoutController.slots.map((s) => s.seat).nonNulls.toList();
-      widget.onPrototypeSave?.call(blueprint!);
-    }
     _seatLayoutController.dispose();
     super.dispose();
   }
@@ -190,6 +228,21 @@ class _BlueprintTabState extends State<BlueprintTab> {
       // Pass the count and the callback for the Create Order button
       selectedCount: _selectedSeatsForOrder.length,
       onConfirmOrder: _processNewOrder,
+      onCreateBatch: FeatureService.isTicketPregenerationEnabled()
+          ? () async {
+              final ids = _selectedSeatsForOrder
+                  .map((s) => s.seat?.id)
+                  .nonNulls
+                  .toList();
+              final created = await ExceptionHandler.guard<bool>(context,
+                  futureFunction: () => createTicketBatchFromSpots(context,
+                      blueprintId: blueprint!.id!, spotIds: ids));
+              if (created == true && mounted) {
+                _handleModeSelected(BlueprintSelectionMode.none);
+                await loadData();
+              }
+            }
+          : null,
       stateCounts: stateCounts,
       allowOrderActions: !_isPrototype,
     );
@@ -206,35 +259,43 @@ class _BlueprintTabState extends State<BlueprintTab> {
             : BlueprintControlsBar(
                 blueprint: blueprint,
                 seatLayoutController: _seatLayoutController,
-                canEdit: _canEdit,
+                canEdit: _canEdit && !_backgroundBusy && !_loading && !_saving,
                 allowRemoteUpload: !_isPrototype,
+                onImportSvg: () => _pickBackground(svg: true),
+                onImportImage: () => _pickBackground(svg: false),
+                onRemoveBackground: _removeBackground,
               ),
         const SizedBox(height: 16),
         Flexible(
           child: blueprint == null
               ? const Center(child: CircularProgressIndicator())
-              : TooltipTheme(
-                  data: TooltipThemeData(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .inverseSurface
-                          .withValues(alpha: .95),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onInverseSurface,
+              : BlueprintViewport(
+                  controller: _seatLayoutController,
+                  child: TooltipTheme(
+                      data: TooltipThemeData(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .inverseSurface
+                              .withValues(alpha: .95),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                  ),
-                  child: VenueSeatViewer<BlueprintObjectModel, Object>(
-                    editorMode: true,
-                    controller: _seatLayoutController,
-                    onSeatPressed: handleSeatTap,
-                    tooltipBuilder: (context, slot) =>
-                        slot.seat?.blueprintTooltip(context) ?? '',
-                    shouldShowTooltipOnTap: (_) =>
-                        currentSelectionMode == BlueprintSelectionMode.none,
-                  )),
+                        textStyle:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onInverseSurface,
+                                ),
+                      ),
+                      child: VenueSeatViewer<BlueprintObjectModel, Object>(
+                        editorMode: true,
+                        controller: _seatLayoutController,
+                        onSeatPressed: handleSeatTap,
+                        tooltipBuilder: (context, slot) =>
+                            slot.seat?.blueprintTooltip(context) ?? '',
+                        shouldShowTooltipOnTap: (_) =>
+                            currentSelectionMode == BlueprintSelectionMode.none,
+                      ))),
         ),
         const SizedBox(height: 16),
       ],
@@ -257,37 +318,86 @@ class _BlueprintTabState extends State<BlueprintTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => _seatLayoutController.showTooltipFor(null),
-          behavior: HitTestBehavior.translucent,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth > 800) {
-                return _buildDesktopLayout();
-              } else {
-                return BlueprintMobileScrollView(
-                  screenWidth: constraints.maxWidth,
-                  leftPanel: _buildLeftPanel(),
-                  mainContent: _buildMainContent(),
-                  rightPanel: _buildRightPanel(),
-                );
-              }
-            },
+    return PopScope(
+        canPop: !_isPrototype ||
+            _allowPrototypePop ||
+            (!_saving && !_snapshot.differs(_draft)),
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop || !_isPrototype || _saving) return;
+          final discard = await confirmDiscardChanges(context);
+          if (discard == true && mounted) {
+            setState(() => _allowPrototypePop = true);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).pop();
+            });
+          }
+        },
+        child: Scaffold(
+          body: EditorFileDropRegion(
+            enabled: _canImport,
+            active: TickerMode.valuesOf(context).enabled,
+            hint: EditorFileDropStrings.hint,
+            allowedExtensions: [
+              if (!_isPrototype) ...editorRasterExtensions,
+              'svg'
+            ],
+            onFileDropped: importBackground,
+            child: AbsorbPointer(
+              absorbing: _backgroundBusy || _loading || _saving,
+              child: SafeArea(
+                child: GestureDetector(
+                  onTap: () => _seatLayoutController.showTooltipFor(null),
+                  behavior: HitTestBehavior.translucent,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth > 800) {
+                        return _buildDesktopLayout();
+                      } else {
+                        return BlueprintMobileScrollView(
+                          screenWidth: constraints.maxWidth,
+                          leftPanel: _buildLeftPanel(),
+                          mainContent: _buildMainContent(),
+                          rightPanel: _buildRightPanel(),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: AnimatedBuilder(
-        animation: _seatLayoutController,
-        builder: (context, _) => EditorActionBar(
-          hasChanges: blueprint != null && _snapshot.differs(_draft),
-          enabled: _canEdit,
-          onSave: saveChanges,
-          onDiscard: loadData,
-        ),
-      ),
-    );
+          bottomNavigationBar: AnimatedBuilder(
+            animation: _seatLayoutController,
+            builder: (context, _) => _isPrototype
+                ? SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        heightFactor: 1,
+                        child: FilledButton(
+                          onPressed: _canEdit &&
+                                  blueprint != null &&
+                                  !_backgroundBusy &&
+                                  !_loading &&
+                                  !_saving
+                              ? saveChanges
+                              : null,
+                          child:
+                              Text(OccasionSetupStrings.story('saveAndReturn')),
+                        ),
+                      ),
+                    ),
+                  )
+                : EditorActionBar(
+                    hasChanges: blueprint != null && _snapshot.differs(_draft),
+                    enabled:
+                        _canEdit && !_backgroundBusy && !_loading && !_saving,
+                    onSave: saveChanges,
+                    onDiscard: loadData,
+                  ),
+          ),
+        ));
   }
 
   //
@@ -721,8 +831,107 @@ class _BlueprintTabState extends State<BlueprintTab> {
     setState(() {});
   }
 
+  Future<void> _pickBackground({required bool svg}) async {
+    if (!_canImport || (!svg && _isPrototype)) return;
+    final draft = blueprint;
+    setState(() => _backgroundBusy = true);
+    try {
+      final file = await DialogHelper.dropFilesHere(
+          context,
+          svg
+              ? BlueprintStrings.dialogImportSvgTitle
+              : BlueprintStrings.dialogImportImageTitle,
+          CommonStrings.ok,
+          CommonStrings.storno,
+          allowedExtensions: svg ? const ['svg'] : editorRasterExtensions,
+          singleFileOnly: true,
+          onInvalidDrop: () => ToastHelper.Show(
+              context, EditorFileDropStrings.singleFile,
+              severity: ToastSeverity.NotOk));
+      if (!mounted ||
+          !identical(draft, blueprint) ||
+          !_canEdit ||
+          file == null) {
+        return;
+      }
+      await _importBackground(file, draft!);
+    } finally {
+      if (mounted) setState(() => _backgroundBusy = false);
+    }
+  }
+
+  Future<void> importBackground(XFile file) async {
+    if (!_canImport) return;
+    final draft = blueprint!;
+    setState(() => _backgroundBusy = true);
+    try {
+      await _importBackground(file, draft);
+    } finally {
+      if (mounted) setState(() => _backgroundBusy = false);
+    }
+  }
+
+  Future<void> _importBackground(XFile file, BlueprintModel draft) async {
+    await ExceptionHandler.guard(context, futureFunction: () async {
+      final svg = file.name.toLowerCase().endsWith('.svg');
+      if (!svg && _isPrototype) return;
+      String source;
+      if (svg) {
+        source = await file.readAsString();
+        if (!source.trim().startsWith('<svg')) {
+          throw FormatException(BlueprintStrings.toastInvalidSvg);
+        }
+      } else {
+        if (await file.length() > ImageUploadLimits.maxInputBytes) {
+          throw FormatException(EditorFileDropStrings.tooLarge);
+        }
+        final bytes = await file.readAsBytes();
+        ImageFileFormat.detect(bytes);
+        source = await (widget.uploadBackground?.call(bytes, draft.occasion) ??
+            DbImages.uploadImage(bytes, draft.occasion, null,
+                profile: ImageUploadProfile.blueprintBackground));
+      }
+      final backdrop = VenueBackdrop.parse(source);
+      if (!mounted || !identical(draft, blueprint) || !_canEdit) return;
+      setState(() {
+        _seatLayoutController.setBackdrop(backdrop);
+        draft.backgroundSvg = source;
+      });
+      ToastHelper.Show(
+          context,
+          svg
+              ? BlueprintStrings.toastSvgUploadSuccess
+              : BlueprintStrings.toastImageUploadSuccess);
+    });
+  }
+
+  Future<void> _removeBackground() async {
+    if (!_canImport) return;
+    final draft = blueprint!;
+    setState(() => _backgroundBusy = true);
+    try {
+      final confirmed = await DialogHelper.showConfirmationDialog(
+          context,
+          BlueprintStrings.dialogConfirmRemoveBackgroundTitle,
+          BlueprintStrings.dialogConfirmRemoveBackgroundContent);
+      if (confirmed != true ||
+          !mounted ||
+          !identical(draft, blueprint) ||
+          !_canEdit) {
+        return;
+      }
+      setState(() {
+        _seatLayoutController.setBackdrop(null);
+        draft.backgroundSvg = null;
+      });
+    } finally {
+      if (mounted) setState(() => _backgroundBusy = false);
+    }
+  }
+
   Future<void> saveChanges() async {
-    if (blueprint == null) return;
+    if (!_canImport) return;
+    setState(() => _saving = true);
     try {
       // Ensure blueprint model objects are in sync
       blueprint!.objects =
@@ -735,44 +944,65 @@ class _BlueprintTabState extends State<BlueprintTab> {
       }
 
       if (_isPrototype) {
-        widget.onPrototypeSave?.call(blueprint!);
+        await widget.onPrototypeSave?.call(blueprint!);
         _prototypeBaseline = jsonEncode(_prototypeData(blueprint!));
       } else {
-        await DbForms.updateBlueprint(blueprint!);
+        await (widget.saveBlueprint?.call(blueprint!) ??
+            DbForms.updateBlueprint(blueprint!));
       }
+      if (!mounted) return;
       ToastHelper.Show(context, CommonStrings.saved,
           severity: ToastSeverity.Ok);
-      await loadData();
+      await _reloadData();
+      if (_isPrototype && mounted && widget.onPrototypeComplete != null) {
+        setState(() => _allowPrototypePop = true);
+        // Let PopScope observe the accepted baseline before the parent closes.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onPrototypeComplete?.call();
+        });
+      }
     } catch (e) {
       ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
           severity: ToastSeverity.NotOk);
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> loadData() async {
-    _resetAllSelections(); // Ensure clean state
-    blueprint = _isPrototype
-        ? BlueprintModel.fromJson(jsonDecode(_prototypeBaseline ??=
-                jsonEncode(_prototypeData(widget.prototypeBlueprint!)))
-            as Map<String, dynamic>)
-        : await DbForms.getBlueprintForEdit(occasionLink!);
-    if (blueprint != null) {
-      _seatLayoutController.loadPlan(
-        rows: blueprint!.configuration?.height ?? 1,
-        columns: blueprint!.configuration?.width ?? 1,
-        seats: (blueprint!.objects ?? const [])
-            .where((object) => object.x != null && object.y != null),
-        seatSize: SeatReservationWidget.boxSize.toDouble(),
-        backdrop: switch (blueprint!.backgroundSvg) {
-          final String source when source.isNotEmpty =>
-            VenueBackdrop.parse(source),
-          _ => null,
-        },
-      );
-    }
-    _snapshot.accept(_draft);
-    if (mounted) {
-      setState(() {});
+    if (_backgroundBusy || _saving || _loading) return;
+    await _reloadData();
+  }
+
+  Future<void> _reloadData() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+    try {
+      _resetAllSelections(); // Ensure clean state
+      blueprint = _isPrototype
+          ? BlueprintModel.fromJson(jsonDecode(_prototypeBaseline ??=
+                  jsonEncode(_prototypeData(widget.prototypeBlueprint!)))
+              as Map<String, dynamic>)
+          : await (widget.loadBlueprint?.call() ??
+              DbForms.getBlueprintForEdit(occasionLink!));
+      if (!mounted) return;
+      if (blueprint != null) {
+        _seatLayoutController.loadPlan(
+          rows: blueprint!.configuration?.height ?? 1,
+          columns: blueprint!.configuration?.width ?? 1,
+          seats: (blueprint!.objects ?? const [])
+              .where((object) => object.x != null && object.y != null),
+          seatSize: SeatReservationWidget.boxSize.toDouble(),
+          backdrop: switch (blueprint!.backgroundSvg) {
+            final String source when source.isNotEmpty =>
+              VenueBackdrop.parse(source),
+            _ => null,
+          },
+        );
+      }
+      _snapshot.accept(_draft);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 }

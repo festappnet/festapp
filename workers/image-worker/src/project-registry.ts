@@ -37,6 +37,15 @@ export function projectRegistry(env: Env): readonly ProjectConfig[] {
       publicHostname: 'akh.img.festapp.net', authContract: 'akhweb',
       publicKeyPrefixes: ['images/', 'blog/', 'content/'], supportsPrivate: false,
       persistsImageRecords: false },
+    // Slunovrat has canonical owner IDs and no historical R2 mapping. New
+    // public assets use the existing Festapp bucket; old Storage URLs stay valid.
+    // Keep its backend explicit rather than aliasing a former source project.
+    { id: 'slunovrat', supabaseUrl: env.SUPABASE_URL_SLUNOVRAT || '',
+      anonKey: env.SUPABASE_ANON_KEY_SLUNOVRAT || '',
+      publicBucket: env.IMAGES_BUCKET, privateBucket: env.IMAGES_PRIVATE_BUCKET,
+      publicBucketName: 'festapp-images', privateBucketName: 'festapp-images-private',
+      publicHostname: 'img.festapp.net', authContract: 'festapp',
+      publicKeyPrefixes: ['images/'], supportsPrivate: false, persistsImageRecords: true },
   ];
 }
 
@@ -44,6 +53,9 @@ function requireConfigured(project: ProjectConfig | undefined): ProjectConfig {
   if (!project) throw new ProjectResolutionError('Unknown image project');
   if (!project.supabaseUrl || !project.anonKey || !project.publicBucket || !project.privateBucket) {
     throw new ProjectResolutionError(`Image project ${project.id} is not fully configured`);
+  }
+  if (project.authContract === 'festapp' && project.supabaseUrl !== 'https://api.festapp.net') {
+    throw new ProjectResolutionError(`Image project ${project.id} must use the canonical Festapp backend`);
   }
   return project;
 }

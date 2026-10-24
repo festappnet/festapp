@@ -10,7 +10,7 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
   fail "run as root on the approved Festapp host"
 [[ -f /etc/festapp-backup/r2.env && "$(stat -c '%a' /etc/festapp-backup/r2.env)" == "600" ]] ||
   fail "root-only R2 backup config is missing"
-for file in create-online-encrypted-backup.sh upload-encrypted-runtime-logs.sh \
+for file in create-online-encrypted-backup.sh prune-online-backups.py upload-encrypted-runtime-logs.sh \
   festapp-supabase-backup.service festapp-supabase-backup.timer \
   festapp-runtime-log-upload.service festapp-runtime-log-upload.timer; do
   [[ -f "$SCRIPT_DIR/$file" ]] || fail "missing $file"
@@ -19,6 +19,8 @@ install -d -o root -g root -m 0700 /opt/festapp-backup /var/backups/festapp-supa
   /var/backups/festapp-supabase-logs
 install -o root -g root -m 0700 "$SCRIPT_DIR/create-online-encrypted-backup.sh" \
   /opt/festapp-backup/create-online-encrypted-backup.sh
+install -o root -g root -m 0700 "$SCRIPT_DIR/prune-online-backups.py" \
+  /opt/festapp-backup/prune-online-backups.py
 install -o root -g root -m 0700 "$SCRIPT_DIR/upload-encrypted-runtime-logs.sh" \
   /opt/festapp-backup/upload-encrypted-runtime-logs.sh
 install -o root -g root -m 0644 "$SCRIPT_DIR/festapp-supabase-backup.service" \

@@ -1,10 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/services/utilities_all.dart';
 import 'form_public_link.dart';
 import '../form_strings.dart';
-import '../models/form_model.dart';
+import '../models/form_bundle.dart';
 import 'create_or_copy_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -18,7 +19,7 @@ class FormCreationHelper {
         context: context,
         builder: (_) => CreateOrCopyFormDialog(existingForms: forms));
     if (!context.mounted || result == null) return;
-    if (result is FormModel) {
+    if (result is FormBundle) {
       await copyFormToOccasion(context, result,
           occasionLink: occasionLink, onFormCreated: onFormCreated);
     } else if (result == 'CREATE_NEW') {
@@ -27,12 +28,14 @@ class FormCreationHelper {
     }
   }
 
-  static Future<void> copyFormToOccasion(BuildContext context, FormModel form,
+  static Future<void> copyFormToOccasion(BuildContext context, FormBundle form,
       {required String occasionLink,
       required VoidCallback onFormCreated}) async {
     try {
       await DbForms.duplicateFormToOccasion(
-          sourceFormId: form.id!, targetOccasionLink: occasionLink);
+          sourceFormId: form.definition.id!,
+          targetOccasionLink: occasionLink,
+          locale: context.locale.languageCode);
       if (!context.mounted) return;
       ToastHelper.Show(context, FormStrings.duplicateSuccess,
           severity: ToastSeverity.Ok);
@@ -45,8 +48,6 @@ class FormCreationHelper {
     }
   }
 
-
-
   static Future<void> showCreateFormDialog(
     BuildContext context, {
     required String occasionLink,
@@ -55,43 +56,22 @@ class FormCreationHelper {
     final formKey = GlobalKey<FormState>();
 
     String title = FormStrings.defaultFormTitle;
-    String link = "${FormStrings.defaultFormTitle}${DateTime.now().year}";
+    String link = '';
 
     final titleController = TextEditingController(text: title);
     final linkController = TextEditingController(text: link);
     final linkNotifier = ValueNotifier<String>(link);
 
-    bool isLinkManuallyChanged = false;
     String? linkError;
     bool isCreating = false;
 
     void validateLink(String? value) {
-      if (value == null || value.isEmpty) {
-        linkError = FormStrings.validationLinkRequired;
-      } else if (!Utilities.isValidUrl(value)) {
+      if (!isValidPublicSlug(value ?? '', allowEmpty: true)) {
         linkError = FormStrings.validationLinkInvalidChars;
       } else {
         linkError = null;
       }
     }
-
-    void updateLink() {
-      var processedTitle = Utilities.removeDiacritics(titleController.text);
-      if (processedTitle.isEmpty) return;
-
-      var firstWord = processedTitle.split(' ').first.toLowerCase();
-      var currentYear = DateTime.now().year;
-
-      link = "$firstWord$currentYear";
-      linkController.text = link;
-      linkNotifier.value = link;
-    }
-
-    titleController.addListener(() {
-      if (!isLinkManuallyChanged) {
-        updateLink();
-      }
-    });
 
     await showDialog(
       context: context,
@@ -104,7 +84,8 @@ class FormCreationHelper {
                   linkError == null;
             }
 
-            return AlertDialog(
+            return AppAlertDialog(
+              onClose: () => Navigator.of(context).pop(),
               title: Text(FormStrings.createNewForm),
               content: Form(
                 key: formKey,
@@ -135,7 +116,6 @@ class FormCreationHelper {
                         ),
                         onChanged: (value) {
                           setState(() {
-                            isLinkManuallyChanged = true;
                             link = value;
                             linkNotifier.value = value;
                             validateLink(value);
@@ -146,8 +126,6 @@ class FormCreationHelper {
                       ValueListenableBuilder<String>(
                         valueListenable: linkNotifier,
                         builder: (context, formLink, child) {
-                          if (formLink.isEmpty)
-                            return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: FormPublicLink(link: formLink),
@@ -172,7 +150,7 @@ class FormCreationHelper {
                           });
 
                           title = titleController.text.trim();
-                          link = linkController.text.trim();
+                          link = linkController.text;
 
                           try {
                             await DbForms.createNewForm(

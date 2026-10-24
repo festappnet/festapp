@@ -1,6 +1,7 @@
 const admin=async()=> (await import('./supabaseUtil.ts')).supabaseAdmin;
 import {TicketFontResolver,TicketFontError,fontCatalog,type FontAsset,type FontStore} from './ticketFonts.ts';
 import {parseLayout,layoutFontIds} from './ticketLayout.ts';
+import {galleryFontIds} from './ticketGallery.ts';
 export async function ticketFontAsset(id:string):Promise<FontAsset|null>{
   const bundled=fontCatalog.find(a=>a.id===id);if(bundled)return bundled;
   const {data,error}=await (await admin()).from('ticket_font_assets').select('metadata').eq('id',id).maybeSingle();
@@ -34,7 +35,7 @@ export const ticketFontStore:FontStore={
   async create(key,bytes){const {error}=await (await admin()).storage.from('ticket-fonts').upload(key,bytes,{upsert:false,contentType:'application/octet-stream'});if(error){if(['409','400'].includes(String((error as any).statusCode))&& /duplicate|already exists/i.test(error.message))return false;throw new TicketFontError('font_storage_write');}return true;}
 };
 const resolver=new TicketFontResolver({store:ticketFontStore,fetch,
-  bundled:async a=>{if(!a.file)return null;try{return await Deno.readFile(new URL(`./ticket-assets/${a.file}`,import.meta.url));}catch(e){if(e instanceof Deno.errors.NotFound)return null;throw e;}},
+  bundled:async a=>{const file=a.file??(galleryFontIds.includes(a.id)?`gallery-fonts/${a.sha256}.ttf`:null);if(!file)return null;try{return await Deno.readFile(new URL(`./ticket-assets/${file}`,import.meta.url));}catch(e){if(e instanceof Deno.errors.NotFound)return null;throw e;}},
   lookup:ticketFontAsset,
   event:event=>console.info('ticket-font',JSON.stringify(event)),
 });

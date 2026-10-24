@@ -10,7 +10,7 @@ import 'package:fstapp/components/event_feedback/event_feedback_strings.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
 import 'package:fstapp/router_service.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/map/db_places.dart';
@@ -31,7 +31,7 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/mouse_detector.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../map/place_picker_field.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -202,7 +202,7 @@ class _EventEditPageState extends State<EventEditPage> {
       ScheduleStrings.deleteEventConfirm,
     );
     if (confirmation) {
-      await originalEvent!.deleteMethod(context);
+      await DbEvents.deleteEvent(originalEvent!);
       ToastHelper.Show(
           context, "${CommonStrings.deleted}: ${originalEvent!.title!}");
       RouterService.popTwo(context);
@@ -223,36 +223,21 @@ class _EventEditPageState extends State<EventEditPage> {
       if (originalEvent != null) {
         content = await _htmlSave.prepare(
             content ?? '', HtmlMediaOwner.occasion(originalEvent!.occasionId));
-        originalEvent!
-          ..isHidden = isHidden!
-          ..title = title!
-          ..startTime = startDate!
-          ..endTime = endDate!
-          ..maxParticipants = maxParticipants == 0 ? null : maxParticipants
-          ..splitForMenWomen = splitForMenWomen!
-          ..isGroupEvent = isGroupEvent!
-          ..place = places!.firstWhereOrNull((p) => p.id == placeId)
-          ..type =
-              type // 'type' state variable is already updated by Dropdown's onChanged
-          ..description = content
-          ..isCancelled = isCancelled!
-          ..parentEventIds =
-              showInsideEvent != null && showInsideEvent!.isNotEmpty
-                  ? showInsideEvent!
-                      .split(",")
-                      .map((e) => int.parse(e.trim()))
-                      .toList()
-                  : [];
-        originalEvent!.data = {
-          ...?originalEvent!.data,
-          FeatureConstants.feedbackEnabled: feedbackEnabled,
-          if (FeatureService.isCounselingEnabled())
-            FeatureConstants.counselingEntry: counselingEntry,
-        };
+        originalEvent = originalEvent!.copyWith(
+          isHidden: isHidden!, title: title!, startTime: startDate!, endTime: endDate!,
+          maxParticipants: maxParticipants == 0 ? null : maxParticipants,
+          splitForMenWomen: splitForMenWomen!, isGroupEvent: isGroupEvent!,
+          place: places!.firstWhereOrNull((place) => place.id == placeId), type: type,
+          description: content, isCancelled: isCancelled!,
+          parentEventIds: showInsideEvent != null && showInsideEvent!.isNotEmpty
+            ? showInsideEvent!.split(',').map((id) => int.parse(id.trim())).toList() : <int>[],
+          data: {...?originalEvent!.data, FeatureConstants.feedbackEnabled: feedbackEnabled,
+            if (FeatureService.isCounselingEnabled()) FeatureConstants.counselingEntry: counselingEntry},
+        );
 
         // updateEvent returns an EventModel carrying the id even after an
         // insert, so speaker attachment never relies on widget.id (decision R6a).
-        final updatedEvent = await DbEvents.updateEvent(originalEvent!);
+        var updatedEvent = await DbEvents.updateEvent(originalEvent!);
         _htmlSave.markSaved();
 
         if (updatedEvent.id != null) {
@@ -265,7 +250,7 @@ class _EventEditPageState extends State<EventEditPage> {
             ),
           );
           if (speakerVersion != null) {
-            updatedEvent.aggregateVersion = speakerVersion;
+            updatedEvent = updatedEvent.copyWith(aggregateVersion: speakerVersion);
           }
         }
 

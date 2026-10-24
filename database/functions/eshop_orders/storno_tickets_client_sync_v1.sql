@@ -1,9 +1,11 @@
 CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
   p_tickets bigint[],p_command_id uuid
-) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
-  v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
+  v_unchanged boolean:=false; v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
 BEGIN
+  p_tickets:=ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id ORDER BY id);
+  IF cardinality(p_tickets)>(SELECT hard_cap FROM public.abuse_policy_rules WHERE rule_key='order.mutation.items') THEN RAISE SQLSTATE 'PT429' USING MESSAGE='abuse_limit_exceeded'; END IF;
   SELECT min(t.occasion) INTO v_occasion FROM eshop.tickets t
     WHERE t.id=ANY(p_tickets);
   IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_tickets)=0
@@ -17,8 +19,15 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.tickets.cancel',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM eshop.tickets WHERE id=ANY(p_tickets) AND state IS DISTINCT FROM 'storno') THEN
+    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,
+      jsonb_build_object('ticketIds',to_jsonb(p_tickets),'cancelledOrderIds','[]'::jsonb,'updatedOrders','[]'::jsonb));
+  END IF;
+  BEGIN
+  PERFORM public.admit_order_mutation_v1(v_occasion,cardinality(p_tickets));
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_tickets)));
   -- Lock in the same order as the bulk mutation, then capture only actual changes.
   PERFORM o.id FROM eshop.orders o WHERE o.id IN (
     SELECT opt."order" FROM eshop.order_product_ticket opt
@@ -27,11 +36,19 @@ BEGIN
   SELECT array_agg(DISTINCT opt."order") INTO v_changed_orders
     FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
     WHERE t.id=ANY(p_tickets) AND t.state IS DISTINCT FROM 'storno';
+  IF coalesce(cardinality(v_changed_orders),0)=0 THEN
+    RAISE SQLSTATE 'P0C01' USING MESSAGE='cancellation already committed'; END IF;
   PERFORM public.storno_tickets_bulk_internal_v1(p_tickets);
   SELECT coalesce(jsonb_agg(o.id ORDER BY o.id) FILTER(WHERE o.state='storno'),'[]'::jsonb),
     coalesce(jsonb_agg(jsonb_build_object('id',o.id,'email',o.data->>'email') ORDER BY o.id)
       FILTER(WHERE o.state IS DISTINCT FROM 'storno'),'[]'::jsonb)
     INTO v_cancelled,v_updated FROM eshop.orders o WHERE o.id=ANY(v_changed_orders);
+  EXCEPTION WHEN SQLSTATE 'P0C01' THEN v_unchanged:=true;
+  END;
+  IF v_unchanged THEN
+    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,
+      jsonb_build_object('ticketIds',to_jsonb(p_tickets),'cancelledOrderIds','[]'::jsonb,'updatedOrders','[]'::jsonb));
+  END IF;
   RETURN public.complete_profile_inventory_membership_mutation_v1(
     p_command_id,v_occasion,'inventory.tickets.cancel',
     jsonb_build_array(jsonb_build_object('entityType','ticket','entityId',NULL,

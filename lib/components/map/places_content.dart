@@ -1,3 +1,4 @@
+import 'package:fstapp/components/map/place_grid_record.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -19,7 +20,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_page.dart';
 
-import 'place_model.dart';
 
 class PlacesContent extends StatefulWidget {
   const PlacesContent({super.key});
@@ -33,7 +33,7 @@ class _PlacesContentState extends State<PlacesContent> {
   List<int?> mapIcons = [];
   List<PlaceTypeModel> placeTypes = [];
   bool isLoading = true;
-  SingleDataGridController<PlaceModel>? controller;
+  SingleDataGridController<PlaceGridRecord>? controller;
 
   @override
   void initState() {
@@ -63,10 +63,11 @@ class _PlacesContentState extends State<PlacesContent> {
   }
 
   void initController() {
-    controller ??= SingleDataGridController<PlaceModel>(
+    controller ??= SingleDataGridController<PlaceGridRecord>(
       context: context,
-      loadData: DbPlaces.getAllPlacesForEditor,
-      fromPlutoJson: PlaceModel.fromPlutoJson,
+      loadData: () async => (await DbPlaces.getAllPlacesForEditor()).map((place) => PlaceGridRecord(
+        place: place, commands: DbPlaces.commands, occasionId: RightsService.currentOccasionId()!)).toList(),
+      fromPlutoJson: (json) => PlaceGridRecord.fromPlutoJson(json, commands: DbPlaces.commands, occasionId: RightsService.currentOccasionId()!),
       firstColumnType: DataGridFirstColumn.deleteAndDuplicate,
       idColumn: Tb.places.id,
       columns: [
@@ -147,7 +148,7 @@ class _PlacesContentState extends State<PlacesContent> {
           renderer: (ctx) {
             return ElevatedButton(
               onPressed: () async {
-                var pm = PlaceModel.fromPlutoJson(ctx.row.toJson());
+                var pm = PlaceGridRecord.decode(ctx.row.toJson());
                 var value = await RouterService.navigatePageInfo(
                   context,
                   MapEditorRoute(mode: PlaceMapEditorMode(pm)),
@@ -195,6 +196,6 @@ class _PlacesContentState extends State<PlacesContent> {
     if (isLoading || controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return SingleTableDataGrid<PlaceModel>(controller!);
+    return SingleTableDataGrid<PlaceGridRecord>(controller!);
   }
 }

@@ -1,10 +1,11 @@
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class OrderCommands {
-  Future<void> delete(int orderId);
-  Future<void> cancel(int orderId);
+  Future<void> delete(int orderId, {String? commandId});
+  Future<void> cancel(int orderId, {String? commandId});
 }
 
 class SupabaseOrderCommands implements OrderCommands {
@@ -16,26 +17,26 @@ class SupabaseOrderCommands implements OrderCommands {
   final ClientCommandTransport _transport;
 
   @override
-  Future<void> cancel(int orderId) async {
+  Future<void> cancel(int orderId, {String? commandId}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'storno_order_client_sync_v1',
-      {'p_order': orderId},
+      {'p_order': orderId, if (commandId != null) 'p_command_id': commandId},
     ));
     if (response.code != 200) {
       throw StateError('Order cancellation was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 
   @override
-  Future<void> delete(int orderId) async {
+  Future<void> delete(int orderId, {String? commandId}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'delete_order_client_sync_v1',
-      {'p_order': orderId},
+      {'p_order': orderId, if (commandId != null) 'p_command_id': commandId},
     ));
     if (response.code != 200) {
       throw StateError('Order deletion was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 }

@@ -7,10 +7,10 @@
 # Tests that require missing env vars are skipped gracefully.
 #
 # Test types:
-# - Web client (JavaScript): npm test
+# - Web client (JavaScript): pnpm test
 # - Database (SQL): node web_client/scripts/run_db_tests.js
 # - Deno edge functions: deno test
-# - Flutter: fvm flutter test
+# - Client: automation/test_client.sh (core + Dart adapters + Flutter)
 #
 # Usage: ./automation/test_all.sh [web] [db] [flutter] [integration]
 # ==============================================================================
@@ -145,9 +145,9 @@ if [ "$RUN_WEB" = true ]; then
     echo ">>> Web Client Tests..."
     if [ -d "$WEB_CLIENT_DIR" ]; then
         cd "$WEB_CLIENT_DIR"
-        # Run npm test with 60s timeout (increased for stability)
+        # Run pnpm test with 60s timeout (increased for stability)
         set +e
-        run_with_timeout 60 "npm test"
+        run_with_timeout 60 "pnpm test"
         res=$?
         set -e
         
@@ -182,21 +182,8 @@ if [ "$RUN_FLUTTER" = true ]; then
     echo ">>> Flutter Tests..."
     cd "$PROJECT_ROOT"
     
-    # Check if fvm is installed/used
-    if command -v fvm &> /dev/null; then
-        FLUTTER_CMD="fvm flutter"
-    else
-        FLUTTER_CMD="flutter"
-    fi
-    
-    set +e
-    $FLUTTER_CMD test
-    res=$?
-    set -e
-    
-    if [ $res -ne 0 ]; then
-        echo "⚠️  WARNING: Flutter Tests Failed."
-    fi
+    "$SCRIPT_DIR/test_client.sh" all
+
 fi
 
 # 3b. Run Deno Edge Function Tests
@@ -220,7 +207,7 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
              # Run without --allow-all to be safe.
              # test_parser_comprehensive only needs logic, but imports might trigger env read.
              set +e
-             deno test --allow-env --allow-net --allow-read $DENO_TEST_FILES
+             deno test --frozen --lock="$PROJECT_ROOT/supabase/functions/deno.lock" --allow-env --allow-net --allow-read $DENO_TEST_FILES
              res=$?
              set -e
              
@@ -247,7 +234,7 @@ if [ "$RUN_INTEGRATION" = true ]; then
         echo "Running Integration Tests (Vitest)..."
         cd "$WORKER_TEST_DIR"
         set +e
-        npx vitest run tests/integration/ 2>&1
+        pnpm exec vitest run tests/integration/ 2>&1
         res=$?
         set -e
         cd "$PROJECT_ROOT"
@@ -280,16 +267,22 @@ if [ "$RUN_AUTOMATION" = true ]; then
         fi
     done
 
+    python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_client_contract_test.py'
     node "$SCRIPT_DIR/tests/font_config.test.mjs"
 
     echo "Running canonical PWA storage and recovery contract tests..."
     node --test \
+      "$SCRIPT_DIR/tests/image_service_preflight.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
+      "$SCRIPT_DIR/tests/optimize_web_fonts.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_reconcile.test.mjs" \
       "$SCRIPT_DIR/tests/pwa_storage_bridge.test.mjs" \
       "$SCRIPT_DIR/tests/cloudflare_pages_project.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_infrastructure.test.mjs" \
       "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
+      "$SCRIPT_DIR/tests/abuse_policy_coverage.test.mjs" \
+      "$SCRIPT_DIR/tests/canonical_operation_sources.test.mjs" \
+      "$PROJECT_ROOT/workers/self-hosted-monitor/test/index.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_cutover_mode_gate.test.mjs" \
       "$SCRIPT_DIR/tests/hetzner_supabase_operational_readiness.test.mjs" \

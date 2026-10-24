@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
 import '../fonts/ticket_font_ids.dart';
@@ -8,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ticket_layout.dart';
 import '../images/db_images.dart';
 import 'ticket_text.dart';
-import 'ticket_background_image.dart';
 
 class TicketFontResource {
   final String id, family, loaderName;
@@ -25,8 +25,47 @@ class TicketLayoutArtwork {
       {required this.label, required this.background, required this.image});
 }
 
+class TicketProductType {
+  final int id;
+  final String title;
+  final List<Map<String, dynamic>> forms;
+  final bool offered, admission, hasVisibleProducts, referenced;
+  final Map<String, dynamic>? example;
+  const TicketProductType(this.id, this.title, this.offered, this.example,
+      {this.admission = false,
+      this.hasVisibleProducts = false,
+      bool? referenced,
+      this.forms = const []})
+      : referenced = referenced ?? offered;
+  factory TicketProductType.fromJson(Map j) => TicketProductType(
+      j['id'],
+      j['title'],
+      j['offered'] == true,
+      (j['example'] as Map?)?.cast<String, dynamic>(),
+      admission: j['admission'] == true,
+      hasVisibleProducts: j['hasVisibleProducts'] == true,
+      referenced: j['referenced'] == true,
+      forms: (j['forms'] as List? ?? [])
+          .map((v) => (v as Map).cast<String, dynamic>())
+          .toList());
+  bool get eligible => referenced;
+}
+
 class TicketLayoutResources {
   final TicketTemplate template, preset;
+  List<TicketProductType> _catalog = const [];
+  Map<int, TicketProductType> _catalogIndex = const {};
+  int _catalogRevision = 0;
+  final _previewCache =
+      Expando<Map<String, ({int revision, Map<String, String?> data})>>();
+  List<TicketProductType> get catalog => _catalog;
+  set catalog(List<TicketProductType> value) {
+    _catalog = value;
+    _catalogIndex = {for (final t in value) t.id: t};
+    _catalogRevision++;
+  }
+
+  bool catalogError;
   final bool missingBackground;
   final Map<String, TicketLayoutArtwork> artworks;
   final String? initialArtworkKey;
@@ -51,6 +90,8 @@ class TicketLayoutResources {
   final List<int> qrModules;
   TicketLayoutResources(
       {required this.template,
+      List<TicketProductType> catalog = const [],
+      this.catalogError = false,
       required this.preset,
       this.presets = const {},
       this.artworks = const {},
@@ -63,7 +104,70 @@ class TicketLayoutResources {
       this.logo,
       required this.qrSize,
       required this.qrModules})
-      : fonts = Map.of(fonts);
+      : fonts = Map.of(fonts) {
+    this.catalog = catalog;
+  }
+  Map<String, String?> previewData(TicketTemplate template, String scenario) {
+    final cache = _previewCache[template] ??= {};
+    final cached = cache[scenario];
+    if (cached?.revision == _catalogRevision) return cached!.data;
+    final base = Map<String, String?>.of(scenarios[scenario]!);
+    final selected = <int, Map<String, dynamic>>{};
+    final admissions = catalog
+        .where((t) => t.admission && t.example != null)
+        .toList()
+      ..sort((a, b) => a.id.compareTo(b.id));
+    if (admissions.isNotEmpty)
+      selected[admissions.first.example!['id']] = admissions.first.example!;
+    if (scenario != 'missing')
+      for (final e
+          in template.elements.where((e) => e.binding == 'productType')) {
+        final example = _catalogIndex[e.productTypeId]?.example;
+        if (example != null) selected[example['id']] = example;
+      }
+    final currencies = selected.values.map((e) => e['currency_code']).toSet();
+    base['price'] = null;
+    if (selected.isNotEmpty &&
+        currencies.length == 1 &&
+        selected.values.every((e) =>
+            e['price'] is num &&
+            (e['price'] as num).isFinite &&
+            (e['price'] as num) >= 0 &&
+            e['currency_code'] is String &&
+            RegExp(r'^[A-Z]{3}$').hasMatch(e['currency_code'] as String) &&
+            e['currency_symbol'] is String)) {
+      final total = selected.values.fold<int>(
+              0, (sum, e) => sum + ((e['price'] as num) * 100).round()) /
+          100;
+      final currency = currencies.single as String;
+      base['price'] = 'Cena: ' +
+          NumberFormat.currency(
+                  locale: 'cs_CZ',
+                  name: currency,
+                  symbol: selected.values.first['currency_symbol'] as String,
+                  decimalDigits: 0)
+              .format(total);
+    }
+    final data = {
+      for (final e in template.elements)
+        e.id: e.binding == 'productType'
+            ? scenario == 'missing'
+                ? null
+                : _productText(
+                    e.label!,
+                    _catalogIndex[e.productTypeId]?.example?['value']
+                        as String?)
+            : base[e.binding]
+    };
+    cache[scenario] = (revision: _catalogRevision, data: data);
+    return data;
+  }
+
+  String? _productText(String label, String? value) => value == null
+      ? null
+      : label.trim().isEmpty
+          ? value
+          : '${label.trim()}: $value';
   void dispose() {
     background?.dispose();
     logo?.dispose();
@@ -133,34 +237,40 @@ class TicketLayoutService {
 
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
       DbImages.uploadImage(bytes, occasionId, null,
-          maxEdge: TicketBackgroundImage.maxEdge,
-          maxBytes: TicketBackgroundImage.maxBytes,
-          quality: TicketBackgroundImage.jpegQuality);
+          profile: ImageUploadProfile.ticketBackground);
+
+  Future<List<TicketProductType>> catalog(int occasionId) async {
+    final j = await _request(
+        {'occasionId': occasionId, 'mode': 'catalog', 'fontProtocol': 2});
+    return (j['catalog'] as List)
+        .map((v) => TicketProductType.fromJson(v))
+        .toList();
+  }
 
   Future<TicketLayoutResources> resolve(int occasionId, String type,
-      Map<String, dynamic>? layout, String? background) async {
+      Map<String, dynamic>? layout, String? background,
+      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
     if (layout != null) validateTicketLayout(layout);
     final j = await _request({
       'fontProtocol': 2,
       'occasionId': occasionId,
       'type': type,
       'mode': 'resolve',
-      if (layout != null) 'layout': layout,
-      'background': background
+      if (readOnly) 'readOnly': true,
+      if (!readOnly) 'borrowResourcesOnly': borrowResourcesOnly,
+      if (!readOnly && layout != null) 'layout': layout,
+      if (!readOnly) 'background': background
     });
-    if (layout?['schemaVersion'] == 2 && j['fonts'] == null)
+    if (layout?['schemaVersion'] == 3 && j['fonts'] == null)
       throw const FormatException('Unsupported font protocol');
     final fonts = <String, TicketFontResource>{};
     final replies = j['fonts'] as Map?;
     if (replies != null)
       for (final entry in replies.entries) {
-        // Closed enum reply belongs exclusively to the old v1 endpoint boundary.
         final raw = (entry.value as Map).cast<String, dynamic>();
-        final id = raw['id'] ?? legacyTicketFontIds[entry.key];
-        if (id == null) throw const FormatException('Unknown font reply');
-        raw['id'] = id;
-        raw['family'] ??= raw['label'];
-        raw['weight'] ??= 400;
+        final id = raw['id'];
+        if (id is! String || id != entry.key)
+          throw const FormatException('Font identity mismatch');
         fonts[id] = await _cache(id, () async => raw);
       }
     ui.Image? bg, logo;
@@ -179,17 +289,31 @@ class TicketLayoutService {
       logo = await decode(j['logo']);
       final presetValues = (j['presets'] as Map? ?? {}).cast<String, dynamic>();
       final overrides = (j['presetBackgrounds'] as Map? ?? {});
+      final presetArtwork = (j['presetArtwork'] as Map? ?? {});
       final artworks = <String, TicketLayoutArtwork>{};
       if (overrides.isNotEmpty) {
         for (final key in presetValues.keys) {
           final blank = overrides.containsKey(key) && overrides[key] == null;
+          final custom = presetArtwork[key] as Map?;
           artworks[key] = TicketLayoutArtwork(
               label: null,
-              background: blank ? null : j['backgroundUrl'] as String?,
-              image: blank ? null : bg?.clone());
+              background: custom != null
+                  ? custom['background'] as String?
+                  : blank
+                      ? null
+                      : j['backgroundUrl'] as String?,
+              image: custom != null
+                  ? await decode(custom['image'] as String?)
+                  : blank
+                      ? null
+                      : bg?.clone());
         }
       }
       return TicketLayoutResources(
+          catalogError: j['catalogError'] == true,
+          catalog: (j['catalog'] as List? ?? [])
+              .map((v) => TicketProductType.fromJson(v))
+              .toList(),
           artworks: artworks,
           template: TicketTemplate.fromJson(j['template']),
           preset: TicketTemplate.fromJson(j['preset']),

@@ -1,0 +1,178 @@
+{
+  "occasion": 1281,
+  "organization": "1043",
+  "event": "Festival · Hlavní vstup",
+  "prepared_at": "2026-10-18T16:27:24.585Z",
+  "cases": [
+    {
+      "key": "mixed_valid",
+      "symbol": "SCANNER-1281-31",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Tereza Nováková",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h1m2 0h2m1 0h7M4 5.5h1m5 0h1m4 0h1m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h4m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h4m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h4m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h5M4 12.5h1m3 0h1m1 0h4m1 0h1m1 0h5m2 0h1M6 13.5h3m2 0h1m1 0h4m3 0h1m1 0h3M5 14.5h4m1 0h3m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1M4 15.5h1m1 0h1m6 0h1m7 0h4M4 16.5h3m1 0h3m2 0h1m2 0h1m2 0h3M12 17.5h1m1 0h1m1 0h1m3 0h1m1 0h3M4 18.5h7m1 0h1m3 0h1m2 0h2m1 0h3M4 19.5h1m5 0h1m2 0h1m1 0h7m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m4 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m5 0h3m2 0h4M4 22.5h1m1 0h3m1 0h1m2 0h1m1 0h1m4 0h3M4 23.5h1m5 0h1m4 0h1m8 0h1M4 24.5h7m1 0h1m1 0h1m1 0h1m1 0h2m3 0h2\"/></svg>\n"
+    },
+    {
+      "key": "clean_1",
+      "symbol": "SCANNER-1281-32",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Jakub Svoboda",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m2 0h1m4 0h7M4 5.5h1m5 0h1m7 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h4m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2M4 12.5h1m1 0h5m3 0h2m2 0h5M4 13.5h1m1 0h2m1 0h1m1 0h1m2 0h7m1 0h1M4 14.5h3m1 0h1m1 0h1m1 0h3m1 0h2m1 0h1m1 0h1m2 0h1M4 15.5h1m2 0h2m4 0h1m1 0h2m3 0h1m2 0h2M4 16.5h2m1 0h1m2 0h1m1 0h1m3 0h3m1 0h2m1 0h2M12 17.5h1m3 0h5m1 0h1M4 18.5h7m4 0h1m3 0h1m1 0h1m1 0h2M4 19.5h1m5 0h1m1 0h3m2 0h3m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h2m2 0h2M4 21.5h1m1 0h3m1 0h1m1 0h2m2 0h1m2 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1M4 23.5h1m5 0h1m2 0h2m1 0h1m3 0h3m1 0h1M4 24.5h7m1 0h3m1 0h1m1 0h1\"/></svg>\n"
+    },
+    {
+      "key": "clean_2",
+      "symbol": "SCANNER-1281-33",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Eliška Dvořáková",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m2 0h1m1 0h7M4 5.5h1m5 0h1m1 0h2m2 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m3 0h2m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m4 0h2m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h5M4 12.5h1m1 0h2m1 0h3m1 0h4m1 0h1m2 0h1m1 0h2M6 13.5h1m7 0h7m1 0h1M5 14.5h1m1 0h2m1 0h3m1 0h2m1 0h2m3 0h1M5 15.5h1m1 0h1m4 0h1m2 0h1m1 0h1m1 0h1m2 0h1m1 0h1M4 16.5h1m1 0h1m2 0h2m1 0h1m3 0h3m1 0h2m1 0h2M12 17.5h4m1 0h1m2 0h2m2 0h1M4 18.5h7m1 0h2m1 0h3m2 0h3m1 0h1M4 19.5h1m5 0h1m1 0h2m3 0h3m2 0h3M4 20.5h1m1 0h3m1 0h1m2 0h2m1 0h1m4 0h1m1 0h2M4 21.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h2m1 0h1M4 22.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1M4 23.5h1m5 0h1m2 0h1m1 0h1m2 0h3M4 24.5h7m1 0h1m5 0h3m1 0h2\"/></svg>\n"
+    },
+    {
+      "key": "clean_3",
+      "symbol": "SCANNER-1281-34",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Adam Procházka",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h3m1 0h1m1 0h7M4 5.5h1m5 0h1m1 0h1m1 0h1m3 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h1m3 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M13 11.5h1M4 12.5h1m2 0h6m2 0h1m1 0h1m2 0h1m1 0h3M4 13.5h2m1 0h1m3 0h1m1 0h1m1 0h3m4 0h1m1 0h1M5 14.5h2m1 0h1m1 0h3m2 0h5M4 15.5h1m1 0h2m6 0h1m1 0h1m2 0h1m1 0h1m1 0h2M7 16.5h1m2 0h3m1 0h3M12 17.5h1m1 0h1m1 0h1m3 0h1m1 0h3M4 18.5h7m1 0h4m1 0h1m1 0h3m2 0h1M4 19.5h1m5 0h1m1 0h3m2 0h1m2 0h1m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m6 0h1m1 0h4M4 21.5h1m1 0h3m1 0h1m1 0h1m1 0h3m3 0h1m1 0h1M4 22.5h1m1 0h3m1 0h1m3 0h5m1 0h2m1 0h2M4 23.5h1m5 0h1m5 0h1m1 0h6M4 24.5h7m1 0h2m2 0h2m2 0h1m2 0h1\"/></svg>\n"
+    },
+    {
+      "key": "single_valid",
+      "symbol": "SCANNER-1281-35",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Anna Černá",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m2 0h1m1 0h1m2 0h7M4 5.5h1m5 0h1m2 0h3m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h2m1 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h3M4 12.5h1m1 0h5m4 0h1m2 0h5M5 13.5h5m2 0h1m1 0h7m1 0h1M5 14.5h1m2 0h1m1 0h1m1 0h1m3 0h2m1 0h1m1 0h1m2 0h1M4 15.5h1m1 0h4m1 0h6m3 0h1m2 0h2M8 16.5h1m1 0h1m5 0h3m1 0h2m1 0h2M12 17.5h2m2 0h5m1 0h1M4 18.5h7m2 0h3m3 0h1m1 0h1m1 0h2M4 19.5h1m5 0h1m1 0h1m1 0h1m2 0h3m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h4m2 0h2m2 0h2M4 21.5h1m1 0h3m1 0h1m1 0h2m2 0h1m2 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m1 0h1m3 0h1M4 23.5h1m5 0h1m3 0h1m1 0h2m2 0h3m1 0h1M4 24.5h7m1 0h3m1 0h2\"/></svg>\n"
+    },
+    {
+      "key": "unpaid",
+      "symbol": "SCANNER-1281-36",
+      "expected": {
+        "code": 200,
+        "state": "ordered",
+        "allowed": true,
+        "unpaid": true,
+        "remaining": 100
+      },
+      "holder": "David Kučera",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m2 0h1m2 0h1m1 0h7M4 5.5h1m5 0h1m3 0h1m3 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m2 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h3M4 12.5h1m1 0h5m3 0h2m2 0h5M4 13.5h1m6 0h1m2 0h7m1 0h1M5 14.5h1m1 0h1m1 0h5m2 0h2m1 0h1m1 0h1m2 0h1M8 15.5h1m2 0h3m1 0h2m3 0h1m2 0h2M5 16.5h1m3 0h3m4 0h3m1 0h2m1 0h2M12 17.5h1m1 0h1m1 0h5m1 0h1M4 18.5h7m2 0h1m1 0h1m3 0h1m1 0h1m1 0h2M4 19.5h1m5 0h1m1 0h1m1 0h1m2 0h3m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h4m2 0h2m2 0h2M4 21.5h1m1 0h3m1 0h1m1 0h2m2 0h1m2 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m1 0h2m2 0h1M4 23.5h1m5 0h1m2 0h2m1 0h2m2 0h3m1 0h1M4 24.5h7m1 0h3m1 0h1m1 0h1\"/></svg>\n"
+    },
+    {
+      "key": "cancelled",
+      "symbol": "SCANNER-1281-37",
+      "expected": {
+        "code": 200,
+        "state": "storno",
+        "allowed": false,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Tereza Nováková",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m3 0h1m3 0h7M4 5.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h2m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m5 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M15 11.5h2M4 12.5h1m1 0h1m1 0h1m1 0h1m2 0h3m4 0h1m2 0h1M4 13.5h2m1 0h1m3 0h1m2 0h1m3 0h4m1 0h1M5 14.5h2m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h2M4 15.5h2m1 0h3m1 0h1m1 0h2m2 0h1m2 0h3m1 0h1M8 16.5h1m1 0h5m1 0h2m1 0h1m1 0h1m1 0h1M12 17.5h1m2 0h1m2 0h4m1 0h1M4 18.5h7m4 0h1m2 0h1m1 0h2m1 0h1M4 19.5h1m5 0h1m4 0h2m1 0h2m1 0h1m2 0h1M4 20.5h1m1 0h3m1 0h1m1 0h4m4 0h1m1 0h3M4 21.5h1m1 0h3m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m3 0h1M4 22.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m3 0h1M4 23.5h1m5 0h1m4 0h1m4 0h1m2 0h2M4 24.5h7m1 0h1m3 0h2m1 0h2m3 0h1\"/></svg>\n"
+    },
+    {
+      "key": "duplicate",
+      "symbol": "SCANNER-1281-38",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Jakub Svoboda",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m1 0h1m2 0h7M4 5.5h1m5 0h1m4 0h1m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m2 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m2 0h2M4 12.5h1m3 0h1m1 0h6m1 0h5m2 0h1M4 13.5h1m2 0h1m1 0h1m1 0h1m2 0h3m3 0h1m1 0h3M6 14.5h2m2 0h2m3 0h1m1 0h1m1 0h2m1 0h1m1 0h1M4 15.5h4m1 0h1m3 0h2m6 0h4M4 16.5h4m2 0h4m2 0h1m2 0h3M12 17.5h1m3 0h1m3 0h1m1 0h3M4 18.5h7m1 0h2m2 0h1m2 0h2m1 0h3M4 19.5h1m5 0h1m2 0h9m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m4 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m2 0h1m2 0h3m2 0h4M4 22.5h1m1 0h3m1 0h1m2 0h3m4 0h3M4 23.5h1m5 0h1m2 0h3m2 0h1m5 0h1M4 24.5h7m1 0h1m1 0h1m1 0h4m3 0h2\"/></svg>\n"
+    },
+    {
+      "key": "group_valid",
+      "symbol": "SCANNER-1281-39",
+      "expected": {
+        "code": 200,
+        "state": "sent",
+        "allowed": true,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Eliška Dvořáková",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m4 0h2m1 0h7M4 5.5h1m5 0h1m2 0h1m4 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h3m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h2m1 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2M4 12.5h1m1 0h5m4 0h1m2 0h5M5 13.5h3m3 0h10m1 0h1M4 14.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1M5 15.5h2m1 0h1m2 0h6m3 0h1m2 0h2M4 16.5h4m1 0h2m5 0h3m1 0h2m1 0h2M12 17.5h3m1 0h5m1 0h1M4 18.5h7m2 0h1m1 0h1m3 0h1m1 0h1m1 0h2M4 19.5h1m5 0h1m1 0h3m2 0h3m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m2 0h2M4 21.5h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m1 0h2m2 0h1M4 23.5h1m5 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 24.5h7m1 0h3m1 0h2\"/></svg>\n"
+    },
+    {
+      "key": "group_unpaid",
+      "symbol": "SCANNER-1281-40",
+      "expected": {
+        "code": 200,
+        "state": "ordered",
+        "allowed": true,
+        "unpaid": true,
+        "remaining": 100
+      },
+      "holder": "Adam Procházka",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m1 0h2m1 0h7M4 5.5h1m5 0h1m2 0h4m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h2m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h2m1 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2m1 0h2M4 12.5h1m3 0h1m1 0h3m2 0h1m1 0h5m2 0h1M6 13.5h2m3 0h6m3 0h1m1 0h3M5 14.5h4m1 0h1m1 0h4m1 0h1m1 0h2m1 0h1m1 0h1M5 15.5h2m1 0h2m3 0h1m7 0h4M7 16.5h1m1 0h6m1 0h1m2 0h3M12 17.5h1m1 0h1m1 0h1m3 0h1m1 0h3M4 18.5h7m1 0h3m1 0h1m2 0h2m1 0h3M4 19.5h1m5 0h1m3 0h8m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m4 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m5 0h1m1 0h1m2 0h4M4 22.5h1m1 0h3m1 0h1m2 0h3m4 0h3M4 23.5h1m5 0h1m3 0h2m8 0h1M4 24.5h7m1 0h2m2 0h4m3 0h2\"/></svg>\n"
+    },
+    {
+      "key": "used",
+      "symbol": "SCANNER-1281-1",
+      "expected": {
+        "code": 200,
+        "state": "used",
+        "allowed": false,
+        "unpaid": false,
+        "remaining": 0
+      },
+      "holder": "Tereza Nováková",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m3 0h1m1 0h1m1 0h7M4 5.5h1m5 0h1m3 0h1m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m3 0h3m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m3 0h1m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m3 0h3m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m5 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M13 11.5h1M4 12.5h1m2 0h1m1 0h2m1 0h1m1 0h4m1 0h1M4 13.5h2m1 0h1m3 0h2m2 0h1m2 0h4m1 0h1M5 14.5h2m1 0h1m1 0h1m3 0h2m2 0h1m2 0h1m1 0h1M4 15.5h1m1 0h3m2 0h1m1 0h2m1 0h3m1 0h1m1 0h1M8 16.5h1m1 0h6m1 0h1m1 0h1m1 0h1m1 0h1M12 17.5h1m4 0h3m1 0h1M4 18.5h7m2 0h4m3 0h1m2 0h1M4 19.5h1m5 0h1m1 0h3m3 0h2m1 0h1m2 0h1M4 20.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m3 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m1 0h1m4 0h1m1 0h1m1 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m3 0h2m2 0h3m3 0h1M4 23.5h1m5 0h1m2 0h1m1 0h2m7 0h1M4 24.5h7m1 0h3m4 0h3\"/></svg>\n"
+    },
+    {
+      "key": "unknown_1",
+      "symbol": "DEMO-1281-NEEXISTUJE-A",
+      "expected": {
+        "code": 404
+      },
+      "holder": "Neexistující vstupenka",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 33 33\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h33v33H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m1 0h5m2 0h7M4 5.5h1m5 0h1m1 0h2m1 0h5m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h4m1 0h2m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h3m2 0h3m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h2m1 0h2m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M13 11.5h2m3 0h1M4 12.5h1m2 0h6m1 0h1m2 0h5m2 0h1m1 0h3M4 13.5h1m3 0h1m2 0h1m2 0h3m1 0h1m2 0h5M5 14.5h4m1 0h4m1 0h2m1 0h1m1 0h1M5 15.5h1m1 0h3m1 0h4m1 0h1m1 0h2m2 0h1m1 0h2M4 16.5h2m1 0h5m3 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1M4 17.5h1m1 0h1m1 0h2m3 0h1m2 0h1m3 0h1m2 0h5M4 18.5h3m1 0h3m1 0h1m1 0h1m3 0h1m3 0h1m1 0h1m1 0h3M4 19.5h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h6m2 0h1m2 0h2M4 20.5h1m1 0h3m1 0h1m1 0h2m1 0h2m3 0h6m2 0h1M12 21.5h2m1 0h1m4 0h1m3 0h1m1 0h2M4 22.5h7m1 0h3m1 0h5m1 0h1m1 0h1m2 0h2M4 23.5h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h2m3 0h1m2 0h1M4 24.5h1m1 0h3m1 0h1m1 0h4m1 0h1m2 0h5m1 0h1M4 25.5h1m1 0h3m1 0h1m1 0h2m2 0h2m3 0h2m1 0h1m1 0h1m1 0h1M4 26.5h1m1 0h3m1 0h1m4 0h1m1 0h1m4 0h1m2 0h1m1 0h2M4 27.5h1m5 0h1m2 0h5m1 0h1m1 0h2m1 0h4M4 28.5h7m1 0h1m2 0h3m2 0h1m3 0h1m1 0h3\"/></svg>\n"
+    },
+    {
+      "key": "unknown_2",
+      "symbol": "DEMO-1281-NEEXISTUJE-B",
+      "expected": {
+        "code": 404
+      },
+      "holder": "Neexistující vstupenka",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 33 33\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h33v33H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h3m1 0h4m2 0h7M4 5.5h1m5 0h1m1 0h3m1 0h4m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h4m1 0h2m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m1 0h4m1 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h2m1 0h2m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M14 11.5h3m1 0h1M4 12.5h1m2 0h7m1 0h1m1 0h5m2 0h1m1 0h3M4 13.5h1m1 0h2m3 0h2m1 0h2m2 0h1m1 0h6M4 14.5h1m1 0h1m1 0h3m3 0h2m2 0h2M7 15.5h1m4 0h4m2 0h1m1 0h1m1 0h1m1 0h2M5 16.5h4m1 0h3m4 0h3m1 0h1m1 0h1m1 0h2m1 0h1M4 17.5h3m1 0h1m2 0h2m3 0h1m3 0h1m2 0h5M4 18.5h3m3 0h1m1 0h1m1 0h1m3 0h1m3 0h1m1 0h1m1 0h3M4 19.5h1m1 0h1m1 0h2m1 0h2m1 0h1m1 0h6m2 0h1m2 0h2M4 20.5h1m1 0h1m1 0h3m3 0h3m3 0h6m2 0h1M12 21.5h1m1 0h2m4 0h1m3 0h1m1 0h2M4 22.5h7m1 0h3m1 0h5m1 0h1m1 0h1m2 0h2M4 23.5h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h2m3 0h1m2 0h1M4 24.5h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m2 0h5m1 0h1M4 25.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h2m1 0h1m1 0h1m1 0h1M4 26.5h1m1 0h3m1 0h1m2 0h1m1 0h1m1 0h1m4 0h1m2 0h1m1 0h2M4 27.5h1m5 0h1m2 0h5m1 0h1m1 0h2m1 0h4M4 28.5h7m1 0h2m1 0h3m2 0h1m3 0h1m1 0h3\"/></svg>\n"
+    },
+    {
+      "key": "unknown_3",
+      "symbol": "DEMO-1281-NEEXISTUJE-C",
+      "expected": {
+        "code": 404
+      },
+      "holder": "Neexistující vstupenka",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 33 33\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h33v33H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m3 0h3m2 0h7M4 5.5h1m5 0h1m1 0h3m1 0h4m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m2 0h4m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h3m2 0h3m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h2m1 0h2m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M14 11.5h1m3 0h1M4 12.5h1m2 0h7m1 0h1m1 0h5m2 0h1m1 0h3M6 13.5h1m1 0h2m1 0h3m1 0h2m1 0h1m2 0h5M7 14.5h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h2M4 15.5h1m1 0h3m2 0h1m3 0h1m2 0h1m1 0h1m1 0h1m1 0h2M4 16.5h3m1 0h3m1 0h4m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1M4 17.5h1m4 0h1m3 0h2m1 0h1m3 0h1m2 0h5M4 18.5h2m2 0h3m2 0h2m3 0h1m3 0h1m1 0h1m1 0h3M4 19.5h1m1 0h2m1 0h1m1 0h1m1 0h2m1 0h6m2 0h1m2 0h2M4 20.5h1m1 0h1m3 0h1m4 0h2m3 0h6m2 0h1M12 21.5h4m4 0h1m3 0h1m1 0h2M4 22.5h7m1 0h3m1 0h5m1 0h1m1 0h1m2 0h2M4 23.5h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h2m3 0h1m2 0h1M4 24.5h1m1 0h3m1 0h1m1 0h4m1 0h1m2 0h5m1 0h1M4 25.5h1m1 0h3m1 0h1m1 0h1m3 0h2m3 0h2m1 0h1m1 0h1m1 0h1M4 26.5h1m1 0h3m1 0h1m3 0h2m1 0h1m4 0h1m2 0h1m1 0h2M4 27.5h1m5 0h1m3 0h4m1 0h1m1 0h2m1 0h4M4 28.5h7m1 0h1m1 0h4m2 0h1m3 0h1m1 0h3\"/></svg>\n"
+    }
+  ]
+}

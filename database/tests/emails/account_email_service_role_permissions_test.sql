@@ -59,16 +59,26 @@ BEGIN
     RAISE EXCEPTION 'Registration and its email must enqueue atomically under the runtime role';
   END IF;
 
+  v_result := public.enqueue_account_email(
+    'register', '{"invitation_code":"012345","data":{"name":"Secure","surname":"Account"},"unit_title":"Fixture unit"}',
+    v_context, 'secure-registration@example.invalid', '{"sealed":"fixture"}', repeat('d', 64),
+    'account-role-register-v2', 'SIGN_IN_CODE', now() + interval '10 minutes'
+  );
+  IF v_result#>>'{domain,code}' <> '200' OR EXISTS (
+    SELECT 1 FROM public.sign_in_codes WHERE user_id=(v_result#>>'{domain,id}')::uuid
+  ) THEN RAISE EXCEPTION 'Compatibility registration must use the same permanent password'; END IF;
+  PERFORM set_config('festapp.v2_registered_user',v_result#>>'{domain,id}',true);
+
   FOREACH v_kind IN ARRAY ARRAY[
     'registration', 'sign_in', 'reset_password', 'app_links', 'deletion_confirm',
     'deletion_complete', 'google_mailbox', 'gotrue', 'custom'
   ] LOOP
     v_result := public.enqueue_prepared_email(
-      v_kind, v_context, 'prepared@example.invalid', '{"sealed":"fixture"}',
+      v_kind, v_context, v_kind||'-prepared@example.invalid', '{"sealed":"fixture"}',
       'prepared-role-' || v_kind, repeat('c', 64), '', now() + interval '1 hour'
     );
     v_replay := public.enqueue_prepared_email(
-      v_kind, v_context, 'prepared@example.invalid', '{"sealed":"fixture"}',
+      v_kind, v_context, v_kind||'-prepared@example.invalid', '{"sealed":"fixture"}',
       'prepared-role-' || v_kind, repeat('c', 64), '', now() + interval '1 hour'
     );
     IF v_result->>'message_id' IS NULL OR v_result->>'message_id' <> v_replay->>'message_id' THEN
@@ -78,4 +88,12 @@ BEGIN
 END;
 $$;
 
+RESET ROLE;
+DO $$
+DECLARE u uuid := current_setting('festapp.v2_registered_user')::uuid; pw text;
+BEGIN
+ SELECT encrypted_password INTO pw FROM auth.users WHERE id=u;
+ IF extensions.crypt('012345',pw) IS DISTINCT FROM pw THEN RAISE EXCEPTION 'Permanent reusable password was not stored'; END IF;
+ IF EXISTS(SELECT 1 FROM public.sign_in_codes WHERE user_id=u) THEN RAISE EXCEPTION 'Registration created an expiring one-time password'; END IF;
+END $$;
 ROLLBACK;

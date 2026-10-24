@@ -20,6 +20,10 @@ BEGIN
         RETURN;
     END IF;
 
+    -- Card refunds/holds never create a new debt or resurrect expired capacity.
+    -- Their current provider facts are applied by the atomic Stripe ingest.
+    IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND payment_method='stripe') THEN RETURN; END IF;
+
     -- Get Paid Amount and Deposit Amount from Payment Info
     SELECT paid, deposit_amount INTO v_paid, v_deposit_amount
     FROM eshop.payment_info
@@ -57,5 +61,6 @@ BEGIN
             AND eshop.tickets.state IN ('paid','sent');
         END IF;
     END IF;
+    PERFORM public.notification_center_order_state_internal(p_order_id);
 END;
 $$;

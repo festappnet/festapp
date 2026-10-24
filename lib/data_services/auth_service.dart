@@ -13,7 +13,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:fstapp/data_services/auth_refresh_recovery.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -22,8 +22,10 @@ import 'package:fstapp/services/notification_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../components/users/logout_flow.dart';
+
+enum InvitationDeliveryStatus { sent, queued }
 
 class AuthService {
   static final _supabase = Supabase.instance.client;
@@ -158,13 +160,19 @@ class AuthService {
         body: {"email": email, "organization": AppConfig.organization});
   }
 
-  static Future<bool> sendSignInCode(OccasionUserModel ou) async {
+  static Future<InvitationDeliveryStatus> sendSignInCode(OccasionUserModel ou,
+      {String? requestId}) async {
     final response =
         await _supabase.functions.invoke("send-sign-in-code", body: {
       "oc": ou.occasion,
       "usr": ou.user,
+      if (requestId != null) "requestId": requestId,
     });
-    return response.data?["status"] == "sent";
+    return switch (response.data?["status"]) {
+      "sent" => InvitationDeliveryStatus.sent,
+      "queued" => InvitationDeliveryStatus.queued,
+      _ => throw StateError('Invitation delivery was not confirmed'),
+    };
   }
 
   static Future<bool> sendAppLinks(OccasionUserModel ou) async {
@@ -336,12 +344,6 @@ class AuthService {
     if (data["code"] != 200) {
       throw Exception(data["message"]);
     }
-  }
-
-  static Future<void> changeMyPassword(String pw) async {
-    await _supabase.auth.updateUser(UserAttributes(
-      password: pw,
-    ));
   }
 
   static Future<dynamic> changePassword(String token, String pw) async {

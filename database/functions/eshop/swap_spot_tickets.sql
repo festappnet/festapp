@@ -48,7 +48,7 @@ BEGIN
         'type_title', product_data.type_title,
         'description', product_data.description,
         'currency_code', product_data.currency_code
-    ));
+    )) || coalesce(public.order_spot_metadata_internal(p_spot_id), '{}'::jsonb);
 END;
 $$;
 
@@ -82,6 +82,8 @@ BEGIN
     SELECT * INTO opt FROM eshop.order_product_ticket WHERE id = p_opt_id;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order Product Ticket % not found', p_opt_id; END IF;
 
+    PERFORM public.check_ticket_is_mutable(opt.ticket);
+    PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[opt.ticket]);
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order";
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
@@ -150,6 +152,8 @@ BEGIN
 
     -- Update payment info
     IF price_delta <> 0 THEN
+        IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=ord.payment_info AND payment_method='stripe') THEN
+            RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
         UPDATE eshop.payment_info SET amount = amount + price_delta WHERE id = ord.payment_info;
     END IF;
 
@@ -178,7 +182,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 BIGINT, spot_id_2 BIGINT)
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 BIGINT, spot_id_2 BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -198,6 +202,8 @@ BEGIN
     IF spot_id_1 = spot_id_2 THEN
         RAISE EXCEPTION 'Cannot swap a spot with itself' USING ERRCODE = '22023';
     END IF;
+
+    PERFORM public.lock_spot_assignment_scope_internal_v1(ARRAY[spot_id_1,spot_id_2]);
 
     -- 2. Fetch Spot Data
     SELECT * INTO spot1 FROM eshop.spots WHERE id = spot_id_1;
@@ -224,6 +230,13 @@ BEGIN
     IF has_permission <> TRUE THEN
         RAISE EXCEPTION 'User is not authorized to edit orders for this occasion' USING ERRCODE = '42501';
     END IF;
+
+    IF EXISTS(SELECT 1 FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2)
+      AND secret IS NOT NULL AND secret_expiration_time>clock_timestamp()) THEN
+      RAISE object_not_in_prerequisite_state USING MESSAGE='SPOT_HELD'; END IF;
+    -- Ticket locks follow the already locked order parents, in a stable order.
+    PERFORM 1 FROM eshop.tickets WHERE id IN(SELECT ticket FROM eshop.order_product_ticket
+      WHERE id IN(spot1.order_product_ticket,spot2.order_product_ticket)) ORDER BY id FOR UPDATE;
 
     -- 4. Main Swap Logic: Branch based on assignment status
     -- This logic is now greatly simplified by the helper functions.
@@ -276,3 +289,17 @@ BEGIN
 
 END;
 $$;
+REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint)
+  FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 bigint,spot_id_2 bigint)
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = public, extensions AS $$
+BEGIN
+  PERFORM public.swap_spot_tickets_client_sync_v1(
+    spot_id_1,spot_id_2,extensions.gen_random_uuid());
+END; $$;
+REVOKE ALL ON FUNCTION public.swap_spot_tickets(bigint,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.swap_spot_tickets(bigint,bigint) TO authenticated;
+
+REVOKE ALL ON FUNCTION public._swap_spots_generate_product_json(bigint,bigint),public._swap_spots_update_ticket(bigint,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

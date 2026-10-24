@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import { scanWriteSignals } from './write-authority-inventory.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
@@ -63,8 +64,11 @@ export function auditLegacyAdapters(
         moduleProblems.push(`unbound-transport:${relativeModule}`);
       }
     }
-    const status = hasSelectionContract && moduleProblems.length === 0 && entryRpcNames.size > 0
-      ? 'rpc-seam-detected-legacy-fallback-remains'
+    const selectionValid = entry.canonical_only === true
+      ? !hasSelectionContract && !scanWriteSignals(adapter).includes('direct-dml')
+      : hasSelectionContract;
+    const status = selectionValid && moduleProblems.length === 0 && entryRpcNames.size > 0
+      ? (entry.canonical_only === true ? 'rpc-seam-detected-canonical-only' : 'rpc-seam-detected-legacy-fallback-remains')
       : 'blocked';
     return {
       ...entry,
@@ -78,7 +82,7 @@ export function auditLegacyAdapters(
     entries,
     rpc_names: [...rpcNames].sort(),
     seam_detected_adapters: entries.filter((entry) =>
-      entry.status === 'rpc-seam-detected-legacy-fallback-remains').length,
+      entry.status.startsWith('rpc-seam-detected-')).length,
     coverage_proof: 'partial-static-evidence-not-operation-completeness',
   };
 }

@@ -1,0 +1,112 @@
+{
+  "native": {
+    "collisionPairs": [],
+    "tables": [
+      {
+        "id": "0c13157c-0205-487b-b99a-09e18aa826a5",
+        "surface": {
+          "holes": [],
+          "moduleSize": 100,
+          "outer": [
+            [
+              0,
+              0
+            ],
+            [
+              13,
+              0
+            ],
+            [
+              13,
+              10
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              5,
+              9
+            ],
+            [
+              12,
+              9
+            ],
+            [
+              12,
+              1
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "type": "grid"
+        },
+        "capacity": 58,
+        "actualSeats": 58
+      },
+      {
+        "id": "0cb694ae-ec9d-4aa0-a0cc-e64a975d1347",
+        "surface": {
+          "type": "circle"
+        },
+        "capacity": 9,
+        "actualSeats": 6
+      },
+      {
+        "id": "987c46f9-aa9a-4ff2-b99d-3ee66b26ab14",
+        "surface": {
+          "type": "rect"
+        },
+        "capacity": 10,
+        "actualSeats": 6
+      },
+      {
+        "id": "c3f5dde7-a08c-4069-9319-6ca98c35732c",
+        "surface": {
+          "type": "circle"
+        },
+        "capacity": 9,
+        "actualSeats": 6
+      },
+      {
+        "id": "d73c35d9-e681-4781-a235-10ddecfdf650",
+        "surface": {
+          "type": "rect"
+        },
+        "capacity": 10,
+        "actualSeats": 6
+      }
+    ]
+  },
+  "scope": "Latest approved ending uses transparent canvas; failed backdrop insertion excluded entirely. Exactly one grid; no second-grid footage.",
+  "decode": "both MP4 PASS",
+  "ownedProcesses": "browser and55907 host closed",
+  "files": {
+    "web/organizers-media/layout-grid.mp4": {
+      "sha256": "f6a96a2acf9fc2e0bb4269f5561cc6bc034bd2d1d5094c82f42bba913f664e1b",
+      "bytes": 747187
+    },
+    "web/organizers-media/layout-grid.jpg": {
+      "sha256": "ee6a2cbdd9ca89be0021b79b3dc391966c398f011ab9a9012d29db0c0542d82a",
+      "bytes": 46747
+    },
+    "web/organizers-media/layout-grid.webp": {
+      "sha256": "30184010b3785cc63c5d77edefbfb93fb8d38d3af45a28b54dd276dace15a9b2",
+      "bytes": 48114
+    },
+    "web/organizers-media/layout-grid-mobile.mp4": {
+      "sha256": "6f0fbd63b85524c9d29a0433928659ea3c53418c0891959527b6eb6fe90bb668",
+      "bytes": 441329
+    },
+    "web/organizers-media/layout-grid-mobile.jpg": {
+      "sha256": "9b5f3de7659d26855ef5b6ff1d311364f5ea0ac842ffcc7f314a6116e3e1bcaa",
+      "bytes": 32140
+    },
+    "web/organizers-media/layout-grid-mobile.webp": {
+      "sha256": "f484fa38ee4d12a9c434e3e0ea6d60ad684563157830adf77a0868e7f59d5bb5",
+      "bytes": 32736
+    }
+  }
+}

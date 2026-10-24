@@ -4,9 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_price_change.dart';
-import 'package:fstapp/components/eshop/models/product_price_wave.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized().ensureSemantics();

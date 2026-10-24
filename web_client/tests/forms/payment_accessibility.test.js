@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {register} from 'node:module';
+import {JSDOM} from 'jsdom';
+register('../css_loader.mjs', import.meta.url);
+const dom = new JSDOM('<button id="opener">Continue</button>', {url:'https://example.test/form/example',pretendToBeVisual:true});
+for(const key of ['window','document','HTMLElement','Event','CustomEvent']) globalThis[key]=key==='window'?dom.window:dom.window[key];
+globalThis.requestAnimationFrame=dom.window.requestAnimationFrame.bind(dom.window);
+dom.window.scrollTo=()=>{};
+const {TextFieldBuilder}=await import('../../src/components/forms/fields/text_field_builder.js');
+const {OrderPreview}=await import('../../src/components/forms/order_preview.js');
+const {RouterService}=await import('../../src/services/router_service.js');
+const {LocalizationService}=await import('../../src/services/localization_service.js');
+LocalizationService.translations={Common:{close:'Close'},PublicOrder:{summary:'Summary'}};
+test('personal fields and repeated ticket fields expose distinct connected labels',()=>{
+ const fields=['1','2_0_4','2_1_4'].map(id=>TextFieldBuilder.create({id,type:'text',title:'Name',isRequired:true},{}));
+ document.body.append(...fields);
+ assert.equal(new Set(fields.map(e=>e.querySelector('input').id)).size,3);
+ for(const field of fields) assert.equal(field.querySelector('input').labels[0],field.querySelector('label'));
+ fields.forEach(e=>e.remove());
+});
+test('review focuses named dialog controls, contains Tab and restores opener on Escape without submitting',async t=>{
+ const prepare=OrderPreview._prepareData,back=RouterService.goBackProgrammatically;
+ OrderPreview._prepareData=()=>({personalInfo:[],tickets:[],totalPrice:0,currency:'CZK',hasTickets:false});
+ RouterService.goBackProgrammatically=()=>window.dispatchEvent(new window.PopStateEvent('popstate'));
+ t.after(()=>{OrderPreview._prepareData=prepare;RouterService.goBackProgrammatically=back;dom.window.close();});
+ const opener=document.querySelector('#opener');opener.focus();let submitted=0;
+ OrderPreview.show(null,{},null,()=>submitted++);
+ const dialog=document.querySelector('[role="dialog"]'),close=dialog.querySelector('.btn-close-preview'),submit=dialog.querySelector('.btn-submit-order');
+ assert.equal(dialog.getAttribute('aria-modal'),'true');
+ assert.equal(document.getElementById(dialog.getAttribute('aria-labelledby')).textContent,'Summary');
+ assert.equal(dialog.querySelector('.order-preview-body').tabIndex,0);
+ assert.equal(close.getAttribute('aria-label'),'Close');assert.equal(document.activeElement,close);
+ const key=(key,shiftKey=false)=>document.dispatchEvent(new window.KeyboardEvent('keydown',{key,shiftKey,bubbles:true,cancelable:true}));
+
+ key('Tab',true);assert.equal(document.activeElement,submit);
+ key('Tab');assert.equal(document.activeElement,close);
+ opener.focus();key('Tab');assert.equal(document.activeElement,close);
+ key('Escape');await new Promise(r=>setTimeout(r,280));
+ assert.equal(document.activeElement,opener);assert.equal(submitted,0);
+});

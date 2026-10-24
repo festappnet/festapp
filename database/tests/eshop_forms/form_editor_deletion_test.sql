@@ -15,10 +15,11 @@ BEGIN
   INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
     VALUES (org,unit_id,'Deletion test',link,now(),now()+interval '1 day') RETURNING id INTO occ;
   UPDATE public.user_info SET organization=org WHERE id=actor;
-  INSERT INTO public.occasion_users(occasion,"user",is_editor_order,is_editor_order_view,is_editor_view) VALUES(occ,actor,true,true,true);
+  INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_order,is_editor_order_view,is_editor_view) VALUES(occ,actor,true,true,true,true);
   PERFORM set_config('request.jwt.claim.sub',actor::text,true);
   PERFORM set_config('request.jwt.claim.role','authenticated',true);
   INSERT INTO public.forms(occasion,title,link) VALUES (occ,'Original',link) RETURNING id INTO form_id;
+  PERFORM public.reserve_public_link_internal('form',form_id,link,true);
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Answered') RETURNING id INTO answered;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Unused') RETURNING id INTO unused;
   INSERT INTO public.form_fields(form,type,title) VALUES (form_id,'text','Late answer') RETURNING id INTO late_field;

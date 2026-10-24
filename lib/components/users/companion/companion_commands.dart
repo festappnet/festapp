@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/users/companion/companion_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -30,7 +31,7 @@ class SupabaseCompanionCommands
       'create_companion_client_sync_v1',
       {'p_occasion': occasionId, 'p_name': name},
     ));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final raw = response.data['companion'];
     if (response.code != 200 || response.status != 'applied' || raw is! Map) {
       throw StateError('Companion create was rejected');
@@ -44,7 +45,7 @@ class SupabaseCompanionCommands
       'delete_owned_companion_client_sync_v1',
       {'p_occasion': occasionId, 'p_companion': companionId},
     ));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     if (response.code != 200 ||
         (response.status != 'applied' && response.status != 'unchanged')) {
       throw StateError('Companion delete was rejected');

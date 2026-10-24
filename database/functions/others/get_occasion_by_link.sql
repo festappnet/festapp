@@ -13,11 +13,15 @@ BEGIN
     -- 1. Fetch the occasion record
     SELECT * INTO occ_record
     FROM public.occasions
-    WHERE link = link_param;
+    WHERE id = public.resolve_occasion_link_internal(link_param);
 
     -- Return null if not found
     IF occ_record IS NULL THEN
         RETURN NULL;
+    END IF;
+
+    IF public.is_demo_occasion(occ_record.id) AND NOT public.can_read_demo_occasion(occ_record.id) THEN
+        RAISE insufficient_privilege USING MESSAGE='Demo access denied';
     END IF;
 
     -- 2. Check for active orders

@@ -7,7 +7,7 @@ import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:trina_grid/trina_grid.dart';
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'group_participant_model.dart';
 
 class UserGroupInfoModel extends ITrinaRowModel {

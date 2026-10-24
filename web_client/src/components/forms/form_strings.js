@@ -1,12 +1,16 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class FormStrings {
+    static emailSuffixWarning(suffix, informal = false) { return LocalizationService.tr(`EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}`, { suffix }); }
+    static get emailSuffixConfirm() { return LocalizationService.tr('EmailDomainSuffix.confirm'); }
+
     // Currency Selector
     static get currencySelectLabel() { return LocalizationService.tr('FormsFeature.inWhatCurrency'); }
 
     // Form Settings Feature
     static get formSettingsTitle() { return LocalizationService.tr('FeatureFormSettings.title'); }
     static get formNotFound() { return LocalizationService.tr('FeatureFormSettings.formNotFound'); }
+    static get loadFailed() { return LocalizationService.tr('FeatureFormSettings.loadFailed', {}, 'The form could not be loaded. Check your connection and try again.'); }
     static get labelFormTitle() { return LocalizationService.tr('FeatureFormSettings.labelFormTitle'); }
     static get labelFormLink() { return LocalizationService.tr('FeatureFormSettings.labelFormLink'); }
     static get validationLinkRequired() { return LocalizationService.tr('FeatureFormSettings.validationLinkRequired'); }

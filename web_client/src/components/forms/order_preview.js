@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 import { FormStrings } from './form_strings.js';
@@ -11,6 +13,9 @@ import { FormDataReader } from './form_data_reader.js';
 import { FieldPreviewFactory } from './previews/field_preview_factory.js';
 import { FormHelper } from './form_helper.js';
 import { LocalizationService } from '../../services/localization_service.js';
+import { formPaymentOptions } from './form_payment_options.js';
+import { renderPaymentMethodPicker } from './payment_method_picker.js';
+import { paymentMethodText } from './payment_method_strings.js';
 
 // Inject CSS
 if (typeof document !== 'undefined') {
@@ -26,6 +31,7 @@ if (typeof document !== 'undefined') {
 export class OrderPreview {
 
     static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null) {
+        const previousFocus = document.activeElement;
         // 1. Calculate and Prepare Data
         const data = OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload);
         
@@ -38,13 +44,34 @@ export class OrderPreview {
             document.body.appendChild(overlay);
         }
 
-        overlay.innerHTML = OrderPreview._render(data);
+        const rendered = OrderPreview._render(data);
+        const restoreScroll = preserveCheckoutScroll();
+        overlay.innerHTML = rendered;
+        const paymentOptions = formPaymentOptions(formModel.payments, isEmbed() ? 'embed' : 'web');
+        const paymentSubmit = overlay.querySelector('.btn-submit-order');
+        let paymentChoice = {selected:null};
+        if (data.totalPrice > 0) paymentChoice = renderPaymentMethodPicker(overlay.querySelector('[data-payment-methods]'),paymentOptions,method=>{
+            paymentSubmit.disabled = !method;
+            paymentSubmit.textContent = method === 'stripe' ? paymentMethodText('orderAndPay') : PublicOrderStrings.getSubmitButton(data.hasTickets,data.tone);
+        });
+        else {paymentSubmit.textContent = paymentMethodText('finishFree');overlay.querySelector('[data-payment-methods]').hidden=true;}
 
         // 3. Close Logic (with Animation)
         let isClosing = false;
         const closePreview = () => {
             if (isClosing) return;
             isClosing = true;
+
+            // Submission has already removed this preview. Finish its ownership
+            // synchronously, before the result can mount; a delayed restoration
+            // would otherwise move focus/scroll back over the confirmation.
+            if (!overlay.isConnected) {
+                document.removeEventListener('keydown', escHandler);
+                overlay.removeEventListener('click', backdropHandler);
+                restoreScroll({restore: false});
+                if (onClose) onClose();
+                return;
+            }
             
             // If closed by drag, we handled animation manually. Don't add .closing class (which forces slideDown from 0).
             if (overlay.dataset.closedByDrag !== 'true') {
@@ -75,6 +102,8 @@ export class OrderPreview {
                 overlay.innerHTML = ''; // Cleanup
                 document.body.style.overflow = ''; // Restore Scroll
                 if (onClose) onClose();
+                previousFocus?.focus({ preventScroll: true });
+                restoreScroll();
             }, 250); 
         };
 
@@ -92,13 +121,26 @@ export class OrderPreview {
             RouterService.goBackProgrammatically();
         };
 
-        if (closeBtn) closeBtn.onclick = triggerBack;
+        if (closeBtn) {
+            closeBtn.onclick = triggerBack;
+            closeBtn.setAttribute('aria-label', LocalizationService.tr('Common.close'));
+        }
 
         // 4. Listeners
         
         // ESC Key
         const escHandler = (e) => {
-            if (e.key === 'Escape') triggerBack();
+            if (e.key === 'Escape') { e.preventDefault(); triggerBack(); }
+            if (e.key === 'Tab' && !isEmbed()) {
+                const controls = [...overlay.querySelectorAll('button, input, select, textarea, a[href], [tabindex]')]
+                    .filter(el => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden]') && el.type !== 'hidden');
+                const first = controls[0], last = controls.at(-1);
+                if (first && (!overlay.contains(document.activeElement) ||
+                    (e.shiftKey && document.activeElement === first) ||
+                    (!e.shiftKey && document.activeElement === last))) {
+                    e.preventDefault(); (e.shiftKey ? last : first).focus();
+                }
+            }
         };
         document.addEventListener('keydown', escHandler);
 
@@ -115,7 +157,9 @@ export class OrderPreview {
                  // Capture payment_type from deposit radio if present
                  const selectedRadio = overlay.querySelector('input[name="payment_type"]:checked');
                  const paymentType = selectedRadio ? selectedRadio.value : null;
-                 if (onConfirm) onConfirm(overlay, paymentType);
+                 if (onConfirm && (data.totalPrice <= 0 || paymentChoice.selected)) onConfirm(overlay, paymentType, paymentChoice.selected || 'bank',{
+                     amountMinor:Math.round(data.totalPrice*100),currency:data.currency,connectionId:paymentOptions.recipient?.connectionId,surface:isEmbed()?'embed':'web',
+                 });
             };
         }
 
@@ -124,6 +168,16 @@ export class OrderPreview {
         overlay.style.display = 'flex';
         overlay.offsetHeight; // Force reflow
         overlay.classList.add('visible');
+        const dialog = overlay.querySelector('.order-preview-content');
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-labelledby', 'order-preview-title');
+        if (!isEmbed()) dialog.setAttribute('aria-modal', 'true');
+        if (isEmbed()) {
+            // One smooth reveal through the bridge, including the padding below
+            // Submit. Do not race a second scroll from the heading or a timer.
+            revealEmbedStep(overlay.querySelector('.preview-actions') || submitBtn || dialog, {block: 'end'});
+            submitBtn?.focus({preventScroll: true});
+        } else closeBtn?.focus({ preventScroll: true });
         
         const content = overlay.querySelector('.order-preview-content');
         const body = overlay.querySelector('.order-preview-body');
@@ -134,6 +188,7 @@ export class OrderPreview {
         let ignoreGesture = false;
         
         const touchStart = (e) => {
+            if (isEmbed()) return;
             // Check if touch target is header or handle
             const isHeader = e.target.closest('.order-preview-header') || e.target.closest('.order-preview-handle-bar');
             
@@ -207,17 +262,17 @@ export class OrderPreview {
             content.addEventListener('touchend', touchEnd);
         }
 
-        // Auto-Scroll to Bottom (User Request)
-        // Ensure the body (scrollable area) is scrolled to show tickets/total/submit
-        // "scrolling can be bit slower" -> Custom JS animation required as 'smooth' is browser-fixed.
-        setTimeout(() => {
+        // Standalone sheets retain their own inner scrolling. Embedded checkout
+        // has already revealed Submit through its single owner.
+        if (!isEmbed()) setTimeout(() => {
+             if (isClosing || !overlay.isConnected) return;
              if (body) {
-                 OrderPreview._animateScrollToBottom(body, 700); // 700ms duration (User Request)
+                 OrderPreview._animateScrollToBottom(body, 700);
              }
         }, 150); 
         
         // Disable Body Scroll
-        document.body.style.overflow = 'hidden';
+        if (!isEmbed()) document.body.style.overflow = 'hidden';
         
         RouterService.pushOverlayState('order-preview');
 
@@ -271,6 +326,7 @@ export class OrderPreview {
         
         // We use passed pricing data to display logic properly
         const totalPriceData = priceData;
+        const cardPricing = formModel.payments?.configured?.stripe === true;
 
         const personalInfo = [];
 
@@ -293,7 +349,7 @@ export class OrderPreview {
                      if (field.id === 'currency_code') return; 
 
                      const result = FieldPreviewFactory.format(field, val, { 
-                          currency: totalPriceData.currency 
+                          currency: totalPriceData.currency, cardPricing
                      });
                      // result is now { value, price }
                      personalInfo.push({ label: field.title, value: result.value, price: result.price });
@@ -328,7 +384,7 @@ export class OrderPreview {
                  let spotLabel = ticketData.spotName || `Spot #${ticketData.spot}`;
                  let spotPrice = null;
                  if (ticketData.spotPrice) {
-                     spotPrice = formatPrice(ticketData.spotPrice, totalPriceData.currency, 0, 'cs-CZ');
+                     spotPrice = formatPrice(ticketData.spotPrice, totalPriceData.currency, cardPricing ? 2 : 0, LocalizationService.currentLocale);
                      // Don't append price to label anymore
                  }
                  
@@ -357,7 +413,7 @@ export class OrderPreview {
 
                            if (val !== undefined) {
                                const result = FieldPreviewFactory.format(subDef, val, {
-                                  currency: totalPriceData.currency,
+                                  currency: totalPriceData.currency, cardPricing,
                                   features: formModel.occasionFeatures,
                                });
                                tData.rows.push({ label: subDef.title, value: result.value, price: result.price, metaSurcharge: result.metaSurcharge });
@@ -384,13 +440,9 @@ export class OrderPreview {
             hasTickets: FeatureService.isFeatureEnabled(FeatureService.FeatureConstants.ticket, formModel.occasionFeatures),
             tone: formModel.communicationTone,
             deposit: depositInfo,
-            metaSurchargeSums
+            metaSurchargeSums,
+            cardPricing
         };
-    }
-
-    static _getAutoTitle(type) {
-        // ... existing ...
-        return ""; 
     }
 
     /**
@@ -465,10 +517,10 @@ export class OrderPreview {
                     <div class="order-preview-handle"></div>
                 </div>
                 <div class="order-preview-header">
-                    <h2>${PublicOrderStrings.summary}</h2>
-                    <button class="btn-close-preview"><i class="material-icons">close</i></button>
+                    <h2 id="order-preview-title">${PublicOrderStrings.summary}</h2>
+                    <button type="button" class="btn-close-preview"><i class="material-icons" aria-hidden="true">close</i></button>
                 </div>
-                <div class="order-preview-body">
+                <div class="order-preview-body" tabindex="0" role="region" aria-labelledby="order-preview-title">
         `;
 
         // Personal Info
@@ -552,7 +604,7 @@ export class OrderPreview {
         }
 
         // Total
-        const formattedPrice = formatPrice(data.totalPrice, data.currency, 0, 'cs-CZ');
+        const formattedPrice = formatPrice(data.totalPrice, data.currency, data.cardPricing ? 2 : 0, LocalizationService.currentLocale);
         const totalPriceString = PublicOrderStrings.totalPrice(formattedPrice);
 
         // Per-currency meta surcharge sums (visual-only, NOT added to totalPrice).
@@ -572,7 +624,7 @@ export class OrderPreview {
              </div>
         `;
 
-        html += `</div>`; // Close Body
+        html += `<section data-payment-methods style="padding:16px;min-width:0;overflow-wrap:anywhere"></section></div>`; // Close Body
 
         // Actions
         // Determine Tone and Ticket Status from FormModel? passing it??

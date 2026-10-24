@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-15",
+  "status": "deployed_and_verified",
+  "main_commit": "36228be3914709a623f91a5d6120bdd854e7d3e7",
+  "base_commit": "6d92dc29a",
+  "publication": "direct admin push; GitHub reported bypass of PR-only rule",
+  "migration": "20261016010000_spots_ticket_lookup_index",
+  "migration_sha256": "adf9956b8e7b70f13af54296f035a57cd1bbc92097bc94ddadbedb737ce5f77f",
+  "index": "eshop.spots_order_product_ticket_idx",
+  "definition": "CREATE INDEX spots_order_product_ticket_idx ON eshop.spots USING btree (order_product_ticket)",
+  "index_bytes": 221184,
+  "valid_and_ready": true,
+  "ledger_rows": 1,
+  "rpc_definition_hash_unchanged": "bbd0d788dfdec54c3ee6c98616b190e3",
+  "server_evidence": "/var/lib/festapp-rehearsal-evidence/spots-ticket-index-20261015T191933Z",
+  "validation": {
+    "runner": "./automation/test_all.sh",
+    "exit_code": 0,
+    "database_passed": 188,
+    "flutter_passed": 1484,
+    "flutter_skipped": 1,
+    "external_integration_skipped": 27,
+    "renderer_permutation_test_published": true
+  },
+  "measurements": {
+    "before": [
+      {
+        "sql_ms": 163.82,
+        "tickets": 14,
+        "occasion": 13,
+        "iteration": 1,
+        "content_md5": "be68539e2711a0b395635e060aacae2a"
+      },
+      {
+        "sql_ms": 152.59,
+        "tickets": 14,
+        "occasion": 13,
+        "iteration": 2,
+        "content_md5": "be68539e2711a0b395635e060aacae2a"
+      },
+      {
+        "sql_ms": 1982.45,
+        "tickets": 700,
+        "occasion": 877055,
+        "iteration": 1,
+        "content_md5": "e7b56a4b4ea0672e347b8f9b91630776"
+      },
+      {
+        "sql_ms": 1926.93,
+        "tickets": 700,
+        "occasion": 877055,
+        "iteration": 2,
+        "content_md5": "e7b56a4b4ea0672e347b8f9b91630776"
+      }
+    ],
+    "after": [
+      {
+        "sql_ms": 11.39,
+        "tickets": 14,
+        "occasion": 13,
+        "iteration": 1,
+        "content_md5": "87f479a5e5da71b913bdb6434881ecb5"
+      },
+      {
+        "sql_ms": 8.25,
+        "tickets": 14,
+        "occasion": 13,
+        "iteration": 2,
+        "content_md5": "87f479a5e5da71b913bdb6434881ecb5"
+      },
+      {
+        "sql_ms": 547.07,
+        "tickets": 700,
+        "occasion": 877055,
+        "iteration": 1,
+        "content_md5": "e7b56a4b4ea0672e347b8f9b91630776"
+      },
+      {
+        "sql_ms": 569.31,
+        "tickets": 700,
+        "occasion": 877055,
+        "iteration": 2,
+        "content_md5": "e7b56a4b4ea0672e347b8f9b91630776"
+      }
+    ]
+  },
+  "content_verification": {
+    "700_tickets": "normalized content hash identical before/after",
+    "14_tickets": "only table_title differs; current force_generic_plan exactly reproduces pre-index hash and force_custom_plan reproduces post-index hash",
+    "table_title_used_by_current_renderer": false,
+    "other_fields_equal_across_plan_modes": true,
+    "existing_ambiguity_not_changed_in_this_release": true
+  }
+}

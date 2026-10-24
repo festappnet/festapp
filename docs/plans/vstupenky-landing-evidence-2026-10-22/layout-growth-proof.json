@@ -1,0 +1,341 @@
+{
+  "empty-hall": {
+    "tables": 0,
+    "seats": 0,
+    "labels": [],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "first-table": {
+    "tables": 1,
+    "seats": 6,
+    "labels": [
+      "Stůl 1"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "filled-hall": {
+    "tables": 16,
+    "seats": 96,
+    "labels": [
+      "Stůl 12",
+      "Stůl 3",
+      "Stůl 16",
+      "Stůl 9",
+      "Stůl 6",
+      "Stůl 15",
+      "Stůl 2",
+      "Stůl 10",
+      "Stůl 8",
+      "Stůl 14",
+      "Stůl 7",
+      "Stůl 4",
+      "Stůl 1",
+      "Stůl 11",
+      "Stůl 13",
+      "Stůl 5"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "plus-chairs": {
+    "tables": 17,
+    "seats": 104,
+    "labels": [
+      "Stůl 12",
+      "Stůl 3",
+      "Stůl 16",
+      "Stůl 17",
+      "Stůl 9",
+      "Stůl 6",
+      "Stůl 15",
+      "Stůl 2",
+      "Stůl 10",
+      "Stůl 8",
+      "Stůl 14",
+      "Stůl 7",
+      "Stůl 4",
+      "Stůl 1",
+      "Stůl 11",
+      "Stůl 13",
+      "Stůl 5"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "round-chairs": {
+    "tables": 18,
+    "seats": 112,
+    "labels": [
+      "Stůl 12",
+      "Stůl 3",
+      "Stůl 16",
+      "Stůl 17",
+      "Stůl 9",
+      "Stůl 6",
+      "Stůl 15",
+      "Stůl 2",
+      "Stůl 10",
+      "Stůl 8",
+      "Stůl 14",
+      "Stůl 7",
+      "Stůl 4",
+      "Stůl 1",
+      "Stůl 11",
+      "Stůl 13",
+      "Stůl 5",
+      "Stůl 18"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "hall-complete": {
+    "tables": 18,
+    "seats": 112,
+    "labels": [
+      "Stůl 12",
+      "Stůl 3",
+      "Stůl 16",
+      "Stůl 17",
+      "Stůl 9",
+      "Stůl 6",
+      "Stůl 15",
+      "Stůl 2",
+      "Stůl 10",
+      "Stůl 8",
+      "Stůl 14",
+      "Stůl 7",
+      "Stůl 4",
+      "Stůl 1",
+      "Stůl 11",
+      "Stůl 13",
+      "Stůl 5",
+      "Stůl 18"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#267329FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#FFFFFFFF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  },
+  "restyled-hall": {
+    "tables": 18,
+    "seats": 112,
+    "labels": [
+      "Stůl 12",
+      "Stůl 3",
+      "Stůl 16",
+      "Stůl 17",
+      "Stůl 9",
+      "Stůl 6",
+      "Stůl 15",
+      "Stůl 2",
+      "Stůl 10",
+      "Stůl 8",
+      "Stůl 14",
+      "Stůl 7",
+      "Stůl 4",
+      "Stůl 1",
+      "Stůl 11",
+      "Stůl 13",
+      "Stůl 5",
+      "Stůl 18"
+    ],
+    "styles": {
+      "kinds": {
+        "seat": {
+          "cornerRadius": 20,
+          "fill": "#253759FF",
+          "material": "simple",
+          "seatStyle": "plain",
+          "stroke": "#00000000",
+          "strokeWidth": 0
+        },
+        "table": {
+          "cornerRadius": 0,
+          "fill": "#80BDF2FF",
+          "label": {
+            "color": "#000000FF",
+            "lineHeight": 1,
+            "size": 70,
+            "weight": 700
+          },
+          "material": "simple",
+          "stroke": "#000000FF",
+          "strokeWidth": 5
+        },
+        "text": {
+          "label": {
+            "color": "#000000FF"
+          }
+        }
+      }
+    }
+  }
+}

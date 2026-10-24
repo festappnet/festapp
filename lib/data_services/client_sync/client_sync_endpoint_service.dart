@@ -36,8 +36,8 @@ class ClientSyncEndpointService {
   })  : tenantId = tenantId ?? AppConfig.clientSyncTenantId,
         configUrl = configUrl ??
             '${AppConfig.webLink.replaceFirst(RegExp(r'/+$'), '')}/client-sync-config.json',
-        fallbackHeadOrigin = fallbackHeadOrigin ?? AppConfig.syncHeadOrigin,
-        fallbackAssetOrigin = fallbackAssetOrigin ?? AppConfig.syncAssetOrigin,
+        fallbackHeadOrigin = fallbackHeadOrigin ?? AppConfig.effectiveSyncHeadOrigin,
+        fallbackAssetOrigin = fallbackAssetOrigin ?? AppConfig.effectiveSyncAssetOrigin,
         isWeb = isWeb ?? kIsWeb,
         _read = read ?? ((key) => StorageHelper.get(key)),
         _write = write ?? ((key, value) => StorageHelper.set(key, value)),

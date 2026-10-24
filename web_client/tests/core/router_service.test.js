@@ -551,3 +551,54 @@ test('RouterService.handleInitialLoad', async (t) => {
         assert.strictEqual(replaceStateCalled, false, 'Should NOT sanitize URL if preview=true is present mixed with others');
     });
 });
+
+test('personal offer overlays preserve capability URL for physical reload without copying token to state', async () => {
+    const { JSDOM } = await import('jsdom');
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const url = `https://example.test/form/test#waitlist?offer_id=offer&token=${'a'.repeat(64)}`;
+    const dom = new JSDOM('', { url });
+    global.window = dom.window;
+    RouterService.pushOverlayState('order-preview');
+    assert.strictEqual(window.location.href, url);
+    assert.deepStrictEqual(window.history.state, { overlay: 'order-preview' });
+    RouterService.pushOverlayState('order-result');
+    assert.strictEqual(window.location.href, url);
+    assert.deepStrictEqual(window.history.state, { overlay: 'order-result' });
+    window.history.replaceState({}, '', '/form/test');
+    RouterService.pushOverlayState('order-preview');
+    assert.strictEqual(window.location.hash, '#order-preview');
+    dom.window.close();
+});
+
+test('same-path personal link changes reload the scoped form while ordinary overlay hashes do not', async () => {
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const listeners = {};
+    let reloads = 0;
+    global.window = { addEventListener: (name, callback) => listeners[name] = callback,
+        location: { reload: () => reloads++ } };
+    RouterService.initPopStateListener();
+    const base = 'https://example.test/form/test';
+    listeners.hashchange({ oldURL: base, newURL: `${base}#waitlist?order_id=1&token=one` });
+    assert.strictEqual(reloads, 1);
+    listeners.hashchange({ oldURL: `${base}#waitlist?order_id=1&token=one`, newURL: `${base}#waitlist?order_id=2&token=two` });
+    assert.strictEqual(reloads, 2);
+    listeners.hashchange({ oldURL: base, newURL: `${base}#order-preview` });
+    assert.strictEqual(reloads, 2);
+});
+
+test('order view overlays retain capability and in-tab offer/view/view changes reload', async () => {
+    const { JSDOM } = await import('jsdom');
+    const { RouterService } = await import('../../src/services/router_service.js');
+    const url = `https://example.test/form/test#order?order_id=1&token=${'a'.repeat(64)}`;
+    const dom = new JSDOM('', { url }); global.window = dom.window;
+    RouterService.pushOverlayState('order-result');
+    assert.strictEqual(window.location.href, url);
+    assert.deepStrictEqual(window.history.state, { overlay: 'order-result' });
+    dom.window.close();
+    const listeners = {}; let reloads = 0;
+    global.window = { addEventListener: (name, cb) => listeners[name] = cb, location: { reload: () => reloads++ } };
+    RouterService.initPopStateListener();
+    listeners.hashchange({ oldURL: url.replace('#order?', '#waitlist?'), newURL: url });
+    listeners.hashchange({ oldURL: url, newURL: url.replace('order_id=1','order_id=2') });
+    assert.strictEqual(reloads, 2);
+});

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/schedule/event_type_colors.dart';
 // day_list.dart
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/activities/activities_component_strings.dart';
@@ -248,7 +249,7 @@ class _EventCardState extends State<_EventCard>
 
     const stripeW = 6.0, stripeH = 58.0;
     final Color eventSpecificColor =
-        ThemeConfig.eventTypeToColor(context, event.eventType);
+        EventTypeColors.background(event.eventType);
     final Color effectiveBaseColor =
         isActivity ? Theme.of(context).primaryColor : eventSpecificColor;
     final cardColor = _kUsePastelBackground

@@ -1,3 +1,4 @@
+import { EmailSuffixConfirmation } from '../forms/email_suffix_confirmation.js';
 
 import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { GOOGLE_AUTH_STYLES, GOOGLE_G } from './google_auth_styles.js';
@@ -11,12 +12,16 @@ import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 import { RouterService } from '../../services/router_service.js';
 // import './login_modal.css'; // Removed in favor of inline styles for test compatibility
 
+// Matches the existing registration syntax validator, including accepted Unicode input.
+const registrationEmailSyntax = input => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+
 const LOGIN_MODAL_STYLES = SHARED_MODAL_STYLES + GOOGLE_AUTH_STYLES;
 
 export class LoginModal extends HTMLElement {
     constructor() {
         super();
         this.currentView = 'login'; // login, register, forgot
+        this.emailSuffixConfirmations = new Map();
         this.isLoading = false;
         this.googleEnabled = false;
         this.googleResult = null;
@@ -61,6 +66,8 @@ export class LoginModal extends HTMLElement {
     }
     
     disconnectedCallback() {
+        this._disposeEmailSuffix?.();
+        this.emailSuffixConfirmations.clear();
         window.removeEventListener('keydown', this._handleKeyDown);
     }
     
@@ -91,7 +98,8 @@ export class LoginModal extends HTMLElement {
         this.modal.open();
         
         this._updateContent();
-        this.authContainer.querySelector('input,button')?.focus();
+        this.authContainer.tabIndex = -1;
+        this.authContainer.focus();
         
         const originalClose = this.modal.close.bind(this.modal);
         this.modal.close = () => {
@@ -116,9 +124,10 @@ export class LoginModal extends HTMLElement {
     }
     
     _updateContent(preserveFields = false) {
-        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
+        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].filter(input => input.id).map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
 
         if (!this.authContainer) return;
+        this._disposeEmailSuffix?.();
         
         try {
             this.authContainer.innerHTML = this._getContent();
@@ -147,6 +156,7 @@ export class LoginModal extends HTMLElement {
                 const input = this.authContainer.querySelector(`#${previous.id}`);
                 if (input) { input.value = previous.value; input.checked = previous.checked; if(previous.focused) input.focus(); }
             }
+            if (this.currentView === 'register') this._disposeEmailSuffix = EmailSuffixConfirmation.install(this.authContainer.querySelector('#register-form'), this.emailSuffixConfirmations, undefined, registrationEmailSyntax);
         } catch (e) {
             console.error("LoginModal render error:", e);
             this.authContainer.innerHTML = `<p class="error">Error rendering form. Please try again.</p>`;
@@ -157,6 +167,13 @@ export class LoginModal extends HTMLElement {
         // Helper to generate a validated field wrapper
         const validatedField = (id, label, type = 'text', required = true, minlength = 0, placeholder = '', autocomplete = 'on') => {
             const isPassword = type === 'password';
+            const example = placeholder || ({
+                email: CommonStrings.emailExample,
+                firstName: CommonStrings.firstNameExample,
+                lastName: CommonStrings.lastNameExample,
+                password: CommonStrings.passwordPlaceholder,
+            })[id] || '';
+
             
             return `
             <div class="form-field-container" data-field="${id}">
@@ -169,8 +186,9 @@ export class LoginModal extends HTMLElement {
                             name="${id}" 
                             ${required ? 'required' : ''} 
                             ${minlength > 0 ? `minlength="${minlength}"` : ''}
-                            ${placeholder ? `placeholder="${placeholder}"` : ''}
+                            ${example ? `placeholder="${example}"` : ''}
                             autocomplete="${autocomplete}"
+                            ${type === 'email' ? 'inputmode="email" autocapitalize="none" spellcheck="false"' : ''}
                         >
                         ${isPassword ? `
                         <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="${CommonStrings.googlePasswordVisibility}">
@@ -184,7 +202,12 @@ export class LoginModal extends HTMLElement {
             `;
         };
 
-        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.googleOr}</div>` : '';
+        const registrationInformation = `<p class="auth-registration-info">${CommonStrings.signupLegalNotice(
+            `<a href="${AppConfig.termsUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupTerms}</a>`,
+            `<a href="${AppConfig.privacyUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.signupPrivacy}</a>`,
+        )}</p>`;
+
+        const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
@@ -202,17 +225,15 @@ export class LoginModal extends HTMLElement {
                     </button>
                     <div class="auth-links">
                         <button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button>
-                        ${this._isRegistrationEnabled() ? `
-                        <button type="button" class="btn-link" id="link-register">${CommonStrings.signUp}</button>
-                        ` : ''}
                     </div>
                 </form>
+                ${this._isRegistrationEnabled() ? `<div class="auth-switch-footer"><span>${CommonStrings.newAccountPrompt}</span><button type="button" class="btn-link" id="link-register" data-auth-mode="register">${CommonStrings.createAccount}</button></div>` : ''}
             `;
         } else if (this.currentView === 'register') {
              return `
-                <h2>${CommonStrings.signUp}</h2>
+                <h2>${CommonStrings.createAccount}</h2>
                 ${feedback}${googleAction}
-                <form id="register-form" novalidate>
+                <form id="register-form" autocomplete="on" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'email')}
                     <div class="form-row">
                         <div style="flex:1">
@@ -223,10 +244,11 @@ export class LoginModal extends HTMLElement {
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
-                        ${this.isLoading ? CommonStrings.loading : CommonStrings.signUp}
+                        ${this.isLoading ? CommonStrings.loading : CommonStrings.createAccount}
                     </button>
-                    <button type="button" class="btn-secondary" id="btn-back">${CommonStrings.back}</button>
+                    ${registrationInformation}
                 </form>
+                <div class="auth-switch-footer"><span>${CommonStrings.existingAccountPrompt}</span><button type="button" class="btn-link" data-auth-mode="login">${CommonStrings.signIn}</button></div>
             `;
         } else if (this.currentView === 'reset_password') {
             return `
@@ -237,7 +259,7 @@ export class LoginModal extends HTMLElement {
                 <form id="reset-password-form" novalidate>
                      <!-- Hidden username field to help browser password managers identify the user -->
                      <input type="text" name="username" autocomplete="username" style="display:none;" aria-hidden="true">
-                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 6, '', 'new-password')}
+                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 8, '', 'new-password')}
                      <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
                         ${this.isLoading ? CommonStrings.loading : CommonStrings.changePassword}
                     </button>
@@ -292,17 +314,21 @@ export class LoginModal extends HTMLElement {
             this.authContainer.querySelector('#google-send-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_send'));
             this.authContainer.querySelector('#google-verify-code')?.addEventListener('click', e => this._advanceGoogle(e, 'mailbox_verify'));
         }
+        this.authContainer.querySelectorAll('[data-auth-mode]').forEach(button => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.authMode;
+                if (mode === this.currentView) return;
+                this._setView(mode);
+                this.authContainer.focus();
+            });
+        });
         if (this.currentView === 'login') {
             attach('#login-form', this._handleLogin, 'submit');
             attach('#link-forgot', (e) => { e.preventDefault(); this._setView('forgot'); });
             
-            if (this._isRegistrationEnabled()) {
-                attach('#link-register', (e) => { e.preventDefault(); this._setView('register'); });
-            }
         } 
         else if (this.currentView === 'register') {
             attach('#register-form', this._handleRegister, 'submit');
-            attach('#btn-back', (e) => { e.preventDefault(); this._setView('login'); });
         }
         else if (this.currentView === 'forgot') {
             attach('#forgot-form', this._handleReset, 'submit');
@@ -341,6 +367,7 @@ export class LoginModal extends HTMLElement {
     }
 
     _setView(view) {
+        if (view !== this.currentView) this.emailSuffixConfirmations.clear();
         this.currentView = view;
         this._updateContent();
     }
@@ -362,7 +389,7 @@ export class LoginModal extends HTMLElement {
     _getSubmitButtonLabel() {
         switch (this.currentView) {
             case 'login': return CommonStrings.signIn;
-            case 'register': return CommonStrings.signUp;
+            case 'register': return CommonStrings.createAccount;
             case 'forgot': return CommonStrings.send;
             case 'reset_password': return CommonStrings.changePassword;
             default: return CommonStrings.signIn;
@@ -526,7 +553,8 @@ export class LoginModal extends HTMLElement {
     async _handleRegister(e) {
         e.preventDefault();
         
-        if (!this._validateForm('register-form')) return;
+        if (this.isLoading || !this._validateForm('register-form')) return;
+        if (!EmailSuffixConfirmation.validate(this.authContainer.querySelector('#register-form'), this.emailSuffixConfirmations, undefined, registrationEmailSyntax)) return;
         
         const firstNameInput = this.authContainer.querySelector('#firstName');
         const lastNameInput = this.authContainer.querySelector('#lastName');
@@ -554,7 +582,7 @@ export class LoginModal extends HTMLElement {
             let msg = err.message || CommonStrings.error;
             
             // Try to match specific backend errors to localized strings
-            if (msg.includes("already in use") || msg.includes("already registered")) {
+            if (err.code === 409 || msg.includes("already in use") || msg.includes("already registered")) {
                 msg = CommonStrings.emailInUse.replace("{email}", email);
             } else if (msg.includes("Registration failed")) {
                 msg = CommonStrings.registrationFailed;

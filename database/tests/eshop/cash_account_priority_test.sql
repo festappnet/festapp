@@ -44,11 +44,12 @@ BEGIN
     INSERT INTO units (organization, title) VALUES (last_org_id, 'Test Unit') RETURNING id INTO last_unit_id;
 
     -- Create Occasion
-    INSERT INTO occasions (unit, title, is_open, start_time, end_time, link) VALUES (last_unit_id, 'Test Occasion', true, now(), now() + interval '1 year', 'test-occasion-link') RETURNING id INTO last_occasion_id;
+    INSERT INTO occasions (organization, unit, title, is_open, start_time, end_time, link) VALUES (last_org_id, last_unit_id, 'Test Occasion', true, now(), now() + interval '1 year', 'test-occasion-link') RETURNING id INTO last_occasion_id;
 
     -- Create Form
     INSERT INTO forms (occasion, title, is_open, link) 
     VALUES (last_occasion_id, 'Test Form', true, 'test-form-link') RETURNING id, key INTO last_form_id, last_form_key;
+    PERFORM public.reserve_public_link_internal('form',last_form_id,'test-form-link',true);
 
     -- Create Standard Bank Account (FIO)
     INSERT INTO eshop.bank_accounts (title, account_number, type, supported_currencies)
@@ -70,8 +71,9 @@ BEGIN
     -- Create Product
     INSERT INTO eshop.product_types (occasion, title, type) VALUES (last_occasion_id, 'General', 'spot') RETURNING id INTO last_pt_id;
 
-    INSERT INTO eshop.products (product_type, title, price, currency_code) 
-    VALUES (last_pt_id, 'Test Product', 100, 'CZK') RETURNING id INTO last_product_id;
+    INSERT INTO eshop.products (occasion, product_type, title, price, currency_code) 
+    VALUES (last_occasion_id, last_pt_id, 'Test Product', 100, 'CZK') RETURNING id INTO last_product_id;
+    INSERT INTO public.form_fields(form,product_type,type) VALUES(last_form_id,last_pt_id,'product_type');
 
 
     -- 2. Test get_form_for_edit (Should only see Standard Account)

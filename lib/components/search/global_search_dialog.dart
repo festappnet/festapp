@@ -1,3 +1,5 @@
+import 'package:fstapp/components/schedule/event_presentation.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:fstapp/components/information/info_page.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/event_page.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/search/db_search.dart';
@@ -193,7 +195,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
     final fallbackDetail = _plainSnippet(result.snippet);
     return showDialog<void>(
       context: context,
-      builder: (dialogContext) => Dialog(
+      builder: (dialogContext) => AppDialog(
         key: const Key('speaker-profile-dialog'),
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: ConstrainedBox(
@@ -202,13 +204,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
+              AppDialogHeader(onClose: () => Navigator.of(dialogContext).pop()),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -232,7 +228,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Dialog(
+    return AppDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 48),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
@@ -241,7 +237,8 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
-              child: Row(
+              child: AppDialogHeader(
+                  title: Row(
                 children: [
                   const Icon(Icons.search),
                   const SizedBox(width: 8),
@@ -258,12 +255,8 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
                       onSubmitted: _run,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
                 ],
-              ),
+              )),
             ),
             const Divider(height: 1),
             Expanded(child: _buildBody(theme)),

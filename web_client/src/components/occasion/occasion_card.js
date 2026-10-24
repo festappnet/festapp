@@ -9,10 +9,13 @@ import { OccasionDetailDialog } from './occasion_detail_dialog.js';
 import { transformImageUrl, MEDIUM_WIDTH } from '../../utils/image_url_helper.js';
 import { AppConfig } from '../../app_config.js';
 import { OccasionCardAction, resolveOccasionCardAction } from './occasion_card_action.js';
+import { getOccasionHref } from './occasion_link.js';
 
 export class OccasionCard {
     static create(occasion, isPresent = false, isPast = false) {
-        const card = document.createElement('div');
+        const href = getOccasionHref(occasion);
+        const card = document.createElement(href ? 'a' : 'div');
+        if (href) card.href = href;
         card.className = `oc-card ${isPresent ? 'oc-present' : ''}`;
         
         // --- Logic Dependencies ---
@@ -25,7 +28,9 @@ export class OccasionCard {
         });
 
         // --- Click Handler (Exact Flutter Logic) ---
-        card.onclick = async () => {
+        card.onclick = async (event) => {
+             if (!href || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+             event.preventDefault();
              // Logic aligned with Flutter:
              // 1. If skipDialog (Has Form + No Description) -> Execute Action immediately 
              // 2. If Has Form + Description -> Show Dialog 
@@ -60,8 +65,11 @@ export class OccasionCard {
         const header = document.createElement('div');
         header.className = 'oc-header';
         
-        // Date String (Simplified for now, assumes TimeHelper exists and works)
-        const dateStr = TimeHelper.getMinimalisticDateRange(new Date(occasion.start_time), new Date(occasion.end_time), LocalizationService.currentLocale);
+        // Missing or invalid dates must not hide an otherwise public event.
+        const start = occasion.start_time ? new Date(occasion.start_time) : null;
+        const end = occasion.end_time ? new Date(occasion.end_time) : null;
+        const dateStr = start && end && Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())
+            ? TimeHelper.getMinimalisticDateRange(start, end, LocalizationService.currentLocale) : '';
         
         const infoRow = document.createElement('div');
         infoRow.className = 'oc-info-row';
@@ -80,7 +88,7 @@ export class OccasionCard {
         titleDiv.className = 'oc-title';
         titleDiv.textContent = occasion.title || '';
 
-        infoDiv.appendChild(dateDiv);
+        if (dateStr) infoDiv.appendChild(dateDiv);
         infoDiv.appendChild(titleDiv);
         infoRow.appendChild(infoDiv);
 

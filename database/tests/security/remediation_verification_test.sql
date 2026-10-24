@@ -17,7 +17,7 @@ BEGIN
     
     SELECT prosecdef, prosrc INTO rec, src
     FROM pg_proc 
-    WHERE proname = 'duplicate_occasion_client_sync_v1';
+    WHERE oid = 'public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)'::regprocedure;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Function duplicate_occasion_client_sync_v1 not found';

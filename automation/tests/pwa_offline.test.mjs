@@ -302,8 +302,12 @@ try {
   const rootNavigation = new Request('https://app.test/');
   Object.defineProperty(rootNavigation, 'mode', { value: 'navigate' });
   const rootResponse = await dispatchFetch(rootNavigation, 'updating-tab');
-  assert.equal(await rootResponse.text(), '<html>offline shell</html>',
-    'a forced-occasion tenant must never open the generic event list at /');
+  assert.equal(await rootResponse.text(), '<html>generic event list</html>',
+    'root must boot JS so a legacy scanner hash works without loading Flutter');
+  for (const route of ['/scan','/scan/SECRET','/scan/settings','/scan/history','/scan/offline','/scan/program/42','/login-qr','/event/check/42']) {
+    const request = new Request('https://app.test'+route); Object.defineProperty(request,'mode',{value:'navigate'});
+    assert.equal(await (await dispatchFetch(request,'updating-tab')).text(),'<html>generic event list</html>',route);
+  }
   const privacyNavigation = new Request('https://app.test/privacy');
   Object.defineProperty(privacyNavigation, 'mode', { value: 'navigate' });
   const privacyResponse = await dispatchFetch(privacyNavigation, 'updating-tab');
@@ -527,7 +531,8 @@ try {
     /activationCorsHeaders[\s\S]*?access-control-allow-origin[\s\S]*?access-control-allow-headers/,
     'activation responses must carry the public CORS contract',
   );
-  assert.match(sharedBuild, /cd web_client && npm ci && npm run build/);
+  assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile[\s\S]*cd web_client && pnpm run build/);
+  assert.match(sharedBuild, /optimize_web_fonts\.mjs build\/web[\s\S]*emit_version_manifest\.sh/);
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);
   assert.match(sharedBuild, /verify_web_build\.mjs/);

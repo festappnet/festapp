@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import '../ticket_layout/ticket_layout_saver.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
@@ -21,7 +22,6 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
@@ -52,6 +52,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   final _draftRevision = ValueNotifier<int>(0);
   Object get _draft => [
         _title,
+        _placeName,
         _linkController.text,
         _replyToEmailController.text,
         _from?.toIso8601String(),
@@ -84,7 +85,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
   // Form fields state
   late String? _title;
+  String? _placeName;
   late String? _linkValue;
+  String? _savedLink;
   DateTime? _from;
   DateTime? _to;
   late TextEditingController _linkController;
@@ -153,7 +156,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
     if (occasion == null) return;
 
     _title = occasion!.title;
+    _placeName = occasion!.data?[Tb.occasions.data_place_name] as String?;
     _linkValue = occasion!.link;
+    _savedLink = occasion!.link;
     _linkController.text = _linkValue ?? "";
     _from = occasion!.startTime;
     _to = occasion!.endTime;
@@ -239,6 +244,13 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           occasion!.data ??= {};
 
+          final placeName = _placeName?.trim() ?? '';
+          if (placeName.isEmpty) {
+            occasion!.data!.remove(Tb.occasions.data_place_name);
+          } else {
+            occasion!.data![Tb.occasions.data_place_name] = placeName;
+          }
+
           // Save Reply-To Email
           final trimmedEmail = _replyToEmailController.text.trim();
           if (trimmedEmail.isEmpty) {
@@ -252,6 +264,12 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
 
           // 5. Persist the changes to the database.
           await DbOccasions.updateOccasion(occasion!);
+          if (mounted)
+            setState(() {
+              _savedLink = occasion!.link;
+              _linkValue = occasion!.link;
+              _linkController.text = occasion!.link ?? "";
+            });
           _htmlSave.markSaved();
           _snapshot.accept(_draft);
 
@@ -274,6 +292,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         },
       );
     } catch (error) {
+      occasion?.link = _savedLink;
       final tickets = occasion!.features.whereType<TicketFeature>().toList();
       final layoutConflict =
           error.toString().contains('ticket_layout_conflict') ||
@@ -282,7 +301,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       if (mounted && layoutConflict) {
         final reload = await showDialog<bool>(
             context: context,
-            builder: (c) => AlertDialog(
+            builder: (c) => AppAlertDialog(
+                    onClose: () => Navigator.pop(c, false),
                     content: Text(TicketLayoutStrings.conflict),
                     actions: [
                       TextButton(
@@ -341,9 +361,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   Future<void> _confirmDelete() async {
     bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         insetPadding: const EdgeInsets.all(16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
         title: Text(OccasionSettingsStrings.deleteEvent),
         content: Text(OccasionSettingsStrings.deleteEventConfirmation),
         actions: [
@@ -462,6 +482,17 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: _placeName,
+                    enabled: isEditingEnabled,
+                    decoration: InputDecoration(
+                      labelText: OccasionSettingsStrings.placeName,
+                      helperText: OccasionSettingsStrings.placeNameHelp,
+                      helperMaxLines: 3,
+                    ),
+                    onSaved: (value) => _placeName = value,
+                  ),
+                  const SizedBox(height: 16),
                   Text(OccasionSettingsStrings.introImage),
                   const SizedBox(height: 8),
                   ImageArea(
@@ -474,11 +505,9 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                     onFileSelected: (file) async {
                       Uint8List imageData = await file.readAsBytes();
                       try {
-                        var compressedImageData =
-                            await ImageCompressionHelper.compress(
-                                imageData, 900);
                         final publicUrl = await DbImages.uploadImage(
-                            compressedImageData, occasion!.id, null);
+                            imageData, occasion!.id, null,
+                            profile: ImageUploadProfile.banner);
                         setState(() {
                           occasion!.data ??= {};
                           occasion!.data![Tb.occasions.data_image] = publicUrl;
@@ -572,6 +601,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                   const SizedBox(height: 16),
                   OccasionAdvancedSettings(
                     linkController: _linkController,
+                    savedLink: _savedLink,
                     replyToEmailController: _replyToEmailController,
                     selectedTimezone: _selectedTimezone,
                     allTimezones: _allTimezones,

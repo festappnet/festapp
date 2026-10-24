@@ -13,6 +13,10 @@ BUILD_WEB_DIR="$PROJECT_ROOT/build/web"
 WEB_CLIENT_DIST_DIR="$PROJECT_ROOT/web_client/dist"
 cd "$PROJECT_ROOT"
 
+# Every production build must reach the image service using this tenant's
+# actual domain and project, before compiling another unusable application.
+node automation/verify_image_service.mjs
+
 # Generated output must never retain content-hashed files from another tenant.
 rm -rf -- "$BUILD_WEB_DIR" "$WEB_CLIENT_DIST_DIR"
 
@@ -60,7 +64,10 @@ else
 fi
 
 "${FLUTTER_CMD[@]}" precache --web
-"${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run
+SETUP_ENABLED="$(sed -n 's/^OCCASION_SETUP_ENABLED=//p' automation/project.conf | tr -d '\r')"
+case "${SETUP_ENABLED:-false}" in true|false) ;; *) echo 'Invalid OCCASION_SETUP_ENABLED' >&2; exit 1 ;; esac
+"${FLUTTER_CMD[@]}" build web --dart-define="FESTAPP_OCCASION_SETUP=${SETUP_ENABLED:-false}" --release --base-href / --no-web-resources-cdn --no-wasm-dry-run
+node automation/optimize_web_fonts.mjs build/web automation/project.conf
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then
@@ -69,8 +76,14 @@ else
     mv build/web/index.html build/web/flutter.html
 fi
 
-(cd web_client && npm ci && npm run build)
+(cd web_client && pnpm install --frozen-lockfile)
+# Both direct deployment and GitHub Deploy use this shared build path.
+# Fail before publishing if restricted WebViews or built module identity regress.
+bash automation/test_web_startup.sh
+(cd web_client && pnpm run build)
 cp -R web_client/dist/. build/web/
+# The standalone organizer document shares the compiled tenant theme and fonts.
+node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
 
 if [ "$TARGET" = cloudflare ]; then
     mv build/web/index.html build/web/webclient

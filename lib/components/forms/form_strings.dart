@@ -2,11 +2,53 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String emailSuffixWarning(String suffix, {bool informal = false}) =>
+      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'
+          .tr(namedArgs: {'suffix': suffix});
+  static String get emailSuffixConfirm => 'EmailDomainSuffix.confirm'.tr();
+
+  static String get embedAction => 'FeatureFormSettings.embedAction'.tr();
+  static String get embedTitle => 'FeatureFormSettings.embedTitle'.tr();
+  static String get embedFallback => 'FeatureFormSettings.embedFallback'.tr();
+  static String get embedHelp => 'FeatureFormSettings.embedHelp'.tr();
+  static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
+  static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
+  static String get embedInheritStyle =>
+      'FeatureFormSettings.embedInheritStyle'.tr();
+  static String get embedInheritStyleHelp =>
+      'FeatureFormSettings.embedInheritStyleHelp'.tr();
+  static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
+
+  static String get savedPublicLink =>
+      'FeatureFormSettings.savedPublicLink'.tr();
+  static String get publicLinkPreview =>
+      'FeatureFormSettings.publicLinkPreview'.tr();
+  static String get automaticPublicLink =>
+      'FeatureFormSettings.automaticPublicLink'.tr();
+  static String get publicLinkHistoryHelp =>
+      'FeatureFormSettings.publicLinkHistoryHelp'.tr();
+  static String get formPaymentDefaultsHelp =>
+      'FeatureFormSettings.formPaymentDefaultsHelp'.tr();
+  static String get occasionPaymentDefaultsHelp =>
+      'FeatureFormSettings.occasionPaymentDefaultsHelp'.tr();
+  static String get remindersOn => 'FeatureFormSettings.remindersOn'.tr();
+  static String get remindersOff => 'FeatureFormSettings.remindersOff'.tr();
+  static String get nonNegativeDays =>
+      'FeatureFormSettings.nonNegativeDays'.tr();
+  static String inheritReminder(bool enabled) =>
+      'FeatureFormSettings.inheritReminder'
+          .tr(args: [enabled ? remindersOn : remindersOff]);
+  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'
+      .tr(args: [days % 1 == 0 ? days.toInt().toString() : days.toString()]);
+
   static String deletionReason(String? reason) =>
       'FormsFeature.deleteBlocked.${reason ?? 'unknown'}'.tr();
 
   static String saveError(Object error) {
     final message = error.toString();
+    if (message.contains('FORM_SELECTION_OPTIONS_REQUIRED')) {
+      return selectionOptionsRequired;
+    }
     for (final reason in [
       'responses',
       'orders',
@@ -125,6 +167,7 @@ class FormStrings {
       'FeatureFormSettings.typography'.tr(); // "Typography"
   static String get browseGoogleFonts =>
       'FeatureFormSettings.browseGoogleFonts'.tr(); // "Browse Google Fonts"
+  static String get fontLoadFailed => 'FeatureFormSettings.fontLoadFailed'.tr();
   static String get currentFont =>
       'FeatureFormSettings.currentFont'.tr(); // "Current Font: "
   static String get defaultFont =>
@@ -190,6 +233,12 @@ class FormStrings {
   static String get countdownDescription =>
       'FeatureFormSettings.countdownDescription'
           .tr(); // "Displayed before scheduled start time."
+  static String get labelShowBeforeStartMessage =>
+      'FeatureFormSettings.labelShowBeforeStartMessage'.tr();
+  static String get helperBeforeStartMessage =>
+      'FeatureFormSettings.helperBeforeStartMessage'.tr();
+  static String get labelBeforeStartMessage =>
+      'FeatureFormSettings.labelBeforeStartMessage'.tr();
   static String get labelCountdownMessage =>
       'FeatureFormSettings.labelCountdownMessage'.tr(); // "Countdown Message:"
   static String get labelClosedMessage =>
@@ -365,6 +414,8 @@ class FormStrings {
       'FormsFeature.newProduct'.tr(); // "New Product"
   static String get noProducts =>
       'FormsFeature.noProducts'.tr(); // "No Products"
+  static String get selectionOptionsRequired =>
+      'FormsFeature.selectionOptionsRequired'.tr();
   static String get noOptions => 'FormsFeature.noOptions'.tr(); // "No options"
   static String get options => 'FormsFeature.options'.tr(); // "Options"
   static String get productQuantity =>

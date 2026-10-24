@@ -1,6 +1,18 @@
 {
   "version": 1,
   "production": {
+    "delete-order": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/delete-order/delete_test.ts",
+        "supabase/functions/send-ticket-order/fakturoid_test.ts"
+      ],
+      "abusePolicy": [
+        "order.mutation"
+      ]
+    },
     "preview-ticket-layout": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
@@ -9,6 +21,9 @@
         "supabase/functions/preview-ticket-layout/preview_test.ts",
         "supabase/functions/preview-ticket-layout/products_test.ts",
         "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "abusePolicy": [
+        "ticket.preview"
       ]
     },
     "cancel-reception-registration": {
@@ -17,6 +32,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/cancel-reception-registration/cancel_test.ts"
+      ],
+      "abusePolicy": [
+        "reception.cancel"
       ]
     },
     "confirm-account-deletion": {
@@ -25,6 +43,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/confirm-account-deletion/completionNotification_test.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary"
       ]
     },
     "download-ticket": {
@@ -34,6 +55,9 @@
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
         "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "abusePolicy": [
+        "ticket.document"
       ]
     },
     "exchange-login-qr": {
@@ -41,7 +65,12 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/exchange-login-qr/exchange_test.ts"
+        "supabase/functions/exchange-login-qr/exchange_test.ts",
+        "supabase/functions/exchange-login-qr/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "qr.global",
+        "qr.proof"
       ]
     },
     "fetch-http-data": {
@@ -50,6 +79,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/fetch-http-data/safeFetch_test.ts"
+      ],
+      "abusePolicy": [
+        "image.fetch"
       ]
     },
     "fetch-transactions": {
@@ -58,6 +90,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
       ]
     },
     "generate-order-agreement": {
@@ -66,6 +101,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/generate-order-agreement/agreementConfig_test.ts"
+      ],
+      "abusePolicy": [
+        "ticket.document"
       ]
     },
     "notify": {
@@ -73,7 +111,13 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/notify/webhookAuth_test.ts"
+        "supabase/functions/notify/webhookAuth_test.ts",
+        "supabase/functions/notify/handler_test.ts",
+        "supabase/functions/notify/notificationPayload_test.ts"
+      ],
+      "abusePolicy": [
+        "push.delivery",
+        "push.dispatch"
       ]
     },
     "register": {
@@ -82,6 +126,10 @@
       ],
       "behaviorTests": [
         "supabase/functions/register/registrationFlow_test.ts"
+      ],
+      "abusePolicy": [
+        "unit.creation",
+        "email.auth"
       ]
     },
     "request-account-deletion": {
@@ -90,6 +138,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary"
       ]
     },
     "send-app-links": {
@@ -98,6 +149,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/send-app-links/test_app_links_delivery.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary"
       ]
     },
     "send-custom-email": {
@@ -106,6 +160,10 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "abusePolicy": [
+        "email.actor",
+        "email.ordinary"
       ]
     },
     "send-email": {
@@ -113,7 +171,11 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/send-email/deposit_templates_test.ts"
+        "supabase/functions/send-email/deposit_templates_test.ts",
+        "supabase/functions/send-email/cancellation_handler_test.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary"
       ]
     },
     "send-reset-password-link": {
@@ -122,6 +184,11 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "abusePolicy": [
+        "auth.reset.source",
+        "auth.reset.account",
+        "email.auth"
       ]
     },
     "send-sign-in-code": {
@@ -129,7 +196,11 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/invitationDelivery_test.ts"
+      ],
+      "abusePolicy": [
+        "email.auth"
       ]
     },
     "send-ticket-order": {
@@ -138,6 +209,10 @@
       ],
       "behaviorTests": [
         "supabase/functions/send-ticket-order/commandIdentity_test.ts"
+      ],
+      "abusePolicy": [
+        "order.creation",
+        "email.ordinary"
       ]
     },
     "send-tickets": {
@@ -147,6 +222,10 @@
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
         "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary",
+        "email.commitment"
       ]
     },
     "google-auth-start": {
@@ -157,6 +236,11 @@
         "supabase/functions/_shared/googleAuthFlow_test.ts",
         "supabase/functions/_shared/googleAuthProtocol_test.ts",
         "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "abusePolicy": [
+        "auth.google.global",
+        "auth.google.client",
+        "auth.google.source"
       ]
     },
     "google-auth-callback": {
@@ -167,6 +251,9 @@
         "supabase/functions/_shared/googleAuthFlow_test.ts",
         "supabase/functions/_shared/googleAuthProtocol_test.ts",
         "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "abusePolicy": [
+        "auth.google.proof"
       ]
     },
     "google-auth-complete": {
@@ -177,6 +264,10 @@
         "supabase/functions/_shared/googleAuthFlow_test.ts",
         "supabase/functions/_shared/googleAuthProtocol_test.ts",
         "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "abusePolicy": [
+        "auth.google.attempt",
+        "auth.google.proof"
       ]
     },
     "process-email-queue": {
@@ -185,6 +276,10 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/canonicalEmail_test.ts"
+      ],
+      "abusePolicy": [
+        "email.dispatch",
+        "existing-provider-fence"
       ]
     },
     "email-provider-events": {
@@ -194,6 +289,9 @@
       "behaviorTests": [
         "supabase/functions/_shared/canonicalEmail_test.ts",
         "supabase/functions/email-provider-events/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
       ]
     },
     "email-confirmation-status": {
@@ -202,6 +300,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/canonicalEmail_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
       ]
     },
     "auth-email-hook": {
@@ -211,6 +312,9 @@
       "behaviorTests": [
         "supabase/functions/auth-email-hook/content_test.ts",
         "supabase/functions/auth-email-hook/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "email.auth"
       ]
     },
     "report-exchange-rates": {
@@ -219,6 +323,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/report-exchange-rates/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
       ]
     },
     "bank-sync-manage": {
@@ -227,6 +334,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/bankSyncOperation_test.ts"
+      ],
+      "abusePolicy": [
+        "bank.operation"
       ]
     },
     "bank-sync-reconcile": {
@@ -236,6 +346,9 @@
       "behaviorTests": [
         "supabase/functions/_shared/bankSyncOperation_test.ts",
         "supabase/functions/_shared/bankSyncToken_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
       ]
     },
     "bank-sync-webhook": {
@@ -244,12 +357,86 @@
       ],
       "behaviorTests": [
         "supabase/functions/bank-sync-webhook/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "signed-inbox-idempotency",
+        "email.commitment"
       ]
+    },
+    "customer-order-access": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/customerOrderAccess_test.ts",
+        "supabase/functions/_shared/orderOverviewEmail_test.ts"
+      ],
+      "abusePolicy": [
+        "email.ordinary"
+      ]
+    },
+    "waitlist-commands": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/waitlistEmail_test.ts"
+      ],
+      "abusePolicy": [
+        "order.creation",
+        "email.ordinary"
+      ]
+    },
+    "occasion-setup-email-preview": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/occasion-setup-email-preview/preview_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
+      ]
+    },
+    "exchange-sign-in-code": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/exchange-sign-in-code/exchange_test.ts"
+      ],
+      "abusePolicy": [
+        "existing-contract-review"
+      ]
+    },
+    "prepare-ticket-batch-document": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/ticketBatchDocuments_test.ts",
+        "supabase/functions/_shared/ticketBatchExports_test.ts"
+      ],
+      "abusePolicy": [
+        "ticket.document",
+        "document.output"
+      ]
+    },
+    "notification-center-maintain": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/notificationCenterHealth_test.ts"
+      ],
+      "abusePolicy": []
     }
   },
   "excluded": {
     "instance-install": {
-      "reason": "Operator-only remote SQL installer is forbidden in the canonical production bundle.",
+      "reason": "Remote SQL installer source was removed; production bundle guards must continue rejecting its reintroduction.",
       "evidenceTests": [
         "automation/tests/hetzner_supabase_production_promotion.test.mjs"
       ]

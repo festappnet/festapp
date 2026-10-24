@@ -16,6 +16,8 @@ DECLARE
   v_old_payment_info_id bigint;
   v_order_id bigint;
 BEGIN
+  PERFORM public.check_bank_account_writable((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id));
+  PERFORM public.check_bank_account_writable((SELECT bank_account FROM eshop.payment_info WHERE id=p_payment_info_id));
   IF p_method IS NULL OR p_method !~ '^[a-z0-9_]{1,64}$' THEN
     RAISE EXCEPTION 'PAIRING_INVALID_METHOD';
   END IF;
@@ -30,6 +32,13 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_TRANSACTION_NOT_FOUND'; END IF;
   v_old_payment_info_id := v_transaction.payment_info;
 
+  IF p_actor_kind='user' THEN
+    FOR v_order_id IN SELECT id FROM eshop.orders
+      WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP
+      PERFORM public.check_order_is_mutable(v_order_id);
+    END LOOP;
+  END IF;
+
   IF v_old_payment_info_id IS NOT DISTINCT FROM p_payment_info_id THEN
     RETURN jsonb_build_object('status', 'unchanged', 'transaction_id', p_transaction_id,
       'payment_info_id', p_payment_info_id);
@@ -38,6 +47,7 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     SELECT * INTO v_target FROM eshop.payment_info WHERE id = p_payment_info_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_PAYMENT_INFO_NOT_FOUND'; END IF;
+    IF v_target.payment_method='stripe' THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
     IF upper(trim(v_transaction.currency::text)) <> upper(trim(v_target.currency_code::text)) THEN
       RAISE EXCEPTION 'PAIRING_CURRENCY_MISMATCH';
     END IF;
@@ -51,23 +61,13 @@ BEGIN
   UPDATE eshop.transactions SET payment_info = p_payment_info_id WHERE id = p_transaction_id;
 
   IF v_old_payment_info_id IS NOT NULL THEN
-    UPDATE eshop.payment_info pi SET
-      paid = COALESCE((SELECT sum(t.amount) FROM eshop.transactions t
-        WHERE t.payment_info = pi.id AND t.transaction_type IS DISTINCT FROM 'return'), 0),
-      returned = COALESCE((SELECT abs(sum(t.amount)) FROM eshop.transactions t
-        WHERE t.payment_info = pi.id AND t.transaction_type = 'return'), 0)
-    WHERE pi.id = v_old_payment_info_id;
+    PERFORM public.refresh_payment_info_totals_internal(v_old_payment_info_id);
     SELECT o.id INTO v_order_id FROM eshop.orders o WHERE o.payment_info = v_old_payment_info_id;
     IF v_order_id IS NOT NULL THEN PERFORM public.recalculate_order_payment_status(v_order_id); END IF;
   END IF;
 
   IF p_payment_info_id IS NOT NULL THEN
-    UPDATE eshop.payment_info pi SET
-      paid = COALESCE((SELECT sum(t.amount) FROM eshop.transactions t
-        WHERE t.payment_info = pi.id AND t.transaction_type IS DISTINCT FROM 'return'), 0),
-      returned = COALESCE((SELECT abs(sum(t.amount)) FROM eshop.transactions t
-        WHERE t.payment_info = pi.id AND t.transaction_type = 'return'), 0)
-    WHERE pi.id = p_payment_info_id;
+    PERFORM public.refresh_payment_info_totals_internal(p_payment_info_id);
     SELECT o.id INTO v_order_id FROM eshop.orders o WHERE o.payment_info = p_payment_info_id;
     IF v_order_id IS NOT NULL THEN PERFORM public.recalculate_order_payment_status(v_order_id); END IF;
   END IF;

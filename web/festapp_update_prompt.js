@@ -402,10 +402,16 @@
     document.body.appendChild(banner);
   }
 
-  async function activateWaitingFestappWorker(expectedVersion) {
+  async function activateWaitingFestappWorker(expectedVersion, automatic) {
     try {
       const ready = await getReadyWorkerForVersion(expectedVersion);
       if (!ready) return false;
+      // Installation can finish after the first usable frame. Readiness must
+      // be checked after asynchronous preparation, before changing controllers.
+      if (automatic && window.__FESTAPP_APP_READY__ === true) {
+        showUpdateBanner(expectedVersion, 'new-version');
+        return false;
+      }
       const registration = ready.registration;
       const candidate = ready.worker;
       if (candidate === registration.active &&
@@ -452,10 +458,18 @@
     }
   }
 
-  async function cutOverToVersion(latestVersion) {
+  async function cutOverToVersion(latestVersion, automatic = false) {
     if (!latestVersion) return false;
-    const ready = await activateWaitingFestappWorker(latestVersion);
+    if (window.festappScannerCanReload && !window.festappScannerCanReload()) return false;
+    const ready = await activateWaitingFestappWorker(latestVersion, automatic);
     if (!ready) return false;
+    // The application can also become usable during the controller handoff.
+    // Explicit Reload clicks still complete; background checks must yield.
+    if (automatic && window.__FESTAPP_APP_READY__ === true) {
+      showUpdateBanner(latestVersion, 'new-version');
+      return false;
+    }
+    if (window.festappScannerCanReload && !window.festappScannerCanReload()) return false;
     sessionStorage.setItem(cutoverStorageKey, latestVersion);
     window.location.reload();
     return true;
@@ -480,6 +494,7 @@
     console.warn('Festapp startup stalled; retrying from the network:', reason);
     sessionStorage.setItem(startupRecoveryStorageKey, currentVersion || '1');
     await prepareNetworkReload();
+    if (window.__FESTAPP_APP_READY__ === true) return false;
     window.location.reload();
     return true;
   }
@@ -578,7 +593,7 @@
             }
             return;
           }
-          if (await cutOverToVersion(currentVersion)) return;
+          if (await cutOverToVersion(currentVersion, true)) return;
         }
         sessionStorage.removeItem(cutoverStorageKey);
         sessionStorage.removeItem(cleanRecoveryStorageKey);
@@ -599,7 +614,7 @@
       // shell, so recover it automatically. Once Flutter is running, preserve
       // in-progress form edits and let the user choose when to reload.
       if (window.__FESTAPP_APP_READY__ !== true &&
-          await cutOverToVersion(latestVersion)) return;
+          await cutOverToVersion(latestVersion, true)) return;
       showUpdateBanner(latestVersion, 'new-version');
     } catch (error) {
       console.warn('Festapp version check failed:', error);

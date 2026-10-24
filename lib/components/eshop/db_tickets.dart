@@ -5,13 +5,12 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/ticket_commands.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app_config.dart';
@@ -46,11 +45,9 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
-  static Future<TicketCancellationOutcome> stornoTicket(int ticketId) =>
-      stornoTickets([ticketId]);
-
   /// One canonical mutation for the complete selection, including email outcomes.
-  static Future<TicketCancellationOutcome> stornoTickets(List<int> ticketIds) async {
+  static Future<TicketCancellationOutcome> stornoTickets(
+      List<int> ticketIds) async {
     if (ticketIds.isEmpty) return const TicketCancellationOutcome();
     return _commands.cancel(ticketIds);
   }
@@ -280,17 +277,8 @@ class DbTickets {
     int spotId1,
     int spotId2,
   ) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.swapSpots(spotId1, spotId2);
-      return;
-    }
-    await _supabase.rpc(
-      'swap_spot_tickets',
-      params: {
-        'spot_id_1': spotId1,
-        'spot_id_2': spotId2,
-      },
-    );
+    await _commands.swapSpots(spotId1, spotId2);
+    return;
   }
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(

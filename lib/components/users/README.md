@@ -95,3 +95,15 @@ and send the original address separately as `email_delivery`. Ticket imports
 use `allocate_user_sign_in_email` for the same rule. User-account email delivery
 must resolve through `get_user_delivery_email`; it must not traverse orders or
 send to the organization-prefixed Auth email.
+
+## Invitation delivery
+
+`send-sign-in-code` enqueues through the canonical email queue. Only provider
+acceptance returns `sent`; an acceptance timeout returns HTTP 202 / `queued`
+with the committed message identity. The queue owns delivery retries during
+provider outages. Each recipient keeps one request ID across transport retries
+and queued checks, preserving the existing password/code intent. Explicit retry
+after failure starts a new request; SQL joins unresolved messages before creating
+a replacement for a terminal failure.
+The batch dialog retains separate sent, queued and failed outcomes and excludes
+confirmed recipients from retries. Queued is never shown as completed delivery.

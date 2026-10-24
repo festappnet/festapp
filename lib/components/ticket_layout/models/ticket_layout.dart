@@ -37,11 +37,13 @@ const ticketBindings = [
   'qr',
   'ticketSymbol',
   'spotGroup',
-  'food',
+  'productType',
   'note',
   'price',
   'occasionTitle',
   'occasionDatePlace',
+  'occasionStartTime',
+  'occasionPlace',
   'orderName',
   'logo',
   'footer'
@@ -52,12 +54,16 @@ Map<String, dynamic> copyTicketJson(Map value) =>
 class TicketElement {
   final String id, binding, color, align;
   final String? fontId;
+  final int? productTypeId;
+  final String? label;
   final Rect box;
   final bool visible, locked, bold, italic, underline;
   final double fontSize, minFontSize;
   final int maxLines;
   const TicketElement(
       {this.fontId,
+      this.productTypeId,
+      this.label,
       required this.id,
       required this.binding,
       required this.box,
@@ -75,6 +81,8 @@ class TicketElement {
     final b = j['box'] as Map, s = j['style'] as Map;
     return TicketElement(
         fontId: s['fontId'],
+        productTypeId: j['productTypeId'],
+        label: j['label'],
         id: j['id'],
         binding: j['binding'],
         box: Rect.fromLTWH(
@@ -96,6 +104,8 @@ class TicketElement {
   Map<String, dynamic> toJson() => {
         'id': id,
         'binding': binding,
+        if (productTypeId != null) 'productTypeId': productTypeId,
+        if (label != null) 'label': label,
         'box': boxJson(box),
         'visible': visible,
         'locked': locked,
@@ -112,7 +122,9 @@ class TicketElement {
         }
       };
   TicketElement copyWith(
-          {String? fontId,
+          {int? productTypeId,
+          String? label,
+          String? fontId,
           bool resetFont = false,
           Rect? box,
           bool? visible,
@@ -125,6 +137,8 @@ class TicketElement {
           String? align,
           int? maxLines}) =>
       TicketElement(
+          productTypeId: productTypeId ?? this.productTypeId,
+          label: label ?? this.label,
           fontId: resetFont ? null : fontId ?? this.fontId,
           id: id,
           binding: binding,
@@ -148,6 +162,8 @@ class TicketTemplate {
   final Map<String, dynamic> appearance;
   String? get fontId => appearance['fontId'] as String?;
   String get font => appearance['font'] as String? ?? 'futura';
+  List<String>? get canvasGradient =>
+      (appearance['canvasGradient'] as List?)?.cast<String>();
   String get canvasColor => appearance['canvasColor'] as String? ?? 'E6E6E6';
   double get canvasOpacity => canvasColor == 'transparent'
       ? 0
@@ -166,7 +182,7 @@ class TicketTemplate {
   Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
   List<TicketElement> positionedElements(Map<String, String?> data) {
     final flow = (appearance['flow'] as List? ?? const [])
-        .map((b) => elements.where((e) => e.binding == b).firstOrNull)
+        .map((b) => elements.where((e) => e.id == b).firstOrNull)
         .whereType<TicketElement>()
         .toList();
     final positions = <String, TicketElement>{};
@@ -174,7 +190,7 @@ class TicketTemplate {
     for (var i = 0; i < flow.length; i++) {
       final e = flow[i];
       positions[e.id] = e.copyWith(box: e.box.shift(Offset(0, -shift)));
-      if (!e.visible || (data[e.binding]?.isEmpty ?? true)) {
+      if (!e.visible || (data[e.id]?.isEmpty ?? true)) {
         shift += (appearance['flowStep'] as num?)?.toDouble() ?? e.box.height;
       }
     }
@@ -224,6 +240,7 @@ class TicketTemplate {
             'qrAppearance',
             'backgroundTransform',
             'backgroundCrop',
+            'canvasGradient',
             'canvasColor',
             'canvasOpacity',
             'pageMargin',
@@ -351,6 +368,18 @@ class TicketTemplate {
             legacyTicketFontIds[value] ?? value ?? legacyTicketFontIds['futura']
       },
       elements: elements);
+  TicketTemplate withElements(List<TicketElement> next) => TicketTemplate(
+      fitPageToTicket: fitPageToTicket,
+      appearance: {
+        ...appearance,
+        if (appearance['flow'] is List)
+          'flow': (appearance['flow'] as List)
+              .where((id) => next.any((e) => e.id == id))
+              .toList()
+      },
+      page: page,
+      area: area,
+      elements: next);
   TicketTemplate replace(TicketElement e) => TicketTemplate(
       fitPageToTicket: fitPageToTicket,
       appearance: appearance,
@@ -362,9 +391,13 @@ class TicketTemplate {
   TicketTemplate resizeCanvasArea(Size size,
       {Size? backgroundImage, Offset origin = Offset.zero}) {
     final bounds = origin & size;
-    if (size == area.size && origin == Offset.zero &&
-        elements.every((e) => e.box.left >= 0 && e.box.top >= 0 &&
-            e.box.right <= size.width && e.box.bottom <= size.height)) return this;
+    if (size == area.size &&
+        origin == Offset.zero &&
+        elements.every((e) =>
+            e.box.left >= 0 &&
+            e.box.top >= 0 &&
+            e.box.right <= size.width &&
+            e.box.bottom <= size.height)) return this;
     final required =
         elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
     if (!size.width.isFinite ||
@@ -475,6 +508,12 @@ class TicketTemplate {
             (appearance['canvasOpacity'] as num) < 0 ||
             (appearance['canvasOpacity'] as num) > 1))
       errors.add('canvasOpacity');
+    if (appearance.containsKey('canvasGradient') &&
+        (appearance['canvasGradient'] is! List ||
+            canvasGradient!.length != 2 ||
+            canvasGradient!
+                .any((c) => !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(c))))
+      errors.add('canvasGradient');
     if (appearance.containsKey('canvasColor') &&
         (appearance['canvasColor'] is! String ||
             (canvasColor != 'transparent' &&
@@ -533,19 +572,29 @@ class TicketTemplate {
     if (!pageValid ||
         !inside(area, page) ||
         elements.length < 2 ||
-        elements.length > 11) {
+        elements.length > 32) {
       errors.add('geometry');
     }
     if (!['futura', 'robotoSlab', 'roboto', 'russoOne'].contains(font))
       errors.add('font');
     final ids = <String>{}, bindings = <String>{};
+    final productIds = <int>{};
     TicketElement? qr;
     for (final e in elements) {
+      if (e.binding == 'productType') {
+        if (e.productTypeId == null ||
+            e.productTypeId! <= 0 ||
+            e.productTypeId! > 9007199254740991 ||
+            !productIds.add(e.productTypeId!) ||
+            e.label == null ||
+            e.label != e.label!.trim() ||
+            e.label!.runes.length > 120) errors.add(e.id);
+      } else if (e.productTypeId != null || e.label != null) errors.add(e.id);
       if (!validFont(e.fontId) ||
           (e.fontId != null && ['qr', 'logo'].contains(e.binding)) ||
           !ids.add(e.id) ||
           !RegExp(r'^[a-zA-Z0-9_-]{1,40}$').hasMatch(e.id) ||
-          !bindings.add(e.binding) ||
+          (e.binding != 'productType' && !bindings.add(e.binding)) ||
           !ticketBindings.contains(e.binding) ||
           !inside(e.box, area.size) ||
           !e.fontSize.isFinite ||
@@ -573,6 +622,13 @@ class TicketTemplate {
         }
       }
     }
+    final flow = appearance['flow'];
+    if (flow != null &&
+        (flow is! List ||
+            flow.toSet().length != flow.length ||
+            flow.any((id) => !elements.any(
+                (e) => e.id == id && !['qr', 'logo'].contains(e.binding)))))
+      errors.add('flow');
     if (!bindings.containsAll(['qr', 'ticketSymbol'])) errors.add('required');
     if (qr != null) {
       for (final e in elements) {
@@ -587,13 +643,32 @@ class TicketTemplate {
   }
 }
 
+// PostgreSQL jsonb text adds separator spaces outside strings. Count those
+// bytes too, so the editor's bound agrees with persisted layout validation.
+int ticketLayoutByteSize(Map<String, dynamic> layout) {
+  int spacing(Object? value) {
+    if (value is Map)
+      return value.length +
+          math.max(0, value.length - 1).toInt() +
+          value.values.fold<int>(0, (sum, v) => sum + spacing(v));
+    if (value is List)
+      return math.max(0, value.length - 1).toInt() +
+          value.fold<int>(0, (sum, v) => sum + spacing(v));
+    return 0;
+  }
+
+  return utf8.encode(jsonEncode(layout)).length + spacing(layout);
+}
+
 void validateTicketLayout(Map<String, dynamic> layout,
     {Set<String>? allowedFontIds}) {
-  if (utf8.encode(jsonEncode(layout)).length > 32768) {
+  if (ticketLayoutByteSize(layout) > 32768) {
     throw const FormatException('Layout too large');
   }
+  if (layout.keys.any((k) => !['schemaVersion', 'templates'].contains(k)))
+    throw const FormatException('Invalid layout metadata');
   final version = layout['schemaVersion'];
-  if (version != 1 && version != 2) {
+  if (version != 3) {
     throw const FormatException('Unsupported ticket layout');
   }
   final templates = layout['templates'] as Map;
@@ -604,16 +679,42 @@ void validateTicketLayout(Map<String, dynamic> layout,
   final ids = <String>{};
   for (final entry in templates.entries) {
     final raw = entry.value as Map;
-    if (version == 2 && raw.containsKey('font')) {
+    if (raw.keys.any((k) => ![
+          'canvasGradient',
+          'canvasColor',
+          'canvasOpacity',
+          'backgroundCrop',
+          'pageMargin',
+          'backgroundTransform',
+          'fontId',
+          'flow',
+          'flowStep',
+          'qrAppearance',
+          'border',
+          'pageFit',
+          'page',
+          'ticketArea',
+          'elements'
+        ].contains(k)))
+      throw const FormatException('Invalid template metadata');
+    if (version == 3 && raw.containsKey('font')) {
       throw const FormatException('Legacy font field in schema 2');
+    }
+    for (final element in raw['elements'] as List) {
+      if ((element as Map).keys.any((k) => ![
+            'id',
+            'binding',
+            'productTypeId',
+            'label',
+            'box',
+            'visible',
+            'locked',
+            'style'
+          ].contains(k)))
+        throw const FormatException('Invalid element metadata');
     }
     final styles =
         (raw['elements'] as List).map((e) => (e as Map)['style'] as Map);
-    if (version == 1 &&
-        (raw.containsKey('fontId') ||
-            styles.any((s) => s.containsKey('fontId')))) {
-      throw const FormatException('Font fields require schema 2');
-    }
     if ((raw.containsKey('fontId') && raw['fontId'] is! String) ||
         styles.any((s) => s.containsKey('fontId') && s['fontId'] is! String)) {
       throw const FormatException('Invalid font');
@@ -624,9 +725,6 @@ void validateTicketLayout(Map<String, dynamic> layout,
     }
     final fonts =
         [t.fontId, ...t.elements.map((e) => e.fontId)].whereType<String>();
-    if (version == 1 && fonts.isNotEmpty) {
-      throw const FormatException('Font fields require schema 2');
-    }
     if (allowedFontIds != null &&
         fonts.any((id) => !allowedFontIds.contains(id))) {
       throw const FormatException('Unknown font');
@@ -636,13 +734,7 @@ void validateTicketLayout(Map<String, dynamic> layout,
   if (ids.length > 12) throw const FormatException('Too many fonts');
 }
 
-Map<String, dynamic> upgradeTicketLayout(Map<String, dynamic> layout) {
-  final result = copyTicketJson(layout);
-  result['schemaVersion'] = 2;
-  for (final value in (result['templates'] as Map).values) {
-    final t = value as Map;
-    t['fontId'] ??= legacyTicketFontIds[t['font'] ?? 'futura'];
-    t.remove('font');
-  }
-  return result;
+Map<String, dynamic> ticketLayoutDocument(Map<String, dynamic> layout) {
+  validateTicketLayout(layout);
+  return copyTicketJson(layout);
 }

@@ -1,0 +1,10 @@
+- alertdialog "ZavřítFotkaPřetáhněte soubor sem nebo klikněte pro nahráníMedailonekUpravitStornoUložit" [ref=e1] focusable [tabindex]
+  - button "Zavřít" [ref=e4]
+  - switch "Skrýt" [checked=false, ref=e5]
+  - textbox "Jméno" [ref=e8]: Eva QA - neuložená změna
+  - textbox "Role / tituly" [ref=e9]
+  - button "Přetáhněte soubor sem nebo klikněte pro nahrání" [ref=e6]
+  - button "Upravit" [ref=e7]
+  - textbox "Pořadí" [ref=e10]
+  - button "Storno" [ref=e2]
+  - button "Uložit" [ref=e3]

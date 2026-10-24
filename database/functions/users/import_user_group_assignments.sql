@@ -1,4 +1,3 @@
-DROP FUNCTION IF EXISTS public.import_user_group_assignments(bigint, jsonb);
 
 CREATE OR REPLACE FUNCTION public.import_user_group_assignments_internal_v1(
     p_occasion_id bigint,
@@ -99,10 +98,10 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.import_user_group_assignments(
-    p_occasion_id bigint,
-    p_assignments jsonb
-) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.import_user_group_assignments_internal_v1(
-    p_occasion_id,p_assignments);
-$$;
+REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.import_user_group_assignments(p_occasion_id bigint,p_assignments jsonb)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN PERFORM public.replace_group_assignments_client_sync_v1(p_occasion_id,extensions.gen_random_uuid(),p_assignments); EXCEPTION WHEN insufficient_privilege THEN RAISE EXCEPTION 'NOT_AUTHORIZED';
+END $$;
+REVOKE ALL ON FUNCTION public.import_user_group_assignments(bigint,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.import_user_group_assignments(bigint,jsonb) TO authenticated;

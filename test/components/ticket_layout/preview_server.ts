@@ -3,9 +3,12 @@
 import { PDFDocument } from 'npm:pdf-lib';
 import { serveDir } from 'jsr:@std/http/file-server';
 import { handlePreview } from '../../../supabase/functions/preview-ticket-layout/handler.ts';
-import { fontBytes, fontMetrics } from '../../../supabase/functions/_shared/ticketGeneration.ts';
+import { fontMetrics } from '../../../supabase/functions/_shared/ticketFonts.ts';
+import {loadLayoutResources} from '../../../supabase/functions/_shared/ticketGeneration.ts';
+import {galleryBackground} from '../../../supabase/functions/_shared/ticketGallery.ts';
+import {indexProductCatalog} from '../../../supabase/functions/_shared/ticketRenderData.ts';
 const root = Deno.args[0] ?? '/tmp/festapp-ticket-editor-web';
-const font = await fontBytes(), metrics = fontMetrics(font);
+const font = await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf'), metrics = fontMetrics(font);
 const catalog = JSON.parse(await Deno.readTextFile('test/fixtures/ticket_layout/historical/catalog.json'));
 const images = new Map<string, Uint8Array>();
 for (const item of catalog) if (item.image) {
@@ -43,12 +46,17 @@ Deno.serve({ hostname: '127.0.0.1', port: 8769 }, async req => {
     if (origin && origin !== url.origin) return new Response('Invalid origin', { status: 403 });
     if (req.method !== 'POST' || !req.headers.get('content-type')?.startsWith('application/json')) return new Response('JSON POST required', { status: 405 });
     return await handlePreview(req, {
-      authorize: async (header, id) => header === 'Bearer local-preview' && id === 1,
+      authorize: async (header, id) => header === 'Bearer local-preview' && id === 1
+        ? {abuseLimits: {'document.input.bytes': 40000, 'document.asset.bytes': 4000000,
+            'document.output.bytes': 16000000, 'document.output.pages': 10}} : false,
       occasion: async () => ({id:1, title:'Slavnostní večer', start_time:'2026-11-20T18:00:00Z', data:{place_name:'Společenský sál'}, features:[]}),
+      products:async()=>indexProductCatalog({product_types:[{id:123,occasion:1,title:'VIP menu',offered:true,referenced:true},{id:124,occasion:1,title:'Odvoz po skončení slavnostního programu - velmi dlouhý název skupiny pro zkoušku úzkého panelu',offered:true,referenced:true}],products:[{id:22,product_type:123,title:'VIP menu',data:{short_title:'Řízek'},price:170,currency_code:'CZK'},{id:23,product_type:124,title:'Autobus',price:50,currency_code:'CZK'}]},1),
       resources: async (_occasion, feature) => {
-        const background = feature.background ? images.get(feature.background) : undefined;
+        const background = feature.background
+          ? images.get(feature.background) ?? await galleryBackground(feature.background)
+          : undefined;
         if (feature.background && !background) throw new Error('Unknown local background');
-        return {font, metrics, background};
+        return {...await loadLayoutResources(_occasion,{...feature,background:null}),background};
       },
     });
   }

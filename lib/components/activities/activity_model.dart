@@ -346,6 +346,8 @@ class ActivityAssignmentModel {
 }
 
 class EditDataBundle {
+  int? autosaveHistoryId;
+  DateTime? autosaveCreatedAt;
   int? id;
   int? parentHistoryId;
   int aggregateVersion;
@@ -359,6 +361,8 @@ class EditDataBundle {
   List<ActivityAssignmentModel>? activityAssignments;
 
   EditDataBundle({
+    this.autosaveHistoryId,
+    this.autosaveCreatedAt,
     this.events,
     this.places,
     this.activities,

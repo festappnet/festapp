@@ -1,16 +1,14 @@
+import '../support/fixtures/root_supabase_fixture.dart';
+import '../support/fixtures/local_app_storage_fixture.dart';
+import '../support/fixtures/rights_context_fixture.dart';
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 void main() {
@@ -20,32 +18,25 @@ void main() {
       () async {
     const userId = '00000000-0000-4000-8000-000000000001';
     final requests = <String>[];
-    final storage =
-        Directory.systemTemp.createTempSync('festapp-auth-context-');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-            const MethodChannel('plugins.flutter.io/path_provider'),
-            (_) async => storage.path);
-    SharedPreferences.setMockInitialValues({});
+    tz.initializeTimeZones();
+    final state = RightsContextFixture();
+    addTearDown(state.dispose);
+    final storage = await LocalAppStorageFixture.open();
+    addTearDown(storage.dispose);
     FlutterSecureStorage.setMockInitialValues({});
+    addTearDown(() => const FlutterSecureStorage().deleteAll());
     PackageInfo.setMockInitialValues(
         appName: 'test',
         packageName: 'test',
         version: '1',
         buildNumber: '1',
         buildSignature: '');
-    tz.initializeTimeZones();
     final token =
         '${base64Url.encode(utf8.encode('{}'))}.${base64Url.encode(utf8.encode(jsonEncode({
           'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
           'sub': userId
         })))}.signature';
-    await Supabase.initialize(
-      url: 'https://fixture.invalid',
-      anonKey: 'fixture',
-      authOptions: const FlutterAuthClientOptions(
-          autoRefreshToken: false, localStorage: EmptyLocalStorage()),
-      httpClient: MockClient((request) async {
+    final fixture = await RootSupabaseFixture.open((request) async {
         requests.add(request.url.path);
         if (request.url.path == '/auth/v1/token') {
           return http.Response(
@@ -97,9 +88,9 @@ void main() {
         }
         return http.Response('{}', 200,
             request: request, headers: {'content-type': 'application/json'});
-      }),
-    );
-    try {
+    });
+    addTearDown(fixture.dispose);
+    {
       RightsService.occasionLinkModelNotifier.value = null;
       await AuthService.completeExternalLogin({
         'organization': AppConfig.organization,
@@ -115,9 +106,6 @@ void main() {
           [980, 981]);
       expect(RightsService.occasionLinkModel?.organization?.title,
           'Authenticated organization');
-    } finally {
-      await Supabase.instance.dispose();
-      storage.deleteSync(recursive: true);
     }
   });
 }

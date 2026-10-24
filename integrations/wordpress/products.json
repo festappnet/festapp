@@ -1,0 +1,28 @@
+[
+  {
+    "slug": "vstupenky-online",
+    "name": "vstupenky.online",
+    "namespace": "VstupenkyOnline",
+    "shortcode": "vstupenky_online",
+    "editor_global": "vstupenkyOnlineEditor",
+    "dev_constant": "VSTUPENKY_ONLINE_DEV_ORIGIN",
+    "origin": "https://vstupenky.online",
+    "login_url": "https://vstupenky.online/login",
+    "offer_url": "https://vstupenky.online/pro-poradatele",
+    "version": "1.0.0",
+    "market": "Czech"
+  },
+  {
+    "slug": "festapp-tickets",
+    "name": "Festapp Tickets",
+    "namespace": "FestappTickets",
+    "shortcode": "festapp_tickets",
+    "editor_global": "festappTicketsEditor",
+    "dev_constant": "FESTAPP_TICKETS_DEV_ORIGIN",
+    "origin": "https://tickets.festapp.net",
+    "login_url": "https://tickets.festapp.net/login",
+    "offer_url": "https://tickets.festapp.net/",
+    "version": "1.0.0",
+    "market": "international"
+  }
+]

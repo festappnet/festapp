@@ -1,0 +1,888 @@
+{
+  "version": 1,
+  "status": "in-progress",
+  "sourceHead": "eb23047248d59bf86345b9e0b79db4a988275231",
+  "mainAtStart": "9638008fe4bbf735bfb7b417fd1113582ec8a581",
+  "operations": [
+    {
+      "operation": "occasion.create",
+      "budget": "occasion.creation",
+      "source": "database/functions/others/create_occasion_domain_command_internal_v1.sql",
+      "admission": "admit_occasion_creation_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "occasion.duplicate",
+      "budget": "occasion.creation",
+      "source": "database/functions/others/duplicate_occasion_client_sync_v1.sql",
+      "admission": "admit_occasion_creation_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "occasion.setup.finalize",
+      "budget": "occasion.creation",
+      "source": "database/functions/occasion_setup/finalize.sql",
+      "admission": "admit_occasion_creation_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "occasion.draft",
+      "budget": "occasion.draft",
+      "source": "database/functions/occasion_setup/drafts.sql",
+      "admission": "admit_occasion_draft_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "unit.manual",
+      "budget": "unit.creation",
+      "source": "database/functions/units/create_unit_and_assign_manager.sql",
+      "admission": "admit_unit_creation_v1",
+      "evidence": "database/tests/abuse/unit_creation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "unit.registration",
+      "budget": "unit.creation",
+      "source": "database/functions/users/initialize_registration_unit_v1.sql",
+      "admission": "admit_unit_creation_v1",
+      "evidence": "database/tests/abuse/unit_creation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "email.enqueue",
+      "budget": "email.ordinary",
+      "source": "database/functions/emails/email_queue.sql",
+      "admission": "admit_email_intent_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "order.allocate",
+      "budget": "order.creation",
+      "source": "database/functions/eshop_waitlist/tickets.sql",
+      "admission": "admit_order_creation_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "bank.operation",
+      "budget": "bank.operation",
+      "source": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "spot.hold",
+      "budget": "spot.hold",
+      "source": "database/functions/eshop/select_spot.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/hold_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "auth.attempt",
+      "budget": "auth.*",
+      "source": "database/functions/abuse/auth.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/concurrency.test.mjs",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "qr.exchange",
+      "budget": "qr.*",
+      "source": "database/functions/abuse/qr.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "supabase/functions/exchange-login-qr/handler_test.ts",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "image.upload",
+      "budget": "image.upload",
+      "source": "database/functions/abuse/media.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "workers/image-worker/tests/unit/image-tenant-contract.test.ts",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "image.external-fetch",
+      "budget": "image.fetch",
+      "source": "database/functions/abuse/media.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "supabase/functions/fetch-http-data/handler_test.ts",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "ticket.document",
+      "budget": "ticket.document",
+      "source": "database/functions/abuse/documents.sql",
+      "admission": "admit_ticket_document_internal_v1",
+      "evidence": "database/tests/abuse/documents_bank_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "ticket.preview",
+      "budget": "ticket.preview",
+      "source": "database/functions/abuse/documents.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/documents_bank_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "occasion.import",
+      "budget": "retired",
+      "source": "database/functions/synchronization/sync_source_via_http.sql",
+      "admission": "require_service_role",
+      "evidence": "docs/security/abuse-implementation-2026-10-16.md",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "status": "retired - zero canonical sources/maps/jobs, unbounded HTTP writer fails before IO"
+    },
+    {
+      "operation": "organization.bootstrap",
+      "budget": "organization.creation",
+      "source": "database/functions/seed/seed_org_with_admin.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/unit_creation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "scan.read",
+      "budget": "scan.operation",
+      "source": "database/functions/eshop_orders/scan_ticket.sql",
+      "admission": "admit_scan_access_v1",
+      "evidence": "database/tests/abuse/scan_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "scan.export",
+      "budget": "scan.export",
+      "source": "database/functions/eshop_orders/get_all_tickets_for_scan.sql",
+      "admission": "admit_scan_access_v1",
+      "evidence": "database/tests/abuse/scan_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "scan.mark",
+      "budget": "scan.operation",
+      "source": "database/functions/eshop_orders/update_ticket_to_used.sql",
+      "admission": "admit_scan_access_v1",
+      "evidence": "database/tests/abuse/scan_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "order.cancel",
+      "budget": "order.mutation",
+      "source": "database/functions/eshop_orders/storno_order_client_sync_v1.sql",
+      "admission": "admit_order_mutation_v1",
+      "evidence": "database/tests/abuse/order_mutation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "order.cancel.tickets",
+      "budget": "order.mutation",
+      "source": "database/functions/eshop_orders/storno_tickets_client_sync_v1.sql",
+      "admission": "admit_order_mutation_v1",
+      "evidence": "database/tests/abuse/order_mutation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "order.delete",
+      "budget": "order.mutation",
+      "source": "database/functions/eshop_orders/delete_order_client_sync_v1.sql",
+      "admission": "admit_order_mutation_v1",
+      "evidence": "database/tests/abuse/order_mutation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "push.publish",
+      "budget": "push.delivery",
+      "source": "database/functions/news/publish_news_client_sync_v1.sql",
+      "admission": "charge_notification_intent_v1",
+      "evidence": "database/tests/abuse/push_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "cleaning.report",
+      "budget": "cleaning.report",
+      "source": "database/functions/cleaning/report_cleaning_issue.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/cleaning_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "image.record",
+      "budget": "image.records",
+      "source": "database/functions/others/add_image_record.sql",
+      "admission": "admit_image_record_v1",
+      "evidence": "database/tests/abuse/image_records_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "auth.password.verify",
+      "budget": "auth.password",
+      "source": "database/functions/abuse/auth.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/password_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "auth.password.change",
+      "budget": "auth.password.change",
+      "source": "database/functions/users/reset_user_password.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/password_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "image.storage",
+      "budget": "image.storage",
+      "source": "database/functions/abuse/media.sql",
+      "admission": "abuse_charge_v1",
+      "evidence": "database/tests/abuse/image_capacity_project_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
+    }
+  ],
+  "edgeFunctions": [
+    {
+      "name": "auth-email-hook",
+      "path": "supabase/functions/auth-email-hook/index.ts",
+      "policies": [
+        "email.auth"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/auth-email-hook/content_test.ts",
+        "supabase/functions/auth-email-hook/handler_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "bank-sync-manage",
+      "path": "supabase/functions/bank-sync-manage/index.ts",
+      "policies": [
+        "bank.operation"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "bank-sync-reconcile",
+      "path": "supabase/functions/bank-sync-reconcile/index.ts",
+      "policies": [
+        "existing-contract-review"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/bankSyncOperation_test.ts",
+        "supabase/functions/_shared/bankSyncToken_test.ts"
+      ],
+      "reason": "Service-only recovery of existing fenced operation intents; live scheduler and outbound retry frequency need reconciliation."
+    },
+    {
+      "name": "bank-sync-webhook",
+      "path": "supabase/functions/bank-sync-webhook/index.ts",
+      "policies": [
+        "signed-inbox-idempotency",
+        "email.commitment"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/bank-sync-webhook/handler_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "cancel-reception-registration",
+      "path": "supabase/functions/cancel-reception-registration/index.ts",
+      "policies": [
+        "reception.cancel"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/cancel-reception-registration/cancel_test.ts"
+      ],
+      "reason": "Existing SQL cancellation command charges the shared actor budget after authorization/replay; completed cancellation returns without reminting or revoking another session."
+    },
+    {
+      "name": "confirm-account-deletion",
+      "path": "supabase/functions/confirm-account-deletion/index.ts",
+      "policies": [
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/confirm-account-deletion/completionNotification_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "customer-order-access",
+      "path": "supabase/functions/customer-order-access/index.ts",
+      "policies": [
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/customerOrderAccess_test.ts",
+        "supabase/functions/_shared/orderOverviewEmail_test.ts"
+      ],
+      "reason": "Existing SQL capability/command authorization and the shared email admission apply; producer pre-render paths and ingress remain in the reconciliation scope."
+    },
+    {
+      "name": "delete-order",
+      "path": "supabase/functions/delete-order/index.ts",
+      "policies": [
+        "order.mutation"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/delete-order/delete_test.ts"
+      ],
+      "reason": "User-authorized deletion delegates to the canonical receipted SQL command; explicit invoice deletion retains its fenced provider workflow and authorized replay recovery."
+    },
+    {
+      "name": "download-ticket",
+      "path": "supabase/functions/download-ticket/index.ts",
+      "policies": [
+        "ticket.document"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "email-confirmation-status",
+      "path": "supabase/functions/email-confirmation-status/index.ts",
+      "policies": [
+        "existing-contract-review"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/canonicalEmail_test.ts"
+      ],
+      "reason": "Read-only capability status; bounded response and no enqueue. Capability polling frequency remains an ingress check."
+    },
+    {
+      "name": "email-provider-events",
+      "path": "supabase/functions/email-provider-events/index.ts",
+      "policies": [
+        "existing-contract-review"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/canonicalEmail_test.ts",
+        "supabase/functions/email-provider-events/handler_test.ts"
+      ],
+      "reason": "Signed provider feedback with existing batch validation and event dedupe; ingress origin and sustained feedback volume remain operational checks."
+    },
+    {
+      "name": "exchange-login-qr",
+      "path": "supabase/functions/exchange-login-qr/index.ts",
+      "policies": [
+        "qr.global",
+        "qr.proof"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/exchange-login-qr/exchange_test.ts",
+        "supabase/functions/exchange-login-qr/handler_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "fetch-http-data",
+      "path": "supabase/functions/fetch-http-data/index.ts",
+      "policies": [
+        "image.fetch"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/fetch-http-data/safeFetch_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "fetch-transactions",
+      "path": "supabase/functions/fetch-transactions/index.ts",
+      "policies": [
+        "existing-contract-review"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "reason": "Existing authorized bank operations; reconcile service consumption and account scope against the active integration."
+    },
+    {
+      "name": "generate-order-agreement",
+      "path": "supabase/functions/generate-order-agreement/index.ts",
+      "policies": [
+        "ticket.document"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/generate-order-agreement/agreementConfig_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "google-auth-callback",
+      "path": "supabase/functions/google-auth-callback/index.ts",
+      "policies": [
+        "auth.google.proof"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/googleAuthFlow_test.ts",
+        "supabase/functions/_shared/googleAuthProtocol_test.ts",
+        "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "google-auth-complete",
+      "path": "supabase/functions/google-auth-complete/index.ts",
+      "policies": [
+        "auth.google.attempt",
+        "auth.google.proof"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/googleAuthFlow_test.ts",
+        "supabase/functions/_shared/googleAuthProtocol_test.ts",
+        "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "google-auth-start",
+      "path": "supabase/functions/google-auth-start/index.ts",
+      "policies": [
+        "auth.google.global",
+        "auth.google.client",
+        "auth.google.source"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/googleAuthFlow_test.ts",
+        "supabase/functions/_shared/googleAuthProtocol_test.ts",
+        "supabase/functions/_shared/issueExistingUserSession_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "notify",
+      "path": "supabase/functions/notify/index.ts",
+      "policies": [
+        "push.delivery",
+        "push.dispatch"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/notify/webhookAuth_test.ts",
+        "supabase/functions/notify/handler_test.ts",
+        "supabase/functions/notify/notificationPayload_test.ts"
+      ],
+      "reason": "Domain RPCs explicitly schedule the existing signed endpoint after admission, without a row trigger. The handler loads the stored intent and enforces durable dispatch and provider idempotency. Legacy direct REST INSERT is revoked."
+    },
+    {
+      "name": "preview-ticket-layout",
+      "path": "supabase/functions/preview-ticket-layout/index.ts",
+      "policies": [
+        "ticket.preview"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/preview-ticket-layout/preview_test.ts",
+        "supabase/functions/preview-ticket-layout/products_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "process-email-queue",
+      "path": "supabase/functions/process-email-queue/index.ts",
+      "policies": [
+        "email.dispatch",
+        "existing-provider-fence"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/canonicalEmail_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "register",
+      "path": "supabase/functions/register/index.ts",
+      "policies": [
+        "unit.creation",
+        "email.auth"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/register/registrationFlow_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "report-exchange-rates",
+      "path": "supabase/functions/report-exchange-rates/index.ts",
+      "policies": [
+        "existing-contract-review"
+      ],
+      "status": "open",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/report-exchange-rates/handler_test.ts"
+      ],
+      "reason": "Existing service/cron cached rate update; fixed-source configuration and cron frequency remain to be reconciled."
+    },
+    {
+      "name": "request-account-deletion",
+      "path": "supabase/functions/request-account-deletion/index.ts",
+      "policies": [
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-app-links",
+      "path": "supabase/functions/send-app-links/index.ts",
+      "policies": [
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/send-app-links/test_app_links_delivery.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-custom-email",
+      "path": "supabase/functions/send-custom-email/index.ts",
+      "policies": [
+        "email.actor",
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-email",
+      "path": "supabase/functions/send-email/index.ts",
+      "policies": [
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/send-email/deposit_templates_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-reset-password-link",
+      "path": "supabase/functions/send-reset-password-link/index.ts",
+      "policies": [
+        "auth.reset.source",
+        "auth.reset.account",
+        "email.auth"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-sign-in-code",
+      "path": "supabase/functions/send-sign-in-code/index.ts",
+      "policies": [
+        "email.auth"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-ticket-order",
+      "path": "supabase/functions/send-ticket-order/index.ts",
+      "policies": [
+        "order.creation",
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/send-ticket-order/commandIdentity_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "send-tickets",
+      "path": "supabase/functions/send-tickets/index.ts",
+      "policies": [
+        "email.ordinary",
+        "email.commitment"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/ticketFonts_test.ts"
+      ],
+      "reason": "Existing route delegates to canonical SQL admission or the existing fenced email/provider contract. Local tests do not certify live activation."
+    },
+    {
+      "name": "waitlist-commands",
+      "path": "supabase/functions/waitlist-commands/index.ts",
+      "policies": [
+        "order.creation",
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/waitlistEmail_test.ts"
+      ],
+      "reason": "Existing SQL capability/command authorization and the shared email admission apply; producer pre-render paths and ingress remain in the reconciliation scope."
+    }
+  ],
+  "workers": [
+    {
+      "name": "image-worker",
+      "path": "workers/image-worker/src/upload.ts",
+      "policies": [
+        "image.upload"
+      ],
+      "status": "local-enforcement",
+      "remaining": "Activate canonical SQL project checks and monotonic new-allocation caps; historical R2 baseline and vendor billing remain operational evidence.",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "entrypoint": "workers/image-worker/src/index.ts",
+      "routes": [
+        {
+          "path": "/upload",
+          "policy": "image.upload",
+          "status": "local-enforcement"
+        },
+        {
+          "path": "/private/",
+          "policy": "project-sharing-contract",
+          "status": "compatibility-open"
+        },
+        {
+          "path": "/delete",
+          "policy": "project-sharing-contract",
+          "status": "compatibility-open"
+        },
+        {
+          "path": "/presign/",
+          "policy": "project-sharing-contract",
+          "status": "compatibility-open"
+        },
+        {
+          "path": "*public-read",
+          "policy": "native-cache-miss",
+          "status": "local-enforcement"
+        }
+      ],
+      "evidence": [
+        "workers/image-worker/tests/unit/control-plane.test.ts",
+        "workers/image-worker/tests/unit/topology.test.ts",
+        "workers/image-worker/tests/unit/image-tenant-contract.test.ts"
+      ]
+    },
+    {
+      "name": "sync-worker",
+      "path": "workers/sync-worker/src/index.ts",
+      "policies": [
+        "native-cache-miss"
+      ],
+      "status": "local-enforcement",
+      "remaining": "Per-location best effort is not a global billing/egress cap; cached hits stay SQL-independent.",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "entrypoint": "workers/sync-worker/src/index.ts",
+      "routes": [
+        {
+          "path": "/v1/public-sync/:organization/:occasion/head",
+          "policy": "native-cache-miss",
+          "status": "local-enforcement"
+        }
+      ],
+      "evidence": [
+        "workers/sync-worker/tests/index.test.ts"
+      ],
+      "routeExpression": "const PATH = /^\\/v1\\/public-sync\\/(\\d+)\\/(\\d+)\\/head$/;"
+    },
+    {
+      "name": "self-hosted-monitor",
+      "entrypoint": "workers/self-hosted-monitor/src/index.mjs",
+      "owner": "Festapp backend operations",
+      "reviewBy": "2026-11-16",
+      "remaining": "Activate narrow capability and existing alerts after SQL migration",
+      "routes": [
+        {
+          "path": "scheduled",
+          "policy": "Dedicated read-only health capability, no service-role credential; existing heartbeat",
+          "status": "implemented"
+        }
+      ],
+      "evidence": [
+        "workers/self-hosted-monitor/test/index.test.mjs"
+      ]
+    }
+  ],
+  "runtime": {
+    "checkedAt": "2026-10-16T08:36:12Z",
+    "canonicalIdentityVerified": true,
+    "activationTenant": "festapp",
+    "activationGeneration": 1,
+    "organization": 1,
+    "newPolicyPresent": false,
+    "externalSyncSources": 0,
+    "externalSyncMaps": 0,
+    "activeImportCrons": 0,
+    "emailRecoveryCrons": 1,
+    "googleCleanupCrons": 1,
+    "providerDailyQuotaSnapshot": 50000,
+    "festappAllocatedDaily": 10000,
+    "festappAllocatedRate": 2,
+    "providerShared": true,
+    "note": "Read-only catalog/configuration checks. No migration, deployment or outgoing email.",
+    "authImage": "supabase/gotrue:v2.189.0",
+    "nativeAuthLimits": "Named rate-limit environment overrides unset; pinned source defaults inspected, not load-tested.",
+    "preparedIngress": "Trusted source overwrite, Cloudflare/loopback origin boundary, body/header/time limits. Production Caddy binary accepts the prepared configuration without reload.",
+    "restoreEvidence": {
+      "date": "2026-09-10",
+      "status": "pass",
+      "rpoSeconds": 0,
+      "rtoSeconds": 230,
+      "isolatedClusterStopped": true,
+      "productionTargetMutated": false
+    }
+  },
+  "remaining": [
+    "Activation and readback are not performed; source implementation is not production enforcement.",
+    "Permanent reusable six-digit passwords are intentional; native Auth SQL hook and email admission limit attempts and delivery without rotating existing credentials.",
+    "Historical R2 baseline, physical push subscription fan-out and global vendor billing caps need current provider evidence.",
+    "Runtime ACL reconciliation, monitoring capability provisioning and current restore/IAM readback remain operational gates.",
+    "Released Storage-copy and notification REST writers require coordinated client activation; superseded writes are closed, supported historical reads/deletes remain."
+  ],
+  "constraints": {
+    "applicationTriggers": "Only updated_at; notification hook and its function removed, all producers explicitly call dispatch from the existing command.",
+    "retiredWriters": "Legacy Storage image INSERT/UPDATE, direct images metadata INSERT/UPDATE, notification REST INSERT."
+  }
+}

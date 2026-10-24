@@ -1,4 +1,15 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:fstapp/components/eshop/product_grid_record.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
+import 'models/ticket_model.dart';
+import '../forms/waitlist_strings.dart';
+import 'views/waitlist_order_detail.dart';
 import 'order_symbol_cell.dart';
+import 'order_grid_filters.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,9 +20,8 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/views/products_dialog.dart';
 import 'package:fstapp/components/eshop/views/transactions_dialog.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
@@ -29,138 +39,87 @@ import 'views/deposit_renderer.dart';
 import 'views/inventory_inclusion_renderer.dart';
 import 'models/orders_history_model.dart';
 import 'orders_strings.dart';
+import 'ticket_batch_strings.dart';
 import 'views/order_history_dialog.dart';
 import 'views/order_state_display.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'views/add_cash_payment_dialog.dart';
 
-bool canToggleTicketUsage(String? formattedState) =>
-    formattedState?.split(';').first != OrderModel.stornoState;
+bool canToggleTicketUsage(String? formattedState) => ![
+      OrderModel.stornoState,
+      OrderModel.waitlistedState
+    ].contains(formattedState?.split(';').first);
+
+bool canDownloadTicket(String? formattedState) =>
+    formattedState?.split(';').first != OrderModel.waitlistedState;
 
 class EshopColumns {
-  // Column identifier constants
-  static const String TICKET_ID = "ticketId";
-  static const String TICKET_SYMBOL = "ticketSymbol";
-  static const String TICKET_STATE = "ticketState";
-  static const String TICKET_DOWNLOAD = "ticketDownload"; // New Constant
-  static const String TICKET_NOTE = "ticketNote";
-  static const String TICKET_NOTE_HIDDEN = "ticketNoteHidden";
-  static const String TICKET_TOTAL_PRICE = "ticketTotalPrice";
-  static const String TICKET_PRODUCTS = "ticketProducts";
-  static const String TICKET_PRODUCTS_EXTENDED = "ticketProductsExtended";
-  static const String TICKET_PRODUCTS_EDIT = "ticketProductsEdit";
-  static const String TICKET_CONFIRM = "confirmTicket";
-
-  static const String TICKET_CREATED_AT = "ticketCreatedAt";
-  static const String TICKET_LAST_CHANGE = "ticketLastChangedAt";
-  static const String TICKET_SPOT = "ticketSpot";
-
-  static const String ORDER_ID = "orderId";
-  static const String ORDER_PRICE = "orderPrice";
-  static const String ORDER_STATE = "orderState";
-  static const String ORDER_MODEL_REFERENCE = "orderModelReference";
-
-  static const String PRODUCT_ID = "productId";
-  static const String PRODUCT_TITLE = "productTitle";
-  static const String PRODUCT_SHORT_TITLE = "productShortTitle";
-  static const String PRODUCT_PRICE_CHANGES = "productPriceChanges";
-  static const String PRODUCT_PRICE = "productPrice";
-  static const String PRODUCT_IS_HIDDEN = "productIsHidden";
-  static const String PRODUCT_TYPE = "productType";
-  static const String PRODUCT_ORDER = "productOrder";
-  static const String PRODUCT_MAXIMUM = "productMaximum";
-  static const String PRODUCT_ORDERED_COUNT = "productOrderedCount";
-  static const String PRODUCT_PAID_COUNT = "productPaidCount";
-  static const String PRODUCT_CURRENCY_CODE = "productCurrencyCode";
-  static const String PRODUCT_DESCRIPTION = "productDescription";
-  static const String PRODUCT_INCLUDED_INVENTORY = "productIncludedInventory";
-  static const String PRODUCT_MODEL_REFERENCE = "productModelReference";
-  static const String PRODUCT_USED_IN_FORMS = "productUsedInForms";
-  static const String PRODUCT_SURCHARGE = "productSurcharge";
-  static const String PRODUCT_SURCHARGE_CURRENCY = "productSurchargeCurrency";
-  static const String PRODUCT_DEPOSIT = "productDeposit";
-
-  static const String PAYMENT_INFO_AMOUNT = "paymentInfoAmount";
-  static const String PAYMENT_INFO_PAID = "paymentInfoPaid";
-  static const String PAYMENT_INFO_ID = "paymentInfoId";
-  static const String PAYMENT_INFO_RETURNED = "paymentInfoReturned";
-  static const String PAYMENT_INFO_VARIABLE_SYMBOL =
-      "paymentInfoVariableSymbol";
-  static const String PAYMENT_INFO_DEADLINE = "orderDataDeadline";
-  static const String PAYMENT_INFO_DEPOSIT_DEADLINE =
-      "paymentInfoDepositDeadline";
-  static const String PAYMENT_INFO_REMINDER_SENT = "isReminderSent";
-
-  static const String ORDER_SEQUENCE = "orderSequence";
-  static const String ORDER_SYMBOL = "orderSymbol";
-  static const String ORDER_DATA = "orderData";
-  static const String ORDER_EMAIL = "orderEmail";
-  static const String ORDER_CREATED_AT = "orderCreatedAt";
-  static const String ORDER_DATA_NOTE = "orderDataNote";
-  static const String ORDER_NOTE_HIDDEN = "orderDataNoteHidden";
-  static const String ORDER_HISTORY = "orderHistory";
-  static const String ORDER_TRANSACTIONS = "orderTransactions";
-
-  static const String ORDER_FORM = "orderForm";
-  static const String ORDER_CONTRACT_DOWNLOAD = "orderContractDownload";
-
-  static const String RESPONSES = "responses";
-
-  static const String ORDER_EMAIL_DELIVERY = "orderEmailDelivery";
-  static const String HISTORY_ID = "historyId";
-  static const String HISTORY_ORDER_SYMBOL = "historyOrderSymbol";
-  static const String HISTORY_CHANGED_AT = "historyChangedAt";
-  static const String HISTORY_CHANGED_BY = "historyChangedBy";
-  static const String HISTORY_STATE = "historyState";
-  static const String HISTORY_PRICE = "historyPrice";
-  static const String HISTORY_CHANGES_SUMMARY = "historyChangesSummary";
-  static const String HISTORY_MODEL_REFERENCE = "historyModelReference";
-
   // Define columns
   // These narrow identity columns use a tooltip rather than the shared
   // interactive help button, whose accessible controls require 160 px.
-  static Widget _compactOrderHeader(TrinaColumnTitleRendererContext r, String help) =>
-      Builder(builder: (context) => Tooltip(
-        message: '${r.column.title}\n$help',
-        child: Container(
-          height: r.height,
-          decoration: BoxDecoration(color: r.column.backgroundColor,
-              border: BorderDirectional(end: r.stateManager.style.enableColumnBorderVertical
-                  ? BorderSide(color: r.stateManager.style.borderColor) : BorderSide.none)),
-          padding: r.column.titlePadding ?? r.stateManager.style.defaultColumnTitlePadding,
-          child: Row(children: [
-            Expanded(child: Text(r.column.title,
-                style: r.stateManager.style.columnTextStyle,
-                maxLines: 1, overflow: TextOverflow.ellipsis)),
-            if (r.isFiltered) SizedBox(width: 24, child: IconButton(
-              padding: EdgeInsets.zero, iconSize: 18,
-              icon: const Icon(Icons.filter_alt_outlined),
-              onPressed: () => r.stateManager.showFilterPopup(context, calledColumn: r.column),
-            )),
-            if (r.showContextIcon) SizedBox(width: 24, child: r.contextMenuIcon),
-          ]),
-        ),
-      ));
+  static Widget _compactOrderHeader(
+          TrinaColumnTitleRendererContext r, String help) =>
+      Builder(
+          builder: (context) => Tooltip(
+                message: '${r.column.title}\n$help',
+                child: Container(
+                  height: r.height,
+                  decoration: BoxDecoration(
+                      color: r.column.backgroundColor,
+                      border: BorderDirectional(
+                          end: r.stateManager.style.enableColumnBorderVertical
+                              ? BorderSide(
+                                  color: r.stateManager.style.borderColor)
+                              : BorderSide.none)),
+                  padding: r.column.titlePadding ??
+                      r.stateManager.style.defaultColumnTitlePadding,
+                  child: Row(children: [
+                    Expanded(
+                        child: Text(r.column.title,
+                            style: r.stateManager.style.columnTextStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)),
+                    if (r.isFiltered)
+                      SizedBox(
+                          width: 24,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            iconSize: 18,
+                            icon: const Icon(Icons.filter_alt_outlined),
+                            onPressed: () => r.stateManager.showFilterPopup(
+                                context,
+                                calledColumn: r.column),
+                          )),
+                    if (r.showContextIcon)
+                      SizedBox(width: 24, child: r.contextMenuIcon),
+                  ]),
+                ),
+              ));
 
   static TrinaColumn orderSequenceColumn() => TrinaColumn(
-    readOnly: true,
-    enableEditingMode: false,
-    title: OrdersStrings.gridOrderSequence,
-    field: ORDER_SEQUENCE,
-    type: TrinaColumnType.number(format: "#", defaultValue: null),
-    width: 76,
-    titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
-  );
+        readOnly: true,
+        enableEditingMode: false,
+        title: OrdersStrings.gridOrderSequence,
+        field: EshopColumnIds.ORDER_SEQUENCE,
+        type: TrinaColumnType.number(format: "#", defaultValue: null),
+        width: 76,
+        titleRenderer: (r) =>
+            _compactOrderHeader(r, OrdersStrings.gridOrderSequenceHelp),
+      );
 
   static double _orderSymbolWidth(BuildContext context) {
     final painter = TextPainter(
-      text: TextSpan(text: '9W9W9W9W9W', style: DefaultTextStyle.of(context).style
-          .merge(TrinaGridStyleConfig.defaultLightCellTextStyle)),
+      text: TextSpan(
+          text: '9W9W9W9W9W',
+          style: DefaultTextStyle.of(context)
+              .style
+              .merge(TrinaGridStyleConfig.defaultLightCellTextStyle)),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    final width = (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
+    final width =
+        (painter.width + 46).ceilToDouble().clamp(144.0, double.infinity);
     painter.dispose();
     return width;
   }
@@ -169,63 +128,65 @@ class EshopColumns {
         readOnly: true,
         enableEditingMode: true,
         title: OrdersStrings.gridOrderSymbol,
-        field: ORDER_SYMBOL,
-        renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+        field: EshopColumnIds.ORDER_SYMBOL,
+        renderer: (r) => OrderSymbolCell(
+            symbol: r.cell.value?.toString() ?? '',
             style: r.stateManager.style.cellTextStyle),
-        titleRenderer: (r) => _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
+        titleRenderer: (r) =>
+            _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
         type: TrinaColumnType.text(),
         width: context == null ? 144 : _orderSymbolWidth(context),
       );
 
   static Map<String, dynamic> columnBuilders(BuildContext context) => {
-        PRODUCT_ID: [
+        EshopColumnIds.PRODUCT_ID: [
           TrinaColumn(
             hide: true,
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridId,
-            field: PRODUCT_ID,
+            field: EshopColumnIds.PRODUCT_ID,
             type: TrinaColumnType.number(defaultValue: -1),
             width: 50,
             renderer: (r) => DataGridHelper.idRenderer(r),
           ),
         ],
         // ... [Other columns omitted for brevity, keeping structure] ...
-        PRODUCT_IS_HIDDEN: [
+        EshopColumnIds.PRODUCT_IS_HIDDEN: [
           TrinaColumn(
             title: OrdersStrings.gridHide,
-            field: PRODUCT_IS_HIDDEN,
+            field: EshopColumnIds.PRODUCT_IS_HIDDEN,
             type: TrinaColumnType.text(),
             applyFormatterInEditing: true,
             enableEditingMode: false,
             width: 100,
-            renderer: (ctx) =>
-                DataGridHelper.checkBoxRenderer(ctx, PRODUCT_IS_HIDDEN),
+            renderer: (ctx) => DataGridHelper.checkBoxRenderer(
+                ctx, EshopColumnIds.PRODUCT_IS_HIDDEN),
           ),
         ],
-        PRODUCT_TITLE: [
+        EshopColumnIds.PRODUCT_TITLE: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridTitle,
-            field: PRODUCT_TITLE,
+            field: EshopColumnIds.PRODUCT_TITLE,
             type: TrinaColumnType.text(),
             width: 200,
           ),
         ],
-        PRODUCT_SHORT_TITLE: [
+        EshopColumnIds.PRODUCT_SHORT_TITLE: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridShortTitle,
-            field: PRODUCT_SHORT_TITLE,
+            field: EshopColumnIds.PRODUCT_SHORT_TITLE,
             type: TrinaColumnType.text(),
             width: 150,
           ),
         ],
-        PRODUCT_PRICE: [
+        EshopColumnIds.PRODUCT_PRICE: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridPrice,
-            field: PRODUCT_PRICE,
+            field: EshopColumnIds.PRODUCT_PRICE,
             type: TrinaColumnType.number(
                 negative: false,
                 format: "#.##",
@@ -234,31 +195,31 @@ class EshopColumns {
             width: 80,
           ),
         ],
-        PRODUCT_TYPE: [
+        EshopColumnIds.PRODUCT_TYPE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridProductType,
-            field: PRODUCT_TYPE,
+            field: EshopColumnIds.PRODUCT_TYPE,
             type: TrinaColumnType.text(),
             width: 150,
           ),
         ],
-        PRODUCT_ORDER: [
+        EshopColumnIds.PRODUCT_ORDER: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridOrder,
-            field: PRODUCT_ORDER,
+            field: EshopColumnIds.PRODUCT_ORDER,
             type: TrinaColumnType.number(defaultValue: 0),
             textAlign: TrinaColumnTextAlign.end,
             width: 80,
           ),
         ],
-        PRODUCT_MAXIMUM: [
+        EshopColumnIds.PRODUCT_MAXIMUM: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridMax,
-            field: PRODUCT_MAXIMUM,
+            field: EshopColumnIds.PRODUCT_MAXIMUM,
             formatter: (s) => s == 0 ? "" : s.toString(),
             applyFormatterInEditing: true,
             type: TrinaColumnType.number(defaultValue: 0, negative: false),
@@ -266,44 +227,44 @@ class EshopColumns {
             width: 80,
           ),
         ],
-        PRODUCT_ORDERED_COUNT: [
+        EshopColumnIds.PRODUCT_ORDERED_COUNT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridOrdered,
-            field: PRODUCT_ORDERED_COUNT,
+            field: EshopColumnIds.PRODUCT_ORDERED_COUNT,
             type: TrinaColumnType.number(defaultValue: 0),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
-        PRODUCT_PAID_COUNT: [
+        EshopColumnIds.PRODUCT_PAID_COUNT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridPaid,
-            field: PRODUCT_PAID_COUNT,
+            field: EshopColumnIds.PRODUCT_PAID_COUNT,
             type: TrinaColumnType.number(defaultValue: 0),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
-        PRODUCT_CURRENCY_CODE: [
+        EshopColumnIds.PRODUCT_CURRENCY_CODE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridCurrency,
-            field: PRODUCT_CURRENCY_CODE,
+            field: EshopColumnIds.PRODUCT_CURRENCY_CODE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.center,
             width: 80,
           ),
         ],
-        PRODUCT_DEPOSIT: [
+        EshopColumnIds.PRODUCT_DEPOSIT: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridDeposit,
-            field: PRODUCT_DEPOSIT,
+            field: EshopColumnIds.PRODUCT_DEPOSIT,
             type: TrinaColumnType.number(
                 negative: false,
                 format: "#.##",
@@ -312,11 +273,11 @@ class EshopColumns {
             width: 100,
           ),
         ],
-        PRODUCT_SURCHARGE: [
+        EshopColumnIds.PRODUCT_SURCHARGE: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridSurcharge,
-            field: PRODUCT_SURCHARGE,
+            field: EshopColumnIds.PRODUCT_SURCHARGE,
             // Negative amounts allowed (slevy) — only used in virtual mode anyway.
             type: TrinaColumnType.number(
                 negative: true,
@@ -326,7 +287,7 @@ class EshopColumns {
             width: 100,
           ),
         ],
-        PRODUCT_SURCHARGE_CURRENCY: [
+        EshopColumnIds.PRODUCT_SURCHARGE_CURRENCY: [
           TrinaColumn(
             // Free-text ISO code (3 letters). Surcharge doesn't go through the
             // bank, so it is NOT restricted to the occasion's bank-supported
@@ -334,98 +295,141 @@ class EshopColumns {
             // ProductModel.fromPlutoJson).
             enableAutoEditing: true,
             title: OrdersStrings.gridCurrency,
-            field: PRODUCT_SURCHARGE_CURRENCY,
+            field: EshopColumnIds.PRODUCT_SURCHARGE_CURRENCY,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.center,
             width: 80,
           ),
         ],
-        PRODUCT_DESCRIPTION: (Map<String, dynamic> data) => [
+        EshopColumnIds.PRODUCT_DESCRIPTION: (Map<String, dynamic> data) => [
               TrinaColumn(
                 title: OrdersStrings.gridDescription,
-                field: PRODUCT_DESCRIPTION,
+                field: EshopColumnIds.PRODUCT_DESCRIPTION,
                 type: TrinaColumnType.text(),
                 width: 150,
                 renderer: (ctx) {
                   return DataGridHelper.buildHtmlEditorButton(
                     context: context,
-                    occasionId: (ctx.row.cells[PRODUCT_MODEL_REFERENCE]?.value
-                            as ProductModel?)
-                        ?.occasion,
-                    field: PRODUCT_DESCRIPTION,
-                    title: ctx.row.cells[PRODUCT_TITLE]!.value,
+                    occasionId: (ctx
+                            .row
+                            .cells[EshopColumnIds.PRODUCT_MODEL_REFERENCE]
+                            ?.value as ProductGridRecord?)
+                        ?.product
+                        .occasion,
+                    field: EshopColumnIds.PRODUCT_DESCRIPTION,
+                    title: ctx.row.cells[EshopColumnIds.PRODUCT_TITLE]!.value,
                     rendererContext: ctx,
-                    loadContent: () async =>
-                        ctx.row.cells[PRODUCT_DESCRIPTION]!.value,
+                    loadContent: () async => ctx
+                        .row.cells[EshopColumnIds.PRODUCT_DESCRIPTION]!.value,
                   );
                 },
               ),
             ],
-        PRODUCT_INCLUDED_INVENTORY: (Map<String, dynamic> data) => [
-              TrinaColumn(
-                title: InventoryStrings.included,
-                field: PRODUCT_INCLUDED_INVENTORY,
-                type: TrinaColumnType.text(),
-                width: 350,
-                enableEditingMode: false,
-                renderer: (ctx) {
-                  final product = ctx.row.cells[PRODUCT_MODEL_REFERENCE]?.value
-                      as ProductModel?;
-                  final allContexts = data[PRODUCT_INCLUDED_INVENTORY]
-                      as List<InventoryContextModel>;
+        EshopColumnIds.PRODUCT_INCLUDED_INVENTORY:
+            (Map<String, dynamic> data) => [
+                  TrinaColumn(
+                    title: InventoryStrings.included,
+                    field: EshopColumnIds.PRODUCT_INCLUDED_INVENTORY,
+                    type: TrinaColumnType.text(),
+                    width: 350,
+                    enableEditingMode: false,
+                    renderer: (ctx) {
+                      final product = ctx
+                          .row
+                          .cells[EshopColumnIds.PRODUCT_MODEL_REFERENCE]
+                          ?.value as ProductGridRecord?;
+                      final allContexts =
+                          data[EshopColumnIds.PRODUCT_INCLUDED_INVENTORY]
+                              as List<InventoryContextModel>;
 
-                  if (product == null) {
-                    return const SizedBox.shrink();
-                  }
+                      if (product == null) {
+                        return const SizedBox.shrink();
+                      }
 
-                  return InventoryInclusionRenderer(
-                    rendererContext: ctx,
-                    product: product,
-                    availableContexts: allContexts,
-                  );
-                },
-              ),
-            ],
-        PRODUCT_USED_IN_FORMS: [
+                      return InventoryInclusionRenderer(
+                        rendererContext: ctx,
+                        product: product.product,
+                        availableContexts: allContexts,
+                      );
+                    },
+                  ),
+                ],
+        EshopColumnIds.PRODUCT_USED_IN_FORMS: [
           TrinaColumn(
             title: OrdersStrings.gridUsedInForms,
             textAlign: TrinaColumnTextAlign.end,
-            field: PRODUCT_USED_IN_FORMS,
+            field: EshopColumnIds.PRODUCT_USED_IN_FORMS,
             type: TrinaColumnType.text(),
             width: 250,
             readOnly: true,
           ),
         ],
-        TICKET_ID: [
+        EshopColumnIds.TICKET_ID: [
           TrinaColumn(
             hide: true,
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridId,
-            field: TICKET_ID,
+            field: EshopColumnIds.TICKET_ID,
             type: TrinaColumnType.number(defaultValue: -1),
             width: 50,
             renderer: (rendererContext) =>
                 DataGridHelper.idRenderer(rendererContext),
           ),
         ],
-        TICKET_SYMBOL: [
+        for (final entry in {
+          EshopColumnIds.TICKET_ORIGIN: 'origin',
+          EshopColumnIds.TICKET_SALE_STATE: 'saleState',
+        }.entries)
+          entry.key: [
+            TrinaColumn(
+                readOnly: true,
+                enableEditingMode: false,
+                title: TicketBatchStrings.text(entry.value),
+                field: entry.key,
+                type: TrinaColumnType.text(),
+                width: 150)
+          ],
+        EshopColumnIds.TICKET_BATCH: [
+          TrinaColumn(
+              readOnly: true,
+              enableEditingMode: false,
+              title: TicketBatchStrings.text('batch'),
+              field: EshopColumnIds.TICKET_BATCH,
+              type: TrinaColumnType.text(),
+              width: 180,
+              renderer: (r) {
+                final ticket = r
+                    .row
+                    .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
+                    ?.value as TicketModel?;
+                final batch = ticket?.batch;
+                if (batch == null) {
+                  return const SizedBox.shrink();
+                }
+                return TextButton(
+                    onPressed: () => context.router.navigatePath(
+                        '/${context.routeData.inheritedPathParams.getString(AppRouter.linkFormatted)}/reservations/orders/pregenerated/${batch['id']}'),
+                    child: Text(batch['title'] as String));
+              })
+        ],
+        EshopColumnIds.TICKET_SYMBOL: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
-            title: OrdersStrings.itemSymbol,
-            field: TICKET_SYMBOL,
+            title: OrderItemStrings.itemSymbol,
+            field: EshopColumnIds.TICKET_SYMBOL,
             type: TrinaColumnType.text(),
             width: 120,
           ),
         ],
-        TICKET_STATE: [
+        EshopColumnIds.TICKET_STATE: [
           TrinaColumn(
             cellPadding: EdgeInsets.zero,
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridState,
-            field: TICKET_STATE,
+            field: EshopColumnIds.TICKET_STATE,
             type: TrinaColumnType.select(
               OrderModel.statesToDataGridFormat(),
             ),
@@ -435,10 +439,10 @@ class EshopColumns {
             textAlign: TrinaColumnTextAlign.center,
           ),
         ],
-        TICKET_DOWNLOAD: (Map<String, dynamic> data) => [
+        EshopColumnIds.TICKET_DOWNLOAD: (Map<String, dynamic> data) => [
               TrinaColumn(
                 title: "",
-                field: TICKET_DOWNLOAD,
+                field: EshopColumnIds.TICKET_DOWNLOAD,
                 type: TrinaColumnType.text(),
                 readOnly: true,
                 enableEditingMode: false,
@@ -448,133 +452,144 @@ class EshopColumns {
                     icon: const Icon(Icons.download),
                     tooltip: OrdersStrings
                         .downloadTicket, // Localize tooltip if preferred
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final ticketSymbol =
-                          rendererContext.row.cells[TICKET_SYMBOL]?.value ??
-                              ticketId.toString();
+                    onPressed: !canDownloadTicket(rendererContext
+                            .row
+                            .cells[EshopColumnIds.TICKET_STATE]
+                            ?.value as String?)
+                        ? null
+                        : () async {
+                            final ticketId = rendererContext.row
+                                .cells[EshopColumnIds.TICKET_ID]!.value as int;
+                            final ticketSymbol = rendererContext
+                                    .row
+                                    .cells[EshopColumnIds.TICKET_SYMBOL]
+                                    ?.value ??
+                                ticketId.toString();
 
-                      // 1. Extract Customer and Spot info for the title
-                      final customerName = rendererContext
-                              .row.cells[ORDER_DATA]?.value
-                              ?.toString() ??
-                          "";
-                      final spotName = rendererContext
-                              .row.cells[TICKET_SPOT]?.value
-                              ?.toString() ??
-                          "";
+                            // 1. Extract Customer and Spot info for the title
+                            final customerName = rendererContext
+                                    .row.cells[EshopColumnIds.ORDER_DATA]?.value
+                                    ?.toString() ??
+                                "";
+                            final spotName = rendererContext.row
+                                    .cells[EshopColumnIds.TICKET_SPOT]?.value
+                                    ?.toString() ??
+                                "";
 
-                      // 2. Determine the dialog title based on available data
-                      String dialogTitle = OrdersStrings.generatingPdf;
-                      if (customerName.isNotEmpty && spotName.isNotEmpty) {
-                        dialogTitle = OrdersStrings.generatingPdfForWithSpot(
-                            customerName, spotName);
-                      } else if (customerName.isNotEmpty) {
-                        dialogTitle =
-                            OrdersStrings.generatingPdfFor(customerName);
-                      }
+                            // 2. Determine the dialog title based on available data
+                            String dialogTitle = OrdersStrings.generatingPdf;
+                            if (customerName.isNotEmpty &&
+                                spotName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfForWithSpot(
+                                      customerName, spotName);
+                            } else if (customerName.isNotEmpty) {
+                              dialogTitle =
+                                  OrdersStrings.generatingPdfFor(customerName);
+                            }
 
-                      // 3. Show dialog
-                      final pdfBytes = await DialogHelper
-                          .showFutureProgressDialog<Uint8List?>(
-                        context: context,
-                        title: dialogTitle,
-                        futureCallback: () =>
-                            DbTickets.downloadTicketPdf(ticketId),
-                      );
+                            // 3. Show dialog
+                            final pdfBytes = await DialogHelper
+                                .showFutureProgressDialog<Uint8List?>(
+                              context: context,
+                              title: dialogTitle,
+                              futureCallback: () =>
+                                  DbTickets.downloadTicketPdf(ticketId),
+                            );
 
-                      if (pdfBytes != null) {
-                        await FileSaver.instance.saveFile(
-                          name: "ticket_$ticketSymbol",
-                          bytes: pdfBytes,
-                          mimeType: MimeType.pdf,
-                        );
-                      } else {
-                        // Error handled in DialogHelper/DbTickets
-                      }
-                    },
+                            if (pdfBytes != null) {
+                              await FileSaver.instance.saveFile(
+                                name: "ticket_$ticketSymbol",
+                                bytes: pdfBytes,
+                                mimeType: MimeType.pdf,
+                              );
+                            } else {
+                              // Error handled in DialogHelper/DbTickets
+                            }
+                          },
                   );
                 },
               ),
             ],
-        TICKET_TOTAL_PRICE: [
+        EshopColumnIds.TICKET_TOTAL_PRICE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridPrice,
-            field: TICKET_TOTAL_PRICE,
+            field: EshopColumnIds.TICKET_TOTAL_PRICE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
-        TICKET_CREATED_AT: [
+        EshopColumnIds.TICKET_CREATED_AT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridCreated,
-            field: TICKET_CREATED_AT,
+            field: EshopColumnIds.TICKET_CREATED_AT,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
-        TICKET_LAST_CHANGE: [
+        EshopColumnIds.TICKET_LAST_CHANGE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridChangedAt,
-            field: TICKET_LAST_CHANGE,
+            field: EshopColumnIds.TICKET_LAST_CHANGE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 140,
           ),
         ],
-        TICKET_PRODUCTS: [
+        EshopColumnIds.TICKET_PRODUCTS: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridProducts,
-            field: TICKET_PRODUCTS,
+            field: EshopColumnIds.TICKET_PRODUCTS,
             type: TrinaColumnType.text(),
             width: 300,
           ),
         ],
-        TICKET_NOTE: [
+        EshopColumnIds.TICKET_NOTE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridNote,
-            field: TICKET_NOTE,
+            field: EshopColumnIds.TICKET_NOTE,
             type: TrinaColumnType.text(),
             width: 200,
           ),
         ],
-        TICKET_NOTE_HIDDEN: [
+        EshopColumnIds.TICKET_NOTE_HIDDEN: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridHiddenNote,
-            field: TICKET_NOTE_HIDDEN,
+            field: EshopColumnIds.TICKET_NOTE_HIDDEN,
+            checkReadOnly: (row, _) =>
+                !OrderGridFilters.ticketIsNonCancelled(row),
             type: TrinaColumnType.text(),
             width: 200,
           ),
         ],
-        TICKET_SPOT: [
+        EshopColumnIds.TICKET_SPOT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridSpot,
-            field: TICKET_SPOT,
+            field: EshopColumnIds.TICKET_SPOT,
             type: TrinaColumnType.text(),
             width: 60,
           ),
         ],
-        ORDER_ID: [
+        EshopColumnIds.ORDER_ID: [
           TrinaColumn(
             hide: true,
             title: OrdersStrings.gridId,
-            field: ORDER_ID,
+            field: EshopColumnIds.ORDER_ID,
             type: TrinaColumnType.number(defaultValue: -1),
             readOnly: true,
             enableEditingMode: false,
@@ -583,14 +598,14 @@ class EshopColumns {
                 DataGridHelper.idRenderer(rendererContext),
           ),
         ],
-        ORDER_SEQUENCE: [orderSequenceColumn()],
-        ORDER_SYMBOL: [orderSymbolColumn(context: context)],
-        ORDER_PRICE: [
+        EshopColumnIds.ORDER_SEQUENCE: [orderSequenceColumn()],
+        EshopColumnIds.ORDER_SYMBOL: [orderSymbolColumn(context: context)],
+        EshopColumnIds.ORDER_PRICE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridPrice,
-            field: ORDER_PRICE,
+            field: EshopColumnIds.ORDER_PRICE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: FeatureService.isFeatureEnabled(FeatureConstants.deposit)
@@ -598,8 +613,10 @@ class EshopColumns {
                 : 100,
             renderer: FeatureService.isFeatureEnabled(FeatureConstants.deposit)
                 ? (ctx) {
-                    final order = ctx.row.cells[ORDER_MODEL_REFERENCE]?.value
-                        as OrderModel?;
+                    final order = ctx
+                        .row
+                        .cells[EshopColumnIds.ORDER_MODEL_REFERENCE]
+                        ?.value as OrderModel?;
                     if (order == null) return const SizedBox.shrink();
                     return OrderPriceDepositRenderer(
                       rendererContext: ctx,
@@ -609,13 +626,31 @@ class EshopColumns {
                 : null,
           ),
         ],
-        ORDER_STATE: [
+        EshopColumnIds.ORDER_WAITLIST: [
+          TrinaColumn(
+              title: WaitlistStrings.detail,
+              field: EshopColumnIds.ORDER_WAITLIST,
+              type: TrinaColumnType.text(),
+              readOnly: true,
+              width: 260,
+              renderer: (ctx) {
+                final order = OrderGridFilters.order(ctx.row);
+                if (order?.waitlistSummary == null)
+                  return const SizedBox.shrink();
+                return TextButton(
+                    onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => WaitlistOrderDetail(order: order!)),
+                    child: Text(order!.waitlistSummary!.label));
+              }),
+        ],
+        EshopColumnIds.ORDER_STATE: [
           TrinaColumn(
             cellPadding: EdgeInsets.zero,
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridState,
-            field: ORDER_STATE,
+            field: EshopColumnIds.ORDER_STATE,
             type: TrinaColumnType.select(
               OrderModel.statesToDataGridFormat(),
             ),
@@ -625,20 +660,20 @@ class EshopColumns {
             width: 140,
           ),
         ],
-        ORDER_DATA: [
+        EshopColumnIds.ORDER_DATA: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridCustomer,
-            field: ORDER_DATA,
+            field: EshopColumnIds.ORDER_DATA,
             type: TrinaColumnType.text(),
             width: 150,
           ),
         ],
-        ORDER_EMAIL_DELIVERY: [
+        EshopColumnIds.ORDER_EMAIL_DELIVERY: [
           TrinaColumn(
             title: EmailDeliveryStrings.title,
-            field: ORDER_EMAIL_DELIVERY,
+            field: EshopColumnIds.ORDER_EMAIL_DELIVERY,
             type: TrinaColumnType.text(),
             width: 74,
             minWidth: 64,
@@ -649,64 +684,67 @@ class EshopColumns {
               summary: r.cell.value is Map
                   ? Map<String, dynamic>.from(r.cell.value as Map)
                   : null,
-              orderId: r.row.cells[ORDER_ID]?.value as int?,
-              occasionId:
-                  (r.row.cells[ORDER_MODEL_REFERENCE]?.value as OrderModel?)
-                      ?.occasion,
+              orderId: r.row.cells[EshopColumnIds.ORDER_ID]?.value as int?,
+              occasionId: (r.row.cells[EshopColumnIds.ORDER_MODEL_REFERENCE]
+                      ?.value as OrderModel?)
+                  ?.occasion,
             ),
           ),
         ],
-        ORDER_EMAIL: [
+        EshopColumnIds.ORDER_EMAIL: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridEmail,
-            field: ORDER_EMAIL,
+            field: EshopColumnIds.ORDER_EMAIL,
             type: TrinaColumnType.text(),
             width: 140,
           ),
         ],
-        ORDER_CREATED_AT: [
+        EshopColumnIds.ORDER_CREATED_AT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: false,
             title: OrdersStrings.gridCreated,
-            field: ORDER_CREATED_AT,
+            field: EshopColumnIds.ORDER_CREATED_AT,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
-        ORDER_DATA_NOTE: [
+        EshopColumnIds.ORDER_DATA_NOTE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridNote,
-            field: ORDER_DATA_NOTE,
+            field: EshopColumnIds.ORDER_DATA_NOTE,
             type: TrinaColumnType.text(),
             width: 200,
           ),
         ],
-        ORDER_NOTE_HIDDEN: [
+        EshopColumnIds.ORDER_NOTE_HIDDEN: [
           TrinaColumn(
             enableAutoEditing: true,
             title: OrdersStrings.gridHiddenNote,
-            field: ORDER_NOTE_HIDDEN,
+            field: EshopColumnIds.ORDER_NOTE_HIDDEN,
+            checkReadOnly: (row, _) =>
+                !OrderGridFilters.orderIsNonCancelled(row),
             type: TrinaColumnType.text(),
             width: 200,
           ),
         ],
-        ORDER_HISTORY: [
+        EshopColumnIds.ORDER_HISTORY: [
           TrinaColumn(
             enableAutoEditing: false,
             title: OrdersStrings.gridHistory,
-            field: ORDER_HISTORY,
+            field: EshopColumnIds.ORDER_HISTORY,
             type: TrinaColumnType.text(),
             width: 150,
             renderer: (rendererContext) {
               return ElevatedButton(
                 onPressed: () async {
-                  var id = rendererContext.row.cells[ORDER_ID]!.value;
+                  var id =
+                      rendererContext.row.cells[EshopColumnIds.ORDER_ID]!.value;
                   await _showOrderHistory(context, id);
                 },
                 child: Row(
@@ -722,10 +760,10 @@ class EshopColumns {
             },
           ),
         ],
-        ORDER_CONTRACT_DOWNLOAD: (Map<String, dynamic> data) => [
+        EshopColumnIds.ORDER_CONTRACT_DOWNLOAD: (Map<String, dynamic> data) => [
               TrinaColumn(
                 title: "",
-                field: ORDER_CONTRACT_DOWNLOAD,
+                field: EshopColumnIds.ORDER_CONTRACT_DOWNLOAD,
                 type: TrinaColumnType.text(),
                 readOnly: true,
                 enableEditingMode: false,
@@ -735,13 +773,14 @@ class EshopColumns {
                     icon: const Icon(Icons.download),
                     tooltip: FeaturesStrings.downloadContract,
                     onPressed: () async {
-                      final orderId =
-                          rendererContext.row.cells[ORDER_ID]!.value as int;
-                      final orderSymbol =
-                          rendererContext.row.cells[ORDER_SYMBOL]?.value ?? "";
+                      final orderId = rendererContext
+                          .row.cells[EshopColumnIds.ORDER_ID]!.value as int;
+                      final orderSymbol = rendererContext
+                              .row.cells[EshopColumnIds.ORDER_SYMBOL]?.value ??
+                          "";
 
                       final customerName = rendererContext
-                              .row.cells[ORDER_DATA]?.value
+                              .row.cells[EshopColumnIds.ORDER_DATA]?.value
                               ?.toString() ??
                           "";
 
@@ -771,24 +810,26 @@ class EshopColumns {
                 },
               ),
             ],
-        ORDER_TRANSACTIONS: (Map<String, dynamic> data) => [
+        EshopColumnIds.ORDER_TRANSACTIONS: (Map<String, dynamic> data) => [
               TrinaColumn(
                 enableAutoEditing: false,
                 title: OrdersStrings.gridTransactions,
-                field: ORDER_TRANSACTIONS,
+                field: EshopColumnIds.ORDER_TRANSACTIONS,
                 type: TrinaColumnType.text(),
                 width: 150,
                 renderer: (rendererContext) {
                   return ElevatedButton(
                     onPressed: () async {
-                      var id = rendererContext.row.cells[ORDER_ID]!.value;
+                      var id = rendererContext
+                          .row.cells[EshopColumnIds.ORDER_ID]!.value;
                       var unitId = data["unitId"] as int?;
                       await _showOrderTransactions(context, id,
                           unitId: unitId,
                           orderSymbol: rendererContext
-                              .row.cells[ORDER_SYMBOL]?.value
+                              .row.cells[EshopColumnIds.ORDER_SYMBOL]?.value
                               ?.toString());
-                      var transactionsAfterFunction = data[ORDER_TRANSACTIONS];
+                      var transactionsAfterFunction =
+                          data[EshopColumnIds.ORDER_TRANSACTIONS];
                       if (transactionsAfterFunction is Future<void>
                           Function()?) {
                         transactionsAfterFunction?.call();
@@ -807,27 +848,39 @@ class EshopColumns {
                 },
               ),
             ],
-        TICKET_PRODUCTS_EDIT: (Map<String, dynamic> data) => [
+        EshopColumnIds.TICKET_PRODUCTS_EDIT: (Map<String, dynamic> data) => [
               TrinaColumn(
                 enableAutoEditing: false,
                 title: OrdersStrings.gridProducts,
-                field: TICKET_PRODUCTS_EDIT,
+                field: EshopColumnIds.TICKET_PRODUCTS_EDIT,
                 type: TrinaColumnType.text(),
                 width: 150,
                 renderer: (rendererContext) {
                   return ElevatedButton(
-                    onPressed: () async {
-                      final ticketId =
-                          rendererContext.row.cells[TICKET_ID]!.value as int;
-                      final changed =
-                          await _showTicketProducts(context, ticketId);
-                      if (changed == true) {
-                        var afterFunction = data[TICKET_PRODUCTS_EDIT];
-                        if (afterFunction is Future<void> Function()?) {
-                          afterFunction?.call();
-                        }
-                      }
-                    },
+                    onPressed: (((rendererContext
+                                        .row
+                                        .cells[EshopColumnIds
+                                            .TICKET_MODEL_REFERENCE]
+                                        ?.value as TicketModel?)
+                                    ?.allowedActions
+                                    ?.contains('products') ??
+                                true) &&
+                            OrderGridFilters.ticketIsNonCancelled(
+                                rendererContext.row))
+                        ? () async {
+                            final ticketId = rendererContext.row
+                                .cells[EshopColumnIds.TICKET_ID]!.value as int;
+                            final changed =
+                                await _showTicketProducts(context, ticketId);
+                            if (changed == true) {
+                              var afterFunction =
+                                  data[EshopColumnIds.TICKET_PRODUCTS_EDIT];
+                              if (afterFunction is Future<void> Function()?) {
+                                afterFunction?.call();
+                              }
+                            }
+                          }
+                        : null,
                     child: Row(
                       children: [
                         const Icon(Icons.category),
@@ -841,19 +894,28 @@ class EshopColumns {
                 },
               ),
             ],
-        TICKET_CONFIRM: (Map<String, dynamic> data) => [
+        EshopColumnIds.TICKET_CONFIRM: (Map<String, dynamic> data) => [
               TrinaColumn(
                 enableAutoEditing: false,
                 title: OrdersStrings.ticketUsage,
-                field: TICKET_CONFIRM,
+                field: EshopColumnIds.TICKET_CONFIRM,
                 type: TrinaColumnType.text(),
                 width: 200,
                 renderer: (rendererContext) {
-                  final formattedState =
-                      rendererContext.row.cells[TICKET_STATE]?.value as String?;
+                  final formattedState = rendererContext
+                      .row.cells[EshopColumnIds.TICKET_STATE]?.value as String?;
                   final isUsed =
                       formattedState?.split(';').first == OrderModel.usedState;
-                  final canToggleUsage = canToggleTicketUsage(formattedState);
+                  final ticket = rendererContext
+                      .row
+                      .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
+                      ?.value as TicketModel?;
+                  final canToggleUsage = (ticket?.allowedActions
+                              ?.contains(isUsed ? 'reset' : 'use') ??
+                          true) &&
+                      canToggleTicketUsage(formattedState) &&
+                      OrderGridFilters.ticketIsNonCancelled(
+                          rendererContext.row);
                   final actionLabel = isUsed
                       ? OrdersStrings.restoreTicket
                       : OrdersStrings.confirmTicket;
@@ -861,18 +923,25 @@ class EshopColumns {
                   return ElevatedButton(
                     onPressed: canToggleUsage
                         ? () async {
-                            final ticketId = rendererContext
-                                .row.cells[TICKET_ID]!.value as int;
-                            final ticketSymbol = rendererContext.row
-                                    .cells[TICKET_SYMBOL]?.value as String? ??
+                            final ticketId = rendererContext.row
+                                .cells[EshopColumnIds.TICKET_ID]!.value as int;
+                            final ticketSymbol = rendererContext
+                                    .row
+                                    .cells[EshopColumnIds.TICKET_SYMBOL]
+                                    ?.value as String? ??
                                 ticketId.toString();
 
-                            // Using the ticket symbol directly as the confirmation message body for simplicity.
-                            var confirm =
-                                await DialogHelper.showConfirmationDialog(
-                              context,
-                              actionLabel,
-                              ticketSymbol,
+                            var confirm = await DataGridActionConfirmation.show<
+                                TicketModel>(
+                              context: context,
+                              title: actionLabel,
+                              confirmButtonText: actionLabel,
+                              itemsLabel: OrderItemStrings.itemsPlural,
+                              items: [
+                                TicketModel.fromPlutoJson(
+                                    rendererContext.row.toJson())
+                              ],
+                              groupBy: (ticket) => ticket.relatedOrder,
                             );
 
                             if (confirm == true) {
@@ -887,7 +956,8 @@ class EshopColumns {
                                   "$ticketSymbol: ${CommonStrings.ok}",
                                 );
                               }
-                              var afterFunction = data[TICKET_CONFIRM];
+                              var afterFunction =
+                                  data[EshopColumnIds.TICKET_CONFIRM];
                               if (afterFunction is Future<void> Function()?) {
                                 afterFunction?.call();
                               }
@@ -908,40 +978,41 @@ class EshopColumns {
                 },
               ),
             ],
-        PAYMENT_INFO_AMOUNT: [
+        EshopColumnIds.PAYMENT_INFO_AMOUNT: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridAmount,
-            field: PAYMENT_INFO_AMOUNT,
+            field: EshopColumnIds.PAYMENT_INFO_AMOUNT,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 80,
           ),
         ],
-        PAYMENT_INFO_ID: [
+        EshopColumnIds.PAYMENT_INFO_ID: [
           TrinaColumn(
             hide: true,
             readOnly: true,
             enableEditingMode: false,
             title: "Payment Info ID",
-            field: PAYMENT_INFO_ID,
+            field: EshopColumnIds.PAYMENT_INFO_ID,
             type: TrinaColumnType.number(defaultValue: 0),
             width: 50,
           ),
         ],
-        PAYMENT_INFO_PAID: (Map<String, dynamic> data) => [
+        EshopColumnIds.PAYMENT_INFO_PAID: (Map<String, dynamic> data) => [
               TrinaColumn(
                 readOnly: true,
                 enableEditingMode: true,
                 title: OrdersStrings.gridPaid,
-                field: PAYMENT_INFO_PAID,
+                field: EshopColumnIds.PAYMENT_INFO_PAID,
                 type: TrinaColumnType.text(),
                 textAlign: TrinaColumnTextAlign.end,
                 width: 150,
                 renderer: (ctx) {
                   final val = ctx.cell.value?.toString() ?? "";
-                  final canUpdate = RightsService.canUpdateOrders();
+                  final canUpdate = RightsService.canUpdateOrders() &&
+                      OrderGridFilters.allows(ctx.row, 'paid');
                   return Row(
                     children: [
                       InkWell(
@@ -958,8 +1029,8 @@ class EshopColumns {
                                 }
 
                                 String currency = "CZK";
-                                String? priceString = ctx
-                                    .row.cells[EshopColumns.ORDER_PRICE]?.value
+                                String? priceString = ctx.row
+                                    .cells[EshopColumnIds.ORDER_PRICE]?.value
                                     ?.toString();
                                 if (priceString != null &&
                                     priceString.isNotEmpty) {
@@ -971,7 +1042,7 @@ class EshopColumns {
 
                                 String variableSymbol = ctx
                                         .row
-                                        .cells[EshopColumns
+                                        .cells[EshopColumnIds
                                             .PAYMENT_INFO_VARIABLE_SYMBOL]
                                         ?.value
                                         ?.toString() ??
@@ -979,7 +1050,7 @@ class EshopColumns {
 
                                 int? orderId = ctx
                                     .row
-                                    .cells[EshopColumns.ORDER_ID]
+                                    .cells[EshopColumnIds.ORDER_ID]
                                     ?.value as int?;
                                 bool isBankAdmin = false;
 
@@ -1011,7 +1082,7 @@ class EshopColumns {
                                   builder: (context) {
                                     int? paymentInfoId = ctx
                                         .row
-                                        .cells[EshopColumns.PAYMENT_INFO_ID]
+                                        .cells[EshopColumnIds.PAYMENT_INFO_ID]
                                         ?.value as int?;
                                     if (paymentInfoId == null ||
                                         paymentInfoId == 0) return Container();
@@ -1028,19 +1099,19 @@ class EshopColumns {
 
                                 if (result == true) {
                                   var refresh =
-                                      data[EshopColumns.PAYMENT_INFO_PAID];
+                                      data[EshopColumnIds.PAYMENT_INFO_PAID];
                                   if (refresh is Future<void> Function()?) {
                                     refresh?.call();
                                   }
                                 } else if (result == 'SWITCH_TO_CASHLESS') {
                                   int? paymentInfoId = ctx
                                       .row
-                                      .cells[EshopColumns.PAYMENT_INFO_ID]
+                                      .cells[EshopColumnIds.PAYMENT_INFO_ID]
                                       ?.value as int?;
                                   if (paymentInfoId != null) {
                                     int? orderId = ctx
                                         .row
-                                        .cells[EshopColumns.ORDER_ID]
+                                        .cells[EshopColumnIds.ORDER_ID]
                                         ?.value as int?;
 
                                     if (orderId != null) {
@@ -1065,8 +1136,8 @@ class EshopColumns {
                                           );
 
                                           if (searchResult == true) {
-                                            var refresh = data[
-                                                EshopColumns.PAYMENT_INFO_PAID];
+                                            var refresh = data[EshopColumnIds
+                                                .PAYMENT_INFO_PAID];
                                             if (refresh is Future<void>
                                                 Function()?) {
                                               refresh?.call();
@@ -1083,7 +1154,7 @@ class EshopColumns {
                                             severity: ToastSeverity.NotOk);
                                       }
                                     } else {
-                                      // Fallback: if HISTORY_ID is missing, try to find "id" or "orderId" if available in cells
+                                      // Fallback: if EshopColumnIds.HISTORY_ID is missing, try to find "id" or "orderId" if available in cells
                                       ToastHelper.Show(context,
                                           "Order ID not found in grid row.",
                                           severity: ToastSeverity.NotOk);
@@ -1108,100 +1179,102 @@ class EshopColumns {
                 },
               ),
             ],
-        PAYMENT_INFO_RETURNED: [
+        EshopColumnIds.PAYMENT_INFO_RETURNED: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridReturned,
-            field: PAYMENT_INFO_RETURNED,
+            field: EshopColumnIds.PAYMENT_INFO_RETURNED,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 80,
           ),
         ],
-        PAYMENT_INFO_VARIABLE_SYMBOL: [
+        EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridVariableSymbol,
-            field: PAYMENT_INFO_VARIABLE_SYMBOL,
+            field: EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 80,
           ),
         ],
-        PAYMENT_INFO_DEADLINE: [
+        EshopColumnIds.PAYMENT_INFO_DEADLINE: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: false,
             title: FeatureService.isFeatureEnabled(FeatureConstants.deposit)
                 ? OrdersStrings.gridDepositPaymentDeadline
                 : OrdersStrings.gridDeadline,
-            field: PAYMENT_INFO_DEADLINE,
+            field: EshopColumnIds.PAYMENT_INFO_DEADLINE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
           ),
         ],
         if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
-          PAYMENT_INFO_DEPOSIT_DEADLINE: [
+          EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE: [
             TrinaColumn(
               readOnly: true,
               enableEditingMode: false,
               title: OrdersStrings.gridDepositDeadline,
-              field: PAYMENT_INFO_DEPOSIT_DEADLINE,
+              field: EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE,
               type: TrinaColumnType.text(),
               textAlign: TrinaColumnTextAlign.end,
               width: 110,
             ),
           ],
-        PAYMENT_INFO_REMINDER_SENT: [
+        EshopColumnIds.PAYMENT_INFO_REMINDER_SENT: [
           TrinaColumn(
             title: OrdersStrings.gridReminderSent,
-            field: PAYMENT_INFO_REMINDER_SENT,
+            field: EshopColumnIds.PAYMENT_INFO_REMINDER_SENT,
             type: TrinaColumnType.text(),
             enableEditingMode: false,
             width: 120,
             renderer: (rendererContext) => DataGridHelper.checkBoxRenderer(
               rendererContext,
-              PAYMENT_INFO_REMINDER_SENT,
+              EshopColumnIds.PAYMENT_INFO_REMINDER_SENT,
               () => false, // This makes the checkbox always read-only
             ),
           ),
         ],
-        ORDER_FORM: [
+        EshopColumnIds.ORDER_FORM: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,
             title: OrdersStrings.gridForm,
-            field: ORDER_FORM,
+            field: EshopColumnIds.ORDER_FORM,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.start,
             width: 120,
           ),
         ],
-        TICKET_PRODUCTS_EXTENDED: (Map<String, dynamic> data) {
-          if (data[TICKET_PRODUCTS_EXTENDED] == null) {
+        EshopColumnIds.TICKET_PRODUCTS_EXTENDED: (Map<String, dynamic> data) {
+          if (data[EshopColumnIds.TICKET_PRODUCTS_EXTENDED] == null) {
             return <TrinaColumn>[];
           }
           var columns = <TrinaColumn>[];
-          for (var f in (data[TICKET_PRODUCTS_EXTENDED]) as List<String>) {
-            var cc = genericTextColumn(ProductModel.typeToLocale(f), f,
+          for (var f in (data[EshopColumnIds.TICKET_PRODUCTS_EXTENDED])
+              as List<String>) {
+            var cc = genericTextColumn(ProductPresentation.typeToLocale(f), f,
                 alignToEnd: false);
             columns.add(cc);
           }
           return columns;
         },
-        RESPONSES: (Map<String, dynamic> data) {
-          if (data[RESPONSES] == null) {
+        EshopColumnIds.RESPONSES: (Map<String, dynamic> data) {
+          if (data[EshopColumnIds.RESPONSES] == null) {
             return <TrinaColumn>[];
           }
           var columns = <TrinaColumn>[];
-          for (FormFieldModel f in (data[RESPONSES]) as List<FormFieldModel>) {
+          for (FormFieldDefinition f in (data[EshopColumnIds.RESPONSES])
+              as List<FormFieldDefinition>) {
             var title = f.title?.trim();
             TrinaColumn cc;
 
-            if (!FormHelper.nonEditableFields.contains(f.type)) {
+            if (!FormMetadata.nonEditableFields.contains(f.type)) {
               cc = genericTextColumn(
                   (title == null || title.isEmpty
                       ? FormHelper.fieldTypeToLocale(f.type!)
@@ -1219,58 +1292,59 @@ class EshopColumns {
           }
           return columns;
         },
-        HISTORY_ID: [
+        EshopColumnIds.HISTORY_ID: [
           TrinaColumn(
             title: OrdersStrings.gridId,
             hide: true,
             readOnly: true,
-            field: HISTORY_ID,
+            field: EshopColumnIds.HISTORY_ID,
             type: TrinaColumnType.number(),
           ),
         ],
-        HISTORY_MODEL_REFERENCE: [
+        EshopColumnIds.HISTORY_MODEL_REFERENCE: [
           TrinaColumn(
             hide: true,
-            field: HISTORY_MODEL_REFERENCE,
+            field: EshopColumnIds.HISTORY_MODEL_REFERENCE,
             type: TrinaColumnType.text(),
             title: '',
           ),
         ],
-        HISTORY_ORDER_SYMBOL: [
+        EshopColumnIds.HISTORY_ORDER_SYMBOL: [
           TrinaColumn(
             title: OrdersStrings.gridOrderSymbol,
-            field: HISTORY_ORDER_SYMBOL,
-            renderer: (r) => OrderSymbolCell(symbol: r.cell.value?.toString() ?? '',
+            field: EshopColumnIds.HISTORY_ORDER_SYMBOL,
+            renderer: (r) => OrderSymbolCell(
+                symbol: r.cell.value?.toString() ?? '',
                 style: r.stateManager.style.cellTextStyle),
             type: TrinaColumnType.text(),
             readOnly: true,
             width: _orderSymbolWidth(context),
           ),
         ],
-        HISTORY_CHANGED_AT: [
+        EshopColumnIds.HISTORY_CHANGED_AT: [
           TrinaColumn(
             title: OrdersStrings.gridChangedAt,
-            field: HISTORY_CHANGED_AT,
+            field: EshopColumnIds.HISTORY_CHANGED_AT,
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 140,
           ),
         ],
-        HISTORY_CHANGED_BY: [
+        EshopColumnIds.HISTORY_CHANGED_BY: [
           TrinaColumn(
             title: OrdersStrings.gridChangedBy,
-            field: HISTORY_CHANGED_BY,
+            field: EshopColumnIds.HISTORY_CHANGED_BY,
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 100,
           ),
         ],
-        HISTORY_STATE: [
+        EshopColumnIds.HISTORY_STATE: [
           TrinaColumn(
             cellPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             readOnly: true,
             title: OrdersStrings.gridState,
-            field: HISTORY_STATE,
+            field: EshopColumnIds.HISTORY_STATE,
             type: TrinaColumnType.text(),
             renderer: (rendererContext) => buildOrderStateRenderer(
                 rendererContext.cell.value,
@@ -1279,26 +1353,28 @@ class EshopColumns {
             width: 280,
           ),
         ],
-        HISTORY_PRICE: [
+        EshopColumnIds.HISTORY_PRICE: [
           TrinaColumn(
             readOnly: true,
             title: OrdersStrings.gridPrice,
-            field: HISTORY_PRICE,
+            field: EshopColumnIds.HISTORY_PRICE,
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 160,
           ),
         ],
-        HISTORY_CHANGES_SUMMARY: [
+        EshopColumnIds.HISTORY_CHANGES_SUMMARY: [
           TrinaColumn(
             title: OrdersStrings.gridChanges,
-            field: HISTORY_CHANGES_SUMMARY,
+            field: EshopColumnIds.HISTORY_CHANGES_SUMMARY,
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 600,
             renderer: (rendererContext) {
-              final historyModel = rendererContext.row
-                  .cells[HISTORY_MODEL_REFERENCE]?.value as OrderHistoryModel?;
+              final historyModel = rendererContext
+                  .row
+                  .cells[EshopColumnIds.HISTORY_MODEL_REFERENCE]
+                  ?.value as OrderHistoryModel?;
               if (historyModel == null) return const SizedBox.shrink();
               // Use the single-line version for the grid
               return historyModel.generateSingleLineSummaryWidget(context);
@@ -1330,8 +1406,9 @@ class EshopColumns {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              textValue,
+            Flexible(
+              child:
+                  Text(textValue, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             if (firstPart == OrderModel.expiredState)
               Padding(
@@ -1359,6 +1436,8 @@ class EshopColumns {
       {bool alignToEnd = true, bool enableEditing = false}) {
     return TrinaColumn(
       readOnly: !enableEditing,
+      checkReadOnly: (row, _) =>
+          !enableEditing || !OrderGridFilters.ticketIsNonCancelled(row),
       enableEditingMode: true,
       title: title,
       field: field,

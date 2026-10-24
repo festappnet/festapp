@@ -1,18 +1,24 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import '../../fonts/font_family_picker.dart';
 
 import '../form_strings.dart';
 
 class FormDesignSettings extends StatefulWidget {
-  final FormModel form;
+  final FormEditorDraft form;
   final VoidCallback onChanged;
+  final Future<FormFontCatalog> Function() loadFonts;
 
   const FormDesignSettings(
-      {super.key, required this.form, required this.onChanged});
+      {super.key,
+      required this.form,
+      required this.onChanged,
+      this.loadFonts = FormFontCatalog.load});
 
   @override
   State<FormDesignSettings> createState() => _FormDesignSettingsState();
@@ -20,6 +26,13 @@ class FormDesignSettings extends StatefulWidget {
 
 class _FormDesignSettingsState extends State<FormDesignSettings> {
   bool _showAllPresets = false;
+  late Future<FormFontCatalog> _fonts;
+
+  @override
+  void initState() {
+    super.initState();
+    _fonts = Future<FormFontCatalog>.sync(widget.loadFonts);
+  }
 
   final List<Map<String, dynamic>> _colorPresets = [
     {
@@ -108,7 +121,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
               TextEditingController(text: colorToHex(pickerColor));
           FocusNode hexFocus = FocusNode();
 
-          return AlertDialog(
+          return AppAlertDialog(
             title: Text(FormStrings.pickColor),
             content: StatefulBuilder(builder: (context, setState) {
               return SingleChildScrollView(
@@ -198,16 +211,18 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
 
   void _applyPreset(Map<String, dynamic> preset) {
     setState(() {
-      widget.form.primaryColor = preset['primary'];
-      widget.form.secondaryColor = preset['secondary'];
+      widget.form.definition =
+          widget.form.definition.withPrimaryColor(preset['primary']);
+      widget.form.definition =
+          widget.form.definition.withSecondaryColor(preset['secondary']);
       widget.onChanged();
     });
   }
 
-  TextStyle? _getSafeFont(String? fontFamily) {
+  TextStyle? _getSafeFont(FormFontCatalog fonts, String? fontFamily) {
     if (fontFamily == null || fontFamily.isEmpty) return null;
     try {
-      return GoogleFonts.getFont(fontFamily);
+      return fonts.getFont(fontFamily);
     } catch (e) {
       return null;
     }
@@ -223,10 +238,11 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           SwitchListTile(
             title: Text(FormStrings.labelCardDesign),
             subtitle: Text(FormStrings.subtitleCardDesign),
-            value: widget.form.isCardDesign,
+            value: widget.form.definition.isCardDesign,
             onChanged: (value) {
               setState(() {
-                widget.form.isCardDesign = value;
+                widget.form.definition =
+                    widget.form.definition.withIsCardDesign(value);
                 widget.onChanged();
               });
             },
@@ -268,12 +284,12 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                           boxShadow: const [
                             BoxShadow(blurRadius: 2, color: Colors.black26)
                           ],
-                          border:
-                              (widget.form.primaryColor == preset['primary'] &&
-                                      widget.form.secondaryColor ==
-                                          preset['secondary'])
-                                  ? Border.all(color: Colors.black, width: 2)
-                                  : null,
+                          border: (widget.form.definition.primaryColor ==
+                                      preset['primary'] &&
+                                  widget.form.definition.secondaryColor ==
+                                      preset['secondary'])
+                              ? Border.all(color: Colors.black, width: 2)
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -316,19 +332,21 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           const SizedBox(height: 16),
           _buildColorPickerRow(
               FormStrings.primaryColor,
-              widget.form.primaryColor != null
-                  ? Color(widget.form.primaryColor!)
+              widget.form.definition.primaryColor != null
+                  ? Color(widget.form.definition.primaryColor!)
                   : Colors.blue, (color) {
             setState(() {
-              widget.form.primaryColor = color.value;
+              widget.form.definition =
+                  widget.form.definition.withPrimaryColor(color.value);
               widget.onChanged();
             });
           },
               () => setState(() {
-                    widget.form.primaryColor = null;
+                    widget.form.definition =
+                        widget.form.definition.withPrimaryColor(null);
                     widget.onChanged();
                   }),
-              widget.form.primaryColor != null),
+              widget.form.definition.primaryColor != null),
           const SizedBox(height: 24),
           // Secondary color is now auto-calculated.
           const Divider(),
@@ -336,15 +354,42 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           Text(FormStrings.typography,
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          FontFamilyPicker(
-              value: widget.form.fontFamily,
-              families: GoogleFonts.asMap().keys.toList(),
-              selectedStyle: _getSafeFont(widget.form.fontFamily),
-              onSelected: (value) async {
-                if (value != null) GoogleFonts.getFont(value);
-                setState(() => widget.form.fontFamily = value);
-                widget.onChanged();
-              }),
+          FutureBuilder<FormFontCatalog>(
+            future: _fonts,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  children: [
+                    Text(FormStrings.fontLoadFailed),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _fonts = Future<FormFontCatalog>.sync(widget.loadFonts);
+                      }),
+                      child: Text(CommonStrings.retry),
+                    ),
+                  ],
+                );
+              }
+              final fonts = snapshot.data;
+              if (fonts == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return FontFamilyPicker(
+                value: widget.form.definition.fontFamily,
+                families: fonts.families,
+                selectedStyle:
+                    _getSafeFont(fonts, widget.form.definition.fontFamily),
+                onSelected: (value) async {
+                  if (value != null) fonts.getFont(value);
+                  setState(() => widget.form.definition =
+                      widget.form.definition.withFontFamily(value));
+                  widget.onChanged();
+                },
+              );
+            },
+          ),
         ],
       ),
     );

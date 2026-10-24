@@ -22,13 +22,12 @@ SET search_path = public, extensions
      v_form_blueprint BIGINT;
      v_form_settings JSONB;
      v_form_link TEXT;
-     v_form_link_base TEXT;
-     v_form_link_suffix INTEGER;
      v_reminder_interval_seconds BIGINT;
      v_email_order record;
 
      input_features JSONB;
      old_features JSONB;
+     old_sync_enabled boolean := false;
      processed_features JSONB;
      feature JSONB;
      form_feature_found BOOLEAN;
@@ -103,10 +102,11 @@ SET search_path = public, extensions
      occ_id := (input_data->>'id')::BIGINT;
 
      IF occ_id IS NOT NULL THEN
+         PERFORM public.check_occasion_writable(occ_id);
          -- This is an UPDATE operation
 
          -- Check for the existence of the occasion and get its current unit
-         SELECT unit, features INTO final_unit, old_features FROM public.occasions WHERE id = occ_id FOR UPDATE;
+         SELECT unit, features, is_order_synchronization_enabled INTO final_unit, old_features, old_sync_enabled FROM public.occasions WHERE id = occ_id FOR UPDATE;
          IF NOT FOUND THEN
              RAISE EXCEPTION 'Occasion with ID % not found', occ_id;
          END IF;
@@ -115,6 +115,7 @@ SET search_path = public, extensions
              RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
          END IF;
          processed_features := public.merge_ticket_layout_features(old_features, processed_features, input_data->'ticket_layout_change');
+         PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
 
          -- Determine the final unit, allowing it to be updated.
          final_unit := COALESCE((input_data->>'unit')::BIGINT, final_unit);
@@ -124,11 +125,15 @@ SET search_path = public, extensions
              RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
          END IF;
 
+         IF (input_data ? 'organization' AND (input_data->>'organization')::bigint IS DISTINCT FROM v_org_id)
+           OR NOT EXISTS(SELECT 1 FROM public.units WHERE id=final_unit AND organization=v_org_id) THEN
+           RAISE insufficient_privilege USING MESSAGE='Occasion tenant cannot change'; END IF;
+
          UPDATE public.occasions
             SET updated_at  = now,
                 title       = COALESCE(input_data->>'title', title),
                 description = COALESCE(input_data->>'description', description),
-                link        = COALESCE(input_data->>'link', link),
+                link        = public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',false),
                 data        = COALESCE(input_data->'data', data),
                 is_hidden   = COALESCE((input_data->>'is_hidden')::BOOLEAN, is_hidden),
                 is_open     = COALESCE((input_data->>'is_open')::BOOLEAN, is_open),
@@ -184,7 +189,7 @@ SET search_path = public, extensions
              now, now,
              COALESCE(input_data->>'title', ''),
              COALESCE(input_data->>'description', ''),
-             input_data->>'link',
+             '',
              COALESCE(input_data->'data', '{}'::jsonb),
              COALESCE((input_data->>'is_hidden')::BOOLEAN, false),
              COALESCE((input_data->>'is_open')::BOOLEAN, true),
@@ -200,8 +205,18 @@ SET search_path = public, extensions
 
          -- Set the occ_id from the newly created record for subsequent logic
          occ_id := updated_occ.id;
+         UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',true) WHERE id=occ_id RETURNING * INTO updated_occ;
      END IF;
 
+     -- Enabling the blueprint feature must not bypass form capacity/waitlist guards,
+     -- including when the stored blueprint already exists.
+     IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
+       FOR v_form_id IN SELECT id FROM public.forms WHERE occasion=occ_id ORDER BY id LOOP
+         PERFORM public.check_form_capacity_settings_internal(v_form_id, '{"blueprint":1}'::jsonb);
+       END LOOP;
+     END IF;
+
+     PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
      --
      -- Post-update/insert feature handling
      --
@@ -217,23 +232,6 @@ SET search_path = public, extensions
          -- Create a default form if one doesn't exist for the occasion
          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE occasion = occ_id) THEN
              v_form_link := NULLIF(btrim(input_data->>'form_link'), '');
-             IF v_form_link IS NULL THEN
-                 -- Occasion slugs and form slugs are separate namespaces.
-                 -- An automatic default must not block an unrelated settings save.
-                 v_form_link_base := COALESCE(NULLIF(updated_occ.link, ''), 'registration');
-                 v_form_link := v_form_link_base;
-                 v_form_link_suffix := 0;
-                 LOOP
-                     -- Serialize automatic allocation for each candidate, including
-                     -- candidates that are another occasion's unsuffixed slug.
-                     PERFORM pg_advisory_xact_lock(hashtextextended('default-form:' || v_form_link, 0));
-                     EXIT WHEN NOT EXISTS (SELECT 1 FROM public.forms WHERE link = v_form_link);
-                     v_form_link_suffix := v_form_link_suffix + 1;
-                     v_form_link := v_form_link_base || '-' || occ_id::text ||
-                         CASE WHEN v_form_link_suffix = 1 THEN '' ELSE '-' || v_form_link_suffix::text END;
-                 END LOOP;
-             END IF;
-             -- Explicit links still use create_form's collision validation.
              PERFORM create_form(occ_id, v_form_link, 'Registration');
          END IF;
 
@@ -251,7 +249,10 @@ SET search_path = public, extensions
 
      -- Revalidate in-flight reminders after every relevant occasion update.
      PERFORM public.queue_payment_reminders(occ_id,coalesce(v_reminder_interval_seconds,86400));
-     IF updated_occ.is_order_synchronization_enabled THEN
+     IF updated_occ.is_order_synchronization_enabled AND (
+       NOT coalesce(old_sync_enabled,false) OR (
+        NOT jsonb_path_exists(coalesce(old_features,'[]'), '$[*] ? (@.code == "ticket" && @.is_enabled == true)')
+        AND jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "ticket" && @.is_enabled == true)'))) THEN
        FOR v_email_order IN SELECT id FROM eshop.orders WHERE occasion=occ_id AND state='paid' LOOP
          PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
        END LOOP;
@@ -274,15 +275,33 @@ SET search_path = public, extensions
                 SET blueprint = new_blueprint_id,
                     updated_at = now
               WHERE id = v_form_id;
+             INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+             VALUES('form','occasion',occ_id,v_form_id::text,1)
+             ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+             SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
          END IF;
      END IF;
  END;
  $$;
 
 CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_occasion bigint; v_version bigint;
 BEGIN
-  PERFORM public.update_occasion_internal_v1(input_data);
-END;
-$$;
+  v_occasion:=NULLIF(input_data->>'id','')::bigint;
+  IF v_occasion IS NULL THEN
+    PERFORM public.create_occasion_client_sync_v1(
+      extensions.gen_random_uuid(),input_data);
+    RETURN;
+  END IF;
+  PERFORM 1 FROM public.forms WHERE occasion=v_occasion ORDER BY id FOR UPDATE;
+  PERFORM 1 FROM public.occasions WHERE id=v_occasion FOR UPDATE;
+  SELECT COALESCE(v.version,0) INTO v_version
+    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
+      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
+      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
+  PERFORM public.save_occasion_client_sync_v1(v_occasion,
+    extensions.gen_random_uuid(),v_version,input_data);
+END; $$;
+REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;

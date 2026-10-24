@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/dialogs/dialogs_strings.dart';
@@ -10,6 +11,8 @@ class ResponsiveSearchDialog<T> extends StatefulWidget {
   final String? searchLabel;
   final Widget? suggestion;
   final Widget? failure;
+  final Widget? emptyState;
+  final String? description;
 
   const ResponsiveSearchDialog({
     super.key,
@@ -19,6 +22,8 @@ class ResponsiveSearchDialog<T> extends StatefulWidget {
     this.searchLabel,
     this.suggestion,
     this.failure,
+    this.emptyState,
+    this.description,
   });
 
   @override
@@ -71,8 +76,9 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                 .appMaxWidth; // Using appMaxWidth as a breakpoint or define a smaller one like 600
 
         if (isMobile) {
-          return Scaffold(
-            appBar: AppBar(
+          return AppDialog.fullscreen(
+              child: Scaffold(
+            appBar: AppDialogAppBar(
               title: TextField(
                 controller: _controller,
                 autofocus: true,
@@ -82,10 +88,6 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                   hintStyle: const TextStyle(color: Colors.white70),
                 ),
                 style: const TextStyle(color: Colors.white),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
               ),
               actions: [
                 if (_controller.text.isNotEmpty)
@@ -97,13 +99,10 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                   ),
               ],
             ),
-            body: _buildList(),
-          );
+            body: _buildBody(),
+          ));
         } else {
-          return Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-
+          return AppDialog(
             // Limit the size of the dialog
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
@@ -112,7 +111,8 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Row(
+                    child: AppDialogHeader(
+                        title: Row(
                       children: [
                         const Icon(Icons.search),
                         const SizedBox(width: 16),
@@ -135,11 +135,11 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
                             },
                           ),
                       ],
-                    ),
+                    )),
                   ),
                   const Divider(height: 1),
                   Expanded(
-                    child: _buildList(),
+                    child: _buildBody(),
                   ),
                   const Divider(height: 1),
                   Padding(
@@ -161,18 +161,20 @@ class _ResponsiveSearchDialogState<T> extends State<ResponsiveSearchDialog<T>> {
     );
   }
 
+  Widget _buildBody() => Column(
+        children: [
+          if (widget.description != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(widget.description!),
+            ),
+          Expanded(child: _buildList()),
+        ],
+      );
+
   Widget _buildList() {
-    if (!_isSearching && widget.suggestion != null) {
-      // If we are not actively searching (or query is empty) and have a suggestion widget?
-      // The original search_page behavior shows 'suggestion' when query is empty.
-      // But typically we want to show all items if provided, or the suggestion.
-      // Show all items if query is empty
-      // Re-reading search_page logic: "showItemsOnEmpty" controls this.
-      // In DialogHelper, showItemsOnEmpty: true. So we show items.
-      // If items list is empty initially?
-      if (_filteredItems.isEmpty && widget.failure != null) {
-        return widget.failure!;
-      }
+    if (widget.items.isEmpty && !_isSearching && widget.emptyState != null) {
+      return widget.emptyState!;
     }
 
     if (_filteredItems.isEmpty) {

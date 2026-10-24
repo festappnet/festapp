@@ -1,6 +1,7 @@
 // lib/pages/form/models/ticket_holder.dart
 
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'field_holder.dart';
@@ -14,18 +15,19 @@ class TicketHolder extends FieldHolder {
 
   List<FormTicketModel> tickets = [];
 
-  final int maxTickets;
+  int maxTickets;
+  bool fixedTickets = false;
   final bool showDepositDescription;
   final List<FieldHolder> fields;
 
   TicketHolder({
     required super.fieldType,
-    required this.maxTickets,
+    required int maxTickets,
     this.showDepositDescription = true,
     required this.fields,
     super.isRequired = true,
     required super.id,
-  });
+  }) : maxTickets = maxTickets.clamp(1, AppConfig.maxTicketsPerOrder);
 
   @override
   Map<String, dynamic> toJson() {

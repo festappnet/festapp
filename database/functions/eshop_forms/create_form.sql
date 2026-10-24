@@ -10,7 +10,7 @@ RETURNS jsonb
 LANGUAGE sql
 VOLATILE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, extensions
 AS $$
     SELECT public.create_form_internal_v1(p_occasion_id, p_link, p_title);
 $$;

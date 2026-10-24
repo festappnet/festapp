@@ -1,0 +1,39 @@
+{
+  "scope": "local only; no release",
+  "checks": {
+    "player": "3/3 PASS",
+    "generatorAndSEO": "14/14 PASS",
+    "pnpmBuild": "PASS",
+    "pnpmVersion": "11.24.0",
+    "videoFullDecode": "16/16 PASS",
+    "independentMediaReview": "8/8 PASS after concrete fixes",
+    "responsiveWidths": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "horizontalOverflow": "none",
+    "axeViolations": 0
+  },
+  "routingAndPWA": "See routing-validation.json for prior targeted and actual offline-upgrade checks",
+  "marketingJavaScript": [
+    {
+      "file": "web-assets/landing-D_SR9KxB-0.20.1-485.js",
+      "bytes": 4656,
+      "gzipBytes": 1988
+    },
+    {
+      "file": "web-assets/url_normalizer-DyqXbJA4.js",
+      "bytes": 667,
+      "gzipBytes": 370
+    }
+  ],
+  "cleanup": "owned browser, Flutter, Vite, package demo, Edge Functions and disposable Supabase stopped; retained reproducible fixture data",
+  "limitations": [
+    "file:// warm local metrics are not production vitals",
+    "no deployment or production behavior claimed",
+    "editor/picker synthetic demo is not payment/reservation proof",
+    "available CSV export belongs to tickets, not orders"
+  ]
+}

@@ -2,6 +2,7 @@
 *.class
 *.lock
 !/pubspec.lock
+!/supabase/functions/deno.lock
 !/automation/release/fastlane/Gemfile.lock
 **/.bundle/
 *.log
@@ -202,3 +203,12 @@ workers/*/node_modules/
 
 # Serena MCP (local code-navigation cache/config)
 .serena/
+
+# Scratch operational evidence is retained locally, never a source input.
+/.codex-artifacts/
+
+# Workstation-only runtime state and local dependency overrides.
+/.private/
+/.artifacts/
+/output/
+/pubspec_overrides.yaml

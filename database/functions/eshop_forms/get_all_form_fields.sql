@@ -12,7 +12,7 @@ BEGIN
     -- Retrieve form ID and occasion ID
     SELECT id, occasion INTO v_form_id, v_occasion_id
     FROM public.forms
-    WHERE link = form_link;
+    WHERE id = public.resolve_form_link_internal(form_link);
 
     -- Check if form exists
     IF v_form_id IS NULL THEN

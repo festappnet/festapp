@@ -125,7 +125,7 @@ implementaci.
 | Public historie roste bez pruning ownera. | 1 329 publication rows / 117 932 497 raw bytes a 34 manifestů od 3. srpna; posledních 24 h přibližně 46,4 MB raw. R2 bucket: 1 812 objektů / 265 MB. Search nenašel sync prune/delete implementaci. | Růst je lineární; bucket navíc obsahuje mapová data, takže deletion musí být prefixově omezená. |
 | Plné receipt responses rostou bez compaction. | 5 136 receipts, 0 processing, relation 25 968 640 bytes, response payload 21 399 156 bytes; posledních 24 h 7 151 135 bytes. | Exact replay data potřebují časově omezenou retention, command ID ochrana musí zůstat. |
 | Payload headroom je nyní zdravý. | Latest public set 891 889 B raw / cca 152 KB gzip; program 598 116 B = 57 % raw budget; live 76 223 B = 14,5 % raw budget. Max receipt response 8 517 B proti 8 MiB limitu. | Není důvod dělit komponenty nebo měnit protokol; plán nesmí zavést lazy/delta fallback. |
-| Dokumentace je zastaralá. | `docs/runbooks/client-sync-v1-implementation-status-2026-08-03.md` stále říká, že nic nebylo aplikováno ani zapnuto. | Operátor může provést špatný rollout/diagnózu; dokument musí být přepsán na aktuální stav. |
+| Dokumentace je zastaralá. | `docs/archive/operations/client-sync-v1-implementation-status-2026-08-03.md` stále říká, že nic nebylo aplikováno ani zapnuto. | Operátor může provést špatný rollout/diagnózu; dokument musí být přepsán na aktuální stav. |
 
 ### Reprezentativní end-to-end flow
 
@@ -704,7 +704,7 @@ a dokumentace odpovídá skutečnému nasazení.
   - `docs/runbooks/client-sync-v1.md` o scheduler, secret rotation, cache,
     monitoring, explicitní repair, retention dry-run/apply, occasion lifecycle a
     forward-only rollback;
-  - `docs/runbooks/client-sync-v1-implementation-status-2026-08-03.md` přejmenovat
+  - `docs/archive/operations/client-sync-v1-implementation-status-2026-08-03.md` přejmenovat
     nebo nahradit current status dokumentem; odstranit tvrzení „not deployed“;
   - `docs/architecture/database.md` o maintenance RPCs/status;
   - původní sync plan pouze označit jako historical design baseline a odkázat na

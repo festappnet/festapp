@@ -1,6 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
+  static String get plan => 'FeatureBlueprint.plan'.tr();
+  static String get editingTools => 'FeatureBlueprint.editingTools'.tr();
+  static String get groups => 'FeatureBlueprint.groups'.tr();
+  static String get touchHint => 'FeatureBlueprint.touchHint'.tr();
+  static String get zoomIn => 'FeatureBlueprint.zoomIn'.tr();
+  static String get zoomOut => 'FeatureBlueprint.zoomOut'.tr();
+  static String get fitToScreen => 'FeatureBlueprint.fitToScreen'.tr();
   // --- BlueprintTab (General) ---
   static String get changeTitle =>
       'FeatureBlueprint.changeTitle'.tr(); // "Change title"

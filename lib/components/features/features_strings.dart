@@ -33,6 +33,8 @@ class FeaturesStrings {
       'FeatureSchedule.buttonAddEventType'.tr();
   static String get eventTypeDefaultTitle =>
       'FeatureSchedule.eventTypeDefaultTitle'.tr();
+  static String get eventTypeCodeAlreadyUsed =>
+      'FeatureSchedule.eventTypeCodeAlreadyUsed'.tr();
   static String get labelEventTypeCode =>
       'FeatureSchedule.labelEventTypeCode'.tr();
   static String get labelEventTypeTitle =>
@@ -131,6 +133,11 @@ class FeaturesStrings {
   // Feature Deposit
   static String get depositTitle => 'FeatureDeposit.title'.tr();
   static String get depositDescription => 'FeatureDeposit.description'.tr();
+
+  static String get enablePregeneratedTickets =>
+      'FeatureTicket.enablePregeneratedTickets'.tr();
+  static String get pregeneratedTicketsDescription =>
+      'FeatureTicket.pregeneratedTicketsDescription'.tr();
 
   // Feature Ticket
   static String get enableManualTicketScan =>
@@ -269,21 +276,12 @@ class FeaturesStrings {
   static String get mapBaseModeDescription =>
       'FeatureMap.mapBaseModeDescription'.tr();
   static String get mapBaseModeOnline => 'FeatureMap.mapBaseModeOnline'.tr();
-  static String get mapBaseModeLegacy => 'FeatureMap.mapBaseModeLegacy'.tr();
   static String get mapBaseModeMapLibre =>
       'FeatureMap.mapBaseModeMapLibre'.tr();
   static String get offlineMapBundleManifestUrl =>
       'FeatureMap.offlineMapBundleManifestUrl'.tr();
   static String get mapLibreBundleManifestRequired =>
       'FeatureMap.mapLibreBundleManifestRequired'.tr();
-  static String get offlineMapRendererFieldRequired =>
-      'FeatureMap.offlineMapRendererFieldRequired'.tr();
   static String get offlineMapHttpsUrlRequired =>
       'FeatureMap.offlineMapHttpsUrlRequired'.tr();
-  static String get offlineMapPackageUrl =>
-      'FeatureMap.offlineMapPackageUrl'.tr(); // "Offline Map Package URL"
-  static String get offlineMapStyleUrl =>
-      'FeatureMap.offlineMapStyleUrl'.tr(); // "Offline Map Style URL"
-  static String get offlineMapLayerName =>
-      'FeatureMap.offlineMapLayerName'.tr(); // "Offline Map Layer Name"
 }

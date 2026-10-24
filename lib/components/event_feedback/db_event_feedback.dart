@@ -15,14 +15,6 @@ class DbEventFeedback {
       SupabaseEventFeedbackCommands(_supabase);
   static Future<String> _clientId() => ClientCommandIdentity.clientId();
 
-  static Future<bool> isEnabledOnOccasion(int occasionId) async {
-    final res = await _supabase.rpc(
-      'get_is_event_feedback_enabled_on_occasion',
-      params: {'p_occasion': occasionId},
-    );
-    return res == true;
-  }
-
   /// Current viewer's feedback for [eventId], or null.
   static Future<EventFeedbackModel?> getMyFeedback(int eventId) async {
     if (ClientSyncRuntime.isV1Selected && AuthService.isLoggedIn()) {
@@ -44,47 +36,23 @@ class DbEventFeedback {
     required String rating,
     String? note,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      return _commands.submit(
-        occasionId: RightsService.currentOccasionId()!,
-        eventId: eventId,
-        rating: rating,
-        note: note,
-        anonymousClientId: AuthService.isLoggedIn() ? null : await _clientId(),
-      );
-    }
-    final params = <String, dynamic>{
-      'p_event': eventId,
-      'p_rating': rating,
-      'p_note': note,
-    };
-    if (!AuthService.isLoggedIn()) {
-      params['p_client_id'] = await _clientId();
-    }
-    final res = await _supabase.rpc('submit_event_feedback', params: params);
-    _ensureOk(res);
-    return EventFeedbackModel.fromJson(
-        (res['data'] as Map).cast<String, dynamic>());
+    return _commands.submit(
+      occasionId: RightsService.currentOccasionId()!,
+      eventId: eventId,
+      rating: rating,
+      note: note,
+      anonymousClientId: AuthService.isLoggedIn() ? null : await _clientId(),
+    );
   }
 
   static Future<void> delete(int eventId) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.delete(
-        occasionId: RightsService.currentOccasionId()!,
-        eventId: eventId,
-        anonymousClientId: AuthService.isLoggedIn() ? null : await _clientId(),
-      );
-      return;
-    }
-    final params = <String, dynamic>{'p_event': eventId};
-    if (!AuthService.isLoggedIn()) {
-      params['p_client_id'] = await _clientId();
-    }
-    final res = await _supabase.rpc('delete_event_feedback', params: params);
-    _ensureOk(res);
+    await _commands.delete(
+      occasionId: RightsService.currentOccasionId()!,
+      eventId: eventId,
+      anonymousClientId: AuthService.isLoggedIn() ? null : await _clientId(),
+    );
+    return;
   }
-
-  // --- Admin ---
 
   static Future<EventFeedbackForEdit> getForEdit(int eventId) async {
     final res = await _supabase

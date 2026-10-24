@@ -31,6 +31,7 @@ DECLARE
   v_new_deadline      timestamptz;
   v_current_products_for_compare jsonb;
 BEGIN
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=p_ticket_id));
   /* 0) Lookup & permission */
   SELECT opt."order", o.occasion, o.payment_info, o.currency_code, o.data, o.state, occ.features
     INTO v_order_id, v_occasion_id, v_payment_info_id, v_currency_code, v_old_data, v_state, v_occasion_features
@@ -38,7 +39,7 @@ BEGIN
   JOIN eshop.orders              AS o   ON o.id = opt."order"
   JOIN public.occasions          AS occ ON occ.id = o.occasion
   WHERE opt.ticket = p_ticket_id
-  LIMIT 1;
+  LIMIT 1 FOR UPDATE OF o;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 404, 'message', 'Ticket not linked to any order')::text;
@@ -47,6 +48,11 @@ BEGIN
   IF NOT get_is_editor_order_on_occasion(v_occasion_id) THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 403, 'message', 'Not authorized')::text;
   END IF;
+
+  PERFORM public.check_ticket_is_mutable(p_ticket_id);
+  PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[p_ticket_id]);
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND payment_method='stripe') THEN
+    RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
 
   /* Check for negative prices in the input */
   IF EXISTS (
@@ -57,6 +63,12 @@ BEGIN
     RAISE EXCEPTION '%', jsonb_build_object('code', 400, 'message', 'Product prices cannot be negative.')::text;
   END IF;
 
+  PERFORM public.lock_ticket_order_products_internal(v_order_id,jsonb_build_object('ticket',jsonb_build_array(jsonb_build_object('fields',
+    (SELECT coalesce(jsonb_agg(jsonb_build_object('product_type',x->'id')),'[]') FROM jsonb_array_elements(p_products) x)))));
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_products) x JOIN eshop.products p ON p.id=(x->>'id')::bigint
+    WHERE p.maximum>0 AND (SELECT count(*) FROM eshop.order_product_ticket WHERE product=p.id)+
+      CASE WHEN EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE ticket=p_ticket_id AND product=p.id) THEN 0 ELSE 1 END>p.maximum) THEN
+    RAISE EXCEPTION 'PRODUCT_CAPACITY_EXCEEDED'; END IF;
   /* get old products for the ticket */
   SELECT jsonb_path_query_first(v_old_data, '$.tickets[*] ? (@.id == $tid).products', jsonb_build_object('tid', p_ticket_id))
   INTO v_old_products;
@@ -209,6 +221,17 @@ BEGIN
          updated_at = now()
    WHERE id = v_order_id;
 
+  -- A price edit can pay off the order without the usual paid transition.
+  -- Email acceptance only projects paid tickets to sent, so keep eligible
+  -- tickets in step with the order before creating its delivery intent.
+  IF v_new_state = 'paid' THEN
+    UPDATE eshop.tickets t
+       SET state = 'paid', updated_at = now()
+      FROM eshop.order_product_ticket opt
+     WHERE opt.ticket = t.id AND opt."order" = v_order_id
+       AND t.state IN ('ordered', 'expired');
+  END IF;
+
   IF v_price > 0 THEN
     -- If there's a balance due, set/update the payment deadline.
     SELECT elem INTO v_form_settings
@@ -216,6 +239,8 @@ BEGIN
     WHERE elem->>'code' = 'form';
 
     v_deadline_duration_seconds := COALESCE(
+        (SELECT f.deadline_duration_seconds FROM public.forms f
+         JOIN eshop.orders o ON o.form=f.id WHERE o.id=v_order_id),
         (v_form_settings->>'deadline_duration_seconds')::bigint,
         604800 -- Default to 7 days (604800 seconds) if not specified
     );
@@ -243,3 +268,19 @@ BEGIN
   RETURN jsonb_build_object('code',200,'data',v_new_data);
 END;
 $$;
+
+-- The receipted Client Sync command must use the same payment and email
+-- transition as the legacy RPC, rather than its pre-email-cutover copy.
+CREATE OR REPLACE FUNCTION public.update_ticket_products_internal_v1(
+  p_ticket_id bigint, p_products jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, extensions AS $$
+BEGIN
+  RETURN public.update_ticket_products_wsv2(p_ticket_id, p_products);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.update_ticket_products_internal_v1(bigint,jsonb)
+  FROM PUBLIC, anon, authenticated;

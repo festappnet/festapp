@@ -1,0 +1,62 @@
+[
+  {
+    "email": "jana@seznam.cz",
+    "status": "knownSuffix",
+    "suffix": "cz"
+  },
+  {
+    "email": "Jana+test@SUB.Example.COM",
+    "status": "knownSuffix",
+    "suffix": "com"
+  },
+  {
+    "email": " a@example.co.uk ",
+    "status": "knownSuffix",
+    "suffix": "uk"
+  },
+  {
+    "email": "a@example.international",
+    "status": "knownSuffix",
+    "suffix": "international"
+  },
+  {
+    "email": "a@example.xn--p1ai",
+    "status": "knownSuffix",
+    "suffix": "xn--p1ai"
+  },
+  {
+    "email": "a@example.XN--P1AI",
+    "status": "knownSuffix",
+    "suffix": "xn--p1ai"
+  },
+  {
+    "email": "a@example.co",
+    "status": "knownSuffix",
+    "suffix": "co"
+  },
+  {
+    "email": "a@example.cm",
+    "status": "knownSuffix",
+    "suffix": "cm"
+  },
+  {
+    "email": "a@example.czz",
+    "status": "unrecognizedSuffix",
+    "suffix": "czz"
+  },
+  {
+    "email": "a@example.comm",
+    "status": "unrecognizedSuffix",
+    "suffix": "comm"
+  },
+  {
+    "email": "a@example.newfuturetld",
+    "status": "unrecognizedSuffix",
+    "suffix": "newfuturetld"
+  },
+  {
+    "email": "a@example.рф",
+    "status": "unrecognizedSuffix",
+    "suffix": "рф"
+  }
+]

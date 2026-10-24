@@ -1,3 +1,6 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -60,39 +63,45 @@ class _TicketsTabState extends State<TicketsTab> {
     }
 
     final List<String> columnIdentifiers = [
-      EshopColumns.TICKET_ID,
-      EshopColumns.ORDER_SEQUENCE,
-      EshopColumns.ORDER_SYMBOL,
-      EshopColumns.ORDER_DATA,
-      EshopColumns.TICKET_SYMBOL,
-      EshopColumns.TICKET_CREATED_AT,
-      EshopColumns.TICKET_STATE,
+      EshopColumnIds.TICKET_ID,
+      EshopColumnIds.ORDER_SEQUENCE,
+      EshopColumnIds.ORDER_SYMBOL,
+      EshopColumnIds.ORDER_DATA,
+      EshopColumnIds.TICKET_SYMBOL,
+      if (FeatureService.isTicketPregenerationEnabled()) ...[
+        EshopColumnIds.TICKET_ORIGIN,
+        EshopColumnIds.TICKET_BATCH,
+        EshopColumnIds.TICKET_SALE_STATE,
+      ],
+      EshopColumnIds.TICKET_CREATED_AT,
+      EshopColumnIds.TICKET_STATE,
       if (PlatformHelper.isWeb &&
           FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-        EshopColumns.TICKET_DOWNLOAD,
+        EshopColumnIds.TICKET_DOWNLOAD,
       if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-        EshopColumns.TICKET_CONFIRM,
-      EshopColumns.TICKET_TOTAL_PRICE,
+        EshopColumnIds.TICKET_CONFIRM,
+      EshopColumnIds.TICKET_TOTAL_PRICE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
-        EshopColumns.TICKET_SPOT,
-      EshopColumns.TICKET_PRODUCTS_EXTENDED,
-      EshopColumns.TICKET_PRODUCTS_EDIT,
+        EshopColumnIds.TICKET_SPOT,
+      EshopColumnIds.TICKET_PRODUCTS_EXTENDED,
+      EshopColumnIds.TICKET_PRODUCTS_EDIT,
       if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-        EshopColumns.TICKET_LAST_CHANGE,
-      EshopColumns.TICKET_NOTE,
-      EshopColumns.TICKET_NOTE_HIDDEN,
+        EshopColumnIds.TICKET_LAST_CHANGE,
+      EshopColumnIds.TICKET_NOTE,
+      EshopColumnIds.TICKET_NOTE_HIDDEN,
     ];
 
     final newController = SingleDataGridController<TicketModel>(
       context: context,
       additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
-      headerFilterBuilder: (context, controller) => OrderGridFilters.filterButton(
-          context, controller, label: OrdersStrings.validTickets),
+      headerFilterBuilder: (context, controller) =>
+          OrderGridFilters.filterButton(context, controller,
+              label: OrderItemStrings.validTickets),
       loadData: () => DbTickets.getAllTickets(occasionLink!),
       fromPlutoJson: TicketModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.check,
-      idColumn: EshopColumns.TICKET_ID,
+      idColumn: EshopColumnIds.TICKET_ID,
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: RightsService.isEditorOrder,
         isAddActionPossible: () => false,
@@ -103,11 +112,15 @@ class _TicketsTabState extends State<TicketsTab> {
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (_controller?.visibleCheckedRows
+                      .every(OrderGridFilters.ticketIsNonCancelled) ??
+                  false),
         ),
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
-            name: OrdersStrings.scanActionText,
+            name: OrderItemStrings.scanActionText,
             requiresSelection: false,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
@@ -118,10 +131,11 @@ class _TicketsTabState extends State<TicketsTab> {
         context,
         columnIdentifiers,
         data: {
-          EshopColumns.TICKET_PRODUCTS_EXTENDED: EshopColumns.productCategories,
-          EshopColumns.TICKET_PRODUCTS_EDIT: refreshData,
-          EshopColumns.TICKET_CONFIRM: refreshData,
-          EshopColumns.TICKET_DOWNLOAD: null,
+          EshopColumnIds.TICKET_PRODUCTS_EXTENDED:
+              EshopColumns.productCategories,
+          EshopColumnIds.TICKET_PRODUCTS_EDIT: refreshData,
+          EshopColumnIds.TICKET_CONFIRM: refreshData,
+          EshopColumnIds.TICKET_DOWNLOAD: null,
         },
       ),
       exportOptions: ExportOptions(fileName: "$occasionLink-tickets"),
@@ -157,7 +171,7 @@ class _TicketsTabState extends State<TicketsTab> {
   Future<void> _scanTickets(SingleDataGridController singleDataGrid) async {
     await TicketCodeHelper.showScanTicketCode(
       context,
-      OrdersStrings.scanActionText,
+      OrderItemStrings.scanActionText,
       occasionLink!,
     );
     refreshData();
@@ -170,13 +184,24 @@ class _TicketsTabState extends State<TicketsTab> {
       return;
     }
 
-    var confirm = await DialogHelper.showConfirmationDialog(
-      context,
-      CommonStrings.cancel,
-      "${OrdersStrings.cancelItemsConfirmationText} (${selectedTickets.length})",
+    var confirm = await DataGridActionConfirmation.show<TicketModel>(
+      context: context,
+      title: CommonStrings.cancel,
+      message: OrderItemStrings.cancelItemsConfirmationText,
+      items: selectedTickets,
+      itemsLabel: OrderItemStrings.itemsPlural,
+      confirmButtonText: CommonStrings.cancel,
+      groupBy: (ticket) => ticket.relatedOrder,
     );
 
     if (confirm && mounted) {
+      final checkedIds =
+          _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id).toSet();
+      final confirmedIds = selectedTickets
+          .where((ticket) => checkedIds.contains(ticket.id))
+          .map((ticket) => ticket.id!)
+          .toList();
+      if (confirmedIds.isEmpty) return;
       TicketCancellationOutcome? outcome;
       final success = await DialogHelper.showProgressDialogAsync(
         context,
@@ -185,7 +210,7 @@ class _TicketsTabState extends State<TicketsTab> {
         futures: [
           () async {
             outcome = await DbTickets.stornoTickets(
-              _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id!).toList(),
+              confirmedIds,
             );
           },
         ],
@@ -243,6 +268,7 @@ class _TicketsTabState extends State<TicketsTab> {
   ) {
     return List<TicketModel>.from(
       singleDataGrid.visibleCheckedRows
+          .where(OrderGridFilters.ticketIsNonCancelled)
           .map((row) => TicketModel.fromPlutoJson(row.toJson())),
     );
   }

@@ -3,7 +3,7 @@ BEGIN;
 -- 1. Setup Data
 INSERT INTO organizations (id, title) VALUES (997, 'Test Org Free');
 INSERT INTO units (id, organization, title) VALUES (997, 997, 'Test Unit Free');
-INSERT INTO occasions (id, unit, title, link, start_time, end_time) VALUES (125, 997, 'Test Occasion Free', 'free-link', now(), now() + interval '1 day');
+INSERT INTO occasions (id, organization, unit, title, link, start_time, end_time) VALUES (125, 997, 997, 'Test Occasion Free', 'free-link', now(), now() + interval '1 day');
 INSERT INTO public.forms (id, key, occasion, data, is_open) VALUES (800, '00000000-0000-0000-0000-000000000800', 125, '{}', true);
 
 -- Need a Bank Account for VS generation (even if free)
@@ -13,6 +13,8 @@ INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority) VALUES (997,
 -- Need a Product Type (spot) and Product
 INSERT INTO eshop.product_types (id, occasion, title, type) VALUES (900, 125, 'Free Ticket Type', 'spot');
 INSERT INTO eshop.products (id, product_type, title, price, currency_code, is_hidden) VALUES (901, 900, 'Free Ticket', 0, 'CZK', false);
+
+INSERT INTO public.form_fields(form,product_type,type) VALUES(800,900,'product_type');
 
 -- 2. Call create_ticket_order with Price 0
 -- We simulate a JSON payload for a free ticket

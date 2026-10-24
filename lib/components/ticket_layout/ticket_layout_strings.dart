@@ -1,11 +1,39 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class TicketLayoutStrings {
+  static String get manageProducts => 'TicketLayout.manageProducts'.tr();
+  static String get layoutLimit => 'TicketLayout.layoutLimit'.tr();
+  static String get addElement => 'TicketLayout.addElement'.tr();
+  static String get addProduct => 'TicketLayout.addProduct'.tr();
+  static String get productGroup => 'TicketLayout.productGroup'.tr();
+  static String get productLabel => 'TicketLayout.productLabel'.tr();
+  static String get labelHint => 'TicketLayout.labelHint'.tr();
+  static String get example => 'TicketLayout.example'.tr();
+  static String get noExample => 'TicketLayout.noExample'.tr();
+  static String get removeProduct => 'TicketLayout.removeProduct'.tr();
+  static String get searchProducts => 'TicketLayout.searchProducts'.tr();
+  static String get alreadyAdded => 'TicketLayout.alreadyAdded'.tr();
+  static String get emptyProducts => 'TicketLayout.emptyProducts'.tr();
+  static String get retryCatalog => 'TicketLayout.retryCatalog'.tr();
+  static String get catalogError => 'TicketLayout.catalogError'.tr();
+  static String get missingProduct => 'TicketLayout.missingProduct'.tr();
+  static String get hiddenProduct => 'TicketLayout.hiddenProduct'.tr();
+  static String get offeredProduct => 'TicketLayout.offeredProduct'.tr();
+  static String get catalogProduct => 'TicketLayout.catalogProduct'.tr();
+  static String get noSpace => 'TicketLayout.noSpace'.tr();
+  static String get elementLimit => 'TicketLayout.elementLimit'.tr();
+  static String get draftProducts => 'TicketLayout.draftProducts'.tr();
+  static String get replacementProducts =>
+      'TicketLayout.replacementProducts'.tr();
+  static String get productType => 'TicketLayout.productType'.tr();
+
   static String get modeCanvas => 'TicketLayout.modeCanvas'.tr();
   static String get modeImage => 'TicketLayout.modeImage'.tr();
   static String get modeCrop => 'TicketLayout.modeCrop'.tr();
-  static String get dimensionInputHint => 'TicketLayout.dimensionInputHint'.tr();
-  static String editBlockingElement(String name) => 'TicketLayout.editBlockingElement'.tr(namedArgs: {'name': name});
+  static String get dimensionInputHint =>
+      'TicketLayout.dimensionInputHint'.tr();
+  static String editBlockingElement(String name) =>
+      'TicketLayout.editBlockingElement'.tr(namedArgs: {'name': name});
   static String get cropImage => 'TicketLayout.cropImage'.tr();
   static String get cropImageHint => 'TicketLayout.cropImageHint'.tr();
   static String get resetCrop => 'TicketLayout.resetCrop'.tr();
@@ -132,7 +160,6 @@ class TicketLayoutStrings {
   static String get qr => 'TicketLayout.qr'.tr();
   static String get ticketSymbol => 'TicketLayout.ticketSymbol'.tr();
   static String get spotGroup => 'TicketLayout.spotGroup'.tr();
-  static String get food => 'TicketLayout.food'.tr();
   static String get note => 'TicketLayout.note'.tr();
   static String get price => 'TicketLayout.price'.tr();
   static String get occasionTitle => 'TicketLayout.occasionTitle'.tr();

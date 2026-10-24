@@ -1,0 +1,49 @@
+<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stripe - návrhy stavů</title><style>:root {
+    /* Colors from properties matches Flutter ThemeConfig */
+    --seed-1: #253759;
+    --seed-2: #80BDF2; /* dddPrimary */
+    --seed-3: #4465A6; /* lllPrimary */
+    --white: #ffffff;
+
+    /* Light Theme (Default) */
+    --primary-color: var(--seed-3); 
+    --accent-color: var(--seed-2);
+    --background-color: #ebf1f6; /* lllBackground: seed2 sat 0.10 light 0.92 */
+    --surface-color: #ffffff;
+    --text-color: #000000;
+    --card-bg: #ffffff;
+    --red-color: #d32f2f;
+
+    /* Dimensions */
+    --header-height: 80px;
+    --max-width: 1200px;
+    --form-max-width: 580px; /* Reduced to match formMaxWidthMid from StylesConfig */
+    
+    /* Spacing */
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    
+    /* Border Radius */
+    --radius-sm: 10px;
+    --radius-md: 15px;
+    --radius-round: 50%;
+    
+    /* Font Scale (Default for Futura) */
+    --font-scale: 1.2;
+}
+
+body.dark-mode {
+    --primary-color: var(--seed-2); /* Use lighter blue for better contrast on dark */
+    --background-color: #232529; /* dddBackground: seed3 sat 0.08 light 0.14 */
+    --surface-color: #2b2d31; /* sat 0.06 light 0.20 */
+    --text-color: #bdbdbd; /* Neutral White, was #cedcea (blueish) */
+    --card-bg: #2b2d31; /* Fix for card background in dark mode */
+    --red-color: #ff5252;
+    --bg-input: var(--card-bg); /* FIXED: matched var name used in input rule */
+    /* Enhance Contrast for Outlines (Subtle) */
+    --input-border: rgba(255, 255, 255, 0.2); 
+    --unselected-widget-border: rgba(255, 255, 255, 0.2);
+}
+
+body{margin:0;font:16px/1.5 system-ui;background:var(--background-color);color:var(--text-color)}main{max-width:1100px;margin:auto;padding:24px}section{background:var(--surface-color);padding:24px;border-radius:15px;min-width:0}h1{font-size:1.5rem}h2{font-size:1.2rem}p{overflow-wrap:anywhere}button{font:inherit;min-height:44px;padding:8px 16px;color:var(--surface-color);background:var(--primary-color);border:0;border-radius:10px;cursor:pointer}button:focus-visible{outline:3px solid var(--text-color);outline-offset:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px}header{margin-block-end:24px}small{display:block} @media(max-width:600px){main,section{padding:16px}button{width:100%}}</style><body><main><header><h1>Platby kartou - návrhy obrazovek</h1><p>Statický návrh, nikoli fungující integrace. Tokeny z web_client/src/theme_config.css.</p><button onclick="document.body.classList.toggle('dark-mode')">Světlé / tmavé téma</button></header><div class="grid"><section><small>Platby kartou</small><h2>Nepřipojeno</h2><p>Přijímejte platby kartou na svůj Stripe účet. Výplaty, vracení peněz a reklamace plateb spravujete ve Stripe.</p><button type="button">Připojit Stripe</button></section><section><small>Platby kartou</small><h2>Platby kartou jsou dostupné</h2><p>Příjemce: Spolek přátel kulturního a společenského života ve Větřkovicích a okolí. Výplaty vyžadují doplnění údajů ve Stripe.</p><button type="button">Nastavit ve formuláři</button></section><section><small>Platby kartou</small><h2>Platby kartou teď nejsou dostupné</h2><p>Účet je omezený. Bankovní převody zůstávají dostupné, pokud jsou ve formuláři povolené. Poslední ověření: 21. 10. 2026 14:32.</p><button type="button">Otevřít Stripe</button></section><section><small>Nastavení formuláře</small><h2>Platební metody</h2><p>Převodem: povoleno. Kartou online: vypnuto. Úhrada celé objednávky; rezervace 30 minut. Změny patří do existujícího draftu a Save/Discard.</p><button type="button">Uložit</button></section><section><small>Rekapitulace</small><h2>Částka splatná nyní: 1 234,50 Kč</h2><p>2 vstupenky · kulturní večer · návštěvník@example.cz. Zaplatíte bezpečně přes Stripe. Vstupenky obdržíte po potvrzení platby.</p><button type="button">Objednat a pokračovat k platbě</button></section><section><small>Objednávka 001234</small><h2>Ověřujeme přípravu platby</h2><p>Částka: 1 234,50 Kč. Zachována stejná objednávka. Nejasný výsledek není důvod vytvořit další rezervaci.</p><button type="button">Ověřit stav</button></section><section><small>Objednávka 001234</small><h2>Ověřujeme výsledek platby</h2><p>Částka: 1 234,50 Kč. Návrat ze Stripe nepotvrzuje zaplacení. Po 30 sekundách se automatické ověřování zastaví.</p><button type="button">Ověřit stav</button></section><section><small>Objednávka 001234</small><h2>Platba zatím není potvrzená</h2><p>Rezervace platí do 15:02. Platbu můžete dokončit v témže otevřeném pokusu.</p><button type="button">Pokračovat k platbě</button></section><section><small>Objednávka 001234</small><h2>Platba je v pořádku, email se nepodařilo odeslat</h2><p>Zaplaceno: 1 234,50 Kč. Platnost vstupenek a stav emailu jsou samostatné. Kontaktujte pořadatele.</p><button type="button">Zobrazit objednávku</button></section><section><small>Detail objednávky</small><h2>Vráceno 234,50 Kč z 1 234,50 Kč</h2><p>Částečná refundace nevybírá vstupenky ke zrušení. Vyberte nepoužité vstupenky, nebo potvrďte vrácení části ceny bez změny vstupenek.</p><button type="button">Dořešit vstupenky</button></section><section><small>Detail objednávky</small><h2>Platnost vstupenek je pozastavena</h2><p>Otevřený spor. Použité vstupenky a historii vstupů zachovat. Kapacitu neuvolňovat.</p><button type="button">Otevřít platbu ve Stripe</button></section></div></main></body></html>

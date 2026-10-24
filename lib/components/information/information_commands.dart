@@ -1,6 +1,7 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum InformationCommandStatus { applied, unchanged, rejected, conflict }
@@ -53,7 +54,7 @@ class SupabaseInformationCommands implements InformationCommands {
         'p_guess': guess,
       }),
     );
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return GameGuessCommandResult(
       status: InformationCommandStatus.values.byName(response.status),
       domainCode: (response.data['domainCode'] as num?)?.toInt() ?? 500,
@@ -64,23 +65,30 @@ class SupabaseInformationCommands implements InformationCommands {
   @override
   Future<InformationCommandResult> save(
       int occasionId, InformationModel information) async {
-    final raw = await _transport.invoke('save_information_client_sync_v1', {
-      'p_occasion': occasionId,
-      'p_expected_version':
-          information.id == null ? null : information.aggregateVersion,
-      'p_information': {
-        if (information.id case final id?) 'id': id,
-        'title': information.title,
-        'description': information.description,
-        'type': information.type,
-        'isHidden': information.isHidden ?? false,
-        'order': information.order,
-        'data': information.data,
-        'hiddenData': information.type == InformationModel.gameType
-            ? information.informationHidden?.data
-            : null,
-      },
-    });
+    final raw = await _transport.invoke(
+        information.unit == null
+            ? 'save_information_client_sync_v1'
+            : 'save_unit_information_client_sync_v1',
+        {
+          if (information.unit == null)
+            'p_occasion': occasionId
+          else
+            'p_unit': information.unit,
+          'p_expected_version':
+              information.id == null ? null : information.aggregateVersion,
+          'p_information': {
+            if (information.id case final id?) 'id': id,
+            'title': information.title,
+            'description': information.description,
+            'type': information.type,
+            'isHidden': information.isHidden ?? false,
+            'order': information.order,
+            'data': information.data,
+            'hiddenData': information.type == InformationModel.gameType
+                ? information.informationHidden?.data
+                : null,
+          },
+        });
     return _decode(raw);
   }
 
@@ -91,17 +99,23 @@ class SupabaseInformationCommands implements InformationCommands {
     if (id == null) {
       throw ArgumentError('Deleting information requires its ID');
     }
-    return _decode(
-        await _transport.invoke('delete_information_client_sync_v1', {
-      'p_occasion': occasionId,
-      'p_information_id': id,
-      'p_expected_version': information.aggregateVersion,
-    }));
+    return _decode(await _transport.invoke(
+        information.unit == null
+            ? 'delete_information_client_sync_v1'
+            : 'delete_unit_information_client_sync_v1',
+        {
+          if (information.unit == null)
+            'p_occasion': occasionId
+          else
+            'p_unit': information.unit,
+          'p_information_id': id,
+          'p_expected_version': information.aggregateVersion,
+        }));
   }
 
   Future<InformationCommandResult> _decode(Object? raw) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     final version = (data['version'] as num?)?.toInt() ?? 0;
     final entity = data['information'];

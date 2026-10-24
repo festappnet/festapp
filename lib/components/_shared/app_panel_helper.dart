@@ -1,8 +1,10 @@
+import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/project_picker_widget.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -60,7 +62,8 @@ class AppPanelHelper {
 
     // Unit Selector
     if (currentUnit != null) {
-      breadcrumbItems.add(_buildBreadcrumbSegment<UnitModel>(
+      breadcrumbItems.add(Flexible(
+          child: _buildBreadcrumbSegment<UnitModel>(
         context: context,
         title: currentUnit.title ?? '---',
         isBold: currentOccasion == null,
@@ -87,15 +90,15 @@ class AppPanelHelper {
             originalContext, currentUnit),
         searchHintText: AdministrationStrings.findUnitHint,
         createNewText: AdministrationStrings.newUnitButton,
-      ));
+      )));
     }
 
     // Separator, Occasion Selector, and new Action Selector
     // Skip on unit-level pages (e.g. /unit/5/edit) where occasion context is stale
     // App-bar builders can inherit a different route scope than the page.
-    final currentRoutePath = originalContext.routeData.path;
-    final isUnitLevelPage = currentRoutePath.contains('/unit/') &&
-        currentRoutePath.contains('/edit');
+    final activeRoutes = originalContext.router.root.currentSegments;
+    final isUnitLevelPage =
+        activeRoutes.any((route) => route.name == UnitAdminRoute.name);
     if (currentUnit != null && currentOccasion != null && !isUnitLevelPage) {
       final onAppBarColor =
           Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
@@ -108,45 +111,49 @@ class AppPanelHelper {
       ));
 
       // Occasion Selector
-      breadcrumbItems.add(_buildBreadcrumbSegment<OccasionModel>(
-        context: context,
-        title: currentOccasion.title ?? '---',
-        isBold: true,
-        items: occasionsInCurrentUnit,
-        selectedItem: currentOccasion,
-        itemTitleBuilder: (item) => item.title ?? '---',
-        itemIdBuilder: (item) => item.id,
-        itemDateBuilder: (item) => item.startTime,
-        onItemSelected: (item) async {
-          if (item.link != null) {
-            await RouterService.navigateToOccasionAdministration(
-                originalContext,
-                occasion: item);
-          }
-        },
-        onCreateNew: !RightsService.isUnitEditor()
-            ? null
-            : () async {
-                final newOccasion =
-                    await OccasionCreationHelper.createNewOccasion(
-                        originalContext, currentUnit, occasionsInCurrentUnit);
-                if (newOccasion != null && newOccasion.link != null) {
-                  await RouterService.navigateToOccasionAdministration(
-                      originalContext,
-                      occasionLink: newOccasion.link!);
-                }
-              },
-        onTitleTap: () async {
-          if (currentOccasion.link != null) {
-            await RouterService.navigateToOccasionAdministration(
-                originalContext,
-                occasionLink: currentOccasion.link!,
-                occasion: currentOccasion);
-          }
-        },
-        searchHintText: AdministrationStrings.findOccasionHint,
-        createNewText: AdministrationStrings.newOccasionButton,
-      ));
+      breadcrumbItems.add(Flexible(
+          flex: 4,
+          child: _buildBreadcrumbSegment<OccasionModel>(
+            context: context,
+            title: currentOccasion.title ?? '---',
+            isBold: true,
+            items: occasionsInCurrentUnit,
+            selectedItem: currentOccasion,
+            itemTitleBuilder: (item) => item.title ?? '---',
+            itemIdBuilder: (item) => item.id,
+            itemDateBuilder: (item) => item.startTime,
+            onItemSelected: (item) async {
+              if (item.link != null) {
+                await RouterService.navigateToOccasionAdministration(
+                    originalContext,
+                    occasion: item);
+              }
+            },
+            onCreateNew: !RightsService.isUnitEditor()
+                ? null
+                : () async {
+                    final newOccasion =
+                        await OccasionCreationHelper.createNewOccasion(
+                            originalContext,
+                            currentUnit,
+                            occasionsInCurrentUnit);
+                    if (newOccasion != null && newOccasion.link != null) {
+                      await RouterService.navigateToOccasionAdministration(
+                          originalContext,
+                          occasionLink: newOccasion.link!);
+                    }
+                  },
+            onTitleTap: () async {
+              if (currentOccasion.link != null) {
+                await RouterService.navigateToOccasionAdministration(
+                    originalContext,
+                    occasionLink: currentOccasion.link!,
+                    occasion: currentOccasion);
+              }
+            },
+            searchHintText: AdministrationStrings.findOccasionHint,
+            createNewText: AdministrationStrings.newOccasionButton,
+          )));
 
       // Build the state-aware action menu
       if (AppConfig.isAppSupported) {
@@ -189,9 +196,9 @@ class AppPanelHelper {
 
         _ActionMenuItem currentAction;
 
-        if (currentRoutePath.endsWith(ReservationsPage.ROUTE)) {
+        if (activeRoutes.any((route) => route.name == ReservationsRoute.name)) {
           currentAction = reservationsAction;
-        } else if (currentRoutePath.endsWith(AdminPage.ROUTE)) {
+        } else if (activeRoutes.any((route) => route.name == AdminRoute.name)) {
           currentAction = adminAction;
         } else {
           currentAction = viewAppAction;
@@ -406,6 +413,7 @@ class AppPanelHelper {
           child: Text(title,
               style: textStyle,
               strutStyle: titleStrut,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ),
       );
@@ -416,7 +424,8 @@ class AppPanelHelper {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
+          Flexible(
+              child: InkWell(
             onTap: onTitleTap,
             hoverColor: hoverColor,
             child: Padding(
@@ -426,10 +435,11 @@ class AppPanelHelper {
                 title,
                 style: textStyle,
                 strutStyle: titleStrut,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
+          )),
           Builder(
             builder: (BuildContext inkWellContext) {
               return InkWell(
@@ -632,6 +642,7 @@ class AppPanelHelper {
       ),
 
       actions: [
+        const NotificationCenterBell(color: Colors.white),
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             child: UserHeaderWidget(
@@ -813,6 +824,7 @@ class AppPanelHelper {
         },
       ),
       actions: [
+        NotificationCenterBell(color: iconColor),
         ValueListenableBuilder<OccasionLinkModel?>(
           valueListenable: RightsService.occasionLinkModelNotifier,
           builder: (listenableContext, _, __) {
@@ -915,6 +927,8 @@ class AppPanelHelper {
         .clamp(38.0, double.infinity);
     final tabBar = TabBar(
       controller: controller,
+      onTap: (index) =>
+          resetNestedTabs(context.tabsRouter, tabs[index].route.routeName),
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       labelColor: foreground,

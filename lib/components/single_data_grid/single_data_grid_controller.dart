@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:async';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:convert';
@@ -110,6 +111,10 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final T Function()? getNewObject;
   final T Function(T)? copyObject;
   final BuildContext context;
+
+  /// Confirms a deletion batch and returns its executor; null cancels the save.
+  final Future<Future<void> Function(T)?> Function(BuildContext, List<T>)?
+      prepareDeletion;
   final DataGridActionsController? actionsExtended;
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
@@ -182,6 +187,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   /// Localized plain-text explanations, keyed by column field.
   final Map<String, String> columnHelp;
 
+  bool get isDemoReadOnly => RightsService.isDemoReadOnly;
   String firstColumnTypeId = "delete0";
 
   SingleDataGridController({
@@ -194,6 +200,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.refreshOnTabActivation = true,
     this.headerChildren,
     this.actionsExtended,
+    this.prepareDeletion,
     this.getNewObject,
     this.copyObject,
     this.exportOptions,
@@ -249,13 +256,23 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Applies [rows] to the grid and inserts the first column if needed.
   void applyDataToGrid() async {
-    final sorted = additionalRowPredicate == null ? null : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
+    if (isDemoReadOnly) {
+      for (final column in columns) {
+        column.readOnly = true;
+      }
+    }
+    final sorted = additionalRowPredicate == null
+        ? null
+        : stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
     htmlSave.clearBindings();
     stateManager.removeAllRows();
     stateManager.appendRows(rows);
     if (sorted != null) {
-      if (sorted.sort.isAscending) { stateManager.sortAscending(sorted); }
-      else { stateManager.sortDescending(sorted); }
+      if (sorted.sort.isAscending) {
+        stateManager.sortAscending(sorted);
+      } else {
+        stateManager.sortDescending(sorted);
+      }
     }
 
     if (additionalRowPredicate != null) {
@@ -286,24 +303,29 @@ class SingleDataGridController<T extends ITrinaRowModel> {
             ? 50
             : 100,
         renderer: (rendererContext) {
+          if (isDemoReadOnly) return const SizedBox.shrink();
           List<Widget> rowChildren = [];
           if (firstColumnType != DataGridFirstColumn.check) {
             rowChildren.add(
               IconButton(
-                onPressed: () async {
-                  var row = rendererContext.row;
-                  if (deletedRows.contains(row)) {
-                    deletedRows.remove(row);
-                  } else if (newRows.contains(row)) {
-                    newRows.remove(row);
-                    rendererContext.stateManager.removeRows([row]);
-                  } else {
-                    deletedRows.add(row);
-                  }
-                  row.setState(TrinaRowState.updated);
-                  applyRowFilter();
-                  rendererContext.stateManager.notifyListeners();
-                },
+                onPressed:
+                    (actionsExtended?.canDeleteRow?.call(rendererContext.row) ??
+                            true)
+                        ? () async {
+                            var row = rendererContext.row;
+                            if (deletedRows.contains(row)) {
+                              deletedRows.remove(row);
+                            } else if (newRows.contains(row)) {
+                              newRows.remove(row);
+                              rendererContext.stateManager.removeRows([row]);
+                            } else {
+                              deletedRows.add(row);
+                            }
+                            row.setState(TrinaRowState.updated);
+                            applyRowFilter();
+                            rendererContext.stateManager.notifyListeners();
+                          }
+                        : null,
                 icon: const Icon(Icons.delete_forever),
               ),
             );

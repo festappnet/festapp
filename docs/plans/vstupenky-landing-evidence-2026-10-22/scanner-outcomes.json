@@ -1,0 +1,17 @@
+{
+  "accepted": {
+    "ticket": 627,
+    "receipt": {
+      "reason": "admitted",
+      "outcome": "accepted",
+      "ticket_id": 627,
+      "committed_at": "2026-10-22T13:23:49.51382+00:00",
+      "operation_id": "d0267274-c1ac-499d-9f2f-f4de8efcfd46",
+      "eligibility_fingerprint": "35f5fac78e711aba46881bfba567fbe31f764b23b599e6737e9e26ceea72ca24"
+    },
+    "occasion": 10,
+    "committed_at": "2026-10-22T13:23:49.490092+00:00"
+  },
+  "rejectedActualDOM": "Ples pod hvězdami\nNabídka\nPřipojeno\nPoužité vstupenky:\n0 / 5\n0 %\n\nNamiřte na QR kód vstupenky\n\nŽivý obraz\nZadat kód ručně\nOvládání kamery\nVstupenka už byla použita\n\nOvěřeno serverem\n\nAlexandra Novotná\n\nSCANNER-10-2\n\n22. 10. 2026 15:23:49\n\nVstup do hlavního sálu\nDalší vstupenka",
+  "camera": "Synthetic local paper-ticket MediaStream decoded by real jsQR; not physical phone filming"
+}

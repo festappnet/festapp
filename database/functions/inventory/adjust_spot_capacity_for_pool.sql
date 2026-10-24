@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION adjust_spot_capacity_for_pool(p_inventory_pool_id bigint)
+CREATE OR REPLACE FUNCTION public.adjust_spot_capacity_for_pool(p_inventory_pool_id bigint)
 RETURNS integer
 LANGUAGE plpgsql
 SET search_path = public, extensions
@@ -15,6 +15,9 @@ DECLARE
     v_pool_occasion_id BIGINT;
     v_total_pool_capacity BIGINT;
 BEGIN
+    PERFORM 1 FROM public.inventory_pools WHERE id=p_inventory_pool_id FOR UPDATE;
+    PERFORM 1 FROM public.inventory_contexts WHERE inventory_pool=p_inventory_pool_id ORDER BY id FOR UPDATE;
+    PERFORM 1 FROM eshop.spots WHERE inventory_context IN(SELECT id FROM public.inventory_contexts WHERE inventory_pool=p_inventory_pool_id) ORDER BY id FOR UPDATE;
     -- Step 0: Validate input and get occasion ID.
     SELECT occasion INTO v_pool_occasion_id FROM public.inventory_pools WHERE id = p_inventory_pool_id;
     IF NOT FOUND THEN
@@ -40,7 +43,7 @@ BEGIN
         LOOP
             -- Count spots for the current resource WITHIN the current context.
             SELECT count(*) INTO v_total_spots_count FROM eshop.spots WHERE inventory_context = v_context.id AND resource = v_resource.id;
-            SELECT count(*) INTO v_booked_spots_count FROM eshop.spots WHERE inventory_context = v_context.id AND resource = v_resource.id AND order_product_ticket IS NOT NULL;
+            SELECT count(*) INTO v_booked_spots_count FROM eshop.spots WHERE inventory_context = v_context.id AND resource = v_resource.id AND (order_product_ticket IS NOT NULL OR (secret IS NOT NULL AND secret_expiration_time>clock_timestamp()));
 
             IF v_booked_spots_count > v_resource.capacity THEN
                 RAISE EXCEPTION '%', jsonb_build_object(
@@ -59,12 +62,12 @@ BEGIN
                 v_spots_to_delete := v_total_spots_count - v_resource.capacity;
                 SELECT array_agg(id) INTO v_deletable_spot_ids FROM (
                     SELECT id FROM eshop.spots
-                    WHERE inventory_context = v_context.id AND resource = v_resource.id AND order_product_ticket IS NULL
+                    WHERE inventory_context = v_context.id AND resource = v_resource.id AND order_product_ticket IS NULL AND (secret IS NULL OR secret_expiration_time<=clock_timestamp())
                     ORDER BY created_at DESC
                     LIMIT v_spots_to_delete
                 ) AS sub;
 
-                IF array_length(v_deletable_spot_ids, 1) < v_spots_to_delete THEN
+                IF coalesce(cardinality(v_deletable_spot_ids),0) < v_spots_to_delete THEN
                      RAISE EXCEPTION '%', jsonb_build_object(
                         'code', 'S002',
                         'message', 'Cannot delete excess resource-specific spots. Deletion would require removing a booked spot.',
@@ -85,7 +88,7 @@ BEGIN
         -- =============================================================
         -- Count total and booked spots for the GENERIC pool (resource IS NULL) within the current context.
         SELECT count(*) INTO v_total_spots_count FROM eshop.spots WHERE inventory_context = v_context.id;
-        SELECT count(*) INTO v_booked_spots_count FROM eshop.spots WHERE inventory_context = v_context.id AND order_product_ticket IS NOT NULL;
+        SELECT count(*) INTO v_booked_spots_count FROM eshop.spots WHERE inventory_context = v_context.id AND (order_product_ticket IS NOT NULL OR (secret IS NOT NULL AND secret_expiration_time>clock_timestamp()));
 
         IF v_booked_spots_count > v_total_pool_capacity THEN
             RAISE EXCEPTION '%', jsonb_build_object(
@@ -104,12 +107,12 @@ BEGIN
             v_spots_to_delete := v_total_spots_count - v_total_pool_capacity;
             SELECT array_agg(id) INTO v_deletable_spot_ids FROM (
                 SELECT id FROM eshop.spots
-                WHERE inventory_context = v_context.id AND resource IS NULL AND order_product_ticket IS NULL
+                WHERE inventory_context = v_context.id AND resource IS NULL AND order_product_ticket IS NULL AND (secret IS NULL OR secret_expiration_time<=clock_timestamp())
                 ORDER BY created_at DESC
                 LIMIT v_spots_to_delete
             ) AS sub;
 
-            IF array_length(v_deletable_spot_ids, 1) < v_spots_to_delete THEN
+            IF coalesce(cardinality(v_deletable_spot_ids),0) < v_spots_to_delete THEN
                  RAISE EXCEPTION '%', jsonb_build_object(
                     'code', 'S004',
                     'message', 'Cannot delete excess generic spots. Deletion would require removing a booked spot.',
@@ -142,7 +145,9 @@ BEGIN
         END IF;
     END LOOP;
 
+    PERFORM public.notification_center_inventory_capacity_internal(id) FROM public.inventory_contexts WHERE inventory_pool=p_inventory_pool_id;
     RETURN v_net_change;
 
 END;
 $$;
+REVOKE ALL ON FUNCTION public.adjust_spot_capacity_for_pool(bigint) FROM PUBLIC,anon,authenticated,service_role;

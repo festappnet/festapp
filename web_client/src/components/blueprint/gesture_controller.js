@@ -1,4 +1,4 @@
-
+import { BlueprintConfig } from './blueprint_config.js';
 export class GestureController {
     constructor(container, callbacks) {
         this.container = container;
@@ -78,10 +78,14 @@ export class GestureController {
     // --- Mouse ---
 
     onMouseDown(e) {
+        if (e.button !== 0) return;
         if (this.callbacks.onInteractionStart) this.callbacks.onInteractionStart();
         e.preventDefault();
         this.state.mouseLastX = e.clientX;
         this.state.mouseLastY = e.clientY;
+        this.state.mouseStartX = e.clientX;
+        this.state.mouseStartY = e.clientY;
+        this.state.mouseDragged = false;
         this.state.mousePanning = true;
         this.container.style.cursor = 'grabbing';
     }
@@ -89,6 +93,10 @@ export class GestureController {
     onMouseMove(e) {
         if (!this.state.mousePanning) return;
         e.preventDefault();
+        if (!this.state.mouseDragged) {
+            if (Math.hypot(e.clientX - this.state.mouseStartX, e.clientY - this.state.mouseStartY) <= BlueprintConfig.tapThreshold) return;
+            this.state.mouseDragged = true;
+        }
         const deltaX = e.clientX - this.state.mouseLastX;
         const deltaY = e.clientY - this.state.mouseLastY;
         this.state.mouseLastX = e.clientX;
@@ -103,6 +111,10 @@ export class GestureController {
         if (this.state.mousePanning) {
             this.state.mousePanning = false;
             this.container.style.cursor = 'default';
+            if (!this.state.mouseDragged &&
+                Math.hypot(e.clientX - this.state.mouseStartX, e.clientY - this.state.mouseStartY) <= BlueprintConfig.tapThreshold) {
+                this.callbacks.onTap?.(e.clientX, e.clientY);
+            }
             if (this.callbacks.onInteractionEnd) this.callbacks.onInteractionEnd();
         }
     }

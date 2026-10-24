@@ -2,6 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OccasionSettingsStrings {
+  static String get placeName => 'OccasionSettings.placeName'.tr();
+  static String get placeNameHelp => 'OccasionSettings.placeNameHelp'.tr();
+
   // Form Fields
   static String get title => 'OccasionSettings.title'.tr(); // "Title"
   static String get titleIsRequired =>
@@ -46,14 +49,15 @@ class OccasionSettingsStrings {
       .tr(); // "Please select or type a valid timezone"
   static String get timezonesLoading => 'OccasionSettings.timezonesLoading'
       .tr(); // "Timezones loading or unavailable..."
-  static String get invalidNumber => 'OccasionSettings.invalidNumber'
-      .tr(); // "Please enter a valid number"
+  static String get invalidNumber =>
+      'OccasionSettings.invalidNumber'.tr(); // "Please enter a valid number"
 
   // Deposit Deadline Settings
   static String get depositDeadline =>
       'OccasionSettings.depositDeadline'.tr(); // "Deposit Deadline"
   static String get depositDeadlineDaysBefore =>
-      'OccasionSettings.depositDeadlineDaysBefore'.tr(); // "X days before occasion"
+      'OccasionSettings.depositDeadlineDaysBefore'
+          .tr(); // "X days before occasion"
   static String get depositDeadlineOnSite =>
       'OccasionSettings.depositDeadlineOnSite'.tr(); // "On site (no deadline)"
   static String get numberOfDays =>
@@ -61,21 +65,22 @@ class OccasionSettingsStrings {
 
   // Meta Surcharge (visual-only info, not part of payment)
   static String get metaSurchargeDescription =>
-      'OccasionSettings.metaSurchargeDescription'.tr(); // "Surcharge description (visual)"
+      'OccasionSettings.metaSurchargeDescription'
+          .tr(); // "Surcharge description (visual)"
   static String get metaSurchargeDescriptionHelp =>
       'OccasionSettings.metaSurchargeDescriptionHelp'
           .tr(); // "Free-form text shown under product price in form, preview, e-mail, PDF. Not a real charge."
   static String get depositModeTitle =>
       'OccasionSettings.depositModeTitle'.tr(); // "Deposit mode"
-  static String get depositModeReal =>
-      'OccasionSettings.depositModeReal'.tr(); // "Real deposit (payment-linked)"
-  static String get depositModeVirtual =>
-      'OccasionSettings.depositModeVirtual'.tr(); // "Virtual surcharge (visual only)"
-  static String get depositModeRealHelp =>
-      'OccasionSettings.depositModeRealHelp'.tr(); // "Customer pays the deposit upfront; the remainder is settled later or on-site."
+  static String get depositModeReal => 'OccasionSettings.depositModeReal'
+      .tr(); // "Real deposit (payment-linked)"
+  static String get depositModeVirtual => 'OccasionSettings.depositModeVirtual'
+      .tr(); // "Virtual surcharge (visual only)"
+  static String get depositModeRealHelp => 'OccasionSettings.depositModeRealHelp'
+      .tr(); // "Customer pays the deposit upfront; the remainder is settled later or on-site."
   static String get depositModeVirtualHelp =>
-      'OccasionSettings.depositModeVirtualHelp'.tr(); // "Shown next to products as informational; does not affect order total. Negative amounts allowed (discounts)."
-
+      'OccasionSettings.depositModeVirtualHelp'
+          .tr(); // "Shown next to products as informational; does not affect order total. Negative amounts allowed (discounts)."
 
   // Email Settings
   static String get labelReplyToEmail =>

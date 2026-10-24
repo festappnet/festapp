@@ -8,11 +8,10 @@ import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/orders_history_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 
@@ -82,10 +81,10 @@ class GetOrdersHelper {
         : [];
   }
 
-  static List<FormModel>? parseForms(Map<String, dynamic> json) {
+  static List<FormBundle>? parseForms(Map<String, dynamic> json) {
     return json[Tb.forms.table] != null
-        ? List<FormModel>.from(
-            json[Tb.forms.table].map((g) => FormModel.fromJson(g)))
+        ? List<FormBundle>.from(
+            json[Tb.forms.table].map((g) => FormBundle.fromJson(g)))
         : [];
   }
 

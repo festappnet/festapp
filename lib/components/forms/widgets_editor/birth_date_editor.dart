@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/models/holder_models/birth_date_field_holder.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
@@ -11,8 +11,8 @@ import 'form_message_widget.dart';
 
 class BirthDateEditor {
   static Widget buildBirthDateReadOnly(
-      BuildContext context, FormFieldModel field) {
-    final data = field.data ?? {};
+      BuildContext context, FormFieldDraft field) {
+    final data = field.definition.data ?? {};
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -129,25 +129,25 @@ class BirthDateEditor {
   }
 
   static Widget buildBirthDateEditor(
-      BuildContext context, FormFieldModel field, int? occasionId,
+      BuildContext context, FormFieldDraft field, int? occasionId,
       {VoidCallback? onChanged}) {
     final TextEditingController minAgeController = TextEditingController(
-      text: field.data != null &&
-              field.data![BirthDateFieldHolder.metaMinYear] != null
-          ? field.data![BirthDateFieldHolder.metaMinYear].toString()
+      text: field.definition.data != null &&
+              field.definition.data![BirthDateFieldHolder.metaMinYear] != null
+          ? field.definition.data![BirthDateFieldHolder.metaMinYear].toString()
           : "",
     );
     final TextEditingController maxAgeController = TextEditingController(
-      text: field.data != null &&
-              field.data![BirthDateFieldHolder.metaMaxYear] != null
-          ? field.data![BirthDateFieldHolder.metaMaxYear].toString()
+      text: field.definition.data != null &&
+              field.definition.data![BirthDateFieldHolder.metaMaxYear] != null
+          ? field.definition.data![BirthDateFieldHolder.metaMaxYear].toString()
           : "",
     );
-    bool isStrict = field.data != null &&
-        field.data![BirthDateFieldHolder.metaIsHard] == true;
-    String currentMessage = field.data != null &&
-            field.data![BirthDateFieldHolder.metaMessage] != null
-        ? field.data![BirthDateFieldHolder.metaMessage].toString()
+    bool isStrict = field.definition.data != null &&
+        field.definition.data![BirthDateFieldHolder.metaIsHard] == true;
+    String currentMessage = field.definition.data != null &&
+            field.definition.data![BirthDateFieldHolder.metaMessage] != null
+        ? field.definition.data![BirthDateFieldHolder.metaMessage].toString()
         : "";
 
     // We use a local variable to hold a possible error message for max age.
@@ -155,10 +155,12 @@ class BirthDateEditor {
 
     // Define a helper function to compute the default warning.
     String getDefaultWarning() {
-      final minAge =
-          field.data?[BirthDateFieldHolder.metaMinYear]?.toString() ?? "";
-      final maxAge =
-          field.data?[BirthDateFieldHolder.metaMaxYear]?.toString() ?? "";
+      final minAge = field.definition.data?[BirthDateFieldHolder.metaMinYear]
+              ?.toString() ??
+          "";
+      final maxAge = field.definition.data?[BirthDateFieldHolder.metaMaxYear]
+              ?.toString() ??
+          "";
       return PersonFieldsStrings.ageOutsideRecommendedRange(
           minAge: minAge, maxAge: maxAge);
     }
@@ -183,9 +185,10 @@ class BirthDateEditor {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
-                field.data ??= {};
-                field.data![BirthDateFieldHolder.metaMinYear] =
-                    int.tryParse(value) ?? value;
+                field.definition = field.definition.copyWith(data: {
+                  ...?field.definition.data,
+                  BirthDateFieldHolder.metaMinYear: int.tryParse(value) ?? value
+                });
                 final currentMax = int.tryParse(maxAgeController.text) ?? 0;
                 final currentMin = int.tryParse(value) ?? 0;
                 if (currentMax > 0 && currentMax < currentMin) {
@@ -207,14 +210,18 @@ class BirthDateEditor {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
-                field.data ??= {};
+                field.definition = field.definition
+                    .copyWith(data: field.definition.data ?? {});
                 final newMax = int.tryParse(value) ?? 0;
                 final currentMin = int.tryParse(minAgeController.text) ?? 0;
                 if (newMax > 0 && newMax < currentMin) {
                   maxAgeError = FormStrings.maxAgeLowerThanMinAge;
                 } else {
                   maxAgeError = null;
-                  field.data![BirthDateFieldHolder.metaMaxYear] = newMax;
+                  field.definition = field.definition.copyWith(data: {
+                    ...?field.definition.data,
+                    BirthDateFieldHolder.metaMaxYear: newMax
+                  });
                 }
                 setState(() {});
               },
@@ -227,8 +234,10 @@ class BirthDateEditor {
                   value: isStrict,
                   onChanged: (value) {
                     isStrict = value;
-                    field.data ??= {};
-                    field.data![BirthDateFieldHolder.metaIsHard] = value;
+                    field.definition = field.definition.copyWith(data: {
+                      ...?field.definition.data,
+                      BirthDateFieldHolder.metaIsHard: value
+                    });
                     setState(() {});
                   },
                 ),
@@ -241,8 +250,10 @@ class BirthDateEditor {
                   owner: HtmlMediaOwner.occasion(occasionId),
                   onChanged: (html) {
                     currentMessage = html;
-                    field.data ??= {};
-                    field.data![BirthDateFieldHolder.metaMessage] = html;
+                    field.definition = field.definition.copyWith(data: {
+                      ...?field.definition.data,
+                      BirthDateFieldHolder.metaMessage: html
+                    });
                     setState(() {});
                   }),
           ],

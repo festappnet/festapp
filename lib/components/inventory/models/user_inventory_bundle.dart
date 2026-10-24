@@ -1,10 +1,9 @@
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
-import 'package:fstapp/components/inventory/models/product_inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
 
-import '../../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 // An abstract interface can help ensure all models have an 'id' for serialization.
 // This is good practice but not strictly required for the solution to work.
@@ -65,10 +64,11 @@ class UserInventoryBundle {
     final productInventoryContextsList = parseList(
         'product_inventory_contexts', ProductInventoryContextModel.fromJson);
 
-    // 2. Link objects together. Lookups now require converting the integer ID to a string.
-    for (final link in productInventoryContextsList) {
-      productMap[link.productId.toString()]?.includedInventories.add(link);
-      link.inventoryContext = contextMap[link.inventoryContextId.toString()];
+    for (final entry in productMap.entries.toList()) {
+      productMap[entry.key] = entry.value.copyWith(includedInventories: [
+        ...entry.value.includedInventories,
+        ...productInventoryContextsList.where((link) => link.productId == entry.value.id),
+      ]);
     }
 
     for (final context in contextMap.values) {

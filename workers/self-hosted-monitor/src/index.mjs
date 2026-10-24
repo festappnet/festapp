@@ -42,9 +42,46 @@ async function pingHeartbeat(fetchImpl, url, failed) {
   if (!response.ok) throw new Error(`heartbeat delivery failed with ${response.status}`);
 }
 
+// The existing monitor owns this read-only probe; no extra worker or timer.
+export async function probeAbuse(env,fetchImpl,now) {
+  const fail=(reason)=>({host:'api.festapp.net',path:'/rest/v1/rpc/get_abuse_monitor_v1',pass:false,reason});
+  if(!env.ABUSE_MONITOR_TOKEN||!env.SUPABASE_ANON_KEY)return fail('monitor_not_configured');
+  try {
+    const response=await fetchImpl('https://api.festapp.net/rest/v1/rpc/get_abuse_monitor_v1',{
+      method:'POST',redirect:'error',signal:AbortSignal.timeout(10_000),
+      headers:{apikey:env.SUPABASE_ANON_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_token:env.ABUSE_MONITOR_TOKEN}),
+    });
+    if(!response.ok)return fail('monitor_unavailable');
+    const state=await response.json();
+    const reasons=[];
+    const age=(value)=>value==null?0:(now.getTime()-Date.parse(value))/1000;
+    const threshold=(key)=>{
+      const value=state.thresholds?.[key];
+      if(!Number.isSafeInteger(value)||value<=0)throw new Error('Invalid monitor policy');
+      return value;
+    };
+    if(!state.queue||!state.provider||!state.policyRevision||!Number.isFinite(age(state.measuredAt)))return fail('monitor_invalid');
+    for(const cls of ['auth','commitment','ordinary']) {
+      if(!state.queue[cls])return fail('monitor_invalid');
+      const elapsed=age(state.queue[cls].oldestCreatedAt);
+      if(!Number.isFinite(elapsed)||elapsed>threshold(`monitor.${cls}.age.seconds`))reasons.push(`${cls}_backlog`);
+    }
+    for(const [field,key] of [['oldestExpiredUsageAt','cleanup'],['oldestGrowthEvidenceAt','growth']]) {
+      const elapsed=age(state[field]);
+      if(!Number.isFinite(elapsed)||elapsed>threshold(`monitor.${key}.age.seconds`))reasons.push(`${key}_stale`);
+    }
+    const provider=state.provider;
+    if(provider.paused||provider.providerOutageStreak>0||Date.parse(provider.circuitUntil)>now.getTime())reasons.push('provider_unavailable');
+    if(!provider.quotaMeasuredAt||!Number.isFinite(age(provider.quotaMeasuredAt))||age(provider.quotaMeasuredAt)>threshold('monitor.provider.quota.age.seconds'))reasons.push('provider_quota_stale');
+    return {host:'api.festapp.net',path:'/rest/v1/rpc/get_abuse_monitor_v1',pass:reasons.length===0,reasons,state};
+  } catch {return fail('monitor_unavailable');}
+}
+
 export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
   const results = await Promise.all(TARGETS.flatMap((host) =>
     CHECKS.map((check) => probe(fetchImpl, host, check))));
+  results.push(await probeAbuse(env,fetchImpl,now));
   const failed = results.some((result) => !result.pass);
   const observedAt = now.toISOString();
   const record = {

@@ -1,8 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+
 import 'image_file_format.dart';
+import 'image_upload_profile.dart';
+import 'image_upload_limits.dart';
+export 'image_upload_profile.dart';
 
 class ImageControlClient {
   final String endpoint;
@@ -21,39 +26,48 @@ class ImageControlClient {
     required String accessToken,
     int? occasionId,
     int? unitId,
-    int? maxEdge,
-    int? maxBytes,
-    int? quality,
+    ImageUploadProfile profile = ImageUploadProfile.standard,
   }) async {
+    if (bytes.length > ImageUploadLimits.maxInputBytes)
+      throw const FormatException('Image exceeds 20 MB');
     final format = ImageFileFormat.detect(bytes);
     final stem = filename.replaceFirst(RegExp(r'\.[^.]*$'), '');
     final request = http.MultipartRequest('POST', Uri.parse('$endpoint/upload'))
       ..headers['Authorization'] = 'Bearer $accessToken'
       ..fields['projectId'] = projectId
-      ..files
-          .add(http.MultipartFile.fromBytes('file', bytes,
-            filename: '$stem.${format.extension}', contentType: MediaType.parse(format.mime)));
+      ..fields['profile'] = profile.wireName
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: '$stem.${format.extension}',
+          contentType: MediaType.parse(format.mime),
+        ),
+      );
     if (occasionId != null) request.fields['occasionId'] = '$occasionId';
     if (unitId != null) request.fields['unitId'] = '$unitId';
-    if (maxEdge != null) request.fields['maxEdge'] = '$maxEdge';
-    if (maxBytes != null) request.fields['maxBytes'] = '$maxBytes';
-    if (quality != null) request.fields['quality'] = '$quality';
 
     late http.StreamedResponse streamed;
     late String responseBody;
     try {
-      streamed = await httpClient.send(request).timeout(const Duration(seconds: 45));
-      responseBody = await streamed.stream.bytesToString().timeout(const Duration(seconds: 45));
+      streamed =
+          await httpClient.send(request).timeout(const Duration(seconds: 45));
+      responseBody = await streamed.stream.bytesToString().timeout(
+            const Duration(seconds: 45),
+          );
     } catch (error) {
       throw ImageUploadOutcomeUnknown(error);
     }
-    if (streamed.statusCode >= 500) throw ImageUploadOutcomeUnknown(streamed.statusCode);
+    if (streamed.statusCode >= 500)
+      throw ImageUploadOutcomeUnknown(streamed.statusCode);
     if (streamed.statusCode != 200)
       throw ImageUploadRejected(streamed.statusCode);
     try {
-      final url = (jsonDecode(responseBody) as Map<String, dynamic>)['url'] as String;
+      final url =
+          (jsonDecode(responseBody) as Map<String, dynamic>)['url'] as String;
       final uri = Uri.parse(url);
-      if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) throw const FormatException('Invalid permanent image URL');
+      if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty)
+        throw const FormatException('Invalid permanent image URL');
       return url;
     } catch (error) {
       throw ImageUploadOutcomeUnknown(error);
@@ -65,7 +79,7 @@ class ImageControlClient {
       Uri.parse('$endpoint/delete'),
       headers: {
         'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: jsonEncode({'projectId': projectId, 'links': links}),
     );
@@ -74,21 +88,42 @@ class ImageControlClient {
   }
 
   Future<Uint8List> download(String url) async {
-    final response = await httpClient.get(Uri.parse(url));
-    if (response.statusCode != 200)
+    final uri = Uri.parse(url);
+    if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+      throw const FormatException('Invalid image URL');
+    }
+    // Client memory bound matches the upload protocol's 20 MB input envelope.
+    // The Worker independently enforces actual bytes and central SQL budgets.
+    const maxInputBytes = ImageUploadLimits.maxInputBytes;
+    final response = await httpClient
+        .send(http.Request('GET', uri))
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
       throw Exception('Image download failed: ${response.statusCode}');
-    return response.bodyBytes;
+    }
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk
+        in response.stream.timeout(const Duration(seconds: 30))) {
+      if (bytes.length + chunk.length > maxInputBytes) {
+        throw const FormatException('Image exceeds the upload input limit');
+      }
+      bytes.add(chunk);
+    }
+    return bytes.takeBytes();
   }
 }
 
 class ImageUploadOutcomeUnknown implements Exception {
   const ImageUploadOutcomeUnknown(this.cause);
   final Object cause;
-  @override String toString() => 'Image upload outcome is unknown; retry can create another asset.';
+  @override
+  String toString() =>
+      'Image upload outcome is unknown; retry can create another asset.';
 }
 
 class ImageUploadRejected implements Exception {
   const ImageUploadRejected(this.status);
   final int status;
-  @override String toString() => 'Image upload rejected ($status)';
+  @override
+  String toString() => 'Image upload rejected ($status)';
 }

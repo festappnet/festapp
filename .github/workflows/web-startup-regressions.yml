@@ -1,0 +1,32 @@
+name: Web startup regressions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-startup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: web_client/pnpm-lock.yaml
+      - name: Install web test dependencies
+        working-directory: web_client
+        run: pnpm install --frozen-lockfile
+      - name: Verify restricted WebViews and production module identity
+        run: bash automation/test_web_startup.sh
+      - name: Verify deployment gates
+        run: bash automation/tests/deploy_workflow.test.sh

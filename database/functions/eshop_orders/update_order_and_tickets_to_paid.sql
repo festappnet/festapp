@@ -7,15 +7,28 @@ DECLARE
     occasion_id bigint;
     current_state text;
 BEGIN
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
     -- Retrieve the occasion associated with the order
-    SELECT occasion, state INTO occasion_id, current_state FROM eshop.orders WHERE id = order_id;
+    SELECT occasion, state INTO occasion_id, current_state FROM eshop.orders WHERE id = order_id FOR UPDATE;
 
     -- Check if the order exists and has an associated occasion
     IF occasion_id IS NULL THEN
         RAISE EXCEPTION 'Order not found or no associated occasion.';
     END IF;
 
+    IF EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
+      WHERE o.id=order_id AND pi.payment_method='stripe' AND NOT EXISTS(
+        SELECT 1 FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_payment_movements m ON m.attempt_id=a.id
+        WHERE a.order_id=o.id AND m.kind='payment' AND m.amount_minor=a.amount_minor
+          AND m.connection_id=pi.stripe_connection_id AND m.occurred_at<=a.reservation_expires_at)) THEN
+      RETURN jsonb_build_object('code',409,'message','STRIPE_PROVIDER_PAYMENT_REQUIRED');
+    END IF;
+
     -- Check if the order is in 'ordered' or 'created' state before proceeding
+    IF current_state='expired' AND EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info
+      WHERE o.id=order_id AND p.payment_method='stripe') THEN
+      RETURN jsonb_build_object('code',409,'message','Stripe reservation was released');
+    END IF;
     -- Allow 'created' to support direct payments (e.g. manual cash) without explicit confirmation step
     -- FIX: Allow 'expired' too, as late payments should reactivate the order
     IF current_state != 'ordered' AND current_state != 'created' AND current_state != 'expired' THEN
@@ -69,6 +82,7 @@ BEGIN
         END IF;
     END;
 
+    PERFORM public.notification_center_order_state_internal(order_id);
     PERFORM public.enqueue_paid_order_tickets(order_id);
 
     -- Return a success message with a status code 200

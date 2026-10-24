@@ -1,5 +1,8 @@
 # Festapp přes existující BankSync: průzkum a plán bezpečného přepnutí
 
+Aktuální orientace: původní návrh a časový snapshot. [Současné hranice integrace](../setup/bank_import.md) popisují kanonický runtime; [pilotní evidence](../operations/banksync/PRODUCTION-2026-10-04.md) a [celková migrační sekvence](../operations/banksync/FULL-CUTOVER-2026-10-04.md) rozlišují doložený rozsah od chybějícího důkazu úplného rolloutu. Původní „zahájena“ níže není aktuální stav implementace.
+
+
 Datum: 2026-10-03
 Stav: implementace v izolovaném checkoutu zahájena 2026-10-04; produkční přepnutí má brány níže
 Verification: standard - platby, autorizace, sdílená instance a databázové migrace

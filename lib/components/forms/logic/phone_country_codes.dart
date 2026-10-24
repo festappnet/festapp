@@ -8,9 +8,7 @@ class PhoneCountryCodes {
   }
 
   static List<String> getAll() {
-    return _prefixToIso.entries
-        .map((e) => "${e.value} ${e.key}")
-        .toList();
+    return _prefixToIso.entries.map((e) => "${e.value} ${e.key}").toList();
   }
 
   static const Map<String, String> _prefixToIso = {
@@ -124,7 +122,7 @@ class PhoneCountryCodes {
     '+1876': 'JM',
     '+81': 'JP',
     '+962': 'JO',
-    '+7': 'RU/KZ', 
+    '+7': 'RU/KZ',
     '+254': 'KE',
     '+686': 'KI',
     '+383': 'XK',
@@ -174,7 +172,7 @@ class PhoneCountryCodes {
     '+683': 'NU',
 
     '+850': 'KP',
-    '+966': 'SA', // Swapped SA 
+    '+966': 'SA', // Swapped SA
     '+47': 'NO/SJ',
     '+968': 'OM',
     '+92': 'PK',

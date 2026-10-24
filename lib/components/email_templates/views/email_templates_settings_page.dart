@@ -1,3 +1,5 @@
+import '../../ticket_layout/ticket_delivery_strings.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/styles/styles_config.dart';
+import 'package:fstapp/widgets/info_tooltip_button.dart';
 
 class EmailTemplateSettingsPage extends StatefulWidget {
   final EmailTemplateModel template;
@@ -57,7 +60,15 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
+  bool get _duplicateTicketsBlock =>
+      widget.template.code == 'TICKET_ORDER_PAYMENT_DONE' &&
+      RegExp(r'{{\s*tickets\s*}}').allMatches(_htmlContent ?? '').length > 1;
+
   Future<void> _performHtmlSave() async {
+    if (_duplicateTicketsBlock) {
+      setState(() {});
+      return;
+    }
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState!.save();
       _htmlContent = await _htmlSave.prepare(
@@ -124,7 +135,11 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   Widget _buildHtmlParent(BuildContext context) {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () async {
+        if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+          Navigator.of(context).pop();
+      },
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -134,13 +149,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               style: const TextStyle(fontSize: 20),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () async {
-              if (await confirmHtmlDiscard(context, _htmlSave) &&
-                  context.mounted) Navigator.of(context).pop();
-            },
-          )
         ],
       ),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -238,6 +246,12 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 ),
               ),
               const SizedBox(height: 8),
+              if (_duplicateTicketsBlock) ...[
+                Text(TicketDeliveryStrings.text('duplicateBlock'),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
+                const SizedBox(height: 8),
+              ],
               EditableHtmlField(
                   html: _htmlContent,
                   coordinator: _htmlSave,
@@ -255,50 +269,56 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         ),
       ),
       actions: [
-        Row(
-          children: [
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ((widget.template.occasion != null &&
-                            widget.template.occasion ==
-                                widget.emailTemplatesResponse.occasion?.id) ||
-                        (widget.template.unit != null &&
-                            widget.template.unit ==
-                                widget.emailTemplatesResponse.unit.id &&
-                            widget.emailTemplatesResponse.occasion == null))
-                    ? TextButton(
-                        onPressed: () async {
-                          final confirmed =
-                              await DialogHelper.showConfirmationDialog(
-                            context,
-                            EmailTemplatesStrings.resetConfirmTitle,
-                            EmailTemplatesStrings.resetConfirmContent,
-                            confirmButtonMessage:
-                                EmailTemplatesStrings.resetToDefault,
-                          );
+        AppDialogActions(
+          leading: ((widget.template.occasion != null &&
+                      widget.template.occasion ==
+                          widget.emailTemplatesResponse.occasion?.id) ||
+                  (widget.template.unit != null &&
+                      widget.template.unit ==
+                          widget.emailTemplatesResponse.unit.id &&
+                      widget.emailTemplatesResponse.occasion == null))
+              ? TextButton(
+                  onPressed: () async {
+                    final confirmed = await DialogHelper.showConfirmationDialog(
+                      context,
+                      EmailTemplatesStrings.resetConfirmTitle,
+                      EmailTemplatesStrings.resetConfirmContent,
+                      confirmButtonMessage:
+                          EmailTemplatesStrings.resetToDefault,
+                    );
 
-                          if (confirmed == true) {
-                            await DbEmailTemplates.deleteEntityEmailTemplate(
-                              occasionId:
-                                  widget.emailTemplatesResponse.occasion?.id,
-                              unitId:
-                                  widget.emailTemplatesResponse.occasion == null
-                                      ? widget.emailTemplatesResponse.unit.id
-                                      : null,
-                              code: widget.template.code!,
-                            );
+                    if (confirmed == true) {
+                      await DbEmailTemplates.deleteEntityEmailTemplate(
+                        occasionId: widget.emailTemplatesResponse.occasion?.id,
+                        unitId: widget.emailTemplatesResponse.occasion == null
+                            ? widget.emailTemplatesResponse.unit.id
+                            : null,
+                        code: widget.template.code!,
+                      );
 
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          }
-                        },
-                        child: Text(EmailTemplatesStrings.resetToDefault),
-                      )
-                    : null,
-              ),
-            ),
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  },
+                  child: Text(EmailTemplatesStrings.resetToDefault),
+                )
+              : Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        EmailTemplatesStrings.defaultTemplateInUse,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    InfoTooltipButton(
+                      message: EmailTemplatesStrings.defaultTemplateInfo,
+                      semanticLabel: EmailTemplatesStrings.defaultTemplateInfo,
+                      color: ThemeConfig.blackColor(context),
+                    ),
+                  ],
+                ),
+          actions: [
             TextButton(
               onPressed: () async {
                 if (await confirmHtmlDiscard(context, _htmlSave) &&
@@ -307,7 +327,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               child: Text(CommonStrings.storno),
             ),
             const SizedBox(width: 8),
-            ElevatedButton(
+            FilledButton(
               onPressed: _saveSettings,
               child: Text(CommonStrings.save),
             ),

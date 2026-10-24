@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "publicProjection": {
+    "bookingUrl": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+    "contact": "info@vstupenky.online",
+    "references": [
+      {
+        "id": "country-bal-2026",
+        "name": "Country bál 2026",
+        "publicUrl": "https://vstupenky.online/form/country_bal_vetrkovice",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/country-bal-2026.jpg",
+        "dateLabel": "14. listopadu 2026",
+        "date": "2026-11-14",
+        "statusLabel": "Připravovaný ples",
+        "sourceImage": "https://img.festapp.net/images/32316/1772094968899-r0cg0z-1772094968608.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "ples-akh-2026",
+        "name": "Ples AKH 2026",
+        "publicUrl": "https://vstupenky.online/form/4aa0bcbb7d114ceb9f07762cc8660c1b",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-akh-2026.png",
+        "dateLabel": "20. listopadu 2026",
+        "date": "2026-11-20",
+        "statusLabel": "Připravovaný ples",
+        "sourceImage": "https://img.festapp.net/images/1072585/1791309488039-ozzub5-1791309486943.png",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "skautsky-ples-2026",
+        "name": "Skautský ples 2026",
+        "publicUrl": "https://vstupenky.online/form/ples2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/skautsky-ples-2026.jpg",
+        "dateLabel": "14. února 2026",
+        "date": "2026-02-14",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1763720153077.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "sportovni-ples-2026",
+        "name": "Sportovní ples Větřkovice 2026",
+        "publicUrl": "https://vstupenky.online/form/sportovni_ples_2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/sportovni-ples-2026.jpg",
+        "dateLabel": "13. února 2026",
+        "date": "2026-02-13",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1768234882028.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "ples-obce-vetrkovice-2026",
+        "name": "Ples obce Větřkovice",
+        "publicUrl": "https://vstupenky.online/form/5a71dbd201cb44faaf471d938315b8f0",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-obce-vetrkovice-2026.jpg",
+        "dateLabel": "23. ledna 2026",
+        "date": "2026-01-23",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1767629085704.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "farni-ples-2026",
+        "name": "Farní ples",
+        "publicUrl": "https://vstupenky.online/form/farni-ples-2026-cernobily",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/farni-ples-2026.jpg",
+        "dateLabel": "17. ledna 2026",
+        "date": "2026-01-17",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1763253346916.jpg",
+        "verifiedAt": "2026-10-22"
+      }
+    ],
+    "seo": {
+      "siteName": "vstupenky.online",
+      "title": "Prodej vstupenek na akce | vstupenky.online",
+      "description": "Prodávejte vstupenky pro Vaši akci. Vlastní plánek sálu, výběr míst, QR platby bez transakčních poplatků a odbavení telefonem.",
+      "image": "/organizers-media/organizers-social.png",
+      "imageAlt": "Vstupenky pro Vaši akci - vlastní plánek, vlastní vstupenka a QR platby bez transakčních poplatků.",
+      "catalogTitle": "Akce a plesy - vstupenky online | vstupenky.online",
+      "catalogDescription": "Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa."
+    }
+  },
+  "internalSources": {
+    "liveOrganizerPage": {
+      "url": "https://vstupenky.online/pro-poradatele",
+      "observedAt": "2026-10-22",
+      "verifiedClaims": [
+        "The service supports registration forms and ticket sales.",
+        "Organizers can review orders and payments.",
+        "Tickets use QR codes for entry check-in.",
+        "The organizer determines event prices and participation/payment terms.",
+        "A product demonstration can be booked as a 30-minute Google Meet meeting.",
+        "The provider is Michael Bujnovský, IČO 06455361."
+      ],
+      "contact": "info@vstupenky.online",
+      "pricing": "Contact for service pricing; no numeric price is published."
+    },
+    "localTemplate": "automation/release/organizers/page.html",
+    "localTemplateDifferences": [
+      "The template describes general event publishing and organizer management.",
+      "It contains a contact-for-price section but no demo booking section.",
+      "The live page has a dedicated 30-minute Google Meet booking section."
+    ],
+    "evidenceLimit": "Public event listings and pages verify named events and public URLs only. No organizer testimonial, quote, sales total, or client outcome metric has been verified.",
+    "qrPaymentClaim": {
+      "source": "User instruction 2026-10-22",
+      "claim": "Bankovní převod pomocí QR platby bez transakčních poplatků; karty dostupné po kontaktování vstupenky.online. Cena samotné služby je samostatná."
+    }
+  }
+}

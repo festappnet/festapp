@@ -1,0 +1,310 @@
+{
+  "date": "2026-10-20",
+  "scope": "1000 seats; local planning evidence; no production access",
+  "festappHead": "eb23047248d59bf86345b9e0b79db4a988275231",
+  "packageHead": "c829a33d07de9a8fa376b407658875d22abd246e",
+  "sourceProbes": {
+    "target": "disposable-local:55432/postgres",
+    "transaction": "ROLLBACK",
+    "sources": [
+      {
+        "path": "database/functions/eshop/finalize_ticket_order.sql",
+        "sha256": "9049a73a9b7fd0a3bc466c4154e62a11aa2be1973d1866b12183399adafa3694"
+      },
+      {
+        "path": "database/functions/eshop/create_ticket_order.sql",
+        "sha256": "d86cb1d992a3175f35bccf1ffa449b0353339ce0060c7f11e7048d8d4ca5428d"
+      },
+      {
+        "path": "database/functions/eshop/select_spot.sql",
+        "sha256": "e9dad48b434c899479cc7c9a65b44836f4a33f15165e78a517cb1fb5f520fd01"
+      },
+      {
+        "path": "database/functions/eshop/get_blueprint.sql",
+        "sha256": "22fedac11233d2eda0f84dca405fede5337bfaf15c2c6415a2f45615081397fb"
+      },
+      {
+        "path": "database/functions/eshop/update_blueprint.sql",
+        "sha256": "c72480f028c943579e672517a489351de97278be4797a07257ee179d192af5e4"
+      },
+      {
+        "path": "database/functions/eshop/update_blueprint_client_sync_v1.sql",
+        "sha256": "b43f232d40dfbc8e0ebf4b1f4a734f2dcbf5b16f184b01f046fc3348f027912b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "database/tests/abuse/hold_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/blueprint_authoring_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/get_blueprint_preview_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/get_blueprint_order_sequence_test.sql",
+        "passed": false,
+        "error": "ASSERTION FAILED: Blueprint loads. Expected 200, but got 404",
+        "sqlstate": "P0001",
+        "fixtureDiagnostic": {
+          "adaptation": "register occasion slug through canonical allocator before reader",
+          "passed": true
+        }
+      }
+    ],
+    "probes": [
+      {
+        "scenario": "same_order_command_replay",
+        "sameResponse": true
+      },
+      {
+        "scenario": "new_order_command_already_sold_spot",
+        "code": 400,
+        "status": "rejected"
+      },
+      {
+        "scenario": "valid_hold",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "null_secret",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "expired_hold",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "foreign_blueprint_same_occasion",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "foreign_secret",
+        "code": 400,
+        "status": "rejected",
+        "allocated": false,
+        "error": "Invalid secret for spot"
+      }
+    ],
+    "localCatalogMatchedBeforeRefresh": false,
+    "refreshedDefinitionDifferences": [
+      "get_blueprint",
+      "finalize_ticket_order_internal_v1"
+    ],
+    "publicPayload": {
+      "seats": 1000,
+      "productRows": 1000,
+      "distinctProducts": 1,
+      "bytes": 146471
+    },
+    "localReadTiming": {
+      "samples": 6,
+      "medianMs": 5.193166000000019,
+      "maxMs": 5.274250000000023,
+      "includes": "local DB + pg transport + JSON decode; no HTTP/browser/TLS"
+    }
+  },
+  "installedCatalogProbes": {
+    "target": "disposable-local:55432/postgres",
+    "transaction": "ROLLBACK",
+    "mode": "installed disposable local catalog",
+    "sources": [
+      {
+        "path": "database/functions/eshop/finalize_ticket_order.sql",
+        "sha256": "9049a73a9b7fd0a3bc466c4154e62a11aa2be1973d1866b12183399adafa3694"
+      },
+      {
+        "path": "database/functions/eshop/create_ticket_order.sql",
+        "sha256": "d86cb1d992a3175f35bccf1ffa449b0353339ce0060c7f11e7048d8d4ca5428d"
+      },
+      {
+        "path": "database/functions/eshop/select_spot.sql",
+        "sha256": "e9dad48b434c899479cc7c9a65b44836f4a33f15165e78a517cb1fb5f520fd01"
+      },
+      {
+        "path": "database/functions/eshop/get_blueprint.sql",
+        "sha256": "22fedac11233d2eda0f84dca405fede5337bfaf15c2c6415a2f45615081397fb"
+      },
+      {
+        "path": "database/functions/eshop/update_blueprint.sql",
+        "sha256": "c72480f028c943579e672517a489351de97278be4797a07257ee179d192af5e4"
+      },
+      {
+        "path": "database/functions/eshop/update_blueprint_client_sync_v1.sql",
+        "sha256": "b43f232d40dfbc8e0ebf4b1f4a734f2dcbf5b16f184b01f046fc3348f027912b"
+      }
+    ],
+    "tests": [
+      {
+        "path": "database/tests/abuse/hold_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/blueprint_authoring_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/get_blueprint_preview_test.sql",
+        "passed": true
+      },
+      {
+        "path": "database/tests/eshop/get_blueprint_order_sequence_test.sql",
+        "passed": false,
+        "error": "ASSERTION FAILED: Blueprint loads. Expected 200, but got 404",
+        "sqlstate": "P0001",
+        "fixtureDiagnostic": {
+          "adaptation": "register occasion slug through canonical allocator before reader",
+          "passed": true
+        }
+      }
+    ],
+    "probes": [
+      {
+        "scenario": "same_order_command_replay",
+        "sameResponse": true
+      },
+      {
+        "scenario": "new_order_command_already_sold_spot",
+        "code": 400,
+        "status": "rejected"
+      },
+      {
+        "scenario": "valid_hold",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "null_secret",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "expired_hold",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "foreign_blueprint_same_occasion",
+        "code": 200,
+        "status": "applied",
+        "allocated": true
+      },
+      {
+        "scenario": "foreign_secret",
+        "code": 400,
+        "status": "rejected",
+        "allocated": false,
+        "error": "Invalid secret for spot"
+      }
+    ],
+    "localCatalogMatchedBeforeRefresh": true,
+    "refreshedDefinitionDifferences": [],
+    "functionHashesBefore": {
+      "select_spot": "3f2b48ed10f73b2d1641ba9fc9d17323",
+      "get_blueprint": "4d5a84c860e2c3a815bcae323ced0a87",
+      "update_blueprint_internal_v1": "534fd0d6f9e3127b09484e8491df3e5f",
+      "finalize_ticket_order_internal_v1": "6914af4786f65073ce1cf35a7b2f44cd"
+    },
+    "functionHashesTested": {
+      "select_spot": "3f2b48ed10f73b2d1641ba9fc9d17323",
+      "get_blueprint": "4d5a84c860e2c3a815bcae323ced0a87",
+      "update_blueprint_internal_v1": "534fd0d6f9e3127b09484e8491df3e5f",
+      "finalize_ticket_order_internal_v1": "6914af4786f65073ce1cf35a7b2f44cd"
+    },
+    "publicPayload": {
+      "seats": 1000,
+      "productRows": 1000,
+      "distinctProducts": 1,
+      "bytes": 146472
+    },
+    "localReadTiming": {
+      "samples": 6,
+      "medianMs": 5.795249999999953,
+      "maxMs": 6.90079099999997,
+      "includes": "local DB + pg transport + JSON decode; no HTTP/browser/TLS"
+    }
+  },
+  "core1000": {
+    "seats": 1000,
+    "nodes": 1001,
+    "documentBytes": 244870,
+    "sceneItems": 2002,
+    "identityPreserved": true,
+    "roundTripExact": true,
+    "partialSceneExact": true,
+    "mode": "Dart VM JIT, warm, local fixture fonts; no browser/Flutter/network",
+    "timing": [
+      {
+        "operation": "decode_and_validate",
+        "samples": 7,
+        "medianMs": 14.111,
+        "maxMs": 26.33
+      },
+      {
+        "operation": "full_scene",
+        "samples": 7,
+        "medianMs": 27.023,
+        "maxMs": 29.297
+      },
+      {
+        "operation": "one_seat_scene",
+        "samples": 7,
+        "medianMs": 0.019,
+        "maxMs": 0.021
+      }
+    ]
+  },
+  "coreTests": {
+    "files": [
+      "appearance_test.dart",
+      "seat_style_test.dart",
+      "object_style_test.dart",
+      "data_hardening_test.dart",
+      "document_equality_test.dart"
+    ],
+    "passed": 49,
+    "failed": 0
+  },
+  "svgBrowser": {
+    "agentBrowser": "0.33.1",
+    "engine": "local isolated headless Chrome",
+    "fixture": "blueprint-svg-browser-probe-2026-10-20.html",
+    "result": "EXECUTED",
+    "actualApplicationMethod": "BlueprintRenderer.renderBackground",
+    "activeMarkup": "foreignObject > img data URL with onerror; only sets local text marker",
+    "productionCspTested": false,
+    "sessionClosed": true
+  },
+  "additionalSourceSha256": {
+    "web_client/src/components/blueprint/svg_utils.js": "c5c9650e961624da7e7149b529570f19deeb88ad36bae0ac33120a4de79c7f52",
+    "web_client/src/components/blueprint/blueprint_renderer.js": "3d73c8221c36c4a11a1133cc59df6b8a45d0671a3d280e0e9d6ea8daa1af28b8",
+    "web_client/src/components/forms/form_session.js": "fc848403ae70260a081be5245275e22f92dd29ff4e4ea4260c8050f7eff6bf27",
+    "lib/components/blueprint/blueprint_model.dart": "6df0de5ad0cbd91f1c415196c645b4fe0388f4e7d13b8c23b8eb8e160bde2c96",
+    "lib/components/blueprint/blueprint_object_model.dart": "e120480aab7ab48ca2fe8251985ef507f2b9f0bd6702f76a4493213d06aa0975",
+    "../venue_seat_picker/packages/venue_layout_core/lib/src/model.dart": "17f318d8da718c2d414ddb6a9d9c540fbcfaa82d9d1cca1040108324ab9e492b",
+    "../venue_seat_picker/packages/venue_layout_core/lib/src/operations.dart": "8e1234dcb6afd355b019866d24bdb557de52c1c693f8cd68f444a48e21e1c736",
+    "../venue_seat_picker/packages/venue_layout_core/lib/src/scene.dart": "cf84dd4882c2bd08c397bc86396ee166fc04b561b175c8757d24033366cb8c07"
+  },
+  "svgSafeImageBrowser": {
+    "fixture": "blueprint-svg-safe-image-probe-2026-10-20.html",
+    "samePayload": true,
+    "result": "IMAGE_LOADED_NO_EXECUTION",
+    "mode": "Blob URL in img; isolated local headless Chrome",
+    "sessionClosed": true
+  }
+}

@@ -1,10 +1,10 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:trina_grid/trina_grid.dart';
 
@@ -15,7 +15,7 @@ class FormResponseModel extends ITrinaRowModel {
   int? id;
   OrderModel? order;
   Map<String, dynamic>? fields;
-  List<FormFieldModel>? allFields;
+  List<FormFieldDefinition>? allFields;
 
   FormResponseModel({
     this.id,
@@ -25,12 +25,12 @@ class FormResponseModel extends ITrinaRowModel {
   });
 
   static FormResponseModel fromPlutoJson(
-      Map<String, dynamic> json, List<FormFieldModel> allFields) {
-    final int? orderId = json[EshopColumns.ORDER_ID] as int?;
+      Map<String, dynamic> json, List<FormFieldDefinition> allFields) {
+    final int? orderId = json[EshopColumnIds.ORDER_ID] as int?;
     final Map<String, dynamic> responseFields = {};
 
     // Create a quick lookup map for field models by their string ID
-    final Map<String, FormFieldModel> fieldMap = {
+    final Map<String, FormFieldDefinition> fieldMap = {
       for (var f in allFields) f.id.toString(): f
     };
 
@@ -39,34 +39,34 @@ class FormResponseModel extends ITrinaRowModel {
       final dynamic value = entry.value;
 
       // Find the corresponding field model using the ID (key)
-      final FormFieldModel? fieldModel = fieldMap[fieldId];
+      final FormFieldDefinition? fieldModel = fieldMap[fieldId];
 
       if (fieldModel != null) {
         // As requested, skip fields that are listed as non-editable
-        // in FormHelper.nonEditableFields
-        if (FormHelper.nonEditableFields.contains(fieldModel.type)) {
+        // in FormMetadata.nonEditableFields
+        if (FormMetadata.nonEditableFields.contains(fieldModel.type)) {
           continue; // Skip this field entirely
         }
 
-        if (fieldModel.type == FormHelper.fieldTypeSex) {
+        if (fieldModel.type == FormMetadata.fieldTypeSex) {
           // Sex is independent, handled as a single string-to-string mapping
           responseFields[fieldId] =
               UserInfoModel.sexFromLocale(value as String?);
-        } else if (fieldModel.type == FormHelper.fieldTypeBirthDate) {
+        } else if (fieldModel.type == FormMetadata.fieldTypeBirthDate) {
           // BirthDate is handled
           final dt = DateTime.tryParse(value as String? ?? "");
           responseFields[fieldId] = dt?.toIso8601String();
-        } else if (fieldModel.type == FormHelper.fieldTypeIdDocument) {
+        } else if (fieldModel.type == FormMetadata.fieldTypeIdDocument) {
           // IdDocument is handled
           responseFields[fieldId] = value;
-        } else if (fieldModel.type == FormHelper.fieldTypeSelectMany) {
+        } else if (fieldModel.type == FormMetadata.fieldTypeSelectMany) {
           final String? stringValue = value as String?;
           if (stringValue == null || stringValue.isEmpty) {
             // If the grid value is empty, store an empty list
             responseFields[fieldId] = <String>[];
           } else {
             responseFields[fieldId] =
-                stringValue.split(FormHelper.optionDelimiter);
+                stringValue.split(FormMetadata.optionDelimiter);
           }
         } else {
           // Default for all other field types (text, number, etc.)
@@ -88,11 +88,14 @@ class FormResponseModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     Map<String, TrinaCell> cells = {
-      EshopColumns.ORDER_ID: TrinaCell(value: id),
-      EshopColumns.ORDER_SYMBOL: TrinaCell(value: order!.toBasicString()),
-      EshopColumns.ORDER_STATE:
+      EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: order),
+      EshopColumnIds.ORDER_WAITLIST:
+          TrinaCell(value: order?.waitlistSummary?.label ?? ''),
+      EshopColumnIds.ORDER_ID: TrinaCell(value: id),
+      EshopColumnIds.ORDER_SYMBOL: TrinaCell(value: order!.orderSymbol ?? ""),
+      EshopColumnIds.ORDER_STATE:
           TrinaCell(value: OrderModel.formatState(order!.state!)),
-      EshopColumns.TICKET_PRODUCTS: TrinaCell(
+      EshopColumnIds.TICKET_PRODUCTS: TrinaCell(
           value: order!.relatedProducts != null
               ? order!.relatedProducts!
                   .map((p) => p.toBasicString())
@@ -110,15 +113,15 @@ class FormResponseModel extends ITrinaRowModel {
         cells[f.id.toString()] = TrinaCell(value: '');
         continue;
       }
-      if (f.type == FormHelper.fieldTypeSex) {
+      if (f.type == FormMetadata.fieldTypeSex) {
         cells[f.id.toString()] = TrinaCell(
             value: UserInfoModel.sexToLocale(fields![f.id.toString()]));
         continue;
-      } else if (f.type == FormHelper.fieldTypeIdDocument) {
+      } else if (f.type == FormMetadata.fieldTypeIdDocument) {
         var val = fields![f.id.toString()];
         cells[f.id.toString()] = TrinaCell(value: val?.toString() ?? "");
         continue;
-      } else if (f.type == FormHelper.fieldTypeBirthDate) {
+      } else if (f.type == FormMetadata.fieldTypeBirthDate) {
         // Parse ISO datetime string into a DateTime object.
         var dt = DateTime.tryParse(fields![f.id.toString()] ?? "");
         // Format the DateTime into a "year-month-day" string.
@@ -137,8 +140,8 @@ class FormResponseModel extends ITrinaRowModel {
   }
 
   factory FormResponseModel.fromOrder(
-      OrderModel order, List<FormFieldModel> allFields) {
-    var fieldsData = order.data?[FormHelper.metaFields];
+      OrderModel order, List<FormFieldDefinition> allFields) {
+    var fieldsData = order.data?[FormMetadata.metaFields];
 
     Map<String, dynamic>? extractedFields;
 

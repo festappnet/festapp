@@ -1,12 +1,13 @@
+import 'package:fstapp/services/time_helper.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/cleaning/models/cleaning_place_status.dart';
 import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/news/news_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/speakers/speakers_bundle.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
@@ -17,7 +18,7 @@ import 'package:fstapp/components/inventory/models/user_inventory_bundle.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_model.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_model.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:flutter/foundation.dart';
 
@@ -91,7 +92,7 @@ class ClientSyncProjection {
         ((catalog['events'] as List?) ?? const []).whereType<Map>().map((raw) {
       final id = (raw['id'] as num).toInt();
       final liveEvent = liveById[id];
-      final event = EventModel.fromJson({
+      var event = EventModel.fromJson({
         'id': id,
         'title': raw['title'],
         'start_time': raw['startTime'],
@@ -121,25 +122,18 @@ class ClientSyncProjection {
           for (final role in roles)
             if (role['eventId'] == id) {'role': role['roleId']},
         ],
-      });
+      }, timeContext: TimeHelper.eventTime);
       final placeId = event.place?.id;
       final place = placeId == null ? null : placesById[placeId];
       if (place != null) {
-        event.place = place;
+        event = event.copyWith(place: place);
       }
       return event;
     }).toList(growable: false);
-    final eventsById = <int, EventModel>{
-      for (final event in events)
-        if (event.id case final id?) id: event,
-    };
-    for (final event in events) {
-      event.childEvents = [
-        for (final childId in event.childEventIds ?? const <int>[])
-          if (eventsById[childId] case final child?) child,
-      ];
-    }
-    return events;
+    return attachEventChildren(events, {
+      for (final event in events) if (event.id != null)
+        event.id!: event.childEventIds ?? const <int>[],
+    });
   }
 
   static Set<int> _ids(Object? value) => value is List

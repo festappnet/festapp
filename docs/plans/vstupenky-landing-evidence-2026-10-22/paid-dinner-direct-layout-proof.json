@@ -1,0 +1,107 @@
+{
+  "form": {
+    "form": 9,
+    "field": 52,
+    "type": "product_type",
+    "is_ticket_field": true,
+    "product_type": 8,
+    "products": [
+      {
+        "id": 14,
+        "title": "Kuřecí večeře",
+        "price": 180
+      },
+      {
+        "id": 15,
+        "title": "Vegetariánská večeře",
+        "price": 160
+      }
+    ],
+    "genericDinnerRemoved": 50,
+    "readback": [
+      "actual saved builder screenshot",
+      "SQL prices",
+      "physical reload screenshot"
+    ],
+    "media": {
+      "desktop": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "width": 1200,
+            "height": 804
+          }
+        ],
+        "format": {
+          "duration": "17.300000"
+        }
+      },
+      "-mobile": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "width": 720,
+            "height": 638
+          }
+        ],
+        "format": {
+          "duration": "17.300000"
+        }
+      }
+    }
+  },
+  "layoutStart": "first native palette-table drag, no stage drawing/naming/wall intro",
+  "decode": "four changed MP4 PASS",
+  "files": {
+    "web/organizers-media/layout-build.mp4": {
+      "sha256": "fdca175fa0fc47aea56967e185c72ab4235be70c202326618625b0af13133d0a",
+      "bytes": 543007
+    },
+    "web/organizers-media/layout-build.jpg": {
+      "sha256": "30d6ec75349cfa36de381535e0b0ff33da33644e45c626a783cac22f4a4ce09d",
+      "bytes": 60041
+    },
+    "web/organizers-media/layout-build.webp": {
+      "sha256": "99c7fb9989c75b1735640dc1c079890e81671901e35ed7803aceaf10e9b6ce31",
+      "bytes": 71660
+    },
+    "web/organizers-media/layout-build-mobile.mp4": {
+      "sha256": "0acc1eb9091546ffad01ccd95a8963af32389287f4c36c56d5603b48f555e136",
+      "bytes": 309719
+    },
+    "web/organizers-media/layout-build-mobile.jpg": {
+      "sha256": "3da76143a5c2a4277179516a316dc7c9c4c086c7142340d53ff0ef57fea4d04b",
+      "bytes": 42378
+    },
+    "web/organizers-media/layout-build-mobile.webp": {
+      "sha256": "dfdfd51ae42a48150c26d2ce84a7fcedbe8429bbe1a1fe2c355873af099696e6",
+      "bytes": 50754
+    },
+    "web/organizers-media/form-build.mp4": {
+      "sha256": "68b7d7019336f1e6154d13b1c54db1c7ce28ce1283537d43771c31d25ca0ff0a",
+      "bytes": 308629
+    },
+    "web/organizers-media/form-build.jpg": {
+      "sha256": "df6a1a101ad1145ce4b9bdb267216765b31be739a40575de475f0e3c7e88776c",
+      "bytes": 26560
+    },
+    "web/organizers-media/form-build.webp": {
+      "sha256": "f2de424e860e73078ce4700a7e2258f320dfdc5f833de858ad6f1ac9608bd07b",
+      "bytes": 20278
+    },
+    "web/organizers-media/form-build-mobile.mp4": {
+      "sha256": "61ebbd92eb7c9cf5e78f6918503b6164bd1fa2363472fbd2337dc6c935e0a293",
+      "bytes": 235949
+    },
+    "web/organizers-media/form-build-mobile.jpg": {
+      "sha256": "27261c7b31678133354bd4452df37d47860e5f35e7bb925e75bb0d031db9fe7c",
+      "bytes": 18860
+    },
+    "web/organizers-media/form-build-mobile.webp": {
+      "sha256": "6566d3074222400c08a32276d9f98241d58420df873a7d0621884710bacb5faf",
+      "bytes": 14402
+    }
+  }
+}

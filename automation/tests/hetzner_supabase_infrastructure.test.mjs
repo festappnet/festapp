@@ -225,3 +225,24 @@ test('rehearsal environment remains valid when sourced by a shell', () => {
   });
   assert.notEqual(invalidTarget.status, 0);
 });
+
+test('public ingress bounds reads and replaces untrusted source identity before Auth/RPC', () => {
+  const runtime = path.join(root, 'automation/hetzner-supabase/runtime');
+  const caddy = fs.readFileSync(path.join(runtime, 'Caddyfile'), 'utf8');
+  const compose = fs.readFileSync(path.join(runtime, 'docker-compose.festapp.yml'), 'utf8');
+  for (const header of ['X-Festapp-Client-IP', 'X-Forwarded-For', 'X-Real-IP']) {
+    assert.ok(caddy.includes(`header_up ${header} {client_ip}`));
+  }
+  assert.match(caddy, /header_up -Forwarded/);
+  const trusted = caddy.match(/trusted_proxies static ([^\n]+)/)[1].trim().split(/\s+/);
+  const permitted = caddy.match(/@untrusted not remote_ip ([^\n]+)/)[1].trim().split(/\s+/);
+  assert.deepEqual(permitted.filter(x => !['127.0.0.1/32', '::1/128'].includes(x)), trusted);
+  assert.ok(caddy.indexOf('handle @untrusted') < caddy.indexOf('handle @public_api'));
+  assert.match(caddy, /read_header 10s/);
+  assert.match(caddy, /read_body 30s/);
+  assert.match(caddy, /max_size 64KB/);
+  assert.match(caddy, /max_size 32MB/);
+  assert.match(compose, /GOTRUE_RATE_LIMIT_HEADER: X-Festapp-Client-IP/);
+  assert.match(compose, /FESTAPP_TRUSTED_IP_HEADER: X-Festapp-Client-IP/);
+  assert.match(compose, /GOOGLE_AUTH_TRUSTED_IP_HEADER: X-Festapp-Client-IP/);
+});

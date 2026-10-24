@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-15",
+  "scope": "Remove AppConfig -> AdminPage -> router dependency after explicit follow-up request",
+  "sourceSha256": "2dfaceb4984b7b5fb51293a040941557d5a66906cf00cc8a01d503125f444245",
+  "before": {
+    "lib/components/features/feature.dart": {
+      "appFiles": 711,
+      "routerPath": [
+        "lib/components/features/feature.dart",
+        "lib/components/features/form_feature.dart",
+        "lib/app_config.dart",
+        "lib/components/occasion/admin_page.dart",
+        "lib/components/navigation/occasion_administration_boundary.dart",
+        "lib/app_router.dart"
+      ]
+    },
+    "lib/components/features/map_feature.dart": {
+      "appFiles": 711,
+      "routerPath": [
+        "lib/components/features/map_feature.dart",
+        "lib/components/features/feature.dart",
+        "lib/components/features/form_feature.dart",
+        "lib/app_config.dart",
+        "lib/components/occasion/admin_page.dart",
+        "lib/components/navigation/occasion_administration_boundary.dart",
+        "lib/app_router.dart"
+      ]
+    },
+    "packages/festapp_core/lib/src/sync/client_command_response.dart": {
+      "appFiles": 0,
+      "routerPath": null
+    }
+  },
+  "after": {
+    "lib/components/features/feature.dart": {
+      "appFiles": 33,
+      "routerPath": null
+    },
+    "lib/components/features/map_feature.dart": {
+      "appFiles": 33,
+      "routerPath": null
+    },
+    "packages/festapp_core/lib/src/sync/client_command_response.dart": {
+      "appFiles": 0,
+      "routerPath": null
+    }
+  },
+  "graphMethod": "Full app-only AST closure, including exports/parts/conditional branches. No AppConfig exemption. External packages excluded from app-file counts.",
+  "changes": [
+    "NavigationPaths.admin is the single route string owner; AppConfig default and AdminPage.ROUTE consume it.",
+    "AppConfig no longer imports AdminPage. Existing route value, form feature defaults and navigation behavior remain unchanged.",
+    "Feature boundary guard now traverses AppConfig and rejects concrete routing. New conditional/transitive regression fixture covers the former escape."
+  ],
+  "checks": {
+    "architectureGuard": "PASS",
+    "architectureGuardTestsPassed": 11,
+    "targetedFlutter": {
+      "passed": 68,
+      "skipped": 0,
+      "failed": 0,
+      "command": [
+        "fvm",
+        "flutter",
+        "test",
+        "--no-pub",
+        "--concurrency=2",
+        "--reporter=json",
+        "test/components/features/features_unit_cases.dart",
+        "test/components/features/map_feature_cases.dart",
+        "test/startup/app_router_deep_link_cases.dart",
+        "test/components/forms/forms_editor_widget_cases.dart"
+      ],
+      "seconds": 8.834956167032942,
+      "peakOwnedRssBytesIncludingWatcher": 2386640896,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "2dfaceb4984b7b5fb51293a040941557d5a66906cf00cc8a01d503125f444245",
+      "inputsUnchanged": true
+    },
+    "analyze": "No errors or warnings; only the existing AdminPage.ROUTE naming lint remains."
+  },
+  "inputFileSha256": {
+    "lib/app_config.dart": "628c0d6f4ca3738c8daf3ec02b64d011e6ed66c1421e506558117da811b6570f",
+    "lib/components/occasion/admin_page.dart": "0462cc0de6ef12a9f86818d98bbcc959c21e8db746a75307bb091a20e640db61",
+    "lib/components/navigation/navigation_paths.dart": "72ff8f1373ae16c40875519758fec7ffee0ef0c384fac8aa8c3df998749575b8",
+    "packages/festapp_core/tool/check_architecture.dart": "0d7f6db737fad3181e269096271ec09697a70cecdd2279661f84bac1e0e27df1",
+    "packages/festapp_core/test/architecture_guard_test.dart": "4d009f64fc8bb5134c548689abf9b4fecb5573e41ab3dc0b98d73c07efd9f6dc",
+    "docs/development/flutter-test-architecture-progress-2026-10-15.md": "a30fb43ec0f5d686dc47d70f3aef2ad8747b83d501789c55ef2dd27bde7ed49c"
+  },
+  "finalCodeFileSha256": {
+    "lib/app_config.dart": "04e5fc3ff227a642c5a9dd739835ee90965f3e334a333061dcb7a2e0fd35dd5d",
+    "lib/components/occasion/admin_page.dart": "4afda79a20bbe32cbad372192a663422f5702f70b7d1e1ae2c8366373de041d9",
+    "lib/components/navigation/navigation_paths.dart": "3c5122361d261cc517b65d850f392b5abf9f7c817686441e17b22b73c104c663",
+    "packages/festapp_core/tool/check_architecture.dart": "9029bb833a705037efbb56945c1b373335e6b6575a70cd31631099e63a6fdd77",
+    "packages/festapp_core/test/architecture_guard_test.dart": "df097e4ff60ba1d7afb06432d33e02fe1389363e8d064d0b63c003b014579861"
+  },
+  "rawEvidence": "/tmp/festapp-app-config-cut",
+  "performance": "No full benchmark or production build repeated. The previous 29.92 s full run and 45.39 s release build apply to their previous SHA, not this change.",
+  "publication": "No backend operation, commit, push or deployment."
+}

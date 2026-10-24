@@ -1,3 +1,5 @@
+import { OptionBuilderHelper } from './fields/option_builder_helper.js';
+import { AppConfig } from '../../app_config.js';
 import { FormHelper } from './form_helper.js';
 import { FormDataReader } from './form_data_reader.js';
 import { DbForms } from './db_forms.js';
@@ -39,20 +41,68 @@ export class FormSession extends EventTarget {
             if (ticketField && ticketField.data && ticketField.data.max_tickets) {
                 const limit = parseInt(ticketField.data.max_tickets, 10);
                 if (!isNaN(limit) && limit > 0) {
-                    this.maxTickets = limit;
+                    this.maxTickets = Math.min(limit, AppConfig.maxTicketsPerOrder);
                 }
             }
         }
 
 
+        if (formModel.registrationMode === 'regular' && Number.isInteger(formModel.capacity?.remainingPublic)) {
+            this.maxTickets = Math.min(this.maxTickets, formModel.capacity.remainingPublic);
+        }
+        if (formModel.offerBundle) this.maxTickets = Math.min(this.maxTickets, formModel.offerBundle.pendingCount);
         // UI State for persistence across re-renders (not part of payload)
         this.uiState = new Map();
+        this.emailSuffixConfirmations = new Map();
         
         // --- Fix: Request Serialization Queue ---
         this._spotQueue = Promise.resolve();
 
         // Spot Model Cache (Price Robustness)
         this.spotModels = new Map();
+    }
+
+    // Restore answers by stable field/product IDs, never restore quoted prices.
+    restoreDraft(previous, freshSpots = []) {
+        const optionsFor = def => def.options || def.data?.options || [];
+        const restoreValue = (def, value) => {
+            if (def.type !== 'product_type') return value;
+            const ids = Array.isArray(value) ? value : String(value ?? '').split(' | ');
+            return ids.filter(id => optionsFor(def).some(option => String(option.id) === String(id) && option.isAvailable !== false)).join(' | ');
+        };
+        for (const [id, value] of previous.state.fields) {
+            const def = this.formModel.visibleFields.find(field => String(field.id) === String(id));
+            if (def) this.state.fields.set(id, restoreValue(def, value));
+        }
+        this.spotModels = new Map(freshSpots.map(spot => [String(spot.id), spot]));
+        this.state.tickets = previous.state.tickets.map(ticket => {
+            const restored = { ...ticket, fields: [] };
+            delete restored.spotPrice;
+            const spot = this.spotModels.get(String(ticket.spot));
+            if (spot && ['available', 'selected_by_me'].includes(spot.state) && spot.productModel?.price != null) {
+                restored.spotPrice = Number(spot.productModel.price);
+                restored.spotName = spot.title;
+                this.state.currency = spot.productModel.currency_code || spot.productModel.currency || this.state.currency;
+            } else {
+                delete restored.spot;
+                delete restored.spotName;
+            }
+            for (const answer of ticket.fields || []) {
+                const def = this._getTicketSubDef(answer._subFieldId);
+                if (!def || def.type === 'spot') continue;
+                const value = restoreValue(def, answer[def.type] ?? answer[def.id]);
+                const field = { _subFieldId: def.id, [def.type]: value };
+                if (def.type === 'product_type') {
+                    const selected = String(value).split(' | ').map(id => optionsFor(def).find(option => String(option.id) === id)).filter(Boolean);
+                    field.price = selected.reduce((sum, option) => sum + Number(option.price || 0), 0);
+                    field.currency_code = selected[0]?.currency || selected[0]?.currencyCode || selected[0]?.currency_code;
+                }
+                restored.fields.push(field);
+            }
+            return restored;
+        });
+        this._syncPayloadFromState();
+        this._recalculate();
     }
 
     getComponentState(key) {
@@ -214,6 +264,7 @@ export class FormSession extends EventTarget {
                      // Filter by Currency
                      const currency = this.state.currency;
                      const validOptions = options.filter(o => {
+                         if (o.isAvailable === false || o.is_dynamically_available === false) return false;
                          const c = o.currency || o.currencyCode || o.currency_code;
                          return !c || c === currency;
                      });
@@ -221,24 +272,40 @@ export class FormSession extends EventTarget {
                      
 
                      if (validOptions.length > 0) {
-                         // Select first one as default
-                         const autoSelect = validOptions[0];
-                         
-                         // Use ID if available, otherwise fallback to title (matches RadioFieldBuilder logic)
-                         const autoSelectValue = (autoSelect.id !== undefined && autoSelect.id !== null) ? autoSelect.id : autoSelect.title;
-                         
-                         
+                         const configuredDefault = subDef.data?.default_value;
+                         const isMany = subDef.type === 'select_many' || subDef.data?.selection_type === 'select_many';
+                         const selected = configuredDefault == null
+                             ? [validOptions[0]]
+                             : validOptions.filter(o => OptionBuilderHelper.shouldPreselect(
+                                 subDef, o, isMany ? 'checkbox' : 'radio'));
+                         if (isMany && subDef.type !== 'product_type') {
+                             newTicket.fields.push({
+                                 [subDef.type]: selected.map(o => o.id ?? o.title).join(' | '),
+                                 _subFieldId: subDef.id,
+                                 currency_code: currency,
+                                 ...(selected.some(o => o.price !== undefined)
+                                     ? { price: selected.reduce((sum, o) => sum + Number(o.price || 0), 0) } : {}),
+                             });
+                             return;
+                         }
+                         for (const autoSelect of (isMany ? selected : selected.slice(0, 1))) {
 
-                         const valObj = {
-                             [subDef.type]: autoSelectValue,
-                             _subFieldId: subDef.id,
-                             currency_code: currency
-                         };
-                         
-                         if (autoSelect.price !== undefined) valObj.price = autoSelect.price;
-                         if (subDef.type === 'product_type') valObj.product_type = autoSelectValue;
-                         
-                         newTicket.fields.push(valObj);
+                             // Use ID if available, otherwise fallback to title (matches RadioFieldBuilder logic)
+                             const autoSelectValue = (autoSelect.id !== undefined && autoSelect.id !== null) ? autoSelect.id : autoSelect.title;
+
+
+
+                             const valObj = {
+                                 [subDef.type]: autoSelectValue,
+                                 _subFieldId: subDef.id,
+                                 currency_code: currency
+                             };
+
+                             if (autoSelect.price !== undefined) valObj.price = autoSelect.price;
+                             if (subDef.type === 'product_type') valObj.product_type = autoSelectValue;
+
+                             newTicket.fields.push(valObj);
+                         }
                      }
                 });
         }
@@ -404,6 +471,9 @@ export class FormSession extends EventTarget {
                 let pipeKey = null;
 
                 subDef = this._getTicketSubDef(fObj._subFieldId);
+                // Keep explicit clears in the draft, but never submit them as products.
+                if (subDef?.type === 'product_type' && (fObj.product_type === '' ||
+                    (Array.isArray(fObj.product_type) && !fObj.product_type.length))) return;
 
                 if (subDef) {
                     if (subDef.type === 'checkbox') isMultiSelect = true;
@@ -472,12 +542,25 @@ export class FormSession extends EventTarget {
             });
 
             const ticketObj = {
-                fields: processedFields,
+                ...(t.ticketId ? { ticketId: t.ticketId } : {}),
+                fields: processedFields.map(field => {
+                    const definition = this._getTicketSubDef(field._subFieldId);
+                    if (!definition || ['product_type', 'spot'].includes(definition.type)) return field;
+                    const value = field[definition.type] ?? field[definition.id];
+                    return value === undefined ? field : { ...field, [definition.id]: value };
+                }),
                 _ticketIndex: i
             };
             
             // Map special top-level props expected by Backend/Calc
-            if (t.spot) ticketObj.spot = t.spot;
+            if (t.spot) {
+                ticketObj.spot = t.spot;
+                // The shared required-answer validator uses saved field IDs;
+                // the seat finalizer still owns the authoritative top-level spot.
+                const spotDefinition = this.formModel.visibleFields
+                    .find(field => field.type === 'ticket')?.subFields?.find(field => field.type === 'spot');
+                if (spotDefinition) ticketObj.fields.push({ [spotDefinition.id]: t.spot });
+            }
 
             if (t.spotPrice) ticketObj.spotPrice = t.spotPrice;
             // Recover from cache if missing
@@ -494,10 +577,11 @@ export class FormSession extends EventTarget {
         // --- Standard Fields Sync ---
         this.payload.fields = [];
         for (const [fieldId, value] of this.state.fields.entries()) {
-            if (value === null || value === undefined || value === '') continue;
+            if (value === null || value === undefined) continue;
 
             const fieldDef = this.formModel.visibleFields.find(f => String(f.id) === String(fieldId));
             if (!fieldDef) continue; // Should not happen
+            if (value === '' && !['select_one', 'select_many'].includes(fieldDef.type)) continue;
 
             const entry = { [fieldId]: value };
             
@@ -520,6 +604,13 @@ export class FormSession extends EventTarget {
             }
             // TODO: Multi-value currency logic? (Usually ignored for Checkboxes)
             
+            if (fieldDef.type === 'product_type') {
+                const options = fieldDef.options || fieldDef.data?.options || [];
+                const ids = Array.isArray(value) ? value : String(value ?? '').split(' | ');
+                const selected = ids.map(id => options.find(option => String(option.id) === String(id))).filter(Boolean);
+                entry.price = selected.reduce((sum, option) => sum + Number(option.price || 0), 0);
+                if (selected.length) entry.currency_code = selected[0].currency || selected[0].currencyCode || selected[0].currency_code;
+            }
             this.payload.fields.push(entry);
         }
     }
@@ -684,15 +775,15 @@ export class FormSession extends EventTarget {
               
               this.updateTicket(index, subDef.id, valueObj);
          } else {
-             // Remove field
-             this.updateTicket(index, subDef.id, null);
+             // Preserve explicit clears so rebuilding does not restore defaults.
+             this.updateTicket(index, subDef.id, { [subDef.type]: '', _subFieldId: subDef.id });
          }
     }
 
     initialize(form) {
         // 1. Hydrate Tickets (One-time from DOM)
         const initialTickets = FormDataReader.getTicketDataFromDom(form, this.formModel);
-        if (initialTickets.length > 0) {
+        if (initialTickets.length > 0 && !this.formModel.offerBundle) {
             this.state.tickets = initialTickets;
         }
 

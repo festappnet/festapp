@@ -18,7 +18,7 @@ BEGIN
 
     -- Authorization Check: User must be a member or have editor view permissions on the occasion.
     SELECT EXISTS (SELECT 1 FROM public.user_groups WHERE "group" = p_group_id AND "user" = auth.uid()) INTO v_is_member;
-    v_is_editor_view := get_is_editor_view_on_occasion(v_occasion_id);
+    v_is_editor_view := get_is_editor_view_on_occasion(v_occasion_id) OR get_is_editor_on_occasion(v_occasion_id);
 
     IF NOT v_is_member AND NOT v_is_editor_view THEN
         RAISE EXCEPTION 'NOT_AUTHORIZED';
@@ -31,13 +31,14 @@ BEGIN
     SELECT
         jsonb_build_object(
             'id', ugi.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND scope_type='occasion' AND scope_id=ugi.occasion AND aggregate_id=ugi.id::text),0),
             'title', ugi.title,
             'description', ugi.description,
             'type', ugi.type,
             'data', ugi.data,
             'place', ugi.place, -- This is placeId
             'is_admin', COALESCE(v_current_user_is_admin, false),
-            'places', (SELECT row_to_json(p)::jsonb FROM public.places p WHERE p.id = ugi.place),
+            'places', (SELECT to_jsonb(p)||jsonb_build_object('aggregate_version',coalesce(v.version,0)) FROM public.places p LEFT JOIN public.client_aggregate_versions v ON v.aggregate_type='place' AND v.scope_type='occasion' AND v.scope_id=p.occasion AND v.aggregate_id=p.id::text WHERE p.id=ugi.place),
             'user_groups', (
                 SELECT COALESCE(jsonb_agg(
                     jsonb_build_object(

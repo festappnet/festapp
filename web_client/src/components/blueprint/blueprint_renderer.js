@@ -10,6 +10,7 @@ import { TooltipProvider } from './tooltip_provider.js';
 import { BlueprintDataPreparer } from './blueprint_data_preparer.js';
 import { TransformController } from './transform_controller.js';
 import { GestureController } from './gesture_controller.js';
+import { BlueprintStrings } from './blueprint_strings.js';
 
 export class BlueprintRenderer {
     constructor(container) {
@@ -38,14 +39,11 @@ export class BlueprintRenderer {
         this.state.scalingMode = mode;
         // Re-process not needed if data already prepared, but simple enough to re-render
         // Clear and re-render
-        this.container.innerHTML = '';
-        
-        // Re-init container
-        this.container.classList.add('blueprint-renderer-container');
+        this.createViewport();
 
         this.transformContainer = document.createElement('div');
         this.transformContainer.className = 'blueprint-transform-container';
-        this.container.appendChild(this.transformContainer);
+        this.viewport.appendChild(this.transformContainer);
         
         // Apply sizing
         if (this.contentWidth) {
@@ -53,6 +51,7 @@ export class BlueprintRenderer {
              this.transformContainer.style.height = this.contentHeight + 'px';
         }
 
+        this.createZoomControls();
         this.renderBackground();
         this.renderSeats();
         this.fitToScreen();
@@ -70,8 +69,7 @@ export class BlueprintRenderer {
         }
 
         this.onSeatClick = onSeatClick;
-        this.container.innerHTML = '';
-        this.container.classList.add('blueprint-renderer-container');
+        this.createViewport();
 
         // Transform Container
         this.transformContainer = document.createElement('div');
@@ -82,7 +80,9 @@ export class BlueprintRenderer {
              this.transformContainer.style.height = this.contentHeight + 'px';
         } 
         
-        this.container.appendChild(this.transformContainer);
+        this.viewport.appendChild(this.transformContainer);
+
+        this.createZoomControls();
 
         // Build Tooltip
         this.createTooltip();
@@ -160,27 +160,102 @@ export class BlueprintRenderer {
         });
     }
 
+    createViewport() {
+        this.container.innerHTML = '';
+        this.container.classList.add('blueprint-renderer-container');
+        this.viewport = document.createElement('div');
+        this.viewport.className = 'blueprint-map-viewport';
+        this.container.appendChild(this.viewport);
+    }
+
+    createZoomControls() {
+        const controls = document.createElement('div');
+        controls.className = 'blueprint-zoom-controls';
+        controls.setAttribute('role', 'group');
+        controls.setAttribute('aria-label', BlueprintStrings.zoomControls);
+        // Keep controls outside the transformed map and its gesture handling.
+        for (const event of ['mousedown', 'touchstart', 'pointerdown', 'click', 'wheel']) {
+            controls.addEventListener(event, e => e.stopPropagation());
+        }
+        const button = (label, text, action) => {
+            const element = document.createElement('button');
+            element.type = 'button';
+            element.className = 'btn';
+            element.textContent = text;
+            element.title = label;
+            element.setAttribute('aria-label', label);
+            element.addEventListener('click', action);
+            controls.appendChild(element);
+            return element;
+        };
+        this.zoomInButton = button(BlueprintStrings.zoomIn, '+', () => this.zoomBy(1.25));
+        this.zoomOutButton = button(BlueprintStrings.zoomOut, '−', () => this.zoomBy(1 / 1.25));
+        const reset = button(BlueprintStrings.fitToScreen, '', () => this.fitToScreen());
+        const fitIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        fitIcon.setAttribute('viewBox', '0 0 24 24');
+        fitIcon.setAttribute('width', '24');
+        fitIcon.setAttribute('height', '24');
+        fitIcon.setAttribute('aria-hidden', 'true');
+        fitIcon.setAttribute('focusable', 'false');
+        const corners = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        corners.setAttribute('d', 'M9 4H4v5M15 4h5v5M20 15v5h-5M9 20H4v-5');
+        corners.setAttribute('fill', 'none');
+        corners.setAttribute('stroke', 'currentColor');
+        corners.setAttribute('stroke-width', '2');
+        corners.setAttribute('stroke-linecap', 'round');
+        corners.setAttribute('stroke-linejoin', 'round');
+        fitIcon.appendChild(corners);
+        reset.appendChild(fitIcon);
+        reset.classList.add('blueprint-zoom-reset');
+        this.zoomControls = controls;
+        this.container.appendChild(controls);
+    }
+
+    zoomBy(factor) {
+        this.cancelAnimation();
+        this.hideTooltip();
+        this.updateControllerDims();
+        const rect = this.viewport.getBoundingClientRect();
+        this.handleZoom(factor, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+
+    cancelAnimation() {
+        if (this._animationFrame) cancelAnimationFrame(this._animationFrame);
+        this._animationFrame = null;
+    }
+
     updateControllerDims() {
-        if (!this.container) return;
+        if (!this.viewport) return;
+        const viewportRect = this.viewport.getBoundingClientRect();
+        const controlsRect = this.zoomControls?.getBoundingClientRect();
+        // Keep enough stable pan space to move edge seats out from under the
+        // floating controls, including their safe-area offsets.
+        const panInsets = controlsRect?.width && controlsRect?.height ? {
+            right: Math.max(0, Math.min(this.viewport.clientWidth - 44, viewportRect.right - controlsRect.left + 12)),
+            bottom: Math.max(0, Math.min(this.viewport.clientHeight - 44, viewportRect.bottom - controlsRect.top + 12)),
+        } : {};
         this.controller.updateDimensions(
-            this.container.clientWidth,
-            this.container.clientHeight,
+            this.viewport.clientWidth,
+            this.viewport.clientHeight,
             this.contentWidth,
-            this.contentHeight
+            this.contentHeight,
+            panInsets
         );
     }
 
     fitToScreen() {
         if (!this.contentWidth || !this.contentHeight) return;
-        if (this.container.clientWidth === 0 || this.container.clientHeight === 0) return;
+        if (this.viewport.clientWidth === 0 || this.viewport.clientHeight === 0) return;
 
+        this.cancelAnimation();
         this.updateControllerDims();
         this.controller.fitToScreen();
         this.updateTransform();
     }
 
     attachEvents() {
-        this.gestureController = new GestureController(this.container, {
+        if (this.gestureController) this.gestureController.destroy();
+        this.gestureController = new GestureController(this.viewport, {
             onPan: (dx, dy, x, y) => this.handlePan(dx, dy, x, y),
             onZoom: (factor, x, y) => this.handleZoom(factor, x, y),
             onPinch: (dx, dy, factor, x, y) => this.handlePinch(dx, dy, factor, x, y),
@@ -197,38 +272,60 @@ export class BlueprintRenderer {
     }
 
     handlePan(dx, dy, x, y) {
-        this.controller.onInteractionUpdate(dx, dy, 1, x, y, this.container.getBoundingClientRect());
+        this.controller.onInteractionUpdate(dx, dy, 1, x, y, this.viewport.getBoundingClientRect());
         this.updateTransform();
     }
 
     handleZoom(factor, x, y) {
-        this.controller.onInteractionUpdate(0, 0, factor, x, y, this.container.getBoundingClientRect(), false);
+        this.controller.onInteractionUpdate(0, 0, factor, x, y, this.viewport.getBoundingClientRect(), false);
         this.updateTransform();
     }
 
     handlePinch(dx, dy, factor, x, y) {
-        this.controller.onInteractionUpdate(dx, dy, factor, x, y, this.container.getBoundingClientRect());
+        this.controller.onInteractionUpdate(dx, dy, factor, x, y, this.viewport.getBoundingClientRect());
         this.updateTransform();
     }
 
     handleTap(x, y) {
-         const target = document.elementFromPoint(x, y);
-         if (target) {
-             const seatEl = target.closest('.blueprint-seat-container');
-             if (seatEl && seatEl.dataset.seatId) {
-                 const seatId = seatEl.dataset.seatId;
-                 const obj = this.data.objects.find(o => String(o.id) === String(seatId));
-                 if (obj && this.onSeatClick) {
-                     this.onSeatClick(obj);
-                 }
-             }
-         }
+        const bounds = this.viewport.getBoundingClientRect();
+        if (x < bounds.left || x >= bounds.right || y < bounds.top || y >= bounds.bottom) return;
+        const { x: panX, y: panY, scale } = this.controller.state;
+        const size = this.seatSize * scale;
+        let nearest = null;
+        let nearestDistance = Infinity;
+        let nearestCenter = Infinity;
+        for (const obj of this.data.objects || []) {
+            if (obj.x === undefined || obj.y === undefined) continue;
+            const left = bounds.left + panX + obj.x * size;
+            const top = bounds.top + panY + obj.y * size;
+            const distance = Math.hypot(
+                Math.max(left - x, 0, x - left - size),
+                Math.max(top - y, 0, y - top - size)
+            );
+            const center = Math.hypot(x - left - size / 2, y - top - size / 2);
+            if (distance < nearestDistance || (distance === nearestDistance && center < nearestCenter)) {
+                nearest = obj;
+                nearestDistance = distance;
+                nearestCenter = center;
+            }
+        }
+        // Include unavailable seats in the search so a miss never jumps across one.
+        // Exact hits preserve the callback's existing availability handling.
+        if (nearest && nearestDistance <= BlueprintConfig.seatHitSlop &&
+            (nearestDistance === 0 || nearest.state === SeatStates.AVAILABLE || nearest.state === SeatStates.SELECTED_BY_ME)) {
+            this.onSeatClick?.(nearest);
+        }
     }
 
     updateTransform() {
         if (!this.transformContainer) return;
         const { x, y, scale } = this.controller.state;
         this.transformContainer.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+        if (this.zoomInButton && this.zoomOutButton) {
+            const relativeScale = scale / this.controller.getFitScale();
+            this.zoomOutButton.disabled = relativeScale <= 1.001;
+            this.zoomInButton.disabled = relativeScale >= (BlueprintConfig.maxScale || 5) - 0.001;
+        }
     }
 
     snapBack() {
@@ -284,6 +381,7 @@ export class BlueprintRenderer {
     }
 
     destroy() {
+        this.cancelAnimation();
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;
@@ -329,12 +427,6 @@ export class BlueprintRenderer {
              this.applySeatStyle(inner, obj);
 
              el.appendChild(inner);
-
-             // Interaction
-             el.onclick = (e) => {
-                 e.stopPropagation(); 
-                 if (this.onSeatClick) this.onSeatClick(obj);
-             };
 
              // Tooltip Events
              el.onpointerenter = (e) => this.showTooltip(obj, e);

@@ -1,5 +1,5 @@
-CREATE OR REPLACE FUNCTION get_form_by_link(form_link TEXT)
-RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.get_form_bundle_internal(p_form_id bigint,p_allow_closed boolean DEFAULT false)
+RETURNS JSON LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = public, extensions AS $$
 DECLARE
     allData JSON;
@@ -12,7 +12,7 @@ BEGIN
     SELECT EXISTS (
         SELECT 1
         FROM public.forms
-        WHERE link = form_link
+        WHERE id = p_form_id
     ) INTO form_exists;
 
     IF NOT form_exists THEN
@@ -22,26 +22,28 @@ BEGIN
         );
     END IF;
 
-    SELECT occasion INTO occ_id FROM public.forms WHERE link = form_link;
+    SELECT occasion INTO occ_id FROM public.forms WHERE id = p_form_id;
     is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
 
 
-    IF NOT is_editor_view AND NOT EXISTS (
+    IF NOT p_allow_closed AND NOT is_editor_view AND NOT EXISTS (
         SELECT 1
         FROM public.forms
-        WHERE link = form_link AND is_open = true
+        WHERE id = p_form_id AND is_open = true
     ) THEN
         -- If the form is closed, retrieve only the 'header_off' message
         SELECT jsonb_build_object(
             'code', 400,
             'data', jsonb_build_object(
+                'organizationIdentity', (SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
                 'header_off', f.header_off,
+                'seo', public.get_occasion_seo_data(f.link, 'form'),
                 'is_open', f.is_open
             )
         )
         INTO allData
         FROM public.forms f
-        WHERE f.link = form_link;
+        WHERE f.id = p_form_id;
 
         RETURN allData;
     END IF;
@@ -50,12 +52,20 @@ BEGIN
     SELECT jsonb_build_object(
         'code', 200,
         'data', jsonb_build_object(
+            'organizationIdentity', CASE WHEN o.organization=(SELECT organization FROM public.units WHERE id=o.unit) THEN public.get_verified_unit_identity_internal(o.unit) END,
+            'payments',public.form_payment_availability_internal(f.id),
+            'capacity', public.get_form_capacity_snapshot_internal(f.id),
+            'registrationMode',public.get_form_registration_mode_internal(f.id),
+            'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+            'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
             'id', f.id,
+            'link', f.link,
             'key', f.key,
             'created_at', f.created_at,
             'data', public.get_effective_form_data(f.id),
             'type', f.type,
             'title', f.title,
+            'seo', public.get_occasion_seo_data(f.link, 'form'),
             'is_open', f.is_open,
             'header', f.header,
             'header_off', f.header_off,
@@ -64,7 +74,9 @@ BEGIN
                 'features', o.features,
                 'start_time', o.start_time
             ),
-            'blueprint', f.blueprint,
+            'blueprint', CASE WHEN EXISTS (SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
+                AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)'))
+                THEN f.blueprint END,
             'deadline_duration_seconds', f.deadline_duration_seconds,
             'account_number', ba.account_number,
             'secret', generated_secret,
@@ -129,8 +141,16 @@ BEGIN
     FROM public.forms f
     LEFT JOIN eshop.bank_accounts ba ON f.bank_account = ba.id
     LEFT JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.link = form_link;
+    WHERE f.id = p_form_id;
 
     RETURN allData;
 END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
+RETURNS json LANGUAGE sql SECURITY DEFINER
+SET search_path=public,extensions AS $$
+ SELECT public.get_form_bundle_internal(public.resolve_form_link_internal(form_link),false);
 $$;

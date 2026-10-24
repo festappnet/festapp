@@ -13,7 +13,7 @@
 --   * rate limit: max 5 reports per user per 15 minutes -> 429.
 --   * on a fresh report, inserts a log_notifications row addressed to the crew
 --     (data.path = 'cleaning' so the push deep-links to the Cleaning page).
-CREATE OR REPLACE FUNCTION public.report_cleaning_issue(
+CREATE OR REPLACE FUNCTION public.report_cleaning_issue_internal_v1(
   place_id bigint,
   problem_type text,
   note text DEFAULT NULL
@@ -32,6 +32,9 @@ DECLARE
   v_existing public.cleaning_reports%ROWTYPE;
   v_report public.cleaning_reports%ROWTYPE;
   v_crew jsonb;
+  v_notification_deferred boolean:=false;
+  v_notification uuid;
+  v_policy jsonb; v_new_data jsonb;
 BEGIN
   IF v_user IS NULL THEN
     RETURN jsonb_build_object('code', 401, 'message', 'Sign in is required to report a cleaning issue');
@@ -96,14 +99,14 @@ BEGIN
     RETURN jsonb_build_object('code', 404, 'message', 'Cleaning feature is not enabled for this occasion');
   END IF;
 
-  -- Rate limit: 5 reports / 15 minutes per user.
-  IF (
-    SELECT count(*) FROM public.cleaning_reports
-    WHERE created_by = v_user
-      AND created_at > now() - interval '15 minutes'
-  ) >= 5 THEN
-    RETURN jsonb_build_object('code', 429, 'message', 'Too many reports, please wait a moment');
-  END IF;
+  -- Committed accepted work, including appended duplicate notes, shares one
+  -- actor identity. Removing a report cannot replenish its rolling budget.
+  BEGIN
+    v_policy:=public.abuse_effective_rules_v1('cleaning.report',NULL,NULL);
+    PERFORM public.abuse_charge_v1(v_policy,
+      jsonb_build_object('actor',v_user),jsonb_build_object('cleaning.note.bytes',octet_length(coalesce(v_note,'')), 'cleaning.report.bytes',0));
+  EXCEPTION WHEN SQLSTATE 'PT429' THEN RETURN jsonb_build_object('code',429,'message','Too many reports, please wait a moment'); END;
+  PERFORM pg_advisory_xact_lock(hashtextextended('cleaning-report:'||place_id::text||':'||problem_type,0));
 
   -- Push-notification labels are deliberately Czech-only (the crew is Czech;
   -- localizing push messages is out of scope). Keep the type list in sync — see
@@ -118,24 +121,19 @@ BEGIN
   SELECT cr.* INTO v_existing
   FROM public.cleaning_reports cr
   WHERE cr.place = place_id
-    AND cr.problem_type = report_cleaning_issue.problem_type
+    AND cr.problem_type = report_cleaning_issue_internal_v1.problem_type
     AND cr.resolved_at IS NULL
   ORDER BY cr.created_at ASC
   LIMIT 1;
 
   IF FOUND THEN
     IF v_note IS NOT NULL THEN
-      UPDATE public.cleaning_reports
-      SET data = COALESCE(data, '{}'::jsonb) || jsonb_build_object(
-            'extra_notes',
-            COALESCE(data->'extra_notes', '[]'::jsonb) || to_jsonb(v_note))
-      WHERE id = v_existing.id;
+      v_new_data:=COALESCE(v_existing.data,'{}'::jsonb)||jsonb_build_object('extra_notes',coalesce(v_existing.data->'extra_notes','[]'::jsonb)||to_jsonb(v_note));
+      IF octet_length(v_new_data::text)>(SELECT (r->>'base_limit')::bigint FROM jsonb_array_elements(v_policy->'rules') r WHERE r->>'rule_key'='cleaning.report.bytes') THEN
+        RETURN jsonb_build_object('code',429,'message','Report note capacity is limited'); END IF;
+      UPDATE public.cleaning_reports SET data=v_new_data WHERE id=v_existing.id;
     END IF;
-
-    RETURN jsonb_build_object(
-      'code', 200,
-      'data', jsonb_build_object('duplicate', true, 'id', v_existing.id)
-    );
+    RETURN jsonb_build_object('code',200,'data',jsonb_build_object('duplicate',true,'id',v_existing.id));
   END IF;
 
   INSERT INTO public.cleaning_reports (occasion, place, problem_type, note, created_by)
@@ -156,7 +154,9 @@ BEGIN
     -- is NOT NULL) — no magic fallback needed.
     SELECT organization INTO v_organization FROM public.occasions WHERE id = v_occasion;
 
-    INSERT INTO public.log_notifications (occasion, organization, user_id, "to", heading, content, data)
+    BEGIN
+      PERFORM public.charge_notification_intent_v1(v_occasion,v_user,v_crew,v_place.title || ' - ' || v_type_label,COALESCE(v_note,v_type_label));
+    INSERT INTO public.log_notifications (occasion, organization, user_id, "to", heading, content, data, abuse_admitted_at)
     VALUES (
       v_occasion,
       v_organization,
@@ -164,13 +164,27 @@ BEGIN
       v_crew,
       v_place.title || ' — ' || v_type_label,
       COALESCE(v_note, v_type_label),
-      jsonb_build_object('path', 'cleaning')
-    );
+      jsonb_build_object('path', 'cleaning'), statement_timestamp()
+    ) RETURNING id INTO v_notification;
+    PERFORM public.dispatch_log_notification_v1(v_notification);
+    EXCEPTION WHEN SQLSTATE 'PT429' THEN v_notification_deferred:=true; END;
   END IF;
 
   RETURN jsonb_build_object(
     'code', 200,
-    'data', jsonb_build_object('duplicate', false, 'id', v_report.id)
+    'data', jsonb_build_object('duplicate', false, 'id', v_report.id, 'notificationDeferred',v_notification_deferred)
   );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.report_cleaning_issue_internal_v1(bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.report_cleaning_issue(place_id bigint,problem_type text,note text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ result:=public.report_cleaning_issue_client_sync_v1(place_id,problem_type,note,extensions.gen_random_uuid());
+ RETURN jsonb_build_object('code',result->'code','message',result#>'{data,message}','data',result->'data');
+END $$;
+REVOKE ALL ON FUNCTION public.report_cleaning_issue(bigint,text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.report_cleaning_issue(bigint,text,text) TO authenticated;

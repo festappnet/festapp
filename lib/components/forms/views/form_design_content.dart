@@ -2,7 +2,7 @@ import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/views/form_design_settings.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -29,16 +29,16 @@ class FormDesignContent extends StatefulWidget {
 }
 
 class _FormDesignContentState extends State<FormDesignContent> {
-  FormModel? _form;
+  FormEditorDraft? _form;
   String? _formLink;
   bool _isLoading = true;
   final _snapshot = EditorSnapshot();
   Object get _draft => [
-        _form?.isCardDesign,
-        _form?.primaryColor,
-        _form?.secondaryColor,
-        _form?.fontFamily,
-        _form?.countdownStyle
+        _form?.definition.isCardDesign,
+        _form?.definition.primaryColor,
+        _form?.definition.secondaryColor,
+        _form?.definition.fontFamily,
+        _form?.definition.countdownStyle
       ];
   bool get _hasChanges => _form != null && _snapshot.differs(_draft);
 
@@ -74,7 +74,8 @@ class _FormDesignContentState extends State<FormDesignContent> {
     try {
       await DbForms.updateForm(_form!);
       if (!mounted) return;
-      ToastHelper.Show(context, "${CommonStrings.saved}: ${_form?.title ?? ""}",
+      ToastHelper.Show(
+          context, "${CommonStrings.saved}: ${_form?.definition.title ?? ""}",
           severity: ToastSeverity.Ok);
       widget.onDataUpdated?.call();
       setState(() => _snapshot.accept(_draft));

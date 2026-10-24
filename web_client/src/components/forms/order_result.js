@@ -1,11 +1,51 @@
+import { overviewText } from './order_overview.js';
+import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
 import { PublicOrderStrings } from './public_order_strings.js';
 import QRCode from 'qrcode';
+import { renderCardPaymentStatus } from './card_payment_status.js';
+import { paymentMethodText } from './payment_method_strings.js';
 
 export class OrderResult {
-    static render(container, success, resultData, formModel, onClose) {
+    static render(container, success, resultData, formModel, onClose, paymentActions = {}) {
         container._orderDeliveryObserver?.stop();
+        if (success && resultData?.payment?.method === 'stripe') {
+            container.replaceChildren();
+            const statusHost = document.createElement('section');
+            const symbol = document.createElement('p');
+            symbol.textContent = resultData?.ticketOrder?.order?.order_symbol || '';
+            container.append(symbol, statusHost);
+            const handoff = resultData.payment_access?.kind === 'handoff';
+            // Embedded receipt never consumes or upgrades the one-use capability.
+            renderCardPaymentStatus(statusHost, resultData.payment, handoff ? {} : paymentActions);
+            if (handoff) {
+                const access = resultData.payment_access;
+                try {
+                    const url = new URL(access.url);
+                    if (typeof access.token === 'string' && /^[a-f0-9]{64}$/.test(access.token) && url.protocol === 'https:' &&
+                        url.origin === window.location.origin && !url.username && !url.password &&
+                        !url.search && url.pathname.endsWith('/stripe/pay') && url.hash === `#handoff=${access.token}`) {
+                        const link = document.createElement('a');
+                        link.href = url.toString();
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.className = 'btn btn-primary card-payment-handoff';
+                        link.textContent = paymentMethodText('continueInNewTab');
+                        container.append(link);
+                    }
+                } catch { /* An invalid handoff never becomes a payment action. */ }
+            }
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'btn btn-outline-secondary card-payment-close';
+            close.textContent = resultData.overviewAvailable ? overviewText('title') : PublicOrderStrings.backToForm;
+            close.onclick = () => { container._orderDeliveryObserver?.stop(); onClose?.(); };
+            container.append(close);
+            // This receipt observes the order confirmation, not ticket delivery.
+            // Card delivery state comes from the canonical payment projection.
+            return;
+        }
         // Prepare Data
         const tone = formModel.communicationTone; 
         // We need to know if tickets were involved. 
@@ -20,6 +60,10 @@ export class OrderResult {
             title = PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+        } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
+            title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
+        } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {
+            title=paymentMethodText('priceChanged');subtitle=paymentMethodText('reviewPrices');icon='error';colorClass='error-color';
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -30,7 +74,7 @@ export class OrderResult {
             // Generic Error
             const code = (resultData && resultData.code) || 0;
             title = PublicOrderStrings.orderFailed;
-            subtitle = PublicOrderStrings.orderError(code);
+            subtitle = resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode) : PublicOrderStrings.orderError(code);
             icon = 'error';
             colorClass = 'error-color';
         }
@@ -48,7 +92,7 @@ export class OrderResult {
                 
                 <div class="result-actions">
                     <button class="btn btn-outline-secondary btn-back-to-form">
-                        ${PublicOrderStrings.backToForm}
+                        ${success && resultData?.overviewAvailable ? overviewText('title') : PublicOrderStrings.backToForm}
                     </button>
                 </div>
             </div>
@@ -95,6 +139,7 @@ export class OrderResult {
                     font-size: 30px;
                 }
                 .result-title {
+                    color: var(--text-color, #222);
                     font-size: 1.4rem;
                     font-weight: bold;
                     margin-bottom: 20px;
@@ -109,9 +154,9 @@ export class OrderResult {
                 }
                 .result-actions button {
                     /* Match Flutter OutlinedButton style roughly */
-                    border: 1px solid var(--divider-color, #ccc);
+                    border: 1px solid currentColor;
                     background: transparent;
-                    color: var(--primary-color);
+                    color: var(--text-color, #222);
                     padding: 12px 32px;
                     border-radius: 8px;
                     font-weight: bold;
@@ -124,18 +169,21 @@ export class OrderResult {
                 .result-payment-label { display: block; color: var(--text-color); opacity: .72; font-size: .8rem; letter-spacing: .05em; text-transform: uppercase; }
                 .result-payment-total { display: block; margin: 3px 0 6px; font-size: 2rem; line-height: 1.1; }
                 .result-payment-more { margin-top: 16px; border-top: 1px solid var(--input-border, #ddd); text-align: left; }
-                .result-payment-more summary { cursor: pointer; color: var(--primary-color); font-size: 1.1rem; font-weight: 600; padding: 14px 0; min-height: 44px; }
-                .result-payment-more summary:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+                .result-payment-more summary { cursor: pointer; color: var(--text-color, #222); font-size: 1.1rem; font-weight: 600; padding: 14px 0; min-height: 44px; }
+                .result-payment-more summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
                 .result-payment-qr-area { text-align: center; padding: 8px 0 18px; }
                 .result-payment-qr-title { margin: 0 0 6px; font-size: 1.05rem; }
                 .result-payment-hint { margin: 0 0 12px; color: var(--text-color); line-height: 1.4; }
                 .result-payment-qr { display: block; width: 220px; height: 220px; margin: 0 auto 14px; background: white; image-rendering: pixelated; }
                 .result-payment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--input-border, #ddd); text-align: left; }
                 .result-payment-value { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
-                .result-copy { border: 0; background: transparent; color: var(--primary-color); cursor: pointer; padding: 6px; min-width: 32px; min-height: 32px; }
-                .result-copy .material-icons { font-size: 18px; }
-                .result-copy:focus-visible, .result-download:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
-                .result-download { display: inline-block; border: 1px solid var(--primary-color); border-radius: var(--radius-sm, 10px); padding: 10px 16px; color: var(--primary-color); text-decoration: none; font-weight: 600; }
+                .result-copy { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; box-sizing: border-box; border: 0; border-radius: 50%; background: transparent; color: var(--text-color, #222); cursor: pointer; padding: 0; }
+                .result-copy:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+                .result-copy .material-icons { display: block; width: 18px; height: 18px; font-size: 18px; line-height: 18px; }
+                .result-copy-tooltip { position: absolute; z-index: 1; inset-inline-end: 0; bottom: calc(100% + 6px); border-radius: 4px; padding: 6px 10px; background: #333; color: #fff; font: 12px/1.4 system-ui, sans-serif; white-space: nowrap; pointer-events: none; visibility: hidden; }
+                .result-copy:hover .result-copy-tooltip, .result-copy:focus-visible .result-copy-tooltip, .result-copy.is-copied .result-copy-tooltip { visibility: visible; }
+                .result-actions button:focus-visible, .result-copy:focus-visible, .result-download:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+                .result-download { display: inline-block; border: 1px solid currentColor; border-radius: var(--radius-sm, 10px); padding: 10px 16px; color: var(--text-color, #222); text-decoration: none; font-weight: 600; }
                 @media (max-width: 560px) {
                     .result-payment-card { padding: 16px; }
                     .result-payment-row { flex-wrap: wrap; }
@@ -152,7 +200,7 @@ export class OrderResult {
         `;
 
         container.querySelector('.result-title').textContent = title;
-        container.querySelector('.result-subtitle').textContent = subtitle;
+        container.querySelector('.result-subtitle').textContent = subtitle + (success && resultData?.conversion === 'split' ? ` ${WaitlistStrings.remaining}: ${resultData.waitlistSummary?.pendingPlaces ?? 0}.` : '');
         const orderSymbol = success ? resultData?.ticketOrder?.order?.order_symbol : null;
         if (typeof orderSymbol === 'string') {
             container.querySelector('.result-order-symbol').textContent = `${OrdersStrings.gridOrderSymbol}: ${orderSymbol}`;
@@ -208,7 +256,13 @@ export class OrderResult {
                     const download = document.createElement('a');
                     download.className = 'result-download';
                     download.href = url;
-                    download.download = 'platba-qr.png';
+                    const filenamePart = value => String(value ?? '')
+                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                    const eventName = filenamePart(formModel.occasionId?.title || formModel.title);
+                    const symbol = filenamePart(orderSymbol || paymentQr.reference);
+                    download.download = [eventName, 'objednavka', symbol, 'qr'].filter(Boolean).join('-') + '.png';
                     download.textContent = PublicOrderStrings.downloadQr;
                     qrArea.appendChild(download);
                 }).catch(error => {
@@ -236,12 +290,32 @@ export class OrderResult {
                 const copy = document.createElement('button');
                 copy.type = 'button';
                 copy.className = 'result-copy';
-                copy.innerHTML = '<i class="material-icons" aria-hidden="true">content_copy</i>';
-                copy.setAttribute('aria-label', `${PublicOrderStrings.copy}: ${label}`);
+                const copyIcon = document.createElement('i');
+                copyIcon.className = 'material-icons';
+                copyIcon.setAttribute('aria-hidden', 'true');
+                copyIcon.textContent = 'content_copy';
+                const tooltip = document.createElement('span');
+                tooltip.className = 'result-copy-tooltip';
+                tooltip.setAttribute('aria-hidden', 'true');
+                tooltip.textContent = PublicOrderStrings.copy;
+                copy.append(copyIcon, tooltip);
+                const copyLabel = `${PublicOrderStrings.copy}: ${label}`;
+                copy.setAttribute('aria-label', copyLabel);
+                let resetTimer;
                 copy.addEventListener('click', async () => {
                     try {
                         await navigator.clipboard.writeText(String(value));
-                        copy.textContent = '✓';
+                        clearTimeout(resetTimer);
+                        copyIcon.textContent = 'check';
+                        tooltip.textContent = PublicOrderStrings.copied;
+                        copy.classList.add('is-copied');
+                        copy.setAttribute('aria-label', `${PublicOrderStrings.copied}: ${label}`);
+                        resetTimer = setTimeout(() => {
+                            copyIcon.textContent = 'content_copy';
+                            tooltip.textContent = PublicOrderStrings.copy;
+                            copy.classList.remove('is-copied');
+                            copy.setAttribute('aria-label', copyLabel);
+                        }, 2000);
                     } catch (error) {
                         console.error('Could not copy payment detail', error);
                     }

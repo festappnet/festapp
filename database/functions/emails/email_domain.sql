@@ -7,6 +7,12 @@ BEGIN
  SELECT * INTO v_order FROM eshop.orders WHERE id=coalesce((p_data->>'order_id')::bigint,(p_data#>>'{ticket_order,order,id}')::bigint) FOR UPDATE;
  SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
  IF v_order.id IS NULL OR v_order.occasion<>p_occ THEN RAISE EXCEPTION 'invalid_order_email'; END IF;
+ IF v_order.state='stock' THEN RAISE EXCEPTION 'ORDER_ACTION_NOT_ALLOWED'; END IF;
+ IF v_order.data ? 'ticketBatchOrigin' AND nullif(trim(v_order.data->>'email'),'') IS NULL THEN
+  RETURN jsonb_build_object('state','skipped','reason','no_recipient'); END IF;
+ IF v_order.state='storno' AND p_code<>'TICKET_ORDER_STORNO' THEN
+  RAISE EXCEPTION 'ORDER_CANCELLED: Cancelled orders are read-only' USING ERRCODE='55000';
+ END IF;
  v_kind:=CASE p_code WHEN 'TICKET_ORDER_CONFIRMATION' THEN 'order_confirmation' WHEN 'TICKET_ORDER_PAYMENT_DONE' THEN 'order_payment_notice'
   WHEN 'TICKET_ORDER_REMINDER' THEN 'order_reminder' WHEN 'TICKET_ORDER_STORNO' THEN 'order_storno' WHEN 'TICKET_ORDER_UPDATE' THEN 'order_update'
   WHEN 'ORDER_TICKETS' THEN 'order_tickets' END;
@@ -14,6 +20,21 @@ BEGIN
  v_version:=CASE WHEN v_kind='order_reminder' THEN v_pi.email_reminder_version ELSE v_order.email_payment_version END;
  v_recipient:=coalesce(p_data->>'recipient',v_order.data->>'email');
  v_key:=coalesce(p_request,p_data->>'command_id',v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':'||coalesce(p_data->>'is_deposit_reminder','false'));
+ IF v_kind='order_storno' AND coalesce(p_request,'') NOT LIKE 'manual:%' THEN
+  -- requested_by is audit metadata, never proof of an explicit resend.
+  v_recipient:=v_order.data->>'email';
+  p_data:=jsonb_build_object('order_id',v_order.id);
+  v_key:=v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':storno';
+  -- Older Edge follow-ups carried requested_by but no explicit resend ID and
+  -- used the generic :false key. Reuse that committed identity rather than
+  -- manufacture a second automatic message, including cancelled/expired rows.
+  SELECT * INTO v_existing FROM public.email_messages
+    WHERE organization=p_org AND order_id=v_order.id AND message_kind='order_storno'
+      AND recipient=v_recipient AND source_version=v_version
+      AND dedupe_key IN (v_key,v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':false')
+    ORDER BY (dedupe_key=v_key) DESC,id LIMIT 1;
+  IF v_existing.id IS NOT NULL THEN v_key:=v_existing.dedupe_key; END IF;
+ END IF;
  IF v_kind='order_tickets' THEN
   SELECT * INTO v_existing FROM public.email_messages WHERE order_id=v_order.id AND message_kind=v_kind AND recipient=v_recipient AND source_version=v_version
     AND workflow_state IN ('pending','preparing','sending','retry_wait','unknown') ORDER BY id DESC LIMIT 1;
@@ -34,7 +55,8 @@ BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_order FOR UPDATE;
  SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
- IF v_order.state='paid' AND v_occ.is_order_synchronization_enabled AND v_order.data ? 'email'
+ IF v_order.data ? 'ticketBatchOrigin' AND coalesce((v_order.data#>>'{ticketBatchOrigin,sendTickets}')::boolean,false) IS NOT TRUE THEN RETURN; END IF;
+ IF v_order.state='paid' AND (v_occ.is_order_synchronization_enabled OR v_order.data ? 'ticketBatchOrigin') AND v_order.data ? 'email'
  AND (coalesce(v_order.price,0)<>0 OR EXISTS(SELECT 1 FROM jsonb_array_elements(v_occ.features) f WHERE f->>'code'='ticket' AND (f->>'is_enabled')::boolean)) THEN
   PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',p_order),v_occ.organization,v_occ.id,v_occ.unit);
  END IF;
@@ -96,7 +118,7 @@ BEGIN
  IF p_operation IN ('reset_token','deletion_confirm') AND v_user IS NOT NULL THEN
   SELECT message_id INTO v_message FROM public.email_messages WHERE organization=(p_context->>'organization')::bigint AND recipient_user=v_user
    AND message_kind=CASE WHEN p_operation='reset_token' THEN 'reset_password' ELSE 'deletion_confirm' END
-   AND workflow_state IN ('pending','preparing','sending','retry_wait','unknown') AND expires_at>now() ORDER BY id DESC LIMIT 1;
+   AND (workflow_state IN ('pending','preparing','sending','retry_wait','unknown') OR (p_operation='reset_token' AND workflow_state='accepted')) AND expires_at>now() ORDER BY id DESC LIMIT 1;
   IF v_message IS NOT NULL THEN RETURN jsonb_build_object('message_id',v_message,'replayed',true);END IF;
  END IF;
  IF p_operation='reset_token' THEN
@@ -106,9 +128,10 @@ BEGIN
   v_source:=jsonb_build_object('reset_hash',encode(extensions.digest(p_domain->>'token','sha256'),'hex'));
  ELSIF p_operation='register' THEN
   v_kind:='registration';
-  v_domain_result:=public.create_user_from_registration((p_context->>'organization')::bigint,p_recipient,p_domain->>'password',p_domain->'data',p_domain->>'unit_title');
+  v_domain_result:=public.create_user_from_registration((p_context->>'organization')::bigint,p_recipient,coalesce(p_domain->>'password',p_domain->>'invitation_code'),p_domain->'data',p_domain->>'unit_title');
   IF v_domain_result->>'code'<>'200' THEN RETURN jsonb_build_object('domain',v_domain_result); END IF;
   v_user:=(v_domain_result->>'id')::uuid;
+  -- The delivery deadline expires the message, never the reusable password.
   v_source:=jsonb_build_object('password_version',(SELECT encode(extensions.digest(encrypted_password,'sha256'),'hex') FROM auth.users WHERE id=v_user));
  ELSIF p_operation='deletion_confirm' THEN
   v_kind:='deletion_confirm';
@@ -123,6 +146,7 @@ BEGIN
  IF v_user IS NOT NULL THEN v_context:=v_context||jsonb_build_object('recipient_user',v_user); END IF;
  v_result:=public.enqueue_email(v_kind,v_context,p_recipient,v_source||jsonb_build_object('content_hash',p_content_hash),p_dedupe,p_code,now(),p_expires);
  UPDATE public.email_messages SET prepared=p_sealed,prepared_hash=encode(extensions.digest(p_sealed::text,'sha256'),'hex'),prepared_at=now(),post_action=v_source WHERE message_id=(v_result->>'message_id')::uuid;
+ PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid),true);
  RETURN v_result||jsonb_build_object('domain',v_domain_result);
 END $$;
 REVOKE ALL ON FUNCTION public.enqueue_account_email(text,jsonb,jsonb,text,jsonb,text,text,text,timestamptz) FROM PUBLIC,anon,authenticated;
@@ -135,7 +159,7 @@ BEGIN
  -- Reuse the existing hierarchical permission check, including elevated-account protections.
  IF auth.uid() IS NULL OR NOT coalesce(public.get_can_reset_user_password(p_user),false) THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('sign-in:'||p_user::text||':'||p_occasion::text,0));
- SELECT * INTO v_existing FROM public.email_messages WHERE recipient_user=p_user AND occasion=p_occasion AND message_kind='sign_in' AND (dedupe_key=p_dedupe OR (workflow_state IN ('pending','preparing','sending','retry_wait','unknown') AND expires_at>now())) ORDER BY id DESC LIMIT 1;
+ SELECT * INTO v_existing FROM public.email_messages WHERE recipient_user=p_user AND occasion=p_occasion AND message_kind='sign_in' AND (dedupe_key=p_dedupe OR (workflow_state IN ('pending','preparing','sending','retry_wait','unknown','accepted') AND expires_at>now())) ORDER BY id DESC LIMIT 1;
  IF v_existing.id IS NOT NULL THEN
   RETURN jsonb_build_object('message_id',v_existing.message_id,'replayed',true);
  END IF;
@@ -147,7 +171,16 @@ BEGIN
  SELECT encode(extensions.digest(encrypted_password,'sha256'),'hex') INTO v_password_version FROM auth.users WHERE id=p_user;
  v_result:=public.enqueue_email('sign_in',v_context,v_email,jsonb_build_object('password_version',v_password_version,'content_hash',p_content_hash),p_dedupe,'SIGN_IN_CODE',now(),p_expires);
  UPDATE public.email_messages SET prepared=p_sealed,prepared_hash=encode(extensions.digest(p_sealed::text,'sha256'),'hex'),prepared_at=now() WHERE message_id=(v_result->>'message_id')::uuid;
+ PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid),true);
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;
+
+-- Compatibility name for older clients; both names own the same permanent password transition.
+CREATE OR REPLACE FUNCTION public.enqueue_sign_in_code_v1(p_user uuid,p_password text,p_occasion bigint,p_sealed jsonb,p_content_hash text,p_dedupe text,p_expires timestamptz)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.reset_password_and_enqueue_email(p_user,p_password,p_occasion,p_sealed,p_content_hash,p_dedupe,p_expires);
+$$;
+REVOKE ALL ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;

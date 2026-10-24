@@ -1,3 +1,8 @@
+import 'package:fstapp/components/schedule/event_type_colors.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/components/schedule/event_grid_record.dart';
+import 'package:fstapp/components/map/place_grid_record.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,9 +14,8 @@ import 'package:fstapp/components/features/schedule_feature.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
-import 'package:fstapp/components/schedule/suspicious_event_detector.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
@@ -20,7 +24,6 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
@@ -33,7 +36,7 @@ import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:trina_grid/trina_grid.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class ScheduleContent extends StatefulWidget {
@@ -67,7 +70,7 @@ class ScheduleContentState extends State<ScheduleContent> {
   final Map<int, ({EventModel event, List<SuspiciousEventReason> reasons})>
       _suspiciousEventDetails = {};
 
-  SingleDataGridController<EventModel>? controller;
+  SingleDataGridController<EventGridRecord>? controller;
 
   /// Refreshes a review list only when doing so cannot discard local edits.
   Future<void> reloadIfClean() async {
@@ -193,7 +196,7 @@ class ScheduleContentState extends State<ScheduleContent> {
     // inline edit without a full grid reload.
     final row = controller?.stateManager.rows.firstWhereOrNull(
         (r) => r.cells[EventModel.idColumn]?.value == eventId);
-    row?.cells[EventModel.speakersColumn]?.value =
+    row?.cells[EventGridRecord.speakersColumn]?.value =
         _speakerNamesFor(speakerIds) ?? '';
     row?.cells[EventModel.aggregateVersionColumn]?.value = version;
     if (mounted) {
@@ -217,7 +220,7 @@ class ScheduleContentState extends State<ScheduleContent> {
   /// so the "Přednášející" column's text filter can match by speaker. Speaker
   /// data is already loaded into `_allSpeakers` / `_eventSpeakerIds` before the
   /// grid mounts.
-  Future<List<EventModel>> _loadEventsForGrid() async {
+  Future<List<EventGridRecord>> _loadEventsForGrid() async {
     var events = await DbEvents.getAllEventsForDatagrid();
     if (widget.suspiciousOnly) {
       final analysis = SuspiciousEventDetector.analyze(
@@ -236,12 +239,15 @@ class ScheduleContentState extends State<ScheduleContent> {
                 ));
       events = analysis.keys.toList();
     }
-    for (final e in events) {
-      final ids = e.id == null ? null : _eventSpeakerIds[e.id];
-      e.speakerNamesSearch =
-          (ids == null || ids.isEmpty) ? null : _speakerNamesFor(ids);
-    }
-    return events;
+    return events.map((event) {
+      final ids = event.id == null ? null : _eventSpeakerIds[event.id];
+      return EventGridRecord(
+          event: event,
+          commands: DbEvents.commands,
+          occasionId: RightsService.currentOccasionId()!,
+          speakerNamesSearch:
+              (ids == null || ids.isEmpty) ? null : _speakerNamesFor(ids));
+    }).toList();
   }
 
   String _formatDateTime(DateTime value) => DateFormat(
@@ -340,7 +346,8 @@ class ScheduleContentState extends State<ScheduleContent> {
   ) {
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AppAlertDialog(
+        onClose: () => Navigator.of(dialogContext).pop(),
         title: Text(ScheduleStrings.suspiciousReason),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -388,12 +395,7 @@ class ScheduleContentState extends State<ScheduleContent> {
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(CommonStrings.close),
-          ),
-        ],
+        actions: [],
       ),
     );
   }
@@ -543,17 +545,20 @@ class ScheduleContentState extends State<ScheduleContent> {
   void initController() {
     if (controller != null || !mounted) return;
 
-    controller = SingleDataGridController<EventModel>(
+    controller = SingleDataGridController<EventGridRecord>(
       context: context,
       loadData: _loadEventsForGrid,
-      fromPlutoJson: EventModel.fromPlutoJson,
+      fromPlutoJson: (json) => EventGridRecord.fromPlutoJson(json,
+          commands: DbEvents.commands,
+          occasionId: RightsService.currentOccasionId()!,
+          timeContext: TimeHelper.eventTime),
       firstColumnType: DataGridFirstColumn.deleteAndDuplicate,
       idColumn: Tb.events.id,
       columns: [
         if (widget.suspiciousOnly)
           TrinaColumn(
             title: ScheduleStrings.suspiciousReason,
-            field: EventModel.suspiciousReasonColumn,
+            field: EventGridRecord.suspiciousReasonColumn,
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 210,
@@ -616,7 +621,8 @@ class ScheduleContentState extends State<ScheduleContent> {
                 onTap: () {
                   showDialog(
                     context: context,
-                    builder: (_) => AlertDialog(
+                    builder: (_) => AppAlertDialog(
+                      onClose: () => Navigator.of(context).pop(),
                       insetPadding: const EdgeInsets.symmetric(
                         horizontal: 40.0,
                         vertical: 24.0,
@@ -629,13 +635,12 @@ class ScheduleContentState extends State<ScheduleContent> {
                           imageUrl: imageUrl,
                           onFileSelected: (file) async {
                             final bytes = await file.readAsBytes();
-                            final compressed =
-                                await ImageCompressionHelper.compress(
-                                    bytes, 200);
+
                             final publicUrl = await DbImages.uploadImage(
-                              compressed,
+                              bytes,
                               RightsService.currentOccasionId(),
                               null,
+                              profile: ImageUploadProfile.thumbnail,
                             );
                             ctx.stateManager.changeCellValue(
                                 ctx.cell, publicUrl,
@@ -655,12 +660,7 @@ class ScheduleContentState extends State<ScheduleContent> {
                           },
                         ),
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(CommonStrings.close),
-                        ),
-                      ],
+                      actions: [],
                     ),
                   );
                 },
@@ -716,7 +716,7 @@ class ScheduleContentState extends State<ScheduleContent> {
         ),
         TrinaColumn(
           title: SpeakersStrings.lecturers,
-          field: EventModel.speakersColumn,
+          field: EventGridRecord.speakersColumn,
           type: TrinaColumnType.text(),
           readOnly: true,
           enableEditingMode: false,
@@ -752,7 +752,7 @@ class ScheduleContentState extends State<ScheduleContent> {
         ),
         TrinaColumn(
           title: CommonStrings.startDate,
-          field: EventModel.startDateColumn,
+          field: EventGridRecord.startDateColumn,
           type: TrinaColumnType.date(defaultValue: occasionModel?.startTime),
           width: 110,
         ),
@@ -764,7 +764,7 @@ class ScheduleContentState extends State<ScheduleContent> {
         ),
         TrinaColumn(
           title: CommonStrings.endDate,
-          field: EventModel.endDateColumn,
+          field: EventGridRecord.endDateColumn,
           type: TrinaColumnType.date(defaultValue: occasionModel?.startTime),
           width: 110,
         ),
@@ -784,6 +784,7 @@ class ScheduleContentState extends State<ScheduleContent> {
           title: CommonStrings.place,
           field: EventModel.placeColumn,
           type: TrinaColumnType.select(places,
+              defaultValue: PlaceModel.WithoutValue,
               itemToString: DataGridHelper.getValueFromFormatted),
           applyFormatterInEditing: true,
           formatter: DataGridHelper.getValueFromFormatted,
@@ -841,8 +842,7 @@ class ScheduleContentState extends State<ScheduleContent> {
             if (eventType != null) {
               Color backgroundColor = eventType.getColor();
               // Determine contrasting text color for readability
-              Color textColor =
-                  ThemeConfig.eventTypeToColorNegative(context, eventType.code);
+              Color textColor = EventTypeColors.foreground(eventType.code);
               String displayTitle = eventType.title;
 
               return Padding(
@@ -908,7 +908,7 @@ class ScheduleContentState extends State<ScheduleContent> {
           ),
         TrinaColumn(
           title: ScheduleStrings.showInsideEvent,
-          field: EventModel.parentEventColumn,
+          field: EventGridRecord.parentEventColumn,
           type: TrinaColumnType.text(),
           width: 300,
         ),
@@ -932,7 +932,7 @@ class ScheduleContentState extends State<ScheduleContent> {
       // This can happen if initController is called before _loadInitialData completes or if an error occurs
       return Center(child: Text(ScheduleStrings.initializing));
     }
-    final grid = SingleTableDataGrid<EventModel>(controller!);
+    final grid = SingleTableDataGrid<EventGridRecord>(controller!);
     if (!widget.suspiciousOnly) return grid;
 
     return Column(

@@ -26,9 +26,11 @@ Business logic is split between **SQL functions** (`database/functions/`) and Da
 - Search for `supabase.rpc('...')` in Dart/JS to find which SQL function handles the operation
 - **In SQL**: Order creation, permissions, payments, ticket scanning, sign-ups, inventory
 - **In Dart/JS**: UI, navigation, file operations (image upload/copy via `workers/image-worker/`)
-- **Hybrid**: Occasion duplication/deletion — SQL copies DB rows, Dart copies images from Storage
+- **Hybrid**: Occasion duplication - SQL copies DB rows, Dart copies image bytes
+  through the image Worker into R2. Occasion deletion uses the SQL command;
+  the client does not scan or remove orphaned Storage objects.
 
-## Critical: Post-Cutover Database Authority
+## Critical: Production Database Authority
 
 Author database schema, function and data-contract changes as canonical
 repository SQL and apply them to the self-hosted production target through the
@@ -85,12 +87,29 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 
 - **FVM**: Always prefix flutter/dart commands with `fvm`
 - **Error handling**: Prefer `ExceptionHandler.guard()` over try-catch in UI code
+- **Admin modals**: Use `widgets/app_dialog.dart` (`AppAlertDialog`,
+  `AppSimpleDialog`, or `AppDialog` for custom/fullscreen content), and
+  `AppDialogHeader`/`AppDialogAppBar` for custom headers. The shared shell owns
+  shape, rightmost close button and Escape focus. Pass the same `onClose` as
+  Cancel and set `dismissible: false` while closing is blocked; preserve draft
+  `PopScope` guards. `StandardDialog` is the compact content adapter. Native
+  date/time pickers and public song/game views keep their specialized controls.
 - **Localization**: `*_strings.dart` files with static getters (`CommonStrings.save`) not `"key".tr()`
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI
 - **No `dart:io`** in shared UI code (breaks web). Exception: `map/` uses it for platform-specific offline maps
 - **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
+
+## Occasion feature configuration
+
+`occasions.features` stores each event's feature array. `Feature.fromJson`
+selects typed settings or `SimpleFeature`; `FeatureService` controls UI availability.
+When adding a feature, register its code, parsing/defaults and UI/SQL behavior.
+`appSupportedFeatures` lists only features restricted to `AppConfig.isAppSupported`;
+form/ticket features also serve ticketing-only tenants. UI flags never replace
+server authorization. Creation/save SQL remains authoritative for stored defaults
+and validation.
 
 ## Directory Structure
 
@@ -105,19 +124,35 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - `automation/` — `project.conf` (single source of truth), `apply_config.sh`, `test_all.sh`
 - `automation/image-migration/` — One-time migration scripts (Supabase Storage → R2). See `automation/image-migration/README.md`
 
+## Documentation lifecycle
+
+Active guides describe current contracts and operating procedures. After a
+migration, replace future-tense rollout instructions with the resulting behavior.
+Move completed plans/prompts and useful dated evidence to `docs/archive/`, updating
+incoming links. Preserve unresolved gates explicitly; local code, a merged change
+and a live release are different states. Do not keep a completed migration as a
+standing installation prerequisite or copy its checklist into a current guide.
+
 ## Feature READMEs (Complex Components Only)
 
-These components have non-obvious architecture worth reading before modifying:
+Keep a feature README when it explains a cross-layer contract, ownership or
+failure mode that is hard to infer from one file. File/class inventories, getter
+lists and change-by-change release notes belong in source, generated references
+or dated operational records. Shared concepts have one owner; other clients link
+to it and document only their own adapter differences.
+
+These components have such local contracts:
 
 - **[Eshop](../../lib/components/eshop/README.md)**: Orders, payments, Split Brain SQL
 - **[Blueprint](../../lib/components/blueprint/README.md)**: Seat reservation with SQL locking
-- **[Forms](../../lib/components/forms/README.md)**: Dynamic form engine, massive data bundles
+- **[Forms](../../lib/components/forms/README.md)**: Server availability, editor drafts and capability-scoped orders
 - **[Schedule](../../lib/components/schedule/README.md)**: Sign-ups with SQL error codes, offline sync
 - **[Users](../../lib/components/users/README.md)**: Bundle re-stitching, multi-tenancy
 - **[Inventory](../../lib/components/inventory/README.md)**: Pool/Resource/Context hierarchy
 - **[Activities](../../lib/components/activities/README.md)**: Draft & Publish with version history
 - **[Email Templates](../../lib/components/email_templates/README.md)**: 3-level inheritance
 - **[Bank Accounts](../../lib/components/bank_accounts/README.md)**: Dual-layer auth, eshop schema
+- **[Organization notification center](../../database/functions/notification_center/README.md)**: Private recipient snapshots, commit-ordered reads, explicit producers and activation baseline; [Flutter adapter](../../lib/components/notification_center/README.md).
 
 - **[Tab deep links](tab_deep_links.md)**: AutoRoute ownership, retained admin tabs, object identities, access boundaries and calendar/panel query state.
 
@@ -131,4 +166,50 @@ BankSync is a shared bank-fact service for independent clients, including Festap
 
 Canonical SQL is in `database/functions/eshop_bank_sync/`; regenerate its scoped migration with `automation/assemble-bank-sync-migration.py`. Activation adopts historical movement identities under an account lock. Legacy bank import/token/email RPCs and the separate polling worker are retired by the guarded full-cutover migration; suspension never reinstates them. No persistent application triggers or second payment engine are introduced.
 
-BankAccountAdmin control uses `bank-sync-manage` with durable, fenced operation intents; encrypted token recovery uses `bank-sync-reconcile` and versioned protected control keys. Paid ticket intent creation is atomic with the SQL paid transition and immediately wakes the globally gated queue. Failed transition receipts abort payment recalculation, keeping the bank webhook retryable. See [implementation and production gates](../operations/banksync/IMPLEMENTATION-2026-10-04.md). See the [full cutover runbook](../operations/banksync/FULL-CUTOVER-2026-10-04.md) for the ordered account rollout and retirement proof. Unproven bank email identities remain quarantined observations until the required real-email evidence is established.
+BankAccountAdmin control uses `bank-sync-manage` with durable, fenced operation intents; encrypted token recovery uses `bank-sync-reconcile` and versioned protected control keys. Paid ticket intent creation is atomic with the SQL paid transition and immediately wakes the globally gated queue. Failed transition receipts abort payment recalculation, keeping the bank webhook retryable. See [current BankSync ownership and account control](../setup/bank_import.md). Dated implementation and migration records are historical evidence, not a requirement to repeat the original rollout. Unproven bank email identities remain quarantined observations until the required real-email evidence is established.
+
+## Payment-reference ownership
+
+Festapp owns VS allocation and reservation under `database/functions/eshop_payment_references/`.
+Activated organizations reserve against a canonical receiving-account namespace in
+same-transaction checkout SQL; BankSync is not a reservation or invoice dependency.
+The registry retains committed symbols after cancellation/deletion, with form
+watermarks and private exact/sequence/random allocation. Unactivated organizations
+retain the guarded legacy allocator until separately authorized activation. The
+preexisting BankSync issuance API is retired in source; its historical registry
+is retained for audit/backup. See [local implementation and activation gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
+
+## Form capacity and waitlist ownership
+
+`eshop.tickets` is the sole entity for an individual admission or waiting item.
+Capacity counts DISTINCT eligible tickets through existing order_product_ticket
+relationships; do not introduce a person ledger, shadow lifecycle or historical
+ticket backfill. Waiting tickets have no valid admission symbol, products or finance.
+Offers bind directly to ticket IDs, and acceptance reuses those IDs through the
+existing order finalizer. Offer status is derived from offer slots, not mirrored
+into an independent person state.
+
+## Public links
+
+`database/functions/public_links/` owns globally unique form/occasion slug
+reservations (separate namespaces), cryptographic allocation and copy titles.
+`forms.link`/`occasions.link` remain canonical. Historical reservations point
+directly to IDs and survive deletion as tombstones. All writers use the same
+transactional allocator, never an application trigger; direct table writes are
+revoked. Existing readers resolve IDs before applying their existing access
+checks. Clients replace only resolved slugs and copy only saved public URLs.
+
+Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
+New writes cannot claim those slugs; canonical links and titles are never bulk renamed.
+
+## Native offline maps
+
+MapLibre is the only native offline renderer. `OfflineMapConfiguration` accepts
+`offlineMapBundleManifestURL` and `forceOfflineMap`; `OfflineMapBundleManager`
+verifies the assets before `MapLibreStyleAssembler` creates a local style.
+CSM Ostrava's schema 2 MBTiles and schema 3 PMTiles bundles remain supported.
+Schema 2 retains its existing `mbtiles` asset role and absent/null
+`bundle_mode`; this format does not select an old renderer. Online and web maps use
+`RasterMapSurface` with network tiles.
+There is no standalone package/style URL downloader or renderer rollback flag.
+See [offline map tooling](../../automation/offline-map/README.md).

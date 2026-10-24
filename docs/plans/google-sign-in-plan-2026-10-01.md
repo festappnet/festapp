@@ -1,7 +1,7 @@
 # Google přihlášení ve FestAppu
 
 Datum: 2026-10-01
-Stav: Zpřesněný plán pro další session; prefix a vydání session ověřeny na izolovaném GoTrue v2.189.0. Google OAuth E2E, plná aplikační integrace a produkční rollout dosud neprovedeny.
+Stav: Broker a vybrané webové klienty byly následně nasazeny; [současný provozní návod](../operations/auth/google-sign-in.md) odkazuje na scope a důkazy. Úplné live propojení účtu a ověření nativních zařízení nejsou těmito záznamy doložené. Níže je původní návrh, nikoli nový požadavek na implementaci.
 Verification: standard (autentizace, oprávnění, migrace).
 Výchozí bod: `main`, HEAD `b7b62b899`, pracovní strom obsahoval jiné rozpracované změny. Tento úkol přidává pouze plán, předávací prompt a referenční screenshoty.
 

@@ -1,7 +1,7 @@
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/features/feature.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -75,7 +75,7 @@ class OccasionModel {
   Map<String, dynamic>? services;
   int? organization;
   int? unit;
-  FormModel? form;
+  FormBundle? form;
   List<Feature> features;
   StatsModel? stats;
   int aggregateVersion;
@@ -142,7 +142,7 @@ class OccasionModel {
 
       organization: json[Tb.occasions.organization],
       unit: json[Tb.occasions.unit],
-      form: json["form"] != null ? FormModel.fromJson(json["form"]) : null,
+      form: json["form"] != null ? FormBundle.fromJson(json["form"]) : null,
       features: json[Tb.occasions.features] is List
           ? List<Feature>.from((json[Tb.occasions.features] as List)
               .map((featureJson) => Feature.fromJson(featureJson)))

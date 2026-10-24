@@ -1,3 +1,4 @@
+import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/services/auth_session_storage.dart';
@@ -39,6 +40,7 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/backend_activation_service.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/time_travel_widget.dart';
+import 'package:fstapp/widgets/app_text_selection.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:pwa_install/pwa_install.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -53,11 +55,19 @@ Future<void> main() async {
   } catch (_) {
     // A missing native link/storage plugin must not block existing sign-in.
   }
-  final initialRoute = GoogleAuthService.hasCallback
-      ? "/login"
-      : kIsWeb
-          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-          : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+  try {
+    await StripePaymentLinkService.initialize()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // Missing native link support must not block startup. Never log link data.
+  }
+  final initialRoute = StripePaymentLinkService.inbox.pendingRoute ??
+      (GoogleAuthService.hasCallback
+          ? "/login"
+          : kIsWeb
+              ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+              : nativeInitialRoute(
+                  WidgetsBinding.instance.platformDispatcher.defaultRouteName));
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
     initialize: initializeEverything,
@@ -75,15 +85,42 @@ Future<void> main() async {
 
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
 
+String nativeInitialRoute(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null) return '/';
+  final stripeRoute = StripePaymentLinkInbox.routeForPath(uri.path);
+  if (stripeRoute != null) return stripeRoute;
+  return value;
+}
+
 String initialRouteForUri(Uri uri) {
   if (uri.path == '/app/google-auth') return '/login';
   final path = uri.path == '/' && AppConfig.forceOccasionLink != null
       ? '/${AppConfig.forceOccasionLink}'
       : uri.path;
-  return '$path${uri.hasQuery ? '?${uri.query}' : ''}';
+  // Public aliases retain their fragment during cold startup as well as later
+  // canonical replacements. Standalone auth/settings routes keep their contract.
+  final segments = Uri.parse(path).pathSegments;
+  final publicPath = path.startsWith('/form/') ||
+      (segments.isNotEmpty &&
+          !AppRouter.getRootLinks().contains(segments.first));
+  final fragment = publicPath && uri.hasFragment ? '#${uri.fragment}' : '';
+  return '$path${uri.hasQuery ? '?${uri.query}' : ''}$fragment';
 }
 
-bool isUnitAdminStartupRoute(Uri uri) {
+bool skipsDefaultOccasionAtStartup(Uri uri) {
+  if (const {
+        '/stripe/pay',
+        '/stripe/return',
+        '/stripe/connect/callback',
+        '/app/stripe/pay',
+        '/app/stripe/return',
+        '/app/stripe/connect/callback'
+      }.contains(uri.path) ||
+      uri.path == '/app/google-auth' ||
+      RegExp(r'^/organizationEdit(?:/[1-9][0-9]*)?/?$').hasMatch(uri.path)) {
+    return true;
+  }
   final segments = uri.pathSegments;
   return segments.length >= 3 &&
       segments[0] == 'unit' &&
@@ -167,11 +204,10 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
 Future<void> initializeEverything() async {
   AppLogger.debug('Initialization started');
 
-  // Unit editors and Google returns own their context. A default occasion
+  // Unit/organization editors and Google returns own their context. A default occasion
   // fetch can outlive startup and block their work in the serialized queue.
   final skipInitialOccasion = kIsWeb &&
-      (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
-          RouterService.getCurrentBrowserUri().path == '/app/google-auth');
+      skipsDefaultOccasionAtStartup(RouterService.getCurrentBrowserUri());
 
   WidgetsFlutterBinding.ensureInitialized();
   AppLogger.debug('Widgets binding initialized');
@@ -415,13 +451,55 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      StripePaymentLinkService.attachNavigator((path) async {
+        if (!mounted || RouterService.router.currentPath == path) return;
+        if (await RetainedDraftGuard.instance
+            .confirmPath(RouterService.router, Uri.parse(path))) {
+          await RouterService.router.pushPath(path);
+        }
+      }, widget.initialRoute);
+    });
+  }
+
+  @override
+  void dispose() {
+    StripePaymentLinkService.detachNavigator();
+    super.dispose();
+  }
+
   Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
+    if (StripePaymentLinkService.isNativeMobile) {
+      final stripeRoute =
+          StripePaymentLinkInbox.routeForPath(platformDeepLink.uri.path);
+      if (stripeRoute != null) {
+        StripePaymentLinkService.capture(platformDeepLink.uri);
+        if (!platformDeepLink.initial &&
+            RouterService.router.currentPath == stripeRoute) {
+          return DeepLink.none;
+        }
+        if (!platformDeepLink.initial &&
+            !await RetainedDraftGuard.instance
+                .confirmPath(RouterService.router, Uri.parse(stripeRoute))) {
+          return DeepLink.none;
+        }
+        return DeepLink.path(stripeRoute, includePrefixMatches: false);
+      }
+    }
     if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
       return DeepLink.path('/login', includePrefixMatches: false);
     }
     if (platformDeepLink.initial) {
+      final canonical =
+          RouterService.consumeCanonicalInitialPath(widget.initialRoute);
+      if (canonical != widget.initialRoute)
+        RouterService.router.markUrlStateForReplace();
       return DeepLink.path(
-        widget.initialRoute,
+        canonical,
         includePrefixMatches: false,
       );
     }
@@ -476,7 +554,7 @@ class _MyAppState extends State<MyApp> {
             },
             child: Stack(
               children: [
-                child!,
+                AppTextSelection(child: child!),
                 Positioned(
                   left: _offset.dx,
                   top: _offset.dy,

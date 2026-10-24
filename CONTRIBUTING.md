@@ -11,14 +11,31 @@ rules are tracked in `AGENTS.md`, `CLAUDE.md`, and
 
 ## 1. Testing Workflow
 
-### A. The "One-Click" Way (Recommended)
+### A. Broad test wrapper
 
-Runs all project tests: Web Client (JavaScript), Database (SQL), Flutter,
-Deno Edge Functions, and Integration tests.
+Selects the repository's Web Client, SQL, client, Deno, image integration and
+explicit automation lanes. Install their dependencies and choose a disposable
+local database before running it. The wrapper loads `.env.local`; an existing
+`DATABASE_URL` there takes precedence over automatic local-DB detection unless
+you supply an explicit shell override.
 
 ```bash
-./automation/test_all.sh
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
+  ./automation/test_all.sh
 ```
+
+The database must already be running; this command does not start it. Missing
+tools/credentials can skip lanes. Web failures/timeouts and image integration
+failures currently print warnings and may leave the wrapper exit status zero.
+Client, SQL, Deno and selected automation failures propagate. Review each lane;
+"Done" alone is not a full pass. For a reliable JS or image integration result,
+run `pnpm --dir web_client test` or
+`pnpm --dir workers/image-worker run test:integration` directly with their
+required isolated fixtures.
+
+Scopes are `web`, `db`, `flutter`, `integration` and `automation`. Both `db` and
+`integration` also run the Deno lane. `automation` uses the script's explicit
+file list; it does not discover every test in that directory.
 
 ### B. Running Only Database Tests
 
@@ -39,35 +56,132 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 ```
 
 **Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
-during a test is undone automatically.
+during a test is undone automatically. The SQL runner exits nonzero when files
+still fail after its sequential retry; it also exits zero when the filter selects
+no files. Check the selected count and summary as well as the exit status. This
+is separate from the broad wrapper's warning-only web/integration lanes.
 
-### C. Troubleshooting
+For the canonical operations source/catalog contract, regenerate the fixture
+from release SQL rather than copying hashes from a running database:
+
+```bash
+python3 automation/generate_canonical_source_contract.py
+python3 automation/generate_canonical_source_contract.py --check
+```
+
+The canonical operation source test checks this generated artifact; the DB lane
+executes its body/retired-identity assertions against the disposable catalog.
+
+### C. Client tests
+
+```bash
+./automation/test_client.sh              # Complete Dart + Flutter client suite
+./automation/test_client.sh core         # Partial: portable package only
+./automation/test_client.sh flutter      # Partial: Flutter lane only
+(cd packages/festapp_core && fvm dart test test/sync) # One core area
+fvm dart test test_dart                  # Dart/VM adapters and SDK contracts, no engine
+fvm flutter test --concurrency=2 test/sessions/shared_czech_test.dart # One environment group
+fvm flutter test test/components/forms/default_values_cases.dart # One suite
+```
+
+Resolve dependencies with `fvm flutter pub get` in the repository and
+`fvm dart pub get` in `packages/festapp_core` before running the client runner.
+The complete command runs the architecture check, core and native Dart adapters
+together, then Flutter, each exactly once. It checks semantic discovery against
+the migration inventory and propagates every
+failure. It works from any working directory and needs no backend credentials.
+Separate JSON results and lane timings are saved in a temporary directory; set
+`FESTAPP_CLIENT_RESULTS` to select an artifact directory. Dependencies are not
+resolved during measured test runs. `fvm flutter test` alone covers only the
+Flutter lane. Pure rules belong in the core package; application composition
+chooses their storage, network and platform adapters explicitly.
+
+The client runner uses at most two workers per lane (fewer on smaller CPU
+hosts). This cap follows measured memory peaks: three simultaneous shared-session compilations exceeded the local
+3 GB budget. For an explicit experiment, set `FESTAPP_CLIENT_CONCURRENCY=5`;
+only positive integers are accepted. Overrides can exceed the memory budget.
+Small compatible suites share an engine through `registerClientSuites`; verify
+both normal and `FESTAPP_FIXTURE_ORDER=reverse` group orders when changing them.
+
+Small suites in the same feature share a `<feature>_unit_test.dart` or
+`<feature>_widget_test.dart` entrypoint to avoid starting a Flutter engine for
+each file. Their original
+tests live in `*_cases.dart` files, each with its own `main()`, registered under
+a named `group` in the entrypoint. Flutter discovers only the entrypoint during
+a directory run; explicitly naming a cases file still runs that suite directly.
+
+Add new tests as `*_test.dart` by default. Use `*_cases.dart` only when importing
+and registering it in the feature entrypoint. Group related widget suites only
+when their setup and teardown can safely share one engine. Keep tests that
+replace platform singletons, use custom bindings, or leave process state behind
+in separate `*_test.dart` files. Shared suites must use local instances or
+restore any state they change; setup and teardown hooks belong inside their
+named group. Initialization that mutates shared state belongs in scoped hooks,
+not in the suite's `main()`.
+
+The exact remaining Flutter roots and reasons are listed in
+`automation/client_test_classification.json`; the architecture guard rejects
+missing/stale classifications, registration-time resource setup and private
+SDK fixture imports. Localized suites use the public widget/delegate fixture. Explicit
+physical-source moves and added parent groups preserve semantic test origins.
+Fixture contracts live in `test/support/fixtures/README.md`.
+
+For a comparable measurement after implementation is final:
+
+```bash
+python3 automation/benchmark_client.py --output /tmp/festapp-client-benchmark
+```
+
+This runs the complete command once to warm it and three times for the median,
+checks source/lock/tool inputs before and after every run, and records each
+lane, counts, SDK/host and sampled owned-process RSS. It fails on test/inventory
+errors or changed inputs; unmet performance targets remain explicit in JSON.
+The pre-existing loopback-only GoTrue SDK test is in `test_dart/integration`;
+it retains its explicit skip without its `FESTAPP_FIXTURE_*` environment.
+
+`test_client.sh` already passes `--no-pub` to its Flutter lane and does not
+accept that flag itself. When running `fvm flutter test` directly, add
+`--no-pub` only after resolving dependencies.
+
+### D. Troubleshooting
 
 If a test fails saying "function does not exist":
 
-1. Rebuild the isolated local database: `./automation/bootstrap_local_db.sh`.
+1. Verify the runner is using the dedicated local database. If its schema is
+   stale, rebuild it with `./automation/bootstrap_local_db.sh`; this deletes
+   that fixture's data.
 2. Check that every active migration has a unique 14-digit timestamp.
 3. Run schema check tests if available.
 
-### D. Remote database and Edge Function changes
+### E. Remote database and Edge Function changes
 
 Do not use a remote database as a substitute for the isolated test database.
 Version every SQL change in the repository and deploy it through the approved
-release workflow. Until the self-hosted cutover is complete, schema, function,
-and data-contract changes must remain semantically identical on the self-hosted
-target and cloud sources `default` and `a`.
+release workflow to the canonical self-hosted backend at `https://api.festapp.net`.
+The production switch completed on 2026-09-10. Former cloud sources are frozen
+retention/reconciliation targets; routine changes must not reopen their writes.
 
-Resolve the live target from `SUPABASE_URL` in `automation/project.conf`, then
-verify `FORCE_OCCASION_LINK` in that same database. Never select a target from
-the project ref in `.env.local`. Deploy Deno functions from their checked-in
+For a production tenant, require `BACKEND_ACTIVATION_PHASE=canonical` in
+its `automation/project.conf` and verify the published
+`WEB_LINK/backend-activation.json`: tenant ID, canonical generation and endpoint
+must match the selected configuration. Verify
+`BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and any `FORCE_OCCASION_LINK`
+in that same canonical database before reading event or user data. Stop on a
+mismatch. `SUPABASE_URL` can be a compiled legacy mobile fallback; neither it
+nor a project ref in `.env.local` selects the live database. The shared main
+configuration is a development template, not evidence of a tenant's activation.
+
+Deploy Deno functions from their checked-in
 `supabase/functions/<name>/` source and follow
 [docs/backend/edge_functions.md](docs/backend/edge_functions.md).
 
 ## 2. Secrets & Configuration
 
-- **Local**: Keys in `.env.local` (NOT committed). This file is automatically
-  loaded by local scripts and Vite. **Put all secrets here.**
-- **Web Client**: Public keys in `web_client/src/app_config.js`.
+- **Local**: Ignored `.env.local` holds private local inputs for scripts that
+  explicitly load them. Follow service-specific secret paths and production
+  private-input schemas; never expose private values through Vite/client assets.
+- **Web Client**: Generated public settings in `web_client/src/app_config.js`,
+  sourced from `automation/project.conf`; no service-role or provider credentials.
 - **Database**: `DATABASE_URL` required for test runner.
 
 ## 3. Security Audit (Before Commit)
@@ -137,13 +251,15 @@ changes):
 
 ### Step 3: Verify Integrity
 
-Run the full test suite (Web, DB, Integration, and Edge Functions).
+Run checks appropriate to the change and required by repository/user
+verification scope. For a full validation, run the broad wrapper with explicit
+local database configuration and inspect every lane as described above.
 
 ```bash
 ./automation/test_all.sh
 ```
 
-> All tests must PASS.
+> A skipped or warning-only failed lane is not a passing full validation.
 
 ### Step 4: Synchronize Translations
 
@@ -181,19 +297,22 @@ Flutter app but shares the same Supabase backend.
 
 ```bash
 cd web_client
-npm install
-npm run dev    # Vite dev server
-npm test       # Node.js native test runner
+pnpm install
+pnpm run dev    # Vite dev server
+pnpm test       # Node.js native test runner
 ```
 
 ### Component Pattern
 
-All components extend a base class (`src/components/base/component.js`) with a
+Page components extend a base class (`src/components/base/component.js`) with a
 standard lifecycle:
 
 - `init()` - Initialize state and fetch data
 - `render()` - Build DOM elements
 - `clear()` - Cleanup listeners and DOM
+
+Small widgets such as dialogs and floating action buttons need not inherit
+this page lifecycle.
 
 ### Key Directories
 
@@ -221,16 +340,20 @@ the Deno runtime.
 # Serve locally
 supabase functions serve <function-name> --env-file .env.local
 
-# Deploy
-supabase functions deploy <function-name>
 ```
+
+Production deployment uses the canonical reviewed Function bundle, not the
+cloud CLI deploy command. Follow [Edge deployment](docs/backend/edge_functions.md#deployment).
 
 ### Shared Utilities
 
 Common code lives in `supabase/functions/_shared/`:
 
 - `supabaseUtil.ts` - Admin client, template fetching
-- `emailClient.ts` - Email sending (SMTP via nodemailer)
+- `emailQueueClient.ts` / `emailDelivery.ts` - Render and encrypt snapshots,
+  enqueue durable intents, and optionally await provider acceptance
+- `emailSender.ts` - SES transport used only by `process-email-queue` after the
+  canonical SQL send gate grants its fenced permit
 - `auth.ts` - Request authorization (`authorizeRequest`)
 - `utilities.ts` - General helpers
 

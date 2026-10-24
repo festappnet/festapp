@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -232,7 +233,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     final text = TextEditingController();
     final value = await showDialog<String>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
+                onClose: () => Navigator.pop(context),
                 title: Text(HtmlStrings.link),
                 content: TextField(
                     controller: text,
@@ -265,7 +267,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     final text = TextEditingController();
     final value = await showDialog<String>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppAlertDialog(
+                onClose: () => Navigator.pop(context),
                 title: Text(HtmlStrings.imageUrl),
                 content: TextField(
                     controller: text,
@@ -368,6 +371,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         if (widget.toolbarActions != null) widget.toolbarActions!,
         HtmlView(
             html: controller.html,
+            embeddedBlock: controller.embeddedBlock,
             imageBytesResolver: controller.media.previewBytes),
       ]);
     return OverlayPortal(
@@ -489,6 +493,19 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                     slivers: [
                                       SuperEditor(
                                         editor: controller.editor,
+                                        // The default opaque highlight obscures
+                                        // light text in dark mode.
+                                        selectionStyle: Theme.of(context)
+                                                    .brightness ==
+                                                Brightness.dark
+                                            ? SelectionStyles(
+                                                selectionColor:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withValues(alpha: 0.35),
+                                              )
+                                            : defaultSelectionStyle,
                                         selectionLayerLinks: _selectionLinks,
                                         documentOverlayBuilders: [
                                           for (final overlay
@@ -732,6 +749,35 @@ class _PreservedBuilder implements ComponentBuilder {
       SingleColumnLayoutComponentViewModel model) {
     final node = controller.editor.document.getNodeById(model.nodeId);
     if (node is! PreservedHtmlNode) return null;
+    final block = controller.embeddedBlock;
+    if (block != null && block.matches(node.html)) {
+      return BoxComponent(
+        key: context.componentKey,
+        child: AnimatedBuilder(
+            animation: controller,
+            builder: (buildContext, _) {
+              return Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  IconButton(
+                    tooltip: HtmlStrings.moveUp,
+                    onPressed: controller.canMoveBlock(node.id, -1)
+                        ? () => controller.moveBlock(node.id, -1)
+                        : null,
+                    icon: const Icon(Icons.arrow_upward),
+                  ),
+                  IconButton(
+                    tooltip: HtmlStrings.moveDown,
+                    onPressed: controller.canMoveBlock(node.id, 1)
+                        ? () => controller.moveBlock(node.id, 1)
+                        : null,
+                    icon: const Icon(Icons.arrow_downward),
+                  ),
+                ]),
+                block.builder(buildContext),
+              ]);
+            }),
+      );
+    }
     return BoxComponent(
         key: context.componentKey,
         child: HtmlView(

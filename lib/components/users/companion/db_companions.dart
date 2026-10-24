@@ -44,18 +44,8 @@ class DbCompanions {
   }
 
   static Future<void> create(String name) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.createSelf(RightsService.currentOccasionId()!, name);
-      return;
-    }
-    final response =
-        await _supabase.rpc("create_companion_in_organization", params: {
-      'oc': RightsService.currentOccasionId(),
-      'c_name': name,
-    });
-    if (response is! Map || response['code'] != 200) {
-      throw StateError('Companion create was rejected');
-    }
+    await _commands.createSelf(RightsService.currentOccasionId()!, name);
+    return;
   }
 
   static Future<void> deleteSelf(CompanionModel companion) async {

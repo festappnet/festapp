@@ -1,3 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
@@ -11,7 +15,7 @@ import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/companion/companion_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/services/vibrate_service.dart';
 import 'package:fstapp/theme_config.dart';
@@ -58,6 +62,10 @@ class _CheckPageState extends State<CheckPage> {
   @override
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
+    if (kIsWeb) {
+      await LaunchUrlService.openExternalUrl('${AppConfig.webLink}/scan/program/${widget.id}', inCurrentWindow: true);
+      return;
+    }
     await loadData(widget.id);
   }
 
@@ -83,7 +91,7 @@ class _CheckPageState extends State<CheckPage> {
         }
       }
     }
-    _event!.currentParticipants = participants.length;
+    _event = _event!.copyWith(currentParticipants: participants.length);
     _participants = participants;
     _filteredParticipants = _participants;
     setState(() {});
@@ -178,6 +186,7 @@ class _CheckPageState extends State<CheckPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return const SizedBox.shrink();
     const minChildSize = 0.25;
     const maxChildSize = 0.88;
     return Scaffold(
@@ -204,7 +213,7 @@ class _CheckPageState extends State<CheckPage> {
                       ),
                       Expanded(
                         child: Text(
-                          _event?.toString() ?? "",
+                          _event?.displayLabel() ?? "",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

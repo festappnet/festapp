@@ -1,0 +1,105 @@
+{
+  "chapters": {
+    "layout-build": {
+      "sourceTake": "/Users/miakh/Downloads/festapp-video-continuous-20261023/layout/layout-unbroken-cs-1792750560",
+      "cues": [
+        {
+          "cue": "unbroken-layout-build",
+          "sourceStart": 1792750561.632918,
+          "sourceEnd": 1792750573.911159,
+          "speed": 1,
+          "encodedDuration": 12.266667
+        }
+      ],
+      "outputs": {
+        "layout-build.mp4": {
+          "width": 1140,
+          "height": 792,
+          "duration": 12.266667,
+          "decode": "PASS"
+        },
+        "layout-build-mobile.mp4": {
+          "width": 820,
+          "height": 792,
+          "duration": 12.266667,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.1637568473815918,
+      "mobilePresentation": "scaled desktop authoring, not native mobile UI"
+    },
+    "form-build": {
+      "sourceTake": "/Users/miakh/Downloads/festapp-video-continuous-20261023/form/form-unbroken-cs-1792750696",
+      "cues": [
+        {
+          "cue": "unbroken-form-build",
+          "sourceStart": 1792750697.068015,
+          "sourceEnd": 1792750742.897598,
+          "speed": 1,
+          "encodedDuration": 45.833008
+        }
+      ],
+      "outputs": {
+        "form-build.mp4": {
+          "width": 1200,
+          "height": 804,
+          "duration": 45.833333,
+          "decode": "PASS"
+        },
+        "form-build-mobile.mp4": {
+          "width": 720,
+          "height": 638,
+          "duration": 45.833333,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.16933131217956543,
+      "mobilePresentation": "scaled desktop authoring, not native mobile UI"
+    }
+  },
+  "startMotionChecks": {
+    "layout-build.mp4": {
+      "changedChannelsAt0_1s": 1141,
+      "sha256": "eb11698aa0a0ef4e2f54bbbc69d1ada654a04eac43107e8dbf253499afb92f9b"
+    },
+    "layout-build-mobile.mp4": {
+      "changedChannelsAt0_1s": 795,
+      "sha256": "22569911d7bf127d4cb1bd3d7fadb730655cd74624b1844ad1b0348ca2d5b146"
+    },
+    "form-build.mp4": {
+      "changedChannelsAt0_1s": 113,
+      "sha256": "8ae1987ae89595fab408207f6d8bba27cc1c36a333754e056b2d14567a507f84"
+    },
+    "form-build-mobile.mp4": {
+      "changedChannelsAt0_1s": 84,
+      "sha256": "f9566ce3c148ac467ae6a6e31e52a38b93a78b840d19fa6ac31dc71d45d0166b"
+    }
+  },
+  "savedForm": {
+    "products": [
+      {
+        "title": "Kuřecí večeře",
+        "price": 180.0
+      },
+      {
+        "title": "Veganská večeře",
+        "price": 160.0
+      },
+      {
+        "title": "Vegetariánská večeře",
+        "price": 160.0
+      }
+    ],
+    "fields": [
+      {
+        "type": "note",
+        "title": null
+      }
+    ],
+    "orders": 0
+  }
+}

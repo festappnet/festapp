@@ -17,5 +17,9 @@
     "typescript": "^5.9.2",
     "vitest": "^4.0.18",
     "wrangler": "^4.131.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "pnpm": "11.24.0"
   }
 }

@@ -1,0 +1,39 @@
+{
+  "sourceScannerSHA256": "48a27958a7ff05828da2a3c83daee48cbc16a9bb273926b69f5d12deabf5e5c3",
+  "method": "Actual unmodified scanner master inside Chromium HTML rendered directly on navy; SVG circle/check/cross; no color key, threshold mask or RGB replacement",
+  "font": "Actual bundled Futura PT Medium, weight500, document.fonts.ready verified",
+  "artifacts": [
+    {
+      "asset": "/Users/miakh/source/festapp/web/organizers-media/check-in.mp4",
+      "take": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/scanner-svg/iphone-svg-desktop-1792680752",
+      "sha256": "47388f9a75e2120e2b2387b090d7b1021229825be356205a9ffa860ce3dab912",
+      "configuredMatte": "#19243b",
+      "decodedEdgeRGB": [
+        25,
+        35,
+        58
+      ],
+      "width": 1200,
+      "height": 800,
+      "duration": 8.5,
+      "decode": "pass",
+      "posterDecode": "pass"
+    },
+    {
+      "asset": "/Users/miakh/source/festapp/web/organizers-media/check-in-mobile.mp4",
+      "take": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/scanner-svg/iphone-svg-mobile-1792680763",
+      "sha256": "5b5167c84daaca22a4dc0e62d658cd0a6844aa583d574ffe6808dc1b483fff94",
+      "configuredMatte": "#19243b",
+      "decodedEdgeRGB": [
+        25,
+        36,
+        58
+      ],
+      "width": 500,
+      "height": 1000,
+      "duration": 8.5,
+      "decode": "pass",
+      "posterDecode": "pass"
+    }
+  ]
+}

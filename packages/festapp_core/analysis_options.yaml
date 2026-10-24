@@ -1,0 +1,5 @@
+# This package must also analyze with a standalone Dart SDK. Do not inherit
+# the application's Flutter-only lint package through the parent directory.
+analyzer:
+  exclude:
+    - .dart_tool/**

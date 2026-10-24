@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/place_picker_field.dart';
 import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
@@ -39,13 +40,11 @@ class CounselingSlotDialog {
         .add(const Duration(days: eventDayRangeTolerance));
 
     // A new slot defaults to the occasion start + a typical 20-minute length.
-    DateTime startDate = initialStart ??
-        SynchroService.globalSettingsModel!.eventStartTime!;
-    DateTime endDate =
-        initialEnd ?? startDate.add(const Duration(minutes: 20));
+    DateTime startDate =
+        initialStart ?? SynchroService.globalSettingsModel!.eventStartTime!;
+    DateTime endDate = initialEnd ?? startDate.add(const Duration(minutes: 20));
     int? placeId = initialPlaceId;
-    final capacityController =
-        TextEditingController(text: '$initialCapacity');
+    final capacityController = TextEditingController(text: '$initialCapacity');
     final isEditing = initialStart != null;
 
     final result = await showDialog<CounselingSlotResult>(
@@ -61,7 +60,8 @@ class CounselingSlotDialog {
                     endDate.difference(startDate).inMinutes >= 5 &&
                     capacity >= 1;
 
-                return AlertDialog(
+                return AppAlertDialog(
+                  onClose: () => Navigator.of(context).pop(),
                   title: Text(isEditing
                       ? SpeakersStrings.editSlot
                       : SpeakersStrings.addSlot),
@@ -129,9 +129,8 @@ class CounselingSlotDialog {
                                 capacity: capacity,
                               ))
                           : null,
-                      child: Text(isEditing
-                          ? CommonStrings.save
-                          : CommonStrings.add),
+                      child: Text(
+                          isEditing ? CommonStrings.save : CommonStrings.add),
                     ),
                   ],
                 );

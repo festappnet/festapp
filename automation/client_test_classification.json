@@ -1,0 +1,535 @@
+{
+  "flutter_roots": {
+    "test/components/forms/email_domain_suffix_test.dart": {
+      "kind": "environment",
+      "reason": "Localized public email field widgets in both designs and real main/ticket FormBuilder submission gate.",
+      "sources": ["test/components/forms/email_domain_suffix_test.dart"]
+    },
+    "test/components/blueprint/blueprint_mobile_scroll_view_test.dart": {
+      "kind": "environment",
+      "reason": "Mobile touch gesture arbitration between the real venue viewer and the blueprint panel scroll view; requires Flutter widget binding.",
+      "sources": [
+        "test/components/blueprint/blueprint_mobile_scroll_view_test.dart"
+      ]
+    },
+    "test/data_services/external_login_context_test.dart": {
+      "kind": "environment",
+      "reason": "Actual client-sync projection/runtime/private SDK adapters or root auth/rights integration; pure sync orchestration is in core.",
+      "sources": [
+        "test/data_services/external_login_context_test.dart"
+      ]
+    },
+    "test/data_services/rights_explicit_occasion_test.dart": {
+      "kind": "environment",
+      "reason": "Actual client-sync projection/runtime/private SDK adapters or root auth/rights integration; pure sync orchestration is in core.",
+      "sources": [
+        "test/data_services/rights_explicit_occasion_test.dart"
+      ]
+    },
+    "test/data_services/sign_in_code_login_test.dart": {
+      "kind": "environment",
+      "reason": "Actual client-sync projection/runtime/private SDK adapters or root auth/rights integration; pure sync orchestration is in core.",
+      "sources": [
+        "test/data_services/sign_in_code_login_test.dart"
+      ]
+    },
+    "test/sessions/shared_default_1_test.dart": {
+      "kind": "environment",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/shared_default_1_test.dart",
+        "test/sessions/default_locale_1_cases.dart",
+        "test/components/html/rich_html_editor_lifecycle_cases.dart",
+        "test/components/event_feedback/feedback_widget_cases.dart",
+        "test/components/event_feedback/event_feedback_widget_cases.dart",
+        "test/components/event_feedback/event_feedback_admin_content_cases.dart",
+        "test/components/event_feedback/event_feedback_commands_cases.dart",
+        "test/components/features/map_feature_cases.dart",
+        "test/components/fonts/font_family_picker_cases.dart",
+        "test/components/users/profile_companion_widget_cases.dart",
+        "test/components/users/profile_place_field_cases.dart",
+        "test/components/users/profile_legal_link_cases.dart",
+        "test/components/users/companion_dialog_cases.dart",
+        "test/components/users/user_fields_widget_cases.dart",
+        "test/components/users/occasion_user_grid_cases.dart",
+        "test/components/users/import_helper_cases.dart",
+        "test/components/users/companion_accommodation_field_cases.dart",
+        "test/components/users/users_unit_cases.dart",
+        "test/components/users/account_deletion_service_cases.dart",
+        "test/components/users/admin_companion_relationships_cases.dart",
+        "test/components/users/companion_commands_cases.dart",
+        "test/components/users/companion_model_cases.dart",
+        "test/components/users/occasion_editor_data_cases.dart",
+        "test/components/users/profile_commands_cases.dart",
+        "test/components/ticket_layout/ticket_layout_unit_cases.dart",
+        "test/components/ticket_layout/ticket_image_palette_cases.dart",
+        "test/components/ticket_layout/ticket_layout_saver_cases.dart",
+        "test/components/ticket_layout/ticket_background_image_cases.dart",
+        "test/components/ticket_layout/ticket_group_resize_cases.dart",
+        "test/widgets/widgets_cases.dart",
+        "test/widgets/app_dialog_cases.dart",
+        "test/widgets/app_text_selection_cases.dart",
+        "test/widgets/logo_widget_cases.dart",
+        "test/widgets/time_date_picker_cases.dart",
+        "test/sessions/visual_primitives_cases.dart",
+        "test/theme_config_cases.dart",
+        "test/components/shared/editor_action_bar_cases.dart",
+        "test/components/breadcrumb_row_cases.dart",
+        "test/services/dialog_helper_progress_cases.dart",
+        "test/services/auth_session_storage_cases.dart"
+      ]
+    },
+    "test/sessions/shared_default_2_test.dart": {
+      "kind": "environment",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/shared_default_2_test.dart",
+        "test/sessions/default_locale_3_cases.dart",
+        "test/components/map/map_surface_widget_cases.dart",
+        "test/components/map/map_renderer_host_cases.dart",
+        "test/components/map/raster_map_focus_contract_cases.dart",
+        "test/components/map/path_node_cases.dart",
+        "test/components/map/map_cache_cases.dart",
+        "test/components/map/offline_map_bundle_manager_cases.dart",
+        "test/components/forms/forms_contract_widget_cases.dart",
+        "test/components/forms/forms_unit_cases.dart",
+        "test/components/forms/default_values_cases.dart",
+        "test/components/forms/form_commands_cases.dart",
+        "test/components/forms/form_metadata_cases.dart",
+        "test/components/forms/occasion_setup_defaults_cases.dart",
+        "test/components/forms/form_html_content_cases.dart",
+        "test/components/forms/forms_order_widget_cases.dart",
+        "test/components/forms/customer_order_overview_cases.dart",
+        "test/components/forms/order_finish_screen_cases.dart",
+        "test/components/forms/payment_qr_card_cases.dart",
+        "test/components/forms/waitlist_models_cases.dart",
+        "test/components/forms/waitlist_runtime_cases.dart",
+        "test/components/html/html_unit_cases.dart",
+        "test/components/html/html_clipboard_cases.dart",
+        "test/components/html/html_editor_document_cases.dart",
+        "test/components/html/html_media_service_cases.dart",
+        "test/components/email_templates/email_templates_cases.dart",
+        "test/components/email_templates/email_template_dialog_cases.dart",
+        "test/components/email_templates/email_template_model_cases.dart",
+        "test/components/email_delivery/email_delivery_widget_cases.dart",
+        "test/components/email_delivery/email_delivery_history_cases.dart",
+        "test/components/email_delivery/email_delivery_indicator_cases.dart",
+        "test/components/forms/forms_field_widget_cases.dart",
+        "test/components/forms/form_deletion_cases.dart",
+        "test/components/forms/form_editor_answer_preview_cases.dart",
+        "test/components/eshop/views/add_cash_payment_dialog_cases.dart",
+        "test/components/users/companion_admin_dialog_cases.dart",
+        "test/components/ticket_layout/ticket_canvas_selection_cases.dart",
+        "test/components/occasion/occasion_home_navigation_contract_cases.dart",
+        "test/components/navigation/navigation_unit_cases.dart",
+        "test/components/navigation/platform_route_parser_cases.dart",
+        "test/components/navigation/tab_route_contract_cases.dart",
+        "test/components/blueprint/blueprint_unit_cases.dart",
+        "test/components/blueprint/blueprint_order_metadata_cases.dart",
+        "test/components/blueprint/blueprint_seat_adapter_cases.dart",
+        "test/sessions/default_locale_2_cases.dart",
+        "test/components/single_data_grid/single_data_grid_widget_cases.dart",
+        "test/components/single_data_grid/data_grid_action_confirmation_cases.dart",
+        "test/components/single_data_grid/data_grid_column_header_cases.dart",
+        "test/components/single_data_grid/data_grid_dirty_actions_cases.dart",
+        "test/components/single_data_grid/data_grid_helper_cases.dart",
+        "test/components/single_data_grid/tab_refresh_cases.dart",
+        "test/components/single_data_grid/versioned_admin_models_cases.dart",
+        "test/components/speakers/speaker_widget_cases.dart",
+        "test/components/speakers/speaker_picker_field_cases.dart",
+        "test/components/speakers/counseling_widgets_cases.dart",
+        "test/components/speakers/speakers_unit_cases.dart",
+        "test/components/speakers/db_speakers_compatibility_cases.dart",
+        "test/components/speakers/speaker_commands_cases.dart",
+        "test/components/speakers/speakers_mapping_cases.dart",
+        "test/components/groups/groups_unit_cases.dart",
+        "test/components/groups/group_commands_cases.dart",
+        "test/components/groups/user_groups_editor_data_cases.dart",
+        "test/components/groups/group_place_assignment_cases.dart",
+        "test/components/groups/group_place_dialog_cases.dart",
+        "test/components/app_shell_widget_cases.dart",
+        "test/components/app_management/pwa_storage_advanced_settings_cases.dart",
+        "test/components/client_changes/client_changes_tab_cases.dart",
+        "test/components/occasion/material_3_chrome_compatibility_cases.dart",
+        "test/components/search/global_search_dialog_cases.dart",
+        "test/components/shared/copy_button_cases.dart",
+        "test/startup/startup_widget_cases.dart",
+        "test/startup/app_bootstrap_cases.dart",
+        "test/startup/app_router_deep_link_cases.dart",
+        "test/startup/router_service_post_login_cases.dart",
+        "test/router_reserved_paths_cases.dart",
+        "test/components/html/html_view_cases.dart",
+        "test/components/occasion/occasion_unit_cases.dart",
+        "test/components/occasion/occasion_save_state_cases.dart",
+        "test/components/occasion/occasion_commands_cases.dart",
+        "test/components/occasion/occasion_media_copier_cases.dart",
+        "test/data_services/data_services_unit_cases.dart",
+        "test/data_services/app_config_rpc_cases.dart",
+        "test/data_services/auth_refresh_recovery_cases.dart",
+        "test/data_services/offline_data_service_cases.dart",
+        "test/data_services/saved_program_pending_state_cases.dart",
+        "test/data_services/update_service_cases.dart"
+      ]
+    },
+    "test/sessions/shared_default_3_test.dart": {
+      "kind": "environment",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/shared_default_3_test.dart",
+        "test/sessions/default_locale_4_cases.dart",
+        "test/components/navigation/routed_tab_navigation_cases.dart",
+        "test/components/navigation/object_route_access_cases.dart",
+        "test/components/schedule/program_presentation_widget_cases.dart",
+        "test/components/schedule/event_grid_record_cases.dart",
+        "test/components/schedule/event_metadata_item_cases.dart",
+        "test/components/schedule/saved_program_ui_cases.dart",
+        "test/components/schedule/program_notification_settings_cases.dart",
+        "test/components/eshop/product_grid_record_cases.dart",
+        "test/components/reception/reception_entry_widget_cases.dart",
+        "test/components/reception/reception_gating_cases.dart",
+        "test/components/reception/manual_login_code_field_cases.dart",
+        "test/components/reception/login_qr_transition_cases.dart",
+        "test/components/unit/unit_presentation_widget_cases.dart",
+        "test/components/unit/unit_sidebar_overlay_cases.dart",
+        "test/components/unit/unit_context_switch_cases.dart",
+        "test/components/unit/unit_commands_cases.dart",
+        "test/components/map/map_unit_cases.dart",
+        "test/components/map/external_map_navigation_cases.dart",
+        "test/components/map/map_commands_cases.dart",
+        "test/components/map/map_deep_link_route_identity_cases.dart",
+        "test/components/map/map_path_direction_layout_cases.dart",
+        "test/components/map/map_viewport_coordinator_cases.dart",
+        "test/components/map/maplibre_place_icon_rasterizer_cases.dart",
+        "test/components/map/maplibre_scene_controller_cases.dart",
+        "test/components/map/offline_map_configuration_cases.dart",
+        "test/components/map/place_type_column_builder_cases.dart",
+        "test/components/map/public_map_session_cases.dart",
+        "test/components/map/warm_map_lifecycle_cases.dart",
+        "test/components/map/map_edge_indicator_layout_cases.dart",
+        "test/components/map/map_locate_coordinator_cases.dart",
+        "test/components/map/maplibre_focus_contract_cases.dart",
+        "test/components/map/maplibre_style_assembler_cases.dart",
+        "test/components/map/maplibre_style_image_pixel_ratio_cases.dart",
+        "test/services/service_adapter_cases.dart",
+        "test/services/services_unit_cases.dart",
+        "test/services/backend_activation_service_cases.dart",
+        "test/services/installation_cutover_service_cases.dart",
+        "test/services/connectivity_service_cases.dart",
+        "test/services/notification_helper_cases.dart",
+        "test/services/storage_helper_cases.dart",
+        "test/data_services/client_sync/client_sync_adapter_cases.dart",
+        "test/data_services/client_sync/client_sync_unit_cases.dart",
+        "test/data_services/client_sync/client_command_transport_cases.dart",
+        "test/data_services/client_sync/client_sync_context_cases.dart",
+        "test/data_services/client_sync/client_sync_endpoint_service_cases.dart",
+        "test/data_services/client_sync/occasion_media_cache_cases.dart",
+        "test/data_services/client_sync/client_sync_service_cases.dart",
+        "test/data_services/client_sync/client_sync_projection_cases.dart",
+        "test/data_services/client_sync/supabase_private_sync_remote_cases.dart",
+        "test/sessions/default_locale_5_cases.dart",
+        "test/components/eshop/order_grid_filters_cases.dart",
+        "test/components/news/news_presentation_widget_cases.dart",
+        "test/components/news/news_form_page_layout_cases.dart",
+        "test/components/news/news_notification_audience_selector_cases.dart",
+        "test/components/news/news_send_confirmation_dialog_cases.dart",
+        "test/components/occasion/occasion_navigation_bar_cases.dart",
+        "test/components/map/map_presentation_widget_cases.dart",
+        "test/components/map/map_download_indicator_cases.dart",
+        "test/components/map/map_location_accuracy_cases.dart",
+        "test/components/map/map_offscreen_location_indicator_cases.dart",
+        "test/components/map/map_description_popup_cases.dart",
+        "test/components/map/ios_navigation_app_picker_cases.dart",
+        "test/components/map/counseling_hours_panel_cases.dart",
+        "test/components/map/map_admin_grid_version_cases.dart",
+        "test/components/map/map_page_helper_cases.dart",
+        "test/components/map/map_navigation_contract_cases.dart",
+        "test/components/icons/upload_icon_dialog_cases.dart",
+        "test/components/bank_accounts/nested_dialog_cases.dart",
+        "test/components/eshop/order_projection_widget_cases.dart",
+        "test/components/eshop/models/order_email_cell_cases.dart",
+        "test/components/eshop/eshop_unit_cases.dart",
+        "test/components/eshop/eshop_commands_cases.dart",
+        "test/components/eshop/order_commands_cases.dart",
+        "test/components/eshop/order_grid_permissions_cases.dart",
+        "test/components/eshop/password_reset_result_cases.dart",
+        "test/components/eshop/ticket_commands_cases.dart",
+        "test/components/eshop/models/transaction_model_cases.dart",
+        "test/components/inventory/inventory_unit_cases.dart",
+        "test/components/inventory/inventory_resource_commands_cases.dart",
+        "test/components/inventory/spot_commands_cases.dart",
+        "test/components/scan/scan_field_mappings_cases.dart",
+        "test/components/reception/reception_unit_cases.dart",
+        "test/components/reception/login_qr_payload_cases.dart",
+        "test/components/offline/offline_presentation_widget_cases.dart",
+        "test/components/offline/offline_banner_layout_cases.dart",
+        "test/components/offline/offline_sync_timestamp_cases.dart",
+        "test/components/schedule/program_contract_cases.dart",
+        "test/components/schedule/schedule_unit_cases.dart",
+        "test/components/schedule/exclusive_group_commands_cases.dart",
+        "test/components/schedule/saved_program_commands_cases.dart",
+        "test/components/schedule/schedule_companion_loading_cases.dart",
+        "test/components/schedule/event_page_theme_cases.dart",
+        "test/components/schedule/event_model_client_sync_cases.dart",
+        "test/components/timeline/advanced_timeline_day_list_cases.dart",
+        "test/components/features/features_unit_cases.dart",
+        "test/components/features/companion_feature_cases.dart",
+        "test/components/features/counseling_gating_cases.dart",
+        "test/components/features/services_feature_cases.dart",
+        "test/components/cleaning/admin_contract_cases.dart",
+        "test/components/cleaning/cleaning_unit_cases.dart",
+        "test/components/cleaning/cleaning_commands_cases.dart",
+        "test/components/cleaning/cleaning_offline_banner_cases.dart",
+        "test/components/cleaning/cleaning_gating_cases.dart",
+        "test/components/information/information_unit_cases.dart",
+        "test/components/information/information_commands_cases.dart",
+        "test/components/information/information_expansion_state_cases.dart",
+        "test/components/news/news_unit_cases.dart",
+        "test/components/news/news_commands_cases.dart",
+        "test/components/features/feature_settings_editor_cases.dart",
+        "test/data_services/client_sync/client_command_replacements_cases.dart",
+        "test/components/notification_center/notification_center_cases.dart"
+      ]
+    },
+    "test/sessions/shared_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "actual-cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/shared_czech_test.dart",
+        "test/sessions/czech_catalog_3_cases.dart",
+        "test/components/eshop/occasion_report_cases.dart",
+        "test/components/eshop/product_price_scheduling_cases.dart",
+        "test/components/navigation/object_route_dirty_dialog_cases.dart",
+        "test/components/eshop/ticket_usage_action_cases.dart",
+        "test/components/blueprint/blueprint_editor_actions_cases.dart",
+        "test/components/eshop/order_update_email_dialog_cases.dart",
+        "test/components/blueprint/blueprint_draft_product_cases.dart",
+        "test/sessions/czech_catalog_2_cases.dart",
+        "test/components/forms/forms_editor_widget_cases.dart",
+        "test/components/forms/default_product_price_cases.dart",
+        "test/components/forms/form_blueprint_capacity_cases.dart",
+        "test/components/forms/form_payment_defaults_cases.dart",
+        "test/components/forms/ticket_seat_toggle_cases.dart",
+        "test/components/forms/product_price_grouping_cases.dart",
+        "test/components/forms/form_editor_actions_cases.dart",
+        "test/components/forms/form_field_mobile_layout_cases.dart",
+        "test/components/navigation/save_and_single_form_navigation_cases.dart",
+        "test/components/forms/public_link_settings_cases.dart",
+        "test/components/fonts/form_design_font_loading_cases.dart",
+        "test/components/eshop/cancelled_order_read_only_cases.dart",
+        "test/sessions/czech_catalog_1_cases.dart",
+        "test/components/ticket_layout/ticket_layout_cases.dart"
+      ]
+    },
+    "test/sessions/shared_sdk_widgets_test.dart": {
+      "kind": "environment",
+      "reason": "Share compilation while retaining each original group and its explicit setup/teardown. SDK scopes run sequentially; command groups use disjoint cached services. Locale groups load their own catalog through public roots. Both registration orders are required.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "per-group public roots",
+        "rootSupabase": "scoped-per-group"
+      },
+      "sources": [
+        "test/sessions/shared_sdk_widgets_test.dart",
+        "test/components/bank_accounts/bank_adapter_fixture_cases.dart",
+        "test/components/bank_accounts/token_update_cases.dart",
+        "test/support/fixtures/client_fixture_cases.dart",
+        "test/components/bank_accounts/synchronization_control_cases.dart",
+        "test/components/bank_accounts/token_error_view_cases.dart",
+        "test/components/bank_accounts/unit_bank_accounts_add_cases.dart",
+        "test/components/html/html_media_upload_contract_cases.dart",
+        "test/components/news/news_page_render_cases.dart",
+        "test/support/fixtures/localization_log_cases.dart"
+      ]
+    },
+    "test/sessions/shared_legacy_commands_test.dart": {
+      "kind": "environment",
+      "reason": "Share compilation while retaining each original group and its explicit setup/teardown. SDK scopes run sequentially; command groups use disjoint cached services. Locale groups load their own catalog through public roots. Both registration orders are required.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "per-group public roots",
+        "rootSupabase": "scoped-per-group"
+      },
+      "sources": [
+        "test/sessions/shared_legacy_commands_test.dart",
+        "test/components/information/information_save_legacy_reader_cases.dart",
+        "test/components/schedule/event_commands_cases.dart"
+      ]
+    },
+    "test/sessions/shared_locale_matrix_test.dart": {
+      "kind": "environment",
+      "reason": "Share compilation while retaining each original group and its explicit setup/teardown. SDK scopes run sequentially; command groups use disjoint cached services. Locale groups load their own catalog through public roots. Both registration orders are required.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "per-group public roots",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/shared_locale_matrix_test.dart",
+        "test/sessions/czech_key_fallback_cases.dart",
+        "test/components/schedule/light_timeline_initial_day_cases.dart",
+        "test/components/schedule/schedule_initial_day_cases.dart",
+        "test/components/users/google_login_panel_cases.dart"
+      ]
+    },
+    "test/components/forms/organization_identity_test.dart": {
+      "kind": "environment",
+      "reason": "Localized legal-profile and public identity widget interactions with the application dialog and isolated RPC transport.",
+      "sources": [
+        "test/components/forms/organization_identity_test.dart"
+      ]
+    },
+    "test/components/forms/card_payment_status_test.dart": {
+      "kind": "environment",
+      "reason": "Real localized card-payment result and admission/delivery states, with an isolated catalog separate from shared key-fallback sessions.",
+      "sources": [
+        "test/components/forms/card_payment_status_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/unit_card_payments_test.dart": {
+      "kind": "environment",
+      "reason": "Localized unit connection UI and lifecycle isolation with actual Flutter widgets.",
+      "sources": [
+        "test/components/stripe_payments/unit_card_payments_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_access_test.dart": {
+      "kind": "environment",
+      "reason": "Actual localized protected payment widgets, app resume and scope isolation.",
+      "sources": [
+        "test/components/stripe_payments/payment_access_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_method_preview_test.dart": {
+      "kind": "environment",
+      "reason": "Localized actual purchase preview, immutable price/recipient quote and editor serialization.",
+      "sources": [
+        "test/components/stripe_payments/payment_method_preview_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_method_cards_test.dart": {
+      "kind": "environment",
+      "reason": "Localized form payment policy cards, keyboard operation and narrow dark large-text rendering.",
+      "sources": [
+        "test/components/stripe_payments/payment_method_cards_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/form_payment_settings_test.dart": {
+      "kind": "environment",
+      "reason": "Actual form editor payment policy Save/Discard, recipient loading and stale-response isolation.",
+      "sources": [
+        "test/components/stripe_payments/form_payment_settings_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/card_refund_decision_test.dart": {
+      "kind": "environment",
+      "reason": "Localized refund decision widgets, admission choices and stale refund revision recovery.",
+      "sources": [
+        "test/components/stripe_payments/card_refund_decision_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/admin_payment_precision_test.dart": {
+      "kind": "environment",
+      "reason": "Stripe admin amounts, refund and history preserve exact currency precision.",
+      "sources": [
+        "test/components/stripe_payments/admin_payment_precision_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_payment_link_test.dart": {
+      "kind": "environment",
+      "reason": "Native AppLinks capability inbox uses actual platform service dependencies; validates strict tenant/scope parsing and in-memory consume/replay behavior.",
+      "sources": [
+        "test/components/stripe_payments/stripe_payment_link_test.dart"
+      ]
+    },
+    "test/components/forms/form_total_price_test.dart": {
+      "kind": "environment",
+      "reason": "Renders the actual floating form total with localized currency precision for Stripe and legacy bank configuration.",
+      "sources": [
+        "test/components/forms/form_total_price_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_connect_callback_test.dart": {
+      "kind": "environment",
+      "reason": "Actual callback page lifecycle across login route destruction with injected auth/transport verifies memory retention and terminal cleanup.",
+      "sources": [
+        "test/components/stripe_payments/stripe_connect_callback_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_products_dialog_test.dart": {
+      "kind": "environment",
+      "reason": "Actual ProductsDialog separates immutable Stripe product edits from authorized admission/refund and update-email controls.",
+      "sources": [
+        "test/components/stripe_payments/stripe_products_dialog_test.dart"
+      ]
+    },
+    "test/components/forms/form_validation_test.dart": {
+      "kind": "environment",
+      "reason": "Actual Czech form settings/editor widgets and public form holders; validates draft repair and persisted decimal duration.",
+      "sources": [
+        "test/components/forms/form_validation_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_creation_recovery_test.dart": {
+      "kind": "environment",
+      "reason": "Actual occasion creation dialog with isolated HTTP backend; validates conflict and corrected retry.",
+      "sources": [
+        "test/components/occasion/occasion_creation_recovery_test.dart"
+      ]
+    },
+    "test/components/dialogs/responsive_search_empty_test.dart": {
+      "kind": "environment",
+      "reason": "Actual shared participant search dialog empty and no-match states.",
+      "sources": [
+        "test/components/dialogs/responsive_search_empty_test.dart"
+      ]
+    },
+    "test/services/batch_progress_dialog_test.dart": {
+      "kind": "environment",
+      "reason": "Actual batch progress dialog; validates truthful mixed outcomes and retry exclusions.",
+      "sources": [
+        "test/services/batch_progress_dialog_test.dart"
+      ]
+    },
+    "test/components/qa/program_qa_regression_test.dart": {
+      "kind": "environment",
+      "reason": "Program QA regressions exercise real routed app bars, form widgets and the cached DbSpeakers root Supabase client with a Czech catalog; isolate the root client from other sessions.",
+      "sources": [
+        "test/components/qa/program_qa_regression_test.dart"
+      ]
+    },
+    "test/components/eshop/ticket_batch_commands_test.dart": {
+      "kind": "environment",
+      "reason": "Actual durable client command transport and Supabase exception adapter; verifies stable identity, recovery and validation before persisted intent.",
+      "sources": [
+        "test/components/eshop/ticket_batch_commands_test.dart"
+      ]
+    },
+    "test/components/eshop/ticket_batch_print_downloads_test.dart": {
+      "kind": "environment",
+      "reason": "Actual Material batch download menu in a narrow viewport; verifies compact layout and the packed A4 PDF versus individual PDF ZIP choices.",
+      "sources": [
+        "test/components/eshop/ticket_batch_print_downloads_test.dart"
+      ]
+    }
+  }
+}

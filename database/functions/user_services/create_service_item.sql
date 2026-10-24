@@ -1,19 +1,9 @@
-CREATE OR REPLACE FUNCTION public.create_service_item(
-  oc BIGINT,
-  type TEXT,
-  code TEXT,
-  title TEXT,
-  reference BIGINT
-)
-RETURNS JSONB
-LANGUAGE plpgsql
--- SECURITY DEFINER: the function self-gates on get_is_manager_on_occasion below,
--- then writes occasions.services. The occasions RLS write policy only allows org
--- admins, so as INVOKER a plain manager's UPDATE silently matches 0 rows (no error)
--- and the item is never saved. DEFINER lets the manager-gated write bypass RLS.
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.create_service_item_internal_v1(oc bigint, type text, code text, title text, reference bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   existing_codes JSONB;
   new_service_item JSONB;
@@ -65,4 +55,17 @@ BEGIN
     'message', 'Service item created successfully'
   );
 END;
-$$;
+$function$
+;
+REVOKE ALL ON FUNCTION public.create_service_item_internal_v1(bigint,text,text,text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.create_service_item(oc bigint, type text, code text, title text, reference bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
+BEGIN RETURN public.create_service_item_client_sync_v1(
+  oc,type,code,title,reference,extensions.gen_random_uuid())->'data'; END; $function$
+;
+REVOKE ALL ON FUNCTION public.create_service_item(bigint,text,text,text,bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.create_service_item(bigint,text,text,text,bigint) TO authenticated;

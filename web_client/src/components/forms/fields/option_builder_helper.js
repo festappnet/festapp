@@ -1,3 +1,5 @@
+import { WaitlistStrings } from '../waitlist_strings.js';
+import { html, sanitizeHtml } from '../../../utils/html.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { FormStrings } from '../form_strings.js';
 import { FeatureService, DEFAULT_META_SURCHARGE_CURRENCY } from '../../features/feature_service.js';
@@ -23,7 +25,7 @@ export class OptionBuilderHelper {
     static buildFieldLabel(field) {
         const label = document.createElement('label');
         label.className = 'form-field-label';
-        label.innerHTML = `${field.title || ''}${field.isRequired ? '<span class="required-star">*</span>' : ''}`;
+        label.innerHTML = html`${field.title || ''}${field.isRequired ? html`<span class="required-star">*</span>` : ''}`;
         return label;
     }
 
@@ -33,7 +35,7 @@ export class OptionBuilderHelper {
     static buildFieldDescription(field) {
         const desc = document.createElement('div');
         desc.className = 'form-field-description';
-        desc.innerHTML = field.description;
+        desc.innerHTML = sanitizeHtml(field.description);
         return desc;
     }
 
@@ -57,10 +59,11 @@ export class OptionBuilderHelper {
         input.value = (opt.id !== undefined && opt.id !== null) ? opt.id : opt.title;
         input.id = `${field.id}_${(opt.id !== undefined && opt.id !== null) ? opt.id : opt.title}`;
         input.className = 'form-check-input';
+        input.disabled = opt.isAvailable === false;
 
         // Apply default selection from field.data.default_value (radio: string, checkbox: list of strings).
         // Matches by option title or id.
-        if (OptionBuilderHelper.shouldPreselect(field, opt, inputType)) {
+        if (!input.disabled && OptionBuilderHelper.shouldPreselect(field, opt, inputType)) {
             input.checked = true;
         }
 
@@ -83,11 +86,12 @@ export class OptionBuilderHelper {
         optLabel.className = 'form-check-label';
         optLabel.htmlFor = input.id;
 
-        let labelContent = `<span>${opt.title || ''}</span>`;
+        let labelContent = html`<span>${opt.title || ''}</span>`;
         if (opt.price) {
-            const priceDisplay = formatPrice(opt.price, currency, 0, 'cs-CZ');
-            labelContent += `<span class="option-price">+ ${priceDisplay}</span>`;
+            const priceDisplay = formatPrice(opt.price, currency, Number.isInteger(Number(opt.price)) ? 0 : 2, LocalizationService.currentLocale);
+            labelContent = html`${labelContent}<span class="option-price">+ ${priceDisplay}</span>`;
         }
+        if (input.disabled) labelContent = html`${labelContent} (${WaitlistStrings.text('PRODUCT_CAPACITY_EXCEEDED')})`;
         optLabel.innerHTML = labelContent;
 
         // Content wrapper with label + optional deposit/description
@@ -114,19 +118,19 @@ export class OptionBuilderHelper {
             const optDesc = document.createElement('span');
             optDesc.className = 'option-description';
 
-            let descHtml = '';
+            let descHtml = html``;
             // Order: deposit (bold) → meta surcharge → original description
             if (hasDeposit) {
                 const depositPrice = formatPrice(depositData.amount, currency, 0, 'cs-CZ');
-                descHtml += `<span class="deposit-info">${FormStrings.depositInfo}: ${depositPrice}</span>`;
-                if (metaSurchargeHtml || opt.description) descHtml += '<br>';
+                descHtml = html`${descHtml}<span class="deposit-info">${FormStrings.depositInfo}: ${depositPrice}</span>`;
+                if (metaSurchargeHtml || opt.description) descHtml = html`${descHtml}<br>`;
             }
             if (metaSurchargeHtml) {
-                descHtml += metaSurchargeHtml;
-                if (opt.description) descHtml += '<br>';
+                descHtml = html`${descHtml}${sanitizeHtml(metaSurchargeHtml)}`;
+                if (opt.description) descHtml = html`${descHtml}<br>`;
             }
             if (opt.description) {
-                descHtml += opt.description;
+                descHtml = html`${descHtml}${sanitizeHtml(opt.description)}`;
             }
 
             optDesc.innerHTML = descHtml;
@@ -169,12 +173,16 @@ export class OptionBuilderHelper {
         const sign = amount < 0 ? '− ' : '+ ';
         const amountText = `${sign}${formatPrice(Math.abs(amount), currency, 0, locale)}`;
         const body = description ? `${amountText} — ${description}` : amountText;
-        return `<span class="meta-surcharge">${body}</span>`;
+        return html`<span class="meta-surcharge">${body}</span>`.toString();
     }
 
     static shouldPreselect(field, opt, inputType) {
+        if (inputType === 'checkbox' && field.value !== undefined && field.value !== null) {
+            const values = Array.isArray(field.value) ? field.value : String(field.value).split(' | ');
+            return values.some(value => String(value) === String(opt.id ?? opt.title) || value === opt.title);
+        }
         // Existing answer (field.value) takes precedence — defaults only apply to fresh forms.
-        if (inputType === 'radio' && field.value !== undefined && field.value !== null && field.value !== '') {
+        if (inputType === 'radio' && field.value !== undefined && field.value !== null) {
             return false;
         }
         const def = field && field.data && field.data.default_value;

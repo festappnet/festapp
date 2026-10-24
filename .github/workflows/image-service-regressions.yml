@@ -1,0 +1,33 @@
+name: Image service regressions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
+      - name: Install image test dependencies
+        working-directory: workers/image-worker
+        run: pnpm install --frozen-lockfile
+      - name: Verify every active origin, project and authorization contract
+        working-directory: workers/image-worker
+        run: pnpm run typecheck && pnpm run test:unit
+      - name: Verify production deployment probe regressions
+        run: node --test automation/tests/image_service_preflight.test.mjs

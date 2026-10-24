@@ -1,0 +1,300 @@
+{
+  "native": {
+    "tables": [
+      {
+        "id": "0c13157c-0205-487b-b99a-09e18aa826a5",
+        "surface": "grid",
+        "material": "wood",
+        "childSeatMaterial": "wood",
+        "seatCount": 64
+      },
+      {
+        "id": "0cb694ae-ec9d-4aa0-a0cc-e64a975d1347",
+        "surface": "circle",
+        "material": "wood",
+        "childSeatMaterial": "wood",
+        "seatCount": 6
+      },
+      {
+        "id": "987c46f9-aa9a-4ff2-b99d-3ee66b26ab14",
+        "surface": "rect",
+        "material": "wood",
+        "childSeatMaterial": "wood",
+        "seatCount": 6
+      },
+      {
+        "id": "c3f5dde7-a08c-4069-9319-6ca98c35732c",
+        "surface": "circle",
+        "material": "wood",
+        "childSeatMaterial": "wood",
+        "seatCount": 6
+      },
+      {
+        "id": "d73c35d9-e681-4781-a235-10ddecfdf650",
+        "surface": "rect",
+        "material": "wood",
+        "childSeatMaterial": "wood",
+        "seatCount": 6
+      }
+    ],
+    "canonicalCapacity": {
+      "collisionPairs": [],
+      "tables": [
+        {
+          "id": "0c13157c-0205-487b-b99a-09e18aa826a5",
+          "surface": {
+            "holes": [],
+            "moduleSize": 100,
+            "outer": [
+              [
+                0,
+                2
+              ],
+              [
+                8,
+                2
+              ],
+              [
+                8,
+                0
+              ],
+              [
+                9,
+                0
+              ],
+              [
+                9,
+                2
+              ],
+              [
+                13,
+                2
+              ],
+              [
+                13,
+                12
+              ],
+              [
+                5,
+                12
+              ],
+              [
+                5,
+                11
+              ],
+              [
+                12,
+                11
+              ],
+              [
+                12,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                5,
+                6
+              ],
+              [
+                4,
+                6
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                0,
+                3
+              ]
+            ],
+            "type": "grid"
+          },
+          "capacity": 64,
+          "actualSeats": 64
+        },
+        {
+          "id": "0cb694ae-ec9d-4aa0-a0cc-e64a975d1347",
+          "surface": {
+            "type": "circle"
+          },
+          "capacity": 9,
+          "actualSeats": 6
+        },
+        {
+          "id": "987c46f9-aa9a-4ff2-b99d-3ee66b26ab14",
+          "surface": {
+            "type": "rect"
+          },
+          "capacity": 10,
+          "actualSeats": 6
+        },
+        {
+          "id": "c3f5dde7-a08c-4069-9319-6ca98c35732c",
+          "surface": {
+            "type": "circle"
+          },
+          "capacity": 9,
+          "actualSeats": 6
+        },
+        {
+          "id": "d73c35d9-e681-4781-a235-10ddecfdf650",
+          "surface": {
+            "type": "rect"
+          },
+          "capacity": 10,
+          "actualSeats": 6
+        }
+      ]
+    },
+    "nativeButton": {
+      "increments": 6,
+      "disabled": "true"
+    },
+    "totalSeats": 88
+  },
+  "capacity": {
+    "collisionPairs": [],
+    "tables": [
+      {
+        "id": "0c13157c-0205-487b-b99a-09e18aa826a5",
+        "surface": {
+          "holes": [],
+          "moduleSize": 100,
+          "outer": [
+            [
+              0,
+              2
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              9,
+              0
+            ],
+            [
+              9,
+              2
+            ],
+            [
+              13,
+              2
+            ],
+            [
+              13,
+              12
+            ],
+            [
+              5,
+              12
+            ],
+            [
+              5,
+              11
+            ],
+            [
+              12,
+              11
+            ],
+            [
+              12,
+              3
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              0,
+              3
+            ]
+          ],
+          "type": "grid"
+        },
+        "capacity": 64,
+        "actualSeats": 64
+      },
+      {
+        "id": "0cb694ae-ec9d-4aa0-a0cc-e64a975d1347",
+        "surface": {
+          "type": "circle"
+        },
+        "capacity": 9,
+        "actualSeats": 6
+      },
+      {
+        "id": "987c46f9-aa9a-4ff2-b99d-3ee66b26ab14",
+        "surface": {
+          "type": "rect"
+        },
+        "capacity": 10,
+        "actualSeats": 6
+      },
+      {
+        "id": "c3f5dde7-a08c-4069-9319-6ca98c35732c",
+        "surface": {
+          "type": "circle"
+        },
+        "capacity": 9,
+        "actualSeats": 6
+      },
+      {
+        "id": "d73c35d9-e681-4781-a235-10ddecfdf650",
+        "surface": {
+          "type": "rect"
+        },
+        "capacity": 10,
+        "actualSeats": 6
+      }
+    ]
+  },
+  "decode": "both MP4 PASS",
+  "processCleanup": "owned browser and55907 server closed; Flutter finished",
+  "files": {
+    "web/organizers-media/layout-grid.mp4": {
+      "sha256": "6edbd47ab83848443954ad7d908770ef33323e10f60f3a171a5ae37d137c1b0b",
+      "bytes": 1173171
+    },
+    "web/organizers-media/layout-grid.jpg": {
+      "sha256": "a529cabae8dc032da0df9940a0eada887c93ca90853a5e463276a8cd05b91ce0",
+      "bytes": 48401
+    },
+    "web/organizers-media/layout-grid.webp": {
+      "sha256": "74bd035bd6ba60c53e06b3660d4cd6c2562dc1e032bc39b4f0ce93534ace20b2",
+      "bytes": 51176
+    },
+    "web/organizers-media/layout-grid-mobile.mp4": {
+      "sha256": "aa502dcf030810ad466c54fb4cc23f76fe949dc45e7ea1ae60040277ff54fe03",
+      "bytes": 663949
+    },
+    "web/organizers-media/layout-grid-mobile.jpg": {
+      "sha256": "bd5ceb42aa0bd822697617078cfe8f21bee0d532c0207600afe5cd200fbc5786",
+      "bytes": 33030
+    },
+    "web/organizers-media/layout-grid-mobile.webp": {
+      "sha256": "1379d6b9f523cd31117b677f33f6c62f559c824ce76ace987f3b9e7264badc6a",
+      "bytes": 33864
+    }
+  }
+}

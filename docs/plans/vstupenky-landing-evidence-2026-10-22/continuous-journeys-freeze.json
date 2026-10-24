@@ -1,0 +1,96 @@
+{
+  "manifestSHA256": "e2d111c8b2d91f6df02e70d321a2717b86279ef8bd9071f37dcbf962494dc8b5",
+  "changedMP4OwnerDecode": "8/8PASS",
+  "manifestDimensionsDurations": "8/8PASS",
+  "manifestPosterDecode": "8/8PASS",
+  "artifacts": [
+    {
+      "asset": "web/organizers-media/layout-build.mp4",
+      "sha256": "9942cc8d9358bfe9afaf9e3bedea49cbb4b4f37d6082b1b20d0eaf69992699a2"
+    },
+    {
+      "asset": "web/organizers-media/layout-build.jpg",
+      "sha256": "817b2e49702875ee124a145deee1a88f5b794b394630a26ae2f2be70f7649faa"
+    },
+    {
+      "asset": "web/organizers-media/layout-build-mobile.mp4",
+      "sha256": "b9dd5794d6dc93761f1b3e73283ba98bf10f70a24f306e81bb81d1d71f044f9b"
+    },
+    {
+      "asset": "web/organizers-media/layout-build-mobile.jpg",
+      "sha256": "84ba2e18962c0a66b3cfb063ea8837c40995a6c93a610b423111c484402441cf"
+    },
+    {
+      "asset": "web/organizers-media/form-build.mp4",
+      "sha256": "44029ee71f80c17a4675a7235dd72c905da64f2b8841cbfae5dc01813533f575"
+    },
+    {
+      "asset": "web/organizers-media/form-build.webp",
+      "sha256": "1a78d9961a4650630beb600f3970755261e89e0b04b821857c80455c1926dac5"
+    },
+    {
+      "asset": "web/organizers-media/form-build-mobile.mp4",
+      "sha256": "fc149f17bce84288c314711e34e46a518dd808d056e1b22fdfdacf8c0646ded2"
+    },
+    {
+      "asset": "web/organizers-media/form-build-mobile.webp",
+      "sha256": "0135f98a10e966b5cb88080f6ecfa2f3d9e85c73902d3b0e0f7a3f1143d75d88"
+    },
+    {
+      "asset": "web/organizers-media/seat-select.mp4",
+      "sha256": "6e03af9a9951ddfb629d064d468bb709617974512acafa116de911d0da46538d"
+    },
+    {
+      "asset": "web/organizers-media/seat-select.jpg",
+      "sha256": "cdf1b4bbe679c667310e89b121cd632a45135e4ed3e2eb52794d18616519115b"
+    },
+    {
+      "asset": "web/organizers-media/seat-select-mobile.mp4",
+      "sha256": "6e03af9a9951ddfb629d064d468bb709617974512acafa116de911d0da46538d"
+    },
+    {
+      "asset": "web/organizers-media/seat-select-mobile.jpg",
+      "sha256": "cdf1b4bbe679c667310e89b121cd632a45135e4ed3e2eb52794d18616519115b"
+    },
+    {
+      "asset": "web/organizers-media/check-in.mp4",
+      "sha256": "c5d50d9bd12630a407e6c39acb7cd6ddaecd06a591aa00b4e4d1cf13f866af62"
+    },
+    {
+      "asset": "web/organizers-media/check-in.webp",
+      "sha256": "3fca4044a8c5cceeb7d195c425152077c84212d9bdb53d5de7ca4936754bb896"
+    },
+    {
+      "asset": "web/organizers-media/check-in-mobile.mp4",
+      "sha256": "0e9894ff2e207791ef2fe7e433c90248b3dff75a1cad93e64b0660daa36de284"
+    },
+    {
+      "asset": "web/organizers-media/check-in-mobile.webp",
+      "sha256": "8f9b26882a9edbbff7efbf595e9e97be18ec54013de58520b540f6aa7dac7d48"
+    }
+  ],
+  "builderMatte": [
+    {
+      "asset": "web/organizers-media/form-build.mp4",
+      "configuredMatte": "#ebf1f6",
+      "decodedEdgeRGB": [
+        234,
+        241,
+        245
+      ],
+      "decode": "pass",
+      "method": "Native UI scaled proportionally inside at least12px editorial pad; no pixel key or UI recolor"
+    },
+    {
+      "asset": "web/organizers-media/form-build-mobile.mp4",
+      "configuredMatte": "#ebf1f6",
+      "decodedEdgeRGB": [
+        234,
+        241,
+        245
+      ],
+      "decode": "pass",
+      "method": "Native UI scaled proportionally inside at least12px editorial pad; no pixel key or UI recolor"
+    }
+  ]
+}

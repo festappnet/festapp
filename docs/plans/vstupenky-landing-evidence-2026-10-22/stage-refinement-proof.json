@@ -1,0 +1,53 @@
+{
+  "layout-build": {
+    "frames": 1124,
+    "redWarningCandidates": [],
+    "duration": 37.466667,
+    "width": 1140,
+    "height": 828,
+    "mobileWidth": 820,
+    "mobileHeight": 824
+  },
+  "layout-refine": {
+    "frames": 638,
+    "redWarningCandidates": [],
+    "duration": 21.266667,
+    "width": 1140,
+    "height": 828,
+    "mobileWidth": 820,
+    "mobileHeight": 824
+  },
+  "finalRefinedCounts": {
+    "tables": 15,
+    "seats": 132
+  },
+  "hashes": {
+    "web/organizers-media/layout-build.jpg": "8d768618ae17991b35e86f6659e5ec2c9589605068a16427e2d63be3f2e16e98",
+    "web/organizers-media/layout-build-mobile.jpg": "03d06d38c30f71b6667e50e89cef99baafff6f74a92c50fc184140b4f6412037",
+    "web/organizers-media/layout-build-mobile.webp": "ef1f66da70a67002b2efbeb099673fa0f80323050fd0f8d31a77f88ea4df5003",
+    "web/organizers-media/layout-build-mobile.mp4": "3662fc8b757321f741ae8198f21a436f292369c6d42315e7c8f8dea432d985e3",
+    "web/organizers-media/layout-build.mp4": "ba320669ade6c28d51dc432291885d81e163b8abf28cbfec082ebe72dd935ccd",
+    "web/organizers-media/layout-build.webp": "fb01b4338f542b90c95177e9af593966dcb47297de83f6317bb0fc7ecb727423",
+    "web/organizers-media/layout-refine.mp4": "0de775622d6f718461e6b4ab0a59a8128b9559d81f0d52beb48d10f515aa08db",
+    "web/organizers-media/layout-refine-mobile.mp4": "a39228921321bdcaf9938ea583a05eb4b42303c43f2189f3461f5d036c80a4a0",
+    "web/organizers-media/layout-refine.jpg": "a4a05fd51edb6d9cf9df524cba5e8d8e169686065eaf0b1155b961f4e0df212f",
+    "web/organizers-media/layout-refine-mobile.jpg": "784e33d875647aa36b6a737656d8a83bbed9eb5d842896b3735ccea4bdaf7389",
+    "web/organizers-media/layout-refine.webp": "10c0ed0250971e5f0d25052f09dcc5faaaf013d1a30730ae93f1bc444d92bae8",
+    "web/organizers-media/layout-refine-mobile.webp": "774a98cdeb753fdbca36eba867de554ac968962cd07e9c38f196371cf40560e8",
+    "web/organizers-media/seat-select.jpg": "ac4627b25365c058fce91b0e8b7fff6b54babd2761d19a84823b88b9384803c4",
+    "web/organizers-media/seat-select-mobile.jpg": "ac4627b25365c058fce91b0e8b7fff6b54babd2761d19a84823b88b9384803c4",
+    "web/organizers-media/seat-select-mobile.mp4": "cc086c8dde100f035b9c856b9493888778497eeea9af11c92aa1574350a666a0",
+    "web/organizers-media/seat-select.mp4": "cc086c8dde100f035b9c856b9493888778497eeea9af11c92aa1574350a666a0",
+    "web/organizers-media/seat-select-mobile.webp": "63ce58a021d5e3263dff399ca3126dcf474d10ba00b75dec7ef878bffef5d475",
+    "web/organizers-media/seat-select.webp": "63ce58a021d5e3263dff399ca3126dcf474d10ba00b75dec7ef878bffef5d475",
+    "web/organizers-media/form-build-mobile.mp4": "05a6882f57ae3923f7faa91eaad709dfd67347af622eb816be222a991aeaed52",
+    "web/organizers-media/form-build-mobile.webp": "4a6389fe0d337c908d624c1245ba74c6e4a1169b4078ff894ee84f81978314e9",
+    "web/organizers-media/form-build.jpg": "27061e66ca937589a5cf9933d564ef08c086b1356a4bc6e0e8aa921d30d054a5",
+    "web/organizers-media/form-build-mobile.jpg": "fa14510c3f30eb8841ab431b69c7b098786990aebfa33e4ecd9942ee60e728be",
+    "web/organizers-media/form-build.webp": "38b19f7b27d39d58d63770347a580d1dbd42a3e7a9bb4ea1299997390dc2c787",
+    "web/organizers-media/form-build.mp4": "5e79ad00427cab4d9e34847419a097e777492146d5847caa6bb44529586b02cf",
+    "web/organizers-media/ticket-ball.jpg": "a2ec0d28a7e9d5925b7bae7fbce8f9603c874818ddaa1e1a4a289869c96e1f2e",
+    "web/organizers-media/layout-modern.jpg": "cdfd3fb78c02b80f00366ead9c327b9c8497c9cd5c247077dcfa65bb90d69cb2",
+    "web/organizers-media/layout-scout.jpg": "c650ae7ab8a16cd5ea4ae61dd431de7ce80f36c4bf9a2d58078f19c01adf0736"
+  }
+}

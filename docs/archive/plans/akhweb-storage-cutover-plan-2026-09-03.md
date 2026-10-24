@@ -42,7 +42,7 @@ the legacy `images-temp` runtime path.
 
 - Production Auth, data migration and deployment require standard verification.
 - Preserve source objects as rollback evidence; do not delete them during this
-  cutover (`docs/operations/supabase-self-hosted/storage-authority.md`).
+  cutover (`docs/archive/operations/supabase-self-hosted/storage-authority.md`).
 - Keep AKH's existing `uploadImageAction` / `deleteImages` application
   interfaces; their internal HTTP target changes to `image-api.festapp.net`.
 - Preserve object keys inside the dedicated R2 bucket.

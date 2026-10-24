@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checkout confirmation transition fixture</title>
+<link rel="stylesheet" href="/src/theme_config.css">
+<link rel="stylesheet" href="/src/embed.css">
+<div id="form-page-container"><form><p style="height:1400px">Synthetic checkout form</p><button type="button" id="review">Review test order</button></form></div>
+<script type="module">
+import {FormPage} from '/src/components/forms/form_page.js';
+import {FormNetwork} from '/src/components/forms/form_network.js';
+import {OrderPreview} from '/src/components/forms/order_preview.js';
+import {EmbedBridge} from '/src/services/embed_bridge.js';
+import {LocalizationService} from '/src/services/localization_service.js';
+const delay=Number(new URLSearchParams(location.search).get('delay')||0);
+history.replaceState(null,'','/form/result-transition?embed=1');
+LocalizationService.translations=await (await fetch('/assets/translations/en.json')).json();
+LocalizationService.currentLocale='en';
+const bridge=new EmbedBridge();bridge.start();
+addEventListener('festapp-embed-step',event=>bridge.scrollTo(event.detail.element,{block:event.detail.block}));
+const page=new FormPage('form-page-container');
+page.currentSession={payload:{form:'synthetic-result'}};
+page.cleanup=()=>{};
+page.renderForm=()=>{};
+// Freeze only the transport boundary: this fixture never creates an order.
+FormNetwork.submitOrder=async()=>{
+ await new Promise(resolve=>setTimeout(resolve,delay));
+ return {success:true,data:{code:200,ticketOrder:{order:{order_symbol:'TEST-RESULT',data:{email:'scroll@example.invalid'}}},
+  payment_qr:{amount:120,currency_code:'CZK',reference_kind:'VS',reference:'123',account_number_human_readable:'Synthetic test account',payload:''}}};
+};
+const fields=Array.from({length:6},(_,i)=>({id:i+1,type:'text',title:'Order answer '+(i+1)}));
+const ticket={id:100,type:'ticket',subFields:[]};
+const model={visibleFields:[...fields,ticket],relatedFields:[...fields,ticket],communicationTone:'formal',occasionFeatures:[{code:'ticket',is_enabled:true}]};
+document.querySelector('#review').onclick=()=>OrderPreview.show(document.querySelector('form'),model,
+ {totalPrice:120,currency:'CZK'},overlay=>page.submitOrder(document.querySelector('form'),model,overlay),()=>{},
+ {fields:fields.map(field=>({[field.id]:'Synthetic answer with sufficient content for a long summary'})),ticket:[{spot:1,spotName:'A1',spotPrice:120,fields:[]}]});
+</script></html>

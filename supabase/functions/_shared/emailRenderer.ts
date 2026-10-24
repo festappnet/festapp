@@ -1,6 +1,6 @@
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
-import { supabaseAdmin } from "./supabaseUtil.ts";
-import { prepareTicketRenderer } from "./ticketGeneration.ts";
+import { paidEmailSubstitutions } from "./paidEmailContent.ts";
+import { escapeTicketText, prepareTicketDelivery } from "./ticketDelivery.ts";
 import { getTicketOrderConfirmationTemplate } from "../send-email/getTicketOrderConfirmationTemplate.ts";
 import { getTicketOrderReminderTemplate } from "../send-email/getTicketOrderReminderTemplate.ts";
 import { getTicketOrderPaidTemplate } from "../send-email/getTicketOrderPaidTemplate.ts";
@@ -8,6 +8,7 @@ import { getTicketOrderUpdateTemplate } from "../send-email/getTicketOrderUpdate
 import { getTicketOrderStornoTemplate } from "../send-email/getTicketOrderStornoTemplate.ts";
 import { safeClickTracking } from "./emailTracking.ts";
 import { emailRpc } from "./emailQueueClient.ts";
+import { renderWaitlistEmail } from "./waitlistEmailRenderer.ts";
 export type EmailRow = {
   message_id: string;
   message_kind: string;
@@ -25,36 +26,25 @@ export type EmailRow = {
 export async function renderQueuedEmail(
   row: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
+  if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
+    return await renderWaitlistEmail(row);
+  }
   if (row.message_kind === "order_tickets") {
     const result = await emailRpc("get_order_details_for_email", {
       p_order_id: row.order_id,
     });
     if (result.code !== 200) throw new Error("ticket_order_unavailable");
     const { order, occasion, reply_to } = result.data;
-    const tickets =
-      (await emailRpc("get_tickets_with_details", { order_id: row.order_id }))
-        .filter((t: any) => t.state !== "storno");
-    if (!tickets.length) throw new Error("ticket_set_empty");
-    const enabled = occasion.features?.some((f: any) =>
-      f.code === "ticket" && f.is_enabled
+    const subs = paidEmailSubstitutions(result.data, row.data?.lang);
+    const delivery = await prepareTicketDelivery(
+      occasion,
+      order.data,
+      await emailRpc("get_tickets_with_details", { order_id: row.order_id }),
+      async (...args) => {
+        const { prepareTicketRenderer } = await import("./ticketGeneration.ts");
+        return await prepareTicketRenderer(...args);
+      },
     );
-    const attachments = [];
-    if (enabled) {
-      const render = await prepareTicketRenderer(
-        occasion,
-        tickets[0],
-        order.data,
-      );
-      for (const ticket of tickets) {
-        const { bytes } = await render(ticket);
-        attachments.push({
-          filename: `ticket_${ticket.ticket_symbol}.pdf`,
-          content: bytes,
-          contentType: "application/pdf",
-          encoding: "binary",
-        });
-      }
-    }
     return {
       prepared: await renderEmail({
         to: row.recipient,
@@ -64,12 +54,21 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol },
+        subjectSubstitutions: {
+          occasionTitle: occasion.title,
+          orderSymbol: order.order_symbol,
+        },
+        substitutions: {
+          ...subs,
+          occasionTitle: escapeTicketText(occasion.title),
+          orderSymbol: escapeTicketText(order.order_symbol),
+        },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
-        attachments,
+        attachments: delivery.attachments,
+        ticketBlock: delivery.html,
       }),
-      postAction: { ticket_ids: tickets.map((t: any) => t.id) },
+      postAction: { ticket_ids: delivery.tickets.map((t: any) => t.id) },
     };
   }
   const handlers: Record<string, any> = {

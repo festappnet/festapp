@@ -1,64 +1,17 @@
--- Places — move a place to new coordinates from the map.
--- SECURITY DEFINER because the permission model here is wider than the plain
--- RLS UPDATE policy on public.places (editors only): a group admin may also move
--- the place assigned to their own group. A direct PostgREST UPDATE from such a
--- group admin would silently hit 0 rows (RLS filters it out) yet return 200, so
--- the client would think the move succeeded when it did not. All validation and
--- the write happen here. Envelope {code, message, data} like report_cleaning_issue.
---
--- Only saveLocation goes through this RPC; the other place writes (grid CRUD)
--- keep their direct editor-only RLS path — see DbPlaces / database/policies.
-CREATE OR REPLACE FUNCTION public.save_place_location(
-  p_place_id bigint,
-  p_lat double precision,
-  p_lng double precision
-) RETURNS jsonb
-  LANGUAGE plpgsql
-  VOLATILE
-  SECURITY DEFINER
-  SET search_path = public, extensions
-AS $$
-DECLARE
-  v_user uuid := auth.uid();
-  v_occasion bigint;
+CREATE OR REPLACE FUNCTION public.save_place_location(p_place_id bigint,p_lat double precision,p_lng double precision)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE oc bigint; ver bigint; r jsonb;
 BEGIN
-  IF v_user IS NULL THEN
-    RETURN jsonb_build_object('code', 401, 'message', 'Sign in is required to move a place');
-  END IF;
+ IF auth.uid() IS NULL THEN RETURN jsonb_build_object('code',401); END IF;
+ SELECT occasion INTO oc FROM public.places WHERE id=p_place_id;
+ PERFORM public.lock_group_place_scope_internal_v1(oc,p_place_id);
+ IF oc IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
+ SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
+ ON v.aggregate_type='place' AND v.scope_type='occasion' AND v.scope_id=oc AND v.aggregate_id=p_place_id::text;
+ r:=public.move_place_client_sync_v1(oc,p_place_id,extensions.gen_random_uuid(),ver,p_lat,p_lng);
+ RETURN jsonb_build_object('code',r->'code','data',jsonb_build_object('id',p_place_id));
+EXCEPTION WHEN insufficient_privilege THEN RETURN jsonb_build_object('code',403);
+END $$;
 
-  SELECT occasion INTO v_occasion FROM public.places WHERE id = p_place_id;
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('code', 404, 'message', 'Place not found');
-  END IF;
-
-  -- Editor on the place's occasion, OR admin of a group whose assigned place is
-  -- exactly this one and is a private hidden group point. A group may also link
-  -- to a shared catalog place; that link must never grant permission to move it.
-  IF NOT (
-    get_is_editor_on_occasion(v_occasion)
-    OR EXISTS (
-      SELECT 1
-      FROM public.user_groups ug
-      JOIN public.user_group_info ugi ON ugi.id = ug."group"
-      JOIN public.places p ON p.id = ugi.place
-      WHERE ug."user" = v_user
-        AND ug.is_admin
-        AND ugi.place = p_place_id
-        AND p.type = 'group'
-        AND p.is_hidden
-    )
-  ) THEN
-    RETURN jsonb_build_object('code', 403, 'message', 'You cannot change this place');
-  END IF;
-
-  UPDATE public.places
-  SET coordinates = jsonb_build_object(
-        'latLng', jsonb_build_object('lat', p_lat, 'lng', p_lng))
-  WHERE id = p_place_id;
-
-  RETURN jsonb_build_object(
-    'code', 200,
-    'data', jsonb_build_object('id', p_place_id)
-  );
-END;
-$$;
+REVOKE ALL ON FUNCTION public.save_place_location(bigint,double precision,double precision) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.save_place_location(bigint,double precision,double precision) TO authenticated;

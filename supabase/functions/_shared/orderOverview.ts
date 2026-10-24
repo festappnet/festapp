@@ -6,7 +6,8 @@ import {
   MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
-export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string): string {
+export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
+    const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
 
     const tr = {
@@ -19,6 +20,8 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ticket: "Vstupenka",
             application: "Přihláška",
             itemNote: "Poznámka",
+            table: "Stůl",
+            seat: "Místo",
             totalPrice: "Celková cena",
         },
         en: {
@@ -30,6 +33,8 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ticket: "Ticket",
             application: "Application",
             itemNote: "Note",
+            table: "Table",
+            seat: "Seat",
             totalPrice: "Total Price",
         }
     }[lang];
@@ -79,7 +84,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const meta = extractMetaSurcharge(product, depositFeature?.deposit_mode);
         if (!meta) return null;
         metaSurchargeAmounts.push(meta);
-        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, formatCurrency);
+        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, currencyFormat);
         return metaSurchargeDescription
             ? `${amountText} — ${metaSurchargeDescription}`
             : amountText;
@@ -89,9 +94,14 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const productsRows = ticket.products.map((product: any) => {
             const price = Number(product.price || 0);
             overallTotal += price;
-            const formattedPrice = formatCurrency(price, product.currency_code || currencyCode);
+            const formattedPrice = currencyFormat(price, product.currency_code || currencyCode);
 
-            const title = product.spot_title || product.title;
+            const escape = (value: unknown) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+            const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escape).join(': ');
+            const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
+                .filter(([, value]) => value != null && String(value).trim() !== '')
+                .map(([label, value]) => `${label}: ${escape(value)}`).join(' · ');
+            const seatingHtml = seating ? `<div style="margin-top: 4px; font-weight: 600;">${seating}</div>` : '';
 
             const rowStyle = 'style="border-bottom: 1px solid #e2e8f0;"';
 
@@ -102,7 +112,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
 
             return `
                 <tr ${rowStyle}>
-                    <td style="padding: 12px 0; vertical-align: top;">${product.type_title}: ${title}</td>
+                    <td style="padding: 12px 0; vertical-align: top;">${title}${seatingHtml}</td>
                     <td style="padding: 12px 0; text-align: right; white-space: nowrap; vertical-align: bottom; padding-left: 16px;"><strong>${formattedPrice}</strong></td>
                 </tr>${metaRow}`;
         }).join("");
@@ -127,12 +137,12 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     }).join("");
 
     // --- 3. Total Price ---
-    const formattedOverallTotal = formatCurrency(overallTotal, currencyCode);
+    const formattedOverallTotal = currencyFormat(overallTotal, currencyCode);
 
     // Per-currency meta surcharge sums (visual-only, NOT included in overallTotal).
     // Renders as separate lines under Total Price, one per currency.
     const metaSumLines = aggregateMetaSurchargeSums(metaSurchargeAmounts).map(
-        ({ currency, sum }) => formatSignedMetaSurcharge(sum, currency, formatCurrency),
+        ({ currency, sum }) => formatSignedMetaSurcharge(sum, currency, currencyFormat),
     );
     const metaSumHtml = metaSumLines.length > 0
         ? `<div style="margin-top: 4px;">

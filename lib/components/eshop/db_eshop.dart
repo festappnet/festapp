@@ -1,10 +1,11 @@
-import 'models/product_price_wave.dart';
-import 'models/order_change_summary.dart';
-import 'models/report_exchange_rates.dart';
-import 'package:fstapp/components/eshop/models/occasion_report_model.dart';
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
+import 'package:festapp_core/sync.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
+import 'package:fstapp/components/eshop/supabase_eshop_commands.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
@@ -13,21 +14,17 @@ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/models/transaction_model.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../inventory/models/product_inventory_context_model.dart';
-
 class DbEshop {
   static final _supabase = Supabase.instance.client;
-  static EshopCommands get _commands => SupabaseEshopCommands(_supabase);
+  static EshopCommands get commands => SupabaseEshopCommands(_supabase);
 
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
       int orderId) async {
@@ -186,7 +183,7 @@ class DbEshop {
         products.map((p) => {'id': p.id, 'price': p.price}).toList();
 
     if (ClientSyncRuntime.isV1Selected) {
-      return _commands.updateTicketProducts(ticketId, productsJson);
+      return commands.updateTicketProducts(ticketId, productsJson);
     }
 
     // Directly return the Future. The calling code will handle success or exceptions.
@@ -195,29 +192,6 @@ class DbEshop {
       params: {
         'p_ticket_id': ticketId,
         'p_products': productsJson,
-      },
-    );
-  }
-
-  static Future<void> updateProductInventoryContexts(
-      int productId, List<ProductInventoryContextModel> contexts) async {
-    final contextsJson = contexts
-        .map((c) => {
-              'inventory_context_id': c.inventoryContextId,
-              'quantity': c.quantity
-            })
-        .toList();
-
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.updateProductInventoryContexts(productId, contextsJson);
-      return;
-    }
-
-    await _supabase.rpc(
-      'update_product_inventory_contexts',
-      params: {
-        'p_product_id': productId,
-        'p_contexts': contextsJson,
       },
     );
   }
@@ -246,41 +220,36 @@ class DbEshop {
         .map((pc) => ProductInventoryContextModel.fromJson(pc))
         .toList();
     final forms =
-        (response['forms'] as List).map((f) => FormModel.fromJson(f)).toList();
+        (response['forms'] as List).map((f) => FormBundle.fromJson(f)).toList();
 
     // Create lookup maps for efficient joins
-    final typesMap = {for (var t in types) t.id: t};
     final poolsMap = {for (var p in pools) p.id: p};
     final contextsMap = {for (var c in contexts) c.id: c};
-    final formsMap = {for (var form in forms) form.id: form.toString()};
+    final formsMap = {
+      for (var form in forms) form.definition.id: form.toString()
+    };
 
     // Join inventory pools to inventory contexts
     for (var context in contexts) {
       context.inventoryPool = poolsMap[context.inventoryPoolId];
     }
 
-    // Join inventory contexts to the link table models
-    for (var link in productContextLinks) {
-      link.inventoryContext = contextsMap[link.inventoryContextId];
-    }
-
     // Group inventory links by product ID
     final productLinksMap =
         groupBy(productContextLinks, (link) => link.productId);
 
-    // Join all data to the final product models
-    for (var product in products) {
-      product.priceServerTime = DateTime.parse(response['server_time']).toUtc();
-      product.priceClockOffset =
-          product.priceServerTime!.difference(DateTime.now().toUtc());
-      product.productType = typesMap[product.productTypeId];
-      product.includedInventories = (productLinksMap[product.id] ?? [])
-          .where((link) => link.inventoryContext != null)
-          .toList();
-
-      // Populate the formTitles string for each product
-      product.formTitles =
-          product.formIds.map((id) => formsMap[id]).map((f) => f).join(', ');
+    final serverTime = DateTime.parse(response['server_time']).toUtc();
+    final clockOffset = serverTime.difference(DateTime.now().toUtc());
+    for (var index = 0; index < products.length; index++) {
+      final product = products[index];
+      products[index] = product.copyWith(
+        priceServerTime: serverTime,
+        priceClockOffset: clockOffset,
+        includedInventories: (productLinksMap[product.id] ?? [])
+            .where((link) => contextsMap.containsKey(link.inventoryContextId))
+            .toList(),
+        formTitles: product.formIds.map((id) => formsMap[id]).join(', '),
+      );
     }
 
     products.sort((a, b) {
@@ -311,6 +280,32 @@ class DbEshop {
             'p_occasion_link': link,
             'p_change_time': time.toUtc().toIso8601String()
           }));
+  static Future<void> saveNewProductWaveTarget(
+      String occasionLink,
+      ProductPriceWave wave,
+      int productId,
+      double? price,
+      bool? hidden,
+      int? priceRevision,
+      int? visibilityRevision) async {
+    final response = ClientCommandResponse.from(
+        await ClientCommandTransport.supabase(_supabase, durable: true)
+            .invoke('save_product_wave_target_client_sync_v1', {
+      'p_target': {
+        'occasion_link': occasionLink,
+        'product_id': productId,
+        'change_time': wave.time.toUtc().toIso8601String(),
+        'price': price,
+        'is_hidden': hidden,
+        'expected_price_revision': priceRevision,
+        'expected_visibility_revision': visibilityRevision,
+      }
+    }));
+    if (response.code != 200)
+      throw StateError('Product wave target was rejected');
+    await applyClientCommandReplacements(response);
+  }
+
   static Future<void> saveProductWaveTarget(
       ProductPriceWave wave,
       int productId,
@@ -364,25 +359,21 @@ class DbEshop {
     });
   }
 
-  static Future<int> updateProduct(ProductModel product) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      return _commands.saveProduct(product.toJson());
-    }
-    return await _supabase.rpc(
-      'update_product',
-      params: {'p_input': product},
-    );
-  }
-
-  static Future<void> deleteProduct(int productId) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.deleteProduct(productId);
-      return;
-    }
-    await _supabase.rpc(
-      'delete_product',
-      params: {'p_product_id': productId},
-    );
+  static Future<ProductModel> saveProductBasics(ProductModel product) async {
+    final saved = await commands.saveProduct({
+      'id': product.id,
+      'title': product.title,
+      'price': product.price,
+      if (product.id == null) ...{
+        'product_type': product.productTypeId,
+        'occasion': product.occasion,
+        'currency_code': product.currencyCode,
+      },
+      if (product.id != null)
+        'expected_aggregate_version': product.aggregateVersion,
+    });
+    return product.copyWith(
+        id: saved.id, aggregateVersion: saved.aggregateVersion);
   }
 
   /// Fetches all resources associated with a specific inventory pool ID.
@@ -390,9 +381,7 @@ class DbEshop {
       int inventoryPoolId) async {
     try {
       final response = await _supabase.rpc(
-        ClientSyncRuntime.isV1Selected
-            ? 'get_resources_for_inventory_pool_v1'
-            : 'get_resources_for_inventory_pool',
+        'get_resources_for_inventory_pool_v1',
         params: {'p_inventory_pool_id': inventoryPoolId},
       );
 
@@ -415,10 +404,12 @@ class DbEshop {
 // DATA MODELS
 
 class GetTransactionsForOrderResponse {
+  final String? orderState;
   final PaymentInfoModel? paymentInfo;
   final List<TransactionModel> transactions;
 
   GetTransactionsForOrderResponse({
+    this.orderState,
     required this.paymentInfo,
     required this.transactions,
   });
@@ -444,6 +435,7 @@ class GetTransactionsForOrderResponse {
     }
 
     return GetTransactionsForOrderResponse(
+      orderState: json['order_state'] as String?,
       paymentInfo: json['payment_info'] != null
           ? PaymentInfoModel.fromJson(json['payment_info'])
           : null,
@@ -490,7 +482,8 @@ class TicketDetailsBundle {
 
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
-      changes: OrderChangeSummary.fromJson(Map<String, dynamic>.from(json['order_changes'])),
+      changes: OrderChangeSummary.fromJson(
+          Map<String, dynamic>.from(json['order_changes'])),
       ticket: TicketModel.fromJson(json['ticket']),
       order: OrderModel.fromJson(json['order']),
       paymentInfo: json['payment_info'] != null

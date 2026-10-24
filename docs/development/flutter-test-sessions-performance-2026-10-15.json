@@ -1,0 +1,676 @@
+{
+  "date": "2026-10-15",
+  "memoryBudgetBytes": 3000000000,
+  "previousProfiles": {
+    "previous76": {
+      "sourceSha256": "c3fbcc28272c9170acc2983d33204575251ed3557711e58b341ed7f07d3c1ef8",
+      "concurrency": 3,
+      "medianSeconds": 76.93059208302293,
+      "laneMedianSeconds": {
+        "core": 3.4279579169815406,
+        "adapters": 3.54288191703381,
+        "flutter": 73.13787375000538
+      },
+      "targets": {
+        "wholeUnder40s": false,
+        "coreUnder5s": true,
+        "memoryUnder3GB": true
+      },
+      "runs": [
+        {
+          "seconds": 76.93059208302293,
+          "peakSummedRssBytes": 2661548032,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            4.36767578125,
+            5.05517578125,
+            4.5576171875
+          ],
+          "loadAverageEnd": [
+            4.390625,
+            4.9287109375,
+            4.552734375
+          ]
+        },
+        {
+          "seconds": 76.09861595800612,
+          "peakSummedRssBytes": 2606415872,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            4.390625,
+            4.9287109375,
+            4.552734375
+          ],
+          "loadAverageEnd": [
+            3.791015625,
+            4.64306640625,
+            4.47314453125
+          ]
+        },
+        {
+          "seconds": 81.46515791700222,
+          "peakSummedRssBytes": 2545418240,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            3.791015625,
+            4.64306640625,
+            4.47314453125
+          ],
+          "loadAverageEnd": [
+            5.8662109375,
+            5.08935546875,
+            4.65576171875
+          ]
+        }
+      ]
+    },
+    "environmentSessions21": {
+      "sourceSha256": "4dfa3c2384007a370f1ac56501abacad1fa68defefebb59179b0d7af883aa869",
+      "concurrency": 2,
+      "medianSeconds": 42.963682542031165,
+      "laneMedianSeconds": {
+        "core": 2.438608666008804,
+        "adapters": 2.157847166992724,
+        "flutter": 37.07204254204407
+      },
+      "targets": {
+        "wholeUnder40s": false,
+        "coreUnder5s": true,
+        "memoryUnder3GB": true
+      },
+      "runs": [
+        {
+          "seconds": 40.278173208003864,
+          "peakSummedRssBytes": 2788343808,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            3.212890625,
+            3.0576171875,
+            3.2822265625
+          ],
+          "loadAverageEnd": [
+            3.53271484375,
+            3.15869140625,
+            3.3076171875
+          ]
+        },
+        {
+          "seconds": 42.963682542031165,
+          "peakSummedRssBytes": 2456027136,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            3.53271484375,
+            3.15869140625,
+            3.3076171875
+          ],
+          "loadAverageEnd": [
+            5.05712890625,
+            3.603515625,
+            3.4619140625
+          ]
+        },
+        {
+          "seconds": 49.23414041695651,
+          "peakSummedRssBytes": 2297905152,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            5.05712890625,
+            3.603515625,
+            3.4619140625
+          ],
+          "loadAverageEnd": [
+            4.76806640625,
+            3.69091796875,
+            3.4970703125
+          ]
+        }
+      ]
+    },
+    "overlappedPreparation21": {
+      "sourceSha256": "a624682f8d70f49621acb5d9c90a19fa10ee7b5590cc2908245afeaede8fc31d",
+      "concurrency": 2,
+      "medianSeconds": 47.34292566700606,
+      "laneMedianSeconds": {
+        "core": 3.3150818750145845,
+        "adapters": 3.169595292012673,
+        "flutter": 42.239632458018605
+      },
+      "targets": {
+        "wholeUnder40s": false,
+        "coreUnder5s": true,
+        "memoryUnder3GB": true
+      },
+      "runs": [
+        {
+          "seconds": 39.266240749973804,
+          "peakSummedRssBytes": 2110341120,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            5.3505859375,
+            4.037109375,
+            3.6396484375
+          ],
+          "loadAverageEnd": [
+            6.2412109375,
+            4.53515625,
+            3.84521484375
+          ]
+        },
+        {
+          "seconds": 47.34292566700606,
+          "peakSummedRssBytes": 2320400384,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            6.2412109375,
+            4.53515625,
+            3.84521484375
+          ],
+          "loadAverageEnd": [
+            5.30126953125,
+            4.54150390625,
+            3.88525390625
+          ]
+        },
+        {
+          "seconds": 61.07058104197495,
+          "peakSummedRssBytes": 2067709952,
+          "inputsUnchanged": true,
+          "success": true,
+          "loadAverageStart": [
+            5.30126953125,
+            4.54150390625,
+            3.88525390625
+          ],
+          "loadAverageEnd": [
+            6.57958984375,
+            4.9638671875,
+            4.08154296875
+          ]
+        }
+      ]
+    }
+  },
+  "latestSingleVerification": {
+    "command": [
+      "./automation/test_client.sh"
+    ],
+    "seconds": 29.92089379101526,
+    "peakOwnedRssBytesIncludingWatcher": 2520006656,
+    "budgetBytes": 3000000000,
+    "budgetExceeded": false,
+    "exitCode": 0,
+    "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+    "inputsUnchanged": true,
+    "scope": "One complete verification after the three dependency cuts; not a benchmark median",
+    "runner": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 2.676007915986702,
+        "testSeconds": 2.282,
+        "cases": 154,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 33
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 2.4580397909739986,
+        "testSeconds": 1.943,
+        "cases": 78,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 25.844940292066894,
+        "testSeconds": 25.153,
+        "cases": 1082,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 10
+      },
+      "mode": "all",
+      "concurrency": 2,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 29.8736432089936
+    }
+  },
+  "webCompile": {
+    "command": [
+      "fvm",
+      "flutter",
+      "build",
+      "web",
+      "--release",
+      "--base-href",
+      "/",
+      "--no-web-resources-cdn",
+      "--no-wasm-dry-run",
+      "--no-pub"
+    ],
+    "seconds": 45.388515915954486,
+    "peakOwnedRssBytesIncludingWatcher": 2681503744,
+    "budgetBytes": 3000000000,
+    "budgetExceeded": false,
+    "exitCode": 0,
+    "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+    "inputsUnchanged": true
+  },
+  "dependencyCut": {
+    "genericThemeAppFilesBefore": 693,
+    "genericThemeAppFilesAfter": 3,
+    "editorActionBarAppFilesBefore": 693,
+    "editorActionBarAppFilesAfter": 7,
+    "method": "AST import/export/part closure including conditional branches; application files only",
+    "sameArm64SdkConfirmed": true
+  },
+  "baseline": {
+    "originallyRecordedCases": 1249,
+    "correctedCases": 1250,
+    "reason": "An existing real widget test named loading is visible was incorrectly filtered as synthetic discovery. Original reporter test id 1434, root line 75 proves execution. The baseline was tightened by adding that existing case; no old case was removed."
+  },
+  "latestCases": 1314,
+  "originalBaselineAccountedFor": 1250,
+  "addedCases": 64,
+  "skipped": 1,
+  "flutterRootsBefore": 76,
+  "flutterRootsAfter": 10,
+  "newCliContractTestsPassed": 12,
+  "applicationVersion": "0.20.1+485",
+  "existingDependencyVersionChanges": {},
+  "repeatedBenchmarkAfterLastProductionCut": false,
+  "reasonNoMoreRepeatedRuns": "User requested no repeated benchmark loops. Each coherent production cut received one complete verification; prior single runs and medians retain their source identities. Latest single run is below 40 seconds, but a stable median below 40 seconds is unproven.",
+  "previousSingleVerifications": [
+    {
+      "scope": "One complete verification run after production theme dependency cut; not a repeated benchmark median",
+      "seconds": 50.59660024999175,
+      "peakOwnedRssBytesIncludingWatcher": 2681454592,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "05169629607f4cf7a0ee69478063c958cea9b65af4d4273cd94a6b2cebb9b705",
+      "inputsUnchanged": true,
+      "runner": {
+        "architectureSuccess": true,
+        "core": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.918560084013734,
+          "testSeconds": 2.409,
+          "cases": 147,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32
+        },
+        "adapters": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.837408083025366,
+          "testSeconds": 1.903,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25
+        },
+        "flutter": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 45.72038454102585,
+          "testSeconds": 44.644,
+          "cases": 1075,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 22
+        },
+        "mode": "all",
+        "concurrency": 2,
+        "schedule": "Dart+VM then Flutter",
+        "inventorySuccess": true,
+        "success": true,
+        "seconds": 50.49216712504858
+      }
+    },
+    {
+      "scope": "One complete verification after grid contracts, labels and command adapter separation; not a benchmark median",
+      "seconds": 38.2901539169834,
+      "peakOwnedRssBytesIncludingWatcher": 2610184192,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "2d80fb6b6da91ef8b734ca1991a25b277fbb69a05ecdba7ffabefbd964393cf9",
+      "inputsUnchanged": true,
+      "runner": {
+        "architectureSuccess": true,
+        "core": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.737180916010402,
+          "testSeconds": 2.275,
+          "cases": 148,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32
+        },
+        "adapters": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.4617268330184743,
+          "testSeconds": 1.811,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25
+        },
+        "flutter": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 34.0819129999727,
+          "testSeconds": 33.209,
+          "cases": 1075,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 22
+        },
+        "mode": "all",
+        "concurrency": 2,
+        "schedule": "Dart+VM then Flutter",
+        "inventorySuccess": true,
+        "success": true,
+        "seconds": 38.193212750018574
+      }
+    },
+    {
+      "scope": "One complete verification after sharing larger compatible test environments; not a benchmark median",
+      "seconds": 35.22519558301428,
+      "peakOwnedRssBytesIncludingWatcher": 2414133248,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "f94579ba88092314239fc5e7eef43bf0a6c2cae090f50872b8bd2a3d836d3f61",
+      "inputsUnchanged": true,
+      "runner": {
+        "architectureSuccess": true,
+        "core": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.7060698329587467,
+          "testSeconds": 2.243,
+          "cases": 148,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32
+        },
+        "adapters": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.634832209034357,
+          "testSeconds": 1.886,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25
+        },
+        "flutter": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 30.836116457998287,
+          "testSeconds": 30.098,
+          "cases": 1075,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 15
+        },
+        "mode": "all",
+        "concurrency": 2,
+        "schedule": "Dart+VM then Flutter",
+        "inventorySuccess": true,
+        "success": true,
+        "seconds": 35.13886679202551
+      }
+    },
+    {
+      "scope": "One complete verification after consolidating SDK and public locale groups into 10 Flutter roots; not a benchmark median",
+      "seconds": 34.951519957976416,
+      "peakOwnedRssBytesIncludingWatcher": 2444197888,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "1d9c4429ea100263ceddac37289724e9ecd0539f4206baf49323907b655942ff",
+      "inputsUnchanged": true,
+      "runner": {
+        "architectureSuccess": true,
+        "core": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 3.0180901660351083,
+          "testSeconds": 2.428,
+          "cases": 148,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32
+        },
+        "adapters": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 2.890039167017676,
+          "testSeconds": 2.03,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25
+        },
+        "flutter": {
+          "exitCode": 0,
+          "success": true,
+          "seconds": 30.30816179100657,
+          "testSeconds": 29.567,
+          "cases": 1075,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 10
+        },
+        "mode": "all",
+        "concurrency": 2,
+        "schedule": "Dart+VM then Flutter",
+        "inventorySuccess": true,
+        "success": true,
+        "seconds": 34.899634708010126
+      }
+    }
+  ],
+  "gridContractCut": {
+    "productGridRecordAppFilesBefore": 694,
+    "productGridRecordAppFilesAfter": 12,
+    "eachCommandContractAppFilesBefore": 694,
+    "eachCommandContractAppFilesAfter": 1,
+    "canonicalColumnIdentifiers": 68,
+    "contextSelectedGettersMoved": 9,
+    "method": "AST import/export/part closure including conditional branches; application files only",
+    "preservation": {
+      "eshopImplementationPreserved": true,
+      "formImplementationPreserved": true,
+      "eventImplementationPreserved": true,
+      "columnIdentifiersPreserved": true,
+      "columnIdentifierCount": 68,
+      "appVersion": "0.20.1+485",
+      "appVersionEqualsHead": true,
+      "existingPackageVersionsChanged": [],
+      "existingPackageVersionsChecked": 322
+    }
+  },
+  "latestFlutterTiming": {
+    "summedLoadingWorkerSeconds": 15.1,
+    "summedBodyWorkerSeconds": 33.91,
+    "meanOccupiedSlots": 1.95,
+    "slots": 2
+  },
+  "previousWebCompiles": [
+    {
+      "command": [
+        "fvm",
+        "flutter",
+        "build",
+        "web",
+        "--release",
+        "--base-href",
+        "/",
+        "--no-web-resources-cdn",
+        "--no-wasm-dry-run",
+        "--no-pub"
+      ],
+      "seconds": 46.806655665975995,
+      "peakOwnedRssBytesIncludingWatcher": 2453782528,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0
+    },
+    {
+      "scope": "Local release web compilation after grid contracts and command adapter separation; no deploy",
+      "seconds": 46.60524300002726,
+      "peakOwnedRssBytesIncludingWatcher": 2698297344,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "2d80fb6b6da91ef8b734ca1991a25b277fbb69a05ecdba7ffabefbd964393cf9",
+      "inputsUnchanged": true,
+      "command": [
+        "fvm",
+        "flutter",
+        "build",
+        "web",
+        "--release",
+        "--base-href",
+        "/",
+        "--no-web-resources-cdn",
+        "--no-wasm-dry-run",
+        "--no-pub"
+      ]
+    }
+  ],
+  "sharedEnvironmentConsolidation": {
+    "previousRoots": 22,
+    "currentRoots": 15,
+    "productionCodeChanged": false,
+    "movedRootsWithByteIdenticalBodies": 11,
+    "sharedDefaultSessions": 3,
+    "sharedActualCzechSessions": 1,
+    "reverseVerification": {
+      "scope": "Reverse order verification of four consolidated environment sessions",
+      "seconds": 23.03863058402203,
+      "peakOwnedRssBytesIncludingWatcher": 2217066496,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "f94579ba88092314239fc5e7eef43bf0a6c2cae090f50872b8bd2a3d836d3f61",
+      "inputsUnchanged": true,
+      "semanticCases": 1018,
+      "passed": 1018,
+      "failed": 0
+    },
+    "groups": {
+      "test/sessions/shared_default_1_test.dart": [
+        "test/sessions/default_locale_1_test.dart",
+        "test/widgets/widgets_test.dart",
+        "test/sessions/visual_primitives_test.dart",
+        "test/services/auth_session_storage_test.dart"
+      ],
+      "test/sessions/shared_default_2_test.dart": [
+        "test/sessions/default_locale_3_test.dart",
+        "test/sessions/default_locale_2_test.dart"
+      ],
+      "test/sessions/shared_default_3_test.dart": [
+        "test/sessions/default_locale_4_test.dart",
+        "test/sessions/default_locale_5_test.dart"
+      ],
+      "test/sessions/shared_czech_test.dart": [
+        "test/sessions/czech_catalog_3_test.dart",
+        "test/sessions/czech_catalog_2_test.dart",
+        "test/sessions/czech_catalog_1_test.dart"
+      ]
+    }
+  },
+  "targetWholeUnder30sEstablished": true,
+  "webCompileAppliesTo": "Same final source SHA as complete client verification; three dependency cuts; no deploy.",
+  "sdkAndLocaleConsolidation": {
+    "previousRoots": 15,
+    "currentRoots": 10,
+    "productionCodeChanged": false,
+    "movedRootsWithByteIdenticalBodies": 8,
+    "groups": {
+      "test/sessions/shared_sdk_widgets_test.dart": [
+        "test/components/bank_accounts/bank_adapter_fixture_test.dart",
+        "test/components/bank_accounts/unit_bank_accounts_add_test.dart",
+        "test/components/html/html_media_upload_contract_test.dart",
+        "test/components/news/news_page_render_test.dart"
+      ],
+      "test/sessions/shared_legacy_commands_test.dart": [
+        "test/components/information/information_save_legacy_reader_test.dart",
+        "test/components/schedule/event_commands_test.dart"
+      ],
+      "test/sessions/shared_locale_matrix_test.dart": [
+        "test/sessions/czech_key_fallback_test.dart",
+        "test/components/users/google_login_panel_test.dart"
+      ]
+    },
+    "reverseVerification": {
+      "scope": "Reverse order verification of SDK widget, disjoint command and public locale groups",
+      "seconds": 8.775092667026911,
+      "peakOwnedRssBytesIncludingWatcher": 2329051136,
+      "budgetBytes": 3000000000,
+      "budgetExceeded": false,
+      "exitCode": 0,
+      "sourceSha256": "dc0185b819d6316626276421a0d0247c7b8e9ba8f163d418331c25cd15dc6568",
+      "inputsUnchanged": true,
+      "semanticCases": 50,
+      "passed": 50,
+      "failed": 0
+    },
+    "boundary": "Original SDK groups own sequential root scopes; legacy command groups capture disjoint services. Locale groups load their own public widget roots. Shared auth/rights cached services remain process isolated.",
+    "timingInterpretation": "One whole run 34.90s versus previous 35.14s; difference too small to establish a material speedup amid previous timing variability."
+  },
+  "previousFlutterTimings": [
+    {
+      "summedLoadingWorkerSeconds": 18.8,
+      "summedBodyWorkerSeconds": 38.54,
+      "meanOccupiedSlots": 1.94,
+      "slots": 2
+    }
+  ],
+  "stableMedianWholeUnder30sEstablished": false,
+  "dependencyCuts": {
+    "receipt": "docs/development/flutter-test-dependency-cuts-results-2026-10-15.json",
+    "sourceSha256": "27ae9d7b7f60acb3680f22bd6be49aaa29c6fa4f78638add1d60aac96ca9807c",
+    "wholeCommandSingleSeconds": 29.92089379101526,
+    "rawFeatureClosureBefore": 699,
+    "rawFeatureClosureAfter": 711,
+    "featureClosureAtAppConfigSeamAfter": 31,
+    "coreCommandParserAppFiles": 0,
+    "remainingRouterPath": "Feature -> FormFeature -> AppConfig -> AdminPage -> OccasionAdministrationBoundary -> AppRouter. Fixing AppConfig composition remains outside this plan."
+  },
+  "appConfigRouterCut": {
+    "receipt": "docs/development/flutter-app-config-router-cut-results-2026-10-15.json",
+    "sourceSha256": "2dfaceb4984b7b5fb51293a040941557d5a66906cf00cc8a01d503125f444245",
+    "fullFeatureAppClosureBefore": 711,
+    "fullFeatureAppClosureAfter": 33,
+    "routerReachable": false,
+    "appConfigGuardExemptionRemoved": true,
+    "targetedFlutterPassed": 68,
+    "fullBenchmarkRepeated": false,
+    "previousFullRunRemainsHistoricalForItsOwnSha": true
+  }
+}

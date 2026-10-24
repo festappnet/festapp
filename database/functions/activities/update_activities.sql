@@ -1,12 +1,9 @@
-CREATE OR REPLACE FUNCTION public.update_activities(
-    p_occasion_id BIGINT,
-    p_activities_data JSONB
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.update_activities_internal_v1(p_occasion_id bigint, p_activities_data jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
 DECLARE
     activity_json RECORD;
     assignment_json_record RECORD;
@@ -176,4 +173,14 @@ EXCEPTION
     WHEN others THEN
         RETURN jsonb_build_object('code', 500, 'message', 'Error saving activities: ' || SQLERRM || '. Details: ' || SQLSTATE);
 END;
+$function$
+
+;
+REVOKE ALL ON FUNCTION public.update_activities_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+-- Released two-call publication cannot preserve an atomic history/assignment boundary.
+-- Rollout requires upgrading those clients before this definition is activated.
+CREATE OR REPLACE FUNCTION public.update_activities(p_occasion_id bigint,p_activities_data jsonb)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT jsonb_build_object('code',426,'message','Upgrade required: publish_activities_client_sync_v1');
 $$;
+REVOKE ALL ON FUNCTION public.update_activities(bigint,jsonb) FROM PUBLIC,anon,authenticated;

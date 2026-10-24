@@ -35,6 +35,7 @@ BEGIN
     INSERT INTO public.forms (title, link, occasion, key)
     VALUES ('Test Form Delete', v_form_link, v_occasion_id, gen_random_uuid())
     RETURNING id INTO v_form_id;
+    PERFORM public.reserve_public_link_internal('form',v_form_id,v_form_link,true);
 
     -- 3. Check can_delete = true (initially)
     v_full_json := get_form_for_edit(v_form_link);

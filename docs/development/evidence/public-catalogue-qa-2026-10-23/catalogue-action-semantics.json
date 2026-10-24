@@ -1,0 +1,18 @@
+[
+  {
+    "label": null,
+    "outer": "<i class=\"material-icons settings-icon-btn\">settings</i>",
+    "role": null,
+    "tabIndex": -1,
+    "tag": "I",
+    "text": "settings"
+  },
+  {
+    "label": null,
+    "outer": "<div id=\"fab-button\" class=\"fab-button\">\n                <i class=\"material-icons\" id=\"fab-icon\">chat_bubble</i>\n            </div>",
+    "role": null,
+    "tabIndex": -1,
+    "tag": "DIV",
+    "text": "chat_bubble"
+  }
+]

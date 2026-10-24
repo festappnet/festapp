@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -47,7 +48,7 @@ class SupabaseProfileCommands implements ProfileCommands {
     if (response.code != 200) {
       throw StateError('Occasion membership was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 
   @override
@@ -56,7 +57,7 @@ class SupabaseProfileCommands implements ProfileCommands {
       'import_users_from_tickets_client_sync_v1',
       {'p_occasion': occasionId},
     ));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return response.data;
   }
 
@@ -117,7 +118,7 @@ class SupabaseProfileCommands implements ProfileCommands {
       String name, Map<String, dynamic> parameters) async {
     final response =
         ClientCommandResponse.from(await _transport.invoke(name, parameters));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return ProfileCommandResult(
       status: ProfileCommandStatus.values.byName(response.status),
       version: (response.data['version'] as num?)?.toInt() ?? 0,

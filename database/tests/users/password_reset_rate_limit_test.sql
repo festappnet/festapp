@@ -4,16 +4,17 @@ DECLARE
 BEGIN
   PERFORM set_config('request.jwt.claim.role','anon',true);
   PERFORM assert_false(
-    public.consume_password_reset_rate_limit_v1(v_key,2,900),
+    public.consume_password_reset_rate_limit_v1(v_key,3,900),
     'anonymous callers cannot consume the privileged password reset limiter'
   );
 
   PERFORM set_config('request.jwt.claim.role','service_role',true);
-  PERFORM assert_true(public.consume_password_reset_rate_limit_v1(v_key,2,900),'first attempt passes');
-  PERFORM assert_true(public.consume_password_reset_rate_limit_v1(v_key,2,900),'second attempt passes');
-  PERFORM assert_false(public.consume_password_reset_rate_limit_v1(v_key,2,900),'third attempt is limited');
+  PERFORM assert_true(public.consume_password_reset_rate_limit_v1(v_key,3,900),'first attempt passes');
+  PERFORM assert_true(public.consume_password_reset_rate_limit_v1(v_key,3,900),'second attempt passes');
+  PERFORM assert_true(public.consume_password_reset_rate_limit_v1(v_key,3,900),'third attempt passes');
+  PERFORM assert_false(public.consume_password_reset_rate_limit_v1(v_key,3,900),'fourth attempt is limited');
   PERFORM assert_false(
-    public.consume_password_reset_rate_limit_v1('invalid',2,900),
+    public.consume_password_reset_rate_limit_v1('invalid',3,900),
     'invalid limiter keys fail closed'
   );
   PERFORM assert_true(NOT has_function_privilege(

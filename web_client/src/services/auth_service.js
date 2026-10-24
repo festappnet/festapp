@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { SupabaseService } from './supabase_service.js';
 import { AppConfig } from '../app_config.js';
 import { RightsService } from './rights_service.js';
@@ -25,7 +26,7 @@ export class AuthService {
     static async logout() {
         await SupabaseService.getClient().auth.signOut();
         // Clear local data if needed
-        localStorage.removeItem(SupabaseService.tokenKey);
+        browserStorage.removeItem(SupabaseService.tokenKey);
         // Reset Rights
         // (RightsService usually listens to auth state changes, but we force it here too)
         await RightsService.updateAppData(); 
@@ -58,7 +59,9 @@ export class AuthService {
         
         // The edge function usually returns { code: 200, ... } or throws error
         if (responseData && responseData.code !== 200) {
-             throw new Error(responseData.message || "Registration failed");
+             const registrationError = new Error(responseData.message || responseData.error || "Registration failed");
+             registrationError.code = responseData.code;
+             throw registrationError;
         }
 
         return responseData;
@@ -105,11 +108,6 @@ export class AuthService {
             throw error;
         }
         return data; // Returns { code: 200, email: "..." } or error code
-    }
-
-    static async isLoggedIn() {
-        const { data, error } = await SupabaseService.getClient().auth.getSession();
-        return !error && !!data?.session;
     }
 
     static async completeExternalLogin(result) {

@@ -3,9 +3,9 @@ CREATE OR REPLACE FUNCTION public.initialize_registration_unit_v1(p_user uuid,p_
 RETURNS bigint LANGUAGE plpgsql SET search_path=public,extensions AS $$
 DECLARE v_unit bigint;
 BEGIN
+  PERFORM public.admit_unit_creation_v1(p_user,p_organization);
   INSERT INTO public.units(title,organization,data) VALUES(p_title,p_organization,jsonb_build_object('reply_to',lower(btrim(p_raw_email)),'timezone','Europe/Prague')) RETURNING id INTO v_unit;
   INSERT INTO public.unit_users(unit,"user",is_manager,is_editor,is_editor_view) VALUES(v_unit,p_user,true,true,true);
   RETURN v_unit;
 END $$;
-REVOKE ALL ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;

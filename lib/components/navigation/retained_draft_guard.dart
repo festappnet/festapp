@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -176,15 +177,17 @@ class _NavigationDraftBoundaryState extends State<NavigationDraftBoundary> {
     if (widget.confirm != null) return widget.confirm!();
     return await showDialog<bool>(
             context: context,
-            builder: (context) =>
-                AlertDialog(title: Text(HtmlStrings.discardDraft), actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(CommonStrings.storno)),
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(CommonStrings.ok)),
-                ])) ==
+            builder: (context) => AppAlertDialog(
+                    onClose: () => Navigator.pop(context, false),
+                    title: Text(HtmlStrings.discardDraft),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text(CommonStrings.storno)),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(CommonStrings.ok)),
+                    ])) ==
         true;
   }
 

@@ -57,26 +57,6 @@ ALTER TABLE public.external_login_attempts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.external_login_clients,public.external_login_identities,public.external_login_attempts FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.external_login_clients,public.external_login_identities,public.external_login_attempts TO service_role;
 
-CREATE TABLE IF NOT EXISTS public.external_login_rate_limits (
-  key_hash text PRIMARY KEY, window_start timestamptz NOT NULL, hits integer NOT NULL
-);
-ALTER TABLE public.external_login_rate_limits ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.external_login_rate_limits FROM PUBLIC,anon,authenticated;
-GRANT ALL ON public.external_login_rate_limits TO service_role;
-CREATE OR REPLACE FUNCTION public.google_auth_rate_limit_v1(p_key text,p_limit integer)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_hits integer;
-BEGIN
-  PERFORM public.require_service_role();
-  IF p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION 'invalid_limit'; END IF;
-  INSERT INTO public.external_login_rate_limits VALUES(p_key,clock_timestamp(),1)
-  ON CONFLICT(key_hash) DO UPDATE SET
-    hits=CASE WHEN external_login_rate_limits.window_start < clock_timestamp()-interval '1 minute' THEN 1 ELSE external_login_rate_limits.hits+1 END,
-    window_start=CASE WHEN external_login_rate_limits.window_start < clock_timestamp()-interval '1 minute' THEN clock_timestamp() ELSE external_login_rate_limits.window_start END
-  RETURNING hits INTO v_hits;
-  RETURN v_hits<=p_limit;
-END $$;
-
 CREATE OR REPLACE FUNCTION public.google_auth_resolve_account_v1(p_organization bigint,p_raw_email text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_users uuid[];
@@ -202,16 +182,8 @@ BEGIN
   RETURN to_jsonb(a)||jsonb_build_object('redirectUri',c.redirect_uri,'origin',c.origin);
 END $$;
 
-CREATE OR REPLACE FUNCTION public.cleanup_external_login_v1()
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  DELETE FROM public.external_login_attempts WHERE expires_at<clock_timestamp();
-  DELETE FROM public.existing_user_session_leases WHERE expires_at<clock_timestamp();
-  DELETE FROM public.external_login_rate_limits WHERE window_start<clock_timestamp()-interval '1 hour';
-END $$;
-REVOKE ALL ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text),public.google_auth_rate_limit_v1(text,integer),public.cleanup_external_login_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text),public.google_auth_rate_limit_v1(text,integer),public.cleanup_external_login_v1() TO service_role;
+REVOKE ALL ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.invalidate_external_login_for_user_v1(p_user uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

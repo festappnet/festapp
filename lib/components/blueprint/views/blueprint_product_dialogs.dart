@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
@@ -82,7 +83,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           // Get details from an existing spot product
           final existingProduct = _spotProducts.first;
 
-          final newProduct = ProductModel(
+          var newProduct = ProductModel(
             title: newTitle,
             price: newPrice,
             currencyCode: existingProduct.currencyCode,
@@ -92,8 +93,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           );
 
           // Call DB to create, get new ID
-          final newId = await DbEshop.updateProduct(newProduct);
-          newProduct.id = newId;
+          newProduct = await DbEshop.saveProductBasics(newProduct);
 
           setState(() {
             widget.blueprint.products ??= [];
@@ -109,14 +109,16 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           final originalProduct = widget.blueprint.products
               ?.firstWhereOrNull((p) => p.id == product.id);
           if (originalProduct != null) {
-            originalProduct.title = newTitle;
-            originalProduct.price = newPrice;
+            var updatedProduct =
+                originalProduct.copyWith(title: newTitle, price: newPrice);
             // productTypeId and productTypeString are not changing
 
             // Call DB to update
-            await DbEshop.updateProduct(originalProduct);
+            updatedProduct = await DbEshop.saveProductBasics(updatedProduct);
 
             setState(() {
+              final index = widget.blueprint.products!.indexOf(originalProduct);
+              widget.blueprint.products![index] = updatedProduct;
               // Refresh local list
               _spotProducts = widget.blueprint.spotProducts;
               _sortProducts();
@@ -135,7 +137,8 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(BlueprintStrings.selectProduct),
       content: SizedBox(
         width: 500, // Make it a bit wider
@@ -227,7 +230,8 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(widget.isCreating
           ? BlueprintStrings.createProduct
           : BlueprintStrings.editProduct),
@@ -445,7 +449,8 @@ class _GroupProductManagerDialogState extends State<GroupProductManagerDialog> {
     final Color warningColor =
         ThemeConfig.isDarkMode(context) ? Colors.orangeAccent : Colors.orange;
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       title: Text(
           "${BlueprintStrings.manageGroupProducts}: ${widget.group.title}"),
@@ -621,10 +626,6 @@ class _GroupProductManagerDialogState extends State<GroupProductManagerDialog> {
               ],
             ),
           ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.close),
-        ),
       ],
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
     );

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/news/news_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -18,61 +17,22 @@ class DbNews {
   static final _supabase = Supabase.instance.client;
   static final NewsCommands _commands = SupabaseNewsCommands(_supabase);
   static Future<void> deleteNewsMessage(NewsModel message) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result =
-          await _commands.delete(RightsService.currentOccasionId()!, message);
-      if (result.status == NewsCommandStatus.conflict) {
-        throw StateError('News was changed by another editor');
-      }
-      if (result.status == NewsCommandStatus.rejected) {
-        throw StateError('News delete was rejected');
-      }
-      return;
+    final result =
+        await _commands.delete(RightsService.currentOccasionId()!, message);
+    if (result.status == NewsCommandStatus.conflict) {
+      throw StateError('News was changed by another editor');
     }
-    var lastMes = await _supabase
-        .from(Tb.news.table)
-        .select(Tb.news.id)
-        .lt(Tb.news.created_at, message.createdAt!)
-// from some reason lower than is behaving like lower and equal than on web platform
-// therefore additional check
-        .neq(Tb.news.id, message.id)
-        .eq(Tb.news.occasion, RightsService.currentOccasionId()!)
-        .order(Tb.news.created_at)
-        .limit(1)
-        .maybeSingle();
-
-    if (lastMes != null) {
-      var currentUsers = await _supabase
-          .from(Tb.user_news.table)
-          .select(Tb.user_news.user)
-          .eq(Tb.user_news.news_id, message.id);
-
-      List<Map<String, dynamic>> toBeUpdated = [];
-      for (var u in currentUsers) {
-        toBeUpdated.add({
-          Tb.user_news.user: u[Tb.user_news.user],
-          Tb.user_news.news_id: lastMes[Tb.news.id],
-          Tb.user_news.occasion: RightsService.currentOccasionId()!
-        });
-      }
-
-      await _supabase.from(Tb.user_news.table).upsert(toBeUpdated);
-    } else {
-      await _supabase
-          .from(Tb.user_news.table)
-          .delete()
-          .eq(Tb.user_news.news_id, message.id);
+    if (result.status == NewsCommandStatus.rejected) {
+      throw StateError('News delete was rejected');
     }
-
-    await _supabase.from(Tb.news.table).delete().eq(Tb.news.id, message.id);
+    return;
   }
 
   static Future<void> updateNewsMessage(NewsModel message,
       {String? originalMessage}) async {
     final result = await _commands.update(
         RightsService.currentOccasionId()!, message,
-        originalMessage:
-            ClientSyncRuntime.isV1Selected ? null : originalMessage);
+        originalMessage: null);
     if (result.status == NewsCommandStatus.conflict) {
       throw StateError('News was changed by another editor');
     }
@@ -84,32 +44,16 @@ class DbNews {
       ..aggregateVersion = result.version;
   }
 
-  static Future<void> sendGroupNotification(
-      List<String> to, String message, String title) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.publish(
-        occasionId: RightsService.currentOccasionId()!,
-        addToNews: false,
-        newsMessage: null,
-        sendNotification: true,
-        notificationHeading: title,
-        notificationContent: message,
-        recipients: to,
-      );
-      return;
-    }
-    await _supabase.from(Tb.log_notifications.table).insert({
-      Tb.log_notifications.occasion: RightsService.currentOccasionId()!,
-      Tb.log_notifications.to: to,
-      Tb.log_notifications.content: message,
-      Tb.log_notifications.heading: title,
-      Tb.log_notifications.organization: AppConfig.organization,
-    });
-  }
-
-  static Future<void> publishSubmission(BuildContext context, NewsSubmission submission) =>
-    insertNewsMessage(context, submission.heading, submission.headingDefault,
-      submission.content, submission.addToNews, submission.withNotification, submission.recipients);
+  static Future<void> publishSubmission(
+          BuildContext context, NewsSubmission submission) =>
+      insertNewsMessage(
+          context,
+          submission.heading,
+          submission.headingDefault,
+          submission.content,
+          submission.addToNews,
+          submission.withNotification,
+          submission.recipients);
 
   static Future<void> insertNewsMessage(
       BuildContext context,
@@ -119,8 +63,9 @@ class DbNews {
       bool addToNews,
       bool withNotification,
       List<String>? to) async {
-    var messageForNews =
-        heading != null ? "<strong>${htmlEscape.convert(heading)}</strong><br>$message" : message;
+    var messageForNews = heading != null
+        ? "<strong>${htmlEscape.convert(heading)}</strong><br>$message"
+        : message;
     String? basicMessage;
     if (withNotification) {
       var plainText = '';
@@ -131,54 +76,21 @@ class DbNews {
       }
       basicMessage = plainText.trim();
     }
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.publish(
-        occasionId: RightsService.currentOccasionId()!,
-        addToNews: addToNews,
-        newsMessage: addToNews ? messageForNews : null,
-        sendNotification: withNotification,
-        notificationHeading:
-            withNotification ? heading ?? headingDefault : null,
-        notificationContent: basicMessage,
-        recipients: to,
-      );
-      if (result.status == NewsCommandStatus.rejected || result.status == NewsCommandStatus.conflict) {
-        throw StateError('News publication was rejected');
-      }
-      if (!context.mounted) return;
-      if (withNotification) {
-        ToastHelper.Show(
-          context,
-          addToNews
-              ? (to == null
-                  ? NewsStrings.messageSentToEveryone
-                  : NewsStrings.messageSentToSelf)
-              : NewsStrings.testSentToSelf,
-        );
-      } else if (addToNews) {
-        ToastHelper.Show(
-            context, NewsStrings.messageCreatedWithoutNotification);
-      }
-      return;
+    final result = await _commands.publish(
+      occasionId: RightsService.currentOccasionId()!,
+      addToNews: addToNews,
+      newsMessage: addToNews ? messageForNews : null,
+      sendNotification: withNotification,
+      notificationHeading: withNotification ? heading ?? headingDefault : null,
+      notificationContent: basicMessage,
+      recipients: to,
+    );
+    if (result.status == NewsCommandStatus.rejected ||
+        result.status == NewsCommandStatus.conflict) {
+      throw StateError('News publication was rejected');
     }
-    if (addToNews) {
-      await _supabase.from(Tb.news.table).insert({
-        Tb.news.occasion: RightsService.currentOccasionId()!,
-        Tb.news.message: messageForNews,
-        Tb.news.created_by: AuthService.currentUserId()
-      }).select();
-    }
-
+    if (!context.mounted) return;
     if (withNotification) {
-      await _supabase.from(Tb.log_notifications.table).insert({
-        Tb.log_notifications.occasion: RightsService.currentOccasionId()!,
-        Tb.log_notifications.to: to,
-        Tb.log_notifications.content: basicMessage,
-        Tb.log_notifications.heading: heading ?? headingDefault,
-        Tb.log_notifications.organization: AppConfig.organization,
-      });
-
-      if (!context.mounted) return;
       ToastHelper.Show(
         context,
         addToNews
@@ -187,13 +99,10 @@ class DbNews {
                 : NewsStrings.messageSentToSelf)
             : NewsStrings.testSentToSelf,
       );
-      return;
-    }
-
-    if (addToNews) {
-      if (!context.mounted) return;
+    } else if (addToNews) {
       ToastHelper.Show(context, NewsStrings.messageCreatedWithoutNotification);
     }
+    return;
   }
 
   static Future<int> countNewMessages() async {
@@ -230,21 +139,8 @@ class DbNews {
 
   static Future<void> setMessagesAsRead(int newId) async {
     AuthService.ensureUserIsLoggedIn();
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.markRead(RightsService.currentOccasionId()!, newId);
-      return;
-    }
-    await _supabase
-        .from(Tb.user_news.table)
-        .delete()
-        .eq(Tb.user_news.user, AuthService.currentUserId())
-        .eq(Tb.user_news.occasion, RightsService.currentOccasionId()!);
-
-    await _supabase.from(Tb.user_news.table).insert({
-      Tb.user_news.user: AuthService.currentUserId(),
-      Tb.user_news.news_id: newId,
-      Tb.user_news.occasion: RightsService.currentOccasionId()
-    }).select();
+    await _commands.markRead(RightsService.currentOccasionId()!, newId);
+    return;
   }
 
   static Future<void> setLatestMessageAsRead() async {
@@ -268,8 +164,8 @@ class DbNews {
     if (AuthService.isLoggedIn()) {
       lastReadMessageId = await getLastReadMessage();
     }
-    var data = await _supabase.rpc("get_news_with_views",
-        params: {"oc": RightsService.currentOccasionId()!});
+    var data = await _supabase.rpc("get_news_with_versions_v1",
+        params: {'p_occasion': RightsService.currentOccasionId()!});
 
     List<NewsModel> loadedMessages =
         List<NewsModel>.from(data.map((x) => NewsModel.fromJson(x)));

@@ -1,0 +1,85 @@
+{
+  "environment": "owned disposable canonical Supabase",
+  "source_head": "353394511e7f3fae1efa52c8cc806ee459c5b4cf",
+  "cases": [
+    {
+      "case": "exact UI request replay twice creates no duplicate",
+      "status": "PASS",
+      "order_id": 3,
+      "orders_before": 4,
+      "orders_after": 4
+    },
+    {
+      "case": "organizer authentication through local Auth",
+      "status": "PASS"
+    },
+    {
+      "case": "organizer reads saved form through authoritative editor RPC",
+      "status": "PASS"
+    },
+    {
+      "case": "bank order confirmed by canonical manual transaction, no provider payment",
+      "status": "PASS",
+      "order_ids": [
+        3,
+        4
+      ]
+    },
+    {
+      "case": "canonical form capacity after UI orders",
+      "status": "PASS",
+      "snapshot": {
+        "limit": 20,
+        "enabled": true,
+        "revision": 2,
+        "serverTime": "2026-10-23T15:01:33.973881+00:00",
+        "blockedReason": "WAITLIST_NOT_AVAILABLE",
+        "canSendOffers": false,
+        "offeredPlaces": 0,
+        "showRemaining": true,
+        "waitingPeople": 0,
+        "heldForWaiting": 0,
+        "occupiedPeople": 2,
+        "offerablePlaces": 18,
+        "remainingPublic": 18
+      }
+    },
+    {
+      "case": "real ticket PDF from canonical queued email rendering",
+      "status": "PASS",
+      "order_id": 3,
+      "bytes": 49166,
+      "sha256": "78f2712524350fd2536e1bafc45e3a7e4bfb7689b6739b9da84df082e03380be"
+    },
+    {
+      "case": "real ticket PDF from canonical queued email rendering",
+      "status": "PASS",
+      "order_id": 4,
+      "bytes": 49195,
+      "sha256": "c937a9eb826a35e11d07d12f696ab71b7e131d29ab0098e84505070d6e5d368e"
+    },
+    {
+      "case": "confirmation and tickets captured from canonical queue without provider send",
+      "status": "PASS",
+      "kinds": [
+        "order_confirmation",
+        "order_tickets"
+      ],
+      "mode": "capture_only_no_provider_send"
+    },
+    {
+      "case": "real scanner admission, same-operation replay and second-entry rejection",
+      "status": "PASS",
+      "ticket_id": 3,
+      "first": "admitted",
+      "second": "already_used"
+    },
+    {
+      "case": "real scanner admission, same-operation replay and second-entry rejection",
+      "status": "PASS",
+      "ticket_id": 4,
+      "first": "admitted",
+      "second": "already_used"
+    }
+  ]
+}

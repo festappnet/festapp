@@ -1,0 +1,557 @@
+{
+  "kind": "synthetic-reduced-schema-sql-only",
+  "function_sha256": "46316701fa07f0a9651a2f111ff78142db64e212c106bb67d5c83ce5e89ce519",
+  "background_opt_rows": 10000,
+  "background_spots": 18569,
+  "results": [
+    {
+      "tickets": 1,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "current_indexes",
+      "first_ms": 2.33,
+      "warm_median_ms": 0.93,
+      "warm_samples_ms": [
+        1.04,
+        0.93,
+        0.92
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 1,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "order_lookup_only",
+      "first_ms": 1.9,
+      "warm_median_ms": 0.72,
+      "warm_samples_ms": [
+        0.84,
+        0.72,
+        0.7
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 1,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "spot_lookup_only",
+      "first_ms": 1.57,
+      "warm_median_ms": 0.45,
+      "warm_samples_ms": [
+        0.55,
+        0.45,
+        0.43
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 1,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 1.59,
+      "warm_median_ms": 0.26,
+      "warm_samples_ms": [
+        0.55,
+        0.26,
+        0.21
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "current_indexes",
+      "first_ms": 9.34,
+      "warm_median_ms": 8.15,
+      "warm_samples_ms": [
+        8.18,
+        8.08,
+        8.15
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "order_lookup_only",
+      "first_ms": 9.15,
+      "warm_median_ms": 7.91,
+      "warm_samples_ms": [
+        7.91,
+        7.81,
+        8.01
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "spot_lookup_only",
+      "first_ms": 1.74,
+      "warm_median_ms": 0.57,
+      "warm_samples_ms": [
+        0.71,
+        0.57,
+        0.56
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 3.2,
+      "warm_median_ms": 0.51,
+      "warm_samples_ms": [
+        1.56,
+        0.51,
+        0.42
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "current_indexes",
+      "first_ms": 23.78,
+      "warm_median_ms": 22.77,
+      "warm_samples_ms": [
+        22.86,
+        22.65,
+        22.77
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "order_lookup_only",
+      "first_ms": 23.92,
+      "warm_median_ms": 22.29,
+      "warm_samples_ms": [
+        22.54,
+        22.29,
+        22.14
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "spot_lookup_only",
+      "first_ms": 2.56,
+      "warm_median_ms": 1.33,
+      "warm_samples_ms": [
+        1.44,
+        1.32,
+        1.33
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 2.29,
+      "warm_median_ms": 1.12,
+      "warm_samples_ms": [
+        1.2,
+        1.12,
+        1.11
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 250,
+      "mode": "current_indexes",
+      "first_ms": 24.12,
+      "warm_median_ms": 23.15,
+      "warm_samples_ms": [
+        23.18,
+        23.15,
+        22.97
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 250,
+      "mode": "order_lookup_only",
+      "first_ms": 23.99,
+      "warm_median_ms": 23.04,
+      "warm_samples_ms": [
+        22.86,
+        23.27,
+        23.04
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 250,
+      "mode": "spot_lookup_only",
+      "first_ms": 3.08,
+      "warm_median_ms": 1.71,
+      "warm_samples_ms": [
+        1.86,
+        1.71,
+        1.71
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 250,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 2.58,
+      "warm_median_ms": 1.54,
+      "warm_samples_ms": [
+        1.59,
+        1.54,
+        1.53
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 2,
+      "blueprint_objects": 250,
+      "mode": "current_indexes",
+      "first_ms": 46.0,
+      "warm_median_ms": 44.82,
+      "warm_samples_ms": [
+        44.95,
+        44.82,
+        44.81
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 2,
+      "blueprint_objects": 250,
+      "mode": "order_lookup_only",
+      "first_ms": 45.64,
+      "warm_median_ms": 44.34,
+      "warm_samples_ms": [
+        44.34,
+        44.13,
+        53.38
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 2,
+      "blueprint_objects": 250,
+      "mode": "spot_lookup_only",
+      "first_ms": 3.7,
+      "warm_median_ms": 2.48,
+      "warm_samples_ms": [
+        2.63,
+        2.48,
+        2.42
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 14,
+      "products_per_ticket": 3,
+      "blueprints_on_event": 2,
+      "blueprint_objects": 250,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 3.42,
+      "warm_median_ms": 2.26,
+      "warm_samples_ms": [
+        2.36,
+        2.26,
+        2.26
+      ],
+      "identical_field_content": true,
+      "identical_array_order": false,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 100,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "current_indexes",
+      "first_ms": 59.57,
+      "warm_median_ms": 56.11,
+      "warm_samples_ms": [
+        57.52,
+        56.11,
+        56.02
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 100,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "order_lookup_only",
+      "first_ms": 57.25,
+      "warm_median_ms": 56.01,
+      "warm_samples_ms": [
+        56.2,
+        56.01,
+        55.93
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 100,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "spot_lookup_only",
+      "first_ms": 6.79,
+      "warm_median_ms": 5.66,
+      "warm_samples_ms": [
+        5.66,
+        5.65,
+        6.09
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 100,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 6.59,
+      "warm_median_ms": 5.49,
+      "warm_samples_ms": [
+        5.49,
+        5.54,
+        5.45
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "current_indexes",
+      "first_ms": 470.66,
+      "warm_median_ms": 428.85,
+      "warm_samples_ms": [
+        430.68,
+        427.98,
+        428.85
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "order_lookup_only",
+      "first_ms": 431.45,
+      "warm_median_ms": 434.44,
+      "warm_samples_ms": [
+        434.44,
+        445.77,
+        415.31
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "spot_lookup_only",
+      "first_ms": 76.99,
+      "warm_median_ms": 74.96,
+      "warm_samples_ms": [
+        76.15,
+        74.86,
+        74.96
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 401408
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 0,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 78.8,
+      "warm_median_ms": 75.8,
+      "warm_samples_ms": [
+        75.83,
+        75.8,
+        74.99
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 491520
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "current_indexes",
+      "first_ms": 480.24,
+      "warm_median_ms": 474.95,
+      "warm_samples_ms": [
+        475.13,
+        474.95,
+        474.29
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 0
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "order_lookup_only",
+      "first_ms": 504.95,
+      "warm_median_ms": 487.13,
+      "warm_samples_ms": [
+        507.82,
+        480.61,
+        487.13
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 90112
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "spot_lookup_only",
+      "first_ms": 111.28,
+      "warm_median_ms": 121.23,
+      "warm_samples_ms": [
+        121.23,
+        151.21,
+        111.83
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 417792
+    },
+    {
+      "tickets": 700,
+      "products_per_ticket": 1,
+      "blueprints_on_event": 1,
+      "blueprint_objects": 700,
+      "mode": "candidate_lookup_indexes",
+      "first_ms": 111.13,
+      "warm_median_ms": 112.09,
+      "warm_samples_ms": [
+        109.93,
+        153.78,
+        112.09
+      ],
+      "identical_field_content": true,
+      "identical_array_order": true,
+      "candidate_index_bytes": 507904
+    }
+  ],
+  "postgres": [
+    "15.8",
+    "on",
+    "100000"
+  ]
+}

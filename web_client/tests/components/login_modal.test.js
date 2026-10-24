@@ -95,12 +95,70 @@ describe('LoginModal Conditional Registration', () => {
             console.log('DEBUG: Test 1 HTML Length:', html.length);
             
             assert.match(html, /id="link-register"/, 'Registration link should be visible');
-            assert.match(html, /FeatureUser.signUp/, 'Link text should be present');
+            assert.match(html, /FeatureUser.createAccount/, 'Link text should be present');
             console.log('DEBUG: Test 1 Passed');
         } catch (e) {
             console.error('DEBUG: Test 1 FAILED', e);
             throw e;
         }
+    });
+
+    it('opens registration directly and switches both ways inside the same modal', async () => {
+        RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
+        const { LocalizationService } = await import('../../src/services/localization_service.js');
+        LocalizationService.translations = { FeatureUser: {
+            signupLegalNotice: 'By clicking {button}, you agree to {terms} and acknowledge {privacy}.',
+            signupTerms: 'terms of use', signupPrivacy: 'privacy policy',
+        } };
+        const modal = new LoginModal();
+        modal.currentView = 'register';
+        modal.googleEnabled = true;
+        document.body.appendChild(modal);
+        const dialog = modal.modal;
+
+        assert.ok(modal.authContainer.querySelector('#register-form'));
+        assert.ok(modal.authContainer.querySelector('#google-start'));
+        const legalInfo = modal.authContainer.querySelector('.auth-registration-info');
+        assert.doesNotMatch(legalInfo.textContent, /Michael Bujnovský/);
+        assert.match(legalInfo.textContent, /agree to terms of use and acknowledge privacy policy/);
+        assert.equal(legalInfo.previousElementSibling.type, 'submit');
+        assert.deepEqual([...legalInfo.querySelectorAll('a')].map(link => link.href), [
+            'https://vstupenky.online/terms/',
+            'https://vstupenky.online/privacy/',
+        ]);
+        for (const link of legalInfo.querySelectorAll('a')) {
+            assert.equal(link.target, '_blank');
+            assert.equal(link.rel, 'noopener noreferrer');
+        }
+        for (const [id, autocomplete] of [
+            ['email', 'email'], ['firstName', 'given-name'], ['lastName', 'family-name'],
+        ]) {
+            const input = modal.authContainer.querySelector(`#${id}`);
+            assert.equal(input.autocomplete, autocomplete);
+            assert.ok(input.placeholder);
+        }
+        modal.authContainer.querySelector('[data-auth-mode="login"]').click();
+        assert.ok(modal.authContainer.querySelector('#login-form'));
+        assert.ok(modal.authContainer.querySelector('#google-start'));
+        modal.authContainer.querySelector('[data-auth-mode="register"]').click();
+        assert.ok(modal.authContainer.querySelector('#register-form'));
+        assert.equal(modal.modal, dialog);
+        assert.equal(document.activeElement, modal.authContainer);
+    });
+
+    it('keeps the reset form and password across loading despite an unnamed username input', () => {
+        const modal = new LoginModal();
+        modal._render();
+        modal.resetToken = '00000000-0000-4000-8000-000000000001';
+        const input = modal.authContainer.querySelector('#newPassword');
+        assert.equal(input.minLength, 8);
+        input.value = 'a-valid-local-password';
+        assert.ok(modal.authContainer.querySelector('input[name="username"]:not([id])'));
+        modal._setLoading(true);
+        modal._setLoading(false);
+        assert.ok(modal.authContainer.querySelector('#reset-password-form'));
+        assert.equal(modal.authContainer.querySelector('#newPassword').value, 'a-valid-local-password');
+        assert.equal(modal.authContainer.querySelector('.error'), null);
     });
 
     it('prefills Google proof email and preserves manual edits across retry rendering', () => {
@@ -145,4 +203,61 @@ describe('LoginModal Conditional Registration', () => {
         const html = modal.authContainer.innerHTML;
         assert.match(html, /id="link-register"/, 'Registration link should be visible by default');
     });
+    it('registration confirms only this address, survives rerender, revokes on edits and never auto-submits', async (t) => {
+        const { AuthService } = await import('../../src/services/auth_service.js');
+        const { ToastHelper } = await import('../../src/components/ui/toast.js');
+        let requests = 0;
+        t.mock.method(AuthService, 'register', async () => { requests++; });
+        t.mock.method(ToastHelper, 'showSuccess', () => null);
+        const modal = new LoginModal(); modal._render(); modal._setView('register');
+        document.body.appendChild(modal.authContainer);
+        const value = (id, text) => { const input = modal.authContainer.querySelector('#' + id); input.value = text; input.dispatchEvent(new Event('input', { bubbles: true })); };
+        value('email', 'a@example.czz'); value('firstName', 'A'); value('lastName', 'B');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 0);
+        let warning = modal.authContainer.querySelector('[data-email-suffix-warning]');
+        assert.equal(warning.hidden, false);
+        warning.querySelector('button').click();
+        assert.equal(requests, 0);
+        modal._updateContent(true);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, true);
+        value('email', 'b@example.czz');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 0);
+        modal.authContainer.querySelector('[data-email-suffix-warning] button').click();
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1);
+        modal._setView('register');
+        value('email', 'b@example.czz'); value('firstName', 'A'); value('lastName', 'B');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1, 'new registration session needs confirmation again');
+        value('email', 'a@example.рф');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, false);
+        modal.authContainer.querySelector('[data-email-suffix-warning] button').click();
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 2, 'accepted Unicode input has an overridable warning');
+    });
+
+    it('login, reset and Google proof accept unknown suffixes without confirmation', async (t) => {
+        const { AuthService } = await import('../../src/services/auth_service.js');
+        const { GoogleAuthService } = await import('../../src/services/google_auth_service.js');
+        const { ToastHelper } = await import('../../src/components/ui/toast.js');
+        let login = 0, reset = 0, proof = 0;
+        t.mock.method(AuthService, 'login', async () => { login++; });
+        t.mock.method(AuthService, 'resetPasswordForEmail', async () => { reset++; });
+        t.mock.method(GoogleAuthService, 'advance', async () => { proof++; return { status: 'needs_account_proof' }; });
+        t.mock.method(ToastHelper, 'showSuccess', () => null);
+        const modal = new LoginModal(); modal._render();
+        modal.modal.close = () => {};
+        const fill = () => { modal.authContainer.querySelector('#email').value = 'a@example.czz'; const password = modal.authContainer.querySelector('#password'); if (password) password.value = 'password123'; };
+        fill(); await modal._handleLogin({ preventDefault() {} });
+        modal._setView('forgot'); fill(); await modal._handleReset({ preventDefault() {} });
+        modal.showGoogleResult({ status: 'needs_account_proof' }); fill();
+        await modal._advanceGoogle({ preventDefault() {} }, 'prove_existing');
+        assert.equal(login, 1); assert.equal(reset, 1); assert.equal(proof, 1);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]'), null);
+    });
+
 });

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { APP_VERSION } from './src/version.js';
 
 export default defineConfig({
   server: {
@@ -15,6 +16,15 @@ export default defineConfig({
     });
   },
   build: {
-    assetsDir: 'web-assets'
+    assetsDir: 'web-assets',
+    manifest: true,
+    rollupOptions: {
+      input: { index: path.resolve('index.html'), landing: path.resolve('src/marketing/landing.js') },
+      output: {
+        // Version the entry filename so shared chunks refer to the same module
+        // identity and cached failures cannot survive a release.
+        entryFileNames: `web-assets/[name]-[hash]-${APP_VERSION.replace('+', '-')}.js`,
+      },
+    }
   }
 });

@@ -1,3 +1,4 @@
+import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 import { createClient } from '@supabase/supabase-js';
 import { BackendActivationService } from './backend_activation_service.js';
@@ -9,7 +10,7 @@ export class SupabaseService {
     static tokenKey = AppConfig.Keys.auth;
     static originMarkerKey = 'festapp-supabase-auth-origin';
     static clientOptions = Object.freeze({
-        auth: Object.freeze({ storageKey: AppConfig.Keys.auth }),
+        auth: Object.freeze({ storageKey: AppConfig.Keys.auth, storage: browserStorage }),
     });
 
     static async getEmailConfirmationStatus(capability) {
@@ -17,6 +18,8 @@ export class SupabaseService {
         if (error) throw error;
         return data;
     }
+
+    static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
 
     static getClient() {
         if (!SupabaseService._client) {
@@ -37,19 +40,35 @@ export class SupabaseService {
     /// origin changes. The refresh token is preserved by the stable storage
     /// namespace and exchanged for a JWT signed by the new Auth service before
     /// any rights or business query runs.
+    // A previously prepared scanner must boot without an auth refresh request.
+    // Reuse only the same persisted activation decision used by normal startup.
+    static initializeScannerOffline() {
+        const activation = new BackendActivationService({ storage: browserStorage });
+        const marker = browserStorage.getItem(BackendActivationService.markerPrefix + AppConfig.backendActivationTenantId);
+        SupabaseService._backend = activation.enabled && marker === BackendActivationService.canonicalMarker
+            ? activation.canonical : activation.legacy;
+        AppConfig.organization = SupabaseService._backend.organizationId;
+        return SupabaseService._backend;
+    }
+
     static initialize() {
         if (!SupabaseService._initialization) {
-            SupabaseService._initialization = SupabaseService._initialize();
+            SupabaseService._initialization = SupabaseService._initialize().catch(error => {
+                SupabaseService._initialization = null;
+                throw error;
+            });
         }
         return SupabaseService._initialization;
     }
 
     static async _initialize() {
-        SupabaseService._backend = await new BackendActivationService().resolve();
+        // The signed backend manifest is still verified when persistent storage
+        // is blocked; only the activation marker then lives for this page.
+        SupabaseService._backend = await new BackendActivationService({ storage: browserStorage }).resolve();
         AppConfig.organization = SupabaseService._backend.organizationId;
         const client = SupabaseService.getClient();
         const activeOrigin = SupabaseService._backend.supabaseUrl;
-        const previousOrigin = localStorage.getItem(SupabaseService.originMarkerKey);
+        const previousOrigin = browserStorage.getItem(SupabaseService.originMarkerKey);
         const { data, error } = await client.auth.getSession();
         if (error) throw error;
         const session = data?.session;
@@ -65,14 +84,14 @@ export class SupabaseService {
                     } catch (signOutError) {
                         console.warn('Local Supabase session cleanup failed', signOutError);
                     }
-                    localStorage.removeItem(SupabaseService.tokenKey);
-                    localStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
+                    browserStorage.removeItem(SupabaseService.tokenKey);
+                    browserStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
                     return client;
                 }
                 throw refreshError ?? new Error('Supabase session refresh returned no session');
             }
         }
-        localStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
+        browserStorage.setItem(SupabaseService.originMarkerKey, activeOrigin);
         return client;
     }
 
@@ -85,34 +104,9 @@ export class SupabaseService {
     // --- Data ---
     // Moved to DbOccasions
 
-    // --- Auth ---
-    static getLocalUser() {
-        const localSessionStr = localStorage.getItem(SupabaseService.tokenKey);
-        if (localSessionStr) {
-            try {
-                const sessionData = JSON.parse(localSessionStr);
-                return sessionData.user;
-            } catch (e) {
-                console.error("Error parsing local session", e);
-            }
-        }
-        return null;
-    }
-
-    static async validateSession() {
-        // Background check
-        const { data, error } = await SupabaseService.getClient().auth.getSession();
-        if (error || !data.session) {
-            // Invalid, clear local
-            localStorage.removeItem(SupabaseService.tokenKey);
-            return null;
-        }
-        return data.session.user;
-    }
-
     static async signOut() {
         await SupabaseService.getClient().auth.signOut();
-        localStorage.removeItem(SupabaseService.tokenKey);
+        browserStorage.removeItem(SupabaseService.tokenKey);
         window.location.reload();
     }
 }

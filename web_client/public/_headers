@@ -1,3 +1,6 @@
+/*
+  Content-Security-Policy: base-uri 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
 /privacy*
   Content-Type: text/html; charset=utf-8
   Cache-Control: public, max-age=300, must-revalidate
@@ -23,5 +26,31 @@
   Cache-Control: no-store
   Referrer-Policy: no-referrer
 /app/google-auth
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/embed.js
+  Cache-Control: public, max-age=300, must-revalidate
+
+/stripe/connect/callback
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+/app/stripe/connect/callback
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/stripe/pay
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/stripe/return
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/app/stripe/pay
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/app/stripe/return
   Cache-Control: no-store
   Referrer-Policy: no-referrer

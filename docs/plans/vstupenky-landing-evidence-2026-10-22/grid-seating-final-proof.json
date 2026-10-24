@@ -1,0 +1,79 @@
+{
+  "files": {
+    "web/organizers-media/layout-build.mp4": {
+      "sha256": "78ff5a1b9217a1ea1c72e9634e9ff3e273031b01766bc9d57255dd8c98ea59c8",
+      "bytes": 631502
+    },
+    "web/organizers-media/layout-build.jpg": {
+      "sha256": "8adfe99f9f9f3a4a72c0eab877903e3c3e24ad5c8af73c28a163da7e4a74d5bb",
+      "bytes": 60018
+    },
+    "web/organizers-media/layout-build.webp": {
+      "sha256": "5fbfafdbfb70609c34a90e9efa7ae06c23ad815c4176e0ac4b14728f82bbdb1a",
+      "bytes": 71884
+    },
+    "web/organizers-media/layout-build-mobile.mp4": {
+      "sha256": "01e76b74594589f9bb617e5ec4385f34b98e096bf66ac5cb1ab77919469f5529",
+      "bytes": 365117
+    },
+    "web/organizers-media/layout-build-mobile.jpg": {
+      "sha256": "9addb7532046f720f23ffa30f5f64896c14b773d6f6cbe6e9c31ac73f6dab92f",
+      "bytes": 42179
+    },
+    "web/organizers-media/layout-build-mobile.webp": {
+      "sha256": "0d351d2182a24749dff9df040c203c65688396e2f0fbbc1b56c5326315298a63",
+      "bytes": 50700
+    },
+    "web/organizers-media/layout-refine.mp4": {
+      "sha256": "b5999d90ab4f3500d21d35c745560f419b9400e23f2e0f9c2338ae854701523a",
+      "bytes": 328743
+    },
+    "web/organizers-media/layout-refine.jpg": {
+      "sha256": "4964e9ea4faaa9b7f40f418c62e70ef099096231dbf4d55b43ed85aa0eab088f",
+      "bytes": 58041
+    },
+    "web/organizers-media/layout-refine.webp": {
+      "sha256": "0ddb5b59b5e83a86f13f28dabf0053b411717e8104f6ae4d98c69162b5854246",
+      "bytes": 69560
+    },
+    "web/organizers-media/layout-refine-mobile.mp4": {
+      "sha256": "8445ce05f1abf41c7def804ead294dffc9a1e81588567fa7771ad81ba2aad1d5",
+      "bytes": 189584
+    },
+    "web/organizers-media/layout-refine-mobile.jpg": {
+      "sha256": "8e94711588d248042a3154c620ab7297cb621edd9124a92693cf220107c16944",
+      "bytes": 44104
+    },
+    "web/organizers-media/layout-refine-mobile.webp": {
+      "sha256": "90741ec3445f0ec0aa61683661a7ec485663e5d277ab10d75b0e8c190a00c433",
+      "bytes": 48334
+    },
+    "web/organizers-media/layout-grid.mp4": {
+      "sha256": "7d7a43fd4aa6fcbb21bfb8518b123c0f6cddbccbee352ec2e47d90c1f8cacbac",
+      "bytes": 722547
+    },
+    "web/organizers-media/layout-grid.jpg": {
+      "sha256": "a56866e8de02b3aa8a0501a6c1f9e1cf02fe70d766d784d3ca044757455c0f6c",
+      "bytes": 39099
+    },
+    "web/organizers-media/layout-grid.webp": {
+      "sha256": "20c6f13970d379fef2f50d77bd8dce7fb325315cddcef50e19d1f69f6e4f0b77",
+      "bytes": 34334
+    },
+    "web/organizers-media/layout-grid-mobile.mp4": {
+      "sha256": "8c78e6ee9068e0ed97b30547537316fd84be2a2a55d4df6d7eea3be2d950d770",
+      "bytes": 403835
+    },
+    "web/organizers-media/layout-grid-mobile.jpg": {
+      "sha256": "ecd994c39114f8c1e9dfedef58d7cdbb61bb2c2c6c7ecb10286441cfbe9b2dd0",
+      "bytes": 28286
+    },
+    "web/organizers-media/layout-grid-mobile.webp": {
+      "sha256": "3106de50f46a3f9d816f69b7fb7c6f7e03b1de4067f296984d73aa6b506fff4d",
+      "bytes": 23068
+    }
+  },
+  "readback": "layout-grid/seating-backdrop-final.json",
+  "frame": "layout-grid/seating-backdrop-final.png",
+  "validation": "6 changed MP4 decode PASS; actual2tables24seats both materialwood; backdrop z=-1; owned browsers/server closed"
+}

@@ -1,0 +1,37 @@
+import 'package:easy_localization/easy_localization.dart';
+
+class WaitlistStrings {
+  static String text(String key) => 'Waitlist.$key'.tr();
+  static String get settings => text('settings');
+  static String get capacity => text('capacity');
+  static String get unlimited => text('unlimited');
+  static String get enabled => text('enabled');
+  static String get showRemaining => text('showRemaining');
+  static String get durationHours => text('durationHours');
+  static String get positiveNumber => text('positiveNumber');
+  static String get activeEntries => text('activeEntries');
+  static String get title => text('title');
+  static String get explanation => text('explanation');
+  static String get full => text('full');
+  static String get registered => text('registered');
+  static String get register => text('register');
+  static String get accept => text('accept');
+  static String get decline => text('decline');
+  static String get withdraw => text('withdraw');
+  static String get send => text('send');
+  static String get expired => text('expired');
+  static String get productAvailability => text('productAvailability');
+  static String get selectPeople => text('selectPeople');
+  static String get remaining => text('remaining');
+  static String get confirm => text('confirm');
+  static String get stale => text('stale');
+  static String get queued => text('queued');
+  static String get detail => text('detail');
+  static String get offers => text('offers');
+  static String get cancel => text('cancel');
+  static String get linkedOrders => text('linkedOrders');
+  static String get invalid => text('invalid');
+  static String get refresh => text('refresh');
+  static String get count => text('count');
+  static String get expiresAt => text('expiresAt');
+}

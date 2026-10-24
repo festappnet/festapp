@@ -9,7 +9,7 @@ BEGIN
   -- Serializes workers, including backlog across multiple instants of one product.
   IF NOT pg_try_advisory_xact_lock(7310420261004::bigint) THEN RETURN; END IF;
   FOR v_candidate IN SELECT id,subject_id,change_type FROM eshop.planned_changes
-    WHERE change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
+    WHERE NOT public.is_demo_occasion(occasion) AND change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
   LOOP
     -- Same lock order as editor commands: subject, then plan. Recheck after lock.
     IF v_candidate.change_type IN ('products.price','products.is_hidden') THEN
@@ -40,9 +40,21 @@ BEGIN
         SELECT occasion INTO v_occasion FROM public.forms WHERE id=v_change.subject_id;
         IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_SUBJECT'; END IF;
         IF v_occasion IS NULL OR v_change.occasion IS DISTINCT FROM v_occasion THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
-        UPDATE public.forms SET is_open=v_change.new_value::boolean WHERE id=v_change.subject_id;
+        UPDATE public.forms SET is_open=v_change.new_value::boolean WHERE id=v_change.subject_id AND is_open IS DISTINCT FROM v_change.new_value::boolean;
+        GET DIAGNOSTICS v_changed=ROW_COUNT;
       ELSE RAISE EXCEPTION 'UNKNOWN_CHANGE_TYPE'; END IF;
       IF v_changed>0 THEN
+        IF v_change.change_type='forms.is_open' THEN
+          INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+          VALUES('form','occasion',v_occasion,v_change.subject_id::text,1)
+          ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+          SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
+          PERFORM public.record_client_sync_commit_v1(v_occasion,'inventory.form.planned','inventory',
+            jsonb_build_array(jsonb_build_object('entityType','form','entityId',v_change.subject_id,
+              'operation','update','safeLabel','Scheduled form change','changedFields',jsonb_build_array('is_open'))),
+            '{}','[]','[]','service','planned_change:'||v_change.id::text);
+        ELSE
+        PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion,v_change.subject_id);
         SELECT COALESCE(jsonb_agg(jsonb_build_object('component','private_inventory','userId',ou."user")),'[]'::jsonb)
           INTO v_impacts FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
           ON ou.ticket=opt.ticket AND ou.occasion=v_occasion WHERE opt.product=v_change.subject_id;
@@ -51,6 +63,7 @@ BEGIN
           'entityType','product','entityId',v_change.subject_id,'operation','update',
           'safeLabel','Scheduled product change','changedFields',jsonb_build_array(split_part(v_change.change_type,'.',2)))),
           '{}',v_impacts,'[]','service','planned_change:'||v_change.id::text);
+        END IF;
       END IF;
       UPDATE eshop.planned_changes SET applied=true,revision=revision+1 WHERE id=v_change.id;
     EXCEPTION WHEN OTHERS THEN

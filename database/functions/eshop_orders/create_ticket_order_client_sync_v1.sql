@@ -13,7 +13,7 @@ BEGIN
   IF v_occasion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'occasion',v_occasion,'order',p_order)::text,'UTF8'),'sha256'),'hex');
+    'occasion',v_occasion,'order',p_order-'stripePaymentSource')::text,'UTF8'),'sha256'),'hex');
   IF v_actor IS NULL THEN
     v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,
       'inventory.order.create',v_occasion,p_client_id,v_hash);
@@ -32,15 +32,18 @@ BEGIN
         v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
       END IF;
     END IF;
-    RETURN v_result;
+    RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  v_result:=public.create_ticket_order_internal_v1(p_order);
+  v_result:=public.create_ticket_order_internal_v1(p_order-'stripePaymentSource');
   IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       CASE WHEN COALESCE((v_result->>'code')::integer,500) BETWEEN 100 AND 599
         THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
+  IF v_result#>>'{order,payment_info,payment_method}'='stripe' THEN
+    PERFORM public.attach_stripe_order_pay_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order->'stripePaymentSource');
+  END IF;
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     p_command_id,v_occasion,v_result,p_order->>'lang');
   RETURN public.complete_profile_inventory_membership_mutation_v1(

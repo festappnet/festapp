@@ -1,3 +1,4 @@
+import 'email_suffix_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -43,6 +44,18 @@ class TextFieldBuilder extends StatelessWidget {
     }
   }
 
+  Widget _withEmailConfirmation(FormFieldState<String?> field, Widget input) {
+    if (!isEmail) return input;
+    return EmailSuffixField(
+      session: formHolder.emailSuffixConfirmations,
+      field: field,
+      name: fieldHolder.id.toString(),
+      eligible: !fieldHolder.isHidden,
+      informal: formHolder.communicationTone == 'informal',
+      child: input,
+    );
+  }
+
   Widget _buildStandardTextField(BuildContext context) {
     List<String? Function(String?)> validators = [];
 
@@ -53,6 +66,7 @@ class TextFieldBuilder extends StatelessWidget {
 
     if (isEmail) {
       validators.add(FormBuilderValidators.email(
+        checkNullOrEmpty: false,
         errorText: FormHelper.emailInvalidMessage(),
       ));
     }
@@ -69,7 +83,8 @@ class TextFieldBuilder extends StatelessWidget {
 
     return FormBuilderField<String?>(
       name: fieldHolder.id.toString(),
-      initialValue: isPhone ? '+420' : null,
+      initialValue:
+          fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: validators.isNotEmpty
           ? FormBuilderValidators.compose(validators)
           : null,
@@ -77,7 +92,7 @@ class TextFieldBuilder extends StatelessWidget {
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {
-        return _StandardTextField(
+        final input = _StandardTextField(
           field: field,
           fieldHolder: fieldHolder,
           formHolder: formHolder,
@@ -85,6 +100,7 @@ class TextFieldBuilder extends StatelessWidget {
           isEmail: isEmail,
           autofillHints: autofillHints,
         );
+        return _withEmailConfirmation(field, input);
       },
     );
   }
@@ -99,6 +115,7 @@ class TextFieldBuilder extends StatelessWidget {
 
     if (isEmail) {
       validators.add(FormBuilderValidators.email(
+        checkNullOrEmpty: false,
         errorText: FormHelper.emailInvalidMessage(),
       ));
     }
@@ -115,12 +132,14 @@ class TextFieldBuilder extends StatelessWidget {
 
     return FormBuilderField<String?>(
       name: fieldHolder.id.toString(),
+      initialValue:
+          fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: FormBuilderValidators.compose(validators),
       autovalidateMode: isPhone
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {
-        return _CardTextField(
+        final input = _CardTextField(
           field: field,
           fieldHolder: fieldHolder,
           formHolder: formHolder,
@@ -128,6 +147,7 @@ class TextFieldBuilder extends StatelessWidget {
           isPhone: isPhone,
           isEmail: isEmail,
         );
+        return _withEmailConfirmation(field, input);
       },
     );
   }
@@ -209,6 +229,8 @@ class _StandardTextFieldState extends State<_StandardTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
+          enabled: widget.field.widget.enabled &&
+              (FormBuilder.of(context)?.enabled ?? true),
           controller: _controller,
           focusNode: _focusNode,
           maxLines: null,
@@ -343,6 +365,8 @@ class _CardTextFieldState extends State<_CardTextField> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
+            enabled: widget.field.widget.enabled &&
+                (FormBuilder.of(context)?.enabled ?? true),
             controller: _controller,
             focusNode: _focusNode,
             maxLines: null,
@@ -383,10 +407,9 @@ class _CardTextFieldState extends State<_CardTextField> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    if (widget.isPhone && _showPrefixes)
-                      _PhonePrefixHelpers(
-                        prefixes:
-                            widget.formHolder.phonePrefixes,
+                  if (widget.isPhone && _showPrefixes)
+                    _PhonePrefixHelpers(
+                      prefixes: widget.formHolder.phonePrefixes,
                       onPrefixSelected: (prefix) {
                         // Keep focus to prevent onUnfocus validation
                         _focusNode.requestFocus();
@@ -457,13 +480,11 @@ class _PhonePrefixHelpers extends StatefulWidget {
 }
 
 class _PhonePrefixHelpersState extends State<_PhonePrefixHelpers> {
-
   @override
   Widget build(BuildContext context) {
     // Default to +420, +421 if empty
-    final prefixes = widget.prefixes.isNotEmpty
-        ? widget.prefixes
-        : ['+420', '+421'];
+    final prefixes =
+        widget.prefixes.isNotEmpty ? widget.prefixes : ['+420', '+421'];
 
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),

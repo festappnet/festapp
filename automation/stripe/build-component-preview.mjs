@@ -1,0 +1,11 @@
+import { execFileSync } from 'node:child_process';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('../../', import.meta.url));
+execFileSync('pnpm', ['--dir', `${root}web_client`, 'exec', 'vite', 'build', '--config', 'tests/fixtures/stripe-payments/vite.config.mjs'], { stdio: 'pipe' });
+const bundle = '/tmp/festapp-stripe-component-bundle';
+const script = readFileSync(`${bundle}/fixture.js`, 'utf8').replaceAll('</script', '<\\/script');
+const css = readdirSync(bundle).filter(p => p.endsWith('.css')).map(p => readFileSync(`${bundle}/${p}`, 'utf8')).join('\n');
+const output = '/tmp/festapp-stripe-components.html';
+writeFileSync(output, `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Actual card payment components</title><style>${css}</style><body><script>${script}</script></body></html>`);
+console.log(output);

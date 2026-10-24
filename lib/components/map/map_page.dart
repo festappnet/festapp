@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -13,7 +14,7 @@ import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/map/map_page_helper.dart';
 import 'package:fstapp/components/map/counseling_hours_panel.dart';
-import 'package:fstapp/components/map/map_path_direction_layout.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/map/map_location_accuracy.dart';
 import 'package:fstapp/components/map/map_locate_coordinator.dart';
 import 'package:fstapp/components/map/map_offscreen_location_indicator.dart';
@@ -22,11 +23,8 @@ import 'package:fstapp/components/map/public_map_host.dart';
 import 'package:fstapp/components/map/public_map_session.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
-import 'package:fstapp/components/map/map_renderer_benchmark_override.dart';
 import 'package:fstapp/components/map/maplibre/maplibre_style_assembler.dart';
-import 'package:fstapp/components/map/maplibre/maplibre_style_load_guard.dart';
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
 import 'package:fstapp/components/map/offline_map_configuration.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/timeline/schedule_timeline.dart';
@@ -47,8 +45,6 @@ import 'package:fstapp/components/icons/icons_strings.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/icons/db_place_types.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
-import 'package:fstapp/components/map/path_node.dart';
-import 'package:fstapp/components/map/gpx_importer.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 import 'package:cross_file/cross_file.dart';
@@ -58,13 +54,11 @@ import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/html/html_helper.dart';
-import 'place_model.dart';
 import 'package:fstapp/services/platform_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/map/offline_map_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/pop_button.dart';
 import 'package:collection/collection.dart';
@@ -218,7 +212,9 @@ class _MapPageState extends State<MapPage>
   // Derived cleaning status + rating aggregate per toilet place id (empty unless
   // the cleaning feature is enabled). Colors the toilet pins for everyone.
   Map<int, CleaningPlaceStatus> _cleaningByPlace = {};
-  Map<int, List<CounselingHoursRange>> _counselingHoursByPlace = {};
+  MapPlaceProgram _placeProgram = const MapPlaceProgram();
+  Map<int, List<CounselingHoursRange>> get _counselingHoursByPlace =>
+      _placeProgram.counselingByPlace;
   final List<MapPlacePresentation> _places = [];
   final List<MapPlacePresentation> _selectedPlaces = [];
   MapPlacePresentation? focusedPlace;
@@ -240,8 +236,6 @@ class _MapPageState extends State<MapPage>
 
   bool _useOffline = false;
   MapDownloadState _downloadState = const MapDownloadIdle();
-  String? _offlinePackagePath;
-  LegacyMapConfiguration? _legacyOfflineConfiguration;
   String? _mapLibreStyle;
   String? _offlineMapError;
   final MapLibreStyleRecoveryCoordinator _mapLibreRecovery =
@@ -323,7 +317,6 @@ class _MapPageState extends State<MapPage>
     _placeTypeSelectionFeedbackTimer?.cancel();
     unawaited(_userLocationSubscription?.cancel());
     _currentUserLocation.dispose();
-    _legacyOfflineConfiguration?.dispose();
     super.dispose();
   }
 
@@ -332,7 +325,7 @@ class _MapPageState extends State<MapPage>
     final isOffline = ConnectivityService.isOfflineNotifier.value;
     if (kIsWeb) {
       // Web has no native offline renderer. A transient connectivity result
-      // must not swap the online Legacy surface for an empty offline base;
+      // must not swap the online raster surface for an empty offline base;
       // network tiles fail naturally while cached places and paths stay usable.
       if (_useOffline) setState(() => _useOffline = false);
       return;
@@ -398,7 +391,7 @@ class _MapPageState extends State<MapPage>
     );
     if (!PlatformHelper.isWeb && offlineConfiguration.shouldInitialize) {
       // Renderer selection must be correct before the first await. Otherwise a
-      // forced/offline MapLibre page briefly builds the online Legacy surface,
+      // forced/offline MapLibre page briefly builds the online raster surface,
       // which starts tile and attribution-logo requests that can outlive it.
       // Preparing the base-map bundle must not block cached place content. A
       // deep-linked place can open while MapLibre finishes underneath it.
@@ -422,10 +415,10 @@ class _MapPageState extends State<MapPage>
       await loadData();
     } else {
       if (placeModel.latLng.toString().isEmpty) {
-        placeModel.latLng = {
+        placeModel = placeModel.copyWith(latLng: {
           "lat": _mapFeature.defaultMapLocation.lat,
           "lng": _mapFeature.defaultMapLocation.lng
-        };
+        });
       }
       pageTitle = placeModel.title ?? AppConfig.mapTitle;
       addPlacesToMap([placeModel]);
@@ -442,7 +435,7 @@ class _MapPageState extends State<MapPage>
     );
     if (!mounted) return;
 
-    late final OfflineMapContract? contract;
+    late final MapLibreOfflineMapContract? contract;
     late final bool useOffline;
     switch (startup) {
       case InvalidOfflineMapStartup():
@@ -562,23 +555,15 @@ class _MapPageState extends State<MapPage>
   }
 
   Future<bool> _prepareOfflineMap(
-    OfflineMapContract contract, {
+    MapLibreOfflineMapContract contract, {
     bool allowDownload = true,
     bool forceRefresh = false,
   }) =>
-      switch (contract) {
-        final MapLibreOfflineMapContract mapLibre => _downloadMapLibreBundle(
-            mapLibre,
-            allowDownload: allowDownload,
-            forceRefresh: forceRefresh,
-          ),
-        final LegacyOfflineMapContract legacy => _downloadLegacyBundle(
-            legacy,
-            _offlineConfiguration.bundleFor(legacy),
-            allowDownload: allowDownload,
-            forceRefresh: forceRefresh,
-          ),
-      };
+      _downloadMapLibreBundle(
+        contract,
+        allowDownload: allowDownload,
+        forceRefresh: forceRefresh,
+      );
 
   void _showOfflineDownloadComplete(MapDownloadCompleted completedState) {
     ToastHelper.Show(context, MapStrings.offlineMapReady);
@@ -594,11 +579,7 @@ class _MapPageState extends State<MapPage>
     bool forceRefresh = false,
   }) async {
     if (!mounted) return false;
-    final contract = selectedContract ??
-        switch (_offlineConfiguration.selectedContract) {
-          final MapLibreOfflineMapContract mapLibre => mapLibre,
-          _ => null,
-        };
+    final contract = selectedContract ?? _offlineConfiguration.selectedContract;
     if (contract == null) {
       setState(
           () => _offlineMapError = MapStrings.mapLibreManifestNotConfigured);
@@ -613,7 +594,7 @@ class _MapPageState extends State<MapPage>
       context,
       defaultErrorMessage: MapStrings.mapLibreBundleDownloadFailed,
       futureFunction: () async {
-        final installation = await _installSharedBundle(
+        final installation = await _installOfflineBundle(
           contract,
           allowDownload: allowDownload,
           forceRefresh: forceRefresh,
@@ -662,142 +643,7 @@ class _MapPageState extends State<MapPage>
     return true;
   }
 
-  Future<bool> _downloadLegacyBundle(
-    LegacyOfflineMapContract legacy,
-    MapLibreOfflineMapContract? sharedBundle, {
-    bool allowDownload = true,
-    bool forceRefresh = false,
-  }) async {
-    if (!mounted) return false;
-    setState(() {
-      _downloadState = const MapDownloadCheckingCache();
-      _offlineMapError = null;
-    });
-    var downloadRequired = false;
-    final openedConfiguration =
-        await ExceptionHandler.guard<LegacyMapConfiguration>(
-      context,
-      defaultErrorMessage: MapStrings.legacyMapOpenFailed,
-      futureFunction: () async {
-        if (sharedBundle != null) {
-          final installation = await _installSharedBundle(
-            sharedBundle,
-            allowDownload: allowDownload,
-            forceRefresh: forceRefresh,
-            onDownloadRequired: () {
-              downloadRequired = true;
-              if (mounted) {
-                setState(() => _downloadState = const MapDownloading(0));
-              }
-            },
-            onProgress: (progress) {
-              if (mounted) {
-                setState(
-                  () => _downloadState = MapDownloading(progress.fraction),
-                );
-              }
-            },
-          );
-          return LegacyMapConfiguration.openOfflineBundle(
-            layer: _mapFeature.offlineMapLayer,
-            contract: legacy,
-            installation: installation,
-          );
-        }
-        downloadRequired = forceRefresh;
-        return _openStandaloneLegacyMap(
-          legacy,
-          allowDownload: allowDownload,
-          forceRefresh: forceRefresh,
-          onDownloadRequired: () {
-            downloadRequired = true;
-            if (mounted) {
-              setState(() => _downloadState = const MapDownloading(0));
-            }
-          },
-        );
-      },
-    );
-    if (!mounted) {
-      openedConfiguration?.dispose();
-      return false;
-    }
-    if (openedConfiguration == null) {
-      setState(() {
-        _downloadState = const MapDownloadIdle();
-        _offlineMapError = MapStrings.legacyMapOpenFailed;
-      });
-      return false;
-    }
-    _legacyOfflineConfiguration?.dispose();
-    _legacyOfflineConfiguration = openedConfiguration;
-    final completedState = downloadRequired ? MapDownloadCompleted() : null;
-    setState(() {
-      _downloadState = completedState ?? const MapDownloadIdle();
-      _useOffline = true;
-    });
-    if (downloadRequired) {
-      _showOfflineDownloadComplete(completedState!);
-    }
-    return true;
-  }
-
-  Future<LegacyMapConfiguration> _openStandaloneLegacyMap(
-    LegacyOfflineMapContract contract, {
-    required bool allowDownload,
-    required bool forceRefresh,
-    required VoidCallback onDownloadRequired,
-  }) async {
-    _offlinePackagePath ??=
-        await OfflineMapHelper.getOfflinePackagePath(contract.packageUrl);
-    final stylePath =
-        await OfflineMapHelper.getOfflineStyleFilePath(contract.styleUrl);
-
-    Future<LegacyMapConfiguration> open({required bool refresh}) async {
-      final packageExists = await File(_offlinePackagePath!).exists();
-      final styleExists = await File(stylePath).exists();
-      if (allowDownload && (refresh || !packageExists || !styleExists)) {
-        onDownloadRequired();
-      }
-      final package = await OfflineMapHelper.getOfflineMapPackage(
-        contract.packageUrl,
-        _offlinePackagePath!,
-        (progress) {
-          if (mounted) {
-            setState(() => _downloadState = MapDownloading(progress));
-          }
-        },
-        forceRefresh: refresh,
-        allowDownload: allowDownload,
-      );
-      final style = await OfflineMapHelper.getOrDownloadFile(
-        contract.styleUrl,
-        stylePath,
-        (_) {},
-        forceRefresh: refresh,
-        allowDownload: allowDownload,
-      );
-      if (package == null || style == null) {
-        throw OfflineMapBundleException(
-          'No downloaded Legacy offline map is available.',
-        );
-      }
-      return LegacyMapConfiguration.openOffline(
-        layer: _mapFeature.offlineMapLayer,
-        contract: contract,
-        mbtilesPath: _offlinePackagePath!,
-      );
-    }
-
-    try {
-      return await open(refresh: forceRefresh);
-    } catch (_) {
-      if (!allowDownload || forceRefresh) rethrow;
-      return open(refresh: true);
-    }
-  }
-
-  Future<OfflineMapBundleInstallation> _installSharedBundle(
+  Future<OfflineMapBundleInstallation> _installOfflineBundle(
     MapLibreOfflineMapContract contract, {
     bool allowDownload = true,
     bool forceRefresh = false,
@@ -806,9 +652,7 @@ class _MapPageState extends State<MapPage>
   }) async {
     final appSupport = await getApplicationSupportDirectory();
     final manager = OfflineMapBundleManager(
-      // Keep the original directory name as the stable on-device cache
-      // contract. The bundle is now shared by MapLibre and Legacy, but moving
-      // it would force every existing installation to download it again.
+      // Preserve the on-device cache so installed bundles remain usable offline.
       rootDirectory: Directory('${appSupport.path}/maplibre-bundles'),
     );
     final manifestUri = Uri.parse(contract.manifestUrl);
@@ -844,7 +688,6 @@ class _MapPageState extends State<MapPage>
       styleEpoch: Object.hash(
         _useOffline,
         _mapLibreStyle,
-        _legacyOfflineConfiguration?.sourceName,
       ),
       readinessEpoch: _viewportController.readinessEpoch,
       catalogEpoch: _catalogEpoch,
@@ -997,16 +840,14 @@ class _MapPageState extends State<MapPage>
   Widget build(BuildContext context) {
     final offlineConfiguration = _offlineConfiguration;
     final renderer = MapRendererHost.resolveRenderer(
-      configuredRenderer: offlineConfiguration.renderer,
       isOffline: _useOffline,
       isWeb: kIsWeb,
     );
     final rendererAvailableForLocate = switch (renderer) {
-      OfflineMapRenderer.legacy => !_useOffline || _offlineMapError == null,
-      OfflineMapRenderer.maplibre => _mapLibreStyle != null,
+      MapRenderer.raster => true,
+      MapRenderer.maplibre => _mapLibreStyle != null,
     };
     Widget buildMapWidget(LatLng? currentLocation) => MapRendererHost(
-          renderer: offlineConfiguration.renderer,
           isOffline: _useOffline,
           model: MapSurfaceModel(
             active: _isMapTabActive,
@@ -1033,12 +874,7 @@ class _MapPageState extends State<MapPage>
             },
             onZoomChanged: _onZoomChanged,
           ),
-          legacy: _useOffline
-              ? (_legacyOfflineConfiguration ??
-                  LegacyMapConfiguration.offlineUnavailable(
-                    _mapFeature.offlineMapLayer,
-                  ))
-              : LegacyMapConfiguration.online(_mapFeature.onlineMapLayer),
+          onlineLayer: _mapFeature.onlineMapLayer,
           mapLibre: MapLibreMapConfiguration(
             style: _mapLibreStyle,
             unavailable: _buildMapLibreUnavailable(),
@@ -1047,7 +883,7 @@ class _MapPageState extends State<MapPage>
             onStyleLoadSuccess: _mapLibreRecovery.markStyleLoaded,
           ),
         );
-    final mapWidget = renderer == OfflineMapRenderer.legacy
+    final mapWidget = renderer == MapRenderer.raster
         ? ValueListenableBuilder<LatLng?>(
             valueListenable: _currentUserLocation,
             builder: (context, location, child) => buildMapWidget(location),
@@ -1106,12 +942,7 @@ class _MapPageState extends State<MapPage>
       body: Stack(
         children: [
           if (_mapCenter != null) mapWidget,
-          if (renderer == OfflineMapRenderer.maplibre)
-            _buildMapLibreAttribution(),
-          if (renderer == OfflineMapRenderer.legacy &&
-              _useOffline &&
-              _offlineMapError != null)
-            _buildLegacyOfflineUnavailable(),
+          if (renderer == MapRenderer.maplibre) _buildMapLibreAttribution(),
           if (_popupPlaceId != null) _buildPlacePopup(),
           MapDownloadIndicator(
             state: _downloadState,
@@ -1185,7 +1016,7 @@ class _MapPageState extends State<MapPage>
 
   List<Rect> _locateOverlayOccupiedRects(
     BuildContext context,
-    OfflineMapRenderer renderer,
+    MapRenderer renderer,
     Size viewport,
   ) {
     final obstacles = <Rect>[];
@@ -1241,7 +1072,7 @@ class _MapPageState extends State<MapPage>
       }
     }
 
-    if (renderer == OfflineMapRenderer.maplibre) {
+    if (renderer == MapRenderer.maplibre) {
       obstacles.add(
         Rect.fromLTWH(viewport.width - 208, 8, 200, 28),
       );
@@ -1296,16 +1127,8 @@ class _MapPageState extends State<MapPage>
     }
   }
 
-  OfflineMapRenderer get _offlineRenderer =>
-      MapRendererBenchmarkOverride.resolve(
-        _mapFeature.offlineMapLayer.offlineMapRenderer,
-      );
-
   OfflineMapConfiguration get _offlineConfiguration =>
-      OfflineMapConfiguration.fromLayer(
-        _mapFeature.offlineMapLayer,
-        renderer: _offlineRenderer,
-      );
+      OfflineMapConfiguration.fromLayer(_mapFeature.offlineMapLayer);
 
   Widget _buildMapLibreUnavailable() {
     if (_downloadState.isBusy) {
@@ -1334,43 +1157,6 @@ class _MapPageState extends State<MapPage>
                 label: Text(MapStrings.downloadMapAgain),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegacyOfflineUnavailable() {
-    return Positioned.fill(
-      child: ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: Card(
-            margin: const EdgeInsets.all(24),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _offlineMapError ??
-                        MapStrings.offlineMapConfigurationIncomplete,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: ConnectivityService.isOfflineNotifier.value ||
-                            _downloadState.isBusy
-                        ? null
-                        : () => unawaited(
-                              _retryMapLibreBundle(),
-                            ),
-                    icon: const Icon(Icons.download),
-                    label: Text(MapStrings.downloadMapAgain),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -1898,8 +1684,7 @@ class _MapPageState extends State<MapPage>
         if (loadOtherGroups) {
           var dbGroups = await DbGroups.getGroupsWithPlaces();
           onlineList = dbGroups.where((e) => e.place != null).map((e) {
-            e.place!.title = e.title;
-            return e.place!;
+            return e.place!.copyWith(title: e.title);
           }).toList();
         } else {
           onlineList = placesFromDb.where((p) => !(p.isHidden)).toList();
@@ -1958,8 +1743,7 @@ class _MapPageState extends State<MapPage>
 
   Future<void> addOfflineEventsToPlace(List<PlaceModel> places) async {
     final events = await OfflineDataService.getAllEvents();
-    _counselingHoursByPlace =
-        MapPageHelper.assignEventsToPlaces(places, events);
+    _placeProgram = MapPageHelper.assignEventsToPlaces(places, events);
   }
 
   Future<void> addEventsToPlace(List<PlaceModel> places) async {
@@ -1969,8 +1753,7 @@ class _MapPageState extends State<MapPage>
     }
     final events =
         await DbEvents.getAllEvents(RightsService.currentOccasionId()!, false);
-    _counselingHoursByPlace =
-        MapPageHelper.assignEventsToPlaces(places, events);
+    _placeProgram = MapPageHelper.assignEventsToPlaces(places, events);
   }
 
   bool _shouldShowPlaceTitle(int? placeId, int? currentFocusedPlaceId,
@@ -2079,9 +1862,10 @@ class _MapPageState extends State<MapPage>
       if (wcIconId != null &&
           place.type == CleaningStatusHelper.toiletPlaceTypeCode &&
           place.icon == null) {
-        place.icon = wcIconId;
+        place = place.copyWith(icon: wcIconId);
       }
-      var mapPlace = MapPlaceModel.fromPlaceModel(place);
+      var mapPlace = MapPlaceModel.fromPlaceModel(place,
+          events: _placeProgram.eventsByPlace[place.id] ?? const []);
       var pinColor = _cleaningPinColorFor(mapPlace);
       bool displayTitle = _shouldShowPlaceTitle(
           mapPlace.id, focusedPlaceId, editingPlaceId, placeIdsInSelectedGroup);
@@ -2340,7 +2124,8 @@ class _MapPageState extends State<MapPage>
   Future<void> _showImportDialog() async {
     await showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => AppAlertDialog(
+        onClose: () => Navigator.of(dialogContext).pop(),
         title: Text(MapStrings.importRoute),
         content: SizedBox(
           width: 420,

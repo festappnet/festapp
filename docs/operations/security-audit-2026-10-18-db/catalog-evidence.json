@@ -1,0 +1,616 @@
+[
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "occasions",
+    "name": "Enable all for admins",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "permissive": "PERMISSIVE",
+    "qual": "get_is_admin_on_organization(organization)",
+    "check": "get_is_admin_on_organization(organization)"
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "occasions",
+    "name": "Enable read for all",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "true",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "occasions",
+    "name": "demo_read_fence",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "RESTRICTIVE",
+    "qual": "(((NOT is_demo_occasion(id)) OR can_read_demo_occasion(id)) AND ((NOT is_demo_unit(unit)) OR demo_unit_can_read(unit)))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_group_info",
+    "name": "Enable select for editors",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "get_is_editor_view_on_occasion(occasion)",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_group_info",
+    "name": "Enable select to all auth",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "true",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_group_info",
+    "name": "demo_read_fence",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "RESTRICTIVE",
+    "qual": "((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR get_is_editor_order_view_on_occasion(occasion)))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_groups",
+    "name": "Enable select for editors",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "get_is_editor_view_on_occasion(( SELECT user_group_info.occasion\n   FROM user_group_info\n  WHERE (user_group_info.id = user_groups.\"group\")))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_groups",
+    "name": "Enable select to all auth",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "true",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "email_templates",
+    "name": "Enable select for managers and admins",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "(get_is_manager_on_any_occasion() OR get_is_admin_on_organization(organization))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "email_templates",
+    "name": "demo_read_fence",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "RESTRICTIVE",
+    "qual": "(((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR get_is_editor_order_view_on_occasion(occasion))) AND ((NOT is_demo_unit(unit)) OR demo_unit_can_read(unit)))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_news",
+    "name": "Enable all for editors",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "permissive": "PERMISSIVE",
+    "qual": "get_is_editor_on_occasion(occasion)",
+    "check": "get_is_editor_on_occasion(occasion)"
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_news",
+    "name": "Enable all on own record",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "permissive": "PERMISSIVE",
+    "qual": "(auth.uid() = \"user\")",
+    "check": "(auth.uid() = \"user\")"
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_news",
+    "name": "demo_read_fence",
+    "roles": [
+      "anon",
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "permissive": "RESTRICTIVE",
+    "qual": "((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR get_is_editor_order_view_on_occasion(occasion)))",
+    "check": null
+  },
+  {
+    "kind": "policy",
+    "schema": "public",
+    "table": "user_news",
+    "name": "select for all",
+    "roles": [
+      "public"
+    ],
+    "cmd": "SELECT",
+    "permissive": "PERMISSIVE",
+    "qual": "true",
+    "check": null
+  },
+  {
+    "kind": "relation",
+    "schema": "public",
+    "name": "occasions",
+    "type": "r",
+    "rls": true,
+    "options": null,
+    "owner": "postgres",
+    "anon_select": true,
+    "auth_select": true,
+    "anon_write": false,
+    "auth_write": false,
+    "anon_truncate": false,
+    "auth_truncate": false
+  },
+  {
+    "kind": "relation",
+    "schema": "public",
+    "name": "user_group_info",
+    "type": "r",
+    "rls": true,
+    "options": null,
+    "owner": "postgres",
+    "anon_select": true,
+    "auth_select": true,
+    "anon_write": false,
+    "auth_write": false,
+    "anon_truncate": false,
+    "auth_truncate": false
+  },
+  {
+    "kind": "relation",
+    "schema": "public",
+    "name": "user_groups",
+    "type": "r",
+    "rls": true,
+    "options": null,
+    "owner": "postgres",
+    "anon_select": true,
+    "auth_select": true,
+    "anon_write": false,
+    "auth_write": false,
+    "anon_truncate": false,
+    "auth_truncate": false
+  },
+  {
+    "kind": "relation",
+    "schema": "public",
+    "name": "email_templates",
+    "type": "r",
+    "rls": true,
+    "options": null,
+    "owner": "postgres",
+    "anon_select": true,
+    "auth_select": true,
+    "anon_write": true,
+    "auth_write": true,
+    "anon_truncate": false,
+    "auth_truncate": false
+  },
+  {
+    "kind": "relation",
+    "schema": "public",
+    "name": "user_news",
+    "type": "r",
+    "rls": true,
+    "options": null,
+    "owner": "postgres",
+    "anon_select": true,
+    "auth_select": true,
+    "anon_write": false,
+    "auth_write": true,
+    "anon_truncate": false,
+    "auth_truncate": false
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "public",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/postgres",
+      "anon=rwU/postgres",
+      "authenticated=rwU/postgres",
+      "service_role=rwU/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "public",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/postgres",
+      "anon=arwdDxtm/postgres",
+      "authenticated=arwdDxtm/postgres",
+      "service_role=arwdDxtm/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "public",
+    "type": "f",
+    "acl": [
+      "postgres=X/postgres",
+      "anon=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_auth_admin",
+    "schema": "auth",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/supabase_auth_admin",
+      "dashboard_user=rwU/supabase_auth_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_auth_admin",
+    "schema": "auth",
+    "type": "f",
+    "acl": [
+      "postgres=X/supabase_auth_admin",
+      "dashboard_user=X/supabase_auth_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_auth_admin",
+    "schema": "auth",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/supabase_auth_admin",
+      "dashboard_user=arwdDxtm/supabase_auth_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql",
+    "type": "f",
+    "acl": [
+      "postgres=X/supabase_admin",
+      "anon=X/supabase_admin",
+      "authenticated=X/supabase_admin",
+      "service_role=X/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/supabase_admin",
+      "anon=arwdDxtm/supabase_admin",
+      "authenticated=arwdDxtm/supabase_admin",
+      "service_role=arwdDxtm/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/supabase_admin",
+      "anon=rwU/supabase_admin",
+      "authenticated=rwU/supabase_admin",
+      "service_role=rwU/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql_public",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/supabase_admin",
+      "anon=rwU/supabase_admin",
+      "authenticated=rwU/supabase_admin",
+      "service_role=rwU/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql_public",
+    "type": "f",
+    "acl": [
+      "postgres=X/supabase_admin",
+      "anon=X/supabase_admin",
+      "authenticated=X/supabase_admin",
+      "service_role=X/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "graphql_public",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/supabase_admin",
+      "anon=arwdDxtm/supabase_admin",
+      "authenticated=arwdDxtm/supabase_admin",
+      "service_role=arwdDxtm/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "realtime",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/supabase_admin",
+      "dashboard_user=rwU/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "realtime",
+    "type": "f",
+    "acl": [
+      "postgres=X/supabase_admin",
+      "dashboard_user=X/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "supabase_admin",
+    "schema": "realtime",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/supabase_admin",
+      "dashboard_user=arwdDxtm/supabase_admin"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "storage",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/postgres",
+      "anon=rwU/postgres",
+      "authenticated=rwU/postgres",
+      "service_role=rwU/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "storage",
+    "type": "f",
+    "acl": [
+      "postgres=X/postgres",
+      "anon=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "storage",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/postgres",
+      "anon=arwdDxtm/postgres",
+      "authenticated=arwdDxtm/postgres",
+      "service_role=arwdDxtm/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "supabase_functions",
+    "type": "S",
+    "acl": [
+      "postgres=rwU/postgres",
+      "anon=rwU/postgres",
+      "authenticated=rwU/postgres",
+      "service_role=rwU/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "supabase_functions",
+    "type": "f",
+    "acl": [
+      "postgres=X/postgres",
+      "anon=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "supabase_functions",
+    "type": "r",
+    "acl": [
+      "postgres=arwdDxtm/postgres",
+      "anon=arwdDxtm/postgres",
+      "authenticated=arwdDxtm/postgres",
+      "service_role=arwdDxtm/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "eshop",
+    "type": "S",
+    "acl": [
+      "anon=rwU/postgres",
+      "authenticated=rwU/postgres",
+      "service_role=rwU/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "eshop",
+    "type": "f",
+    "acl": [
+      "anon=X/postgres",
+      "authenticated=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "kind": "default_acl",
+    "owner": "postgres",
+    "schema": "eshop",
+    "type": "r",
+    "acl": [
+      "anon=arwdDxtm/postgres",
+      "authenticated=arwdDxtm/postgres",
+      "service_role=arwdDxtm/postgres"
+    ]
+  },
+  {
+    "kind": "schema",
+    "name": "public",
+    "anon_create": false,
+    "auth_create": false,
+    "anon_usage": true,
+    "auth_usage": true
+  },
+  {
+    "kind": "schema",
+    "name": "auth",
+    "anon_create": false,
+    "auth_create": false,
+    "anon_usage": true,
+    "auth_usage": true
+  },
+  {
+    "kind": "schema",
+    "name": "storage",
+    "anon_create": false,
+    "auth_create": false,
+    "anon_usage": true,
+    "auth_usage": true
+  },
+  {
+    "kind": "schema",
+    "name": "eshop",
+    "anon_create": false,
+    "auth_create": false,
+    "anon_usage": true,
+    "auth_usage": true
+  },
+  {
+    "kind": "schema",
+    "name": "extensions",
+    "anon_create": false,
+    "auth_create": false,
+    "anon_usage": false,
+    "auth_usage": true
+  },
+  {
+    "kind": "role",
+    "name": "anon",
+    "superuser": false,
+    "bypassrls": false,
+    "createrole": false,
+    "config": [
+      "statement_timeout=3s"
+    ]
+  },
+  {
+    "kind": "role",
+    "name": "authenticated",
+    "superuser": false,
+    "bypassrls": false,
+    "createrole": false,
+    "config": [
+      "statement_timeout=8s"
+    ]
+  },
+  {
+    "kind": "role",
+    "name": "authenticator",
+    "superuser": false,
+    "bypassrls": false,
+    "createrole": false,
+    "config": [
+      "session_preload_libraries=supautils, safeupdate",
+      "statement_timeout=8s",
+      "lock_timeout=8s"
+    ]
+  },
+  {
+    "kind": "role",
+    "name": "service_role",
+    "superuser": false,
+    "bypassrls": true,
+    "createrole": false,
+    "config": null
+  }
+]

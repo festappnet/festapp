@@ -1,6 +1,8 @@
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
@@ -11,7 +13,7 @@ import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/occasion/occasion_home_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import '../map/place_picker_field.dart';
 
 class AddNewEventDialog {
@@ -71,7 +73,8 @@ class AddNewEventDialog {
                       !endDate!.isBefore(startDate!);
                 }
 
-                return AlertDialog(
+                return AppAlertDialog(
+                  onClose: () => Navigator.of(context).pop(),
                   title: Text(OccasionHomeStrings.addToSchedule),
                   content: Form(
                     key: formKey,
@@ -158,7 +161,7 @@ class AddNewEventDialog {
                                   parentEventIds: parentEvent != null
                                       ? [parentEvent.id]
                                       : null,
-                                );
+                                 timeContext: TimeHelper.eventTime);
                                 await DbEvents.updateEvent(newEvent);
                                 Navigator.of(context).pop();
                               }

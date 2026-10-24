@@ -13,6 +13,8 @@ class PaymentInfoModel {
   double? returned;
   DateTime? deadline;
   String? currencyCode;
+  String? paymentMethod;
+  bool get isStripe => paymentMethod == 'stripe';
   Map<String, dynamic>? data;
   bool? isReminderSent;
 
@@ -47,6 +49,7 @@ class PaymentInfoModel {
           ? DateTime.parse(json[TbEshop.payment_info.deadline])
           : null,
       currencyCode: json[TbEshop.payment_info.currency_code],
+      paymentMethod: json['payment_method'] as String?,
       data: data,
       isReminderSent: data?['current_version_reminded'] == true,
     );
@@ -67,6 +70,7 @@ class PaymentInfoModel {
     this.returned,
     this.deadline,
     this.currencyCode,
+    this.paymentMethod,
     this.data,
     this.isReminderSent = false,
   });

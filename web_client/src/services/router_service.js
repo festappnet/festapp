@@ -1,3 +1,7 @@
+import { normalizeUrl, legacyHashTarget } from './url_normalizer.js';
+import { isEmbed } from './embed_context.js';
+import { resolveScannerRoute } from './scanner_routes.js';
+import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
 import { AppConfig } from '../app_config.js';
 import { prepareFlutterRuntime } from './flutter_runtime_handoff.js';
 
@@ -6,12 +10,19 @@ export class RouterService {
 
     static FORM_PATH_PREFIX = '/form/';
 
+    static getFormLink(path) { return formLinkFromPath(path); }
+
     static openExternalUrl(url, { inCurrentWindow = false } = {}) {
         if (inCurrentWindow) {
             window.location.href = url;
             return;
         }
         window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    static canonicalizePublicLink(kind, requested, canonical) {
+        replaceResolvedPublicLink(kind, requested, canonical);
+        RouterService._lastPath = window.location.pathname;
     }
 
     static async navigateToOccasionApp(link) {
@@ -29,22 +40,20 @@ export class RouterService {
         return /^\/[^/]+\/event(?:\/.*)?$/.test(path);
     }
 
-    static navigateToOccasion(link) {
-        // For backwards compatibility or default behavior
-        return RouterService.navigateToForm(link);
-    }
     
     static async navigateToForm(link) {
         const cleanLink = link.split('?')[0];
-        const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
-        RouterService._lastPath = path; // Update tracker
+        const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}${isEmbed() ? window.location.search + window.location.hash : ''}`;
+        RouterService._lastPath = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
         RouterService.pushState(path);
+        await RouterService.mountForm(cleanLink);
+    }
+
+    static async mountForm(link) {
         const { FormPage } = await import('../components/forms/form_page.js');
-        // Instantiate using correct container (legacy id preserved)
-        // Ensure to remove old instance if tracked via singleton in FormPage (which we removed)
-        // Since we are moving to instance based, the Router should probably hold the current page reference
-        // but for now, we just create new one which cleans up previous by id.
-        new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
+        RouterService._formPage?.clear();
+        RouterService._formPage = new FormPage('form-page-container');
+        await RouterService._formPage.init(link, { onBack: RouterService.goBackProgrammatically });
     }
 
     static getLoginUrl() {
@@ -63,11 +72,6 @@ export class RouterService {
         return '/admin';
     }
 
-    static async navigateToLogin() {
-        const url = RouterService.getLoginUrl();
-        await RouterService.navigateToFlutterRoute(url);
-    }
-
     static async navigateToAdmin(unitId = null) {
         const url = RouterService.getAdminUrl(unitId);
         await RouterService.navigateToFlutterRoute(url);
@@ -79,6 +83,7 @@ export class RouterService {
     }
 
     static async navigateToFlutterRoute(url) {
+        if (isEmbed()) return;
         await prepareFlutterRuntime();
         RouterService.openExternalUrl(url, { inCurrentWindow: true });
     }
@@ -97,7 +102,13 @@ export class RouterService {
     }
     
     static pushOverlayState(hash) {
-        window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
+        // Personal capabilities must survive reload while an overlay is open.
+        // The browser owns the fragment; keep only the overlay name in state.
+        if ((window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?'))) {
+            window.history.pushState({ overlay: hash }, '', window.location.href);
+        } else {
+            window.history.pushState({}, '', `${window.location.pathname}${window.location.search}#${hash}`);
+        }
     }
     
     static goBackProgrammatically() {
@@ -116,7 +127,6 @@ export class RouterService {
         '/unit',
         '/admin',
         // '/form', // Handled by Web Client
-        '/scan',
         '/transfer'
     ];
 
@@ -126,14 +136,34 @@ export class RouterService {
         // cancels. App-supported tenants must not hand it off to Flutter.
         if (window.location.pathname === '/google-auth') return true;
         let path = window.location.pathname;
-        const fullUrl = window.location.href;
+        const legacyTarget = legacyHashTarget(window.location.href, AppConfig.compatibleUrls);
+        if (legacyTarget) window.history.replaceState(null, '', legacyTarget);
+        const fullUrl = legacyTarget ? new URL(legacyTarget, window.location.origin).href : window.location.href;
 
         // 0. Normalize URL
         path = RouterService.normalizeUrl(fullUrl);
 
+        const scannerRoute = resolveScannerRoute(path);
+        if (scannerRoute) {
+            const requestedOccasion = new URL(fullUrl).searchParams.get('occasion');
+            if (/^[1-9][0-9]*$/.test(requestedOccasion || '')) scannerRoute.occasion = requestedOccasion;
+            const target = scannerRoute.canonical || path;
+            if (!scannerRoute.code) window.history.replaceState(null, '', target);
+            this._lastPath = target;
+            await this.mountScanner(scannerRoute);
+            return true;
+        }
+
+        // The root shell must see scanner hashes before the tenant home handoff.
+        if (path === '/' && AppConfig.forceOccasionLink) {
+            await RouterService.navigateToFlutterRoute(`/${encodeURIComponent(AppConfig.forceOccasionLink)}/event`);
+            return true;
+        }
+
         // 1. Identify Route Type
         // Web Client Routes: / (Home), /index.html, /form/...
         const isWebClientRoute = path === '/' ||
+                                 (path === '/events' && new URL(AppConfig.webLink).hostname === 'vstupenky.online') ||
                                  path === '/index.html' ||
                                  path.startsWith(RouterService.FORM_PATH_PREFIX);
 
@@ -148,7 +178,7 @@ export class RouterService {
         let redirectPath = `${path}${query}`;
 
         // 2. Data-Driven Decision Logic (Mirrors Flutter AppRouter.getDefaultLink)
-        if (AppConfig.isAppSupported) {
+        if (AppConfig.isAppSupported && !isEmbed()) {
             // Need to fetch data to make a decision
             const { RightsService } = await import('./rights_service.js'); // Lazy load to avoid cycle
             await RightsService.updateAppData();
@@ -301,7 +331,7 @@ export class RouterService {
              const hasPreview = window.location.search && window.location.search.includes('preview=true');
              const hasSearch = window.location.search && (window.location.search.includes('?q=') || window.location.search.includes('&q='));
 
-             if (!hasPreview && !hasSearch && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
+             if (!legacyTarget && !isEmbed() && !hasPreview && !hasSearch && !(window.location.hash.startsWith('#waitlist?') || window.location.hash.startsWith('#order?')) && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
                   window.history.replaceState(null, '', path);
                   RouterService._lastPath = path; // Sync tracker
              }
@@ -313,11 +343,9 @@ export class RouterService {
 
         // 5. Load Component
         if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
-            const link = path.substring(RouterService.FORM_PATH_PREFIX.length);
-            const cleanLink = link.split('/')[0];
+            const cleanLink = RouterService.getFormLink(path);
             if (cleanLink) {
-                const { FormPage } = await import('../components/forms/form_page.js');
-                new FormPage('form-page-container').init(cleanLink, { onBack: RouterService.goBackProgrammatically });
+                await RouterService.mountForm(cleanLink);
                 return true; // Handled
             }
         }
@@ -325,64 +353,49 @@ export class RouterService {
         return false;
     }
 
+    static async mountScanner(route) {
+        this._scannerPage?.clear();
+        document.getElementById('app')?.style.setProperty('display', 'none');
+        const host = document.getElementById('form-page-container');
+        host.style.display = 'block';
+        const { SupabaseService } = await import('./supabase_service.js');
+        const domain = ['program','reception'].includes(route.page);
+        if (domain) await SupabaseService.initialize();
+        // Ticket shell and IDB mount without waiting for Auth refresh. The first
+        // online RPC still resolves/validates the normal backend before use.
+        const client = domain ? SupabaseService.getClient() : {
+            get supabaseUrl() { return SupabaseService._backend.supabaseUrl; },
+            get scannerBackendContext() {
+                const b=SupabaseService._backend;
+                return { generation:b.isCanonical?1:0,origin:b.supabaseUrl,organization:b.organizationId };
+            },
+            async rpc(...args) { await SupabaseService.initialize(); return SupabaseService.getClient().rpc(...args); },
+        };
+        const { ScanPage } = await import('../components/scan/scan_page.js');
+        const { ScannerDomainPage } = await import('../components/scan/scanner_domain_page.js');
+        this._scannerPage = ['program','reception'].includes(route.page)
+            ? new ScannerDomainPage(host, { client }) : new ScanPage(host, { client });
+        await this._scannerPage.init(route);
+    }
+
     static normalizeUrl(url) {
-        let path = url;
-
-        // Absolute URLs can come from any valid deployment origin, including
-        // Cloudflare preview domains. Routing depends on their path, never on
-        // whether the origin happens to be listed in compatibleUrls.
-        try {
-            const uri = new URL(url);
-            path = `${uri.pathname}${uri.search}${uri.hash}`;
-        } catch (_) {
-            // Relative and legacy malformed paths are normalized below.
-        }
-
-        // Handle malformed paths e.g. /https://domain.com/path
-        if (path.match(/^\/https?:/)) {
-             const matchedBaseInternal = AppConfig.compatibleUrls.find(u => u && path.includes(u));
-             if (matchedBaseInternal) {
-                 const index = path.indexOf(matchedBaseInternal);
-                 path = path.substring(index + matchedBaseInternal.length);
-             }
-        }
-
-        // 2. Identify and Extract Legacy Hash /#/ regardless of preceding query params
-        // Example: /?fbclid=123/#/form/slug  -> should extract /form/slug
-
-        // Strategy: First split by # to isolate potential legacy hash
-        const parts = path.split('#');
-        if (parts.length > 1) {
-            // Check if the part after # starts with / (Legacy Hash pattern)
-            // or if it's the specific pattern we support
-            const fragment = parts[1];
-            if (fragment.startsWith('/')) {
-                path = fragment; // Take the hash path as the new root
-            } else {
-                 // It's a normal fragment (e.g. #section), so we just want the path part before it.
-                 // BUT wait, if we had /path#section, we want /path.
-                 // If we had /?query#section, we want / (and query stripped later).
-                 path = parts[0];
-            }
-        }
-
-        // 2.5 Strip Query Parameters (Strict Sanitization)
-        // Now that we've potentially re-rooted to the hash path, strip queries from it.
-        // Also strip queries from the original path if we didn't re-root (e.g. /path?q=1)
-        path = path.split('?')[0];
-
-        // 3. Ensure leading slash
-        if (!path.startsWith('/')) {
-            path = '/' + path;
-        }
-
-        return path;
+        return normalizeUrl(url, AppConfig.compatibleUrls);
     }
 
     // Listen for PopState
     static _lastPath = window.location.pathname;
 
     static initPopStateListener() {
+        window.addEventListener('hashchange', (event) => {
+            const previous = new URL(event.oldURL);
+            const current = new URL(event.newURL);
+            if (current.pathname.startsWith(RouterService.FORM_PATH_PREFIX) &&
+                previous.hash !== current.hash &&
+                ([previous.hash, current.hash].some(hash => hash.startsWith('#waitlist?') || hash.startsWith('#order?')))) {
+                // A different personal capability is a fresh form session.
+                window.location.reload();
+            }
+        });
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
             
@@ -392,10 +405,12 @@ export class RouterService {
             }
             RouterService._lastPath = path;
 
+            const scannerRoute = resolveScannerRoute(path);
+            if (scannerRoute) { await RouterService.mountScanner(scannerRoute); return; }
+            RouterService._scannerPage?.clear(); RouterService._scannerPage = null;
             if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
-                 const link = path.substring(RouterService.FORM_PATH_PREFIX.length).split('/')[0];
-                 const { FormPage } = await import('../components/forms/form_page.js');
-                 new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically }); 
+                 const link = RouterService.getFormLink(path);
+                 await RouterService.mountForm(link); 
             } else {
                  window.location.reload(); 
             }

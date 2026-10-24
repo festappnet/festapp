@@ -1,14 +1,13 @@
+import 'sembast_client_sync_storage.dart';
+import 'package:fstapp/services/storage_helper.dart';
+import 'supabase_private_sync_remote.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_projection_tracker.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_remote.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_service.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_store.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/occasion_media_cache.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -54,7 +53,9 @@ class ClientSyncRuntime {
   static DateTime? lastSuccess(SyncFreshnessClass type) =>
       state.value?.classes[type]?.lastSuccess;
   static ClientSyncStore get store => _store;
-  static final ClientSyncStore _store = ClientSyncStore();
+  static final ClientSyncStore _store = ClientSyncStore(
+      storage: SembastClientSyncStorage(
+          () => StorageHelper.openDatabase('client_sync_v1.db')));
 
   static void configure(
     SupabaseClient supabase, {
@@ -64,8 +65,8 @@ class ClientSyncRuntime {
   }) {
     _onLastSuccess = onLastSuccess;
     final publicRemote = HttpPublicSyncRemote(
-      headOrigin: publicHeadOrigin ?? Uri.parse(AppConfig.syncHeadOrigin),
-      artifactOrigin: publicAssetOrigin ?? Uri.parse(AppConfig.syncAssetOrigin),
+      headOrigin: publicHeadOrigin ?? Uri.parse(AppConfig.effectiveSyncHeadOrigin),
+      artifactOrigin: publicAssetOrigin ?? Uri.parse(AppConfig.effectiveSyncAssetOrigin),
       artifactRequestUriResolver: kIsWeb
           ? (artifactUri) => resolvePublicArtifactRequestUriForPage(
                 artifactUri,
@@ -311,45 +312,6 @@ class ClientSyncRuntime {
         pointer: pointer,
       );
     }
-  }
-
-  /// Reconciles fields returned authoritatively by a private mutation even
-  /// when an idempotent/no-op response carries no replacement artifact.
-  static Future<void> patchPrivateComponent({
-    required ClientSyncComponent component,
-    required Map<String, dynamic> fields,
-    bool notifyProjection = true,
-    String? expectedContextToken,
-  }) async {
-    if (expectedContextToken != null &&
-        !isCurrentMutationContext(expectedContextToken)) {
-      return;
-    }
-    final context = _context;
-    final scope = context?.privateScope;
-    if (!_v1Selected || context == null || scope == null) return;
-    final current = await _store.activeGeneration(
-      scope,
-      SyncFreshnessClass.privateIdentity,
-    );
-    final raw = await readPrivate(component);
-    final revision = current?.revisions[component];
-    if (_context != context ||
-        (expectedContextToken != null &&
-            !isCurrentMutationContext(expectedContextToken))) {
-      return;
-    }
-    if (raw is! Map || revision == null) {
-      await refresh(SyncReason.manual, privateConsumer: true);
-      return;
-    }
-    await applyPrivateReplacement(
-      component: component,
-      revision: revision,
-      payload: {...raw.cast<String, dynamic>(), ...fields},
-      notifyProjection: notifyProjection,
-      expectedContextToken: expectedContextToken,
-    );
   }
 
   static Future<void> applyPublicReplacement({

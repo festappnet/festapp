@@ -1,0 +1,17 @@
+{
+  "cause": "Separate palette and canvas crops discarded native source columns232-338 and changed their relative coordinates. Native ghost remained present in raw footage.",
+  "fix": "One continuous1128x716 source rectangle at0,168, mapped by translation(+6,-114) into1140x824. Static palette chrome only excluded outside the gesture path.",
+  "sourceTake": "layout-brand/layout-build-cs-1792679468",
+  "encodedEvidence": [
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/drag-mid-0.png",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/drag-mid-1.png",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/drag-mid-2.png",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/drag-mid-3.png",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/additional-table-mid.png",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-continuity/round-table-mid.png"
+  ],
+  "duration": 30.5,
+  "copyCompression": 8,
+  "nativeGesturesUnchanged": true,
+  "ghostOrPointerFabricated": false
+}

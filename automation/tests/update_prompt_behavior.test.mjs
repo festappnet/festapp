@@ -21,7 +21,7 @@ assert.doesNotMatch(
   'accepting an update must preserve the currently working offline shell',
 );
 const cutoverFunction = source.match(
-  /async function cutOverToVersion\(latestVersion\) \{[\s\S]*?\n  \}/,
+  /async function cutOverToVersion\(latestVersion, automatic = false\) \{[\s\S]*?\n  \}/,
 )?.[0] ?? '';
 assert.ok(
   cutoverFunction.indexOf('activateWaitingFestappWorker') <

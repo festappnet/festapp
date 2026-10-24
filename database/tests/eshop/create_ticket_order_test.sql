@@ -10,6 +10,7 @@ DECLARE
     v_product_type_id bigint;
     v_product_id bigint;
     v_spot_id bigint;
+    v_blueprint_id bigint;
     v_acc_id bigint;
     v_secret_id bigint;
     v_input_data jsonb;
@@ -37,8 +38,8 @@ BEGIN
     INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority) VALUES (v_unit_id, v_acc_id, 1);
 
     -- Create Occasion
-    INSERT INTO public.occasions (title, unit, link, start_time, end_time)
-    VALUES ('Test Occasion Eshop', v_unit_id, 'test-occ-eshop-' || floor(random()*100000)::text, now(), now() + interval '1 day')
+    INSERT INTO public.occasions (title, unit, organization, link, start_time, end_time)
+    VALUES ('Test Occasion Eshop', v_unit_id, (SELECT organization FROM public.units WHERE id=v_unit_id), 'test-occ-eshop-' || floor(random()*100000)::text, now(), now() + interval '1 day')
     RETURNING id INTO v_occasion_id;
 
     -- Create Form (Open)
@@ -64,6 +65,12 @@ BEGIN
     VALUES ('Test Spot', v_product_id, v_occasion_id, gen_random_uuid())
     RETURNING id INTO v_spot_id;
 
+    INSERT INTO eshop.blueprints(organization, occasion, title, groups, objects)
+    VALUES ((SELECT organization FROM public.units WHERE id=v_unit_id), v_occasion_id, 'Seating',
+      '[{"id":7,"title":"7"}]', jsonb_build_array(jsonb_build_object('id',v_spot_id,'type','spot','group',7)))
+    RETURNING id INTO v_blueprint_id;
+    UPDATE eshop.spots SET blueprint=v_blueprint_id WHERE id=v_spot_id;
+
     -- 2. Construct Order Input
     -- { form: key, email: ..., ticket: [ { spot: spot_id } ] }
     v_input_data := jsonb_build_object(
@@ -83,6 +90,8 @@ BEGIN
     PERFORM assert_eq((v_result->>'code')::int, 200, 'Order creation should succeed (200). Got: ' || COALESCE(v_result->>'code', 'NULL') || ' Msg: ' || COALESCE(v_result->>'message', ''));
 
     PERFORM assert_not_null(v_result->'order'->>'id', 'Order ID must be returned');
+    PERFORM assert_eq(v_result#>>'{order,data,tickets,0,products,0,spot_group_title}', '7', 'Confirmation snapshot includes table');
+    PERFORM assert_eq(v_result#>>'{order,data,tickets,0,products,0,spot_title}', 'Test Spot', 'Confirmation snapshot includes seat');
     PERFORM assert_true(v_result#>>'{order,order_symbol}' ~ '^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$', 'Canonical order symbol returned');
     PERFORM assert_eq(v_result#>>'{order,order_symbol}',
         (SELECT order_symbol FROM eshop.orders WHERE id=(v_result#>>'{order,id}')::bigint), 'Response uses persisted symbol');

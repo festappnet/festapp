@@ -1,0 +1,12 @@
+- alertdialog "ZavřítNáhled neuloženého odkazuDalší možnostiZrušitVytvořit" [ref=e1] focusable [tabindex]
+  - button "Zavřít" [ref=e5]
+  - textbox "Název" [ref=e6]: QA Kolize události
+  - textbox "Odkaz" [ref=e7]: qa-formulare
+  - textbox "Začátek" [ref=e8]
+  - textbox "Datum začátku" [ref=e9]
+  - textbox "Konec" [ref=e10]
+  - textbox "Datum konce" [ref=e11]
+  - textbox [disabled, ref=e12]
+  - button "Další možnosti" [expanded=false, ref=e2]
+  - button "Zrušit" [ref=e3]
+  - button "Vytvořit" [ref=e4]

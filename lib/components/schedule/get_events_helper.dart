@@ -1,6 +1,7 @@
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:festapp_core/program.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 /// Model for linking parent and child events
 class EventGroupModel {
@@ -63,7 +64,7 @@ class GetEventsHelper {
     if (data == null) return [];
     return data
         .cast<Map<String, dynamic>>()
-        .map((e) => EventModel.fromJson(e))
+        .map((e) => EventModel.fromJson(e, timeContext: TimeHelper.eventTime))
         .toList();
   }
 

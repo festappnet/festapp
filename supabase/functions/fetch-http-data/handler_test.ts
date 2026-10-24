@@ -25,7 +25,7 @@ function transport(permission: boolean | number = true) {
       calls.push({ url, init: init ?? {} });
       if (url.startsWith(backend)) {
         return Promise.resolve(new Response(JSON.stringify(
-          typeof permission === "boolean" ? permission : { error: "rejected" },
+          permission === true ? { allowed: true, maxBytes: 10485760 } : permission === false ? false : { error: "rejected" },
         ), { status: typeof permission === "number" ? permission : 200 }));
       }
       return Promise.resolve(new Response(new Uint8Array([1, 2, 3]), {
@@ -47,7 +47,7 @@ for (const [role, scope, args] of [
     assertEquals(response.status, 200);
     assertEquals(await response.json(), { data: "AQID", contentType: "image/png" });
     assertEquals(calls.length, 2);
-    assertEquals(calls[0].url, `${backend}/rest/v1/rpc/check_upload_permission`);
+    assertEquals(calls[0].url, `${backend}/rest/v1/rpc/admit_external_image_fetch_v1`);
     assertEquals(JSON.parse(String(calls[0].init.body)), args);
     const headers = new Headers(calls[0].init.headers);
     assertEquals(headers.get("Authorization"), `Bearer ${role}`);

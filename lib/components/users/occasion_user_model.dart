@@ -1,7 +1,6 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/components/users/db_users.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -31,7 +30,7 @@ class OccasionUserModel extends ITrinaRowModel {
   String? companionOwnerName;
   String? companionOrigin;
   List<String> managedCompanionNames;
-  FormModel? form;
+  FormBundle? form;
 
   bool? isEditor = false;
   bool? isEditorView = false;
@@ -420,16 +419,6 @@ class OccasionUserModel extends ITrinaRowModel {
     }
 
     return true;
-  }
-
-  static bool compareJson(
-      Map<String, dynamic>? json1, Map<String, dynamic>? json2) {
-    if (json1 == null && json2 == null) return true;
-    if (json1 == null || json2 == null) return false;
-
-    // Use DeepCollectionEquality to perform a deep comparison for non-null maps
-    final deepEquality = const DeepCollectionEquality().equals;
-    return deepEquality(json1, json2);
   }
 
   static bool compareServicesJson(Map<String, dynamic>? json1,

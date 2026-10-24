@@ -1,5 +1,16 @@
 # Supabase Storage → Cloudflare R2 Migration
 
+> Historical, operator-only tooling. These scripts are not called by the app,
+> the image Worker, SQL admission or abuse maintenance. Do not replay the old
+> commands or use former cloud-project configuration as the canonical backend.
+> The 2026-10-16 abuse implementation adds no migration job or process.
+> New uploads and copies use the existing image control Worker. Existing Storage
+> URLs remain a read/delete boundary because the October 12 Slunovrat readback
+> still found 224 such records; see
+> [current contract](../../docs/backend/image_worker.md).
+> Public R2 delivery cutover and historical object migration are distinct:
+> changing a public host's routing does not migrate Storage objects.
+
 Scripts for migrating image files from Supabase Storage to Cloudflare R2 and rewriting all database URLs.
 
 ## Architecture
@@ -28,7 +39,7 @@ Cloudflare R2 private bucket
 ```bash
 cd automation/image-migration
 cp .env.example .env    # Fill in credentials
-npm install
+pnpm install
 ```
 
 ## Usage
@@ -47,13 +58,13 @@ node migrate-files.js --concurrency 5
 ```
 
 **Prerequisites:**
-- `wrangler` authenticated (`npx wrangler login`)
+- `wrangler` authenticated (`pnpm exec wrangler login`)
 - R2 bucket `festapp-images` exists
 - `DATABASE_URL` set in `.env`
 
 **How it works:**
 1. Queries database for all distinct Supabase Storage URLs across 18+ columns
-2. Filters to only this project's Supabase instance (`kjdpmixlnhntmxjedpxh`)
+2. Filters downloaded URLs using the explicitly supplied `SUPABASE_PROJECT_REF`
 3. Downloads each file via public HTTP (no service role key needed)
 4. Uploads to R2 via `wrangler r2 object put --remote`
 5. Skips files already in R2 (idempotent)
@@ -61,9 +72,9 @@ node migrate-files.js --concurrency 5
 ### Private bucket isolation (P1 only)
 
 ```bash
-npm run private:inventory
-npm run private:copy
-npm run private:verify
+pnpm run private:inventory
+pnpm run private:copy
+pnpm run private:verify
 # Separate authorized source-deletion checkpoint only:
 node private-bucket-cutover.js --delete --confirm-source-delete
 ```
@@ -123,9 +134,12 @@ node verify.js
 ```
 
 Checks:
-1. Zero Supabase Storage URLs remaining in all columns
+1. Scans its listed columns for the configured legacy project; other-project
+   URLs are reported separately, not proof of a global canonical Storage inventory
 2. File count parity between Supabase and R2 (if credentials provided)
-3. Dual-write period status
+The scanner matches legacy `.supabase.co/storage` URLs. It does not establish
+that no `api.festapp.net/storage` references remain, and it does not verify a
+live dual-write period.
 
 ### Step 5: Find orphan images (optional)
 
@@ -172,4 +186,4 @@ to its exact public R2 bucket, so the direct-delivery cutover needs no DB rewrit
 - **Historical target URL:** a workers.dev migration route that is no longer a supported client contract
 
 Current split-plane production checkpoints are tracked in
-`docs/plans/image-delivery-cost-cutover-evidence-2026-08-23.md`.
+[the cutover evidence](../../docs/plans/image-delivery-cost-cutover-evidence-2026-08-23.md).

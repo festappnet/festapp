@@ -14,7 +14,7 @@ const excludedNames = new Set([
 
 export function shouldPrecache(relativePath) {
   const name = path.posix.basename(relativePath);
-  if (excludedNames.has(name)) return false;
+  if (excludedNames.has(name) || /\.(mp4|webm)$/i.test(name) || relativePath.startsWith('.vite/')) return false;
   if (name === 'NOTICES' || name.endsWith('.map') || name.endsWith('.symbols')) {
     return false;
   }
@@ -24,6 +24,7 @@ export function shouldPrecache(relativePath) {
 
 export function deploymentUrl(url) {
   if (url === '/flutter') return '/flutter?pwa-cache=1';
+  if (url === '/organizers-page') return '/organizers-page?pwa-cache=1';
   if (url === '/webclient') return '/webclient?pwa-cache=1';
   return url.endsWith('/index.html') ? url.slice(0, -'index.html'.length) : url;
 }
@@ -68,6 +69,7 @@ export async function collectPwaShellManifest(buildDir) {
   }
 
   const knownResources = [...byUrl.keys()];
+  const marketingEntry = knownResources.includes('/organizers-page?pwa-cache=1') ? '/organizers-page?pwa-cache=1' : null;
   const standaloneDocuments = knownResources.filter((url) =>
     url !== '/' && url.endsWith('/'));
   const standaloneDocumentSet = new Set(standaloneDocuments);
@@ -78,14 +80,16 @@ export async function collectPwaShellManifest(buildDir) {
     '/AssetManifest.json', '/FontManifest.json',
   ]);
   const coreResources = knownResources.filter((url) =>
-    url === flutterEntry || url === webClientEntry ||
+    url === flutterEntry || url === webClientEntry || url === marketingEntry ||
     standaloneDocumentSet.has(url) ||
     installCriticalNames.has(url.split('?')[0]) ||
-    /^\/main\.dart\.js_\d+\.part\.js$/.test(url.split('?')[0]));
+    /^\/main\.dart\.js_\d+\.part\.js$/.test(url.split('?')[0]) ||
+    url.startsWith('/web-assets/') || url.startsWith('/assets/translations/'));
   const total = (resources) => resources.reduce(
     (sum, url) => sum + (byUrl.get(url)?.bytes ?? 0), 0);
 
   return {
+    marketingEntry,
     flutterEntry,
     webClientEntry,
     standaloneDocuments,

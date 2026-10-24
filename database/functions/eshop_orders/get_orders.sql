@@ -38,13 +38,13 @@ BEGIN
         SELECT id
         INTO v_occasion_id
         FROM public.occasions
-        WHERE link = p_occasion_link
+        WHERE id = public.resolve_occasion_link_internal(p_occasion_link)
           AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
     ELSE
         SELECT occasion, id
         INTO v_occasion_id, v_form_id
         FROM public.forms
-        WHERE link = p_form_link
+        WHERE id = public.resolve_form_link_internal(p_form_link)
           AND occasion IN (SELECT o.id FROM public.occasions o WHERE o.organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid()));
     END IF;
 
@@ -109,7 +109,14 @@ BEGIN
         'ticket_symbol', t.ticket_symbol,
         'state', t.state,
         'note', t.note,
-        'note_hidden', t.note_hidden
+        'note_hidden', t.note_hidden,
+        'batch', (SELECT jsonb_build_object('id',i.batch_id,'title',b.title,'ordinal',i.ordinal,'saleOrderId',i.sale_order_id) FROM eshop.ticket_batch_items i JOIN eshop.ticket_batches b ON b.id=i.batch_id WHERE i.ticket_id=t.id),
+        'allowedActions',CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id) THEN
+          jsonb_build_array('view') || CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_document_parts d WHERE d.kind='single' AND d.ticket_ids=ARRAY[t.id] AND d.state='ready') THEN jsonb_build_array('download') ELSE '[]'::jsonb END ||
+          CASE WHEN public.get_is_editor_order_on_occasion(t.occasion) THEN jsonb_build_array('note') ||
+            CASE WHEN t.state<>'storno' AND EXISTS(SELECT 1 FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id AND i.sale_order_id IS NOT NULL)
+              THEN jsonb_build_array('use','reset','cancel') ELSE '[]'::jsonb END ELSE '[]'::jsonb END END,
+        'data', t.data
     ))
     INTO ticketsData
     FROM eshop.tickets t
@@ -123,6 +130,12 @@ BEGIN
         'occasion', f.occasion,
         'type', f.type,
         'deadline_duration_seconds', f.deadline_duration_seconds,
+        'participant_capacity',f.participant_capacity,
+        'waitlist_enabled',f.waitlist_enabled,
+        'show_remaining_capacity',f.show_remaining_capacity,
+        'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+        'capacity',public.get_form_capacity_snapshot_internal(f.id),
+        'registrationMode',public.get_form_registration_mode_internal(f.id),
         'is_open', f.is_open,
         'link', f.link,
         'blueprint', f.blueprint,
@@ -136,10 +149,20 @@ BEGIN
     IF v_form_id IS NOT NULL THEN
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
+              OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
+              THEN public.get_waitlist_summary_internal(o.id) END,
+            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
+            'allowedActions',(public.get_waitlist_summary_internal(o.id)->'allowedActions') -
+              CASE WHEN EXISTS(SELECT 1 FROM eshop.payment_info card WHERE card.id=o.payment_info AND card.payment_method='stripe')
+                THEN ARRAY['cancel','paid']::text[] ELSE ARRAY[]::text[] END,
+            'paymentChannel',CASE WHEN o.data ? 'ticketBatchOrigin' THEN 'cash' END,
+            'batchId',(SELECT b.id FROM eshop.ticket_batches b WHERE b.stock_order_id=o.id),
+            'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data
+                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))
                 ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email')
             END,
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden
@@ -150,10 +173,20 @@ BEGIN
     ELSE
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
+            'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL
+              OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
+              THEN public.get_waitlist_summary_internal(o.id) END,
+            'isActive',(public.get_waitlist_summary_internal(o.id)->>'isActive')::boolean,
+            'allowedActions',(public.get_waitlist_summary_internal(o.id)->'allowedActions') -
+              CASE WHEN EXISTS(SELECT 1 FROM eshop.payment_info card WHERE card.id=o.payment_info AND card.payment_method='stripe')
+                THEN ARRAY['cancel','paid']::text[] ELSE ARRAY[]::text[] END,
+            'paymentChannel',CASE WHEN o.data ? 'ticketBatchOrigin' THEN 'cash' END,
+            'batchId',(SELECT b.id FROM eshop.ticket_batches b WHERE b.stock_order_id=o.id),
+            'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data
+                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))
                 ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email')
             END,
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden
@@ -176,7 +209,7 @@ BEGIN
 
     -- Fetch payment information linked to the orders
     SELECT jsonb_agg(jsonb_build_object(
-        'id', pi.id, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
+        'id', pi.id, 'payment_method', pi.payment_method, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
         'deposit_deadline', pi.deposit_deadline, 'paid', pi.paid, 'returned', pi.returned, 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data
     ))
     INTO paymentInfoData

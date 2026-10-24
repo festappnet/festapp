@@ -1,3 +1,4 @@
+import { html, sanitizeHtml } from '../../../utils/html.js';
 import * as FormFieldBuilderModule from './form_field_builder.js';
 import { FormStrings } from '../form_strings.js';
 import { CommonStrings } from '../../shared/common_strings.js';
@@ -60,7 +61,7 @@ export class TicketFieldBuilder {
         // Complex Mode: >1 Tickets OR Spots (Ticket List UI).
         
         let forceComplex = false;
-        if (session && session.maxTickets > 1) {
+        if (session && (session.maxTickets > 1 || formModel.offerBundle)) {
              forceComplex = true;
         }
 
@@ -138,7 +139,7 @@ export class TicketFieldBuilder {
                          let newVal = '';
                          if (fieldEntry) {
                              // Try to resolve type from subFields in scope
-                             const subDef = subFields.find(sf => sf.id === subId);
+                             const subDef = subFields.find(sf => String(sf.id) === String(subId));
                              const typeKey = subDef ? subDef.type : null;
                              
                              newVal = fieldEntry.value;
@@ -158,6 +159,10 @@ export class TicketFieldBuilder {
                                  input.checked = false;
                              }
                          } else if (input.type === 'checkbox') {
+                             if (fieldEntry?.product_type !== undefined) {
+                                 newVal = ticketData.fields.filter(f => String(f._subFieldId) === String(subId))
+                                     .map(f => f.product_type).join(' | ');
+                             }
                              // Checkbox Logic (Multiselect support)
                              // Session value might be "101 | 102"
                              let isChecked = false;
@@ -208,7 +213,7 @@ export class TicketFieldBuilder {
             if (field.description) {
                 const desc = document.createElement('div');
                 desc.className = 'form-field-description';
-                desc.innerHTML = field.description;
+                desc.innerHTML = sanitizeHtml(field.description);
                 container.appendChild(desc);
             }
 
@@ -277,7 +282,7 @@ export class TicketFieldBuilder {
                         container.selectedSeats = container.selectedSeats.filter(s => s.id !== seat.id);
                     }
                 };
-                header.appendChild(removeBtn);
+                if (!formModel.offerBundle) header.appendChild(removeBtn);
                 ticketItem.appendChild(header);
                 
                 // Sort fields to ensure Spot is first
@@ -305,7 +310,10 @@ export class TicketFieldBuilder {
                                 if (val === undefined && fieldEntry.text !== undefined) val = fieldEntry.text;
 
                                 if (val !== undefined) {
-                                    scopedDef.value = val;
+                                    scopedDef.value = subDef.type === 'product_type' && subDef.data?.selection_type === 'select_many'
+                                        ? ticketData.fields.filter(f => String(f._subFieldId) === String(subDef.id))
+                                            .map(f => f.product_type).join(' | ')
+                                        : val;
                                 }
                             }
                         }
@@ -365,10 +373,10 @@ export class TicketFieldBuilder {
                                 displayDiv.style.alignItems = 'center';
 
                                 const formattedPart = formatPrice(priceVal, currency);
-                                const priceHtml = priceVal > 0 ? `&nbsp;<span class="option-price">+${formattedPart}</span>` : '';
+                                const priceHtml = priceVal > 0 ? html`&nbsp;<span class="option-price">+${formattedPart}</span>` : '';
                                 const prefix = productTitle ? `${productTitle} - ` : '';
                                 
-                                displayDiv.innerHTML = `<span>${prefix}${seatName}</span>${priceHtml}`;
+                                displayDiv.innerHTML = html`<span>${prefix}${seatName}</span>${priceHtml}`;
                                 
                                 displayContainer.appendChild(displayDiv);
                                 ticketItem.appendChild(displayContainer);
@@ -432,7 +440,7 @@ export class TicketFieldBuilder {
                         let val = undefined;
                         if (fieldEntry) {
                             // Try to resolve type from subFields in scope
-                            const subDef = subFields.find(sf => sf.id === subId);
+                            const subDef = subFields.find(sf => String(sf.id) === String(subId));
                             const typeKey = subDef ? subDef.type : null;
                         
                             val = fieldEntry.value;
@@ -454,6 +462,10 @@ export class TicketFieldBuilder {
                              }
                              if (!shouldBeChecked) input.checked = false; // Explicit Uncheck Fix
                         } else if (input.type === 'checkbox') {
+                             if (fieldEntry?.product_type !== undefined) {
+                                 val = ticketData.fields.filter(f => String(f._subFieldId) === String(subId))
+                                     .map(f => f.product_type).join(' | ');
+                             }
                              // Checkbox Logic (Multiselect support)
                              // Session value might be "101 | 102"
                              let isChecked = false;
@@ -480,8 +492,8 @@ export class TicketFieldBuilder {
                     });
                 };
 
-                if (ticketItem.updateFromSession) ticketItem.updateFromSession(index);
                 listContainer.appendChild(ticketItem);
+                if (ticketItem.updateFromSession) ticketItem.updateFromSession(index);
             };
     
             // --- Logic Branch: Blueprint vs Manual ---
@@ -522,10 +534,10 @@ export class TicketFieldBuilder {
                      // --- STATE INVERSION: Call Session ---
                      if (session) session.addTicket(); // Add dummy/empty ticket
                 };
-                container.appendChild(addBtn);
+                if (!formModel.offerBundle) container.appendChild(addBtn);
                 
                 // Default 1 ticket (if session empty)
-                if (session && session.state.tickets.length === 0) {
+                if (session && session.state.tickets.length === 0 && !formModel.offerBundle) {
                      session.addTicket();
                      renderTicketItem(0);
                 } else if (session && session.state.tickets.length > 0) {
@@ -534,7 +546,7 @@ export class TicketFieldBuilder {
                          renderTicketItem(i);
                          // TODO: Restore values?
                     });
-                } else {
+                } else if (!formModel.offerBundle) {
                     // Fallback
                     renderTicketItem(0);
                 }

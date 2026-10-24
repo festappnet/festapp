@@ -1,27 +1,25 @@
+import 'package:fstapp/components/forms/models/form_bundle.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/form_commands.dart';
+import 'package:fstapp/components/forms/supabase_form_commands.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/eshop/models/product_type_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 
 // Bundle class to hold all related data for editing a form
 class FormEditBundle {
-  final FormModel form;
-  final List<FormFieldModel> formFields;
+  final FormEditorDraft form;
   final List<ProductTypeModel> productTypes;
   final List<ProductModel> products;
   final List<BankAccountModel> availableBankAccounts;
 
   FormEditBundle({
     required this.form,
-    required this.formFields,
     required this.productTypes,
     required this.products,
     required this.availableBankAccounts,
@@ -32,53 +30,44 @@ class DbForms {
   static final _supabase = Supabase.instance.client;
   static FormCommands get _commands => SupabaseFormCommands(_supabase);
 
-  static Future<List<FormModel>> getAllFormsForOccasionOrUnit() async {
+  static Future<List<FormBundle>> getAllFormsForOccasionOrUnit() async {
     final response = await _supabase.rpc('get_all_viewable_forms_for_copying');
 
-    return List<FormModel>.from(response.map((f) => FormModel.fromJson(f)));
+    return List<FormBundle>.from(response.map((f) => FormBundle.fromJson(f)));
   }
 
   static Future<void> duplicateFormToOccasion({
     required int sourceFormId,
     required String targetOccasionLink,
+    required String locale,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.duplicate(
+    await _commands.duplicate(
         sourceFormId: sourceFormId,
         targetOccasionLink: targetOccasionLink,
-      );
-      return;
-    }
-    await _supabase.rpc(
-      'duplicate_form_to_occasion',
-      params: {
-        'source_form_id': sourceFormId,
-        'target_occasion_link': targetOccasionLink,
-      },
+        locale: locale);
+  }
+
+  static Future<List<FormBundle>> getAllFormsByOccasionLink(String occasionLink,
+      {String? formLink}) async {
+    final response = await _supabase.rpc('get_forms_by_link', params: {
+      'occasion_link': occasionLink,
+      if (formLink != null) 'form_link': formLink,
+    });
+
+    return List<FormBundle>.from(response.map((f) => FormBundle.fromJson(f)));
+  }
+
+  static Future<({List<FormBundle> forms, String canonical})> getFormsForRoute(
+      String occasionLink, String formLink) async {
+    final rows = await _supabase.rpc('get_forms_by_link',
+        params: {'occasion_link': occasionLink, 'form_link': formLink}) as List;
+    final resolved = rows.where((row) => row['requested_link'] == formLink);
+    return (
+      forms: rows
+          .map((row) => FormBundle.fromJson(Map<String, dynamic>.from(row)))
+          .toList(),
+      canonical: resolved.isEmpty ? formLink : resolved.first['link'] as String
     );
-  }
-
-  static Future<List<FormModel>> getAllFormsByOccasionLink(
-      String occasionLink) async {
-    final response = await _supabase
-        .rpc('get_forms_by_link', params: {'occasion_link': occasionLink});
-
-    return List<FormModel>.from(response.map((f) => FormModel.fromJson(f)));
-  }
-
-  /// Fetches all forms for a given occasion, including their nested form fields.
-  static Future<List<FormModel>> getAllFormsWithFieldsViaOccasionLink(
-      String occasionLink) async {
-    final response = await _supabase
-        .rpc('get_all_forms_with_fields', // Calling the new function
-            params: {'occasion_link': occasionLink});
-
-    if (response["code"] == 200) {
-      // The FormModel.fromJson factory is expected to handle the 'fields' array
-      return List<FormModel>.from(
-          response["data"].map((f) => FormModel.fromJson(f)));
-    }
-    return [];
   }
 
   static Future<void> createNewForm({
@@ -86,69 +75,30 @@ class DbForms {
     required String link,
     required String occasionLink,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.create(
-        title: title,
-        link: link,
-        occasionLink: occasionLink,
-      );
-      return;
-    }
-    final response = await _supabase.rpc(
-      'create_form_ws',
-      params: {
-        'input_data': {
-          'title': title,
-          'link': link,
-          'occasion_link': occasionLink
-        },
-      },
-    );
-
-    if (response["code"] != 201) {
-      // 201 Created
-      throw Exception(response["message"]);
-    }
+    await _commands.create(
+        title: title, link: link, occasionLink: occasionLink);
   }
 
-  static Future<void> updateForm(FormModel form) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.save(form.toEditedJson());
-      return;
-    }
-    final response = await _supabase.rpc(
-      'update_form',
-      params: {
-        'input_data': form.toEditedJson(),
-      },
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
-    }
+  static Future<FormEditorDraft> updateForm(FormEditorDraft form) async {
+    final response = await _commands.save(form.toEditedJson());
+    form.aggregateVersion = (response['aggregate_version'] as num).toInt();
+    form.acceptProductVersions(response);
+    form.definition =
+        form.definition.copyWith(link: response['link'] as String);
+    return form;
   }
 
-  static Future<void> deleteForm(int formId) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.delete(formId);
-      return;
-    }
-    final response = await _supabase.rpc(
-      'delete_form_ws',
-      params: {'p_form_id': formId},
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
-    }
+  static Future<void> deleteForm(int formId,
+      {required int expectedVersion}) async {
+    await _commands.delete(formId, expectedVersion: expectedVersion);
   }
 
-  static Future<FormModel?> getFormFromLink(String link) async {
+  static Future<FormBundle?> getFormFromLink(String link) async {
     final response =
         await _supabase.rpc('get_form_by_link', params: {'form_link': link});
 
     if (response["code"] == 200 || response["code"] == 400) {
-      var form = FormModel.fromJson(response["data"]);
+      var form = FormBundle.fromJson(response["data"]);
       return form;
     }
     return null;
@@ -167,9 +117,9 @@ class DbForms {
     final data = response["data"];
 
     // 1. Parse all individual JSON lists into Dart models.
-    final form = FormModel.fromJson(data['form']);
+    final form = FormEditorDraft.fromJson(data['form']);
     final formFields = (data['form_fields'] as List)
-        .map((e) => FormFieldModel.fromJson(e))
+        .map((e) => FormFieldDraft.fromJson(e))
         .toList();
     final productTypes = (data['product_types'] as List)
         .map((e) => ProductTypeModel.fromJson(e))
@@ -183,38 +133,34 @@ class DbForms {
 
     // 2. Interconnect the parsed models.
     // Create maps for efficient lookups.
-    final productTypeMap = {for (var pt in productTypes) pt.id: pt};
-    final productMap = groupBy(products, (ProductModel p) => p.productTypeId);
-
-    // Link products to their parent product types.
-    for (var pt in productTypes) {
-      pt.products = productMap[pt.id] ?? [];
-    }
+    final catalog = ProductCatalog(products: products, types: productTypes);
+    final productTypeMap = {for (final type in catalog.types) type.id: type};
 
     // Link product type data to the relevant form fields.
     for (var field in formFields) {
-      if (field.productTypeId != null) {
-        field.productType = productTypeMap[field.productTypeId];
+      if (field.definition.productTypeId != null) {
+        field.definition = field.definition.copyWith(
+            productType: productTypeMap[field.definition.productTypeId]);
       }
     }
 
     // Assign the fully populated fields list to the form.
     form.relatedFields = formFields;
+    form.captureProductCatalog(catalog.types);
 
     // Find and assign the selected bank account model to the form.
     if (availableBankAccounts.isNotEmpty) {
       form.availableBankAccounts = availableBankAccounts;
-      if (form.bankAccountId != null) {
+      if (form.definition.bankAccountId != null) {
         form.bankAccount = availableBankAccounts
-            .firstWhereOrNull((ba) => ba.id == form.bankAccountId);
+            .firstWhereOrNull((ba) => ba.id == form.definition.bankAccountId);
       }
     }
 
     // 3. Create and return the final bundle.
     return FormEditBundle(
       form: form,
-      formFields: formFields,
-      productTypes: productTypes,
+      productTypes: catalog.types,
       products: products,
       availableBankAccounts: availableBankAccounts,
     );
@@ -259,19 +205,12 @@ class DbForms {
   }
 
   static Future<void> updateBlueprint(BlueprintModel blueprint) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.saveBlueprint(blueprint.toJson());
-      return;
-    }
-    final response = await _supabase.rpc(
-      'update_blueprint',
-      params: {
-        'input_data': blueprint,
-      },
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
+    final result = await _commands.saveBlueprint(blueprint.toSaveJson());
+    blueprint.id = (result['blueprint_id'] as num).toInt();
+    blueprint.aggregateVersion = (result['aggregate_version'] as num).toInt();
+    final savedObjects = result['updated_objects'] as List;
+    for (var index = 0; index < savedObjects.length; index++) {
+      blueprint.objects![index].id = savedObjects[index]['id'] as int?;
     }
   }
 
@@ -281,20 +220,21 @@ class DbForms {
     var ordersBundle = await DbOrders.getAllOrdersBundle(
         formLink: formLink, includeOrderDetails: true);
     var onlyFormOrders =
-        ordersBundle.orders.where((o) => o.form?.link == formLink);
+        ordersBundle.orders.where((o) => o.form?.definition.link == formLink);
     return List<FormResponseModel>.from(
       onlyFormOrders.map((x) => FormResponseModel.fromOrder(x, allFields)),
     );
   }
 
-  static Future<List<FormFieldModel>> getAllFormFields(String formLink) async {
+  static Future<List<FormFieldDefinition>> getAllFormFields(
+      String formLink) async {
     final response = await _supabase.rpc(
       'get_all_form_fields',
       params: {'form_link': formLink},
     );
 
-    return List<FormFieldModel>.from(
-      (response as List).map((x) => FormFieldModel.fromJson(x)),
+    return List<FormFieldDefinition>.from(
+      (response as List).map((x) => FormFieldDefinition.fromJson(x)),
     );
   }
 }

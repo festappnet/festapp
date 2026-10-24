@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/inventory/views/place_search_dialog.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 /// A tappable form field that opens a searchable place picker
 /// ([PlaceSearchDialog]) instead of a plain dropdown.

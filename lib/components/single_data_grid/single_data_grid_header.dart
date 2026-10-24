@@ -1,3 +1,4 @@
+import 'data_grid_action_confirmation.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'dart:ui';
 
@@ -95,31 +96,33 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     final canSaveOrDiscard =
         canChange && controller.hasPendingChanges && !_isSaving;
 
-    leftActions.addAll([
-      if (actionsController?.isAddActionPossible?.call() ?? true)
+    if (!controller.isDemoReadOnly)
+      leftActions.addAll([
+        if (actionsController?.isAddActionPossible?.call() ?? true)
+          ElevatedButton(
+            onPressed: actionsController != null &&
+                    actionsController.areAllActionsEnabled != null &&
+                    !actionsController.areAllActionsEnabled!()
+                ? null
+                : _addRow,
+            child: Text(CommonStrings.add),
+          ),
         ElevatedButton(
-          onPressed: actionsController != null &&
-                  actionsController.areAllActionsEnabled != null &&
-                  !actionsController.areAllActionsEnabled!()
-              ? null
-              : _addRow,
-          child: Text(CommonStrings.add),
+          onPressed: canSaveOrDiscard ? _cancelChanges : null,
+          child: Text(DataGridStrings.discardChanges),
         ),
-      ElevatedButton(
-        onPressed: canSaveOrDiscard ? _cancelChanges : null,
-        child: Text(DataGridStrings.discardChanges),
-      ),
-      ElevatedButton(
-        onPressed: canSaveOrDiscard &&
-                (actionsController?.saveAction?.isEnabled?.call() ?? true)
-            ? _runSave
-            : null,
-        child: Text(
-            actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
-      ),
-    ]);
+        ElevatedButton(
+          onPressed: canSaveOrDiscard &&
+                  (actionsController?.saveAction?.isEnabled?.call() ?? true)
+              ? _runSave
+              : null,
+          child: Text(
+              actionsController?.saveAction?.name ?? CommonStrings.saveChanges),
+        ),
+      ]);
 
-    if (controller.headerChildren != null &&
+    if (!controller.isDemoReadOnly &&
+        controller.headerChildren != null &&
         controller.headerChildren!.isNotEmpty) {
       for (var a in controller.headerChildren!) {
         leftActions.add(
@@ -181,7 +184,8 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
               animation: widget.stateManager,
               builder: (context, child) {
                 final displayedRowCount = widget.stateManager.rows.length;
-                if (displayedRowCount > 0 || controller.additionalRowPredicate != null) {
+                if (displayedRowCount > 0 ||
+                    controller.additionalRowPredicate != null) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
@@ -256,11 +260,17 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
       toDelete.map((x) => controller.fromPlutoJson(x.toJson())),
     );
 
-    if (deleteList.isNotEmpty) {
-      var result = await DialogHelper.showConfirmationDialog(
-        context,
-        CommonStrings.confirmRemoval,
-        "${DataGridStrings.items}:\n ${deleteList.map((value) => value.toBasicString()).toList().join(",\n")}\n?",
+    Future<void> Function(T) deleteItem = (item) => item.deleteMethod(context);
+    if (deleteList.isNotEmpty && controller.prepareDeletion != null) {
+      final executor = await controller.prepareDeletion!(context, deleteList);
+      if (executor == null) return;
+      deleteItem = executor;
+    } else if (deleteList.isNotEmpty) {
+      var result = await DataGridActionConfirmation.show(
+        context: context,
+        title: CommonStrings.confirmRemoval,
+        items: deleteList,
+        confirmButtonText: CommonStrings.delete,
       );
       if (!result) {
         return;
@@ -285,7 +295,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
 
     for (var element in deleteList) {
       actions.add(() async {
-        await element.deleteMethod(context);
+        await deleteItem(element);
         if (!mounted) return;
         ToastHelper.Show(
             context, "${CommonStrings.deleted}: ${element.toBasicString()}");

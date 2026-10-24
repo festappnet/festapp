@@ -48,13 +48,17 @@ The renderer uses a "Transform Layer" approach:
 
 1. **Background & Seats** are rendered once into a `transformContainer`.
 2. **Pan & Zoom** only updates the `transform: translate(...) scale(...)`
-   property of this container, ensuring 60fps performance even with many seats.
+   property of this container. Actual frame rate depends on device and map size.
 3. **Updates**: Use `updateSeatsDOM()` to flip classes/styles on existing DOM
    nodes instead of `render()`.
 
 ## Interaction & Zoom
 
-- **Zoom Constraints**: The view is constrained to a reasonable scale range
-  (typically `0.1x` to `5.0x`) and x-axis bounds to prevent getting lost.
-- **Gesture Control**: Handled by `TransformController` (or `GestureController`
-  refactor), supporting touch (pinch-zoom) and mouse (wheel-zoom) interactions.
+- **Zoom constraints**: The minimum is the viewport's computed fit scale. The
+  maximum is that fit scale multiplied by `BlueprintConfig.maxScale` (currently
+  5), not an absolute `0.1x-5x` range. Bounds apply in both axes, including
+  configured insets and pan clearance.
+- **Gestures**: `GestureController` handles pointer/wheel input;
+  `TransformController` owns the transform and bounds. The renderer also provides
+  zoom/reset buttons. Call `renderer.destroy()` when removing the view so its
+  gesture handlers and `ResizeObserver` are released.

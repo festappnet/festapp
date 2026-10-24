@@ -242,8 +242,25 @@ BEGIN
   PERFORM assert_true(NOT EXISTS (
     SELECT 1 FROM public.client_sync_component_sources s
     CROSS JOIN LATERAL unnest(s.canonical_writers) writer(name)
-    WHERE writer.name ~ '(^|\.)(mutate|dispatch|execute)(_|$)'),
+    WHERE writer.name ~ '(^|\.)(mutate|dispatch|execute)(_|$)'
+      AND writer.name <> 'execute_waitlist_command_client_sync_v1'),
     'component registry contains no generic mutation dispatcher');
+  -- This existing service boundary dispatches only the six waitlist intentions.
+  -- Its historical name is not permission to expose a general executor.
+  PERFORM assert_true((SELECT count(*)=1 FROM pg_proc
+      WHERE pronamespace='public'::regnamespace
+        AND proname='execute_waitlist_command_client_sync_v1')
+    AND EXISTS (SELECT 1 FROM pg_proc
+      WHERE oid=to_regprocedure('public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)')
+        AND prosrc LIKE '%PERFORM public.require_client_sync_service_role_v1();%'
+        AND prosrc LIKE '%p_operation NOT IN (''register'',''send'',''accept'',''decline'',''cancel'',''withdraw'')%')
+    AND NOT has_function_privilege('anon',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE')
+    AND NOT has_function_privilege('authenticated',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE')
+    AND has_function_privilege('service_role',
+      'public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)','EXECUTE'),
+    'named waitlist boundary has one closed-action service-only signature');
   PERFORM assert_true(NOT EXISTS (
     SELECT 1 FROM public.client_sync_component_sources s
     WHERE s.disposition='boundary'),
@@ -320,7 +337,7 @@ BEGIN
   PERFORM assert_true(EXISTS (
     SELECT 1 FROM pg_proc p
     WHERE p.oid='public.update_ticket_products_internal_v1(bigint,jsonb)'::regprocedure
-      AND p.proconfig @> ARRAY['search_path=public, eshop, extensions']),
+      AND p.proconfig @> ARRAY['search_path=public, extensions']),
     'ticket product implementation resolves its permission helper on a trusted path');
   PERFORM assert_true(EXISTS (
     SELECT 1 FROM pg_proc p
@@ -359,6 +376,9 @@ BEGIN
     'internal public materialization accepts the unit editor save role');
   PERFORM assert_true(pg_get_functiondef(
     'public.delete_occasion_client_sync_v1(bigint,uuid)'::regprocedure)
+      LIKE '%public.delete_occasion_domain_command_internal_v1(p_occasion,p_command_id)%'
+    AND pg_get_functiondef(
+      'public.delete_occasion_domain_command_internal_v1(bigint,uuid)'::regprocedure)
       LIKE '%client_sync_v1 before deleting%',
     'ordinary occasion delete requires guarded disable first');
   PERFORM assert_true(pg_get_functiondef(
@@ -366,7 +386,10 @@ BEGIN
       LIKE '%client_sync_v1%false%',
     'ordinary occasion create forces the activation flag false');
   PERFORM assert_true(pg_get_functiondef(
-    'public.duplicate_occasion_client_sync_v1(bigint,uuid)'::regprocedure)
+    'public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint)'::regprocedure)
+      LIKE '%public.duplicate_occasion_client_sync_v1(p_occasion,p_command_id,p_target_unit,NULL)%'
+    AND pg_get_functiondef(
+      'public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)'::regprocedure)
       LIKE '%client_sync_v1%false%',
     'occasion duplication cannot copy an enabled activation flag');
   PERFORM assert_eq((SELECT count(*) FROM pg_trigger t

@@ -1,4 +1,5 @@
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
@@ -21,7 +22,7 @@ import 'package:fstapp/styles/styles_config.dart';
 @RoutePage()
 class FormDetailPage extends StatefulWidget {
   final String formLink;
-  final Future<List<FormModel>> Function(String)? loadForms;
+  final Future<List<FormBundle>> Function(String)? loadForms;
   const FormDetailPage(
       {super.key,
       @PathParam('formLink') required this.formLink,
@@ -35,7 +36,8 @@ class _FormDetailPageState extends State<FormDetailPage> {
   bool _failed = false;
   int _generation = 0;
   String? _link;
-  List<FormModel> _forms = [];
+  List<FormBundle> _forms = [];
+  String? _canonicalFormLink;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -61,13 +63,39 @@ class _FormDetailPageState extends State<FormDetailPage> {
     final generation = ++_generation;
     final link = _link!;
     try {
-      final objects =
-          await (widget.loadForms ?? DbForms.getAllFormsByOccasionLink)(link);
+      final List<FormBundle> objects;
+      var canonical = widget.formLink;
+      if (widget.loadForms != null) {
+        objects = await widget.loadForms!(link);
+      } else {
+        final loaded = await DbForms.getFormsForRoute(link, widget.formLink);
+        objects = loaded.forms;
+        canonical = loaded.canonical;
+      }
+      if (!mounted || generation != _generation) return;
+      _canonicalFormLink = canonical;
+      RouterService.canonicalizePublicLink(
+          'occasion', link, RightsService.currentLink);
+      if (canonical != widget.formLink) {
+        final path = context.router.root.urlState.uri;
+        final parts = path.pathSegments.toList();
+        final formsIndex = parts.indexOf(NavigationPaths.forms);
+        final index = formsIndex >= 0 && formsIndex + 1 < parts.length
+            ? formsIndex + 1
+            : -1;
+        if (index >= 0) {
+          parts[index] = canonical;
+          context.router.root.markUrlStateForReplace();
+          await context.router.root.navigatePath(
+              path.replace(pathSegments: ['', ...parts]).toString());
+        }
+      }
       if (!mounted || generation != _generation) return;
       setState(() {
         _forms = objects;
         _ready = RightsService.currentLink == link &&
-            objects.any((f) => f.link == widget.formLink);
+            objects.any((f) =>
+                f.definition.link == (_canonicalFormLink ?? widget.formLink));
         _failed = !_ready;
       });
     } catch (_) {
@@ -97,7 +125,7 @@ class _FormDetailPageState extends State<FormDetailPage> {
       );
     if (!_ready) return const Center(child: CircularProgressIndicator());
     return FormRouteScope(
-        identity: widget.formLink,
+        identity: _canonicalFormLink ?? widget.formLink,
         onDeleted: _back,
         onUpdated: _load,
         child: Scaffold(
@@ -136,8 +164,9 @@ class _FormDetailPageState extends State<FormDetailPage> {
 
   Widget _buildBreadcrumbs() {
     final color = Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-    final selected = _forms.firstWhere((form) => form.link == widget.formLink);
-    final title = Text(selected.toString(),
+    final selected = _forms.firstWhere((form) =>
+        form.definition.link == (_canonicalFormLink ?? widget.formLink));
+    final title = Text(selected.definition.toString(),
         style: TextStyle(
             fontSize: 16,
             color: color,
@@ -163,16 +192,26 @@ class _FormDetailPageState extends State<FormDetailPage> {
                   style:
                       TextStyle(fontSize: 14, color: color.withOpacity(0.4)))),
           if (_forms.length <= 1)
-            title
+            InkWell(
+                onTap: () =>
+                    resetNestedTabs(context.router, FormDetailRoute.name),
+                child: title)
           else
-            PopupMenuButton<FormModel>(
+            PopupMenuButton<FormBundle>(
                 elevation: 0,
                 onSelected: (form) {
-                  if (form.link != widget.formLink)
+                  if (form.definition.link ==
+                      (_canonicalFormLink ?? widget.formLink)) {
+                    resetNestedTabs(context.router, FormDetailRoute.name);
+                  } else {
                     RetainedDraftGuard.instance.leaveOwner(
                         context,
-                        () => context.router
-                            .navigate(FormDetailRoute(formLink: form.link!)));
+                        () => context.router.navigate(FormDetailRoute(
+                                formLink: form.definition.link!,
+                                children: const [
+                                  FormTabsRoute(children: [FormEditorRoute()])
+                                ])));
+                  }
                 },
                 itemBuilder: (_) => _forms
                     .map((form) => PopupMenuItem(
@@ -180,8 +219,8 @@ class _FormDetailPageState extends State<FormDetailPage> {
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(form.toString()),
-                              if (form.id == selected.id)
+                              Text(form.definition.toString()),
+                              if (form.definition.id == selected.definition.id)
                                 Icon(Icons.check,
                                     color:
                                         Theme.of(context).colorScheme.primary),

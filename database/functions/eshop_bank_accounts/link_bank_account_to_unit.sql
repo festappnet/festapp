@@ -13,6 +13,7 @@ DECLARE
     v_conflict_data jsonb;
     v_is_reordering boolean;
 BEGIN
+    PERFORM public.check_bank_account_writable(p_bank_account_id);
     -- Strict Check: User must be a MANAGER of the unit to link/unlink bank accounts
     PERFORM check_is_manager_on_unit(p_unit_id);
 

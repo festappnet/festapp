@@ -8,27 +8,34 @@ export function qrColorReadable(color:string,background='FFFFFF'):boolean {
   const back=bg[0]*.2126+bg[1]*.7152+bg[2]*.0722;
   return (Math.max(foreground,back)+.05)/(Math.min(foreground,back)+.05)>=4.5;
 }
-export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'food', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'orderName', 'logo', 'footer'] as const;
+export const bindings = ['qr', 'ticketSymbol', 'spotGroup', 'productType', 'note', 'price', 'occasionTitle', 'occasionDatePlace', 'occasionStartTime', 'occasionPlace', 'orderName', 'logo', 'footer'] as const;
 export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
-export interface Element { id: string; binding: Binding; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { canvasColor?:string; canvasOpacity?:number; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:Binding[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
-export interface TicketLayout { schemaVersion: 1 | 2; templates: { wide?: Template; named?: Template } }
+export interface Element { id: string; binding: Binding; productTypeId?:number; label?:string; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
+export interface Template { canvasGradient?:string[]; canvasColor?:string; canvasOpacity?:number; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:string[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface TicketLayout { schemaVersion: 3; templates: { wide?: Template; named?: Template } }
+export function ticketLayoutByteSize(value:unknown):number {
+  const spacing=(v:any):number=>Array.isArray(v)?Math.max(0,v.length-1)+v.reduce((n,x)=>n+spacing(x),0):v&&typeof v==='object'?(()=>{const entries=Object.entries(v).filter(([,x])=>x!==undefined);return entries.length+Math.max(0,entries.length-1)+entries.reduce((n,[,x])=>n+spacing(x),0);})():0;
+  return new TextEncoder().encode(JSON.stringify(value)).length+spacing(value);
+}
 export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=new Set()): asserts value is TicketLayout {
   const v = value as TicketLayout;
   const fail = () => { throw new Error('Invalid ticket layout'); };
-  if (!v || JSON.stringify(v).length > 32768 || ![1,2].includes(v.schemaVersion) || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
+  if (!v || ticketLayoutByteSize(v) > 32768 || v.schemaVersion!==3 || !v.templates || Array.isArray(v.templates) || !Object.keys(v.templates).length || Object.keys(v.templates).some(k => !['wide', 'named'].includes(k))) fail();
+  if(Object.keys(v).some(k=>!['schemaVersion','templates'].includes(k)))fail();
   const fontIds=new Set<string>();
-  const checkFont=(id:unknown)=>{if(id===undefined)return;if(v.schemaVersion===1||typeof id!=='string'||! /^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$/.test(id)||(!knownFontId(id)&&!registeredIds.has(id)))fail();fontIds.add(id as string);if(fontIds.size>12)fail();};
+  const checkFont=(id:unknown)=>{if(id===undefined)return;if(typeof id!=='string'||! /^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$/.test(id)||(!knownFontId(id)&&!registeredIds.has(id)))fail();fontIds.add(id as string);if(fontIds.size>12)fail();};
   for (const t of Object.values(v.templates)) {
+    if(t&&Object.keys(t).some(k=>!['canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements'].includes(k)))fail();
     if(t?.canvasOpacity!==undefined && (!Number.isFinite(t.canvasOpacity)||t.canvasOpacity<0||t.canvasOpacity>1))fail();
     if(t?.canvasColor!==undefined && (typeof t.canvasColor!=='string'||(t.canvasColor!=='transparent'&&!/^[0-9a-fA-F]{6}$/.test(t.canvasColor))))fail();
-    checkFont(t?.fontId);if(v.schemaVersion===2&&t?.font!==undefined)fail();
+    if(t?.canvasGradient!==undefined && (!Array.isArray(t.canvasGradient)||t.canvasGradient.length!==2||t.canvasGradient.some(c=>typeof c!=='string'||!/^[0-9a-fA-F]{6}$/.test(c))))fail();
+    checkFont(t?.fontId);if(t?.font!==undefined)fail();
     if(t?.font!==undefined && !['futura','robotoSlab','roboto','russoOne'].includes(t.font)) fail();
     if(t?.flowStep!==undefined && (!Number.isFinite(t.flowStep)||t.flowStep<1||t.flowStep>842))fail();
     if(t?.border!==undefined && typeof t.border!=='boolean')fail();
-    if(t?.flow!==undefined && (!Array.isArray(t.flow)||new Set(t.flow).size!==t.flow.length||t.flow.some(b=>!['spotGroup','food','note','price'].includes(b))))fail();
+    if(t?.flow!==undefined && (!Array.isArray(t.flow)||new Set(t.flow).size!==t.flow.length||t.flow.some(id=>!t.elements?.some(e=>e.id===id&&!['qr','logo'].includes(e.binding)))))fail();
     if(t?.qrAppearance!==undefined && (!t.qrAppearance||!/^[0-9a-fA-F]{6}$/.test(t.qrAppearance.background)||!Number.isFinite(t.qrAppearance.opacity)||t.qrAppearance.opacity<0||t.qrAppearance.opacity>1||!Number.isFinite(t.qrAppearance.margin)||t.qrAppearance.margin<0||t.qrAppearance.margin>8))fail();
     if (!t || (t.pageFit!==undefined && t.pageFit!=='ticket')) fail();
     if(t.pageMargin!==undefined && (t.pageFit!=='ticket'||!Number.isFinite(t.pageMargin)||t.pageMargin<0||t.pageMargin>72))fail();
@@ -49,10 +56,15 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
       const b=t.backgroundTransform;
       if(!b || ![b.scale,b.x,b.y].every(Number.isFinite) || b.scale<.1 || b.scale>10 || Math.abs(b.x)>10 || Math.abs(b.y)>10) fail();
     }
-    if (!Array.isArray(t.elements) || t.elements.length < 2 || t.elements.length > 11) fail();
-    const ids = new Set(), seen = new Set();
+    if (!Array.isArray(t.elements) || t.elements.length < 2 || t.elements.length > 32) fail();
+    const ids = new Set(), seen = new Set(), products=new Set();
     for (const e of t.elements) {
-      if (!e || typeof e.id !== 'string' || !/^[a-zA-Z0-9_-]{1,40}$/.test(e.id) || ids.has(e.id) || seen.has(e.binding) || !bindings.includes(e.binding) || typeof e.visible !== 'boolean' || typeof e.locked !== 'boolean') fail();
+      if (!e || typeof e.id !== 'string' || !/^[a-zA-Z0-9_-]{1,40}$/.test(e.id) || ids.has(e.id) || (e.binding!=='productType'&&seen.has(e.binding)) || !bindings.includes(e.binding) || typeof e.visible !== 'boolean' || typeof e.locked !== 'boolean') fail();
+      if(Object.keys(e).some(k=>!['id','binding','box','visible','locked','style','productTypeId','label'].includes(k)))fail();
+      if(e.binding==='productType') {
+        if(!Number.isSafeInteger(e.productTypeId)||e.productTypeId!<=0||products.has(e.productTypeId)||typeof e.label!=='string'||e.label!==e.label.trim()||Array.from(e.label).length>120)fail();
+        products.add(e.productTypeId);
+      } else if(e.productTypeId!==undefined||e.label!==undefined)fail();
       ids.add(e.id); seen.add(e.binding);
       checkBox(e.box,t.ticketArea.width,t.ticketArea.height);
       const s=e.style;checkFont(s?.fontId);if(s?.fontId!==undefined&&['qr','logo'].includes(e.binding))fail();
@@ -98,7 +110,7 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
     const qx=Math.max(width*.55,Math.min(width-q, width-(240+150)*scale));
     const qy=Math.max(8,Math.min(h-q-28,h-(240+140)*scale));
     const tx=Math.min(50,150*scale), tw=Math.min(width*.45,qx-tx-8);
-    elements=[element('qr',qx,qy,q,q),element('ticketSymbol',qx,qy+q+4,q,22,Math.min(24,Math.max(8,28*scale)),1),...(['spotGroup','food','note','price'] as Binding[]).map((b,i)=>element(b,tx,Math.max(8,h-100)+i*22,tw,21,Math.min(24,Math.max(8,24*scale)),1))];
+    elements=[element('qr',qx,qy,q,q),element('ticketSymbol',qx,qy+q+4,q,22,Math.min(24,Math.max(8,28*scale)),1),...(['spotGroup','note','price'] as Binding[]).map((b,i)=>element(b,tx,Math.max(8,h-100)+i*22,tw,21,Math.min(24,Math.max(8,24*scale)),1))];
   }
   return {page:{width:595.28,height:841.89},ticketArea:area,elements};
 }
@@ -122,17 +134,17 @@ function styleVariants(type: TicketType): Record<string,Template> {
       t.ticketArea.height=Math.max(id==='compact'?260:320,t.ticketArea.height);
       const w=t.ticketArea.width,h=t.ticketArea.height,left=w-156;
       const qr=id==='compact'?make('qr',w-100,20,80,80):make('qr',w-116,id==='classic'?Math.round((h-96)/2):h-130,96,96);
-      const details=(['spotGroup','food','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*21,left,20,binding==='spotGroup'||binding==='price'?12:10,1));
+      const details=(['spotGroup','note','price'] as Binding[]).map((binding,i)=>make(binding,20,h-108+i*21,left,20,binding==='spotGroup'||binding==='price'?12:10,1));
       t.elements=[qr,make('ticketSymbol',qr.box.x-4,qr.box.y+qr.box.height+5,qr.box.width+8,22,10,1,'center'),...details];
     }
   }
   for(const t of [classic,compact,event]) {
-    t.font='futura';
+    t.fontId=futuraId;
     for(const e of t.elements) {
       if(['occasionTitle','orderName','ticketSymbol','spotGroup','price'].includes(e.binding))e.style.bold=true;
       if(e.binding==='footer')e.style.italic=true;
     }
-    validateLayout({schemaVersion:1,templates:{[type]:t}});
+    validateLayout({schemaVersion:3,templates:{[type]:t}});
   }
   return {classic,compact,event};
 }
@@ -146,14 +158,14 @@ export function ticketPresets(): Record<string,Template> {
   return {classic:wide.classic,compact:wide.compact,event:wide.event,portrait:named.classic,portrait_compact:named.compact,portrait_event:named.event};
 }
 
-export function positionedElements(t:Template,data:Partial<Record<Binding,string|null>>):Element[] {
+export function positionedElements(t:Template,data:Partial<Record<string,string|null>>):Element[] {
   let shift=0;
   const positions=new Map<string,Element>();
-  const flow=(t.flow??[]).map(b=>t.elements.find(e=>e.binding===b)).filter((e):e is Element=>!!e);
+  const flow=(t.flow??[]).map(b=>t.elements.find(e=>e.id===b)).filter((e):e is Element=>!!e);
   for(let i=0;i<flow.length;i++) {
     const e=flow[i];
     positions.set(e.id,{...e,box:{...e.box,y:e.box.y-shift}});
-    if(!e.visible||!data[e.binding])shift+=t.flowStep??e.box.height;
+    if(!e.visible||!data[e.id])shift+=t.flowStep??e.box.height;
   }
   return t.elements.map(e=>positions.get(e.id)??e);
 }

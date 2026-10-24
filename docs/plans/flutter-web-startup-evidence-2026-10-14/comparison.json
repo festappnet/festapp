@@ -1,0 +1,103 @@
+[
+  {
+    "variant": "baseline",
+    "main": {
+      "name": "main.dart.js",
+      "raw": 21329870,
+      "gzip": 3776596,
+      "brotli": 3093298
+    },
+    "partCount": 0,
+    "totalRaw": 21329870,
+    "totalGzip": 3776596,
+    "totalBrotli": 3093298,
+    "largestParts": []
+  },
+  {
+    "variant": "routes-deferred",
+    "main": {
+      "name": "main.dart.js",
+      "raw": 8166593,
+      "gzip": 2205418,
+      "brotli": 1865110
+    },
+    "partCount": 487,
+    "totalRaw": 21600576,
+    "totalGzip": 4070253,
+    "totalBrotli": 3478843,
+    "largestParts": [
+      {
+        "name": "main.dart.js_513.part.js",
+        "raw": 10157969,
+        "gzip": 745498,
+        "brotli": 564720
+      },
+      {
+        "name": "main.dart.js_412.part.js",
+        "raw": 393445,
+        "gzip": 113173,
+        "brotli": 103132
+      },
+      {
+        "name": "main.dart.js_586.part.js",
+        "raw": 205999,
+        "gzip": 65038,
+        "brotli": 59210
+      },
+      {
+        "name": "main.dart.js_574.part.js",
+        "raw": 147457,
+        "gzip": 41610,
+        "brotli": 39091
+      },
+      {
+        "name": "main.dart.js_627.part.js",
+        "raw": 129974,
+        "gzip": 39726,
+        "brotli": 36812
+      }
+    ]
+  },
+  {
+    "variant": "fonts-deferred",
+    "main": {
+      "name": "main.dart.js",
+      "raw": 11190337,
+      "gzip": 3037911,
+      "brotli": 2536823
+    },
+    "partCount": 3,
+    "totalRaw": 21302312,
+    "totalGzip": 3728630,
+    "totalBrotli": 3037443,
+    "largestParts": [
+      {
+        "name": "main.dart.js_2.part.js",
+        "raw": 8501292,
+        "gzip": 581469,
+        "brotli": 446853
+      },
+      {
+        "name": "main.dart.js_1.part.js",
+        "raw": 1594465,
+        "gzip": 104401,
+        "brotli": 51111
+      },
+      {
+        "name": "main.dart.js_3.part.js",
+        "raw": 16218,
+        "gzip": 4849,
+        "brotli": 2656
+      }
+    ]
+  },
+  {
+    "routeClosureEstimate": {
+      "route": "ReservationsTabsRoute + OrdersTabsRoute",
+      "parts": 204,
+      "raw": 19382082,
+      "gzip": 3316795,
+      "limitation": "Compiler import closure, not an authenticated browser startup timing"
+    }
+  }
+]

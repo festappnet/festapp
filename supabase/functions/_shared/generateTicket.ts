@@ -3,12 +3,28 @@ import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
 import QRCode from "npm:qrcode";
-import { PDFDocument, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
+import { PDFDocument, PDFName, PDFOperator, PDFOperatorNames, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
 // Import all exports from fontkit (do not try to import a default)
 import * as fontkit from "npm:fontkit";
 
+export interface PreparedTicketBackground {
+  page: import('npm:pdf-lib').PDFPage;
+  width: number;
+  height: number;
+}
+// The renderer's existing batch resource contract owns the decoded artwork.
+// Embedding its page preserves PNG alpha and JPEG bytes in independent PDFs.
+export async function prepareTicketBackground(bytes: Uint8Array): Promise<PreparedTicketBackground> {
+  const document = await PDFDocument.create();
+  const image = bytes[0] === 137 ? await document.embedPng(bytes) : await document.embedJpg(bytes);
+  const page = document.addPage([image.width,image.height]);
+  page.drawImage(image,{x:0,y:0,width:image.width,height:image.height});
+  await document.flush();
+  return {page,width:image.width,height:image.height};
+}
+
 export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_type:'wide'|'named'=t.page.width===595.28?'wide':'named',_sample=false) {
-  validateLayout({schemaVersion:t.fontId||t.elements.some(e=>e.style.fontId)?2:1,templates:{[_type]:t}},new Set([...Object.keys(r.fonts??{}),...(r.registeredIds??[])]));
+  validateLayout({schemaVersion:3,templates:{[_type]:t}},new Set([...Object.keys(r.fonts??{}),...(r.registeredIds??[])]));
   const doc=await PDFDocument.create();doc.registerFontkit(fontkit);
   const embedded=new Map<string,any>();const page=doc.addPage([t.page.width,t.page.height]);const warnings:string[]=[];
   const color=(hex:string)=>rgb(...([0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255) as [number,number,number]));
@@ -19,22 +35,35 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   };
   const area=pdfBox(t,{x:0,y:0,width:t.ticketArea.width,height:t.ticketArea.height});
   if(t.canvasColor!=='transparent'&&(t.canvasOpacity??1)>0)page.drawRectangle({...area,color:t.canvasColor?color(t.canvasColor):rgb(.9,.9,.9),opacity:t.canvasOpacity??1});
-  if(r.background) {
-    const img=r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);
+  if(t.canvasGradient) {
+    const [a,b]=t.canvasGradient.map(hex=>[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255));
+    const shading=doc.context.register(doc.context.obj({ShadingType:2,ColorSpace:'DeviceRGB',
+      Coords:[area.x,area.y,area.x+area.width,area.y],
+      Function:{FunctionType:2,Domain:[0,1],C0:a,C1:b,N:1},Extend:[true,true]}));
+    page.node.Resources()!.set(PDFName.of('Shading'),doc.context.obj({SharedGradient:shading}));
+    const opacity=page.node.newExtGState('GradientOpacity',doc.context.register(doc.context.obj({Type:'ExtGState',ca:t.canvasOpacity??1})));
+    page.pushOperators(pushGraphicsState(),PDFOperator.of(PDFOperatorNames.SetGraphicsStateParams,[opacity]),rectangle(area.x,area.y,area.width,area.height),clip(),endPath(),
+      PDFOperator.of(PDFOperatorNames.ShadingFill,[PDFName.of('SharedGradient')]),popGraphicsState());
+  }
+  if(r.background || r.preparedBackground) {
+    const prepared = r.preparedBackground;
+    const img = prepared ?? (r.background![0]===137?await doc.embedPng(r.background!):await doc.embedJpg(r.background!));
     page.pushOperators(pushGraphicsState(),rectangle(area.x,area.y,area.width,area.height),clip(),endPath());
     const crop=pdfBox(t,croppedBackgroundBox(t,img.width,img.height));
     page.pushOperators(rectangle(crop.x,crop.y,crop.width,crop.height),clip(),endPath());
-    page.drawImage(img,pdfBox(t,backgroundBox(t,img.width,img.height)));
+    const box=pdfBox(t,backgroundBox(t,img.width,img.height));
+    if(prepared)page.drawPage(await doc.embedPage(prepared.page),box);
+    else page.drawImage(img as import('npm:pdf-lib').PDFImage,box);
     page.pushOperators(popGraphicsState());
   }
   if(t.border)page.drawRectangle({...area,borderColor:rgb(224/255,224/255,224/255),borderWidth:1,borderDashArray:[3.75,1.25]});
   for(const e of positionedElements(t,data).filter(e=>e.visible && e.binding!=='qr')) {
     const b=pdfBox(t,e.box);
     if(e.binding==='logo') {if(r.logo)await image(r.logo,b);continue;}
-    const text=data[e.binding];if(!text)continue;
+    const text=data[e.id];if(!text)continue;
     const id=effectiveFontId(t,e);const resource=r.fonts?.[id]??(!t.fontId&&!e.style.fontId?{bytes:r.font,metrics:r.metrics}:undefined);
     if(!resource)throw new Error('font_resource_missing');let font=embedded.get(id);if(!font){font=await doc.embedFont(resource.bytes);embedded.set(id,font);}const metrics=resource.metrics;
-    const fit=fitText(text,e,metrics);if(fit.overflow||fit.replaced)warnings.push(e.binding);
+    const fit=fitText(text,e,metrics);if(fit.overflow||fit.replaced)warnings.push(e.id);
     page.pushOperators(pushGraphicsState(),rectangle(b.x,b.y,b.width,b.height),clip(),endPath());
     fit.lines.forEach((line,i)=>{
       let x=b.x+(e.style.align==='center'?(b.width-fit.widths[i])/2:e.style.align==='right'?b.width-fit.widths[i]:0);
@@ -52,7 +81,7 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
     page.pushOperators(popGraphicsState());
   }
   const q=t.elements.find(e=>e.binding==='qr')!;const b=pdfBox(t,q.box);
-  const qr=QRCode.create(data.qr!,{errorCorrectionLevel:'M'}).modules;
+  const qr=QRCode.create(data[q.id]!,{errorCorrectionLevel:'M'}).modules;
   const margin=t.qrAppearance?.margin??4;
   const module=b.width/(qr.size+2*margin);if(module<1.2)throw new Error('QR modules are too small for print');
   page.drawRectangle({...b,color:color(t.qrAppearance?.background??'FFFFFF'),opacity:t.qrAppearance?.opacity??1});

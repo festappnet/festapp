@@ -1,16 +1,13 @@
+import '../../widgets_view/email_suffix_confirmation.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'field_holder.dart';
 import 'id_document_field_holder.dart';
 import 'birth_date_field_holder.dart';
-import 'package:fstapp/components/forms/models/form_field_model.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
 
 import 'ticket_holder.dart';
@@ -41,11 +38,16 @@ class FormHolder {
   static const String metaFields = "fields";
 
   FormHolderController? controller;
+  final emailSuffixConfirmations = EmailSuffixSession();
   final List<FieldHolder> fields;
   final bool isCardDesign;
   final List<String> phonePrefixes;
   final String? communicationTone;
   String? paymentType;
+  String? paymentMethod;
+  int? paymentAmountMinor;
+  String? paymentCurrency;
+  String? paymentConnectionId;
 
   TicketHolder? getTicket() =>
       fields.firstWhereOrNull((f) => f is TicketHolder) as TicketHolder?;
@@ -56,13 +58,17 @@ class FormHolder {
       this.phonePrefixes = const [],
       this.communicationTone});
 
-  factory FormHolder.fromFormFieldModel(FormModel formModel) {
+  factory FormHolder.fromDefinition(FormDefinition formModel) {
     // Extract and sort ticket child fields.
     final ticketChildFields = formModel.relatedFields
         .where((f) =>
             f.isTicketField == true &&
-            !(f.type == FormHelper.fieldTypeSpot && f.isHidden == true) &&
-            !(f.type == FormHelper.fieldTypeProductType &&
+            (!formModel.isWaitlist ||
+                (f.type != FormMetadata.fieldTypeProductType &&
+                    f.type != FormMetadata.fieldTypeSpot &&
+                    f.productTypeId == null)) &&
+            !(f.type == FormMetadata.fieldTypeSpot && f.isHidden == true) &&
+            !(f.type == FormMetadata.fieldTypeProductType &&
                 f.productType?.type == ProductModel.spotType &&
                 formModel.usesSeatSelection))
         .toList()
@@ -72,7 +78,11 @@ class FormHolder {
     final otherFields = formModel.relatedFields
         .where((f) =>
             f.isTicketField != true &&
-            !(f.type == FormHelper.fieldTypeProductType &&
+            (!formModel.isWaitlist ||
+                (f.type != FormMetadata.fieldTypeProductType &&
+                    f.type != FormMetadata.fieldTypeSpot &&
+                    f.productTypeId == null)) &&
+            !(f.type == FormMetadata.fieldTypeProductType &&
                 f.productType?.type == ProductModel.spotType &&
                 formModel.usesSeatSelection))
         .map((f) => createFieldHolder(f))
@@ -80,9 +90,14 @@ class FormHolder {
 
     // Find the ticket field, if any.
     TicketHolder? ticket = otherFields.firstWhereOrNull(
-        (f) => f.fieldType == FormHelper.fieldTypeTicket) as TicketHolder?;
+        (f) => f.fieldType == FormMetadata.fieldTypeTicket) as TicketHolder?;
     if (ticket != null) {
       ticket.fields.addAll(ticketChildFields.map((f) => createFieldHolder(f)));
+      if (formModel.registrationMode == 'regular' &&
+          formModel.capacity?.remainingPublic != null) {
+        ticket.maxTickets =
+            ticket.maxTickets.clamp(0, formModel.capacity!.remainingPublic!);
+      }
     }
     return FormHolder(
         fields: otherFields,
@@ -94,39 +109,43 @@ class FormHolder {
         communicationTone: formModel.communicationTone);
   }
 
-  /// Creates a [FieldHolder] instance based on the provided [FormFieldModel].
-  static FieldHolder createFieldHolder(FormFieldModel ffm) {
+  /// Creates a [FieldHolder] instance based on the provided [FormFieldDefinition].
+  static FieldHolder createFieldHolder(FormFieldDefinition ffm) {
     final fieldType = ffm.type;
-    if (fieldType == FormHelper.fieldTypeTicket) {
+    if (fieldType == FormMetadata.fieldTypeTicket) {
       return TicketHolder(
         id: ffm.id!,
         fieldType: ffm.type!,
         maxTickets:
-            ffm.data != null ? ffm.data[FormHelper.metaMaxTickets] ?? 1 : 1,
+            ffm.data != null ? ffm.data[FormMetadata.metaMaxTickets] ?? 1 : 1,
         showDepositDescription: ffm.data != null
             ? ffm.data[TicketHolder.metaShowDepositDescription] ?? true
             : true,
         fields: [],
         isRequired: true,
       );
-    } else if (fieldType == FormHelper.fieldTypeSelectOne ||
-        fieldType == FormHelper.fieldTypeSelectMany) {
+    } else if (fieldType == FormMetadata.fieldTypeSelectOne ||
+        fieldType == FormMetadata.fieldTypeSelectMany) {
       // Safely extract the options list from ffm.data.
-      List<dynamic> optionsData = ffm.data[FormHelper.metaOptions] ?? [];
+      final rawOptions =
+          ffm.data is Map ? (ffm.data as Map)[FormMetadata.metaOptions] : null;
+      final optionsData = rawOptions is List ? rawOptions : const [];
 
-      // Convert each option to a FormOptionModel.
-      List<FormOptionModel> formOptions = optionsData.mapIndexed((index, o) {
+      // Convert each option to a FormOptionDefinition.
+      List<FormOptionDefinition> formOptions =
+          optionsData.mapIndexed((index, o) {
         String value = '';
         if (o is Map<String, dynamic> &&
-            o.containsKey(FormOptionModel.metaValue)) {
-          value = o[FormOptionModel.metaValue]?.toString() ?? '';
+            o.containsKey(FormOptionDefinition.metaValue)) {
+          value = o[FormOptionDefinition.metaValue]?.toString() ?? '';
         }
         String description = '';
         if (o is Map<String, dynamic> &&
-            o.containsKey(FormOptionModel.metaDescription)) {
-          description = o[FormOptionModel.metaDescription]?.toString() ?? '';
+            o.containsKey(FormOptionDefinition.metaDescription)) {
+          description =
+              o[FormOptionDefinition.metaDescription]?.toString() ?? '';
         }
-        return FormOptionModel(index.toString(), value,
+        return FormOptionDefinition(index.toString(), value,
             description: description);
       }).toList();
 
@@ -136,14 +155,14 @@ class FormHolder {
           isRequired: ffm.isRequired ?? false,
           options: formOptions,
           value: ffm.data is Map
-              ? (ffm.data as Map)[FormHelper.metaDefaultValue]
+              ? (ffm.data as Map)[FormMetadata.metaDefaultValue]
               : null,
           title: ffm.title ?? "",
           description: ffm.description);
-    } else if (fieldType == FormHelper.fieldTypeProductType) {
-      final selType = ffm.data?[FormHelper.metaSelectionType]?.toString();
+    } else if (fieldType == FormMetadata.fieldTypeProductType) {
+      final selType = ffm.data?[FormMetadata.metaSelectionType]?.toString();
       final prodSelectionType =
-          (selType != null && selType == FormHelper.metaSelectionTypeMany)
+          (selType != null && selType == FormMetadata.metaSelectionTypeMany)
               ? OptionsFieldProductSelectionType.selectMany
               : OptionsFieldProductSelectionType.selectOne;
       return OptionsFieldProductHolder(
@@ -152,7 +171,7 @@ class FormHolder {
           selectionType: prodSelectionType,
           isRequired: ffm.isRequired ?? false,
           value: ffm.data is Map
-              ? (ffm.data as Map)[FormHelper.metaDefaultValue]
+              ? (ffm.data as Map)[FormMetadata.metaDefaultValue]
               : null,
           productOptions: ffm.productType!.products!
               .map((p) => FormOptionProductModel(
@@ -164,13 +183,13 @@ class FormHolder {
                     orderedCount: p.orderedCount,
                     isDynamicallyAvailable: p.isDynamicallyAvailable,
                     data: p.data,
-                    type: FormHelper.fieldTypeProductType,
+                    type: FormMetadata.fieldTypeProductType,
                     description: p.description,
                   ))
               .toList(),
           title: ffm.title ?? ffm.productType!.title ?? "",
           description: ffm.productType!.description);
-    } else if (fieldType == FormHelper.fieldTypeBirthDate) {
+    } else if (fieldType == FormMetadata.fieldTypeBirthDate) {
       // Use constants from BirthDateFieldHolder instead of hardcoded strings.
       return BirthDateFieldHolder(
         id: ffm.id!,
@@ -184,7 +203,7 @@ class FormHolder {
         isHard: ffm.data?[BirthDateFieldHolder.metaIsHard] ?? false,
         message: ffm.data?[BirthDateFieldHolder.metaMessage] ?? '',
       );
-    } else if (fieldType == FormHelper.fieldTypeIdDocument) {
+    } else if (fieldType == FormMetadata.fieldTypeIdDocument) {
       return IdDocumentFieldHolder(
         id: ffm.id!,
         fieldType: ffm.type!,
@@ -199,6 +218,7 @@ class FormHolder {
       );
     } else {
       return FieldHolder(
+        isHidden: ffm.isHidden == true,
         id: ffm.id!,
         fieldType: ffm.type!,
         isRequired: ffm.isRequired ?? false,

@@ -1,0 +1,166 @@
+{
+  "scope": "local synthetic and genuine package UI; no production mutations",
+  "clips": [
+    {
+      "clip": "layout-build",
+      "variant": "src",
+      "bytes": 237983,
+      "duration": 13.466667,
+      "width": 1200,
+      "height": 760,
+      "sha256": "fd3fbba05a714586609c3c8e5a343f832b1a5f7c65c4ea64d4eaba471d024ddd",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "mobileSrc",
+      "bytes": 173196,
+      "duration": 13.466667,
+      "width": 720,
+      "height": 800,
+      "sha256": "24f0a7a6aaf0cac79c3818d1c1e927b6476eb716771ebdbc586c72aceab43f94",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "layout-style",
+      "variant": "src",
+      "bytes": 145861,
+      "duration": 8.2,
+      "width": 1200,
+      "height": 760,
+      "sha256": "29d4c82428626951c0e1bf7b3795afc5e74f1930c62630c776d9334ec1be4fc5",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "layout-style",
+      "variant": "mobileSrc",
+      "bytes": 121910,
+      "duration": 8.2,
+      "width": 720,
+      "height": 800,
+      "sha256": "6bde5a51697015991af4de9b6e2ba0490f734217d0d05d9ee300ea9b157af6d0",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "form-build",
+      "variant": "src",
+      "bytes": 219929,
+      "duration": 12.933333,
+      "width": 1200,
+      "height": 760,
+      "sha256": "283d9cd8c299e4ca0bb5ed51eba0159e541bf26bf8c9f77486ad97fb1d72e2c9",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "form-build",
+      "variant": "mobileSrc",
+      "bytes": 245187,
+      "duration": 12.933333,
+      "width": 720,
+      "height": 900,
+      "sha256": "75502addc729b7b3b787070ffa21be7bd88cda9986cf814a57b105acb16f8959",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "form-style",
+      "variant": "src",
+      "bytes": 136534,
+      "duration": 9.666667,
+      "width": 1200,
+      "height": 760,
+      "sha256": "08642581cf30b984f209615b9a408a6e3b53ddaccffe64cf3e07dda74f2d7bc5",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "form-style",
+      "variant": "mobileSrc",
+      "bytes": 158568,
+      "duration": 9.666667,
+      "width": 720,
+      "height": 900,
+      "sha256": "a0b062922d9095421ad095b6da326200553aeb705e5e71df85d1f3986253aee8",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "src",
+      "bytes": 712399,
+      "duration": 10.466016,
+      "width": 1200,
+      "height": 760,
+      "sha256": "fceed5737eb0e3f2c8d79fd62c0d1d6de16520e0890313dfcd3569381683e1b3",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "mobileSrc",
+      "bytes": 455805,
+      "duration": 10.466016,
+      "width": 720,
+      "height": 900,
+      "sha256": "1ecc6fbf113c068dc8be379b74aa6e6554cff822346e97728dd3b3b0a84c7b76",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "src",
+      "bytes": 75872,
+      "duration": 7.4,
+      "width": 1440,
+      "height": 900,
+      "sha256": "309bd97354d333a96056737ece714f635605bfdfe8eafd0b7716be5e38478fcb",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "mobileSrc",
+      "bytes": 64597,
+      "duration": 7.4,
+      "width": 420,
+      "height": 810,
+      "sha256": "a3b1712ec2471fc184b467eeeb1486fdff079988e5c9fff819b2d1f5bba360d0",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "check-in",
+      "variant": "src",
+      "bytes": 102169,
+      "duration": 7.566667,
+      "width": 1200,
+      "height": 800,
+      "sha256": "68026830f0ab06f8eec684135c841f7417d7b890de16f5ca5c015201e339e545",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "check-in",
+      "variant": "mobileSrc",
+      "bytes": 84975,
+      "duration": 7.566667,
+      "width": 430,
+      "height": 900,
+      "sha256": "4d7d65fabe846510e429b40fc63b430b2a77d4d51297a0c4606af1066a5f96f7",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "src",
+      "bytes": 153833,
+      "duration": 9.366667,
+      "width": 1200,
+      "height": 520,
+      "sha256": "e2cfaf6af2472b086352e2e6867c3c15f6bc338d1a952bba43de2aed4a13a002",
+      "fullDecode": "pass"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "mobileSrc",
+      "bytes": 154800,
+      "duration": 9.366667,
+      "width": 720,
+      "height": 800,
+      "sha256": "831f958c6e489d91cad80e9b2a81f63a4e1854f3c723e8ad960a5914535e02fa",
+      "fullDecode": "pass"
+    }
+  ],
+  "totalVideoBytes": 3243618
+}

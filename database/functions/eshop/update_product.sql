@@ -1,6 +1,5 @@
-DROP FUNCTION IF EXISTS public.update_product(JSONB);
 
-CREATE OR REPLACE FUNCTION public.update_product(p_input JSONB)
+CREATE OR REPLACE FUNCTION public.update_product_internal_v1(p_input JSONB)
 RETURNS BIGINT LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -56,9 +55,18 @@ BEGIN
         (SELECT product_type FROM eshop.products WHERE id=v_product_id) AND p_input->>'product_type' IS NOT NULL
     ) THEN RAISE EXCEPTION 'CANCEL_PRICE_CHANGES_BEFORE_PRODUCT_MOVE'; END IF;
 
+    IF p_input->>'product_type' IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.product_types WHERE id=(p_input->>'product_type')::bigint AND occasion=v_occasion_id) THEN RAISE EXCEPTION 'Product type occasion mismatch'; END IF;
+    IF p_input->>'occasion' IS NOT NULL AND (p_input->>'occasion')::bigint<>v_occasion_id THEN RAISE EXCEPTION 'Product occasion cannot change'; END IF;
     -- Update only the fields that are provided in the input JSON.
     -- COALESCE is used to keep the existing value if a new one isn't provided.
     -- NULLIF is added to safely handle empty strings '' during casting.
+    PERFORM 1 FROM public.occasions WHERE id=v_occasion_id FOR UPDATE;
+    IF p_input ? 'product_type' AND NULLIF(p_input->>'product_type','')::bigint IS DISTINCT FROM (SELECT product_type FROM eshop.products WHERE id=v_product_id)
+      AND EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE product=v_product_id)
+    THEN RAISE EXCEPTION 'Purchased product type cannot change'; END IF;
+    IF nullif(p_input->>'maximum','')::integer>0 AND
+      nullif(p_input->>'maximum','')::integer<(SELECT count(*) FROM eshop.order_product_ticket WHERE product=v_product_id) THEN
+      RAISE EXCEPTION 'PRODUCT_CAPACITY_BELOW_COMMITTED'; END IF;
     UPDATE eshop.products p
     SET
       occasion      = COALESCE(NULLIF(p_input->>'occasion', '')::BIGINT, p.occasion),
@@ -75,6 +83,13 @@ BEGIN
     WHERE p.id = v_product_id;
 
     -- Return the ID of the updated product on success.
+    IF p_input ? 'inventory_contexts' THEN
+      PERFORM public.update_product_inventory_contexts_internal_v1(v_product_id,p_input->'inventory_contexts');
+    END IF;
+    IF NOT (p_input ? 'inventory_contexts') THEN
+      PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
+    END IF;
+    PERFORM public.notification_center_product_capacity_internal(v_product_id);
     RETURN v_product_id;
 
   -- CASE 2: Product was NOT found (v_product_id was NULL or was an ID that doesn't exist)
@@ -154,8 +169,23 @@ BEGIN
     RETURNING id INTO v_product_id; -- Get the newly created ID
 
     -- Return the ID of the newly created product.
+    IF p_input ? 'inventory_contexts' THEN
+      PERFORM public.update_product_inventory_contexts_internal_v1(v_product_id,p_input->'inventory_contexts');
+    END IF;
+    IF NOT (p_input ? 'inventory_contexts') THEN
+      PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
+    END IF;
+    PERFORM public.notification_center_product_capacity_internal(v_product_id);
     RETURN v_product_id;
 
   END IF;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.update_product(p_input jsonb)
+RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN (public.update_product_client_sync_v1(p_input,extensions.gen_random_uuid())->'data'->>'productId')::bigint;
+END $$;
+REVOKE ALL ON FUNCTION public.update_product(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_product(jsonb) TO authenticated;

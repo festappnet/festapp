@@ -52,8 +52,11 @@ BEGIN
           INTO occasionId, occasion_link
         FROM public.forms f
         JOIN public.occasions o ON f.occasion = o.id
-        WHERE f.link = form_link
+        WHERE f.id = public.resolve_form_link_internal(form_link)
           AND o.organization = org_id;
+        IF occasionId IS NULL THEN
+            RETURN json_build_object('code',404,'message','Form not found');
+        END IF;
     END IF;
 
     -- 2. If no occasion found yet, try via link_txt
@@ -61,7 +64,7 @@ BEGIN
         SELECT id, link
           INTO occasionId, occasion_link
         FROM occasions
-        WHERE link = link_txt
+        WHERE id = public.resolve_occasion_link_internal(link_txt,org_id)
           AND organization = org_id;
 
         -- If link_txt is provided but *not* found, this is a hard 404.
@@ -129,6 +132,10 @@ BEGIN
     IF occasionId IS NOT NULL THEN
         -- Process occasion-related queries only if an occasion was determined
 
+        IF public.is_demo_occasion(occasionId) AND NOT public.can_read_demo_occasion(occasionId) THEN
+            RETURN jsonb_build_object('code',403,'message','Demo access denied');
+        END IF;
+
         -- Get the is_open status for the occasion
         SELECT is_open
           INTO is_open_bool
@@ -183,7 +190,7 @@ BEGIN
         END IF;
 
         -- If the occasion user record is not found and the user is authenticated, add the user to the occasion
-        IF occasion_user IS NULL AND current_user_id IS NOT NULL THEN
+        IF occasion_user IS NULL AND current_user_id IS NOT NULL AND NOT public.is_demo_occasion(occasionId) THEN
             IF is_app_supported_bool IS TRUE 
                OR (unit_user.is_manager IS TRUE OR unit_user.is_editor IS TRUE OR unit_user.is_editor_view IS TRUE) THEN
                 PERFORM add_user_to_occasion(occasionId, current_user_id);
@@ -345,6 +352,7 @@ BEGIN
     RETURN json_build_object(
         'code', 200,
         'is_admin', is_admin_bool,
+        'demo_read_only', public.can_read_demo_occasion(occasionId),
         'occasion_user', COALESCE(row_to_json(occasion_user)::jsonb, NULL),
         'unit_user', COALESCE(row_to_json(unit_user)::jsonb, NULL),
         'occasion', COALESCE(occasion_json, '{}'::jsonb),

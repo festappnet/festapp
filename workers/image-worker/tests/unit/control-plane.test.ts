@@ -12,12 +12,14 @@ function bucket() {
 
 function env(): Env {
   return {
+    IMAGE_READ_MISS_BUDGET: { limit: vi.fn().mockResolvedValue({ success: true }) },
     IMAGES_BUCKET: bucket(), IMAGES_BUCKET_A: bucket(),
     IMAGES_BUCKET_AKHWEB: bucket(),
     IMAGES_PRIVATE_BUCKET: bucket(), IMAGES_PRIVATE_BUCKET_A: bucket(),
-    SUPABASE_URL: 'https://default.supabase.co', SUPABASE_ANON_KEY: 'server-default',
-    SUPABASE_URL_A: 'https://a.supabase.co', SUPABASE_ANON_KEY_A: 'server-a',
+    SUPABASE_URL: 'https://api.festapp.net', SUPABASE_ANON_KEY: 'server-default',
+    SUPABASE_URL_A: 'https://api.festapp.net', SUPABASE_ANON_KEY_A: 'server-a',
     SUPABASE_URL_AKHWEB: 'https://akh.supabase.co', SUPABASE_ANON_KEY_AKHWEB: 'server-akh',
+    SUPABASE_URL_SLUNOVRAT: 'https://api.festapp.net', SUPABASE_ANON_KEY_SLUNOVRAT: 'server-canonical',
     R2_ACCESS_KEY_ID: 'id', R2_SECRET_ACCESS_KEY: 'secret', CF_ACCOUNT_ID: 'account',
     CF_ZONE_ID: 'zone', CF_CACHE_PURGE_TOKEN: 'purge-token',
     CONTROL_ALLOWED_ORIGINS: 'https://app.example',
@@ -27,6 +29,74 @@ function env(): Env {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('control plane', () => {
+  it('rejects private uploads for the public-only AKH project before storage', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    const form = new FormData();
+    form.set('file', new File(['sensitive'], 'export.txt'));
+    form.set('projectId', 'akhweb');
+    form.set('key', 'private/export.txt');
+    const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
+    }), configured);
+    expect(response.status).toBe(400);
+    expect(configured.IMAGES_BUCKET_AKHWEB.put).not.toHaveBeenCalled();
+  });
+
+  it.each(['/private/export.txt', '/presign/private/export.txt'])(
+    'denies non-editors before storage or signing at %s', async (path) => {
+      const configured = env();
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('false')));
+      const response = await worker.fetch(new Request(`https://image-api.festapp.net${path}?projectId=default`, {
+        method: path.startsWith('/presign/') ? 'POST' : 'GET',
+        headers: { Authorization: 'Bearer jwt' },
+      }), configured);
+      expect(response.status).toBe(403);
+      expect(configured.IMAGES_PRIVATE_BUCKET.get).not.toHaveBeenCalled();
+      expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
+    });
+
+  it('preserves shared editor reads without caching private content', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    vi.mocked(configured.IMAGES_PRIVATE_BUCKET.get).mockResolvedValue({
+      body: 'private export', writeHttpMetadata: (headers: Headers) => headers.set('Content-Type', 'text/plain'),
+    } as unknown as R2ObjectBody);
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/private/export.txt?projectId=default', {
+      headers: { Authorization: 'Bearer jwt' },
+    }), configured);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('private export');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  });
+
+  it('never reads a public bucket when a private object is missing', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    vi.mocked(configured.IMAGES_PRIVATE_BUCKET.get).mockResolvedValue(null);
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/private/export.txt?projectId=default', {
+      headers: { Authorization: 'Bearer jwt' },
+    }), configured);
+    expect(response.status).toBe(404);
+    expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
+  });
+
+  it('preserves project-local time-limited presigning without caching credentials', async () => {
+    const configured = env();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/presign/private/export.txt?projectId=a&expiresIn=60', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' },
+    }), configured);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { url: string };
+    const signed = new URL(body.url);
+    expect(signed.pathname).toBe('/festapp-images-a-private/private/export.txt');
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    expect(signed.searchParams.has('X-Amz-Signature')).toBe(true);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
   it('allows live uploads through the actual configured origin list', async () => {
     const config = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8');
     const origins = config.match(/^CONTROL_ALLOWED_ORIGINS = "([^"]+)"/m)![1];
@@ -39,6 +109,47 @@ describe('control plane', () => {
     expect(handleCors(new Request('https://image-api.festapp.net/upload', {
       method: 'OPTIONS', headers: { Origin: 'https://live.festapp.net.evil.example' },
     }), configured).status).toBe(403);
+  });
+
+  it('allows Slunovrat preflight through the deployed origin configuration', async () => {
+    const config = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8');
+    const origins = config.match(/^CONTROL_ALLOWED_ORIGINS = "([^"]+)"/m)![1];
+    const configured = { ...env(), CONTROL_ALLOWED_ORIGINS: origins };
+    const response = await worker.fetch(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://slunovrat.festapp.net' },
+    }), configured);
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://slunovrat.festapp.net');
+    expect(handleCors(new Request('https://image-api.festapp.net/upload', {
+      method: 'OPTIONS', headers: { Origin: 'https://slunovrat.festapp.net.evil.example' },
+    }), configured).status).toBe(403);
+  });
+
+  it.each([true, false])('routes Slunovrat uploads to canonical authorization (editor=%s)', async (authorized) => {
+    const configured = env();
+    const fetchMock = vi.fn().mockImplementation(async (input: string) =>
+      new Response(input.endsWith('/get_image_project_access_v1') ? JSON.stringify(authorized) : (input.endsWith('/admit_image_upload_v1') || input.endsWith('/admit_image_storage_v1')) ? 'true' : 'null'));
+    vi.stubGlobal('fetch', fetchMock);
+    const form = new FormData();
+    form.set('file', new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'picture.png', { type: 'image/png' }));
+    form.set('projectId', 'slunovrat');
+    form.set('unitId', '999');
+    const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
+      method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
+    }), configured);
+    expect(response.status).toBe(authorized ? 200 : 403);
+    expect(fetchMock).toHaveBeenCalledWith('https://api.festapp.net/rest/v1/rpc/get_image_project_access_v1',
+      expect.objectContaining({ headers: expect.objectContaining({ apikey: 'server-canonical' }), body: JSON.stringify({ p_project: 'slunovrat', p_occasion: null, p_unit: 999 }) }));
+    expect(configured.IMAGES_BUCKET_A.put).not.toHaveBeenCalled();
+    expect(configured.IMAGES_BUCKET_AKHWEB.put).not.toHaveBeenCalled();
+    expect(configured.IMAGES_PRIVATE_BUCKET.put).not.toHaveBeenCalled();
+    if (authorized) {
+      expect(configured.IMAGES_BUCKET.put).toHaveBeenCalledOnce();
+      expect(fetchMock).toHaveBeenCalledWith('https://api.festapp.net/rest/v1/rpc/add_image_record', expect.anything());
+      expect(await response.json()).toMatchObject({ projectId: 'slunovrat', url: expect.stringMatching(/^https:\/\/img\.festapp\.net\/images\/unit-999\//) });
+    } else {
+      expect(configured.IMAGES_BUCKET.put).not.toHaveBeenCalled();
+    }
   });
 
   it('uses exact CORS origins and Vary', () => {
@@ -80,11 +191,13 @@ describe('control plane', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
-  it('compensates the public R2 write when DB persistence fails', async () => {
+  it.each([[500, 502], [429, 429]])('compensates the public R2 write when DB returns %i', async (databaseStatus, expectedStatus) => {
     const configured = env();
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(new Response('true', { status: 200 }))
-      .mockResolvedValueOnce(new Response('failed', { status: 500 })));
+      .mockResolvedValueOnce(new Response('true', { status: 200 }))
+      .mockResolvedValueOnce(new Response('true', { status: 200 }))
+      .mockResolvedValueOnce(new Response('failed', { status: databaseStatus })));
     const form = new FormData();
     form.set('file', new File([new Uint8Array([1, 2, 3])], 'x.jpg', { type: 'image/jpeg' }));
     form.set('occasionId', '42');
@@ -93,7 +206,7 @@ describe('control plane', () => {
     const response = await handleUpload(new Request('https://image-api.festapp.net/upload', {
       method: 'POST', headers: { Authorization: 'Bearer jwt' }, body: form,
     }), configured);
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(expectedStatus);
     expect(configured.IMAGES_BUCKET.put).toHaveBeenCalledOnce();
     expect(configured.IMAGES_BUCKET.delete).toHaveBeenCalledOnce();
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers.apikey).toBe('server-default');
@@ -158,7 +271,7 @@ describe('control plane', () => {
     vi.stubGlobal('fetch', mockedFetch);
     const response = await handleDelete(new Request('https://img.festapp.net/delete', {
       method: 'POST', headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ supabaseUrl: 'https://default.supabase.co', key: 'images/1/x.jpg' }),
+      body: JSON.stringify({ supabaseUrl: 'https://api.festapp.net', key: 'images/1/x.jpg' }),
     }), configured);
     expect(response.status).toBe(200);
     expect(mockedFetch.mock.calls[0][0]).toContain('/authorize_image_deletion');
@@ -182,4 +295,38 @@ describe('control plane', () => {
     expect(JSON.parse(mockedFetch.mock.calls[1][1].body)).toEqual({ files: [link] });
     expect(mockedFetch.mock.calls[2][0]).toContain('/remove_image_records');
   });
+});
+
+it('blocks public cache misses before R2 and keeps existing cache hits independent', async () => {
+  const { handlePublicServe } = await import('../../src/serve-public');
+  const configured = env();
+  const limiter = vi.fn().mockResolvedValue({ success: false });
+  configured.IMAGE_READ_MISS_BUDGET = { limit: limiter };
+  const cache = { match: vi.fn().mockResolvedValue(undefined), put: vi.fn() };
+  const request = new Request('https://img.festapp.net/images/42/a.jpg?bust=random');
+  expect((await handlePublicServe(request, configured, undefined, cache)).status).toBe(429);
+  expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
+  configured.IMAGE_READ_MISS_BUDGET = undefined;
+  cache.match.mockResolvedValue(new Response('cached', { headers: { etag: 'stored' } }));
+  const response = await handlePublicServe(request, configured, undefined, cache);
+  expect(response.status).toBe(200);
+  expect(await response.text()).toBe('cached');
+  expect(limiter).toHaveBeenCalledTimes(1);
+  expect(new URL(cache.match.mock.calls[0][0].url).search).toBe('');
+});
+
+it('maps legacy requested variants into bounded presets before any paid transform', async () => {
+  const { handlePublicServe } = await import('../../src/serve-public');
+  const configured = env();
+  const cache = { match: vi.fn().mockImplementation(async () => new Response('cached')), put: vi.fn() };
+  for (const query of ['w=301&q=1', 'w=599&q=99&nonce=123']) {
+    const response = await handlePublicServe(new Request(`https://img.festapp.net/images/42/a.jpg?${query}`), configured, undefined, cache);
+    expect(response.status).toBe(200);
+  }
+  expect(cache.match.mock.calls[0][0].url).toBe(cache.match.mock.calls[1][0].url);
+  const variant = new URL(cache.match.mock.calls[0][0].url);
+  expect(variant.searchParams.get('w')).toBe('600');
+  expect(variant.searchParams.get('q')).toBe('75');
+  expect((await handlePublicServe(new Request('https://img.festapp.net/images/42/a.jpg?w=123oops'), configured, undefined, cache)).status).toBe(400);
+  expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
 });

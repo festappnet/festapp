@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
@@ -10,9 +10,15 @@ import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class ProductDetailEditorDialog extends StatefulWidget {
-  final ProductModel product;
+  final ProductModel Function() readProduct;
+  final ValueChanged<ProductModel> replaceProduct;
+  ProductModel get product => readProduct();
   final HtmlSaveCoordinator? coordinator;
-  const ProductDetailEditorDialog({super.key, required this.product, this.coordinator});
+  const ProductDetailEditorDialog(
+      {super.key,
+      required this.readProduct,
+      required this.replaceProduct,
+      this.coordinator});
 
   @override
   _ProductDetailEditorDialogState createState() =>
@@ -31,12 +37,14 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
     _quantityController =
         TextEditingController(text: widget.product.maximum?.toString() ?? "0");
     _quantityController.addListener(() {
-      widget.product.maximum = int.tryParse(_quantityController.text) ?? 0;
+      widget.replaceProduct(widget.product
+          .copyWith(maximum: int.tryParse(_quantityController.text) ?? 0));
     });
     _shortTitleController =
         TextEditingController(text: widget.product.shortTitle ?? "");
     _shortTitleController.addListener(() {
-      widget.product.shortTitle = _shortTitleController.text;
+      widget.replaceProduct(
+          widget.product.withShortTitle(_shortTitleController.text));
     });
   }
 
@@ -50,19 +58,12 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return StandardDialog(
+      title: SelectableText(widget.product.title ?? ''),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 32),
-            SelectableText(
-              widget.product.title ?? '',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
             if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) ...[
               const SizedBox(height: 16),
               TextField(
@@ -91,9 +92,15 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             ),
             const SizedBox(height: 8),
             // Full HTML description (no height limit)
-            EditableHtmlField(html: _description, coordinator: widget.coordinator,
-              owner: HtmlMediaOwner.occasion(widget.product.occasion),
-              onChanged: (html) => setState(() { _description = html; widget.product.description = html; })),
+            EditableHtmlField(
+                html: _description,
+                coordinator: widget.coordinator,
+                owner: HtmlMediaOwner.occasion(widget.product.occasion),
+                onChanged: (html) => setState(() {
+                      _description = html;
+                      widget.replaceProduct(
+                          widget.product.copyWith(description: html));
+                    })),
             const SizedBox(height: 24),
           ],
         ),

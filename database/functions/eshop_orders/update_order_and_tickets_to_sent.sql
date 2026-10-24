@@ -1,7 +1,9 @@
-CREATE OR REPLACE FUNCTION update_order_and_tickets_to_sent(order_id bigint, ticket_ids bigint[])
+CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_sent(order_id bigint, ticket_ids bigint[])
 RETURNS jsonb
 SET search_path = public, extensions AS $$
 BEGIN
+    PERFORM public.check_order_is_mutable(order_id);
+
     -- Update the state of the order to 'sent'
     UPDATE eshop.orders
     SET state = 'sent', updated_at = now()
@@ -13,7 +15,7 @@ BEGIN
     SET state = 'sent', updated_at = now()
     WHERE id = ANY(ticket_ids)
       AND id IN (SELECT ticket FROM eshop.order_product_ticket WHERE "order" = order_id)
-      AND state != 'used';
+      AND state IN ('ordered','paid','sent');
 
     -- Check if any rows were updated in the orders table
     IF NOT FOUND THEN
@@ -31,6 +33,7 @@ BEGIN
         FROM eshop.orders o
         WHERE o.id = order_id;
 
+    PERFORM public.notification_center_order_state_internal(order_id);
         -- Return a success message with a status code 200
         RETURN jsonb_build_object('code', 200, 'message', 'Order and tickets updated to sent successfully');
     END IF;

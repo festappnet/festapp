@@ -82,6 +82,11 @@ fi
 
 echo "Project: ${PROJECT_NAME} | Branch tag: ${BRANCH} | Account: ${CLOUDFLARE_ACCOUNT_ID}"
 
+# The regular build performs this check; prebuilt uploads need the same gate.
+if [ "$SKIP_BUILD" -eq 1 ]; then
+  node automation/verify_image_service.mjs
+fi
+
 # Export the complete public tenant config for the Pages worker and make the
 # project/domain setup identical to the GitHub Actions path.
 set -a
@@ -94,7 +99,7 @@ export BRANCH
 if [ "$USE_WRANGLER_OAUTH" -eq 1 ]; then
   # OAuth is deliberately a routine-deploy path only. It may update an already
   # bound Pages project, but it must not silently create projects or DNS.
-  PROJECTS_JSON="$(npx --yes wrangler@latest pages project list --json)"
+  PROJECTS_JSON="$(pnpm dlx wrangler@latest pages project list --json)"
   node - "$PROJECT_NAME" "$DOMAIN" "$PROJECTS_JSON" <<'NODE'
 const [projectName, domain, source] = process.argv.slice(2);
 const projects = JSON.parse(source);
@@ -125,7 +130,7 @@ if [ ! -f build/web/_worker.js ]; then
 fi
 
 echo "Deploying build/web to Cloudflare Pages project '${PROJECT_NAME}'..."
-npx --yes wrangler@latest pages deploy build/web \
+pnpm dlx wrangler@latest pages deploy build/web \
   --project-name "${PROJECT_NAME}" \
   --branch "${BRANCH}" \
   --commit-dirty=true

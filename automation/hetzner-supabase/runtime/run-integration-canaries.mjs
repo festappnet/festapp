@@ -160,7 +160,7 @@ async function main() {
       revision: 0,
       canary: true,
     });
-    await run('npx', [
+    await run('pnpm', ['dlx',
       'wrangler', 'r2', 'object', 'put', `festapp-public/${syncKey}`,
       '--pipe', '--remote', '--config', 'workers/sync-worker/wrangler.toml',
     ], syncPayload);
@@ -198,7 +198,7 @@ async function main() {
     process.stdout.write(`Integration canaries passed: ${Object.keys(integrations).length}/11 evidence_sha256=${evidence.evidence_sha256}\n`);
   } finally {
     if (syncObjectCreated) {
-      await run('npx', [
+      await run('pnpm', ['dlx',
         'wrangler', 'r2', 'object', 'delete', `festapp-public/${syncKey}`,
         '--remote', '--config', 'workers/sync-worker/wrangler.toml',
       ]).catch(() => {});

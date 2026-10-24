@@ -1,0 +1,7 @@
+- alertdialog "ZavřítNáhled neuloženého odkazuPro vložení na web nejprve formulář uložte.StornoVytvořit" [ref=e1] focusable [tabindex]
+  - button "Zavřít" [ref=e4]
+  - textbox "Název formuláře" [ref=e5]:  
+  - textbox "Odkaz formuláře" [ref=e6]: qa-workshop
+  - textbox [disabled, ref=e7]
+  - button "Storno" [ref=e2]
+  - button "Vytvořit" [disabled, ref=e3]

@@ -16,10 +16,8 @@ DECLARE
     v_rejected boolean;
 BEGIN
     -- Impersonate a real user so auth.uid() (used by the manager gate) resolves.
-    SELECT id INTO v_user_id FROM auth.users LIMIT 1;
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'No users found in auth.users to test with.';
-    END IF;
+    PERFORM public.create_user_for_test('service-item-manager','service-item-manager@example.invalid');
+    v_user_id:=public.get_user_id('service-item-manager');
     PERFORM set_config('request.jwt.claim.sub', v_user_id::text, true);
 
     -- A fresh occasion whose services is JSON `null` — the exact state that

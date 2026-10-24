@@ -1,3 +1,4 @@
+import 'package:fstapp/services/time_helper.dart';
 // Offline visual smoke harness using production widgets and a mocked backend.
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -9,11 +10,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
-import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/occasion/occasion_navigation_bar.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/event_page.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/components/users/views/user_page.dart';
@@ -36,7 +38,7 @@ final event = EventModel(
     description:
         '<p>Podrobný popis události s českými znaky. Přijďte se potkat a vyzkoušet společný program.</p>',
     startTime: DateTime(2026, 10, 3, 14),
-    endTime: DateTime(2026, 10, 3, 15));
+    endTime: DateTime(2026, 10, 3, 15), timeContext: TimeHelper.eventTime);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -180,16 +182,16 @@ class _FixtureAppState extends State<FixtureApp> {
                                       (AppPanelHelper.buildAdaptiveAdminAppBar(
                                               ctx,
                                               activeTabs: [
-                                                AdminTabDefinition(
-                                                    label: 'Účastníci',
+                                                RoutedTabDefinition(
+                                                    slug: 'users', route: const PageRouteInfo('fixture-users'), label: 'Účastníci',
                                                     icon: Icons.people,
-                                                    widget: const SizedBox()),
-                                                AdminTabDefinition(
+                                                    ),
+                                                RoutedTabDefinition(slug: 'orders', route: const PageRouteInfo('fixture-orders'),
                                                     label:
                                                         'Objednávky vstupenek',
                                                     icon: Icons
                                                         .confirmation_number,
-                                                    widget: const SizedBox()),
+                                                    ),
                                               ],
                                               tabController:
                                                   DefaultTabController.of(

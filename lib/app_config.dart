@@ -2,10 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/app_management/language_model.dart';
-import 'package:fstapp/components/occasion/admin_page.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
 
 class AppConfig {
-  static const bool occasionSetupEnabled = bool.fromEnvironment('FESTAPP_OCCASION_SETUP');
+  static const int maxTicketsPerOrder = 20;
+  // Tenant builds opt in explicitly; unrelated tenants retain their creation flow.
+  static const bool occasionSetupEnabled =
+      bool.fromEnvironment('FESTAPP_OCCASION_SETUP');
   static const String supabaseUrl = 'https://kjdpmixlnhntmxjedpxh.supabase.co';
   static const String anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI';
   static const String effectiveSupabaseUrl = String.fromEnvironment(
@@ -25,7 +28,7 @@ class AppConfig {
   static const int backendActivationCanonicalOrganizationId = 0;
   static const String backendActivationCanonicalProfileSha256 = '';
   static const String clientSyncTenantId = 'default';
-  static const String appName = 'Festapp';
+  static const String appName = 'vstupenky.online';
   static String get mapTitle => CommonStrings.map;
   static const bool showPWAInstallOption = true;
   static const bool isOwnProgramSupportedWithoutSignIn = true;
@@ -42,14 +45,14 @@ class AppConfig {
   static const String logoAsset = 'assets/icons/fstapplogo.svg';
   static const String darkLogoAsset = 'assets/icons/fstapplogo.dark.svg';
   static const String programLogoAsset = 'assets/icons/fstapplogo.svg';
-  static const String defaultAdministrationRoute = AdminPage.ROUTE;
+  static const String defaultAdministrationRoute = NavigationPaths.admin;
 
   static int organization = 1;
   //setup occasion id to force occasion
   static const String? forceOccasionLink = null;
   static const bool isPublicNotificationSendingDisabled = false;
   static const bool isAllUnit = false;
-  static const bool isAppSupported = true;
+  static const bool isAppSupported = bool.fromEnvironment('FESTAPP_APP_SUPPORTED', defaultValue: true);
   static const bool isWebclientSupported = true;
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;
@@ -62,6 +65,14 @@ class AppConfig {
   static const String deleteAccountUrl = "https://vstupenky.online/delete-account/";
   static const String syncHeadOrigin = "";
   static const String syncAssetOrigin = "";
+  static const String effectiveSyncHeadOrigin = String.fromEnvironment(
+    'FESTAPP_SYNC_HEAD_ORIGIN',
+    defaultValue: syncHeadOrigin,
+  );
+  static const String effectiveSyncAssetOrigin = String.fromEnvironment(
+    'FESTAPP_SYNC_ASSET_ORIGIN',
+    defaultValue: syncAssetOrigin,
+  );
   static const String imageApiUrl = 'https://image-api.festapp.net';
   static const String imageProjectId = 'default';
   static bool isProLicense = true;

@@ -1,7 +1,8 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_data_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
@@ -107,7 +108,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     // The entire model is stored in a dedicated column to preserve the original data.
     // This is the most reliable way to get the model from a grid row.
     final model =
-        json[EshopColumns.HISTORY_MODEL_REFERENCE] as OrderHistoryModel;
+        json[EshopColumnIds.HISTORY_MODEL_REFERENCE] as OrderHistoryModel;
 
     // Because OrderHistoryModel is treated as immutable in the grid (update is disabled),
     // we simply return the original model reference. If fields were updatable,
@@ -202,8 +203,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
-      final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode);
+      final priceString = Utilities.formatPrice(context, price,
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       return ' ($priceString)';
     }
 
@@ -229,11 +231,13 @@ class OrderHistoryModel extends ITrinaRowModel {
       final toP = c['to']!.product;
       final oldPrice = fromP.price != null
           ? Utilities.formatPrice(context, fromP.price!,
-              currencyCode: fromP.currencyCode)
+              currencyCode: fromP.currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : _noPricePlaceholder;
       final newPrice = toP.price != null
           ? Utilities.formatPrice(context, toP.price!,
-              currencyCode: toP.currencyCode)
+              currencyCode: toP.currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : _noPricePlaceholder;
       if (fromP.spotTitle != toP.spotTitle) {
         changeStrings
@@ -261,8 +265,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
-      final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode);
+      final priceString = Utilities.formatPrice(context, price,
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       return ' ($priceString)';
     }
 
@@ -291,11 +296,13 @@ class OrderHistoryModel extends ITrinaRowModel {
       final toP = c['to']!.product;
       final oldPrice = fromP.price != null
           ? Utilities.formatPrice(context, fromP.price!,
-              currencyCode: fromP.currencyCode)
+              currencyCode: fromP.currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : _noPricePlaceholder;
       final newPrice = toP.price != null
           ? Utilities.formatPrice(context, toP.price!,
-              currencyCode: toP.currencyCode)
+              currencyCode: toP.currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : _noPricePlaceholder;
       if (fromP.spotTitle != toP.spotTitle) {
         changeSpans.add(TextSpan(
@@ -374,7 +381,8 @@ class OrderHistoryModel extends ITrinaRowModel {
         final product = p.product;
         final priceString = product.price != null
             ? Utilities.formatPrice(context, product.price!,
-                currencyCode: product.currencyCode)
+                currencyCode: product.currencyCode,
+                decimalDigits: orderModel?.amountDecimalDigits ?? 0)
             : null;
         changeRows.add(_buildProductRow("+ ${product.title}", priceString,
             ThemeConfig.greenColor(context)));
@@ -383,7 +391,8 @@ class OrderHistoryModel extends ITrinaRowModel {
         final product = p.product;
         final priceString = product.price != null
             ? Utilities.formatPrice(context, product.price!,
-                currencyCode: product.currencyCode)
+                currencyCode: product.currencyCode,
+                decimalDigits: orderModel?.amountDecimalDigits ?? 0)
             : null;
         changeRows.add(_buildProductRow(
             "− ${product.title}", priceString, ThemeConfig.redColor(context)));
@@ -417,7 +426,7 @@ class OrderHistoryModel extends ITrinaRowModel {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "${OrdersStrings.itemSingular} $ticketSymbol",
+            "${OrderItemStrings.itemSingular} $ticketSymbol",
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
@@ -489,11 +498,13 @@ class OrderHistoryModel extends ITrinaRowModel {
 
     final oldPriceText = from.price != null
         ? Utilities.formatPrice(context, from.price!,
-            currencyCode: from.currencyCode)
+            currencyCode: from.currencyCode,
+            decimalDigits: orderModel?.amountDecimalDigits ?? 0)
         : _noPricePlaceholder;
     final newPriceText = to.price != null
         ? Utilities.formatPrice(context, to.price!,
-            currencyCode: to.currencyCode)
+            currencyCode: to.currencyCode,
+            decimalDigits: orderModel?.amountDecimalDigits ?? 0)
         : _noPricePlaceholder;
 
     return Padding(
@@ -532,13 +543,17 @@ class OrderHistoryModel extends ITrinaRowModel {
         price != previousHistoryRecord!.price) {
       final oldPrice = Utilities.formatPrice(
           context, previousHistoryRecord!.price ?? 0,
-          currencyCode: previousHistoryRecord!.currencyCode);
+          currencyCode: previousHistoryRecord!.currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       final newPrice = Utilities.formatPrice(context, price ?? 0,
-          currencyCode: currencyCode);
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       priceText = "$oldPrice → $newPrice";
     } else {
       priceText = price != null
-          ? Utilities.formatPrice(context, price!, currencyCode: currencyCode)
+          ? Utilities.formatPrice(context, price!,
+              currencyCode: currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : "";
     }
 
@@ -556,30 +571,30 @@ class OrderHistoryModel extends ITrinaRowModel {
 
     return TrinaRow(
       cells: {
-        EshopColumns.HISTORY_ID: TrinaCell(value: id ?? 0),
-        EshopColumns.ORDER_SEQUENCE: TrinaCell(
+        EshopColumnIds.HISTORY_ID: TrinaCell(value: id ?? 0),
+        EshopColumnIds.ORDER_SEQUENCE: TrinaCell(
           value: orderSequence ?? orderModel?.orderSequence,
         ),
-        EshopColumns.HISTORY_ORDER_SYMBOL:
+        EshopColumnIds.HISTORY_ORDER_SYMBOL:
             TrinaCell(value: orderSymbol ?? orderModel?.orderSymbol ?? ""),
-        EshopColumns.ORDER_DATA:
+        EshopColumnIds.ORDER_DATA:
             TrinaCell(value: orderModel?.toCustomerData() ?? ""),
-        EshopColumns.ORDER_EMAIL: TrinaCell(
+        EshopColumnIds.ORDER_EMAIL: TrinaCell(
             value: orderModel?.data?[TbEshop.orders.data_email] ?? ""),
-        EshopColumns.HISTORY_CHANGED_AT: TrinaCell(
+        EshopColumnIds.HISTORY_CHANGED_AT: TrinaCell(
             value: createdAt != null
                 ? DateFormat('yyyy-MM-dd HH:mm')
                     .format(createdAt!.toOccasionTime())
                 : ""),
-        EshopColumns.HISTORY_CHANGED_BY: TrinaCell(
+        EshopColumnIds.HISTORY_CHANGED_BY: TrinaCell(
             value: createdBy?.toFullNameString() ?? OrdersStrings.systemUser),
-        EshopColumns.HISTORY_STATE: TrinaCell(value: stateCellFormat),
-        EshopColumns.HISTORY_PRICE: TrinaCell(value: priceText),
-        EshopColumns.HISTORY_CHANGES_SUMMARY:
+        EshopColumnIds.HISTORY_STATE: TrinaCell(value: stateCellFormat),
+        EshopColumnIds.HISTORY_PRICE: TrinaCell(value: priceText),
+        EshopColumnIds.HISTORY_CHANGES_SUMMARY:
             TrinaCell(value: _generateChangesSummaryString(context)),
-        EshopColumns.ORDER_FORM:
+        EshopColumnIds.ORDER_FORM:
             TrinaCell(value: orderModel?.form?.toString() ?? ""),
-        EshopColumns.HISTORY_MODEL_REFERENCE: TrinaCell(value: this),
+        EshopColumnIds.HISTORY_MODEL_REFERENCE: TrinaCell(value: this),
       },
     );
   }

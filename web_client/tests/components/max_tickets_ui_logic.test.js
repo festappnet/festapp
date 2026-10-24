@@ -78,6 +78,13 @@ describe('Max Tickets UI Logic', () => {
         };
     });
 
+    it('caps legacy form values at the global limit and preserves lower limits', () => {
+        mockFormModel.relatedFields[0].data.max_tickets = 999;
+        assert.equal(new FormSession(mockFormModel).maxTickets, 20);
+        mockFormModel.relatedFields[0].data.max_tickets = 4;
+        assert.equal(new FormSession(mockFormModel).maxTickets, 4);
+    });
+
     it('should run without crash (Sanity)', async () => {
          assert.ok(TicketFieldBuilder, 'Builder should be imported');
     });

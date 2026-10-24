@@ -2,6 +2,14 @@
   "version": 1,
   "canonical_origin": "https://api.festapp.net",
   "edge_functions": {
+    "delete-order": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "fakturoid-invoice-delete"
+      ],
+      "mutates_authority": true
+    },
     "preview-ticket-layout": {
       "trigger": "client-http",
       "effects": [
@@ -45,6 +53,14 @@
       ],
       "mutates_authority": true
     },
+    "exchange-sign-in-code": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-create"
+      ],
+      "mutates_authority": true
+    },
     "fetch-http-data": {
       "trigger": "client-http",
       "effects": [
@@ -67,14 +83,6 @@
         "remote-asset-read"
       ],
       "mutates_authority": false
-    },
-    "instance-install": {
-      "trigger": "operator-http",
-      "effects": [
-        "direct-sql",
-        "github-api"
-      ],
-      "mutates_authority": true
     },
     "notify": {
       "trigger": "database-webhook",
@@ -244,6 +252,47 @@
         "banksync-tenant-control"
       ],
       "mutates_authority": true
+    },
+    "customer-order-access": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "waitlist-commands": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
+    },
+    "occasion-setup-email-preview": {
+      "trigger": "client-http",
+      "effects": [
+        "database-read"
+      ],
+      "mutates_authority": false
+    },
+    "prepare-ticket-batch-document": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "private-storage-write",
+        "private-storage-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": true
+    },
+    "notification-center-maintain": {
+      "trigger": "canonical-cron",
+      "effects": [
+        "database-rpc",
+        "banksync-tenant-control"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -257,15 +306,6 @@
         "cloudflare-cache-purge"
       ],
       "mutates_authority": true
-    },
-    "self-hosted-preactivation-guard": {
-      "entrypoint": "workers/self-hosted-preactivation-guard/src/index.mjs",
-      "deployment_contract": "workers/self-hosted-preactivation-guard/wrangler.toml",
-      "trigger": "canonical-function-route",
-      "effects": [
-        "fail-closed-http-response"
-      ],
-      "mutates_authority": false
     },
     "self-hosted-monitor": {
       "entrypoint": "workers/self-hosted-monitor/src/index.mjs",
@@ -317,14 +357,17 @@
       "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
       "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
       "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only",
-      "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt"
+      "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt",
+      "occasion-setup-email-preview": "user-jwt-draft-unit-editor-or-manager-exact-revision-server-resolved-template-hierarchy-synthetic-render-only",
+      "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion",
+      "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel"
     },
     "excluded": {
-      "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"
+      "instance-install": "removed-remote-sql-installer-must-not-be-reintroduced"
     }
   },
   "activation_requirements": [
-    "pre-activation Function guard remains active until the reviewed canonical Function bundle is promoted and internally verified, then its exact route is removed before external Function canaries",
+    "The reviewed canonical Function bundle and matching writer policy must preserve production exclusions, exact proof-route authentication and worker-scoped credentials; verify internally before external release canaries",
     "AWS SNS topic uses SignatureVersion 2 and a signed canonical endpoint canary passes",
     "festapp_notify_webhook_token_v1 in target Vault matches NOTIFY_WEBHOOK_TOKEN and setup_triggers installs only the canonical HTTPS endpoint",
     "sync-publisher ignored wrangler.toml contains fresh final canonical occasion IDs and no Supabase Cloud origin",

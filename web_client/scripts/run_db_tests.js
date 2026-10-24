@@ -82,6 +82,10 @@ async function runTest(file) {
         console.warn("  WARNING: assertions.sql not found. Some tests may fail.");
     }
 
+    if (relativePath.startsWith('database/tests/scanning/') || ['database/tests/eshop/stripe/admission_test.sql','database/tests/eshop/stripe/refund_decisions_test.sql'].includes(relativePath)) {
+      await client.query(fs.readFileSync(path.join(TESTS_DIR, 'scanning/fixture.sql'), 'utf8'));
+    }
+
     // Read and Execute Test File
     const testSql = fs.readFileSync(file, 'utf8');
     await client.query(testSql);

@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:fstapp/components/map/offline_map_bundle_manager.dart';
-import 'package:fstapp/components/map/offline_map_bundle_manifest.dart';
-import 'package:fstapp/components/map/maplibre/maplibre_style_optimizer.dart';
+import 'package:festapp_core/map.dart';
 
 class MapLibreStyleAssembler {
   static Future<String> assemble({
@@ -41,7 +40,7 @@ class MapLibreStyleAssembler {
     // Compact MapLibre-only bundles have no MBTiles asset and keep using
     // PMTiles.
     final tileSource = switch (manifest.bundleMode) {
-      OfflineMapBundleMode.dualRenderer => 'mbtiles://${_absoluteAssetPath(
+      OfflineMapBundleMode.mbtiles => 'mbtiles://${_absoluteAssetPath(
           bundleDirectory,
           manifest.assetFor(OfflineMapAssetRole.mbtiles).path,
         )}',

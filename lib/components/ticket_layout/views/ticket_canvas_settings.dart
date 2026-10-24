@@ -1,3 +1,4 @@
+import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:flutter/material.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_controller.dart';
@@ -38,8 +39,9 @@ class _TicketCanvasSettingsState extends State<TicketCanvasSettings> {
     if (document.fitPageToTicket &&
         !document.appearance.containsKey('pageMargin')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted)
+        if (mounted) {
           changePaper(true, marginValue: TicketTemplate.defaultPageMargin);
+        }
       });
     }
     widthFocus.addListener(() {
@@ -54,12 +56,15 @@ class _TicketCanvasSettingsState extends State<TicketCanvasSettings> {
   }
 
   void refresh() {
-    if (!widthFocus.hasFocus)
+    if (!widthFocus.hasFocus) {
       width.text = (document.area.width / units).toStringAsFixed(1);
-    if (!heightFocus.hasFocus)
+    }
+    if (!heightFocus.hasFocus) {
       height.text = (document.area.height / units).toStringAsFixed(1);
-    if (!marginFocus.hasFocus)
+    }
+    if (!marginFocus.hasFocus) {
       margin.text = (document.pageMargin / units).toStringAsFixed(1);
+    }
     if (mounted) setState(() {});
   }
 
@@ -108,7 +113,8 @@ class _TicketCanvasSettingsState extends State<TicketCanvasSettings> {
     final next = document.withPaper(ticket,
         margin: ticket
             ? marginValue ??
-                (document.fitPageToTicket && document.appearance.containsKey('pageMargin')
+                (document.fitPageToTicket &&
+                        document.appearance.containsKey('pageMargin')
                     ? document.pageMargin
                     : TicketTemplate.defaultPageMargin)
             : 0);
@@ -133,18 +139,24 @@ class _TicketCanvasSettingsState extends State<TicketCanvasSettings> {
 
   Widget field(TextEditingController value, FocusNode focus, String label,
           VoidCallback submit) =>
-      TextField(
-          controller: value,
-          focusNode: focus,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => submit(),
-          onTapOutside: (_) => focus.unfocus(),
-          decoration: InputDecoration(
-              labelText: label,
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 18)));
+      EditorNumberScroll(
+        min: value == margin ? 0 : .1,
+        max: value == margin ? 25.4 : null,
+        step: .1,
+        onChanged: submit,
+        child: TextField(
+            controller: value,
+            focusNode: focus,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => submit(),
+            onTapOutside: (_) => focus.unfocus(),
+            decoration: InputDecoration(
+                labelText: label,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 18))),
+      );
 
   @override
   Widget build(BuildContext context) {

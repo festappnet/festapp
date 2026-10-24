@@ -55,6 +55,7 @@ BEGIN
         '[{"code": "deposit", "is_enabled": true, "deposit_deadline": "on_site"}, {"code": "form", "is_enabled": true, "reminder_is_enabled": true, "reminder_interval_seconds": 259200}]'::jsonb,
         v_hidden_id
     ) RETURNING id INTO v_occasion_id;
+    PERFORM public.reserve_public_link_internal('occasion',v_occasion_id,(SELECT link FROM public.occasions WHERE id=v_occasion_id),true);
 
     INSERT INTO public.forms (title, occasion, is_open)
     VALUES ('Test Form OnSite', v_occasion_id, true) RETURNING id, key INTO v_form_id, v_form_key;
@@ -82,7 +83,7 @@ BEGIN
 
     -- No deposit reminder should be queued (on_site deadline)
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
-    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND coalesce((data->>'is_deposit_reminder')::boolean,false) AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 1: No reminder for on_site deadline');
     RAISE NOTICE 'Step 1 PASSED: Order created, no reminder for on_site';
 
@@ -104,7 +105,7 @@ BEGIN
     -- ==================================================================
     PERFORM queue_payment_reminders(v_occasion_id, 259200);
     SELECT COUNT(*) INTO v_reminder_count FROM public.email_messages
-    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND occasion = v_occasion_id;
+    WHERE workflow_state NOT IN ('cancelled','expired') AND (target_time>now() OR public.email_intent_valid(email_messages)) AND code = 'TICKET_ORDER_REMINDER' AND coalesce((data->>'is_deposit_reminder')::boolean,false) AND occasion = v_occasion_id;
     PERFORM assert_eq(v_reminder_count, 0::bigint, 'Step 3: No reminder from batch for on_site');
     RAISE NOTICE 'Step 3 PASSED: Batch produces no reminder for on_site';
 

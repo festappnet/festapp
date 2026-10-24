@@ -1,5 +1,8 @@
 # Complete Festapp bank ingress cutover
 
+Status: original migration procedure, not routine account setup. Source retirement is described by [current BankSync setup](../../setup/bank_import.md). This file has no appended full-rollout receipt; the [pilot snapshot](PRODUCTION-2026-10-04.md) records a narrower scope and a blocked payment check. Do not infer all-account production completion or replay this sequence from the title.
+
+
 The authorized scope is every Festapp bank-import path on the canonical backend.
 Only the selected `prod/festapptickets` web client is released; no other tenant
 build is implied. The user confirmed the former bank-email addresses are unused.

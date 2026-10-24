@@ -34,7 +34,6 @@ import 'package:fstapp/components/information/song/song_page.dart';
 import 'package:fstapp/components/schedule/timetable_page.dart';
 import 'package:fstapp/components/users/views/user_page.dart';
 import 'package:fstapp/components/forms/views/form_page.dart';
-import 'package:fstapp/components/app_management/instance_install_page.dart';
 import 'package:fstapp/components/reception/reception_page.dart';
 import 'package:fstapp/components/reception/login_qr_scanner_page.dart';
 
@@ -81,11 +80,18 @@ class AppRouter extends RootStackRouter {
             page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
         AutoRoute(page: SignupRoute.page, path: sl(SignupPage.ROUTE)),
         AutoRoute(page: SettingsRoute.page, path: sl(SettingsPage.ROUTE)),
+        AutoRoute(
+            page: StripeConnectCallbackRoute.page,
+            path: '/stripe/connect/callback'),
+        RedirectRoute(
+            path: '/app/stripe/connect/callback',
+            redirectTo: '/stripe/connect/callback'),
+        AutoRoute(page: StripePayRoute.page, path: '/stripe/pay'),
+        AutoRoute(page: StripeReturnRoute.page, path: '/stripe/return'),
+        RedirectRoute(path: '/app/stripe/pay', redirectTo: '/stripe/pay'),
+        RedirectRoute(path: '/app/stripe/return', redirectTo: '/stripe/return'),
         AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
         AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
-        AutoRoute(
-            page: InstanceInstallRoute.page,
-            path: sl(InstanceInstallPage.ROUTE)),
         CustomRoute(
             page: UnitAdminRoute.page,
             // Retained context routers must have different keys per unit/link.
@@ -113,6 +119,9 @@ class AppRouter extends RootStackRouter {
                     AutoRoute(
                         page: UnitSettingsRoute.page,
                         path: NavigationPaths.settings),
+                    AutoRoute(
+                        page: UnitCardPaymentsRoute.page,
+                        path: NavigationPaths.cardPayments),
                     AutoRoute(
                         page: UnitBankAccountsNavigationRoute.page,
                         path: NavigationPaths.bankAccounts,
@@ -202,6 +211,18 @@ class AppRouter extends RootStackRouter {
                                 AutoRoute(
                                     page: OrdersCurrentRoute.page,
                                     path: NavigationPaths.current),
+                                AutoRoute(
+                                    page: TicketBatchesRoute.page,
+                                    path: NavigationPaths.pregenerated,
+                                    children: [
+                                      AutoRoute(
+                                          page: TicketBatchListRoute.page,
+                                          path: '',
+                                          initial: true),
+                                      AutoRoute(
+                                          page: TicketBatchDetailRoute.page,
+                                          path: ':batchId'),
+                                    ]),
                                 AutoRoute(
                                     page: OrdersHistoryRoute.page,
                                     path: NavigationPaths.history),
@@ -575,7 +596,7 @@ class AppRouter extends RootStackRouter {
       return "/";
     }
 
-    if (RightsService.useOfflineVersion) {
+    if (RightsService.useOfflineVersion && RightsService.currentLink != null) {
       return getOccasionLandingPath(RightsService.currentLink!);
     }
     if (RightsService.currentLink != null) {
@@ -614,6 +635,7 @@ class AppRouter extends RootStackRouter {
       ScanPage.ROUTE,
       TransferPage.ROUTE,
       'app',
+      'stripe',
       'privacy',
       'terms',
       'support',

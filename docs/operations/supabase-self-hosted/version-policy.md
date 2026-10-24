@@ -1,41 +1,50 @@
-# Stable-version policy
+# Runtime version policy
 
-Festapp uses the newest stable versions available at the start of a rehearsed
-release, with one compatibility boundary: Supabase services and PostgreSQL are
-selected as the newest **tested self-hosted Supabase release bundle**, not as an
-untested collection of individually newest container tags.
+Use a tested self-hosted Supabase bundle with exact container tags and ARM64
+digests. A database major upgrade needs its own backup, restore rehearsal and
+rollback plan. Do not assemble a release by independently advancing individual
+service tags or using mutable `latest` images.
 
-The 2026-08-27 cutover candidate is Supabase `self-hosted/v0.8.0` at commit
-`241bb11c0627f2981746d37033f57dbfa81d29b0`. It contains PostgreSQL
-`17.6.1.136`, matching the canonical source's PostgreSQL 17 major. Source `a`
-on PostgreSQL 15 is logically exported into staging and transformed; its data
-directory is never opened by PostgreSQL 17.
+The selected repository inputs are
+[`runtime/pins.json`](../../../automation/hetzner-supabase/runtime/pins.json),
+the Festapp Compose overlays and the host bootstrap. They describe the proposed
+source configuration, not proof of what is installed on a live host. Verify the
+installed versions and artifact identities during a scoped release.
 
-PostgreSQL 18.6 is the newest upstream stable version, but the selected stable
-Supabase bundle does not support it as its tested default. Moving the canonical
-database to PostgreSQL 18 is therefore a separate post-cutover release with its
-own backup, restore rehearsal and rollback gate. This preserves both user goals:
-no knowingly stale production software and no database-major change hidden
-inside the data consolidation.
+## Check the pins
 
-All container references are pinned by human-readable tag and `linux/arm64`
-digest in `runtime/pins.json`. Before the first rehearsal and again immediately
-before production cutover, refresh stable-version research from primary
-sources, resolve new digests, inspect breaking/security changes, run the full
-restore suite and commit the updated manifest. A newer release is adopted only
-as a complete tested bundle. Mutable `latest` tags are prohibited.
+Run from the repository root:
 
-Run `node runtime/verify-pins.mjs --online` to compare release pins with primary
-upstreams. Before production cutover, authenticate to Docker Hub and run
-`node runtime/verify-pins.mjs --online --registry` to re-resolve every declared
-container digest for `linux/arm64` without relying on anonymous pull quotas.
+```bash
+node automation/hetzner-supabase/runtime/verify-pins.mjs
+```
 
-Terraform is pinned to stable `1.16.1`, published on 2026-09-02 and verified as
-non-prerelease through GitHub Releases. It is a patch release containing CLI,
-test, import and state bug fixes; `required_version = "~> 1.16.0"` already
-accepts it. The Hetzner provider remains pinned to stable `1.68.0`.
+This checks local version/digest/source formats. For an authorized dependency
+review, `--online` compares selected versions with primary upstream release
+information and checks the selected upstream Compose bundle:
 
-No update workflow may invoke Supabase `reset.sh`, `docker compose down -v`,
-volume pruning or any equivalent deletion command. Cloud sources remain intact
-and writable/read-only according to the current migration wave until a separate
-explicit destructive approval is recorded.
+```bash
+node automation/hetzner-supabase/runtime/verify-pins.mjs --online
+```
+
+With an authenticated Docker registry session, add `--registry` to check the
+`linux/arm64` image digests. A newer upstream version can make this comparison
+fail; that is a review finding, not authority to update or restart production.
+Commit a rehearsed pin/Compose change before its release.
+
+Terraform's repository constraint is `~> 1.16.0`; the hcloud provider is pinned
+to `1.68.0` in `terraform/versions.tf`. The recorded 2026 cutover selected
+Supabase `self-hosted/v0.8.0` at revision
+`241bb11c0627f2981746d37033f57dbfa81d29b0`, including PostgreSQL `17.6.1.136`.
+Earlier statements about the newest upstream PostgreSQL/Terraform version were
+point-in-time research, not a current availability claim.
+
+## Data and retention boundaries
+
+An ordinary runtime update must not invoke Supabase `reset.sh`,
+`docker compose down -v`, volume pruning or equivalent deletion. Former cloud
+sources remain retained history/reconciliation targets; routine migrations and
+writes must not reopen them. Their disposition follows the
+[retention record](../work-items/completed/legacy-supabase-decommission-2026-09-23.md),
+not the old migration-wave state. A restore or destructive recovery requires
+its own exact target and authority.

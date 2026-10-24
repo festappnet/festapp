@@ -27,67 +27,6 @@ class Utilities {
     return currencyFormatter.format(price);
   }
 
-  static String formatCurrencyCode(BuildContext context,
-      {String? currencyCode}) {
-    final locale = EasyLocalization.of(context)?.locale.toString() ?? 'cs_CZ';
-    final currency = currencyCode ?? 'CZK';
-    final NumberFormat simpleFormatter = NumberFormat.simpleCurrency(
-      locale: locale,
-      name: currency,
-    );
-    return simpleFormatter.currencySymbol;
-  }
-
-  static bool isValidUrl(String link) {
-    // 1. Check if the link is empty
-    if (link.isEmpty) {
-      return false;
-    }
-
-    // 2. Define the regex pattern for validation
-    final String urlPattern = r'^[a-zA-Z0-9-_]+$';
-
-    // 3. Create a RegExp object and check for a match
-    final RegExp regex = RegExp(urlPattern);
-    return regex.hasMatch(link);
-  }
-
-  /// Validates a string for a common email format.
-  ///
-  /// This provides practical validation, not full RFC 5322 compliance.
-  /// It returns `true` for valid formats (e.g., "name@domain.com")
-  /// and `false` for null, empty, or improperly formatted strings.
-  static bool isValidEmail(String? email) {
-    // 1. Check if the email is null or empty (after trimming)
-    if (email == null || email.trim().isEmpty) {
-      return false;
-    }
-
-    // 2. Define the regex pattern for a common email format.
-    // This checks for:
-    // - local-part: [a-z0-9._%+-]
-    // - @ symbol
-    // - domain-part: [a-z0-9.-]
-    // - . (dot)
-    // - top-level-domain: [a-z]{2,} (at least 2 letters)
-    final String emailPattern = r'^[a-z0-9\._%+-]+@[a-z0-9\.-]+\.[a-z]{2,}$';
-
-    // 3. Create a RegExp object (case-insensitive) and check for a match.
-    // We trim the email again to ensure the regex doesn't fail on trailing whitespace.
-    final RegExp regex = RegExp(emailPattern, caseSensitive: false);
-    return regex.hasMatch(email.trim());
-  }
-
-  static String sanitizeFullUrl(String link) {
-    // First, remove diacritics from the input string.
-    final String cleaned = removeDiacritics(link);
-    // Define a RegExp that matches all characters not allowed in a URL segment.
-    // Allowed characters: a-z, A-Z, 0-9, dash (-), and underscore (_)
-    final RegExp invalidChars = RegExp(r'[^a-zA-Z0-9\-_]');
-    // Remove all invalid characters from the cleaned string.
-    return cleaned.replaceAll(invalidChars, '');
-  }
-
   static final RegExp _tabsAndNewLinesPattern = RegExp(r'[\t\n]+');
   static String removeTabsAndNewLines(String input) {
     return input.replaceAll(_tabsAndNewLinesPattern, '');

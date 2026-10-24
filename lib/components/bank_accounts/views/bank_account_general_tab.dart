@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
-import 'package:fstapp/components/bank_accounts/data/cz_banks.dart';
+import 'package:festapp_core/eshop.dart';
 
 class BankAccountGeneralTab extends StatefulWidget {
   final bool isReadOnly;

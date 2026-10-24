@@ -36,6 +36,10 @@ BEGIN
     (title, link, start_time, end_time, organization, unit)
   VALUES ('Own orders occasion', v_link, now(), now() + interval '1 day',
     v_own_org, v_own_unit) RETURNING id INTO v_own_occasion;
+  -- Model the explicit frozen bindings of a historical duplicate slug.
+  INSERT INTO public.occasion_link_reservations(slug,occasion) VALUES(v_link,NULL);
+  INSERT INTO public.legacy_occasion_link_bindings(slug,organization,occasion)
+  VALUES(v_link,v_foreign_org,v_foreign_occasion),(v_link,v_own_org,v_own_occasion);
 
   INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, state, data, price, currency_code)
   VALUES (public.next_order_sequence(v_foreign_occasion), public.generate_order_symbol(), v_foreign_occasion, 'ordered', '{}', 100, 'CZK')
@@ -70,7 +74,7 @@ BEGIN
     RAISE EXCEPTION 'orders read unexpectedly allowed';
   EXCEPTION WHEN OTHERS THEN
     RESET ROLE;
-    IF SQLERRM <> 'get_orders failed: User is not authorized to access this occasion' THEN
+    IF SQLERRM <> 'order viewer required' THEN
       RAISE;
     END IF;
   END;

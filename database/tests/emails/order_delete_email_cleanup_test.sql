@@ -1,4 +1,6 @@
 BEGIN;
+-- This cleanup fixture deliberately creates every queue state for one recipient.
+UPDATE public.abuse_policy_rules SET base_limit=100,hard_cap=100 WHERE rule_key='email.ordinary.recipient.burst';
 DO $$
 DECLARE org bigint; u bigint; occ bigint; ord bigint; other_ord bigint; actor uuid; ctx jsonb; msg jsonb; n int; message_ids uuid[]; attempt_ids uuid[]; log_id bigint; states text[]:=ARRAY['pending','retry_wait','blocked','preparing','sending','accepted','unknown','dead','cancelled','suppressed','expired'];
 BEGIN

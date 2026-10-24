@@ -1,8 +1,5 @@
 -- Test for public.get_bank_accounts_for_unit_management(p_unit_id)
 
-
--- Test for public.get_bank_accounts_for_unit_management(p_unit_id)
-
 DO $$
 DECLARE
     v_user_manager uuid;
@@ -11,6 +8,10 @@ DECLARE
     v_unit_id bigint;
     v_acc_fio bigint;
     v_acc_cash bigint;
+    v_acc_alias bigint;
+    v_foreign_org bigint;
+    v_foreign_unit bigint;
+    v_context jsonb;
     v_count int;
     v_fio_rec record;
 BEGIN
@@ -33,6 +34,12 @@ BEGIN
     
     INSERT INTO public.units (title, organization) VALUES ('Test Unit', v_org_id) RETURNING id INTO v_unit_id;
     INSERT INTO public.unit_users (unit, "user", is_manager) VALUES (v_unit_id, v_user_manager, true);
+    -- Multiple unit roles must remain scoped to the requested unit.
+    INSERT INTO public.organizations(title) VALUES ('Foreign bank context') RETURNING id INTO v_foreign_org;
+    INSERT INTO public.units(title,organization) VALUES ('Foreign bank unit',v_foreign_org)
+      RETURNING id INTO v_foreign_unit;
+    INSERT INTO public.unit_users(unit,"user",is_manager,is_editor)
+      VALUES(v_foreign_unit,v_user_manager,false,true);
     -- v_user_other is NOT manager
 
     -- Create Bank Accounts
@@ -93,6 +100,18 @@ BEGIN
       RAISE EXCEPTION 'Bank admin must receive authorized connection details';
     END IF;
     
+    -- Keep these calls separate: an optional organization RPC failure must not be
+    -- mistaken for a bank permission failure (SQLSTATE/context identifies owner).
+    v_context := public.get_current_organization_data();
+    IF v_context->>'code' <> '200' THEN
+      RAISE EXCEPTION 'Organization admin context missing: %',v_context;
+    END IF;
+    BEGIN
+      PERFORM public.get_bank_accounts_for_unit_management(v_foreign_unit);
+      RAISE EXCEPTION 'Editor in another organization must not get manager bank access';
+    EXCEPTION WHEN raise_exception THEN
+      IF SQLERRM <> 'User is not manager.' THEN RAISE; END IF;
+    END;
     RAISE NOTICE 'Success Case Passed.';
 
 
@@ -114,6 +133,21 @@ BEGIN
     END IF;
     PERFORM set_config('request.jwt.claim.role','authenticated',true);
 
+    -- Multiple bank accounts can share one canonical BankSync connection.
+    INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies,pairing_code)
+      VALUES('Alias account','FIO','123/2010',ARRAY['EUR'],'bankalias1') RETURNING id INTO v_acc_alias;
+    INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(v_unit_id,v_acc_alias,3);
+    INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin)
+      VALUES(v_acc_alias,v_user_manager,true);
+    INSERT INTO eshop.bank_sync_account_aliases(bank_account_id,connection_id)
+      SELECT v_acc_alias,id FROM eshop.bank_sync_connections WHERE bank_account_id=v_acc_fio;
+    SELECT count(*) INTO v_count FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_count<>2 THEN RAISE EXCEPTION 'Expected both bank accounts, got %',v_count; END IF;
+    SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id) WHERE id=v_acc_alias;
+    IF v_fio_rec.bank_sync->>'receiving_address' IS DISTINCT FROM 'abcdef0123@banksync.festapp.net' THEN
+      RAISE EXCEPTION 'Authorized alias must resolve the canonical connection';
+    END IF;
+
     -- 3. Test Failure (As Non-Manager)
     PERFORM set_config('request.jwt.claim.sub', v_user_other::text, true);
     
@@ -124,6 +158,8 @@ BEGIN
         IF SQLERRM <> 'User is not manager.' THEN RAISE; END IF;
     END;
 
+    v_context := public.get_current_organization_data();
+    IF v_context->>'code' <> '403' THEN RAISE EXCEPTION 'Foreign organization context leaked'; END IF;
     RAISE NOTICE 'get_bank_accounts_for_unit_management Test Passed.';
 END;
 $$;

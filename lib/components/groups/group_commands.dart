@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +19,8 @@ class GroupCommandResult {
 }
 
 abstract interface class GroupCommands {
+  Future<GroupCommandResult> addMembers(
+      int occasionId, int groupId, List<String> userIds);
   Future<GroupCommandResult> save(int occasionId, UserGroupInfoModel group);
   Future<GroupCommandResult> delete(int occasionId, UserGroupInfoModel group);
   Future<GroupCommandResult> replaceAssignments(
@@ -28,11 +31,22 @@ abstract interface class GroupCommands {
 
 class SupabaseGroupCommands implements GroupCommands {
   SupabaseGroupCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseGroupCommands.withTransport(this._transport);
 
   final ClientCommandTransport _transport;
+
+  @override
+  Future<GroupCommandResult> addMembers(
+      int occasionId, int groupId, List<String> userIds) async {
+    final selected = userIds.toSet().toList()..sort();
+    return _decode(await _invoke('add_user_group_members_client_sync_v1', {
+      'p_occasion': occasionId,
+      'p_group': groupId,
+      'p_users': selected,
+    }));
+  }
 
   @override
   Future<GroupCommandResult> replaceAssignments(
@@ -103,7 +117,7 @@ class SupabaseGroupCommands implements GroupCommands {
       String name, Map<String, dynamic> parameters) async {
     final response =
         ClientCommandResponse.from(await _transport.invoke(name, parameters));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return response;
   }
 

@@ -1,9 +1,11 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 import 'html_strings.dart';
+import 'html_embedded_block.dart';
 import 'html_text_style.dart';
 import 'html_view.dart';
 import 'rich_html_editor.dart';
@@ -14,6 +16,7 @@ import 'rich_html_editor_dialog.dart';
 class EditableHtmlField extends StatefulWidget {
   const EditableHtmlField({
     required this.html,
+    this.embeddedBlock,
     required this.onChanged,
     this.owner = const HtmlMediaOwner.none(),
     this.profile = HtmlContentProfile.appContent,
@@ -27,6 +30,7 @@ class EditableHtmlField extends StatefulWidget {
     super.key,
   });
   final String? html;
+  final HtmlEmbeddedBlock? embeddedBlock;
   final String? placeholder;
   final ValueChanged<String> onChanged;
   final Future<void> Function(String)? onSave;
@@ -57,6 +61,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         widget.onSave; // Freeze the entity/version writer for this session.
     _controller ??= RichHtmlEditorController(
       initialHtml: _activationHtml,
+      embeddedBlock: widget.embeddedBlock,
       owner: _coordinator == null && _writer == null
           ? const HtmlMediaOwner.none()
           : widget.owner,
@@ -94,7 +99,8 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     final discard = !_controller!.hasUserChanges ||
         await showDialog<bool>(
               context: context,
-              builder: (context) => AlertDialog(
+              builder: (context) => AppAlertDialog(
+                onClose: () => Navigator.pop(context, false),
                 title: Text(HtmlStrings.discardDraft),
                 actions: [
                   TextButton(
@@ -213,6 +219,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         children: [
           Expanded(
             child: HtmlView(
+              embeddedBlock: widget.embeddedBlock,
               html: (widget.html?.isNotEmpty ?? false)
                   ? widget.html!
                   : widget.placeholder ?? '',

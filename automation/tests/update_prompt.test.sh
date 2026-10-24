@@ -63,15 +63,14 @@ cp "$PROJECT_ROOT/web/index.html"                  "$TMP_ROOT/web/index.html"
 # Minimal pubspec + package.json so the earlier steps of the script do not warn-fail.
 printf 'name: festapp\nversion: 0.0.0+1\n' > "$TMP_ROOT/pubspec.yaml"
 printf '{\n  "name": "web_client",\n  "version": "0.0.0"\n}\n' > "$TMP_ROOT/web_client/package.json"
-printf '{\n  "name": "web_client",\n  "version": "0.0.0",\n  "lockfileVersion": 3,\n  "packages": {"": {"name": "web_client", "version": "0.0.0"}}\n}\n' \
-  > "$TMP_ROOT/web_client/package-lock.json"
+printf "lockfileVersion: '9.0'\nimporters: {}\n" > "$TMP_ROOT/web_client/pnpm-lock.yaml"
 
 ( cd "$TMP_ROOT" && node automation/configure_version.js 1.2.3+456 > configure.log 2>&1 ) || {
     echo "  FAIL: configure_version.js exited non-zero. Log:"; cat "$TMP_ROOT/configure.log"; fail=1;
 }
 assert_contains "$TMP_ROOT/web/index.html" 'window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";'
 assert_contains "$TMP_ROOT/web_client/package.json" '"version": "1.2.3"'
-assert_contains "$TMP_ROOT/web_client/package-lock.json" '"version": "1.2.3"'
+assert_contains "$TMP_ROOT/web_client/pnpm-lock.yaml" "lockfileVersion: '9.0'"
 
 # A fresh HTML document may still be controlled by the previous app-shell
 # worker. The runtime updater must compare both versions even when the network

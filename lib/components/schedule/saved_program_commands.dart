@@ -1,6 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,51 +8,6 @@ enum SavedProgramMode { join, remove, replace }
 
 abstract interface class SavedProgramCommands {
   Future<List<int>> update(List<int> eventIds, SavedProgramMode mode);
-}
-
-typedef LegacySavedProgramRpcInvoker = Future<dynamic> Function(
-  String functionName,
-  Map<String, dynamic> parameters,
-);
-
-/// RPC adapter used by cloud cohorts that have not selected Client Sync v1.
-/// All supported cloud sources expose the atomic `set_saved_program` RPC; a
-/// missing RPC is a visible deployment/parity failure, never a direct-DML
-/// fallback.
-///
-/// Remove this adapter after every tenant activates the canonical
-/// `set_saved_program_client_sync_v1` command path.
-class LegacySavedProgramCommands implements SavedProgramCommands {
-  LegacySavedProgramCommands(
-    SupabaseClient client,
-    int occasionId,
-  ) : this.withAdapters(
-          occasionId: occasionId,
-          invoke: (name, parameters) => client.rpc(name, params: parameters),
-        );
-
-  LegacySavedProgramCommands.withAdapters({
-    required int occasionId,
-    required LegacySavedProgramRpcInvoker invoke,
-  })  : _occasionId = occasionId,
-        _invoke = invoke;
-
-  final int _occasionId;
-  final LegacySavedProgramRpcInvoker _invoke;
-
-  @override
-  Future<List<int>> update(List<int> eventIds, SavedProgramMode mode) async {
-    final normalizedIds = eventIds.toSet().toList()..sort();
-    final response = await _invoke('set_saved_program', {
-      'p_occasion': _occasionId,
-      'p_event_ids': normalizedIds,
-      'p_mode': mode.name,
-    });
-    return (response as List)
-        .whereType<num>()
-        .map((value) => value.toInt())
-        .toList(growable: false);
-  }
 }
 
 class SupabaseSavedProgramCommands implements SavedProgramCommands {
@@ -83,7 +38,8 @@ class SupabaseSavedProgramCommands implements SavedProgramCommands {
     // authoritative cache replacements must not bump the process-wide
     // projection epoch: OccasionHomePage keys its routed child by that epoch,
     // which would otherwise dispose and recreate the entire event detail.
-    await response.applyReplacements(
+    await applyClientCommandReplacements(
+      response,
       notifyProjection: false,
       expectedContextToken: contextToken,
     );

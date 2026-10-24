@@ -1,17 +1,9 @@
-CREATE OR REPLACE FUNCTION public.delete_service_item(
-  oc BIGINT,
-  type TEXT,
-  code TEXT,
-  force BOOLEAN DEFAULT false
-)
-RETURNS JSONB
-LANGUAGE plpgsql
--- SECURITY DEFINER: self-gates on get_is_manager_on_occasion below. The occasions
--- RLS write policy only allows org admins, so as INVOKER a manager's UPDATE would
--- silently touch 0 rows. DEFINER lets the manager-gated write bypass RLS.
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.delete_service_item_internal_v1(oc bigint, type text, code text, force boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   in_use BOOLEAN;
 BEGIN
@@ -63,9 +55,9 @@ BEGIN
   SET services = jsonb_set(
     services,
     ARRAY[type],
-    (SELECT jsonb_agg(item)
+    coalesce((SELECT jsonb_agg(item)
      FROM jsonb_array_elements(services->type) AS item
-     WHERE item->>'code' IS DISTINCT FROM code),
+     WHERE item->>'code' IS DISTINCT FROM code),'[]'::jsonb),
     true
   )
   WHERE id = oc;
@@ -76,4 +68,19 @@ BEGIN
     'message', 'Service item deleted successfully'
   );
 END;
-$$;
+$function$
+;
+REVOKE ALL ON FUNCTION public.delete_service_item_internal_v1(bigint,text,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.delete_service_item(oc bigint, type text, code text, force boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
+BEGIN
+  RETURN public.delete_service_item_client_sync_v1(
+    oc,type,code,force,extensions.gen_random_uuid());
+END; $function$
+;
+REVOKE ALL ON FUNCTION public.delete_service_item(bigint,text,text,boolean) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.delete_service_item(bigint,text,text,boolean) TO authenticated;

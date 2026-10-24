@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 
 /// One unit-list request shared by the underlay and its routed account dialog.
 class BankAccountsLoadScope extends InheritedWidget {

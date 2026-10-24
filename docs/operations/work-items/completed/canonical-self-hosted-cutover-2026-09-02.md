@@ -8,9 +8,9 @@ Closed: 2026-09-23
 
 ## Authoritative sources
 
-- Runbook: [`../../supabase-self-hosted/cutover-runbook.md`](../../supabase-self-hosted/cutover-runbook.md)
-- Client matrix: [`../../supabase-self-hosted/client-cutover-release-matrix-2026-08-28.md`](../../supabase-self-hosted/client-cutover-release-matrix-2026-08-28.md)
-- Writer matrix: [`../../supabase-self-hosted/write-authority-matrix.md`](../../supabase-self-hosted/write-authority-matrix.md)
+- Runbook: [`../../supabase-self-hosted/cutover-runbook.md`](../../../archive/operations/supabase-self-hosted/cutover-runbook.md)
+- Client matrix: [`../../supabase-self-hosted/client-cutover-release-matrix-2026-08-28.md`](../../../archive/operations/supabase-self-hosted/client-cutover-release-matrix-2026-08-28.md)
+- Writer matrix: [`../../supabase-self-hosted/write-authority-matrix.md`](../../../archive/operations/supabase-self-hosted/write-authority-matrix.md)
 - Architecture: [`../../supabase-self-hosted/architecture.md`](../../supabase-self-hosted/architecture.md)
 
 ## Outcome

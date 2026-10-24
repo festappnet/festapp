@@ -1,0 +1,52 @@
+{
+  "core": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-grid/all-wood-encoded/layout-grid.mp4",
+  "coreDuration": 36.266341,
+  "introParts": [
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-paced/evolution-encoded/intro-0.mp4",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-paced/evolution-encoded/intro-1.mp4",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-paced/evolution-encoded/intro-2.mp4",
+    "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/layout-paced/evolution-encoded/intro-3.mp4"
+  ],
+  "transition": "honest editorial cut to archived empty-room native take; no simulated clear",
+  "junction": "0.4s editorial hold of actual next-build first frame; same stage/walls/full palette",
+  "outputs": {
+    "layout-grid.mp4": {
+      "width": 1140,
+      "height": 792,
+      "duration": 45.866016,
+      "decode": "PASS"
+    },
+    "layout-grid-mobile.mp4": {
+      "width": 820,
+      "height": 792,
+      "duration": 45.866667,
+      "decode": "PASS"
+    }
+  },
+  "files": {
+    "web/organizers-media/layout-grid.mp4": {
+      "sha256": "6de789c1f3477789ed1fab9513d2bdec15656b0a83158532300cb2e4de7af084",
+      "bytes": 1280916
+    },
+    "web/organizers-media/layout-grid.jpg": {
+      "sha256": "a529cabae8dc032da0df9940a0eada887c93ca90853a5e463276a8cd05b91ce0",
+      "bytes": 48401
+    },
+    "web/organizers-media/layout-grid.webp": {
+      "sha256": "74bd035bd6ba60c53e06b3660d4cd6c2562dc1e032bc39b4f0ce93534ace20b2",
+      "bytes": 51176
+    },
+    "web/organizers-media/layout-grid-mobile.mp4": {
+      "sha256": "ae31ab5efe60f368a0c2f2add1cd1f7dc04ca39d8b97be8d52f08141c4abca05",
+      "bytes": 693918
+    },
+    "web/organizers-media/layout-grid-mobile.jpg": {
+      "sha256": "bd5ceb42aa0bd822697617078cfe8f21bee0d532c0207600afe5cd200fbc5786",
+      "bytes": 33030
+    },
+    "web/organizers-media/layout-grid-mobile.webp": {
+      "sha256": "1379d6b9f523cd31117b677f33f6c62f559c824ce76ace987f3b9e7264badc6a",
+      "bytes": 33864
+    }
+  }
+}

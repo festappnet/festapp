@@ -1,6 +1,7 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum IconCommandStatus { applied, unchanged, rejected, conflict }
@@ -15,9 +16,8 @@ class IconCommandResult {
 
 abstract interface class IconCommands {
   Future<IconCommandResult> create(
-      {required int occasionId, required String link, required String svg});
-  Future<IconCommandResult> delete(
-      {required int occasionId, required int iconId});
+      {required int unitId, required String link, required String svg});
+  Future<IconCommandResult> delete({required int unitId, required int iconId});
 }
 
 class SupabaseIconCommands implements IconCommands {
@@ -30,28 +30,28 @@ class SupabaseIconCommands implements IconCommands {
 
   @override
   Future<IconCommandResult> create({
-    required int occasionId,
+    required int unitId,
     required String link,
     required String svg,
   }) async =>
-      _decode(await _transport.invoke('save_icon_client_sync_v1', {
-        'p_occasion': occasionId,
+      _decode(await _transport.invoke('save_unit_icon_client_sync_v1', {
+        'p_unit': unitId,
         'p_icon': {'link': link, 'svg': svg},
       }));
 
   @override
   Future<IconCommandResult> delete({
-    required int occasionId,
+    required int unitId,
     required int iconId,
   }) async =>
-      _decode(await _transport.invoke('delete_icon_client_sync_v1', {
-        'p_occasion': occasionId,
+      _decode(await _transport.invoke('delete_unit_icon_client_sync_v1', {
+        'p_unit': unitId,
         'p_icon_id': iconId,
       }));
 
   Future<IconCommandResult> _decode(Object? raw) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     final icon = data['icon'];
     return IconCommandResult(

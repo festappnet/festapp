@@ -1,8 +1,9 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum MapCommandStatus { applied, unchanged, rejected, conflict }
@@ -170,7 +171,7 @@ class SupabaseMapCommands implements MapCommands {
     T Function(Map<String, dynamic>) decodeEntity,
   ) async {
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     final version = (data['version'] as num?)?.toInt() ?? 0;
     final entityJson = data[entityKey];

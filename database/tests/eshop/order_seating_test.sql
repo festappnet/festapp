@@ -1,0 +1,31 @@
+DO $$
+DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Seating test') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO unit_id;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Seats',org,unit_id,'seat-test-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO occ;
+ INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Místo','spot') RETURNING id INTO typ;
+ INSERT INTO eshop.products(product_type,title,price,currency_code) VALUES(typ,'Místo',450,'CZK') RETURNING id INTO prod;
+ INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data) VALUES(occ,public.next_order_sequence(occ),public.generate_order_symbol(),'paid','{}') RETURNING id INTO ord;
+ INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data) VALUES(occ,public.next_order_sequence(occ),public.generate_order_symbol(),'paid','{}') RETURNING id INTO other_ord;
+ INSERT INTO eshop.tickets(occasion,ticket_symbol,state) VALUES(occ,'SEAT-TEST','paid') RETURNING id INTO ticket;
+ INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(ord,prod,ticket) RETURNING id INTO opt;
+ INSERT INTO eshop.blueprints(organization,occasion,title,groups,objects) VALUES(org,occ,'Hall','[{"id":12,"title":"7"}]','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.spots(occasion,title,blueprint,order_product_ticket) VALUES(occ,'3',bp,opt) RETURNING id INTO seat;
+ UPDATE eshop.blueprints SET objects=jsonb_build_array(jsonb_build_object('id',seat,'type','spot','group',12)) WHERE id=bp;
+ original:=jsonb_build_array(jsonb_build_object('id',ticket,'products',jsonb_build_array(jsonb_build_object('id',prod,'title','Místo','price',450))));
+ result:=public.order_tickets_with_seating_internal(ord,original);
+ PERFORM assert_eq(public._swap_spots_generate_product_json(prod,seat)->>'spot_group_title','7','Seat swaps preserve table metadata');
+ PERFORM assert_eq(result#>>'{0,products,0,spot_title}','3','Existing order resolves seat');
+ PERFORM assert_eq(result#>>'{0,products,0,spot_group_title}','7','Existing order resolves table');
+ PERFORM assert_eq(result#>>'{0,products,0,price}','450','Price preserved');
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(other_ord,original),original,'Foreign order cannot enrich from another order');
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,'[]'),'[]'::jsonb,'Empty admissions preserved');
+ UPDATE eshop.spots SET title='4' WHERE id=seat;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_title}','4','Current assignment takes precedence');
+ UPDATE eshop.blueprints SET groups='[]' WHERE id=bp;
+ PERFORM assert_true(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_group_title}' IS NULL,'Ungrouped assignment clears stale table');
+ UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result),result,'Released seats retain historical snapshot');
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,original),original,'Absent historical metadata is not invented');
+END $$;

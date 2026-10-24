@@ -7,7 +7,7 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
 import 'package:fstapp/components/unit/views/unit_admin_page.dart';
@@ -57,7 +57,7 @@ class _BankAccountsNavigationViewState
             load: (refresh) {
               if (refresh) _accounts = null;
               return _accounts ??= (widget.loadAccounts ??
-                  DbBankAccounts.getBankAccountsForUnit)(
+                  DbBankAccounts.current.getBankAccountsForUnit)(
                 unit.id!,
               );
             },
@@ -136,7 +136,7 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
       final scope = BankAccountsLoadScope.maybeOf(context);
       final accounts = await (widget.loadAccounts != null
           ? widget.loadAccounts!(id)
-          : scope?.load(false) ?? DbBankAccounts.getBankAccountsForUnit(id));
+          : scope?.load(false) ?? DbBankAccounts.current.getBankAccountsForUnit(id));
       if (!mounted || generation != _generation) return;
       BankAccountModel? account;
       for (final candidate in accounts) {

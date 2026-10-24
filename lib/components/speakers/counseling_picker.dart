@@ -1,9 +1,11 @@
+import 'package:fstapp/components/schedule/event_presentation.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/speakers/counseling_availability.dart';
 import 'package:fstapp/components/speakers/db_speakers.dart';
@@ -556,7 +558,7 @@ Future<void> _showCounselorProfileDialog(
 }) {
   return showDialog(
     context: context,
-    builder: (ctx) => Dialog(
+    builder: (ctx) => AppDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
@@ -567,21 +569,14 @@ Future<void> _showCounselorProfileDialog(
             // Practical info (place) left, close right — above the profile.
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: (placeTitle != null && placeTitle.isNotEmpty)
-                        ? Align(
-                            alignment: Alignment.centerLeft,
-                            child: _placeLink(ctx, placeId, placeTitle),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(ctx).pop(),
-                  ),
-                ],
+              child: AppDialogHeader(
+                title: (placeTitle != null && placeTitle.isNotEmpty)
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: _placeLink(ctx, placeId, placeTitle),
+                      )
+                    : null,
+                onClose: () => Navigator.of(ctx).pop(),
               ),
             ),
             // Only the profile scrolls; the header and the action bar below

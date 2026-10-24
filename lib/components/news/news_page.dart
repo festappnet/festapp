@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';
@@ -92,10 +93,15 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   void _showMessageDialog(BuildContext context) {
-    context.router.root.push<bool>(NewsFormRoute(onSubmit: (submission) =>
-      DbNews.publishSubmission(context, submission))).then((saved) async {
-        if (saved == true && mounted) await loadData();
-      });
+    final occasionLink = context.routeData.inheritedPathParams
+        .getString(AppRouter.linkFormatted);
+    context.router.root
+        .push<bool>(NewsFormRoute(
+          onSubmit: (submission) => DbNews.publishSubmission(context, submission),
+        ).copyWith(params: {AppRouter.linkFormatted: occasionLink}))
+        .then((saved) async {
+      if (saved == true && mounted) await loadData();
+    });
   }
 
   Future<void> loadNewsMessages() async {
@@ -237,10 +243,9 @@ class _NewsPageState extends State<NewsPage> {
                                           },
                                         ),
                                       ),
-                                      Visibility(
-                                        visible: AuthService.isLoggedIn() &&
-                                            message.views != null,
-                                        child: Padding(
+                                      if (AuthService.isLoggedIn() &&
+                                          message.views != null)
+                                        Padding(
                                           padding: const EdgeInsets.all(8),
                                           child: Row(
                                             mainAxisAlignment:
@@ -263,7 +268,6 @@ class _NewsPageState extends State<NewsPage> {
                                             ],
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),

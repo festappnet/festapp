@@ -6,7 +6,6 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
 import 'package:fstapp/components/activities/activity_commands.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 class ActivityHistoryInfo {
   final int id;
@@ -38,7 +37,6 @@ class DbActivities {
     );
 
     if (resp == null) {
-
       return null;
     }
 
@@ -46,7 +44,6 @@ class DbActivities {
     if (responseMap == null ||
         responseMap['code'] != 200 ||
         responseMap['data'] == null) {
-
       return null;
     }
 
@@ -127,7 +124,6 @@ class DbActivities {
       );
       return response as Map<String, dynamic>?;
     } catch (e) {
-
       return {'code': 500, 'message': 'An unexpected error occurred.'};
     }
   }
@@ -135,78 +131,35 @@ class DbActivities {
   static Future<void> saveActivitiesForEdit(
       BuildContext context, int occasionId, EditDataBundle bundle) async {
     final historyPayload = bundle.toJsonEditor();
+    if (bundle.autosaveHistoryId != null && bundle.autosaveCreatedAt != null) {
+      historyPayload['_consume_autosave'] = {
+        'id': bundle.autosaveHistoryId,
+        'created_at': bundle.autosaveCreatedAt!.toUtc().toIso8601String(),
+      };
+    }
     final updatePayload = _buildUpdatePayload(bundle);
 
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.publish(
-        occasionId: occasionId,
-        expectedVersion: bundle.aggregateVersion,
-        activities: updatePayload,
-        history: historyPayload,
-        parentHistoryId: bundle.parentHistoryId,
-      );
-      if (result.status == 'conflict') {
-        throw StateError('Activities were changed by another editor');
-      }
-      if (result.status == 'rejected') {
-        throw StateError('Activities publish was rejected');
-      }
-      bundle.aggregateVersion = result.version;
-      bundle.parentHistoryId = result.historyId ?? bundle.parentHistoryId;
-      if (context.mounted) {
-        ToastHelper.Show(context, ActivitiesComponentStrings.publishedSuccessfully,
-            severity: ToastSeverity.Ok);
-      }
-      return;
-    }
-
-    try {
-      final historyResponse =
-          await _supabase.rpc('save_activity_history', params: {
-        'p_occasion_id': occasionId,
-        'p_activities_data': historyPayload,
-        'p_history_type': 'PUBLISH',
-        'p_parent_history_id': bundle.parentHistoryId,
-        'p_note': 'Published via application',
-      });
-      if (historyResponse is Map<String, dynamic> &&
-          historyResponse['code'] != 200) {
-        ToastHelper.Show(
-            context, "Could not save version history. Publish aborted.",
-            severity: ToastSeverity.NotOk);
-        throw Exception(
-            "Failed to save history: ${historyResponse['message']}");
-      }
-    } catch (e) {
-
-      rethrow;
-    }
-
-    final response = await _supabase.rpc(
-      'update_activities',
-      params: {
-        'p_occasion_id': occasionId,
-        'p_activities_data': updatePayload,
-      },
+    final result = await _commands.publish(
+      occasionId: occasionId,
+      expectedVersion: bundle.aggregateVersion,
+      activities: updatePayload,
+      history: historyPayload,
+      parentHistoryId: bundle.parentHistoryId,
     );
-
-    if (response is Map<String, dynamic> && response['code'] != null) {
-      if (response['code'] == 200) {
-        ToastHelper.Show(
-            context, ActivitiesComponentStrings.publishedSuccessfully,
-            severity: ToastSeverity.Ok);
-      } else {
-        final errorMessage =
-            response["message"] as String? ?? "Failed to publish activities.";
-        ToastHelper.Show(context, errorMessage, severity: ToastSeverity.NotOk);
-        throw Exception("Failed to publish activities: ${response['message']}");
-      }
-    } else {
-      ToastHelper.Show(context, "Unexpected server response.",
-          severity: ToastSeverity.NotOk);
-      throw Exception(
-          "Failed to publish activities: Unexpected server response format.");
+    if (result.status == 'conflict') {
+      throw StateError('Activities were changed by another editor');
     }
+    if (result.status == 'rejected') {
+      throw StateError('Activities publish was rejected');
+    }
+    bundle.aggregateVersion = result.version;
+    bundle.parentHistoryId = result.historyId ?? bundle.parentHistoryId;
+    if (context.mounted) {
+      ToastHelper.Show(
+          context, ActivitiesComponentStrings.publishedSuccessfully,
+          severity: ToastSeverity.Ok);
+    }
+    return;
   }
 
   static Future<AutosaveInfo> getAutosaveAndPublishInfo(int occasionId) async {
@@ -230,7 +183,10 @@ class DbActivities {
     if (autosaveData != null) {
       final bundleJson =
           autosaveData['activities_data'] as Map<String, dynamic>;
-      bundle = EditDataBundle.fromJson(bundleJson);
+      bundle = EditDataBundle.fromJson(bundleJson)
+        ..autosaveHistoryId = (autosaveData['id'] as num).toInt()
+        ..autosaveCreatedAt =
+            DateTime.parse(autosaveData['created_at'] as String);
     }
 
     return AutosaveInfo(
@@ -248,7 +204,6 @@ class DbActivities {
     if (responseMap == null ||
         responseMap['code'] != 200 ||
         responseMap['data'] == null) {
-
       return [];
     }
 

@@ -17,3 +17,9 @@ head_sampling_rate = 1
 
 [placement]
 mode = "smart"
+
+# Network protection owner: sync-worker. Per-location best effort, not provider quota.
+[[ratelimits]]
+name = "SYNC_MISS_BUDGET"
+namespace_id = "2026101601"
+simple = { limit = 5000, period = 60 }

@@ -48,12 +48,15 @@ const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
+const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
+const ORGANIZERS_ENABLED = false; // stamped from tenant domain
+const SITE_NAME = "Festapp"; // replaced from project.conf after generation
 
 // Web client SPA routes (form list handled by /form/<slug> below).
 const WEB_CLIENT_EXACT = new Set(["/"]);
 
 // Flutter SPA routes (login / admin / handover).
-const FLUTTER_PREFIXES = ["/login", "/admin", "/transfer"];
+const FLUTTER_PREFIXES = ["/login", "/admin", "/transfer", "/unit", "/signup", "/settings", "/install", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
 
 // auth_bridge.html alias — RouterService still posts to /auth_bridge.html.
 const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
@@ -61,7 +64,7 @@ const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
 // Internal asset names (extension-less HTML entry points). Cloudflare serves
 // these as application/octet-stream to direct hits, which triggers a browser
 // download. They must never be reachable as a user-facing URL — redirect to /.
-const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient"]);
+const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-page"]);
 
 // Flutter's entry/runtime files use stable, unversioned names that change on
 // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
@@ -69,7 +72,7 @@ const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient"]);
 // revalidated on every load so a client never mixes assets from two builds.
 const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
 
-function htmlResponse(body, originHeaders) {
+function htmlResponse(body, originHeaders, status = 200) {
   const headers = new Headers(originHeaders || {});
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-cache, must-revalidate");
@@ -78,7 +81,87 @@ function htmlResponse(body, originHeaders) {
   headers.delete("content-length");
   headers.delete("content-range");
   headers.delete("accept-ranges");
-  return new Response(body, { status: 200, headers });
+  return new Response(body, { status, headers });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
+
+// Must match the native links on OccasionCard (covered by contract tests).
+function occasionHref(occasion) {
+  const form = occasion.features?.find(feature => feature.code === "form" &&
+    (feature.is_enabled === true || feature.isEnabled === true));
+  if (form) {
+    const data = { ...form, ...form.data };
+    if (data.use_external_form === true && data.external_form_link) {
+      try {
+        const url = new URL(data.external_form_link);
+        if (["https:", "http:"].includes(url.protocol)) return url.href;
+      } catch { /* Fall back to an internal destination. */ }
+    }
+    const slug = (occasion.form?.link || occasion.link || "").split("?")[0].replace(/^\/+|\/+$/g, "");
+    return slug ? `/form/${encodeURIComponent(slug)}` : null;
+  }
+  const slug = (occasion.link || "").split("?")[0].replace(/^\/+|\/+$/g, "");
+  return slug ? `/${encodeURIComponent(slug)}/event` : null;
+}
+
+async function publicOccasions(env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
+  const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
+      authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID || 1, p_unit_id: null }),
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
+  const data = await rpc.json();
+  return extractPublicOccasions(data);
+}
+
+// SHARED_CATALOG_CLASSIFICATION
+
+async function handleHome(request, env) {
+  const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
+  let html = await base.text();
+  if (ORGANIZERS_ENABLED) {
+    const canonical = (CANONICAL_ORIGIN || new URL(request.url).origin) + "/events";
+    html = html.replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
+      .replace(/(<meta[^>]*property="(?:og:url|twitter:url)"[^>]*content=")[^"]*/gi, (_, prefix) => prefix + canonical);
+  }
+  try {
+    const occasions = await publicOccasions(env);
+    const groups = classifyOccasions(occasions);
+    const date = value => {
+      if (!value || !Number.isFinite(new Date(value).getTime())) return "";
+      return `<time datetime="${escapeHtml(new Date(value).toISOString())}">${escapeHtml(new Date(value).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }))}</time>`;
+    };
+    const section = (title, list, archive = false) => {
+      if (!list.length) return "";
+      const links = list.map(occasion => {
+        const href = occasionHref(occasion);
+        return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a> ${date(occasion.start_time)}</li>` : "";
+      }).join("");
+      return archive
+        ? `<details class="catalog-archive"><summary>${title} (${list.length})</summary><ul>${links}</ul></details>`
+        : `<section><h2>${title}</h2><ul>${links}</ul></section>`;
+    };
+    const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
+      section("Další akce", groups.undated) + section("Minulé akce", groups.past, true);
+    html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || '<p>Zatím zde nejsou žádné akce.</p>'}</div>`);
+  } catch (error) {
+    console.error("Public catalog HTML unavailable", error.message);
+    html = html.replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="unavailable"><p role="status">Akce se nepodařilo načíst. Zkuste stránku znovu načíst.</p></div>');
+  }
+  return htmlResponse(html, base.headers);
+}
+
+function notFound() {
+  return htmlResponse('<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stránka nenalezena</title></head><body><main><h1>Stránka nenalezena</h1><p><a href="/">Zpět na hlavní stránku</a></p></main></body></html>', null, 404);
 }
 
 function activationCorsHeaders(originHeaders) {
@@ -106,49 +189,36 @@ async function serveAsset(env, request, path) {
 // ---------------------------------------------------------------------------
 async function handleSitemap(request, env) {
   const url = new URL(request.url);
-  const baseUrl = url.origin;
-  const today = new Date().toISOString().split("T")[0];
+  const baseUrl = CANONICAL_ORIGIN || url.origin;
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
 
+  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "";
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
-    <lastmod>${today}</lastmod>
     <priority>1.0</priority>
   </url>
+${organizerEntry}
 </urlset>`;
 
   try {
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_ANON_KEY;
-    const orgId = env.ORGANIZATION_ID || 1;
-    if (!supabaseUrl || !supabaseKey) return new Response(fallback, { headers: xmlHeaders });
-
-    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/get_available_occasions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: supabaseKey,
-        authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ p_organization_id: orgId, p_unit_id: null }),
-    });
-    if (!rpc.ok) return new Response(fallback, { headers: xmlHeaders });
-
-    const data = await rpc.json();
-    let occasions = [];
-    if (Array.isArray(data)) occasions = data;
-    else if (data && Array.isArray(data.occasions)) occasions = data.occasions;
-    else if (data && data.data && Array.isArray(data.data.occasions)) occasions = data.data.occasions;
+    const occasions = await publicOccasions(env);
     if (occasions.length === 0) return new Response(fallback, { headers: xmlHeaders });
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-    xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <lastmod>${today}</lastmod>\n    <priority>1.0</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${escapeHtml(baseUrl)}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
+    xml += organizerEntry;
+    const seen = new Set();
     for (const occ of occasions) {
-      const link = (occ && occ.link || "").trim();
-      if (!link) continue;
-      xml += `  <url>\n    <loc>${baseUrl}/form/${link}</loc>\n    <lastmod>${today}</lastmod>\n    <priority>0.8</priority>\n  </url>\n`;
+      const href = occasionHref(occ);
+      if (!href) continue;
+      const destination = new URL(href, baseUrl);
+      if (destination.origin !== baseUrl) continue;
+      const canonical = baseUrl + destination.pathname;
+      if (seen.has(canonical)) continue;
+      seen.add(canonical);
+      xml += `  <url>\n    <loc>${escapeHtml(canonical)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
     }
     xml += `</urlset>`;
     return new Response(xml, { headers: xmlHeaders });
@@ -158,89 +228,73 @@ async function handleSitemap(request, env) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// /form/<slug> — web client HTML with OG / twitter / canonical meta injected
-// ---------------------------------------------------------------------------
-async function handleForm(request, env, path) {
-  // Fetch base HTML (web client index) so the rest of the SPA works as usual.
-  const baseRes = await serveAsset(env, request, WEB_CLIENT_INDEX);
+// SHARED_PUBLIC_PAGE_SEO
+function publicSeoHtml(baseHtml, seo) {
+  let page = baseHtml.replace(/<title[^>]*>[\s\S]*?<\/title>/i, () => `<title>${escapeHtml(seo.title)}</title>`);
+  // Remove both attribute orders and stale catalog structured data, then emit one identity.
+  page = page.replace(/<meta\b[^>]*(?:name|property)=["'](?:description|(?:og|twitter):(?:title|description|image(?::(?:width|height))?|url))["'][^>]*>/gi, '')
+    .replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  const tags = `<link rel="canonical" href="${escapeHtml(seo.canonical)}"><meta name="description" content="${escapeHtml(seo.description)}">`
+    + ['og', 'twitter'].map(prefix => Object.entries({ title: seo.title, description: seo.description, image: seo.image, url: seo.canonical })
+      .map(([name, value]) => `<meta ${prefix === 'twitter' ? 'name' : 'property'}="${prefix}:${name}" content="${escapeHtml(value)}">`).join('')).join('');
+  return page.replace('</head>', () => tags + '</head>');
+}
+
+// A backend outage is temporary, never an unrelated successful catalog page.
+function publicSeoUnavailable(baseHtml, headers, url, kind) {
+  const seo = publicPageSeo({ title: 'Informace o akci jsou dočasně nedostupné' }, {
+    origin: CANONICAL_ORIGIN || url.origin, siteName: SITE_NAME, path: url.pathname, kind,
+  });
+  const response = htmlResponse(publicSeoHtml(baseHtml, seo), headers, 503);
+  response.headers.set('cache-control', 'no-store, max-age=0');
+  response.headers.set('retry-after', '60');
+  return response;
+}
+
+async function handlePublicPage(request, env, path, kind) {
+  const baseRes = await serveAsset(env, request, kind === 'form' ? WEB_CLIENT_INDEX : FLUTTER_ENTRY);
   const baseHtml = await baseRes.text();
-  const baseHeaders = baseRes.headers;
-
+  const url = new URL(request.url);
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length !== 2) return notFound();
+  let slug;
+  try { slug = decodeURIComponent(parts[kind === 'form' ? 1 : 0]); } catch { return notFound(); }
+  if (!slug || /[\/\u0000-\u001f]/.test(slug)) return notFound();
   try {
-    const url = new URL(request.url);
-    const slug = path.replace(/^\/form\//, "").split("/")[0];
-    if (!slug) return htmlResponse(baseHtml, baseHeaders);
-
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) return htmlResponse(baseHtml, baseHeaders);
-
-    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/get_occasion_seo_data`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: supabaseKey,
-        authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ p_link_slug: slug }),
+    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error('SEO backend configuration unavailable');
+    const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_occasion_seo_data`, {
+      method: 'POST', headers: { 'content-type': 'application/json', apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ p_link_slug: slug, p_route_type: kind }), signal: AbortSignal.timeout(2500),
     });
-    if (!rpc.ok) return htmlResponse(baseHtml, baseHeaders);
-    const seo = await rpc.json();
-    if (!seo) return htmlResponse(baseHtml, baseHeaders);
-
-    const unitTitle = seo.unit_title;
-    const orgTitle = seo.org_title || "Festapp";
-    const title = seo.title || "Event";
-    let description = seo.form_description || seo.description ||
-      "Rychlé a jednoduché založení události, prodej vstupenek a registrace.";
-    description = description.replace(/<[^>]+>/gm, " ").replace(/\s+/g, " ").trim();
-    const imagePath = (seo.data && seo.data.image) || seo.image;
-    let imageUrl;
-    if (imagePath && imagePath.startsWith("http")) imageUrl = imagePath;
-    else if (imagePath) imageUrl = `https://img.festapp.net/${imagePath}`;
-    else imageUrl = `${url.origin}/android-chrome-512x512.png`;
-    const fullTitle = `${title} - ${unitTitle || orgTitle}`;
-
-    let page = baseHtml;
-    page = page.replace(/<title[^>]*>.*?<\/title>/i, `<title>${fullTitle}</title>`);
-
-    const replaceMeta = (attr, name, content) => {
-      const re = new RegExp(`(<meta[^>]*${attr}=["']${name}["'][^>]*content=["'])([^"']*)(["'][^>]*>)`, "gi");
-      if (re.test(page)) {
-        page = page.replace(re, `$1${content}$3`);
-      } else {
-        const tagRe = new RegExp(`<meta[^>]*${attr}=["']${name}["'][^>]*>`, "gi");
-        page = page.replace(tagRe, (m) => m.replace(/content=["'][^"']*["']/i, `content="${content}"`));
-      }
-    };
-
-    replaceMeta("property", "og:title", fullTitle);
-    replaceMeta("property", "twitter:title", fullTitle);
-    replaceMeta("name", "description", description);
-    replaceMeta("property", "og:description", description);
-    replaceMeta("property", "twitter:description", description);
-    replaceMeta("property", "og:image", imageUrl);
-    replaceMeta("property", "twitter:image", imageUrl);
-    replaceMeta("property", "og:url", url.href);
-    replaceMeta("property", "twitter:url", url.href);
-    page = page.replace(
-      /<link[^>]*rel=["']canonical["'][^>]*href=["'][^"']*["'][^>]*>/i,
-      `<link rel="canonical" href="${url.href}">`
-    );
-
-    return htmlResponse(page, baseHeaders);
-  } catch (e) {
-    console.error("form OG inject error", e);
-    return htmlResponse(baseHtml, baseHeaders);
+    if (!rpc.ok) throw new Error(`SEO backend HTTP ${rpc.status}`);
+    const data = await rpc.json();
+    if (data === null) return notFound();
+    if (typeof data !== 'object' || Array.isArray(data) || typeof data.title !== 'string') throw new Error('Invalid SEO backend response');
+    const seo = publicPageSeo(data, { origin: CANONICAL_ORIGIN || url.origin, siteName: SITE_NAME, path, kind });
+    // Only a resolved saved identity can redirect an alias. Preserve payment/OAuth queries.
+    if ((kind === 'form' ? data.form_link : data.occasion_link) && url.pathname !== new URL(seo.canonical).pathname) {
+      const target = new URL(seo.canonical); target.search = url.search;
+      return Response.redirect(target.href, 308);
+    }
+    let page = publicSeoHtml(baseHtml, seo);
+    const summary = `<section id="public-seo-summary" style="max-width:48rem;margin:2rem auto;padding:1rem"><h1>${escapeHtml(seo.name)}</h1><p>${escapeHtml(seo.description)}</p>${data.start_time && Number.isFinite(Date.parse(data.start_time)) ? `<p><time datetime="${escapeHtml(data.start_time)}">${escapeHtml(new Intl.DateTimeFormat('cs-CZ', {dateStyle:'long', timeStyle:'short', timeZone:'Europe/Prague'}).format(new Date(data.start_time)))}</time></p>` : ''}</section>`;
+    page = page.replace(/<body\b[^>]*>/i, match => match + summary);
+    if (kind === 'event') {
+      page = page.replace('</head>', '<noscript><style>#loader-content{display:none!important}</style></noscript></head>');
+      page = page.replace('</body>', '<script>(()=>{const clear=()=>document.getElementById("public-seo-summary")?.remove();if(window.__FESTAPP_APP_READY__===true)clear();else window.addEventListener("festapp-app-ready",clear,{once:true});})();</script></body>');
+    }
+    return htmlResponse(page, baseRes.headers);
+  } catch (error) {
+    console.error('Public SEO unavailable', error.message);
+    return publicSeoUnavailable(baseHtml, baseRes.headers, url, kind);
   }
 }
 
 // ---------------------------------------------------------------------------
 // Entry-point
 // ---------------------------------------------------------------------------
-export default {
-  async fetch(request, env) {
+async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -251,10 +305,30 @@ export default {
       });
     }
 
+    if (path === "/pro-poradatele" || path === "/pro-poradatele/") {
+      if (!ORGANIZERS_ENABLED) return notFound();
+      return Response.redirect(new URL("/" + url.search, url).href, 308);
+    }
+    if (ORGANIZERS_ENABLED) {
+      if (path === "/events/" || (path === "/" && (url.searchParams.get("create") === "1" || url.searchParams.has("q")))) {
+        return Response.redirect(new URL("/events" + url.search, url).href, 308);
+      }
+      if (path === "/") {
+        const res = await serveAsset(env, request, "/organizers-page");
+        const response = res.ok ? htmlResponse(res.body, res.headers) : notFound();
+        response.headers.set("referrer-policy", "no-referrer");
+        return response;
+      }
+      if (path === "/events") return handleHome(request, env);
+    }
+
     if (path === "/sitemap.xml") return handleSitemap(request, env);
 
+    // The fragment is unavailable to the server. The web shell resolves legacy
+    // scanner hashes before applying the configured tenant home redirect.
     if (path === "/" && FORCED_OCCASION_PATH) {
-      return Response.redirect(new URL(FORCED_OCCASION_PATH, url).toString(), 302);
+      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
+      return htmlResponse(res.body, res.headers);
     }
 
     if (INTERNAL_ASSET_PATHS.has(path)) {
@@ -265,7 +339,15 @@ export default {
       return Response.redirect(new URL("/", url).toString(), 301);
     }
 
-    if (path.startsWith("/form/")) return handleForm(request, env, path);
+    if (resolveScannerRoute(path)) {
+      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
+      const response = htmlResponse(res.body, res.headers);
+      response.headers.set("cache-control", "no-store");
+      response.headers.set("referrer-policy", "no-referrer");
+      return response;
+    }
+    if (path.startsWith("/form/")) return handlePublicPage(request, env, path, 'form');
+    if (/^\/[^/]+\/event\/?$/.test(path)) return handlePublicPage(request, env, path, 'event');
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.
     if (path === "/google-auth" || path === "/app/google-auth") {
@@ -285,8 +367,7 @@ export default {
     }
 
     if (WEB_CLIENT_EXACT.has(path)) {
-      const res = await serveAsset(env, request, WEB_CLIENT_INDEX);
-      return htmlResponse(res.body, res.headers);
+      return handleHome(request, env);
     }
 
     if (AUTH_BRIDGE_PATHS.has(path)) {
@@ -328,9 +409,46 @@ export default {
       return assetRes;
     }
 
-    // Unknown path -> Flutter SPA fallback (lets Flutter router handle it).
+    // Missing images/scripts must never be returned as a successful HTML asset.
+    if (/\.(?:png|svg|ico|jpg|jpeg|webp|gif|mp4|webm|js|mjs|css|wasm|woff2?|ttf|json|xml|txt)$/i.test(path)) return notFound();
+
+    // Preserve real occasion/private app deep links. Only a successful backend
+    // answer may establish non-existence; an outage must not become a 404.
+    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+      try {
+        const slug = decodeURIComponent(path.split('/').filter(Boolean)[0] || '');
+        const response = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_occasion_seo_data`, {
+          method: "POST", headers: { "content-type": "application/json",
+            apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ p_link_slug: slug }), signal: AbortSignal.timeout(2500),
+        });
+        if (response.ok && await response.json() === null) return notFound();
+      } catch { /* Keep the established Flutter fallback during an outage. */ }
+    }
     const fallback = await serveAsset(env, request, FLUTTER_ENTRY);
     return htmlResponse(fallback.body, fallback.headers);
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const production = CANONICAL_ORIGIN && [new URL(CANONICAL_ORIGIN).hostname, "www." + new URL(CANONICAL_ORIGIN).hostname].includes(url.hostname);
+    let response;
+    if (production && (url.origin !== CANONICAL_ORIGIN)) {
+      const target = new URL(CANONICAL_ORIGIN);
+      target.pathname = url.pathname;
+      target.search = url.search;
+      response = Response.redirect(target.href, 308);
+    } else {
+      try { response = await routeRequest(request, env); }
+      catch (error) {
+        console.error("Public route unavailable", error.message);
+        response = new Response("Service temporarily unavailable", { status: 503 });
+      }
+    }
+    const headers = new Headers(response.headers);
+    if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
+    return new Response(request.method === "HEAD" ? null : response.body, { status: response.status, statusText: response.statusText, headers });
   },
 };
 WORKER
@@ -343,11 +461,28 @@ import sys
 
 worker_path, config_path = sys.argv[1:]
 source = pathlib.Path(worker_path).read_text(encoding="utf-8")
+catalog = pathlib.Path("web_client/src/components/occasion/catalog.js").read_text(encoding="utf-8").replace("export function", "function")
+source = source.replace("// SHARED_CATALOG_CLASSIFICATION", catalog)
+public_seo = pathlib.Path("web_client/src/services/public_page_seo.js").read_text(encoding="utf-8").replace("export function", "function")
+source = source.replace("// SHARED_PUBLIC_PAGE_SEO", public_seo)
+scanner_routes = pathlib.Path("web_client/src/services/scanner_routes.js").read_text(encoding="utf-8").replace("export function", "function")
+source = scanner_routes + "\n" + source
 config = pathlib.Path(config_path).read_text(encoding="utf-8")
 match = re.search(r"^FORCE_OCCASION_LINK=(.*)$", config, re.MULTILINE)
 occasion_link = match.group(1).strip().strip('"').strip("'") if match else ""
 occasion_link = occasion_link.strip().strip("/")
 replacement = json.dumps(f"/{occasion_link}/event" if occasion_link else None)
+web_link_match = re.search(r'^WEB_LINK=(.*)$', config, re.MULTILINE)
+web_link = web_link_match.group(1).strip().strip('"').strip("'").rstrip('/') if web_link_match else ''
+from urllib.parse import urlparse
+canonical = urlparse(web_link)
+if canonical.scheme != 'https' or not canonical.hostname or canonical.path or canonical.query or canonical.fragment or canonical.username or canonical.port:
+    raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
+source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
+source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + ('true' if canonical.hostname == 'vstupenky.online' else 'false') + ';', 1)
+name_match = re.search(r'^APP_TITLE_SHORT=(.*)$', config, re.MULTILINE) or re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
+site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
+source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)
 source, count = re.subn(
     r"const FORCED_OCCASION_PATH = null;",
     f"const FORCED_OCCASION_PATH = {replacement};",

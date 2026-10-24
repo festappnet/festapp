@@ -1,10 +1,7 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
-import 'package:fstapp/components/features/schedule_feature.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 
 class ThemeConfig {
   static bool isDarkMode(BuildContext context) =>
@@ -29,6 +26,10 @@ class ThemeConfig {
       colorScheme: scheme,
       primaryColor: primary,
       scaffoldBackgroundColor: dark ? dddBackground : lllBackground,
+      dialogTheme: const DialogThemeData(shape: appDialogShape, elevation: 16),
+      datePickerTheme: const DatePickerThemeData(shape: appDialogShape),
+      timePickerTheme: const TimePickerThemeData(shape: appDialogShape),
+      bottomSheetTheme: const BottomSheetThemeData(shape: appDialogShape),
       appBarTheme: AppBarTheme(
         backgroundColor: chrome,
         foregroundColor: onChrome,
@@ -132,11 +133,10 @@ class ThemeConfig {
 
   // Dynamic color methods with BuildContext for theme-based color adaptation
   static Color backgroundColor(BuildContext context) =>
-      isDarkMode(context) ? dddBackground : lllBackground;
+      Theme.of(context).scaffoldBackgroundColor;
   static Color logoBackgroundColor(BuildContext context) =>
       backgroundColor(context);
 
-  static Color surfaceColor(BuildContext context) => grey200(context);
   static Color seed1 = const Color(0xFF253759);
   static Color seed2 = const Color(0xFF80BDF2);
   static Color seed3 = const Color(0xFF4465A6);
@@ -149,7 +149,8 @@ class ThemeConfig {
 
   static Color dddBackground =
       seed3.changeColorSaturation(0.08).changeColorLightness(0.14);
-  static Color lllBackground = Color(0xFFe3e2d3);
+  static Color get lllBackground =>
+      Color.alphaBlend(lllPrimary.withValues(alpha: .07), Colors.white);
   static Color dddText =
       seed3.changeColorSaturation(0.1).changeColorLightness(0.82);
 
@@ -162,8 +163,6 @@ class ThemeConfig {
 
   static Color greenColor(BuildContext context) =>
       isDarkMode(context) ? lightGreen : darkGreen;
-  static Color blueColor() =>
-      Colors.deepPurple.changeColorLightness(0.3).changeColorSaturation(0.5);
   static Color redColor(BuildContext context) =>
       isDarkMode(context) ? Color(0xFFff5252) : Color(0xFFd32f2f);
   static Color warningColor(BuildContext context) =>
@@ -224,14 +223,6 @@ class ThemeConfig {
 
   static Color timetableHorizontalLineColor(BuildContext context) =>
       appBarColor();
-  static Color timetableSelectedColor(BuildContext context, Color color) =>
-      isDarkMode(context)
-          ? color.changeColorSaturation(0.7).changeColorLightness(0.8)
-          : color.changeColorSaturation(0.5).changeColorLightness(0.6);
-  static Color timetableUnselectedColor(BuildContext context, Color color) =>
-      isDarkMode(context)
-          ? color.changeColorSaturation(0.1).changeColorLightness(0.3)
-          : color.changeColorSaturation(0.2).changeColorLightness(0.6);
   static Color timetableTimeSplitColor(BuildContext context) => Colors.red;
   static Color timetableBackground1(BuildContext context) =>
       whiteColor(context);
@@ -249,8 +240,6 @@ class ThemeConfig {
       ? seed3.changeColorSaturation(0.2)
       : seed3.changeColorSaturation(0.2);
 
-  static Color grey900(BuildContext context) =>
-      isDarkMode(context) ? Colors.grey[200]! : Colors.grey[900]!;
   static Color grey850(BuildContext context) =>
       isDarkMode(context) ? Colors.grey[200]! : Colors.grey[850]!;
   static Color grey800(BuildContext context) =>
@@ -278,37 +267,6 @@ class ThemeConfig {
 
   static Color textColorForBackground(Color background) {
     return background.computeLuminance() > 0.179 ? Colors.black : Colors.white;
-  }
-
-  // Function for eventTypeColor
-  static Color eventTypeToColor(BuildContext context, String? typeCode) {
-    if (typeCode == null) {
-      return appBarColor();
-    }
-
-    final feature = FeatureService.getFeatureDetails(FeatureConstants.schedule);
-
-    if (feature is ScheduleFeature) {
-      final scheduleFeature = feature;
-      // Find the event type by its code
-      final eventType = scheduleFeature.eventTypes
-          .firstWhereOrNull((et) => et.code == typeCode);
-
-      if (eventType != null) {
-        return eventType.getColor();
-      }
-    }
-
-    return appBarColor();
-  }
-
-  static Color eventTypeToColorNegative(BuildContext context, String? type) {
-    final Color backgroundColor = eventTypeToColor(context, type);
-    return textColorForBackground(backgroundColor);
-  }
-
-  static Color eventTypeToColorTimetable(BuildContext context, String? type) {
-    return eventTypeToColor(context, type);
   }
 }
 

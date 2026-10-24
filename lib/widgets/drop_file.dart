@@ -30,6 +30,9 @@ class DropFile extends StatefulWidget {
 
   /// Height of the drop area.
   final double height;
+  final bool dropEnabled;
+  final bool singleFileOnly;
+  final VoidCallback? onInvalidDrop;
 
   const DropFile({
     super.key,
@@ -38,6 +41,9 @@ class DropFile extends StatefulWidget {
     this.hint,
     this.allowedExtensions,
     this.height = 250,
+    this.dropEnabled = true,
+    this.singleFileOnly = false,
+    this.onInvalidDrop,
   });
 
   @override
@@ -121,9 +127,17 @@ class _DropFileState extends State<DropFile> {
     double iconSpacing = isCompact ? 6 : 12;
 
     return DropTarget(
+      enable: widget.dropEnabled,
       onDragDone: (detail) async {
-        if (detail.files.isEmpty) return;
+        if (!widget.dropEnabled || detail.files.isEmpty) return;
 
+        if (widget.singleFileOnly &&
+            (detail.files.length != 1 ||
+                detail.files.single is DropItemDirectory ||
+                !_isAllowed(detail.files.single))) {
+          widget.onInvalidDrop?.call();
+          return;
+        }
         // Flatten directories into individual files
         final allFiles = _flattenDropItems(detail.files);
         if (allFiles.isEmpty) return;

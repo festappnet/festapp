@@ -11,7 +11,10 @@ DECLARE
   v_org  bigint;
 
   v_effective_org bigint;
+  v_actual_unit bigint;
+  v_actual_org bigint;
   is_app_supported boolean := false;
+  show_waitlist_templates boolean := false;
 BEGIN
   -- 1. Extract context values from the JSON parameter
   v_occ  := CASE
@@ -30,15 +33,39 @@ BEGIN
               ELSE NULL
             END;
 
-  -- 2. Determine the effective Organization ID to check settings
-  -- Priority: Explicit Org -> Org from Occasion -> Org from Unit
-  IF v_org IS NOT NULL THEN
-    v_effective_org := v_org;
-  ELSIF v_occ IS NOT NULL THEN
-    SELECT organization INTO v_effective_org FROM public.occasions WHERE id = v_occ;
+  -- Resolve ancestors from the requested object; never trust mixed tenant IDs.
+  IF v_occ IS NOT NULL THEN
+    SELECT unit, organization INTO v_actual_unit, v_actual_org
+    FROM public.occasions WHERE id = v_occ;
+    IF NOT FOUND OR (v_unit IS NOT NULL AND v_unit IS DISTINCT FROM v_actual_unit)
+        OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
+    END IF;
+    IF NOT public.is_service_role()
+       AND public.get_is_editor_view_on_occasion(v_occ) IS NOT TRUE
+       AND public.get_is_editor_order_view_on_occasion(v_occ) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Occasion template access denied';
+    END IF;
+    v_unit := v_actual_unit;
+    v_org := v_actual_org;
   ELSIF v_unit IS NOT NULL THEN
-    SELECT organization INTO v_effective_org FROM public.units WHERE id = v_unit;
+    SELECT organization INTO v_actual_org FROM public.units WHERE id = v_unit;
+    IF NOT FOUND OR (v_org IS NOT NULL AND v_org IS DISTINCT FROM v_actual_org) THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
+    END IF;
+    IF NOT public.is_service_role()
+       AND public.get_is_manager_on_unit(v_unit) IS NOT TRUE
+       AND public.get_is_editor_on_unit(v_unit) IS NOT TRUE
+       AND public.get_is_editor_view_on_unit(v_unit) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Unit template access denied';
+    END IF;
+    v_org := v_actual_org;
+  ELSIF NOT public.is_service_role() THEN
+    IF v_org IS NULL OR public.get_is_admin_on_organization(v_org) IS NOT TRUE THEN
+      RAISE insufficient_privilege USING MESSAGE = 'Organization template access denied';
+    END IF;
   END IF;
+  v_effective_org := v_org;
 
   -- 3. Check if App is Supported for the effective organization
   IF v_effective_org IS NOT NULL THEN
@@ -48,26 +75,24 @@ BEGIN
     WHERE id = v_effective_org;
   END IF;
 
-  -- 4. If an occasion is provided, perform the permission check.
-  IF v_occ IS NOT NULL THEN
-    IF (SELECT get_is_editor_view_on_occasion(v_occ)) <> TRUE AND (SELECT get_is_editor_order_view_on_occasion(v_occ)) <> TRUE THEN
-       RAISE EXCEPTION 'User is not editor view.';
-    END IF;
-  END IF;
+  -- The catalog follows the requested scope; stored templates and queue rendering
+  -- remain available independently of whether the feature is currently enabled.
+  SELECT EXISTS (
+    SELECT 1 FROM public.forms f
+    JOIN public.occasions o ON o.id = f.occasion
+    WHERE o.organization = v_effective_org
+      AND (v_occ IS NULL OR o.id = v_occ)
+      AND (v_unit IS NULL OR o.unit = v_unit)
+      AND f.participant_capacity > 0
+      AND f.waitlist_enabled IS TRUE
+  ) INTO show_waitlist_templates;
 
   -- 5. Retrieve email templates
-  SELECT jsonb_agg(result)
+  SELECT jsonb_agg(public.get_resolved_email_template(result.code,
+    jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org)) ORDER BY result.code)
     INTO email_data
   FROM (
-    SELECT DISTINCT ON (et.code)
-           et.id,
-           et.html,
-           et.occasion,
-           et.subject,
-           et.organization,
-           et.code,
-           et.unit,
-           et.title
+    SELECT DISTINCT et.code
     FROM public.email_templates et
     WHERE
       -- A. Filter based on context (Scope)
@@ -77,22 +102,22 @@ BEGIN
         OR (v_org IS NOT NULL  AND et.organization = v_org AND et.unit IS NULL AND et.occasion IS NULL)
         OR (et.organization IS NULL AND et.unit IS NULL AND et.occasion IS NULL)
       )
-      -- B. Filter based on App Support (New Logic)
+      AND et.code <> 'ORDER_OVERVIEW'
+      -- Explicit editor catalog: internal and unknown codes are never enabled
+      -- merely by adding a global default. Keep feature visibility below.
       AND (
-        is_app_supported IS TRUE
-        OR
-        et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
-                        'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE')
+        et.code IN (
+          'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_PAYMENT_DONE',
+          'TICKET_ORDER_REMINDER', 'TICKET_ORDER_STORNO', 'TICKET_ORDER_UPDATE',
+          'waitlist_confirmation', 'waitlist_offer'
+        )
+        OR (is_app_supported IS TRUE AND et.code IN (
+          'SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
+          'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE'
+        ))
       )
-    ORDER BY et.code,
-             CASE
-               WHEN (v_occ IS NOT NULL AND et.occasion = v_occ) THEN 1
-               WHEN (v_unit IS NOT NULL AND et.unit = v_unit AND et.occasion IS NULL) THEN 2
-               WHEN (v_org IS NOT NULL  AND et.organization = v_org AND et.unit IS NULL AND et.occasion IS NULL) THEN 3
-               WHEN (et.organization IS NULL AND et.unit IS NULL AND et.occasion IS NULL) THEN 4
-               ELSE 5
-             END,
-             et.id
+      AND (show_waitlist_templates OR et.code NOT IN
+        ('waitlist_confirmation', 'waitlist_offer'))
   ) result;
 
   IF email_data IS NULL THEN
@@ -102,3 +127,6 @@ BEGIN
   RETURN email_data;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_all_email_templates(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_all_email_templates(jsonb) TO authenticated, service_role;

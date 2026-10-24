@@ -1,8 +1,43 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
 
 class OrdersStrings {
+  static String get deleteOrderNotice =>
+      'FeatureOrders.deleteOrderNotice'.tr();
+  static String get deleteFakturoidInvoice =>
+      'FeatureOrders.deleteFakturoidInvoice'.tr();
+  static String get deleteFakturoidInvoiceHelp =>
+      'FeatureOrders.deleteFakturoidInvoiceHelp'.tr();
+  static String get deleteFakturoidInvoiceFailed =>
+      'FeatureOrders.deleteFakturoidInvoiceFailed'.tr();
+  static String get waveSeatProductTitle =>
+      'FeatureOrders.waveSeatProductTitle'.tr();
+  static String get waveSeatProductHint =>
+      'FeatureOrders.waveSeatProductHint'.tr();
+  static String get waveAvailabilityUnknownTitle =>
+      'FeatureOrders.waveAvailabilityUnknownTitle'.tr();
+  static String get waveAvailabilityUnknownHint =>
+      'FeatureOrders.waveAvailabilityUnknownHint'.tr();
+  static String get waveExistingAvailability =>
+      'FeatureOrders.waveExistingAvailability'.tr();
+  static String get waveExistingAvailabilityHint =>
+      'FeatureOrders.waveExistingAvailabilityHint'.tr();
+  static String get waveCancelAvailability =>
+      'FeatureOrders.waveCancelAvailability'.tr();
+  static String get waveCancelAvailabilityHint =>
+      'FeatureOrders.waveCancelAvailabilityHint'.tr();
+
+  static String get waveAvailabilityHelpTitle =>
+      'FeatureOrders.waveAvailabilityHelpTitle'.tr();
+  static String get waveAvailabilityKeepHint =>
+      'FeatureOrders.waveAvailabilityKeepHint'.tr();
+  static String get waveAvailabilityHideHint =>
+      'FeatureOrders.waveAvailabilityHideHint'.tr();
+  static String get waveAvailabilityShowHint =>
+      'FeatureOrders.waveAvailabilityShowHint'.tr();
+  static String get waveAvailabilityHelp =>
+      'FeatureOrders.waveAvailabilityHelp'.tr();
+  static String get waveAvailabilityNoChange =>
+      'FeatureOrders.waveAvailabilityNoChange'.tr();
   static String get waveNow => 'FeatureOrders.waveNow'.tr();
   static String get waveHiddenState => 'FeatureOrders.waveHiddenState'.tr();
   static String get scheduledCurrentPrice => 'FeatureOrders.currentPrice'.tr();
@@ -151,60 +186,6 @@ class OrdersStrings {
       'FeatureOrders.ticketUsage'.tr(); // "Ticket usage"
 
   // --- Tickets/Items Tab ---
-  static String stornoCompleted({required String item}) =>
-      'FeatureOrders.stornoCompletedItem'
-          .tr(namedArgs: {'item': item}); // "Storno completed for {item}."
-
-  /// Returns "Tickets" or "Applications" based on whether the ticket feature is enabled.
-  static String get itemsPlural {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return tickets;
-    }
-    return applications;
-  }
-
-  /// Returns "Ticket" or "Application" based on whether the ticket feature is enabled.
-  static String get itemSingular {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return ticket;
-    }
-    return application;
-  }
-
-  /// Returns "Send tickets" or "Send confirmations" based on whether the ticket feature is enabled.
-  static String get sendActionText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.sendTickets'.tr(); // "Send tickets"
-    }
-    return 'FeatureOrders.sendConfirmations'.tr(); // "Send confirmations"
-  }
-
-  /// Returns confirmation text for cancelling orders, with or without mentioning tickets.
-  static String get cancelOrdersConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.cancelOrdersAndTicketsConfirmation'
-          .tr(); // "Do you want to cancel orders and all included tickets? The customer will receive an email about this cancellation."
-    }
-    return 'FeatureOrders.cancelOrdersConfirmation'
-        .tr(); // "Do you want to cancel orders? The customer will receive an email about this cancellation."
-  }
-
-  static String get itemSymbol {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.ticketSymbol'.tr(); // "Ticket Symbol"
-    }
-    return 'FeatureOrders.applicationSymbol'.tr(); // "Application Symbol"
-  }
-
-  /// Returns confirmation text for sending tickets/confirmations.
-  static String get sendActionConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.sendTicketsToOrdersConfirmation'
-          .tr(); // "Do you want to send the tickets to orders?"
-    }
-    return 'FeatureOrders.sendConfirmationsToOrdersConfirmation'
-        .tr(); // "Do you want to send the confirmations to orders?"
-  }
 
   // --- Scan Page Specific ---
   // (Scan-specific labels moved to ScanStrings in lib/components/scan/scan_strings.dart)
@@ -277,21 +258,6 @@ class OrdersStrings {
           namedArgs: {'error': error}); // "Error resetting password: {error}"
 
   // Tickets Tab
-  static String get scanActionText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.scanTickets'.tr(); // "Scan tickets"
-    }
-    return 'FeatureOrders.scanEntries'.tr(); // "Scan applications"
-  }
-
-  static String get cancelItemsConfirmationText {
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.cancelTicketsConfirmation'
-          .tr(); // "Do you want to cancel the selected tickets?"
-    }
-    return 'FeatureOrders.cancelItemsConfirmation'
-        .tr(); // "Do you want to cancel the selected items?"
-  }
 
   // --- Order Grid Columns ---
   static String get gridId => 'OrderGridColumns.id'.tr(); // "Id"
@@ -320,9 +286,7 @@ class OrdersStrings {
   static String get gridOrderSequenceHelp =>
       "OrderGridColumns.orderSequenceHelp".tr();
   static String get validOrders => "OrderGridColumns.validOrders".tr();
-  static String get validTickets => FeatureService.isFeatureEnabled(FeatureConstants.ticket)
-      ? "OrderGridColumns.validTickets".tr()
-      : "OrderGridColumns.validApplications".tr();
+
   static String get gridOrderSymbol =>
       'OrderGridColumns.orderSymbol'.tr(); // "Order Symbol"
   static String get gridCustomer =>
@@ -334,6 +298,7 @@ class OrdersStrings {
   static String get gridAmount => 'OrderGridColumns.amount'.tr(); // "Amount"
   static String get gridReturned =>
       'OrderGridColumns.returned'.tr(); // "Returned"
+  static String get gridReturnedHelp => 'OrderGridColumns.returnedHelp'.tr();
   static String get gridVariableSymbol =>
       'OrderGridColumns.variableSymbol'.tr(); // "Variable symbol"
   static String get gridDeadline =>

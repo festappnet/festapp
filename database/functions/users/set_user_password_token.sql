@@ -10,14 +10,15 @@ AS $$
   email text;
   encrypted_pw text;
 BEGIN
+    -- Reject invalid credentials before consuming the one-use recovery capability.
+    IF password IS NULL OR length(password)<8 THEN RETURN json_build_object('code',400); END IF;
+
     DELETE FROM public.user_reset_token urt
     WHERE urt.token=$1
     RETURNING urt."user",urt.created_at INTO v_user_id,token_created_at;
     IF v_user_id IS NULL OR token_created_at < clock_timestamp()-interval '30 minutes' THEN
         RETURN json_build_object('code', 403);
     END IF;
-
-    IF length(password)<8 THEN RETURN json_build_object('code',400); END IF;
 
     encrypted_pw := crypt(password, gen_salt('bf'));
 

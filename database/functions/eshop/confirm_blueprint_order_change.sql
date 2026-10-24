@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change(
+CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change_internal_v1(
   p_spot_ids BIGINT[],
   p_input_data JSONB
 )
@@ -26,7 +26,17 @@ BEGIN
 
   -- 1. Analyze impacts
   v_analysis := public.analyze_new_order_spots(p_spot_ids);
+  IF p_input_data->>'payment_method'='stripe' OR EXISTS(
+    SELECT 1 FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
+    JOIN eshop.orders o ON o.id=x."order" JOIN eshop.payment_info pi ON pi.id=o.payment_info
+    WHERE s.id=ANY(p_spot_ids) AND pi.payment_method='stripe') THEN
+    RAISE EXCEPTION 'STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
 
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT x."order" FROM eshop.spots s
+    JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids)));
+  PERFORM 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) ORDER BY id FOR UPDATE;
+  PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+    JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids)));
   -- 2. Extract Ticket IDs for Storno
   SELECT ARRAY_AGG((elem->>'ticket_id')::BIGINT)
   INTO v_ticket_ids_to_cancel
@@ -104,3 +114,5 @@ EXCEPTION WHEN OTHERS THEN
   RETURN JSONB_BUILD_OBJECT('success', false, 'message', SQLERRM);
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb) FROM PUBLIC,anon,authenticated;

@@ -1,0 +1,14 @@
+{
+  "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+  "blocks/ticket-form/block.json": "6a88b779df6251f805bc7a5d45aec089b4d499792bbc5ca6ff7abf217d68b78a",
+  "blocks/ticket-form/editor.js": "8361a761f9cdca20b4e21bebef58ba73d2d542084756072542e197a055ed47ac",
+  "blocks/ticket-form/style.css": "81fcaba306e27593cd3adb8eac4387a8487fa136733d8025fd79d47ce83b3a09",
+  "festapp-tickets.php": "0e3a70d2fe1a48d174b3cd2ea0ca13d6913622e40e256ee3ff9f4a074e31c851",
+  "includes/admin.php": "428483aaaf31f53a76ab3f2e92759e6ceda6b028583386fe07046ca5b9570385",
+  "includes/embed.php": "c99fccaf952f486765a6b88c2596eed513df10365a28f07ea2433c2d5418d6a7",
+  "languages/festapp-tickets-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "614eb28702d33971c8acd1a76101424a3431931c3d24462a536011d7f1441551",
+  "languages/festapp-tickets-cs_CZ.mo": "9eb9e7cd949ba6afdbe88326fab8f7ae285d32cfd3cd14f319a2c11b6ada267d",
+  "languages/festapp-tickets-cs_CZ.po": "0bc385c771a31472cd1d6ad3dceef6173274778d50b7d4105f45298a600525f8",
+  "languages/festapp-tickets.pot": "d7b67e4ebf4331b1cf6d4198bc75da3c258224958621113f6255c624e42f2e66",
+  "readme.txt": "07099bbc17803ef8c34cb298ffd45536ef918b23dbcc066c7b69998d7cf5c6bf"
+}

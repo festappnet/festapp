@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/map/icon_model.dart';
-import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -28,7 +29,20 @@ class DataGridHelper {
     HtmlContentProfile profile = HtmlContentProfile.appContent,
     String? title,
   }) {
-
+    if (RightsService.isDemoReadOnly) {
+      return TextButton(
+          onPressed: () async {
+            final html = await loadContent();
+            if (!context.mounted) return;
+            await showDialog<void>(
+                context: context,
+                builder: (_) => AppAlertDialog(
+                    title: Text(title ?? CommonStrings.content),
+                    content: SingleChildScrollView(
+                        child: HtmlView(html: html ?? ''))));
+          },
+          child: Text(CommonStrings.content));
+    }
     Widget buttonChild = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -43,18 +57,30 @@ class DataGridHelper {
     Widget button = Builder(builder: (buttonContext) {
       final coordinator = HtmlEditingScope.maybeOf(buttonContext);
       final cell = rendererContext.row.cells[field]!;
-      final owner = unitId != null ? HtmlMediaOwner.unit(unitId) : HtmlMediaOwner.occasion(occasionId);
-      coordinator?.registerValue(HtmlFieldIdentity(rendererContext.row.key, field),
-        read: () => cell.value as String?, write: (html) => cell.value = html, owner: owner);
-      return ElevatedButton(onPressed: () async {
-        final initial = cell.value as String?;
-        final value = await RichHtmlEditorDialog.show(buttonContext,
-          initialHtml: initial, loadHtml: loadContent, title: title,
-          owner: owner, profile: profile, coordinator: coordinator);
-        if (value != null && value != initial) {
-          rendererContext.stateManager.changeCellValue(cell, value, force: true);
-        }
-      }, child: buttonChild);
+      final owner = unitId != null
+          ? HtmlMediaOwner.unit(unitId)
+          : HtmlMediaOwner.occasion(occasionId);
+      coordinator?.registerValue(
+          HtmlFieldIdentity(rendererContext.row.key, field),
+          read: () => cell.value as String?,
+          write: (html) => cell.value = html,
+          owner: owner);
+      return ElevatedButton(
+          onPressed: () async {
+            final initial = cell.value as String?;
+            final value = await RichHtmlEditorDialog.show(buttonContext,
+                initialHtml: initial,
+                loadHtml: loadContent,
+                title: title,
+                owner: owner,
+                profile: profile,
+                coordinator: coordinator);
+            if (value != null && value != initial) {
+              rendererContext.stateManager
+                  .changeCellValue(cell, value, force: true);
+            }
+          },
+          child: buttonChild);
     });
 
     if (showTooltipWithContent) {
@@ -180,7 +206,8 @@ class DataGridHelper {
     return value as T?;
   }
 
-  static String getValueFromFormatted(dynamic value) {
+  static String getValueFromFormatted(dynamic rawValue) {
+    final value = rawValue?.toString() ?? "";
     final startIndex = value.indexOf(":");
     if (startIndex == -1) {
       return value;
@@ -189,15 +216,8 @@ class DataGridHelper {
     return result;
   }
 
-  static String returnQuestionMarkOnInvalid(
-      dynamic value, List<String> allValues) {
-    if (!allValues.contains(value)) {
-      return "???";
-    }
-    return UserInfoModel.sexToLocale(value);
-  }
-
-  static int? getIdFromFormatted(String value) {
+  static int? getIdFromFormatted(String? value) {
+    if (value == null || value.isEmpty) return null;
     final startIndex = value.indexOf(":");
     if (startIndex == -1) {
       return null;
@@ -213,7 +233,8 @@ class DataGridHelper {
     var value = rendererContext.cell.value == "true" ? true : false;
     return Checkbox(
       value: value,
-      onChanged: isEnabled != null && isEnabled() == false
+      onChanged: RightsService.isDemoReadOnly ||
+              (isEnabled != null && isEnabled() == false)
           ? null
           : (bool? value) {
               var cell = rendererContext.row.cells[idString]!;
@@ -243,15 +264,6 @@ class DataGridHelper {
       },
       isEnabled: isEnabled == null || isEnabled(),
     );
-  }
-
-  static Widget backgroundFromText(
-      rendererContext, Color Function(String) getBackground,
-      [Function(String)? processText]) {
-    String value = rendererContext.cell.value;
-    String textValue = processText?.call(value);
-    return Container(
-        color: getBackground(value), child: Center(child: Text(textValue)));
   }
 
   static Widget orderState(
@@ -292,59 +304,6 @@ class DataGridHelper {
         ),
       ),
     );
-  }
-
-  static Widget orderStateRenderer(
-      BuildContext context,
-      TrinaColumnRendererContext rendererContext,
-      Color Function(String) getBackground) {
-    String value = rendererContext.cell.value;
-
-    // A helper to create a single colored state tag
-    Widget buildStateTag(String formattedState) {
-      final key = formattedState.split(";").first;
-      final text = formattedState.split(";").last;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: getBackground(key),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          OrderModel.statesDataGridToUpper(text),
-        ),
-      );
-    }
-
-    // Check if this is a state transition
-    if (value.contains("→")) {
-      final parts = value.split("→");
-      final fromState = parts[0].trim();
-      final toState = parts[1].trim();
-      return Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            buildStateTag(fromState),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Icon(Icons.arrow_forward, size: 18),
-            ),
-            buildStateTag(toState),
-          ],
-        ),
-      );
-    }
-    // Otherwise, render a single state
-    else {
-      return Container(
-        color: getBackground(value.split(";").first),
-        child: Center(
-            child:
-                Text(OrderModel.statesDataGridToUpper(value.split(";").last))),
-      );
-    }
   }
 
   static Widget mapIconRenderer(

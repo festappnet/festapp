@@ -1,6 +1,11 @@
+import { isEmbed, applyEmbedContext } from './services/embed_context.js';
+import './embed.css';
+import { resolveScannerRoute } from './services/scanner_routes.js';
+import { handleOrganizerIntent } from './startup/organizer_intent.js';
 import { GoogleAuthService } from './services/google_auth_service.js';
 import { LoginModal } from './components/users/login_modal.js';
-const googleCallback = GoogleAuthService.takeCallback();
+applyEmbedContext();
+const googleCallback = isEmbed() ? null : GoogleAuthService.takeCallback();
 import './theme_config.css';
 import { AppConfig } from './app_config.js';
 import { SupabaseService } from './services/supabase_service.js';
@@ -17,12 +22,24 @@ import { initializeCoreServices } from './startup/initialize_core_services.js';
 class Main {
     static async init() {
         try {
+            // Scanner shell starts locally before optional rights/network startup.
+            const scannerRoute = resolveScannerRoute(RouterService.normalizeUrl(window.location.href));
+            if (scannerRoute) {
+                ThemeService.init();
+                await LocalizationService.init();
+                SupabaseService.initializeScannerOffline();
+                await RouterService.handleInitialLoad();
+                RouterService.initPopStateListener();
+                window.markFestappAppReady?.();
+                return;
+            }
             // 1. Init Core Services
             await initializeCoreServices({
                 localizationService: LocalizationService,
                 supabaseService: SupabaseService,
                 rightsService: RightsService,
                 isAppSupported: AppConfig.isAppSupported,
+                publicEmbed: isEmbed(),
             });
             ThemeService.init();
             ImageLoader.init(); // Initialize Image Loader
@@ -35,16 +52,18 @@ class Main {
                 catch (error) { modal.googleError = error.message; modal._setView('login'); }
             }
 
+            const organizerIntent = isEmbed() ? null : await handleOrganizerIntent();
+            if (organizerIntent === 'navigated') {
+                window.markFestappAppReady?.();
+                return;
+            }
+
             // 2. Check Routing (SPA Support)
-            if (await RouterService.handleInitialLoad()) {
+            if (!organizerIntent && await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
                  window.markFestappAppReady?.();
                  return; 
             }
-            
-            // Not a form page, show the home app
-            const app = document.getElementById('app');
-            if (app) app.style.display = 'flex';
             
             // 3. Init UI Components
             // UserHeader is now a web component and auto-inits via tag in HTML
@@ -53,7 +72,11 @@ class Main {
             FeedbackFab.init('feedback-fab');
     
             // 4. Initial Fetch
-            unitPage.loadOccasions(AppConfig.organization);
+            await unitPage.loadOccasions(AppConfig.organization);
+
+            // Reveal the catalogue after the styled cards or retry state are ready.
+            const app = document.getElementById('app');
+            if (app) app.style.display = 'flex';
             
             // Init PopState forভাগে logic
             RouterService.initPopStateListener();
@@ -69,4 +92,8 @@ class Main {
 }
 
 // Start
-document.addEventListener('DOMContentLoaded', Main.init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', Main.init, { once: true });
+} else {
+    Main.init();
+}

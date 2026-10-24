@@ -1,0 +1,32 @@
+DO $$
+DECLARE actor uuid; org bigint; un bigint; oc bigint; first jsonb; second jsonb; result jsonb; history jsonb;
+ command uuid:=gen_random_uuid(); published bigint;
+BEGIN
+ PERFORM public.create_user_for_test('selected-draft','selected-draft@example.invalid');actor:=public.get_user_id('selected-draft');
+ INSERT INTO public.organizations(title) VALUES('Selected draft') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id=actor;
+ INSERT INTO public.units(title,organization) VALUES('Selected draft',org) RETURNING id INTO un;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Selected draft',org,un,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view) VALUES(oc,actor,true,true);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ ASSERT public.save_activity_history(oc,'{"activities":[]}', 'PUBLISH',NULL)->>'code'='426';
+ ASSERT NOT has_function_privilege('authenticated','public.update_activities(bigint,jsonb)','EXECUTE');
+ ASSERT NOT has_function_privilege('authenticated','public.update_activities_internal_v1(bigint,jsonb)','EXECUTE');
+ first:=public.save_activity_history(oc,'{"activities":[]}', 'AUTOSAVE',NULL);
+ second:=public.save_activity_history(oc,'{"activities":[],"newerTab":true}', 'AUTOSAVE',NULL);
+ ASSERT first#>>'{data,historyId}'<>second#>>'{data,historyId}';
+ history:=jsonb_build_object('activities','[]'::jsonb,'_consume_autosave',jsonb_build_object('id',first#>'{data,historyId}','created_at',first#>'{data,created_at}'));
+ result:=public.publish_activities_client_sync_v1(oc,command,0,'[]',history,NULL);
+ ASSERT result->>'code'='200'; ASSERT result#>>'{data,draftConsumed}'='false';
+ ASSERT public.publish_activities_client_sync_v1(oc,command,0,'[]',history,NULL)=result;
+ ASSERT EXISTS(SELECT 1 FROM public.activity_history WHERE id=(second#>>'{data,historyId}')::bigint),'newer tab draft must survive publication and replay';
+ SELECT id INTO published FROM public.activity_history WHERE occasion_id=oc AND history_type='PUBLISH';
+ ASSERT (SELECT NOT activities_data ? '_consume_autosave' FROM public.activity_history WHERE id=published);
+ history:=jsonb_build_object('activities','[]'::jsonb,'_consume_autosave',jsonb_build_object('id',second#>'{data,historyId}','created_at',second#>'{data,created_at}'));
+ result:=public.publish_activities_client_sync_v1(oc,gen_random_uuid(),0,'[]',history,published);
+ ASSERT result->>'status'='conflict';
+ ASSERT EXISTS(SELECT 1 FROM public.activity_history WHERE id=(second#>>'{data,historyId}')::bigint),'stale publish must not consume draft';
+ result:=public.publish_activities_client_sync_v1(oc,gen_random_uuid(),1,'[]',history,published);
+ ASSERT result->>'status'='unchanged';ASSERT result#>>'{data,draftConsumed}'='true';
+ ASSERT NOT EXISTS(SELECT 1 FROM public.activity_history WHERE id=(second#>>'{data,historyId}')::bigint);
+END $$;

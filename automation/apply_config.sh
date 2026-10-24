@@ -32,6 +32,11 @@ fi
 
 # Source the config (DOMAIN)
 source "$CONFIG_FILE"
+MAX_TICKETS_PER_ORDER="${MAX_TICKETS_PER_ORDER:-20}"
+[[ "$MAX_TICKETS_PER_ORDER" =~ ^[1-9][0-9]{0,3}$ ]] || {
+    echo "Error: MAX_TICKETS_PER_ORDER must be a positive integer up to 9999"
+    exit 1
+}
 
 for required_key in DOMAIN APP_NAME APP_TITLE_SHORT APP_DESCRIPTION VERSION FLUTTER_VERSION \
     ANDROID_APPLICATION_ID IOS_BUNDLE_ID IOS_DEVELOPMENT_TEAM \
@@ -238,6 +243,13 @@ elif data.startswith(b'\x89PNG\r\n\x1a\n'):
 else:
     raise SystemExit('Error: loading brand logo must be SVG or PNG')
 LOADING_LOGO
+mkdir -p "$PROJECT_ROOT/web_client/public"
+cp "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/web_client/public/brand-logo.svg"
+for icon in favicon.ico favicon-16x16.png favicon-32x32.png android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png; do
+    if [ -f "$PROJECT_ROOT/web/$icon" ]; then
+        cp "$PROJECT_ROOT/web/$icon" "$PROJECT_ROOT/web_client/public/$icon"
+    fi
+done
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
@@ -270,17 +282,27 @@ if [ -f "$INDEX_FILE" ]; then
     # crawlers before a forced-occasion tenant hands off to Flutter. Keep its
     # title and descriptions tenant-owned instead of leaking the generic
     # vstupenky.online branding into every production application.
-    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" <<'PY'
+    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" <<'PY'
 import html
 import re
 import sys
 
-path, app_name, app_description, domain = sys.argv[1:]
+path, app_name, app_description, domain, languages, page_title = sys.argv[1:]
 source = open(path, encoding="utf-8").read()
-title = html.escape(app_name, quote=True)
+title = html.escape(page_title, quote=True)
+site_name = html.escape(app_name, quote=True)
 description = html.escape(app_description, quote=True)
 origin = f"https://{domain}"
+language = languages.split(',')[0].strip()
+source = re.sub(r'(<html\s+lang=")[^"]*(")', lambda m: m.group(1) + language + m.group(2), source, count=1)
 source = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", source, count=1, flags=re.DOTALL)
+source, count = re.subn(
+    r'(<section id="site-introduction"[^>]*>\s*<h1[^>]*>).*?(</h1>\s*<p[^>]*>).*?(</p>\s*</section>)',
+    lambda m: m.group(1) + site_name + m.group(2) + description + m.group(3),
+    source, count=1, flags=re.DOTALL,
+)
+if count != 1:
+    raise SystemExit(f"missing site introduction in {path}")
 
 def replace_meta(attribute, key, value):
     global source
@@ -327,7 +349,9 @@ source, count = re.subn(
     source,
     count=1,
 )
-if count != 1:
+# SearchAction is optional. A WebSite without the retired search-box action
+# still has a complete identity; rewrite a target only when that action exists.
+if '"SearchAction"' in source and count != 1:
     raise SystemExit(f"missing WebSite JSON-LD search target in {path}")
 source, count = re.subn(
     r'(<link\s+[^>]*rel=["\']canonical["\'][^>]*href=["\'])[^"\']*(["\'][^>]*>)',
@@ -343,6 +367,23 @@ PY
     echo "✔ Updated meta tags"
 else
     echo "Warning: $INDEX_FILE not found."
+fi
+
+# Static host fallback; the Cloudflare router supplies the live public catalog.
+if [ -d "$PROJECT_ROOT/web_client/public" ]; then
+    printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" > "$PROJECT_ROOT/web_client/public/robots.txt"
+    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$DOMAIN" <<'SITEMAP'
+import html
+import pathlib
+import sys
+path, domain = sys.argv[1:]
+pathlib.Path(path).write_text(
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    f'  <url><loc>https://{html.escape(domain)}/</loc></url>\n'
+    + ('  <url><loc>https://vstupenky.online/events</loc></url>\n' if domain == 'vstupenky.online' else '')
+    + '</urlset>\n', encoding='utf-8')
+SITEMAP
 fi
 
 # 2b. Update Flutter web template (web/index.html): <title> and the
@@ -450,6 +491,7 @@ echo "✔ Updated CNAME"
 APP_CONFIG="$PROJECT_ROOT/web_client/src/app_config.js"
 if [ -f "$APP_CONFIG" ]; then
     echo "Updating $APP_CONFIG..."
+    sed_inplace "s|static maxTicketsPerOrder = .*;|static maxTicketsPerOrder = $MAX_TICKETS_PER_ORDER;|g" "$APP_CONFIG"
 
     sed_inplace "s|static appName = '.*';|static appName = '$APP_NAME';|g" "$APP_CONFIG"
     sed_inplace "s|static appTitleShort = '.*';|static appTitleShort = '$APP_TITLE_SHORT';|g" "$APP_CONFIG"
@@ -561,6 +603,9 @@ fi
 # 5. Update lib/app_config.dart (Flutter App)
 FLUTTER_CONFIG="$PROJECT_ROOT/lib/app_config.dart"
 if [ -f "$FLUTTER_CONFIG" ]; then
+    sed_inplace "s|static const int maxTicketsPerOrder = .*;|static const int maxTicketsPerOrder = $MAX_TICKETS_PER_ORDER;|g" "$FLUTTER_CONFIG"
+fi
+if [ -f "$FLUTTER_CONFIG" ]; then
     echo "Updating $FLUTTER_CONFIG..."
 
     # Update Supabase URL
@@ -639,7 +684,7 @@ PY
 
     # Update Is App Supported
     if [ ! -z "$IS_APP_SUPPORTED" ]; then
-        sed_inplace "s|static const bool isAppSupported = .*;|static const bool isAppSupported = $IS_APP_SUPPORTED;|g" "$FLUTTER_CONFIG"
+        sed_inplace "s|static const bool isAppSupported = .*;|static const bool isAppSupported = bool.fromEnvironment('FESTAPP_APP_SUPPORTED', defaultValue: $IS_APP_SUPPORTED);|g" "$FLUTTER_CONFIG"
     fi
 
     # Keep Flutter's unit-level startup mode on the same canonical tenant flag
@@ -890,6 +935,7 @@ fi
 # Legal and support pages are deterministic generated leaves. Their URLs and
 # tenant identity come from the same project.conf used for the application.
 node "$LEGAL_RENDERER" --config "$CONFIG_FILE"
+node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
 
 echo "Project configuration applied successfully."
 

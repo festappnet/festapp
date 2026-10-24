@@ -1,0 +1,19 @@
+{
+  "source_head": "353394511e7f3fae1efa52c8cc806ee459c5b4cf",
+  "dirty_checkout": true,
+  "plugin_zip_sha256": "ad84ce587c5c9c8349e3477005e1656c9880f1926b947bc6f9a68c25c3604f38",
+  "edge_typescript_files": 215,
+  "served_edge_typescript_sha256": "05a15001906741f769a401af678c81d9c65832e995990246d21860e2c4d8c839",
+  "schema_snapshot_sha256": "37f1096895002b77b4349902c69ccd3d73ba602bbe4866589eaaa391a8bd9b46",
+  "php_current": "8.5.12",
+  "php_minimum": "7.4.33",
+  "wordpress_current": "7.1.3",
+  "wordpress_minimum": "6.6.4",
+  "browser": "Google Chrome 155.0.8059.86",
+  "node": "26.8.1",
+  "pnpm": "11.24.0",
+  "wp_env": "12.0.0",
+  "supabase_cli": "2.111.0",
+  "postgres": "15",
+  "email_mode": "canonical queue, capture only, no provider send"
+}

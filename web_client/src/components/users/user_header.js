@@ -1,3 +1,4 @@
+import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import './user_header.css';
@@ -17,11 +18,15 @@ export class UserHeader extends HTMLElement {
     }
 
     connectedCallback() {
+        if (isEmbed()) { this.hidden = true; return; }
         // Initial render (empty or skeleton?)
         this.innerHTML = ''; 
         
         // Listen to context changes
         RightsService.addListener(this._handleContextChange);
+        // A cached/fast startup or a later remount may publish rights before
+        // this element connects. Subscribe first, then render the current state.
+        this._handleContextChange(RightsService.context);
 
         // Scroll Behavior
         this.lastScrollY = window.scrollY;
@@ -98,20 +103,21 @@ export class UserHeader extends HTMLElement {
 
         // Logo
         const logo = document.createElement('img');
-        logo.src = 'assets/icons/fstapplogo.svg'; 
-        logo.alt = 'Logo';
+        logo.src = '/brand-logo.svg';
+        logo.alt = AppConfig.appName;
         logo.className = 'header-logo';
         // Force height via inline style to beat any CSS loading issues or specificity wars
         logo.style.height = '56px';
         logo.style.cursor = 'pointer';
-        logo.onclick = () => {
-             // Force redirect to root
-             RouterService.openExternalUrl("/", { inCurrentWindow: true });
-        };
-        container.appendChild(logo);
+        const homeLink = document.createElement('a');
+        homeLink.href = '/';
+        homeLink.className = 'header-home-link';
+        homeLink.appendChild(logo);
+        container.appendChild(homeLink);
 
         // SEO: Hidden H1
-        const h1 = document.createElement('h1');
+        const introduction = document.getElementById('site-introduction');
+        const h1 = document.createElement(['/', '/events'].includes(window.location.pathname) && introduction && !introduction.hidden ? 'span' : 'h1');
         h1.textContent = AppConfig.appName;
         h1.style.position = 'absolute';
         h1.style.width = '1px';
@@ -147,7 +153,9 @@ export class UserHeader extends HTMLElement {
              if (canSeeAdmin || canSeeReservations) {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
-                 adminBtn.innerHTML = `<i class="material-icons">admin_panel_settings</i><span class="admin-text">${CommonStrings.admin}</span>`;
+                 adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
+                 adminBtn.title = CommonStrings.myEvents;
+                 adminBtn.innerHTML = `<i class="material-icons" aria-hidden="true">grid_view</i><span class="admin-text">${CommonStrings.myEvents}</span>`;
                  adminBtn.onclick = () => RouterService.navigateToAdmin(
                      RightsService.currentUnit?.id ?? this.user?.units?.[0]?.id,
                  );
@@ -174,10 +182,34 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
+            if (new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
+                RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
+                const addEventBtn = document.createElement('button');
+                addEventBtn.type = 'button';
+                addEventBtn.className = 'btn-add-event';
+                addEventBtn.setAttribute('aria-label', CommonStrings.addEvent);
+                const fullLabel = document.createElement('span');
+                fullLabel.className = 'add-event-full';
+                fullLabel.textContent = CommonStrings.addEvent;
+                const shortLabel = document.createElement('span');
+                shortLabel.className = 'add-event-short';
+                shortLabel.textContent = CommonStrings.addEventShort;
+                shortLabel.setAttribute('aria-hidden', 'true');
+                addEventBtn.append(fullLabel, shortLabel);
+                addEventBtn.onclick = async () => {
+                    await import('./login_modal.js');
+                    const modal = document.createElement('login-modal');
+                    modal.currentView = 'register';
+                    document.body.appendChild(modal);
+                };
+                actions.appendChild(addEventBtn);
+            }
+
             // Guest -> Sign In Button
             // Only show if we confirm we are NOT logged in (context exists but user is null)
             const signInBtn = document.createElement('button');
             signInBtn.className = 'btn-sign-in';
+            signInBtn.setAttribute('aria-label', CommonStrings.signIn);
             // Use innerHTML to include icon and text span for responsive hiding
             signInBtn.innerHTML = `<i class="material-icons">person</i><span class="sign-in-text">${CommonStrings.signIn}</span>`;
             signInBtn.onclick = (e) => {
@@ -291,6 +323,33 @@ export class UserHeader extends HTMLElement {
             const accountActions = document.createElement('div');
             popover.appendChild(accountActions);
             const userId = this.user.id;
+            const organizationId = Number(AppConfig.organization);
+            if (Number.isSafeInteger(organizationId) && organizationId > 0) {
+                // Organization administration is distinct from occasion/unit rights.
+                // Recheck on every open and ignore results from an old identity/menu.
+                Promise.resolve().then(() => SupabaseService.getClient().rpc(
+                    'check_is_admin_of_organization', { organization_id: organizationId },
+                )).then(({ data, error }) => {
+                    if (error || data !== true || !wrapper.isConnected ||
+                        this.user?.id !== userId || RightsService.currentUser?.id !== userId ||
+                        Number(AppConfig.organization) !== organizationId) return;
+                    const action = document.createElement('button');
+                    action.type = 'button';
+                    action.className = 'popover-logout-row popover-account-action popover-organization-settings';
+                    const icon = document.createElement('i');
+                    icon.className = 'material-icons';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.textContent = 'business';
+                    const label = document.createElement('span');
+                    label.textContent = CommonStrings.organizationSettings;
+                    action.append(icon, label);
+                    action.onclick = async () => {
+                        wrapper.remove();
+                        await RouterService.navigateToFlutterRoute(`/organizationEdit/${organizationId}`);
+                    };
+                    accountActions.prepend(action);
+                }).catch(() => {});
+            }
             GoogleAuthService.identityStatus().then(status => {
                 if (!wrapper.isConnected || this.user?.id !== userId || status.enabled !== true) return;
                 const action = document.createElement('button');

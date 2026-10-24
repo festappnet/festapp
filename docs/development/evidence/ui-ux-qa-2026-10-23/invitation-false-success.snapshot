@@ -1,0 +1,4 @@
+- alertdialog "ZavřítPostup: 1/1Zpracování bylo úspěšně dokončeno.StornoOk" [ref=e1] focusable [tabindex]
+  - button "Zavřít" [disabled, ref=e2]
+  - button "Storno" [disabled, ref=e3]
+  - button "Ok" [ref=e4]

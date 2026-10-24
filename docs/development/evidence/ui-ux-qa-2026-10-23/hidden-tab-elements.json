@@ -1,0 +1,81 @@
+{
+  "offscreenInputs": [
+    {
+      "hidden": false,
+      "label": "Název",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Začátek",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Datum začátku",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Konec",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Datum konce",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Místo konání",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Hledat funkce",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Termín platby (ve dnech)",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Interval připomínky (dny před termínem)",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Čas zahájení registrace workshopu",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Zpráva o pokusu o předčasnou registraci",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Přiblížení mapy",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Zeměpisná šířka",
+      "value": ""
+    },
+    {
+      "hidden": false,
+      "label": "Zeměpisná délka",
+      "value": ""
+    }
+  ],
+  "selected": [
+    {
+      "name": "Uživatelé",
+      "x": 725.7245483398438
+    }
+  ],
+  "url": "/n9yv3xn7/reservations/users"
+}

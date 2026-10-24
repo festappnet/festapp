@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/html/html_view.dart';
@@ -31,9 +32,9 @@ class DetailDialog extends StatefulWidget {
 class _DetailDialogState extends State<DetailDialog> {
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       insetPadding: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       title: Row(
@@ -44,10 +45,6 @@ class _DetailDialogState extends State<DetailDialog> {
             ),
           ),
           ...widget.titleActions,
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
         ],
       ),
       content: ConstrainedBox(
@@ -92,12 +89,7 @@ class _DetailDialogState extends State<DetailDialog> {
         ),
       ),
       actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      actions: [
-        TextButton(
-          child: Text(CommonStrings.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ],
+      actions: [],
     );
   }
 

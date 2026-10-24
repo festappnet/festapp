@@ -1,0 +1,6 @@
+{
+  "migration": "supabase/migrations/20261024001000_ticket_batch_exports.sql",
+  "sources": [
+    "database/functions/eshop_ticket_batches/exports.sql"
+  ]
+}

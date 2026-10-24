@@ -7,10 +7,10 @@ import pg from 'pg';
 
 const snapshotPath = process.argv[2];
 if (!snapshotPath) throw new Error('Usage: node web_client/scripts/import_occasion_setup_sources.js <private-snapshot.json>');
-const backend = path.resolve('..', 'festapp-wizard-local');
+const backend = path.resolve(process.env.FESTAPP_WIZARD_WORKSPACE || path.join('..', 'festapp-wizard-local'));
 if (!fs.existsSync(path.join(backend, 'bootstrap-complete'))) throw new Error('Owned local workspace has not been bootstrapped');
 const containers = execFileSync('docker', ['ps', '--format', '{{.Names}} {{.Ports}}'], { encoding: 'utf8' });
-if (!containers.split('\n').some(line => line.startsWith('supabase_db_festapp-wizard-local ') && line.includes(':56822->5432/'))) {
+if (!containers.split('\n').some(line => line.startsWith(`supabase_db_${path.basename(backend)} `) && line.includes(':56822->5432/'))) {
   throw new Error('Expected local container does not own port 56822');
 }
 const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));

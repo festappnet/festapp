@@ -1,6 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class UserStrings {
+  static String get invitationQueued => 'FeatureUser.invitationQueued'.tr();
+  static String get invitationSent => 'FeatureUser.invitationSent'.tr();
+  static String get invitationFailed => 'FeatureUser.invitationFailed'.tr();
+  static String get retryFailedInvitations =>
+      'FeatureUser.retryFailedInvitations'.tr();
+  static String get existingParticipantsScope =>
+      'FeatureUser.existingParticipantsScope'.tr();
+  static String get noExistingParticipants =>
+      'FeatureUser.noExistingParticipants'.tr();
   static String get googlePasswordVisibility =>
       'FeatureUser.googlePasswordVisibility'.tr();
   static String get googleUnlinkProof => 'FeatureUser.googleUnlinkProof'.tr();
@@ -137,6 +146,8 @@ class UserStrings {
   static String get createPasswordToContinue =>
       'FeatureUser.createPasswordToContinue'.tr();
   static String get iAm => 'FeatureUser.iAm'.tr();
+  static String get addEvent => 'FeatureUser.addEvent'.tr();
+  static String get myEvents => 'FeatureUser.myEvents'.tr();
   static String get admin => 'FeatureUser.admin'.tr(); // "Admin"
   static String get profile => 'FeatureUser.profile'.tr(); // "Profile"
   static String get invite => 'FeatureUser.invite'.tr(); // "Invite"
@@ -202,6 +213,10 @@ class UserStrings {
   static String get privacyChoices => 'FeatureUser.privacyChoices'.tr();
   static String get terms => 'FeatureUser.terms'.tr();
   static String get support => 'FeatureUser.support'.tr();
+  static String get signupLegalNotice =>
+      'FeatureUser.signupLegalNotice'.tr(namedArgs: {'button': signUp});
+  static String get signupTerms => 'FeatureUser.signupTerms'.tr();
+  static String get signupPrivacy => 'FeatureUser.signupPrivacy'.tr();
   static String get signupPrivacyNotice =>
       'FeatureUser.signupPrivacyNotice'.tr();
   static String get showMyCode =>

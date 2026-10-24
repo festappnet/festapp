@@ -25,6 +25,7 @@ DECLARE
     v_created integer := 0;
     v_updated integer := 0;
     v_deleted integer := 0;
+    v_global_before jsonb;
 BEGIN
     SELECT o.unit, u.organization
       INTO v_unit_id, v_organization_id
@@ -245,6 +246,7 @@ BEGIN
             v_updated := v_updated + 1;
         END IF;
 
+        SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=v_user_id FOR UPDATE;
         UPDATE public.user_info ui
            SET data = COALESCE(ui.data, '{}'::jsonb)
                       || public.get_user_profile_data_patch(v_data_patch),
@@ -265,6 +267,8 @@ BEGIN
                                  THEN NULLIF(v_data_patch->>'birthDate', '')::date
                                  ELSE ui.birth_date END
          WHERE ui.id = v_user_id;
+
+        PERFORM public.publish_user_profile_change_internal_v1(v_user_id,p_occasion_id,v_global_before);
 
         IF v_row ? 'services' THEN
             IF COALESCE(jsonb_typeof(v_row->'services'), 'null') <> 'object' THEN
@@ -303,35 +307,12 @@ BEGIN
         ) THEN
             RAISE EXCEPTION 'DELETE_USER_NOT_ON_OCCASION';
         END IF;
-        UPDATE public.news
-           SET created_by = NULL
-         WHERE created_by = v_user_id
-           AND occasion = p_occasion_id;
-        DELETE FROM public.user_groups
-         WHERE "user" = v_user_id
-           AND "group" IN (
-               SELECT id FROM public.user_group_info
-                WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.event_users
-         WHERE "user" = v_user_id
-           AND event IN (
-               SELECT id FROM public.events WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.user_news
-         WHERE "user" = v_user_id AND occasion = p_occasion_id;
-        DELETE FROM public.event_users_saved
-         WHERE "user" = v_user_id
-           AND event IN (
-               SELECT id FROM public.events WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.occasion_users
-         WHERE "user" = v_user_id AND occasion = p_occasion_id;
+        PERFORM public.remove_occasion_user_domain_internal_v1(p_occasion_id,v_user_id);
         v_deleted := v_deleted + 1;
     END LOOP;
 
     IF jsonb_array_length(v_group_assignments) > 0 THEN
-        PERFORM public.import_user_group_assignments(
+        PERFORM public.import_user_group_assignments_internal_v1(
             p_occasion_id,
             v_group_assignments
         );
@@ -347,11 +328,14 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(
-    p_occasion_id bigint,
-    p_rows jsonb,
-    p_delete_user_ids jsonb DEFAULT '[]'::jsonb
-) RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.import_occasion_users_from_csv_internal_v1(
-    p_occasion_id,p_rows,p_delete_user_ids);
-$$;
+REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(p_occasion_id bigint,p_rows jsonb,p_delete_user_ids jsonb DEFAULT '[]')
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ result:=public.import_profiles_client_sync_v1(p_occasion_id,extensions.gen_random_uuid(),p_rows,p_delete_user_ids);
+ RETURN jsonb_build_object('code',result->'code')||result->'data';
+EXCEPTION WHEN insufficient_privilege THEN RAISE EXCEPTION 'NOT_AUTHORIZED';
+END $$;
+REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv(bigint,jsonb,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.import_occasion_users_from_csv(bigint,jsonb,jsonb) TO authenticated;

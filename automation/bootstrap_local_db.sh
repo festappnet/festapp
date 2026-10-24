@@ -6,8 +6,15 @@ readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 readonly LOCAL_WORKDIR="$SCRIPT_DIR/local_db"
 readonly LOCAL_PROJECT_ID="festapp-db-tests-pg15"
 readonly DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable"
-readonly BASELINE_VERSION="20260805230000"
-readonly BASELINE_FILE="$PROJECT_ROOT/supabase/baseline/${BASELINE_VERSION}_production_schema.sql"
+if [[ "${1-}" == "--stop" ]]; then
+  supabase stop --project-id "$LOCAL_PROJECT_ID" --no-backup
+  exit 0
+fi
+
+readonly BASELINE_VERSION="$(python3 "$PROJECT_ROOT/automation/baseline.py" field coveredThrough)"
+readonly BASELINE_FILE="$(python3 "$PROJECT_ROOT/automation/baseline.py" field schema)"
+readonly BASELINE_BOOTSTRAP="$(python3 "$PROJECT_ROOT/automation/baseline.py" field bootstrap)"
+readonly BASELINE_SEED="$(python3 "$PROJECT_ROOT/automation/baseline.py" field referenceSeed)"
 readonly MIGRATIONS_DIR="$PROJECT_ROOT/supabase/migrations"
 
 for command in supabase psql; do
@@ -16,11 +23,6 @@ for command in supabase psql; do
     exit 1
   fi
 done
-
-if [[ "${1-}" == "--stop" ]]; then
-  supabase stop --project-id "$LOCAL_PROJECT_ID" --no-backup
-  exit 0
-fi
 
 if [[ ! -f "$BASELINE_FILE" ]]; then
   echo "ERROR: missing local database baseline: $BASELINE_FILE" >&2
@@ -40,52 +42,16 @@ echo "Rebuilding isolated Festapp test database on 127.0.0.1:55432..."
 supabase stop --project-id "$LOCAL_PROJECT_ID" --no-backup >/dev/null 2>&1 || true
 supabase db start --workdir "$LOCAL_WORKDIR" >/dev/null
 
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
-CREATE SCHEMA IF NOT EXISTS eshop;
-CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA public;
-CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
-CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS pgaudit WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS pgjwt WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;
-
--- Supabase's local image starts with broad defaults. Clear them before restore
--- so pg_dump's explicit grants recreate production ACLs rather than adding to
--- the local defaults.
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON TABLES FROM anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON SEQUENCES FROM anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON FUNCTIONS FROM anon, authenticated, service_role;
-SQL
-
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$BASELINE_FILE" >/dev/null
-
-temporary_dir="$(mktemp -d /tmp/festapp-local-db.XXXXXX)"
-trap 'rm -rf "$temporary_dir"' EXIT
-baseline_rows="$temporary_dir/baseline_migrations.tsv"
-
-while IFS= read -r migration_file; do
-  filename="$(basename "$migration_file" .sql)"
-  version="${filename%%_*}"
-  if [[ "$version" =~ ^[0-9]{14}$ ]] && [[ "$version" < "$BASELINE_VERSION" || "$version" == "$BASELINE_VERSION" ]]; then
-    printf '%s\t%s\n' "$version" "${filename#*_}" >> "$baseline_rows"
-  fi
-done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' | sort)
-
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -c "CREATE SCHEMA IF NOT EXISTS supabase_migrations; CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations(version text PRIMARY KEY, statements text[], name text);" \
-  -c "CREATE TEMP TABLE baseline_versions(version text,name text);" \
-  -c "\\copy baseline_versions FROM '$baseline_rows'" \
-  -c "INSERT INTO supabase_migrations.schema_migrations(version,name,statements) SELECT version,name,ARRAY[]::text[] FROM baseline_versions ON CONFLICT (version) DO NOTHING;" \
-  >/dev/null
+# Local installation must never execute scheduled external production calls.
+docker exec -e PGPASSWORD=postgres "supabase_db_$LOCAL_PROJECT_ID" psql -X -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -qc 'ALTER SYSTEM SET cron.launch_active_jobs = off'
+docker exec -e PGPASSWORD=postgres "supabase_db_$LOCAL_PROJECT_ID" psql -X -U supabase_admin -d postgres -Atqc 'SELECT pg_reload_conf()' >/dev/null
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog' >/dev/null
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$BASELINE_BOOTSTRAP" -f "$BASELINE_FILE" -f "$BASELINE_SEED" >/dev/null
+python3 "$PROJECT_ROOT/automation/baseline.py" ledger-sql | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 >/dev/null
 
 # The baseline owns every version through BASELINE_VERSION. Only genuinely new,
 # forward migrations are executed here.
-supabase migration up --db-url "$DATABASE_URL" --include-all >/dev/null
+python3 "$PROJECT_ROOT/automation/baseline.py" upgrade-local --database-url "$DATABASE_URL" >/dev/null
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
 
 echo "Local Festapp database is ready."

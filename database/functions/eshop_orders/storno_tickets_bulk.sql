@@ -18,6 +18,7 @@ DECLARE
     v_removed_price NUMERIC(10, 2);
     v_current_price NUMERIC(10, 2);
 BEGIN
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_ticket_ids)));
     -- 1. Identify all unique orders involved in this batch AND their occasion
     -- We need the occasion ID to perform the security check
     FOR v_order_id, v_occasion_id IN
@@ -34,6 +35,10 @@ BEGIN
             RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
         END IF;
 
+        IF (SELECT state FROM eshop.orders WHERE id=v_order_id)='storno' THEN CONTINUE; END IF;
+        PERFORM public.check_order_is_mutable(v_order_id);
+        IF EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=v_order_id AND pi.payment_method='stripe') THEN
+            RAISE EXCEPTION 'STRIPE_USE_REFUND_ADMISSION_DECISION'; END IF;
         -- Serialize cancellations on the same order before counting survivors.
         PERFORM 1 FROM eshop.orders WHERE id = v_order_id FOR UPDATE;
 
@@ -65,18 +70,6 @@ BEGIN
         IF v_remaining_count <= 0 THEN
             -- Helper function to cancel the entire order
             PERFORM update_order_and_tickets_to_storno_ws_internal_v1(v_order_id);
-            -- Commit cancellation and its durable email intent together. Replays
-            -- cannot reach this branch once the active tickets are cancelled.
-            IF EXISTS (SELECT 1 FROM eshop.orders WHERE id=v_order_id
-                AND position('@' in data->>'email')>0 AND length(data->>'email')<=320) THEN
-            PERFORM public.enqueue_order_email('TICKET_ORDER_STORNO',
-                jsonb_build_object('order_id', v_order_id),
-                (SELECT organization FROM public.occasions WHERE id=v_occasion_id),
-                v_occasion_id,
-                (SELECT unit FROM public.occasions WHERE id=v_occasion_id),
-                now(), 'last-ticket-cancelled:' || v_order_id);
-            END IF;
-
 
         -- -----------------------------------------------------
         -- SCENARIO B: Partial Cancellation (Modify Order)

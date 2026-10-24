@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
@@ -44,9 +45,7 @@ class TicketCodeHelper {
           builder: (BuildContext context, StateSetter setState) {
             Future<void> handleGenerateCode() async {
               bool confirm = await DialogHelper.showConfirmationDialog(
-                  context,
-                  titleMessage,
-                  OrdersStrings.generateNewCodeWarning);
+                  context, titleMessage, OrdersStrings.generateNewCodeWarning);
               if (confirm) {
                 String newCode = generateRandomCode(5);
                 await DbTickets.updateScanCode(formLink, newCode);
@@ -69,17 +68,14 @@ class TicketCodeHelper {
               ToastHelper.Show(context, CommonStrings.copiedToClipboard);
             }
 
-            return AlertDialog(
+            return AppAlertDialog(
+              onClose: () {
+                Navigator.of(context).pop();
+              },
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(child: Text(titleMessage)),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
                 ],
               ),
               content: SingleChildScrollView(

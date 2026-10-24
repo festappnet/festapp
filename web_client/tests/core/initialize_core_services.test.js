@@ -24,3 +24,14 @@ test('does not fetch unsupported-app context for app-backed tenants', async () =
     });
     assert.deepEqual(calls, ['localization', 'supabase']);
 });
+
+test('public embed keeps backend activation but never initializes organizer rights', async () => {
+    const calls = [];
+    await initializeCoreServices({
+        localizationService: {init: async () => calls.push('localization')},
+        supabaseService: {initialize: async () => calls.push('activation and existing session')},
+        rightsService: {updateAppData: async () => { throw Error('Organizer rights in embed'); }},
+        isAppSupported: false, publicEmbed: true,
+    });
+    assert.deepEqual(calls, ['localization','activation and existing session']);
+});

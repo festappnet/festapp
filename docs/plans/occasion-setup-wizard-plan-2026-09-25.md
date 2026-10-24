@@ -1,5 +1,7 @@
 # Průvodce založením události
 
+Pořadí, typy, vzhled, dostupnost kopií a dokončování tohoto původního návrhu nahradil [aktuální kontrakt průvodce](../archive/plans/occasion-setup-types-appearance-plan-2026-10-22.md). Historické počty kroků a prototypová finalizace nejsou aktuální implementační pravidla.
+
 Datum: 2026-09-25\
 Stav: integrovaný lokální Wizard (2026-10-05): celý původní tok, reálné starší předlohy, databázové koncepty; produkční finalizace zatím není implementovaná\
 Ověřování: standard (oprávnění, platební konfigurace, veřejné formuláře a nová SQL operace)

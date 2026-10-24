@@ -1,0 +1,92 @@
+/* Scoped public presentation; natural content height must not depend on iframe height. */
+html.festapp-embed, .festapp-embed body, .festapp-embed #app { min-height: 0; height: auto; }
+.festapp-embed body { display: flow-root; padding: 0; }
+.festapp-embed user-header, .festapp-embed #feedback-fab { display: none !important; }
+.festapp-embed #form-page-container { transform: none !important; min-height: 0; padding-top: 8px; }
+.festapp-embed .form-loading { min-height: 240px; }
+.festapp-embed .order-preview-overlay,
+.festapp-embed .fullscreen-result-overlay,
+.festapp-embed .fullscreen-loader-overlay {
+    position: relative !important; inset: auto !important; height: auto !important;
+    min-height: 240px; overflow: visible !important; background: var(--background-color, white);
+}
+.festapp-embed .order-preview-content { max-height: none; transform: none; animation: none; border-radius: 12px; }
+.festapp-embed .order-preview-body { overflow: visible; }
+.festapp-embed .order-preview-header { touch-action: auto; }
+.festapp-embed .order-preview-handle-bar { display: none; }
+.festapp-embed body:has(.order-preview-overlay.visible) #form-page-container,
+.festapp-embed body:has(.fullscreen-result-overlay) #form-page-container,
+.festapp-embed body:has(.fullscreen-loader-overlay) #form-page-container,
+.festapp-embed body:has(.blueprint-modal-container) #form-page-container { display: none !important; }
+.festapp-embed body { overflow: auto !important; }
+.festapp-embed .blueprint-modal-container { position: relative; height: var(--embed-viewport, 100dvh); min-height: 240px; max-height: 4000px; animation: none; }
+.festapp-embed .blueprint-content { min-height: 0; }
+.festapp-embed.blueprint-active, .festapp-embed body.blueprint-active { overflow: auto; touch-action: auto !important; }
+/* Fixed inside the iframe, offset to the host page's currently visible top. */
+.festapp-embed #floating-price-widget { top: calc(var(--embed-visible-top, 0px) + 16px) !important; }
+.festapp-embed .organization-identity-dialog { max-height: min(80dvh, var(--embed-viewport, 600px)); }
+
+.festapp-embed body:has(.order-preview-overlay.visible) #floating-price-widget,
+.festapp-embed body:has(.fullscreen-result-overlay) #floating-price-widget,
+.festapp-embed body:has(.fullscreen-loader-overlay) #floating-price-widget { display: none !important; }
+
+/* Host appearance is scoped to public checkout surfaces. Service/root tokens
+   and the seat map keep their canonical theme; selector controls use host tokens. */
+.festapp-embed[data-embed-theme="host"] :is(#form-page-container, .order-preview-overlay,
+.fullscreen-result-overlay, .fullscreen-loader-overlay, .flatpickr-calendar, .organization-identity-dialog,
+.blueprint-btn-confirm, .blueprint-zoom-controls, #floating-price-widget) {
+    --font-family-base: var(--embed-font-family);
+    --input-font-family: var(--embed-font-family);
+    --font-scale: 1;
+    --primary-color: var(--embed-primary);
+    --secondary-color: var(--embed-primary);
+    --link-color: var(--embed-text);
+    --background-color: var(--embed-background);
+    --surface-color: var(--embed-background);
+    --card-bg: var(--embed-background);
+    --text-color: var(--embed-text);
+    --text-color-secondary: var(--embed-text);
+    --input-text: var(--embed-text);
+    --input-bg: var(--embed-background);
+    --input-border: var(--embed-text);
+    --btn-text-color: var(--embed-button-text);
+    --btn-secondary-text-color: var(--embed-button-text);
+    font-family: var(--embed-font-family);
+    color: var(--embed-text);
+}
+.festapp-embed[data-embed-theme="host"] body {
+    background: var(--embed-background) !important;
+}
+.festapp-embed[data-embed-theme="host"] #form-page-container {
+    background: var(--embed-background);
+}
+/* The host primary is a button fill, which may be near-white or near-black.
+   Inline prices, hints and text actions belong on the host text/background pair. */
+.festapp-embed[data-embed-theme="host"] :is(.option-price, .surcharge-price,
+.ticket-header, .total-price, .btn-clear-selection, .btn-clear-selection:hover,
+.option-description, .form-field-hint, .meta-surcharge) {
+    color: var(--embed-text);
+}
+.festapp-embed[data-embed-theme="host"] #form-page-container :is(input[type="radio"], input[type="checkbox"]) {
+    accent-color: var(--embed-text);
+}
+.festapp-embed[data-embed-theme="host"] .flatpickr-day.selected {
+    color: var(--embed-button-text) !important;
+}
+.festapp-embed[data-embed-theme="host"] :is(#form-page-container, .order-preview-overlay,
+.fullscreen-result-overlay, .fullscreen-loader-overlay, .flatpickr-calendar, .organization-identity-dialog,
+.blueprint-btn-confirm, .blueprint-zoom-controls, #floating-price-widget)
+:is(input, button, select, textarea) {
+    font-family: var(--embed-font-family);
+}
+
+.festapp-embed[data-embed-theme="host"] .blueprint-modal-container {
+    background-color: var(--embed-background);
+}
+.festapp-embed[data-embed-theme="host"] .blueprint-btn-confirm,
+.festapp-embed[data-embed-theme="host"] #floating-price-widget {
+    color: var(--embed-button-text) !important;
+}
+
+/* Hide the iframe copy only after the host confirms its native sticky view. */
+.festapp-embed.festapp-host-price #floating-price-widget { visibility:hidden; pointer-events:none; }

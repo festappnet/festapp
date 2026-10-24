@@ -1,0 +1,109 @@
+{
+  "scope": "local product design/media revision, no release",
+  "targetedTests": "5/5 generator/player PASS",
+  "responsiveWidths": [
+    320,
+    390,
+    768,
+    1440
+  ],
+  "horizontalOverflow": false,
+  "decorativeLinkArrows": 0,
+  "allNineImagesLoaded": true,
+  "axeViolations": 0,
+  "axeIncomplete": "Partially clipped horizontal reference card contrast and silent-video caption manual checks",
+  "reducedMotion": {
+    "matches": true,
+    "pending": 0,
+    "playing": 0
+  },
+  "newMediaFullDecodeAndFrameReview": "6/6 PASS, current hashes match capture evidence",
+  "clips": [
+    {
+      "file": "layout-build.mp4",
+      "duration": 15.866667,
+      "bytes": 329532
+    },
+    {
+      "file": "layout-build-mobile.mp4",
+      "duration": 15.866667,
+      "bytes": 200397
+    },
+    {
+      "file": "layout-style.mp4",
+      "duration": 15.033333,
+      "bytes": 449088
+    },
+    {
+      "file": "layout-style-mobile.mp4",
+      "duration": 15.033008,
+      "bytes": 330515
+    },
+    {
+      "file": "form-build.mp4",
+      "duration": 12.933333,
+      "bytes": 219929
+    },
+    {
+      "file": "form-build-mobile.mp4",
+      "duration": 12.933333,
+      "bytes": 245187
+    },
+    {
+      "file": "form-style.mp4",
+      "duration": 9.666667,
+      "bytes": 136534
+    },
+    {
+      "file": "form-style-mobile.mp4",
+      "duration": 9.666667,
+      "bytes": 158568
+    },
+    {
+      "file": "ticket-design.mp4",
+      "duration": 18.8,
+      "bytes": 400396
+    },
+    {
+      "file": "ticket-design-mobile.mp4",
+      "duration": 18.8,
+      "bytes": 226442
+    },
+    {
+      "file": "seat-select.mp4",
+      "duration": 7.4,
+      "bytes": 75872
+    },
+    {
+      "file": "seat-select-mobile.mp4",
+      "duration": 7.4,
+      "bytes": 64597
+    },
+    {
+      "file": "check-in.mp4",
+      "duration": 7.566667,
+      "bytes": 102169
+    },
+    {
+      "file": "check-in-mobile.mp4",
+      "duration": 7.566667,
+      "bytes": 84975
+    },
+    {
+      "file": "orders-overview.mp4",
+      "duration": 9.366667,
+      "bytes": 153833
+    },
+    {
+      "file": "orders-overview-mobile.mp4",
+      "duration": 9.366667,
+      "bytes": 154800
+    }
+  ],
+  "limits": [
+    "Theatre template is a real canvas preview; its local PDF render hit runtime CPU limit.",
+    "Contemporary hero has no implied handoff to the separately labelled older picker demo.",
+    "Real editor grid remains in final hall capture.",
+    "No production performance or conversion claim."
+  ]
+}

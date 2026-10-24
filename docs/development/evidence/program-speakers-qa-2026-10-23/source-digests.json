@@ -1,0 +1,8 @@
+{
+  "lib/components/schedule/schedule_content.dart": "9e632c16add5d7b8cbf9dee70ec998d314438cea137de6b228c02b13746fdbda",
+  "lib/components/single_data_grid/data_grid_helper.dart": "ab8f3284388cc367ca6a4b13477df7baeec5eba6f5bbcbe30c19b74a1d778f9e",
+  "lib/components/_shared/app_panel_helper.dart": "3e969a2dd6ebce5b3bcbc329ee6daec304b917d15ffe9559fb37f342f104aff4",
+  "lib/components/speakers/admin/speaker_editor_dialog.dart": "fb28cba53fe1d8a531ade37c17403bced6b272ed7e9d49c1fb5a860e89aac66f",
+  "lib/components/speakers/admin/speakers_tab.dart": "3bab02a204219137839a7e187e56ed63b3f598bcd96efd3b9405a2b264efb498",
+  "lib/components/features/editors/schedule_feature_editor.dart": "68a34466dbbb6817ddb8d233d1d965af0856374c5abd89739f15754c4c247e67"
+}

@@ -1,7 +1,9 @@
+import { EmailSuffixConfirmation } from './email_suffix_confirmation.js';
 import { FormStrings } from './form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { FormFieldBuilder } from './fields/form_field_builder.js';
 import { DbForms } from './db_forms.js';
+import { IdDocumentConstants } from './constants/id_document_constants.js';
 import { html, sanitizeHtml } from '../../utils/html.js';
 
 export class FormRenderer {
@@ -32,10 +34,17 @@ export class FormRenderer {
 
         // Append Fields (FormFieldBuilder still returns Nodes)
         formModel.visibleFields.forEach(field => {
-            const fieldComponent = FormFieldBuilder.createFormField(field, formModel, session);
+            const definition = session.state.fields.has(String(field.id))
+                ? { ...field, value: session.state.fields.get(String(field.id)) } : field;
+            const fieldComponent = FormFieldBuilder.createFormField(definition, formModel, session);
+            if (session.state.fields.has(String(field.id))) {
+                restoreFieldInputs(fieldComponent, field, definition.value);
+            }
             fieldsContainer.appendChild(fieldComponent);
         });
         
+        EmailSuffixConfirmation.install(form, session.emailSuffixConfirmations, session);
+
         // Bind Callbacks
         form.onsubmit = (e) => {
             e.preventDefault();
@@ -74,4 +83,25 @@ export class FormRenderer {
     }
 
     // _renderHeader helper removed as it is now inlined in render() template
+}
+
+// Builders may initialize custom date widgets before returning their node.
+// Restore their actual controls as well as the session, without input events
+// or any old price/quote data entering the refreshed form.
+function restoreFieldInputs(component, field, value) {
+    for (const input of component.querySelectorAll('input, textarea, select')) {
+        let answer = value;
+        if (field.type === 'id_document') {
+            answer = input.name.endsWith(IdDocumentConstants.EXPIRY_SUFFIX)
+                ? value?.id_document_expiry_date : value?.id_document_number;
+        } else if (input.name !== String(field.id)) continue;
+        if (input.type === 'checkbox' || input.type === 'radio') {
+            const selected = Array.isArray(answer) ? answer : String(answer ?? '').split(' | ');
+            input.checked = selected.some(item => String(item) === input.value);
+        } else if (input._flatpickr) {
+            input._flatpickr.setDate(answer || null, false);
+        } else {
+            input.value = answer == null ? '' : String(answer);
+        }
+    }
 }

@@ -1,38 +1,32 @@
-# Activities Component (Volunteer Management)
+# Volunteer activities
 
-Not the public Schedule (attendee events) -- this is admin-side volunteer/staff task scheduling.
+This feature schedules volunteer/staff work. Public attendee events belong to
+[Schedule](../schedule/README.md).
 
-## Draft & Publish Pattern
+## Drafts and publication
 
-Activities use version history, NOT simple CRUD.
+The editor loads `get_activities_for_edit` into an `EditDataBundle`. Local edits
+are periodically autosaved with `save_activity_history` and history type
+`AUTOSAVE`; that snapshot does not change the live activity graph. An empty
+activity list is not autosaved by the current adapter.
 
-- **Autosave**: Editor periodically calls `save_activity_history` RPC (type `AUTOSAVE`). Stored in history only -- does NOT affect live data.
-- **Publish**: `save_activity_history` (type `PUBLISH`) + `update_activities` RPC overwrites live tables. Changes are invisible until publish.
+When Client Sync v1 is selected, Publish calls
+`publish_activities_client_sync_v1` through `SupabaseActivityCommands`. One
+receipted command writes the publication history and live graph atomically,
+checks `expectedVersion`, and returns the aggregate version and history ID.
+The editor updates its baseline from that response. A conflict must be resolved
+against the newer publication; an autosave is not evidence of a live publish.
 
-If changes "aren't showing up", the admin probably hasn't published.
+The retained legacy adapter calls `save_activity_history` with `PUBLISH`, then
+`update_activities` in a second request. Those calls describe only that adapter,
+not the atomic v1 publication contract. Do not copy the two-request sequence
+into a new client.
 
-## Data Flow
+## Source entrypoints
 
-```mermaid
-sequenceDiagram
-    participant E as Editor
-    participant D as Dart
-    participant SQL as PostgreSQL
+- `db_activities.dart`: loading, autosave and capability-selected publication
+- `activity_commands.dart`: typed v1 publish transport and response application
+- `activities_content.dart`: editor state, restore/merge UI and publish actions
 
-    E->>SQL: get_activities_for_edit
-    SQL-->>D: Full graph (users, events, places, activities)
-    D->>D: Parse into EditDataBundle
-    loop Editing
-        E->>D: Drag-and-drop (local state only)
-        D->>SQL: save_activity_history (AUTOSAVE)
-    end
-    E->>D: Publish
-    D->>SQL: save_activity_history (PUBLISH)
-    D->>SQL: update_activities (applies to live tables)
-```
-
-## SQL RPCs
-
-- `get_activities_for_edit` -- full activity graph for editor
-- `save_activity_history` -- versioned JSON snapshot (AUTOSAVE or PUBLISH)
-- `update_activities` -- applies snapshot to live tables
+SQL owns version checks and live persistence. UI/history drafts do not become
+public activity data until publication succeeds.

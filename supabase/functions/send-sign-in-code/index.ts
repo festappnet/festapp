@@ -1,5 +1,7 @@
+import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
   awaitEmailAccepted,
+  EmailAcceptancePendingError,
   prepareAccountEmail,
 } from "../_shared/emailQueueClient.ts";
 import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
@@ -60,7 +62,7 @@ Deno.serve(async (req) => {
     );
 
     // Generate a 6-digit sign in code.
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = generateSignInCode();
 
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
@@ -179,20 +181,26 @@ Deno.serve(async (req) => {
       if (queueError) {
         throw new Error("Password change or email enqueue failed");
       }
-      await awaitEmailAccepted(queued.message_id);
-      const delivery = { logged: true };
-      if (!delivery.logged) {
-        return new Response(
-          JSON.stringify({
-            user: userId,
-            code: 202,
-            status: "sent_unrecorded",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
+      try {
+        await awaitEmailAccepted(queued.message_id);
+      } catch (error) {
+        // The committed queue intent survives a slow or unavailable provider.
+        // A retry joins that intent rather than creating another password/code.
+        if (error instanceof EmailAcceptancePendingError) {
+          return new Response(
+            JSON.stringify({
+              user: userId,
+              code: 202,
+              status: "queued",
+              messageId: queued.message_id,
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 202,
+            },
+          );
+        }
+        throw error;
       }
     } catch (error) {
       if (error instanceof EmailTemplateNotFoundError) {

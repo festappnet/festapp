@@ -1,3 +1,7 @@
+import '../models/verified_organization_identity.dart';
+import '../widgets_view/organization_identity_footer.dart';
+import 'package:fstapp/components/forms/order_overview_strings.dart';
+import '../waitlist_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/theme_config.dart';
@@ -5,14 +9,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/components/forms/widgets_view/payment_qr_card.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
+import '../widgets_view/card_payment_status.dart';
+import '../payment_method_strings.dart';
+import 'package:fstapp/components/stripe_payments/stripe_payment_api.dart';
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:fstapp/components/stripe_payments/stripe_payment_browser_stub.dart'
+    if (dart.library.html) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart'
+    if (dart.library.js_interop) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart';
 
 class FinishOrderScreen extends StatefulWidget {
   final Future<FunctionResponse> Function() orderFutureFunction;
   final VoidCallback? onSuccess;
   final VoidCallback? onOrderConfirmed;
   final String? tone;
+  final VerifiedOrganizationIdentity? organizationIdentity;
   final bool hasTickets;
+  final bool overviewAvailable;
+  final String? occasionTitle;
   final Future<String?> Function(String)? deliveryStatusReader;
+  final Future<void> Function()? onContinuePayment;
+  final VoidCallback? onRefreshPayment;
 
   const FinishOrderScreen({
     super.key,
@@ -20,8 +36,13 @@ class FinishOrderScreen extends StatefulWidget {
     this.onSuccess,
     this.onOrderConfirmed,
     this.tone,
+    this.organizationIdentity,
     this.hasTickets = true,
+    this.overviewAvailable = false,
+    this.occasionTitle,
     this.deliveryStatusReader,
+    this.onContinuePayment,
+    this.onRefreshPayment,
   });
 
   @override
@@ -29,13 +50,21 @@ class FinishOrderScreen extends StatefulWidget {
 }
 
 class _FinishOrderScreenState extends State<FinishOrderScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   bool _isSuccess = false;
   bool _isLoading = true;
   int? code;
   Map<String, dynamic>? _errorProduct;
   Map<String, dynamic>? _orderData;
   String _deliveryState = 'queued';
+  bool _successCloseNotified = false;
+
+  void _notifySuccessAfterClose() {
+    if (!_isSuccess || _successCloseNotified) return;
+    _successCloseNotified = true;
+    final callback = widget.onSuccess;
+    WidgetsBinding.instance.addPostFrameCallback((_) => callback?.call());
+  }
 
   late AnimationController _mainController;
   late AnimationController _loadingController;
@@ -44,6 +73,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -85,7 +115,98 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
-    if (_isSuccess) _observeDelivery();
+    if (_isSuccess && _orderData?['payment']?['method'] != 'stripe') {
+      _observeDelivery();
+    }
+    if (_isSuccess &&
+        _orderData?['payment']?['method'] == 'stripe' &&
+        _payToken != null &&
+        _orderData?['checkout_url'] is String) {
+      try {
+        await _openCardCheckout(_orderData!['checkout_url']);
+      } catch (_) {
+        if (mounted)
+          setState(() => _orderData!['payment'] = {
+                ...?_orderData?['payment'],
+                'status': 'unknown'
+              });
+      }
+    }
+  }
+
+  String? get _payToken {
+    if (_orderData?['payment_access']?['kind'] == 'handoff') return null;
+    final value = _orderData?['payment_access']?['token'];
+    return value is String && RegExp(r'^[a-f0-9]{64}$').hasMatch(value)
+        ? value
+        : null;
+  }
+
+  bool _readingPayment = false;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        !_isLoading &&
+        _payToken != null) {
+      _refreshCardPayment();
+    }
+  }
+
+  Future<void> _refreshCardPayment() async {
+    final token = _payToken;
+    if (token == null || _readingPayment) return;
+    _readingPayment = true;
+    try {
+      final payment = await const SupabaseStripePaymentGateway().read(token);
+      if (mounted) setState(() => _orderData!['payment'] = payment);
+    } catch (_) {
+      if (mounted)
+        setState(() => _orderData!['payment'] = {
+              ...?_orderData?['payment'],
+              'status': 'unknown'
+            });
+    } finally {
+      _readingPayment = false;
+    }
+  }
+
+  Future<void> _openCardCheckout(String value) async {
+    if (stripePaymentSurface() == 'embed')
+      throw StateError('stripe_handoff_required');
+    final uri = Uri.parse(value);
+    if (uri.scheme != 'https' ||
+        uri.host != 'checkout.stripe.com' ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasPort) {
+      throw StateError('stripe_checkout_url_invalid');
+    }
+    final token = _payToken;
+    if (token != null) {
+      rememberStripePaymentLink(token,
+          payUrl: _orderData?['payment_access']?['url']);
+    }
+    if (!await LaunchUrlService.openExternalUrl(uri.toString(),
+        inCurrentWindow: true)) {
+      throw StateError('stripe_browser_unavailable');
+    }
+  }
+
+  Future<void> _continueCardPayment() async {
+    final token = _payToken;
+    if (token == null || _readingPayment) return;
+    _readingPayment = true;
+    try {
+      final result = await const SupabaseStripePaymentGateway().prepare(token);
+      if (!mounted) return;
+      if (result['payment'] is Map) {
+        setState(() => _orderData!['payment'] = result['payment']);
+      }
+      if (result['checkoutUrl'] is String) {
+        await _openCardCheckout(result['checkoutUrl']);
+      }
+    } finally {
+      _readingPayment = false;
+    }
   }
 
   Future<void> _observeDelivery() async {
@@ -137,6 +258,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _mainController.dispose();
     _loadingController.dispose();
     super.dispose();
@@ -149,9 +271,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
       body: PopScope(
         canPop: true,
         onPopInvoked: (didPop) {
-          if (didPop && _isSuccess) {
-            widget.onSuccess?.call();
-          }
+          if (didPop) _notifySuccessAfterClose();
         },
         child: Center(
           child: AnimatedSwitcher(
@@ -187,6 +307,50 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   }
 
   Widget _buildResult() {
+    final payment = _orderData?['payment'];
+    final handoff = _orderData?['payment_access']?['kind'] == 'handoff';
+    final handoffUri = handoff && stripePaymentSurface() == 'embed'
+        ? stripeHandoffUri(_orderData?['payment_access']?['url'],
+            _orderData?['payment_access']?['token'])
+        : null;
+    if (_isSuccess && payment is Map && payment['method'] == 'stripe') {
+      return SingleChildScrollView(
+          child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_orderData?['ticketOrder']?['order']?['order_symbol'] is String)
+            SelectableText(_orderData!['ticketOrder']['order']['order_symbol']),
+          CardPaymentStatus(
+            payment: {
+              ...payment.cast<String, dynamic>(),
+            },
+            onPay: handoff
+                ? null
+                : widget.onContinuePayment ??
+                    (_payToken == null ? null : _continueCardPayment),
+            onRefresh: handoff
+                ? null
+                : widget.onRefreshPayment ??
+                    (_payToken == null ? null : _refreshCardPayment),
+          ),
+          if (handoffUri != null)
+            FilledButton(
+                onPressed: () =>
+                    LaunchUrlService.openExternalUrl(handoffUri.toString()),
+                child: Text(PaymentMethodStrings.text('continueInNewTab'))),
+          OrganizationIdentityFooter(identity: widget.organizationIdentity),
+          OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _notifySuccessAfterClose();
+              },
+              child: Text(widget.overviewAvailable
+                  ? OrderOverviewStrings.text('title')
+                  : PublicOrderStrings.backToForm)),
+        ],
+      ));
+    }
     String title, subtitle;
     if (_isSuccess) {
       title = PublicOrderStrings.successTitle(
@@ -204,13 +368,21 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           hasPayment: hasPayment,
           email: email is String ? email.trim() : '',
           state: _deliveryState);
+    } else if (_orderData?['errorCode'] == 'STRIPE_RECIPIENT_CHANGED') {
+      title = PaymentMethodStrings.reason('recipient_changed');
+      subtitle = WaitlistStrings.refresh;
+    } else if (_orderData?['errorCode'] == 'STRIPE_PRICE_CHANGED') {
+      title = PaymentMethodStrings.text('priceChanged');
+      subtitle = PaymentMethodStrings.text('reviewPrices');
     } else if (code == 1017) {
       final prodTitle = _errorProduct?["title"] ?? "";
       title = PublicOrderStrings.productUnavailable(prodTitle);
       subtitle = PublicOrderStrings.chooseDifferentVariant(widget.tone);
     } else {
       title = PublicOrderStrings.orderFailed;
-      subtitle = PublicOrderStrings.orderError((code ?? 0).toString());
+      subtitle = _orderData?['errorCode'] != null
+          ? WaitlistStrings.text(_orderData!['errorCode'])
+          : PublicOrderStrings.orderError((code ?? 0).toString());
     }
     return SingleChildScrollView(
       child: Column(
@@ -264,11 +436,21 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
               child: SelectableText(
                   '${OrdersStrings.gridOrderSymbol}: ${_orderData!['ticketOrder']['order']['order_symbol']}'),
             ),
+          if (_isSuccess && _orderData?['conversion'] == 'split')
+            Text(
+                '${WaitlistStrings.remaining}: ${_orderData?['waitlistSummary']?['pendingPlaces'] ?? 0}. ${WaitlistStrings.explanation}'),
           if (_isSuccess) _buildPaymentQr(),
+          if (handoffUri != null)
+            FilledButton(
+                onPressed: () =>
+                    LaunchUrlService.openExternalUrl(handoffUri.toString()),
+                child: Text(PaymentMethodStrings.text('continueInNewTab'))),
+          OrganizationIdentityFooter(identity: widget.organizationIdentity),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () {
               Navigator.of(context).pop();
+              _notifySuccessAfterClose();
             },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 32),
@@ -276,7 +458,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: Text(PublicOrderStrings.backToForm),
+            child: Text(_isSuccess && widget.overviewAvailable
+                ? OrderOverviewStrings.text('title')
+                : PublicOrderStrings.backToForm),
           ),
         ],
       ),
@@ -311,6 +495,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         child: PaymentQrCard(
           payload: payload,
           format: pq['format']?.toString() ?? '',
+          occasionTitle: widget.occasionTitle,
+          orderSymbol: (data['ticketOrder'] as Map?)?['order']?['order_symbol']
+              ?.toString(),
           bankAccount: pq['account_number_human_readable']?.toString(),
           iban: pq['account_number']?.toString(),
           paymentReference: pq['reference']?.toString(),

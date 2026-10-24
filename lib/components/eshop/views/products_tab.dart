@@ -1,5 +1,8 @@
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/components/eshop/product_grid_record.dart';
 import 'product_price_waves_dialog.dart';
-import '../models/product_price_wave.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 
 import 'dart:async';
@@ -19,12 +22,12 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 
 import '../eshop_columns.dart';
 import '../models/tb_eshop.dart';
+import '../models/product_edit_bundle.dart';
 
 class ProductsTab extends StatefulWidget {
   const ProductsTab({super.key});
@@ -94,7 +97,7 @@ class _ProductsTabState extends State<ProductsTab>
     _nextChange = times.firstOrNull;
     if (_controller != null) {
       final column = _controller!.columns.firstWhere(
-        (c) => c.field == EshopColumns.PRODUCT_PRICE_CHANGES,
+        (c) => c.field == EshopColumnIds.PRODUCT_PRICE_CHANGES,
       );
       if (column.width != _automaticPlanWidth) _manualPlanWidth = true;
       if (!_manualPlanWidth) {
@@ -154,6 +157,7 @@ class _ProductsTabState extends State<ProductsTab>
     if (!mounted || bundle == null) return;
     final product = bundle.products.where((p) => p.id == id).firstOrNull;
     if (product == null) return;
+    final now = product.priceTime(TimeHelper.currentTime ?? DateTime.now());
     var openWaves = false;
     _dialogOpen = true;
     await showDialog<bool>(
@@ -164,7 +168,7 @@ class _ProductsTabState extends State<ProductsTab>
         suggestedTimes:
             ProductPriceWave.columns(bundle.priceWaves, bundle.products)
                 .map((w) => w.time)
-                .where((time) => time.isAfter(product.priceNow))
+                .where((time) => time.isAfter(now))
                 .toList(),
         canEdit: RightsService.canUpdateOrders(),
         onOpenWaves: () => openWaves = true,
@@ -188,34 +192,34 @@ class _ProductsTabState extends State<ProductsTab>
     });
   }
 
-  SingleDataGridController<ProductModel>? _controller;
+  SingleDataGridController<ProductGridRecord>? _controller;
   String? _occasionLink;
   bool _isLoading = true;
 
   List<String> get columnIdentifiers => [
-        EshopColumns.PRODUCT_ID,
-        EshopColumns.PRODUCT_TYPE,
-        EshopColumns.PRODUCT_TITLE,
+        EshopColumnIds.PRODUCT_ID,
+        EshopColumnIds.PRODUCT_TYPE,
+        EshopColumnIds.PRODUCT_TITLE,
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-          EshopColumns.PRODUCT_SHORT_TITLE,
+          EshopColumnIds.PRODUCT_SHORT_TITLE,
         if (FeatureService.isFeatureEnabled(FeatureConstants.services))
-          EshopColumns.PRODUCT_INCLUDED_INVENTORY,
-        EshopColumns.PRODUCT_DESCRIPTION,
-        EshopColumns.PRODUCT_IS_HIDDEN,
-        EshopColumns.PRODUCT_PRICE,
-        EshopColumns.PRODUCT_CURRENCY_CODE,
+          EshopColumnIds.PRODUCT_INCLUDED_INVENTORY,
+        EshopColumnIds.PRODUCT_DESCRIPTION,
+        EshopColumnIds.PRODUCT_IS_HIDDEN,
+        EshopColumnIds.PRODUCT_PRICE,
+        EshopColumnIds.PRODUCT_CURRENCY_CODE,
         if (FeatureService.isFeatureEnabled(FeatureConstants.deposit) &&
             !FeatureService.isDepositVirtualMode())
-          EshopColumns.PRODUCT_DEPOSIT,
+          EshopColumnIds.PRODUCT_DEPOSIT,
         if (FeatureService.isDepositVirtualMode())
-          EshopColumns.PRODUCT_SURCHARGE,
+          EshopColumnIds.PRODUCT_SURCHARGE,
         if (FeatureService.isDepositVirtualMode())
-          EshopColumns.PRODUCT_SURCHARGE_CURRENCY,
-        EshopColumns.PRODUCT_PAID_COUNT,
-        EshopColumns.PRODUCT_ORDERED_COUNT,
-        EshopColumns.PRODUCT_MAXIMUM,
-        EshopColumns.PRODUCT_USED_IN_FORMS,
-        EshopColumns.PRODUCT_ORDER,
+          EshopColumnIds.PRODUCT_SURCHARGE_CURRENCY,
+        EshopColumnIds.PRODUCT_PAID_COUNT,
+        EshopColumnIds.PRODUCT_ORDERED_COUNT,
+        EshopColumnIds.PRODUCT_MAXIMUM,
+        EshopColumnIds.PRODUCT_USED_IN_FORMS,
+        EshopColumnIds.PRODUCT_ORDER,
       ];
 
   @override
@@ -258,8 +262,12 @@ class _ProductsTabState extends State<ProductsTab>
         initialBundle.products.any((p) => p.priceChanges.isNotEmpty)
             ? 300
             : 180;
-    List<ProductModel>? firstLoadProducts = initialBundle.products;
-    final newController = SingleDataGridController<ProductModel>(
+    List<ProductGridRecord> records(ProductsEditBundle bundle) => bundle.products.map((product) => ProductGridRecord(
+      product: product, commands: DbEshop.commands, 
+      productTypeTitle: bundle.productTypes.where((type) => type.id == product.productTypeId).firstOrNull?.title,
+    )).toList();
+    List<ProductGridRecord>? firstLoadProducts = records(initialBundle);
+    final newController = SingleDataGridController<ProductGridRecord>(
       context: context,
       refreshOnTabActivation: false,
       loadData: () async {
@@ -272,15 +280,15 @@ class _ProductsTabState extends State<ProductsTab>
           _occasionLink!,
         );
         _trackPlans(newBundle.products);
-        return newBundle.products;
+        return records(newBundle);
       },
-      fromPlutoJson: ProductModel.fromPlutoJson,
+      fromPlutoJson: (json) => ProductGridRecord.fromPlutoJson(json, commands: DbEshop.commands),
       firstColumnType: DataGridFirstColumn.delete,
       idColumn: TbEshop.products.id,
       columnHelp: {
-        EshopColumns.PRODUCT_SHORT_TITLE: OrdersStrings.gridShortTitleHelp,
-        EshopColumns.PRODUCT_PRICE: OrdersStrings.futurePricesRemain,
-        EshopColumns.PRODUCT_MAXIMUM: OrdersStrings.gridMaxHelp,
+        EshopColumnIds.PRODUCT_SHORT_TITLE: OrdersStrings.gridShortTitleHelp,
+        EshopColumnIds.PRODUCT_PRICE: OrdersStrings.futurePricesRemain,
+        EshopColumnIds.PRODUCT_MAXIMUM: OrdersStrings.gridMaxHelp,
       },
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: () => RightsService.canUpdateOrders(),
@@ -298,28 +306,28 @@ class _ProductsTabState extends State<ProductsTab>
         context,
         columnIdentifiers,
         data: {
-          EshopColumns.PRODUCT_DESCRIPTION: RightsService.currentOccasionId(),
+          EshopColumnIds.PRODUCT_DESCRIPTION: RightsService.currentOccasionId(),
           // Use the dependencies from the initial fetch
-          EshopColumns.PRODUCT_INCLUDED_INVENTORY:
+          EshopColumnIds.PRODUCT_INCLUDED_INVENTORY:
               initialBundle.inventoryContexts,
-          EshopColumns.PRODUCT_USED_IN_FORMS: initialBundle.forms,
+          EshopColumnIds.PRODUCT_USED_IN_FORMS: initialBundle.forms,
         },
       ),
     );
 
     final priceColumn = newController.columns.firstWhere(
-      (c) => c.field == EshopColumns.PRODUCT_PRICE,
+      (c) => c.field == EshopColumnIds.PRODUCT_PRICE,
     );
     priceColumn.title = OrdersStrings.scheduledCurrentPrice;
     priceColumn.width = 180;
     final currencyIndex = newController.columns.indexWhere(
-      (c) => c.field == EshopColumns.PRODUCT_CURRENCY_CODE,
+      (c) => c.field == EshopColumnIds.PRODUCT_CURRENCY_CODE,
     );
     newController.columns.insert(
       currencyIndex + 1,
       TrinaColumn(
         title: OrdersStrings.priceChanges,
-        field: EshopColumns.PRODUCT_PRICE_CHANGES,
+        field: EshopColumnIds.PRODUCT_PRICE_CHANGES,
         type: TrinaColumnType.text(),
         readOnly: true,
         enableSorting: false,
@@ -328,15 +336,15 @@ class _ProductsTabState extends State<ProductsTab>
             ? 300
             : 180,
         renderer: (cell) {
-          final model = cell.row.cells[EshopColumns.PRODUCT_MODEL_REFERENCE]!
-              .value as ProductModel;
+          final model = cell.row.cells[EshopColumnIds.PRODUCT_MODEL_REFERENCE]!
+              .value as ProductGridRecord;
           return ProductPriceChangeCell(
             focusNode: _planFocusNodes.putIfAbsent(
               model.id!,
               () => FocusNode(),
             ),
             canEdit: RightsService.canUpdateOrders(),
-            product: model,
+            product: model.product,
             onOpen: () => _openPlans(model.id!),
           );
         },
@@ -396,7 +404,7 @@ class _ProductsTabState extends State<ProductsTab>
             padding: const EdgeInsets.all(8),
             child: Text(OrdersStrings.priceRefresh),
           ),
-        Expanded(child: SingleTableDataGrid<ProductModel>(_controller!)),
+        Expanded(child: SingleTableDataGrid<ProductGridRecord>(_controller!)),
       ],
     );
   }

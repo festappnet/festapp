@@ -1,7 +1,8 @@
 import 'package:intl/intl.dart';
 
-import '../models/occasion_report_model.dart';
+import 'package:festapp_core/eshop.dart';
 import '../report_strings.dart';
+import '../ticket_batch_strings.dart';
 
 /// Localized display and export of the same report snapshot, without a new RPC.
 String formatReportText(OccasionReport report) {
@@ -21,6 +22,16 @@ String formatReportText(OccasionReport report) {
     ..writeln(
         '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
     ..writeln('${ReportStrings.free}: ${report.spotsFree}');
+  if ((report.ticketBatches['total'] ?? 0) > 0) {
+    text.writeln(
+        '${TicketBatchStrings.title}: ${report.ticketBatches['total']}');
+    text.writeln(
+        '${TicketBatchStrings.available}: ${report.ticketBatches['available']}');
+    text.writeln(
+        '${TicketBatchStrings.sold}: ${report.ticketBatches['sold_active']}');
+    text.writeln(
+        '${TicketBatchStrings.voided}: ${report.ticketBatches['voided_unsold']}');
+  }
   for (final money in report.money) {
     text
       ..writeln()
@@ -32,12 +43,12 @@ String formatReportText(OccasionReport report) {
       }
     }
   }
-  if (report.hasTimeline) {
+  if (report.hasTicketTimeline) {
     text
       ..writeln()
       ..writeln(ReportStrings.orderTimeline)
       ..writeln(ReportStrings.orderTimelineHelp);
-    for (final day in report.orderDays) {
+    for (final day in report.ticketDays) {
       text.writeln(
           '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${day.count}');
     }

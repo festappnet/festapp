@@ -1,3 +1,6 @@
+[functions.exchange-sign-in-code]
+verify_jwt = false
+
 # Google broker endpoints validate cookie/state, verifier and one-time proofs.
 [functions.google-auth-start]
 verify_jwt = false
@@ -318,4 +321,31 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.bank-sync-reconcile]
+verify_jwt = false
+
+[functions.customer-order-access]
+verify_jwt = false
+
+[functions.stripe-connect]
+verify_jwt = true
+[functions.stripe-connect-callback]
+verify_jwt = true
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.stripe-return]
+verify_jwt = false
+
+[functions.stripe-reconcile]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.prepare-ticket-batch-document]
+verify_jwt = false
+static_files = ["./functions/_shared/ticket-assets/*.ttf", "./functions/_shared/ticket-assets/gallery-fonts/*.ttf"]
+
+[functions.notification-center-maintain]
 verify_jwt = false

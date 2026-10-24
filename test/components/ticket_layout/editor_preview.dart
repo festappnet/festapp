@@ -1,5 +1,12 @@
+import 'package:fstapp/components/blueprint/views/blueprint_editor_tab.dart';
+import 'package:fstapp/components/blueprint/blueprint_model.dart';
+import 'package:fstapp/components/blueprint/blueprint_configuration.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/occasion_user_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 // The actual editor with local fixtures. No production connection or writes.
 import 'dart:convert';
+import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,12 +14,14 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
-import 'package:fstapp/components/ticket_layout/ticket_text.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_editor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+      occasionUser: OccasionUserModel(isEditor: true),
+      unitUser: OccasionUserModel(isEditor: true));
   final fixture = jsonDecode(
       (await http.get(Uri.base.resolve('fixtures/ticket_layout/resolve.json')))
           .body) as Map;
@@ -21,7 +30,7 @@ void main() async {
       .body);
   final resolved = await previewRequest(
       {'occasionId': 1, 'mode': 'resolve', 'type': 'wide', 'background': null});
-  for (final key in ['scenarios', 'metrics', 'qrMatrix']) {
+  for (final key in ['scenarios', 'metrics', 'qrMatrix', 'catalog']) {
     fixture[key] = resolved[key];
   }
   await (FontLoader('TicketLayoutFont')
@@ -38,6 +47,8 @@ void main() async {
               supportedLocales: context.supportedLocales,
               locale: context.locale,
               home: _Preview(fixture: fixture)))));
+  WidgetsBinding.instance
+      .addPostFrameCallback((_) => WebBootstrapBridge.markAppReady());
 }
 
 Future<Map<String, dynamic>> previewRequest(Map<String, dynamic> body) async {
@@ -48,6 +59,7 @@ Future<Map<String, dynamic>> previewRequest(Map<String, dynamic> body) async {
         'Authorization': 'Bearer local-preview'
       },
       body: jsonEncode({
+        'fontProtocol': 2,
         ...body,
         'background': background == null
             ? null
@@ -62,11 +74,12 @@ Future<Map<String, dynamic>> previewRequest(Map<String, dynamic> body) async {
 }
 
 class _PreviewService extends TicketLayoutService {
-  final List catalog;
-  _PreviewService(this.catalog) : super(transport: previewRequest);
+  final List artworkCatalog;
+  _PreviewService(this.artworkCatalog) : super(transport: previewRequest);
   @override
   Future<TicketLayoutResources> resolve(int occasionId, String type,
-      Map<String, dynamic>? layout, String? background) async {
+      Map<String, dynamic>? layout, String? background,
+      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
     final result = await super.resolve(occasionId, type, layout, background);
     if (type != 'wide') return result;
     try {
@@ -74,7 +87,7 @@ class _PreviewService extends TicketLayoutService {
         result.presets.remove(key);
         result.artworks.remove(key)?.image?.dispose();
       }
-      for (final raw in catalog) {
+      for (final raw in artworkCatalog) {
         final item = raw as Map;
         ui.Image? image;
         final path = item['image'] == null
@@ -188,17 +201,29 @@ class _PreviewState extends State<_Preview> {
         selectedArtwork = 'uploaded';
       }
       final initialKey = type == 'wide' ? selectedArtwork : 'classic';
+      final prepared =
+          await TicketLayoutService(transport: previewRequest).resolve(
+              1,
+              type,
+              {
+                'schemaVersion': 3,
+                'templates': {
+                  type: (drafts[type] ?? presets[initialKey]!).toJson()
+                }
+              },
+              null);
       resources = TicketLayoutResources(
+          catalog: prepared.catalog,
+          fonts: prepared.fonts,
           template: drafts[type] ?? presets[initialKey]!,
           preset: presets[initialKey]!,
           presets: presets,
           artworks: artworks,
           initialArtworkKey: type == 'wide' ? initialKey : null,
-          scenarios: (f['scenarios'] as Map).map((key, value) =>
-              MapEntry(key as String, (value as Map).cast<String, String?>())),
-          metrics: TicketFontMetrics.fromJson(f['metrics']),
-          qrSize: f['qrMatrix']['size'],
-          qrModules: (f['qrMatrix']['data'] as List).cast<int>());
+          scenarios: prepared.scenarios,
+          metrics: prepared.metrics,
+          qrSize: prepared.qrSize,
+          qrModules: prepared.qrModules);
       if (!mounted) {
         resources.dispose();
         return;
@@ -255,9 +280,92 @@ class _PreviewState extends State<_Preview> {
         TextButton(
             onPressed: busy ? null : () => edit('named'),
             child: const Text('Jmenná vstupenka')),
+        const SizedBox(height: 16),
+        TextButton(
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) => const _BlueprintPreview())),
+            child: const Text('Blueprint fixture')),
+        TextButton(
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                        body: BlueprintTab.prototype(
+                            prototypeBlueprint: BlueprintModel(
+                                configuration:
+                                    BlueprintConfiguration(width: 8, height: 6),
+                                groups: [],
+                                objects: [],
+                                products: []),
+                            onPrototypeSave: (_) {})))),
+            child: const Text('Blueprint prototype')),
         const SizedBox(height: 24),
         const Text('Předlohy vyberete uvnitř editoru přes Šablony vstupenek.'),
         const Text(
             'Lokální ukázka. Původní názvy a data jsou součástí obrázků.'),
       ])));
+}
+
+/// Synthetic plan with the real editor and loopback-only image transport.
+class _BlueprintPreview extends StatefulWidget {
+  const _BlueprintPreview();
+  @override
+  State<_BlueprintPreview> createState() => _BlueprintPreviewState();
+}
+
+class _BlueprintPreviewState extends State<_BlueprintPreview> {
+  bool active = true;
+  bool fail = false;
+  int imports = 0;
+  BlueprintModel saved = BlueprintModel(
+      occasion: 1,
+      configuration: BlueprintConfiguration(width: 8, height: 6),
+      groups: [],
+      objects: [],
+      products: []);
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+            title: Text('Blueprint fixture - imports $imports'),
+            actions: [
+              TextButton(
+                  onPressed: () => setState(() => active = !active),
+                  child: Text(active ? 'Deactivate' : 'Activate')),
+              TextButton(
+                  onPressed: () => setState(() => fail = !fail),
+                  child: Text(fail ? 'Upload fails' : 'Upload succeeds')),
+              TextButton(
+                  onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                              content: const Text('Blocking modal'),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(c),
+                                    child: const Text('Close'))
+                              ])),
+                  child: const Text('Modal')),
+            ]),
+        body: TickerMode(
+            enabled: active,
+            child: BlueprintTab(
+              loadBlueprint: () async => BlueprintModel.fromJson(
+                  jsonDecode(jsonEncode(saved.toJson()))
+                      as Map<String, dynamic>),
+              saveBlueprint: (plan) async {
+                saved = BlueprintModel.fromJson(
+                    jsonDecode(jsonEncode(plan.toJson()))
+                        as Map<String, dynamic>);
+              },
+              uploadBackground: (bytes, occasion) async {
+                setState(() => imports++);
+                if (fail) throw StateError('Synthetic upload failure');
+                final source =
+                    await _PreviewService(const []).uploadBackground(bytes, 1);
+                return Uri.base.resolve(source!).toString();
+              },
+            )),
+      );
 }

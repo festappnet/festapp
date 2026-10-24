@@ -1,7 +1,8 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class InventoryCommands {
@@ -13,7 +14,7 @@ abstract interface class InventoryCommands {
 
 class SupabaseInventoryCommands implements InventoryCommands {
   SupabaseInventoryCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseInventoryCommands.withTransport(this._transport);
 
@@ -80,7 +81,7 @@ class SupabaseInventoryCommands implements InventoryCommands {
     if (response.status == 'rejected') {
       throw StateError('Inventory pool save was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     return InventoryPoolBundle.fromJson(
         (data['bundle'] as Map).cast<String, dynamic>());
@@ -99,7 +100,7 @@ class SupabaseInventoryCommands implements InventoryCommands {
     if (response.status == 'rejected') {
       throw StateError('Inventory command was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return response;
   }
 }

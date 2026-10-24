@@ -1,0 +1,9 @@
+{
+  "webClient": "http://127.0.0.1:56920",
+  "supabaseUrl": "http://127.0.0.1:56821",
+  "organization": 1,
+  "isAppSupported": false,
+  "isAllUnit": true,
+  "backendActivationTenantId": "",
+  "sourceConfiguration": "task-owned Vite transform; repository app_config.js not changed"
+}

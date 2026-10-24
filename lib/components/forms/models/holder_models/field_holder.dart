@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 
 class FieldHolder {
@@ -10,6 +9,7 @@ class FieldHolder {
   static const String metaValue = "value";
 
   final int id;
+  final bool isHidden;
   final bool isRequired;
   final String fieldType;
   dynamic defaultValue;
@@ -18,6 +18,7 @@ class FieldHolder {
   String? description;
 
   FieldHolder({
+    this.isHidden = false,
     required this.fieldType,
     required this.isRequired,
     required this.id,
@@ -43,7 +44,7 @@ class FieldHolder {
 }
 
 class OptionsFieldHolder extends FieldHolder {
-  final List<FormOptionModel> options;
+  final List<FormOptionDefinition> options;
 
   OptionsFieldHolder({
     required super.fieldType,

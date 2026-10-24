@@ -1,0 +1,97 @@
+{
+  "layoutAndPicker": [
+    {
+      "asset": "layout-build",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    },
+    {
+      "asset": "layout-build-mobile",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    },
+    {
+      "asset": "layout-style",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    },
+    {
+      "asset": "layout-style-mobile",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    },
+    {
+      "asset": "seat-select",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    },
+    {
+      "asset": "seat-select-mobile",
+      "configured": "#ebf1f6",
+      "decodedTopLeftRGB": [
+        234,
+        242,
+        246
+      ]
+    }
+  ],
+  "admin": {
+    "ticket-design": {
+      "configured": "#ebf1f6",
+      "decodedRGB": [
+        234,
+        241,
+        245
+      ],
+      "decodedHex": "#eaf1f5"
+    },
+    "ticket-design-mobile": {
+      "configured": "#ebf1f6",
+      "decodedRGB": [
+        234,
+        242,
+        246
+      ],
+      "decodedHex": "#eaf2f6"
+    },
+    "check-in": {
+      "configured": "#19243b",
+      "decodedRGB": [
+        24,
+        36,
+        58
+      ],
+      "decodedHex": "#18243a"
+    },
+    "check-in-mobile": {
+      "configured": "#19243b",
+      "decodedRGB": [
+        24,
+        37,
+        58
+      ],
+      "decodedHex": "#18253a"
+    }
+  },
+  "note": "Configured matte exact; decoded YUV420 samples carry small quantization differences."
+}

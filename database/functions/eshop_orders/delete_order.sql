@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.delete_order_221(order_id BIGINT)
+CREATE OR REPLACE FUNCTION public.delete_order_internal_v1(order_id BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -11,6 +11,7 @@ DECLARE
   order_oc BIGINT;
   unit_id BIGINT;
   ou_record RECORD;
+  v_activity_impacts jsonb := '[]'::jsonb;
 BEGIN
   -- Retrieve the order's occasion and payment_info.
   SELECT occasion, payment_info
@@ -22,20 +23,40 @@ BEGIN
     RAISE EXCEPTION 'Order not found.';
   END IF;
 
-  -- Check if the current user is a manager on the order's occasion.
+  -- Deletion belongs to unit managers and editors, including cancelled orders.
   SELECT unit
   INTO unit_id
   FROM public.occasions
   WHERE id = order_oc;
 
-  PERFORM public.check_is_manager_on_unit(unit_id);
+  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
+      OR public.get_is_editor_on_unit(unit_id)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+  END IF;
+  -- The queue send gate locks global capacity before an order. Deletion must
+  -- acquire that outer lock before the form/order helper to avoid inversion.
+  PERFORM 1 FROM public.email_capacity FOR UPDATE;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
+  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=order_id AND state IN ('waitlisted','preparing_payment'))
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_offers offer WHERE offer.order_id=delete_order_internal_v1.order_id)
+    OR EXISTS(SELECT 1 FROM eshop.orders WHERE source_waitlist_order_id=delete_order_internal_v1.order_id)
+    OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=delete_order_internal_v1.order_id
+      OR source_order_id=delete_order_internal_v1.order_id) THEN
+    RAISE EXCEPTION 'ORDER_HAS_WAITLIST_HISTORY'; END IF;
+  PERFORM public.check_batch_order_delete_internal(order_id);
+  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=order_id);
+  PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
+  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
+      OR public.get_is_editor_on_unit(unit_id)) THEN
+    RAISE insufficient_privilege USING MESSAGE='unit manager or editor required';
+  END IF;
 
   -- After authorization, match the worker lock order (capacity, order,
   -- attempts, message). Recheck the order after locking against concurrent edits.
   PERFORM 1 FROM public.email_capacity FOR UPDATE;
   SELECT o.payment_info INTO payment_info_id
     FROM eshop.orders o
-   WHERE o.id = delete_order_221.order_id AND o.occasion = order_oc
+   WHERE o.id = delete_order_internal_v1.order_id AND o.occasion = order_oc
    FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Order not found or occasion changed.';
@@ -45,26 +66,26 @@ BEGIN
   -- and address suppressions are independent audit/safety records and remain.
   DELETE FROM public.email_delivery_events e
    WHERE e.message_id IN (SELECT m.message_id FROM public.email_messages m
-                           WHERE m.order_id = delete_order_221.order_id)
+                           WHERE m.order_id = delete_order_internal_v1.order_id)
       OR e.attempt_id IN (SELECT a.attempt_id FROM public.email_attempts a
                           JOIN public.email_messages m USING (message_id)
-                         WHERE m.order_id = delete_order_221.order_id)
+                         WHERE m.order_id = delete_order_internal_v1.order_id)
       OR e.provider_message_id IN (
            SELECT m.provider_message_id FROM public.email_messages m
-            WHERE m.order_id = delete_order_221.order_id
+            WHERE m.order_id = delete_order_internal_v1.order_id
            UNION
            SELECT a.provider_message_id FROM public.email_attempts a
            JOIN public.email_messages m USING (message_id)
-            WHERE m.order_id = delete_order_221.order_id);
+            WHERE m.order_id = delete_order_internal_v1.order_id);
 
   DELETE FROM public.email_confirmation_receipts r
    WHERE r.message_id IN (SELECT m.message_id FROM public.email_messages m
-                          WHERE m.order_id = delete_order_221.order_id);
+                          WHERE m.order_id = delete_order_internal_v1.order_id);
   DELETE FROM public.email_attempts a
    WHERE a.message_id IN (SELECT m.message_id FROM public.email_messages m
-                          WHERE m.order_id = delete_order_221.order_id);
+                          WHERE m.order_id = delete_order_internal_v1.order_id);
   DELETE FROM public.email_messages m
-   WHERE m.order_id = delete_order_221.order_id;
+   WHERE m.order_id = delete_order_internal_v1.order_id;
 
   -- Collect all order_product_ticket IDs for the order.
   SELECT ARRAY(SELECT id FROM eshop.order_product_ticket WHERE "order" = order_id)
@@ -89,23 +110,25 @@ BEGIN
   -- Delete the related order_product_ticket entries.
   DELETE FROM eshop.order_product_ticket WHERE "order" = order_id;
 
-  -- Before deleting the tickets, find any occasion_users rows that are
-  -- bound to these tickets and call the workspace deletion function.
-  -- This function runs as SECURITY INVOKER, so it will correctly
-  -- check the *caller's* permissions (e.g., is_companion, is_manager).
-  IF ticket_ids IS NOT NULL AND array_length(ticket_ids, 1) > 0 THEN
-    FOR ou_record IN
-      SELECT "user", occasion
-      FROM public.occasion_users
-      WHERE ticket = ANY(ticket_ids)
-    LOOP
-      -- Call the function to delete the user from the occasion.
-      -- This respects the security and permission logic defined in
-      -- delete_occasion_user_ws. If this fails, the whole transaction
-      -- will be rolled back.
-      PERFORM public.delete_occasion_user_ws(ou_record."user", ou_record.occasion);
-    END LOOP;
+  -- Ticket-bound membership teardown has one domain owner, independent of
+  -- the retired public RPC. Authorization remains the order's manager boundary.
+  IF EXISTS(SELECT 1 FROM public.occasion_users WHERE ticket=ANY(ticket_ids) AND occasion<>order_oc) THEN
+    RAISE invalid_parameter_value USING MESSAGE='ticket membership belongs to another occasion';
   END IF;
+  FOR ou_record IN SELECT "user",occasion FROM public.occasion_users
+    WHERE ticket=ANY(ticket_ids) AND occasion=order_oc ORDER BY "user"
+  LOOP
+    v_activity_impacts:=v_activity_impacts || public.remove_occasion_user_domain_internal_v1(order_oc,ou_record."user");
+  END LOOP;
+  -- The canonical order facade already invalidates profiles for remaining members.
+  -- Teardown must also invalidate affected activity projections in sorted order.
+  INSERT INTO public.client_sync_private_scopes(component,occasion,user_id,source_revision)
+  SELECT DISTINCT x->>'component',order_oc,(x->>'userId')::uuid,1
+  FROM jsonb_array_elements(v_activity_impacts) x
+  JOIN public.occasion_users ou ON ou.occasion=order_oc AND ou."user"=(x->>'userId')::uuid
+  WHERE x->>'component'='private_activity' ORDER BY 1,3
+  ON CONFLICT(component,occasion,user_id) DO UPDATE
+    SET source_revision=public.client_sync_private_scopes.source_revision+1,updated_at=clock_timestamp();
 
   -- Delete the related tickets.
   -- This is now safe, as any occasion_users foreign key constraints
@@ -137,3 +160,14 @@ BEGIN
 
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.delete_order_221(order_id bigint)
+RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+BEGIN
+  PERFORM public.delete_order_client_sync_v1(
+    order_id,extensions.gen_random_uuid());
+END; $$;
+REVOKE ALL ON FUNCTION public.delete_order_221(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.delete_order_221(bigint) TO authenticated;

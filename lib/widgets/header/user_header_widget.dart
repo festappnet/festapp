@@ -7,6 +7,7 @@ import 'package:fstapp/components/app_management/language_model.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
+import 'package:fstapp/components/users/views/signup_page.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/theme_config.dart';
@@ -14,6 +15,8 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/_shared/admin_strings.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserHeaderWidget extends StatefulWidget {
   final Color? appBarIconColor;
@@ -152,7 +155,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
   }
 
   /// Common popover wrapper that applies constraints, decoration and places a cross button.
-  Widget _buildPopoverWrapper(Widget content, {Widget? topLeftWidget}) {
+  Widget _buildPopoverWrapper(Widget content) {
     // Use a Builder so that we always have the current Theme.
     return Builder(
       builder: (context) {
@@ -183,17 +186,24 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                   hoverColor: Colors.transparent,
                 ),
               ),
-              if (topLeftWidget != null)
-                Positioned(
-                  top: 4,
-                  left: 4,
-                  child: topLeftWidget,
-                ),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<bool> _checkOrganizationAdmin(int organizationId) async {
+    if (RightsService.isDemoReadOnly) return false;
+    try {
+      return await Supabase.instance.client.rpc(
+            'check_is_admin_of_organization',
+            params: {'organization_id': organizationId},
+          ) ==
+          true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Combined popover for signed in state.
@@ -204,6 +214,9 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     if (button == null) return;
     final Offset offset = button.localToGlobal(Offset.zero);
     final Size size = button.size;
+    final organizationId = AppConfig.organization;
+    final openedUserId = RightsService.currentUser()?.id;
+    final organizationAdmin = _checkOrganizationAdmin(organizationId);
     showMenu(
       context: context,
       constraints: const BoxConstraints(maxWidth: _popoverWidth),
@@ -295,6 +308,28 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
 
                     // This divider separates the content above from the sign out button
                     const Divider(),
+                    FutureBuilder<bool>(
+                      future: organizationAdmin,
+                      builder: (context, access) => access.data == true &&
+                              RightsService.currentUser()?.id == openedUserId &&
+                              AppConfig.organization == organizationId
+                          ? ListTile(
+                              leading: Icon(Icons.business,
+                                  color: Theme.of(context).primaryColor),
+                              title: Text(
+                                AdministrationStrings.organizationSettings,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: ThemeConfig.blackColor(context)),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                rootRouter.push(
+                                    OrganizationEditRoute(id: organizationId));
+                              },
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                     ListTile(
                       leading: Icon(
                         Icons.logout,
@@ -314,21 +349,6 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                     ),
                   ],
                 ),
-                topLeftWidget: RightsService.isAdmin()
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.business,
-                          size: 24, // Slightly smaller than close button (28)
-                          color: ThemeConfig.blackColor(context),
-                        ),
-                        tooltip: "Platform Settings",
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.router
-                              .push(const OrganizationEditRedirectRoute());
-                        },
-                      )
-                    : null,
               );
             },
           ),
@@ -421,6 +441,24 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     final bool isMobile = ResponsiveService.isMobile(context);
     final iconColor = widget.appBarIconColor ?? ThemeConfig.blackColor(context);
 
+    final canRegister =
+        RightsService.occasionLinkModel?.organization?.isRegistrationEnabled ??
+            false;
+    final addEventButton = FilledButton(
+      onPressed: () => RouterService.navigate(context, SignupPage.ROUTE),
+      style: FilledButton.styleFrom(
+        backgroundColor: ThemeConfig.brandAccentColor,
+        foregroundColor: ThemeData.estimateBrightnessForColor(
+                    ThemeConfig.brandAccentColor) ==
+                Brightness.light
+            ? Colors.black
+            : Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 18),
+        minimumSize: const Size(0, 40),
+      ),
+      child: Text(UserStrings.addEvent),
+    );
+
     // Define the admin button widget first if it exists
     Widget? adminButton;
     if (widget.onAdminPressed != null) {
@@ -433,11 +471,11 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
             minHeight: 38, // Match avatar height
           ),
           icon: Icon(
-            Icons.edit_calendar,
+            Icons.grid_view_rounded,
             size: 32,
             color: iconColor,
           ),
-          tooltip: UserStrings.admin,
+          tooltip: UserStrings.myEvents,
           onPressed: widget.onAdminPressed,
         );
       } else {
@@ -445,10 +483,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         adminButton = OutlinedButton.icon(
           onPressed: widget.onAdminPressed,
           icon: Icon(
-            Icons.edit_calendar, // Added icon back
+            Icons.grid_view_rounded,
             color: iconColor,
           ),
-          label: Text(UserStrings.admin),
+          label: Text(UserStrings.myEvents),
           style: OutlinedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
@@ -482,6 +520,15 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (canRegister) ...[
+              IconButton.filled(
+                tooltip: UserStrings.addEvent,
+                onPressed: () =>
+                    RouterService.navigate(context, SignupPage.ROUTE),
+                icon: const Icon(Icons.add),
+              ),
+              const SizedBox(width: 8),
+            ],
             IconButton(
               key: _userKey,
               constraints: const BoxConstraints(
@@ -521,6 +568,10 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (canRegister) ...[
+              addEventButton,
+              const SizedBox(width: 16),
+            ],
             OutlinedButton.icon(
               onPressed: () async {
                 await RouterService.navigate(context, LoginPage.ROUTE);

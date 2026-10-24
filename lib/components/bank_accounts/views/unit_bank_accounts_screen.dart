@@ -1,10 +1,14 @@
+import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart'
+    show LinkDependencyException;
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
@@ -31,6 +35,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   bool _isLoading = true;
   bool _hasLoaded = false;
   int? _organizationId;
+  bool _accountsLoadFailed = false;
+  bool _organizationLoadFailed = false;
 
   @override
   void initState() {
@@ -41,7 +47,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   void _showError(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         title: const Text('Error'),
         content: SelectableText(message),
         actions: [
@@ -55,28 +61,59 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _accountsLoadFailed = false;
+    });
+    // Organization context is optional. Its failure must not hide valid accounts.
+    final organization = _loadOrganization();
     try {
-      // Share the initial list request with a routed detail; mutations refresh.
-      final accounts = BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
-          DbBankAccounts.getBankAccountsForUnit(widget.unitId);
+      final accounts =
+          BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
+              DbBankAccounts.current.getBankAccountsForUnit(widget.unitId);
       _hasLoaded = true;
-      _unitAccounts = await accounts;
-      // Get Organization ID (if admin)
-      final orgData = await DbUsers.getCurrentOrganization();
-      _organizationId = orgData?.id;
-
+      final loaded = await accounts;
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
+      setState(() => _unitAccounts = loaded);
+    } catch (error, stack) {
+      debugPrint(
+          'get_bank_accounts_for_unit_management failed: $error\n$stack');
+      if (mounted) setState(() => _accountsLoadFailed = true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+    await organization;
+  }
+
+  Future<void> _loadOrganization() async {
+    if (mounted) setState(() => _organizationLoadFailed = false);
+    try {
+      final organization = await DbUsers.getCurrentOrganization();
+      if (mounted) setState(() => _organizationId = organization?.id);
+    } catch (error, stack) {
+      debugPrint('get_current_organization_data failed: $error\n$stack');
       if (mounted) {
-        setState(() => _isLoading = false);
-        _showError('Error loading accounts: $e');
+        setState(() {
+          _organizationId = null;
+          _organizationLoadFailed = true;
+        });
       }
     }
   }
+
+  Widget _loadError(VoidCallback retry) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(child: Text(CommonStrings.unexpectedError)),
+            TextButton.icon(
+              onPressed: retry,
+              icon: const Icon(Icons.refresh),
+              label: Text(CommonStrings.retry),
+            ),
+          ],
+        ),
+      );
 
   Future<void> _addOrEditAccount([BankAccountModel? account]) async {
     // If editing existing, we check if it is org account
@@ -91,7 +128,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
       final choice = await showDialog<String>(
         context: context,
-        builder: (context) => SimpleDialog(
+        builder: (context) => AppSimpleDialog(
           title: Text(BankAccountStrings.addBankAccount),
           children: [
             SimpleDialogOption(
@@ -121,12 +158,12 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
         List<BankAccountModel> availableAccounts = [];
         try {
           if (_organizationId != null) {
-            availableAccounts =
-                await DbBankAccounts.getBankAccountsForOrganization(
-                    _organizationId!);
+            availableAccounts = await DbBankAccounts.current
+                .getBankAccountsForOrganization(_organizationId!);
           }
           // Also fetch "My Admin" just in case they are not in Org view but I am admin
-          final myAccounts = await DbBankAccounts.getMyAdminBankAccounts();
+          final myAccounts =
+              await DbBankAccounts.current.getMyAdminBankAccounts();
           // Merge and distinct
           final existingIds = availableAccounts.map((a) => a.id).toSet();
           availableAccounts
@@ -153,7 +190,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
         selectedAccount = await showDialog<BankAccountModel>(
           context: context,
-          builder: (context) => SimpleDialog(
+          builder: (context) => AppSimpleDialog(
             title: Text(BankAccountStrings.selectAccount),
             children: availableAccounts
                 .map((a) => SimpleDialogOption(
@@ -199,8 +236,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
           int bankAccountId = selectedAccount.id;
           int priority =
               _unitAccounts.isEmpty ? 0 : _unitAccounts.last.priority + 1;
-          await DbBankAccounts.linkBankAccountToUnit(
-              widget.unitId, bankAccountId, priority);
+          await DbBankAccounts.current
+              .linkBankAccountToUnit(widget.unitId, bankAccountId, priority);
 
           await _loadData();
         } catch (e) {
@@ -219,7 +256,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _unlinkAccount(BankAccountModel account) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         title: Text(BankAccountStrings.unlinkConfirmationTitle),
         content: Text(BankAccountStrings.unlinkConfirmationMessage),
         actions: [
@@ -243,9 +280,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _performUnlink(BankAccountModel account, bool hard) async {
     setState(() => _isLoading = true);
     try {
-      await DbBankAccounts.linkBankAccountToUnit(
-          widget.unitId, account.id, null,
-          hard: hard);
+      await DbBankAccounts.current
+          .linkBankAccountToUnit(widget.unitId, account.id, null, hard: hard);
       await _loadData();
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -285,7 +321,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       BankAccountModel account, List<dynamic> conflicts) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
         title: Text(BankAccountStrings.unlinkDependencyWarningTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -371,8 +407,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     // Update priorities in DB
     try {
       for (int i = 0; i < _unitAccounts.length; i++) {
-        await DbBankAccounts.linkBankAccountToUnit(
-            widget.unitId, _unitAccounts[i].id, i);
+        await DbBankAccounts.current
+            .linkBankAccountToUnit(widget.unitId, _unitAccounts[i].id, i);
       }
     } catch (e) {
       _showError('Error saving order: $e');
@@ -393,12 +429,25 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                 constraints: const BoxConstraints(maxWidth: 800),
                 child: Column(
                   children: [
+                    if (_accountsLoadFailed) _loadError(_loadData),
+                    if (_organizationLoadFailed) _loadError(_loadOrganization),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
                         BankAccountStrings.description,
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          onPressed: () => _addOrEditAccount(),
+                          icon: const Icon(Icons.add),
+                          label: Text(BankAccountStrings.addBankAccount),
+                        ),
                       ),
                     ),
                     Expanded(
@@ -518,10 +567,6 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEditAccount(),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

@@ -1,7 +1,8 @@
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'place_model.dart';
+import 'package:festapp_core/map.dart';
 
 class MapPlaceModel {
   final int? id;
@@ -26,7 +27,7 @@ class MapPlaceModel {
     this.aggregateVersion = 0,
   });
 
-  factory MapPlaceModel.fromPlaceModel(PlaceModel place) {
+  factory MapPlaceModel.fromPlaceModel(PlaceModel place, {List<EventModel> events = const []}) {
     return MapPlaceModel(
         id: place.id,
         title: place.title!,
@@ -37,6 +38,6 @@ class MapPlaceModel {
         isHidden: place.isHidden,
         aggregateVersion: place.aggregateVersion,
         events: List<TimeBlockItem>.from(
-            place.events.map((e) => TimeBlockItem.fromEventModelAsChild(e))));
+            events.map((e) => TimeBlockItem.fromEventModelAsChild(e))));
   }
 }

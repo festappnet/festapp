@@ -8,9 +8,10 @@ DECLARE
     v_users_data jsonb;
 BEGIN
     -- Retrieve the occasion associated with the order
-    SELECT o.occasion, to_jsonb(o)
+    SELECT o.occasion, to_jsonb(o) || jsonb_build_object('payment_method', pi.payment_method)
     INTO v_occasion_id, v_order_data
     FROM eshop.orders o
+    LEFT JOIN eshop.payment_info pi ON pi.id = o.payment_info
     WHERE o.id = order_id;
 
     -- Check if the order exists

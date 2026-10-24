@@ -1,0 +1,14 @@
+[7098.3227] POST http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Fetch) 200
+[3D996AE1BAEBB330DF7CD731328C179D] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Other) 200
+[7098.3230] POST http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Fetch) 200
+[8AC3B82F805B56D30CCC7CDAE98C75CD] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Other) 200
+[7098.3237] POST http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Fetch) 200
+[81B3EDA37BCBB2130D09CAC9E30F1EC9] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Other) 200
+[694D0101CC4AA8C33C2F0D186E6AFDEE] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Other) 200
+[19866.3157] POST http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Fetch) 200
+[19866.3158] POST http://127.0.0.1:56821/functions/v1/send-sign-in-code (Fetch) 503
+[28888348F5D20CA53A7D690F0BA2E911] OPTIONS http://127.0.0.1:56821/functions/v1/send-sign-in-code (Other) 200
+[19866.3159] POST http://127.0.0.1:56821/functions/v1/send-sign-in-code (Fetch) 503
+[19866.3160] POST http://127.0.0.1:56821/functions/v1/send-sign-in-code (Fetch) 503
+[19866.3162] POST http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Fetch) 200
+[04B0FAD26BB47A2E13E1BB9C9C86E9DD] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/get_occasion_sign_in_email_statuses (Other) 200

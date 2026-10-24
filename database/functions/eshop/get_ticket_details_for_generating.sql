@@ -13,6 +13,7 @@ BEGIN
             FROM (
                 SELECT
                     t.id,
+                    (SELECT i.batch_id FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id) AS batch_id,
                     t.ticket_symbol,
                     t.occasion,
                     t.note,
@@ -74,7 +75,7 @@ BEGIN
         ),
 
         -- 2. Build the 'occasion' key (dumps the whole occasion row including 'features')
-        'occasion', to_jsonb(o),
+        'occasion', to_jsonb(o)||jsonb_build_object('demo_read_only',public.is_demo_occasion(o.id)),
         'order_data', jsonb_build_object('name', ord.data->'name', 'surname', ord.data->'surname')
     )
     INTO result
@@ -90,7 +91,8 @@ BEGIN
         ON opt.ticket = t.id
     LEFT JOIN eshop.orders ord
         ON ord.id = opt."order"
-    WHERE t.id = ticket_id_input;
+    WHERE t.id = ticket_id_input AND t.state IS DISTINCT FROM 'waitlisted' AND t.ticket_symbol IS NOT NULL
+      AND ord.state IS DISTINCT FROM 'waitlisted';
 
     RETURN result;
 END;

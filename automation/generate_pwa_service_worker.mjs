@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveScannerRoute } from '../web_client/src/services/scanner_routes.js';
 
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -36,6 +37,7 @@ const PRECACHE_URLS = ${JSON.stringify(assets, null, 2)};
 const CORE_URLS = ${JSON.stringify(coreAssets, null, 2)};
 const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
+const MARKETING_ENTRY = ${JSON.stringify(manifest.marketingEntry)};
 const FORCED_OCCASION_PATH = ${JSON.stringify(forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
 const PRECACHE_PATHS = new Set(PRECACHE_URLS.map((url) =>
@@ -276,6 +278,14 @@ function scheduleExplicitShellPrune() {
 }
 
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'FESTAPP_SCANNER_SHELL_STATUS') {
+    event.waitUntil((async()=>{
+      const cache=await caches.open(CACHE_NAME);
+      const present=await Promise.all(CORE_URLS.map(url=>cache.match(url)));
+      event.ports?.[0]?.postMessage({version:BUILD_VERSION,ready:present.every(Boolean)});
+    })());
+    return;
+  }
   if (event.data?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
     event.ports?.[0]?.postMessage({ version: BUILD_VERSION });
     return;
@@ -356,13 +366,15 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+${resolveScannerRoute.toString()}
+
 function cachedNavigationTarget(pathname) {
+  if (MARKETING_ENTRY && (pathname === '/' || pathname === '/pro-poradatele' || pathname === '/pro-poradatele/')) return MARKETING_ENTRY;
+  if (MARKETING_ENTRY && (pathname === '/events' || pathname === '/events/')) return WEB_CLIENT_ENTRY;
+  if (resolveScannerRoute(pathname)) return WEB_CLIENT_ENTRY;
   const normalizedPath = pathname.endsWith('/') ? pathname : pathname + '/';
   if (STANDALONE_DOCUMENT_PATHS.has(normalizedPath)) {
     return normalizedPath;
-  }
-  if (pathname === '/' && FORCED_OCCASION_PATH) {
-    return FLUTTER_ENTRY;
   }
   if (pathname === '/' || pathname.startsWith('/form/')) {
     return WEB_CLIENT_ENTRY;
@@ -448,9 +460,13 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
-  // Google handoffs are online proofs. Never cache them or substitute a
+  // Authentication handoffs are online proofs. Never cache them or substitute a
   // different platform's shell, even when an older shell is available offline.
-  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth') {
+  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth' ||
+      url.pathname === '/stripe/connect/callback' ||
+      url.pathname === '/app/stripe/connect/callback' ||
+      url.pathname === '/stripe/pay' || url.pathname === '/app/stripe/pay' ||
+      url.pathname === '/stripe/return' || url.pathname === '/app/stripe/return') {
     const callbackClient = event.resultingClientId || event.clientId;
     if (request.mode === 'navigate' && callbackClient) {
       clientCacheNames.delete(callbackClient);

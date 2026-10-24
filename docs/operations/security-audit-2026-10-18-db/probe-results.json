@@ -1,0 +1,218 @@
+{
+  "read-probes": [
+    {
+      "probe": "column_inventory",
+      "table": "email_templates",
+      "columns": [
+        "id",
+        "html",
+        "occasion",
+        "subject",
+        "organization",
+        "code",
+        "unit",
+        "title"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "information",
+      "columns": [
+        "id",
+        "occasion",
+        "created_at",
+        "updated_at",
+        "title",
+        "description",
+        "is_hidden",
+        "order",
+        "type",
+        "data",
+        "information_hidden",
+        "unit",
+        "search_terms",
+        "search_doc"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "news",
+      "columns": [
+        "id",
+        "occasion",
+        "created_at",
+        "updated_at",
+        "message",
+        "created_by",
+        "search_terms",
+        "search_doc"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "occasions",
+      "columns": [
+        "id",
+        "created_at",
+        "updated_at",
+        "data",
+        "is_hidden",
+        "is_open",
+        "start_time",
+        "end_time",
+        "link",
+        "title",
+        "organization",
+        "services",
+        "unit",
+        "features",
+        "occasion_hidden",
+        "description",
+        "is_promoted",
+        "is_order_synchronization_enabled",
+        "external_source",
+        "external_id"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "user_group_info",
+      "columns": [
+        "id",
+        "occasion",
+        "title",
+        "leader",
+        "place",
+        "description",
+        "data",
+        "type"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "user_groups",
+      "columns": [
+        "user",
+        "group",
+        "is_admin"
+      ]
+    },
+    {
+      "probe": "column_inventory",
+      "table": "user_news",
+      "columns": [
+        "created_at",
+        "news_id",
+        "user",
+        "occasion"
+      ]
+    },
+    {
+      "probe": "anon_visibility",
+      "uid_is_null": true,
+      "hidden_occasions_visible": true,
+      "hidden_information_visible": false,
+      "closed_occasion_news_visible": false,
+      "user_news_visible": true
+    },
+    {
+      "probe": "unrelated_authenticated_visibility",
+      "member_of_org1_occasion": false,
+      "group_memberships_visible": true,
+      "group_details_visible": true,
+      "user_news_visible": true
+    },
+    {
+      "probe": "template_policy",
+      "qual": "(get_is_manager_on_any_occasion() OR get_is_admin_on_organization(organization))",
+      "roles": [
+        "authenticated"
+      ]
+    },
+    {
+      "probe": "news_public_policy",
+      "qual": "true",
+      "roles": [
+        "public"
+      ],
+      "cmd": "SELECT"
+    },
+    {
+      "probe": "news_public_policy",
+      "qual": "((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR get_is_editor_order_view_on_occasion(occasion)))",
+      "roles": [
+        "anon",
+        "authenticated"
+      ],
+      "cmd": "SELECT"
+    }
+  ],
+  "legacy-probes": [
+    {
+      "probe": "legacy_password_hierarchy",
+      "candidate_selected": true,
+      "legacy_guard_allows": true,
+      "canonical_guard_allows": false
+    },
+    {
+      "probe": "legacy_owner",
+      "function": "create_user_in_organization_with_data",
+      "definer": true,
+      "anon_execute": true,
+      "auth_execute": true,
+      "owner_can_update_auth_users": true,
+      "owner_can_insert_auth_users": true
+    },
+    {
+      "probe": "legacy_owner",
+      "function": "set_user_password",
+      "definer": true,
+      "anon_execute": true,
+      "auth_execute": true,
+      "owner_can_update_auth_users": true,
+      "owner_can_insert_auth_users": true
+    },
+    {
+      "probe": "registration_org1",
+      "explicitly_enabled": true
+    }
+  ],
+  "template-probe": [
+    {
+      "probe": "unscoped_template_manager",
+      "candidate_selected": false,
+      "canonical_occasion_guard_allows": false,
+      "direct_template_visible": false
+    }
+  ],
+  "http-probes": [
+    {
+      "probe": "hidden_occasions",
+      "status": 200,
+      "row_returned": true,
+      "error_code": null
+    },
+    {
+      "probe": "news_read_markers",
+      "status": 200,
+      "row_returned": true,
+      "error_code": null
+    },
+    {
+      "probe": "anonymous_group_memberships",
+      "status": 200,
+      "row_returned": false,
+      "error_code": null
+    },
+    {
+      "probe": "invalid_type_set_user_password",
+      "status": 400,
+      "error_code": "22P02"
+    },
+    {
+      "probe": "invalid_type_create_user_in_organization_with_data",
+      "status": 400,
+      "error_code": "22P02"
+    }
+  ]
+}

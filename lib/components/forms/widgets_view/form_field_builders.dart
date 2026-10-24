@@ -1,10 +1,12 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:festapp_core/forms.dart';
+import '../waitlist_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_field_holder.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
@@ -91,23 +93,65 @@ class FormFieldBuilders {
 
   static Widget buildTicketField(
       BuildContext context, FormHolder formHolder, TicketHolder ticket) {
-    if (ticket.fields.none((f) => f.fieldType == FormHelper.fieldTypeSpot)) {
-      if (ticket.tickets.isEmpty) {
+    // Initial values register during the first frame without firing onChanged.
+    // Recalculate once the new ticket forms have registered all their fields.
+    if (ticket.tickets.any((t) => t.ticketKey.currentState == null) ||
+        (ticket.tickets.isEmpty && !ticket.hasSpot)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (formHolder.controller?.globalKey.currentState != null) {
+          formHolder.controller?.updateTotalPrice?.call();
+        }
+      });
+    }
+    if (ticket.fields.none((f) => f.fieldType == FormMetadata.fieldTypeSpot)) {
+      if (ticket.tickets.isEmpty &&
+          !ticket.fixedTickets &&
+          ticket.maxTickets > 0) {
         ticket.tickets.add(FormTicketModel(
             ticketValues: ticket.fields,
             ticketKey: GlobalKey<FormBuilderState>()));
       }
-      return FormBuilder(
-        key: ticket.tickets[0].ticketKey,
-        onChanged: formHolder.controller!.updateTotalPrice,
-        child: Column(
-          children: FormHelper.getFormFields(
-              context,
-              ticket.tickets[0].ticketKey,
-              formHolder,
-              ticket.tickets[0].ticketValues),
-        ),
-      );
+      return StatefulBuilder(
+          builder: (context, update) => Column(children: [
+                for (var i = 0; i < ticket.tickets.length; i++) ...[
+                  if (ticket.maxTickets > 1)
+                    Row(children: [
+                      Expanded(
+                          child: Text(
+                              '${WaitlistStrings.text('person')} ${i + 1}')),
+                      if (!ticket.fixedTickets && ticket.tickets.length > 1)
+                        IconButton(
+                          tooltip: CommonStrings.delete,
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            update(() => ticket.tickets.removeAt(i));
+                            formHolder.controller!.updateTotalPrice?.call();
+                          },
+                        ),
+                    ]),
+                  FormBuilder(
+                      key: ticket.tickets[i].ticketKey,
+                      onChanged: formHolder.controller!.updateTotalPrice,
+                      child: Column(
+                          children: FormHelper.getFormFields(
+                              context,
+                              ticket.tickets[i].ticketKey,
+                              formHolder,
+                              ticket.tickets[i].ticketValues))),
+                ],
+                if (!ticket.fixedTickets &&
+                    ticket.tickets.length < ticket.maxTickets)
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: Text(WaitlistStrings.text('addPerson')),
+                    onPressed: () {
+                      update(() => ticket.tickets.add(FormTicketModel(
+                          ticketValues: ticket.fields,
+                          ticketKey: GlobalKey<FormBuilderState>())));
+                      formHolder.controller!.updateTotalPrice?.call();
+                    },
+                  ),
+              ]));
     }
     return StatefulBuilder(
       builder: (context, setState) {
@@ -169,7 +213,7 @@ class FormFieldBuilders {
                               child: Align(
                                 alignment: Alignment.center,
                                 child: buildTitleWidget(
-                                  "${OrdersStrings.itemSingular} ${i + 1}",
+                                  "${OrderItemStrings.itemSingular} ${i + 1}",
                                   false,
                                   context,
                                 ),
@@ -201,7 +245,8 @@ class FormFieldBuilders {
                                 formHolder,
                                 ticket.tickets[i].ticketValues
                                     .where((f) =>
-                                        f.fieldType != FormHelper.fieldTypeSpot)
+                                        f.fieldType !=
+                                        FormMetadata.fieldTypeSpot)
                                     .toList()),
                           ),
                         ),
@@ -233,7 +278,7 @@ class FormFieldBuilders {
       ]),
       builder: (FormFieldState<BlueprintSeat?> field) {
         BlueprintSeat? seat = field.value;
-        textController.text = seat?.seat?.toString() ?? FormHelper.metaEmpty;
+        textController.text = seat?.seat?.toString() ?? FormMetadata.metaEmpty;
         return TextField(
           controller: textController,
           focusNode: focusNode,

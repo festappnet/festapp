@@ -23,6 +23,7 @@ DECLARE
   v_new_hidden boolean;
   v_old_unit bigint;
   v_new_unit bigint;
+  v_features jsonb;
   v_fanout_units bigint[] := '{}';
 BEGIN
   SELECT o.unit INTO v_old_unit
@@ -69,6 +70,10 @@ BEGIN
     RETURN v_begin->'response';
   END IF;
 
+  IF NOT (p_config ? 'ticket_layout_change' AND p_config-ARRAY['id','ticket_layout_change']='{}'::jsonb) THEN
+    PERFORM 1 FROM public.forms WHERE occasion=p_occasion ORDER BY id FOR UPDATE;
+  END IF;
+
   SELECT o.is_hidden, o.unit INTO v_old_hidden, v_old_unit
   FROM public.occasions o
   WHERE o.id = p_occasion
@@ -106,7 +111,19 @@ BEGIN
     );
   END IF;
 
-  PERFORM public.update_occasion_internal_v1(p_config);
+  IF p_config ? 'ticket_layout_change' AND p_config - ARRAY['id','ticket_layout_change']='{}'::jsonb THEN
+    IF NOT public.can_edit_ticket_layout(p_occasion) THEN
+      RAISE insufficient_privilege USING MESSAGE='unit editor required';
+    END IF;
+    SELECT features INTO v_features FROM public.occasions WHERE id=p_occasion;
+    v_features:=public.merge_ticket_layout_features(v_features,v_features,p_config->'ticket_layout_change');
+    v_features:=public.merge_ticket_appearance_internal_v1(p_occasion,v_features,p_config#>'{ticket_layout_change,appearance}');
+    PERFORM public.validate_ticket_layout_references(p_occasion,f->'layout')
+      FROM jsonb_array_elements(v_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
+    UPDATE public.occasions SET features=v_features,updated_at=clock_timestamp() WHERE id=p_occasion;
+  ELSE
+    PERFORM public.update_occasion_internal_v1(p_config);
+  END IF;
   UPDATE public.client_aggregate_versions
   SET version = version + 1, updated_at = clock_timestamp()
   WHERE aggregate_type = 'occasion'

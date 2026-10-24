@@ -1,3 +1,5 @@
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,6 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/features/feature.dart';
 
-import 'scan_field_mappings.dart';
 import 'scan_result_display.dart';
 import 'ticket_search_dialog.dart';
 import 'user_search_dialog.dart';
@@ -32,7 +33,7 @@ enum ScanState { valid, invalid, used, nothing, ordered, notFound }
 class ScanPage extends StatefulWidget {
   static const ROUTE = "scan";
 
-  String? scanCode;
+  final String? scanCode;
   ScanPage({@pathParam this.scanCode, super.key});
 
   @override
@@ -48,7 +49,9 @@ class _ScanPageState extends State<ScanPage> {
   // To prevent multiple scans
   String? rightNowScanned;
   bool _showHelpText = true;
+  String? _scanCode;
   String? _occasionTitle;
+  Map<String, String> _fieldMappings = {};
   List<Feature> _features = [];
   bool _canScanTicketsManually = false;
   bool _startingCamera = false;
@@ -59,6 +62,7 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void initState() {
     super.initState();
+    _scanCode = widget.scanCode;
     final ticketFeature = FeatureService.getFeatureDetails(
       FeatureConstants.ticket,
     ) as TicketFeature?;
@@ -90,43 +94,50 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
-    if (widget.scanCode == null && context.routeData.hasPendingChildren) {
-      widget.scanCode = context.routeData.pendingChildren[0].params.getString(
+    if (_scanCode == null && context.routeData.hasPendingChildren) {
+      _scanCode = context.routeData.pendingChildren[0].params.getString(
         "scanCode",
       );
     }
-
-    AppLogger.debug(widget.scanCode ?? '');
 
     checkForCode();
   }
 
   Future<void> checkForCode() async {
+    if (kIsWeb) {
+      await LaunchUrlService.openExternalUrl(
+        '${AppConfig.webLink}/scan${_scanCode == null ? "" : "/${Uri.encodeComponent(_scanCode!)}"}',
+        inCurrentWindow: true,
+      );
+      return;
+    }
     await Future.delayed(const Duration(milliseconds: 500));
-    if (widget.scanCode == null) {
+    if (!mounted) return;
+    if (_scanCode == null) {
       String? inputScanCode = await DialogHelper.showInputDialog(
         context: context,
         dialogTitle: ScanStrings.enterScanCode,
         labelText: ScanStrings.scanCode,
       );
       if (inputScanCode != null && inputScanCode.isNotEmpty) {
-        widget.scanCode = inputScanCode;
+        _scanCode = inputScanCode;
       }
     }
-    if (widget.scanCode != null) {
+    if (_scanCode != null) {
       _loadOccasionTitle();
     }
   }
 
   Future<void> _loadOccasionTitle() async {
-    if (widget.scanCode == null) return;
+    if (_scanCode == null) return;
     try {
       final occasionData = await DbTickets.getOccasionByScanCode(
-        widget.scanCode!,
+        _scanCode!,
       );
       if (occasionData != null && mounted) {
         setState(() {
           _occasionTitle = occasionData['title'];
+          _fieldMappings = Map<String, String>.from(occasionData['scanner_field_mappings'] ?? {});
           if (occasionData['features'] != null) {
             _features = (occasionData['features'] as List)
                 .map((f) => Feature.fromJson(f))
@@ -149,7 +160,7 @@ class _ScanPageState extends State<ScanPage> {
       scannedObject: _scannedObject,
       scanState: _scanState,
       features: _features,
-      fieldMappings: specificFieldMappings,
+      fieldMappings: _fieldMappings,
       showHelpText: _showHelpText,
       backgroundColor: backgroundColor,
       onConfirm: _confirmTicket,
@@ -207,6 +218,7 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return const SizedBox.shrink();
     bool canSearch = AppConfig.isAppSupported || _canScanTicketsManually;
 
     Color backgroundColor =
@@ -329,7 +341,7 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _openUserSearchDialog() async {
     List<UserInfoModel> allUsers = await DbUsers.getAllUsersBasicsForScan(
-      widget.scanCode!,
+      _scanCode!,
     );
 
     if (!mounted) return;
@@ -346,7 +358,7 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _openTicketSearchDialog() async {
     List<TicketModel> allTickets = await DbTickets.getAllTicketsForScan(
-      widget.scanCode!,
+      _scanCode!,
     );
 
     if (!mounted) return;
@@ -371,7 +383,7 @@ class _ScanPageState extends State<ScanPage> {
     rightNowScanned = scannedId;
     _justConfirmed = false;
 
-    _scannedObject = await DbTickets.scanTicket(scannedId, widget.scanCode!);
+    _scannedObject = await DbTickets.scanTicket(scannedId, _scanCode!);
 
     if (_scannedObject != null) {
       // 1. Valid (Paid/Sent)
@@ -417,7 +429,7 @@ class _ScanPageState extends State<ScanPage> {
 
     bool success = await DbTickets.updateTicketToUsed(
       _scannedObject!.id!,
-      widget.scanCode!,
+      _scanCode!,
     );
 
     if (success) {
@@ -442,7 +454,8 @@ class _ScanPageState extends State<ScanPage> {
     bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return AppAlertDialog(
+          onClose: () => Navigator.of(context).pop(false),
           title: Text(ScanStrings.resetPassword),
           content: Text(
             OrdersStrings.resetPasswordConfirmationContent(
@@ -470,7 +483,7 @@ class _ScanPageState extends State<ScanPage> {
       final result = await DbTickets.resetPassword(
         _scannedObject!.id!,
         _defaultResetPassword,
-        widget.scanCode!,
+        _scanCode!,
       );
       final email = result.email;
 
@@ -479,7 +492,7 @@ class _ScanPageState extends State<ScanPage> {
       if (email != null && email.isNotEmpty) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => AppAlertDialog(
             title: Text(OrdersStrings.newLoginCredentials),
             content: Column(
               mainAxisSize: MainAxisSize.min,

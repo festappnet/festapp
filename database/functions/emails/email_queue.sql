@@ -20,19 +20,20 @@ END $$;
 CREATE OR REPLACE FUNCTION public.enqueue_email(p_kind text,p_context jsonb,p_recipient text,p_data jsonb,p_dedupe text,
  p_code text DEFAULT '',p_not_before timestamptz DEFAULT now(),p_expires timestamptz DEFAULT NULL,
  p_order bigint DEFAULT NULL,p_version bigint DEFAULT NULL,p_post_action jsonb DEFAULT '{}')
-RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_hash text; v_row public.email_messages; v_org bigint:=(p_context->>'organization')::bigint; v_occ bigint:=(p_context->>'occasion')::bigint; v_unit bigint:=(p_context->>'unit')::bigint;
 BEGIN
+ PERFORM public.check_occasion_writable(v_occ);
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
- IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue')
+ IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer')
  OR p_dedupe IS NULL OR length(p_dedupe)>512 OR (p_recipient IS NOT NULL AND (length(p_recipient)>320 OR position('@' in p_recipient)=0)) THEN RAISE EXCEPTION 'invalid_email_intent'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) OR
  (v_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=v_occ AND organization=v_org AND (NOT p_context ? 'unit' OR unit IS NOT DISTINCT FROM v_unit))) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
  IF p_order IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.orders WHERE id=p_order AND occasion=v_occ) THEN RAISE EXCEPTION 'email_order_scope_mismatch'; END IF;
  IF v_occ IS NOT NULL THEN SELECT unit INTO v_unit FROM public.occasions WHERE id=v_occ; END IF;
  v_hash:=encode(extensions.digest(jsonb_build_object('context',p_context-'tracking_policy','recipient',p_recipient,'data',p_data-'requested_by','code',p_code,'version',p_version,'post',p_post_action)::text,'sha256'),'hex');
- INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,priority,workflow_state,post_action,tracking_policy)
- VALUES(p_not_before,p_code,p_data,v_org,v_occ,v_unit,p_kind,p_dedupe,v_hash,p_recipient,(p_context->>'recipient_user')::uuid,p_order,p_version,p_expires,
+ INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,producer_actor,priority,workflow_state,post_action,tracking_policy)
+ VALUES(p_not_before,p_code,p_data,v_org,v_occ,v_unit,p_kind,p_dedupe,v_hash,p_recipient,(p_context->>'recipient_user')::uuid,p_order,p_version,p_expires,coalesce((p_context->>'actor_id')::uuid,auth.uid()),
  CASE WHEN p_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue') THEN 0 WHEN p_kind='order_confirmation' THEN 10 ELSE 50 END,
  CASE WHEN p_not_before='infinity' THEN 'blocked' ELSE 'pending' END,p_post_action,CASE WHEN p_kind LIKE 'order_%' OR p_kind IN ('app_links','custom') THEN CASE WHEN p_context->>'tracking_policy'='engagement' THEN 'engagement' ELSE 'open' END ELSE 'disabled' END)
  ON CONFLICT(organization,message_kind,dedupe_key) DO NOTHING RETURNING * INTO v_row;
@@ -41,6 +42,8 @@ BEGIN
   IF v_row.input_hash<>v_hash THEN RAISE EXCEPTION 'email_dedupe_conflict'; END IF;
   RETURN jsonb_build_object('message_id',v_row.message_id,'state',v_row.workflow_state,'replayed',true);
  END IF;
+ PERFORM public.admit_email_intent_v1(v_row.id);
+ PERFORM public.notification_center_email_internal(v_row.message_id);
  IF p_not_before<=now() THEN PERFORM public.wake_email_worker(); END IF;
  RETURN jsonb_build_object('message_id',v_row.message_id,'state',v_row.workflow_state,'replayed',false);
 END $$;
@@ -50,10 +53,12 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb;
 BEGIN
  PERFORM public.require_service_role();
+ IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
  IF p_message.order_id IS NULL THEN
   IF p_message.recipient_user IS NOT NULL AND p_message.message_kind<>'deletion_complete' THEN
    IF p_message.message_kind<>'gotrue' AND public.get_user_delivery_email(p_message.recipient_user) IS DISTINCT FROM p_message.recipient THEN RETURN false; END IF;
+   IF p_message.data ? 'sign_in_code_version' AND NOT EXISTS(SELECT 1 FROM public.sign_in_codes WHERE user_id=p_message.recipient_user AND version::text=p_message.data->>'sign_in_code_version' AND expires_at>now() AND consumed_at IS NULL AND attempts<5) THEN RETURN false; END IF;
    IF p_message.data ? 'password_version' AND NOT EXISTS(SELECT 1 FROM auth.users WHERE id=p_message.recipient_user AND encode(extensions.digest(encrypted_password,'sha256'),'hex')=p_message.data->>'password_version') THEN RETURN false; END IF;
    IF p_message.data ? 'reset_hash' AND NOT EXISTS(SELECT 1 FROM public.user_reset_token WHERE "user"=p_message.recipient_user AND encode(extensions.digest(token::text,'sha256'),'hex')=p_message.data->>'reset_hash') THEN RETURN false; END IF;
   END IF;
@@ -63,21 +68,39 @@ BEGIN
  END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_message.order_id;
  IF v_order.id IS NULL OR v_order.occasion<>p_message.occasion THEN RETURN false; END IF;
+ IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN
+  RETURN v_order.data->>'email'=p_message.recipient AND EXISTS(
+   SELECT 1 FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash)
+   WHERE s.command_id=(p_message.data->>'order_overview_command')::uuid AND c.kind='order_view'
+   AND c.order_id=v_order.id AND c.form_id=v_order.form AND c.organization_id=p_message.organization
+   AND c.revoked_at IS NULL AND c.expires_at>now() AND s.expires_at=c.expires_at);
+ END IF;
+ IF p_message.message_kind='waitlist_confirmation' THEN
+  RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient;
+ END IF;
+ IF p_message.message_kind='waitlist_offer' THEN
+  RETURN v_order.state='waitlisted' AND v_order.data->>'email'=p_message.recipient AND EXISTS(
+   SELECT 1 FROM eshop.waitlist_offers w JOIN eshop.waitlist_offer_slots s ON s.offer_id=w.id
+   WHERE w.id=(p_message.data->>'offer_id')::uuid AND w.order_id=v_order.id AND w.expires_at>clock_timestamp() AND s.outcome='pending');
+ END IF;
  IF p_message.message_kind='order_storno' THEN RETURN true; END IF;
  IF v_order.state IN ('storno','expired','preparing_payment') THEN RETURN false; END IF;
  IF p_message.message_kind IN ('order_payment_notice','order_tickets') THEN
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_order.payment_info AND payment_method='stripe')
+   AND public.stripe_order_payment_projection_internal(v_order.id)->>'admissionState' IS DISTINCT FROM 'valid' THEN RETURN false; END IF;
   RETURN v_order.state IN ('paid','sent') AND v_order.email_payment_version=p_message.source_version
    AND (p_message.data->>'manual'='true' OR v_order.data->>'email'=p_message.recipient);
  END IF;
  IF p_message.message_kind='order_reminder' THEN
   SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
+  IF v_pi.payment_method='stripe' THEN RETURN false; END IF;
   SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
   SELECT * INTO v_form FROM public.forms WHERE id=v_order.form;
   SELECT x INTO v_feature FROM jsonb_array_elements(v_occ.features) x WHERE x->>'code'='form';
   SELECT x INTO v_deposit FROM jsonb_array_elements(v_occ.features) x WHERE x->>'code'='deposit';
   IF p_message.target_time<now()-interval '7 days' OR p_message.source_version IS DISTINCT FROM v_pi.email_reminder_version
-   OR coalesce((v_feature->>'is_enabled')::boolean,false)=false OR coalesce((v_feature->>'reminder_is_enabled')::boolean,false)=false
-   OR coalesce((v_form.data->>'is_reminder_enabled')::boolean,true)=false THEN RETURN false; END IF;
+   OR coalesce((v_feature->>'is_enabled')::boolean,false)=false
+   OR coalesce((v_form.data->>'is_reminder_enabled')::boolean,(v_feature->>'reminder_is_enabled')::boolean,true)=false THEN RETURN false; END IF;
   IF (p_message.data->>'is_deposit_reminder')::boolean IS TRUE THEN
    RETURN v_order.state IN ('paid','sent') AND v_pi.deposit_amount IS NOT NULL AND v_pi.paid<v_pi.amount
     AND (v_deposit->>'is_enabled')::boolean IS TRUE AND v_deposit->>'deposit_deadline' IS DISTINCT FROM 'on_site';
@@ -104,7 +127,7 @@ REVOKE ALL ON FUNCTION public.recover_email_leases() FROM PUBLIC,anon,authentica
 GRANT EXECUTE ON FUNCTION public.recover_email_leases() TO service_role;
 
 CREATE OR REPLACE FUNCTION public.claim_email() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_row public.email_messages; v_cap public.email_capacity; v_attempt uuid; v_token uuid:=extensions.gen_random_uuid();
+DECLARE v_row public.email_messages; v_cap public.email_capacity; v_attempt uuid; v_token uuid:=extensions.gen_random_uuid(); v_wait integer;
 BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO v_cap FROM public.email_capacity FOR UPDATE;
@@ -112,6 +135,8 @@ BEGIN
  UPDATE public.email_capacity SET heartbeat_at=now() WHERE singleton;
  IF v_cap.paused OR v_cap.quota_at IS NULL OR v_cap.quota_at<now()-interval '15 minutes' OR v_cap.circuit_until>now()
   OR (SELECT count(*) FROM public.email_messages WHERE workflow_state='preparing' AND lease_until>now())>=v_cap.max_preparing THEN RETURN NULL; END IF;
+ SELECT (x->>'base_limit')::integer INTO v_wait FROM jsonb_array_elements(public.abuse_effective_rules_v1('email.dispatch',NULL,NULL)->'rules') x;
+ IF v_wait IS NULL THEN RAISE configuration_limit_exceeded USING MESSAGE='abuse_policy_missing'; END IF;
  SELECT * INTO v_row FROM public.email_messages m
  WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now()
  AND (m.prepared IS NOT NULL OR m.message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation')
@@ -119,14 +144,16 @@ BEGIN
    AND heavy.message_kind NOT IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation'))<greatest(1,v_cap.max_preparing-1))
  AND NOT EXISTS(SELECT 1 FROM public.email_messages prior WHERE prior.order_id=m.order_id AND prior.message_kind='order_confirmation'
   AND m.message_kind<>'order_confirmation' AND prior.workflow_state NOT IN ('accepted','cancelled','expired'))
- ORDER BY priority-greatest(0,floor(extract(epoch FROM now()-created_at)/300))::integer,
- (SELECT max(a.created_at) FROM public.email_attempts a JOIN public.email_messages served ON served.message_id=a.message_id WHERE served.organization=m.organization) NULLS FIRST,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
+ ORDER BY CASE WHEN m.created_at<=now()-make_interval(secs=>v_wait) THEN 0 ELSE priority END,
+ (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.organization=m.organization AND served.last_claimed_at IS NOT NULL) NULLS FIRST,
+ CASE WHEN m.unit IS NULL THEN (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.organization=m.organization AND served.unit IS NULL AND served.last_claimed_at IS NOT NULL)
+ ELSE (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.unit=m.unit AND served.last_claimed_at IS NOT NULL) END NULLS FIRST,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
  IF v_row.id IS NULL THEN RETURN NULL; END IF;
  IF NOT public.email_intent_valid(v_row) THEN
   UPDATE public.email_messages SET workflow_state=CASE WHEN expires_at<=now() THEN 'expired' ELSE 'cancelled' END,last_error='intent_invalid' WHERE id=v_row.id;
   RETURN jsonb_build_object('skipped',true);
  END IF;
- UPDATE public.email_messages SET workflow_state='preparing',lease_token=v_token,lease_until=now()+interval '90 seconds' WHERE id=v_row.id RETURNING * INTO v_row;
+ UPDATE public.email_messages SET workflow_state='preparing',last_claimed_at=now(),lease_token=v_token,lease_until=now()+interval '90 seconds' WHERE id=v_row.id RETURNING * INTO v_row;
  INSERT INTO public.email_attempts(message_id,lease_token,state) VALUES(v_row.message_id,v_token,'preparing') RETURNING attempt_id INTO v_attempt;
  RETURN to_jsonb(v_row)||jsonb_build_object('attempt_id',v_attempt);
 END $$;
@@ -147,6 +174,9 @@ CREATE OR REPLACE FUNCTION public.prepare_email(p_message uuid,p_token uuid,p_pr
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
+ IF octet_length(p_prepared::text)>(SELECT (x->>'base_limit')::bigint
+  FROM jsonb_array_elements(public.abuse_effective_rules_v1('email.payload',NULL,NULL)->'rules') x LIMIT 1) THEN
+  RAISE configuration_limit_exceeded USING MESSAGE='email_payload_too_large'; END IF;
  UPDATE public.email_messages SET prepared=coalesce(prepared,p_prepared),
  prepared_hash=coalesce(prepared_hash,encode(extensions.digest(p_prepared::text,'sha256'),'hex')),prepared_at=coalesce(prepared_at,now()),
  tracking_policy=CASE WHEN prepared IS NULL AND message_kind LIKE 'order_%' AND p_post_action->>'tracking_policy'='engagement' THEN 'engagement' ELSE tracking_policy END,
@@ -154,11 +184,12 @@ BEGIN
  WHERE message_id=p_message AND lease_token=p_token AND lease_until>now() AND workflow_state='preparing'
  AND (prepared IS NULL OR prepared=p_prepared);
  IF NOT FOUND THEN RAISE EXCEPTION 'stale_email_preparation'; END IF;
+ PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=p_message),true);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.begin_email_send(p_attempt uuid,p_token uuid) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric;
+DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric; v_detail text; v_retry integer;
 BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO v_cap FROM public.email_capacity FOR UPDATE;
@@ -173,7 +204,22 @@ BEGIN
  IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
   UPDATE public.email_messages SET workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
+  PERFORM public.notification_center_email_internal(v_row.message_id);
   RETURN jsonb_build_object('disposition','cancelled');
+ END IF;
+ -- A partial acceptance can change a queued offer after its rendered snapshot
+ -- was cached. Re-render within this same queue before granting a send permit.
+ IF v_row.message_kind='waitlist_offer' AND
+  (v_row.post_action->>'waitlist_pending_count')::bigint IS DISTINCT FROM
+  (SELECT count(*) FROM eshop.waitlist_offer_slots
+   WHERE offer_id=(v_row.data->>'offer_id')::uuid AND outcome='pending') THEN
+  UPDATE public.email_messages SET workflow_state='pending',target_time=now(),
+   prepared=NULL,prepared_hash=NULL,prepared_at=NULL,
+   post_action=post_action-'waitlist_pending_count',lease_token=NULL,lease_until=NULL,
+   last_error='offer_snapshot_changed' WHERE id=v_row.id;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),
+   error_code='offer_snapshot_changed' WHERE attempt_id=p_attempt;
+  RETURN jsonb_build_object('disposition','deferred');
  END IF;
  v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;
  v_daily:=CASE WHEN v_cap.shared_account THEN least(v_cap.daily_quota,v_cap.allocated_daily) ELSE v_cap.daily_quota END*0.9;
@@ -188,6 +234,19 @@ BEGIN
   UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='capacity_deferred' WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','deferred');
  END IF;
+ -- Recipient admission at enqueue does not protect against many future intents
+ -- converging on one date. Meter the actual fenced send, with separate essential
+ -- classes so ordinary bulk cannot consume Auth or accepted-order capacity.
+ BEGIN
+  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.send.'||v_row.admission_class,v_row.unit,v_row.organization),
+   jsonb_build_object('recipient',public.abuse_recipient_key_v1(v_row.recipient)));
+ EXCEPTION WHEN SQLSTATE 'PT429' THEN
+  GET STACKED DIAGNOSTICS v_detail=PG_EXCEPTION_DETAIL;
+  v_retry:=greatest(coalesce((v_detail::jsonb->>'retryAfterSeconds')::integer,60),1);
+  UPDATE public.email_messages SET workflow_state='pending',target_time=now()+make_interval(secs=>v_retry),lease_token=NULL,lease_until=NULL,last_error='recipient_deferred' WHERE id=v_row.id;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='recipient_deferred' WHERE attempt_id=p_attempt;
+  RETURN jsonb_build_object('disposition','deferred');
+ END;
  UPDATE public.email_capacity SET next_send_at=clock_timestamp()+make_interval(secs=>(1/v_rate)::double precision),
  probe_until=CASE WHEN provider_outage_streak>0 THEN now()+interval '90 seconds' ELSE NULL END,
  probe_attempt=CASE WHEN provider_outage_streak>0 THEN p_attempt ELSE NULL END WHERE singleton;
@@ -222,9 +281,11 @@ BEGIN
    target_time=now()+make_interval(secs=>v_delay*(0.8+random()*0.4)),last_error=left(p_error,100),lease_until=NULL WHERE id=v_m.id;
   IF p_outcome='unknown' THEN UPDATE public.email_capacity SET provider_outage_streak=least(provider_outage_streak+1,10),
    probe_until=NULL,probe_attempt=NULL,circuit_until=now()+make_interval(secs=>least(300,30*power(2,least(provider_outage_streak,4)))::double precision) WHERE singleton; END IF;
+  PERFORM public.notification_center_email_internal(v_m.message_id);
   IF p_error='throttled' THEN UPDATE public.email_capacity SET rate_factor=greatest(rate_factor/2,0.01),probe_until=NULL,probe_attempt=NULL,circuit_until=now()+interval '15 seconds' WHERE singleton; END IF;
  END IF;
  PERFORM public.reconcile_email_events();
+ PERFORM public.notification_center_email_internal(v_m.message_id);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.reconcile_email_events() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -248,6 +309,7 @@ BEGIN
    accepted_at=coalesce(accepted_at,v_event.accepted),provider_message_id=coalesce(provider_message_id,v_event.provider_id),
    workflow_state=CASE WHEN v_event.accepted IS NOT NULL AND workflow_state IN ('sending','unknown') THEN 'accepted' ELSE workflow_state END,feedback_pending=false
   WHERE message_id=v_event.message_id;
+  PERFORM public.notification_center_email_internal(v_event.message_id);
   UPDATE public.email_attempts SET state='accepted',provider_message_id=v_event.provider_id,finished_at=coalesce(finished_at,now())
   WHERE message_id=v_event.message_id AND state IN ('sending','unknown') AND v_event.accepted IS NOT NULL;
  INSERT INTO public.email_suppressions(recipient,reason)
@@ -285,6 +347,7 @@ BEGIN
  v_result:=public.enqueue_email(p_kind,p_context,p_recipient,jsonb_build_object('content_hash',p_content_hash),p_dedupe,p_code,now(),p_expires);
  UPDATE public.email_messages SET prepared=coalesce(prepared,p_sealed),prepared_hash=coalesce(prepared_hash,encode(extensions.digest(p_sealed::text,'sha256'),'hex')),prepared_at=coalesce(prepared_at,now())
  WHERE message_id=(v_result->>'message_id')::uuid AND workflow_state IN ('pending','blocked','preparing','retry_wait');
+ PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid),true);
  RETURN v_result;
 END $$;
 

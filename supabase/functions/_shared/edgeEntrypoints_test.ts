@@ -50,14 +50,19 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "delete-order",
+  "customer-order-access",
+  "waitlist-commands",
   "report-exchange-rates",
   "process-email-queue",
   "email-confirmation-status",
   "preview-ticket-layout",
+  "occasion-setup-email-preview",
   "cancel-reception-registration",
   "confirm-account-deletion",
   "download-ticket",
   "exchange-login-qr",
+  "exchange-sign-in-code",
   "fetch-http-data",
   "fetch-transactions",
   "generate-order-agreement",
@@ -70,6 +75,7 @@ const optionEntrypoints = [
   "send-sign-in-code",
   "send-ticket-order",
   "send-tickets",
+  "prepare-ticket-batch-document",
 ];
 
 for (const name of optionEntrypoints) {
@@ -170,7 +176,6 @@ Deno.test("send-tickets rejects invalid input before privileged reads", async ()
   assertEquals(response.status, 400);
 });
 
-
 Deno.test("preview rejects missing JWT before privileged work", async () => {
   const response = await (await loadHandler("preview-ticket-layout"))(
     new Request("https://edge-test.invalid", { method: "POST", body: "{}" }),
@@ -222,10 +227,81 @@ Deno.test("confirmation status needs an opaque capability, never an order ID", a
   assertEquals(response.status, 403);
 });
 
-for (const name of ["bank-sync-manage", "bank-sync-reconcile"]) {
+for (const name of ["bank-sync-manage", "bank-sync-reconcile", "notification-center-maintain"]) {
   Deno.test(`${name} rejects missing authorization before bank access`, async () => {
     const handler = await loadHandler(name);
-    const response = await handler(new Request("https://edge-test.invalid", {method:"POST",body:"{}"}));
+    const response = await handler(
+      new Request("https://edge-test.invalid", { method: "POST", body: "{}" }),
+    );
     assertEquals(response.status, 401);
   });
 }
+
+Deno.test("customer order access rejects an unauthenticated reissue before resolving an order", async () => {
+  const handler = await loadHandler("customer-order-access");
+  const response = await handler(
+    new Request("https://edge-test.invalid/customer-order-access", {
+      method: "POST",
+      body: JSON.stringify({
+        commandId: crypto.randomUUID(),
+        orderId: 1,
+        reissue: true,
+      }),
+    }),
+  );
+  assertEquals(response.status, 401);
+});
+Deno.test("waitlist commands reject missing command identity before preparing email", async () => {
+  const handler = await loadHandler("waitlist-commands");
+  const response = await handler(
+    new Request("https://edge-test.invalid/waitlist-commands", {
+      method: "POST",
+      body: JSON.stringify({ operation: "send", payload: {} }),
+    }),
+  );
+  assertEquals(response.status, 400);
+});
+
+Deno.test("delete-order rejects missing authorization before privileged work", async () => {
+  const handler = await loadHandler("delete-order");
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: "{}",
+    }),
+  );
+  assertEquals(response.status, 401);
+});
+
+Deno.test("delete-order requires explicit invoice opt-in and valid command identity", async () => {
+  const handler = await loadHandler("delete-order");
+  for (
+    const body of [{}, {
+      orderId: 1,
+      commandId: "invalid",
+      deleteFakturoidInvoice: true,
+    }, {
+      orderId: 1,
+      commandId: "12345678-1234-4234-8234-123456789012",
+      deleteFakturoidInvoice: false,
+    }]
+  ) {
+    const response = await handler(
+      new Request("https://edge-test.invalid", {
+        method: "POST",
+        headers: { authorization: "Bearer invalid" },
+        body: JSON.stringify(body),
+      }),
+    );
+    assertEquals(response.status, 400);
+  }
+});
+
+Deno.test("batch export requires authorization and rejects unknown formats before document access", async () => {
+  const handler = await loadHandler("prepare-ticket-batch-document");
+  const body = JSON.stringify({batchId: "ba000000-0000-0000-0000-000000000001", format: "other"});
+  const unauthenticated = await handler(new Request("https://edge-test.invalid", {method:"POST",body}));
+  assertEquals(unauthenticated.status,401);
+  const invalid = await handler(new Request("https://edge-test.invalid", {method:"POST",headers:{Authorization:"Bearer invalid"},body}));
+  assertEquals(invalid.status,400);
+});

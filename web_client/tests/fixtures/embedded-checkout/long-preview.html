@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Long checkout summary fixture</title>
+<link rel="stylesheet" href="/src/theme_config.css">
+<link rel="stylesheet" href="/src/components/forms/form_component.css">
+<link rel="stylesheet" href="/src/embed.css">
+<form id="fixture-form"></form>
+<script type="module">
+import {OrderPreview} from '/src/components/forms/order_preview.js';
+import {EmbedBridge} from '/src/services/embed_bridge.js';
+import {LocalizationService} from '/src/services/localization_service.js';
+const params=new URLSearchParams(location.search);
+const count=params.has('large')?64:8;
+history.replaceState(null,'','/form/preview-layout?embed=1');
+LocalizationService.translations=await (await fetch('/assets/translations/en.json')).json();
+LocalizationService.currentLocale='en';
+const orderFields=Array.from({length:7},(_,i)=>({id:i+1,type:'text',title:'Order answer '+(i+1)}));
+const subFields=Array.from({length:4},(_,i)=>({id:i+101,type:'text',title:'Ticket answer '+(i+1)}));
+const fields=[...orderFields,{id:100,type:'ticket',subFields}];
+const model={visibleFields:fields,relatedFields:fields,occasionFeatures:[{code:'ticket',is_enabled:true}]};
+const answer='A longer answer with several words, including a long reference '+ 'reference'.repeat(14);
+const payload={fields:orderFields.map(f=>({[f.id]:answer})),ticket:Array.from({length:count},(_,i)=>({spot:i+1,spotName:'A'+(i+1),spotPrice:120,fields:subFields.map(f=>({_subFieldId:f.id,text:answer}))}))};
+const bridge=new EmbedBridge();bridge.start();
+addEventListener('festapp-embed-step',event=>bridge.scrollTo(event.detail.element,{block:event.detail.block}));
+// Use the real checkout preparation and renderer. This fixture never submits.
+OrderPreview.show(document.querySelector('form'),model,{totalPrice:count*120,currency:'CZK'},()=>{},()=>{},payload);
+</script></html>

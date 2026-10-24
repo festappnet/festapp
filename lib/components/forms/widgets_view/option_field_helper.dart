@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
-import 'package:fstapp/components/forms/models/form_option_model.dart';
-import 'package:fstapp/components/forms/models/form_option_product_model.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/html/html_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
@@ -23,22 +22,25 @@ class OptionFieldHelper {
   /// Returns just the option title (without price).
   static String buildOptionTitle(
     BuildContext context,
-    FormOptionModel option,
+    FormOptionDefinition option,
   ) {
     return option.title;
   }
 
   /// Returns formatted price string like "+ 1 000 CZK", or null if no price.
-  static String? buildPriceText(BuildContext context, FormOptionModel option) {
+  static String? buildPriceText(
+      BuildContext context, FormOptionDefinition option) {
     if (option is FormOptionProductModel && option.price > 0) {
-      return '+ ${Utilities.formatPrice(context, option.price, currencyCode: option.currencyCode)}';
+      return '+ ${Utilities.formatPrice(context, option.price, currencyCode: option.currencyCode, decimalDigits: option.price == option.price.truncateToDouble() ? 0 : null)}';
     }
     return null;
   }
 
   /// Formatted deposit label: "záloha: 500 CZK"
-  static String buildDepositText(BuildContext context, FormOptionProductModel option) {
-    final depositStr = Utilities.formatPrice(context, option.depositAmount!, currencyCode: option.currencyCode);
+  static String buildDepositText(
+      BuildContext context, FormOptionProductModel option) {
+    final depositStr = Utilities.formatPrice(context, option.depositAmount!,
+        currencyCode: option.currencyCode);
     return '${FormStrings.depositInfo}: $depositStr';
   }
 
@@ -56,7 +58,7 @@ class OptionFieldHelper {
   static const String defaultMetaSurchargeCurrency = 'EUR';
 
   static String? buildMetaSurchargeText(
-      BuildContext context, FormOptionModel option) {
+      BuildContext context, FormOptionDefinition option) {
     if (!FeatureService.isFeatureEnabled(FeatureConstants.deposit)) return null;
     // Meta surcharge applies only to product options.
     if (option is! FormOptionProductModel) return null;
@@ -92,6 +94,7 @@ class OptionFieldHelper {
         .map((e) => formatMetaSurchargeAmount(context, e.value, e.key))
         .toList();
   }
+
   /// Builds a card with a leading widget (checkbox or radio), a title, and an optional HTML description.
   static Widget buildOptionCard({
     required BuildContext context,
@@ -143,7 +146,8 @@ class OptionFieldHelper {
                           const SizedBox(width: 8),
                           Text(
                             priceText,
-                            style: FormHelper.cardOptionTitleTextStyle().copyWith(
+                            style:
+                                FormHelper.cardOptionTitleTextStyle().copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).primaryColor,
                             ),

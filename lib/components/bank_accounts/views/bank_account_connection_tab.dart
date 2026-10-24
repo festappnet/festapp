@@ -1,10 +1,11 @@
+import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/bank_accounts/bank_account_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -17,6 +18,9 @@ class BankAccountConnectionTab extends StatefulWidget {
   final String? pairingCode;
   final VoidCallback onRegenerateToken;
   final VoidCallback? onConnectEmail;
+  final Future<void> Function()? onRefreshConnection;
+  final ValueChanged<bool>? onSynchronizationChanged;
+  final bool isChangingSynchronization;
 
   // FIO token fields
   final TextEditingController tokenController;
@@ -33,6 +37,9 @@ class BankAccountConnectionTab extends StatefulWidget {
     required this.pairingCode,
     required this.onRegenerateToken,
     this.onConnectEmail,
+    this.onRefreshConnection,
+    this.onSynchronizationChanged,
+    this.isChangingSynchronization = false,
     required this.tokenController,
     required this.expiryDate,
     required this.onExpiryDateChanged,
@@ -51,8 +58,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   @override
   void initState() {
     super.initState();
-    _relativeTimeRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
+    _relativeTimeRefresh = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted || !TickerMode.valuesOf(context).enabled) return;
       setState(() {});
+      widget.onRefreshConnection?.call();
     });
   }
 
@@ -135,13 +144,34 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    widget.isSaving
-                        ? BankAccountStrings.tokenVerifying
-                        : BankAccountStrings.connectionStatus(sync.state),
+                    widget.isChangingSynchronization
+                        ? BankAccountStrings.synchronizationChanging
+                        : widget.isSaving
+                            ? BankAccountStrings.tokenVerifying
+                            : BankAccountStrings.connectionStatus(sync.state),
                     style: TextStyle(color: color, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Material(
+            type: MaterialType.transparency,
+            child: SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(BankAccountStrings.automaticSynchronization),
+              subtitle: Text(sync.state == 'suspended'
+                  ? BankAccountStrings.synchronizationPaused
+                  : BankAccountStrings.synchronizationEnabled),
+              value: sync.state == 'connected' || sync.state == 'degraded',
+              onChanged: !widget.isReadOnly &&
+                      !widget.isSaving &&
+                      widget.account.isAdmin &&
+                      ['connected', 'degraded', 'suspended']
+                          .contains(sync.state)
+                  ? widget.onSynchronizationChanged
+                  : null,
             ),
           ),
           const SizedBox(height: 16),
@@ -442,7 +472,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
             ? null
             : () async {
                 final picked = await showDatePicker(
-                  context: context,
+                  context: BankAccountDialogScope.contextOf(context),
+                  useRootNavigator: false,
                   initialDate: widget.expiryDate ?? DateTime.now(),
                   firstDate: DateTime(2000),
                   lastDate: DateTime(2100),

@@ -1,6 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="referrer" content="no-referrer">
+  <script>
+    // Capture the short-lived Connect code before bootstrap or any analytics.
+    // It stays in memory only; the same Festapp user must finalize it server-side.
+    (function () {
+      let target = new URL(window.location.href);
+      const redirect = target.searchParams.get('redirect');
+      if (redirect) {
+        const restored = new URL(redirect, target.origin);
+        if (restored.origin === target.origin) target = restored;
+      }
+      if (target.pathname.endsWith('/stripe/pay') || target.pathname.endsWith('/stripe/return')) {
+        const isReturn = target.pathname.endsWith('/stripe/return');
+        const fragment = new URLSearchParams(target.hash.slice(1));
+        const saved = window.history.state && window.history.state.festappStripePayment;
+        const handoff = !isReturn && fragment.get('handoff');
+        const token = isReturn ? target.searchParams.get('return_handle') : handoff || fragment.get('pay') ||
+          (saved && saved.kind === 'pay' ? saved.token : null);
+        if (typeof token === 'string' && /^[a-f0-9]{64}$/.test(token)) {
+          window.__festappStripePaymentLink = JSON.stringify({kind:isReturn?'return':handoff?'handoff':'pay',token});
+        }
+        for (const key of ['return_handle','pay','handoff']) target.searchParams.delete(key);
+        target.hash = '';
+        window.history.replaceState(window.history.state, '', target.pathname + target.search);
+        return;
+      }
+      if (!target.pathname.endsWith('/stripe/connect/callback')) return;
+      const callback = {};
+      for (const key of ['code', 'state', 'error']) {
+        if (target.searchParams.has(key)) callback[key] = target.searchParams.get(key);
+      }
+      if (!Object.keys(callback).length) return;
+      window.__festappStripeConnectCallback = JSON.stringify(callback);
+      for (const key of ['code', 'state', 'error', 'error_description']) target.searchParams.delete(key);
+      window.history.replaceState(null, '', target.pathname + target.search + target.hash);
+    })();
+  </script>
   <!--
     Passkeys Web SDK shim. supabase_flutter pulls passkeys_web, whose
     registerWith() calls PasskeyAuthenticator.init() at startup and throws when
@@ -83,18 +120,20 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Festapp">
+  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="Festapp">
+  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
   <link rel="manifest" href="site.webmanifest" />
-  <meta name="theme-color" content="#e3e2d3">
+  <!-- Match browser chrome to the loading surface before Flutter starts. -->
+  <meta name="theme-color" content="#242424">
+  <meta name="color-scheme" content="dark">
+  <style>html, body { background-color: #242424; }</style>
 
-  <title>Festapp</title>
+  <title>vstupenky.online</title>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     const oneSignalWebAppId = "73f77f22-961a-4ded-9647-e33a7ac14f90";
@@ -480,7 +519,6 @@
 
 <style>
     body {
-      background-color: white;
       height: 100vh;
       width: 100vw;
       margin: 0px;

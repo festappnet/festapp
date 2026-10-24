@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/inventory/views/place_search_dialog.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
-import 'package:fstapp/components/map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 class UseCustomGroupLocationAction {
   const UseCustomGroupLocationAction();
@@ -45,7 +46,8 @@ class GroupPlaceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(GroupsStrings.placeDialogTitle),
       content: SizedBox(
         width: 460,

@@ -1,4 +1,5 @@
 import { FormStrings } from '../form_strings.js';
+import { sanitizeHtml } from '../../../utils/html.js';
 
 export class CountdownWidget {
     static timer = null;
@@ -18,7 +19,7 @@ export class CountdownWidget {
         const targetDate = new Date(formModel.startTime);
 
         widget.innerHTML = `
-            <div class="countdown-title form-header">${title}</div>
+            <div class="countdown-title form-header">${sanitizeHtml(title)}</div>
             <div class="countdown-timer-row">
                 <div class="time-block"><div class="time-value" id="cd-days">00</div><div class="time-label">${FormStrings.days}</div></div>
                 <div class="time-block"><div class="time-value" id="cd-hours">00</div><div class="time-label">${FormStrings.hours}</div></div>
@@ -27,6 +28,14 @@ export class CountdownWidget {
             </div>
         `;
         
+        const titleElement = widget.querySelector('.countdown-title');
+        const timerRow = widget.querySelector('.countdown-timer-row');
+        const slots = titleElement.querySelectorAll('div.html-editor-block.form-countdown');
+        if (slots.length) {
+            slots[0].replaceWith(timerRow);
+            // One schedule owns one timer even if pasted HTML duplicated its slot.
+            for (const slot of [...slots].slice(1)) slot.remove();
+        }
         container.appendChild(widget);
 
         // Update Function
@@ -35,7 +44,7 @@ export class CountdownWidget {
             const diff = targetDate - now;
 
             if (diff <= 0) {
-                if (CountdownWidget.timer) clearInterval(CountdownWidget.timer);
+                CountdownWidget.stop();
                 if (onFinished) onFinished();
                 return;
             }
@@ -58,8 +67,8 @@ export class CountdownWidget {
             if(elS) elS.textContent = pad(seconds);
         };
 
-        update(); // Immediate
         CountdownWidget.timer = setInterval(update, 1000);
+        update(); // Immediate, after the interval exists so expiry can stop it.
     }
 
     static stop() {

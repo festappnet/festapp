@@ -3,7 +3,7 @@
 Spuštění z kořene repozitáře (Docker/Colima, Supabase CLI, psql, Python 3.11+ a FVM):
 
 ```sh
-python3 automation/run_occasion_setup_local.py
+python3 automation/run_occasion_setup_local.py --enable-wizard
 ```
 
 Otevři http://127.0.0.1:56880/unit/1/edit a přihlas se jako `t@t.com`, heslo `test`.
@@ -16,26 +16,36 @@ událostí a RPC konceptů. Jediná nahrazená externí hranice jsou push callba
 Vývojový entrypoint odmítá backend mimo `127.0.0.1:56821`; explicitní loopback
 backend v debug režimu nepoužívá produkční aktivační dokument ani jeho marker.
 
-Pro vstupenky.online je tok Zdroj, Základ, Formulář, Plánek, Nastavení plateb, Vstupenka, Kontrola.
-Nový koncept vzniká přes stejný SQL algoritmus jako běžná událost
-(update_occasion_internal_v1, včetně vytvoření formuláře a produktů).
-Algoritmus běží v podtransakci, jejíž zápisy se vrátí zpět; zachová se pouze
-konfigurace uložená do occasion_setup_drafts. Koncept proto nevytváří trvalé
-řádky událostí, formulářů ani produktů. Sekvence ID mohou postoupit.
-Výchozí hodnoty se neduplikují v Dart kódu. Koncept rovnou obsahuje formulář:
-povinný e-mail, vstupenku a jednu variantu produktu Spot za 100 CZK.
-Editor obsahu je vložený přímo do kroku Formulář a změny průběžně ukládá
-do konceptu. Pole jsou přímo na ploše bez vnořeného canvasu a scrollu. Plánek má samostatný krok za Formulářem. Vstupenka používá existující editor vzhledu,
-ale jeho nastavení ukládá pouze do konceptu. Náhled vyžaduje lokálně spuštěnou
-Edge Function `preview-ticket-layout`, kterou spouštěč automaticky zapne. Nastavení plateb má vlastní krok s bankovní
-trasou, splatností a související komunikací.
-Krok Obsah patří jen aplikacím s programem a informacemi; ve vstupenky.online
-se nezobrazuje ani nepřebírá a registrace/prodej je vždy zapnutá. Starší
-koncepty se při otevření přizpůsobí tomuto toku. Skutečné editory formuláře a plánku pracují s modelem konceptu a jejich
-uložení pokračuje přes verzovaný databázový autosave. Dokončený koncept může
-ukázat 100 %, ale samotná finalizace do nové události ještě není implementovaná.
-Tlačítko na konci ukládá dokončený koncept, nepředstírá vytvoření události.
-Původní samostatný prototyp byl přesunut do `lib/components/occasion/setup/`.
+Průvodce začíná otázkami Název / Termín / Typ / Vzhled. Běžná akce má
+formulář, koncert přidává vstupenku a ples vyžaduje sál. Platby a splatnost se
+objeví podle kladných cen produktů. Přímé cíle v záhlaví a mobilní přehled
+používají stabilní klíče stejného resolveru jako číslování a progress. Kopie
+události je nečíslovaný vstup viditelný pouze při dostupných předlohách;
+kopie formuláře se nabízí pouze pro dostupné formuláře. Přehled zahrnuje
+oprávněné zdroje všech jednotek cílového tenantu, bez rozšíření copy oprávnění.
+
+Název formuláře se odvozuje od názvu akce, včetně převzatých formulářů.
+Upravený slug se při přejmenování nemění. Jeden model `appearance` ukládá
+konkrétní barvy, režim pozadí a písmo; mapuje je do designu formuláře i layoutu
+vstupenky. Kopírovaný vlastní vzhled zůstává zachován do výslovné volby stylu.
+PDF používá axiální gradient a vložený font, Flutter stejný směr shaderu a
+veřejný JS formulář CSS gradient. Náhled vstupenky autorizuje vlastní draft
+s revizí přes `get_occasion_setup_ticket_preview`, bez cizího occasion ID.
+
+Koncepty používají původní revizovaný autosave a finalizaci
+`finalize_occasion_setup_draft`. Neaktivní sál/vstupenka zůstávají v konceptu,
+ale SQL je nevytvoří. Prázdné pole dovolí přímý skok, nikoli dokončení;
+selhání save ponechá lokální práci a zobrazí opakování. Připravenost se počítá
+z aktivních otázek; 100 % vyžaduje výslovnou závěrečnou kontrolu.
+
+Spouštěč obnoví kanonické draft/source/finalize funkce, návrhy odkazů a
+validátor ticket layoutu. Existující backend neobnovuje plošně na nové schéma;
+při starém baseline použij nový `FESTAPP_WIZARD_WORKSPACE` s prefixem
+`festapp-wizard-`, zachovej původní data a zajisti volné porty 56821/56822.
+
+Aktuální důkazy implementace: [typy a společný vzhled](../archive/plans/occasion-setup-types-appearance-VERIFICATION-2026-10-22.md).
+
+## Historické konfigurace a starší ověření
 
 V lokální databázi jsou konfigurace šesti skutečných událostí z
 `vstupenky.online`: r48vetrkovice, Skautský tábor 2026, Skautský ples 2026,
@@ -54,13 +64,18 @@ python3 automation/localize_occasion_setup_media.py ../festapp-wizard-local/vstu
 node web_client/scripts/import_occasion_setup_sources.js ../festapp-wizard-local/vstupenky-source-configurations.json --refresh-media
 ```
 
-Koncepty jsou v `public.occasion_setup_drafts`, nikdy v `public.occasions`.
-Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý.
+Rozpracované koncepty jsou v `public.occasion_setup_drafts`. Teprve finalizace
+materializuje skutečné řádky události, formuláře, produktů a případného plánku.
+Výsledná odpověď a ID události zůstávají u konceptu pro bezpečné opakování.
+Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý a
+v produkčním sestavení se ignoruje. Lokální spouštěč bez `--enable-wizard`
+ponechává původní způsob vytvoření události.
 
 Backend patří výhradně projektu `festapp-wizard-local` v sourozenecké složce
 repozitáře. Porty API/DB jsou 56821/56822. Skript vytvoří čerstvý backend,
 načte kanonický baseline, novější migrace a testovací seed. Při dalších spuštěních
-zachová data a obnoví jen RPC konceptů a předloh. Novější obecné migrace po prvním
+zachová data a obnoví kanonické soubory `sources.sql`, `drafts.sql`, `finalize.sql`, `form_link.sql` a `email_preview.sql`. Lokální Edge runtime obsluhuje oba náhledy.
+Novější obecné migrace po prvním
 bootstrapu se automaticky nepřidávají. Nepřepisuje neoznačenou existující DB.
 Klíče jsou v lokálním souboru `wizard-defines.json` s oprávněním 0600.
 
@@ -82,6 +97,13 @@ Fyzické obnovení stránky vrací na seznam jednotky; rozpracovaný koncept se 
 přes „Pokračovat“. Poslední krok je v databázi. Změny bez potvrzeného „Uloženo“
 mohou být při zavření celé stránky ztraceny; běžný návrat v aplikaci čeká na save.
 
+## Platnost lokálního prostředí
+
+Následující měření a popis šesti importovaných předloh jsou dobové záznamy.
+Soukromý snapshot není součástí checkoutu a nové spuštění jej automaticky
+nestáhne. Před zkoušením finalizace zkontroluj schéma lokálního backendu; samotný
+restart nad starou databází nezajistí nové migrace ani nejnovější finalizační RPC.
+
 ## Ověření 2026-10-05
 
 - SQL kontrakt: 2 testy prošly (práva, jiná organizace, odebraná práva, retry,
@@ -97,7 +119,8 @@ mohou být při zavření celé stránky ztraceny; běžný návrat v aplikaci �
 - Flutter sémantické kliknutí bylo použito tam, kde CDP pointer click nevyvolal
   handler. Ověření tedy dokládá tok a persistenci, nikoli všechny pointer hitboxy.
 
-Lokální backend a Flutter preview byly ponechány běžet pro požadované zkoušení.
+Při ověření 2026-10-05 byly lokální backend a Flutter preview ponechány běžet.
+Tento záznam nedokládá, že tyto procesy běží nyní.
 Produkce se neměnila. Žádné nasazení ani zveřejnění.
 
 ## Ověření rozšířeného Wizardu
@@ -121,3 +144,9 @@ Poslední browser kontrola ověřila i vstup „Vytvořit kopii“ ze skutečné
 Skautského plesu: Wizard předvolil správný zdroj a skutečný editor plánku zobrazil
 182 volných sedadel, původní fotografický podklad z lokálního Storage a ceny
 přiřazených produktů (například Místo 450 Kč). Screenshot byl vizuálně posouzen.
+
+Výběry kopií formuláře a plánku čtou lehké souhrny autorizovaného source listu a detail načítají až po výběru. Nevybírají zdroj celé události. Zrušení výběru ponechá koncept beze změny; bezprostřední vrácení kopie formuláře obnoví i vazby plánku. Dostupnost odkazu je jen náhled, finální přidělení stále vlastní atomický serverový allocator.
+
+V tomto checkoutu používá draft editor starší mřížkový kontrakt. Novější katalog `VenueLayoutDocument` nalezený ve worktree `festapp-setup-usability-20261021` do něj nelze načíst jako grid JSON. Minimální skutečný katalog proto nabízí prázdný plánek a upravitelné 4 řady po 8 místech; nepředstírá konkrétní existující sály. Výběr nic nevkládá před potvrzením. Uložení a návrat přijme baseline editoru až po potvrzeném flushi konceptu; selhání nechá editor otevřený.
+
+Regrese bankovní chyby `21000` je doložená přes skutečné RPC na disposable DB při explicitní simulaci historického driftu: bez primárního klíče členství vzniknou dva řádky role a původní scalar subquery selže. Kanonický lookup používá existenční oprávnění `EXISTS` a zachovává demo guard. Simulace není důkazem skutečného stavu produkce; běžný kanonický baseline duplicitu klíčem zakazuje. Viz `database/tests/units/manager_membership_cardinality_test.sql`.

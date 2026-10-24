@@ -4,9 +4,12 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 class BankAccountStrings {
   static String get errorTitle => 'BankAccount.errorTitle'.tr();
   static String get tokenVerifying => 'BankAccount.tokenVerifying'.tr();
-  static String get tokenVerificationWait => 'BankAccount.tokenVerificationWait'.tr();
-  static String get tokenAwaitingActivation => 'BankAccount.tokenAwaitingActivation'.tr();
-  static String get tokenSavedNeedsVerification => 'BankAccount.tokenSavedNeedsVerification'.tr();
+  static String get tokenVerificationWait =>
+      'BankAccount.tokenVerificationWait'.tr();
+  static String get tokenAwaitingActivation =>
+      'BankAccount.tokenAwaitingActivation'.tr();
+  static String get tokenSavedNeedsVerification =>
+      'BankAccount.tokenSavedNeedsVerification'.tr();
   static String get linkedAccountIdentity =>
       'BankAccount.linkedAccountIdentity'.tr();
   static String get detailsSyncPending => 'BankAccount.detailsSyncPending'.tr();
@@ -22,6 +25,14 @@ class BankAccountStrings {
   static String connectionStatus(String state) =>
       'BankAccount.syncState.$state'.tr();
   static String get connectEmail => 'BankAccount.connect_email'.tr();
+  static String get automaticSynchronization =>
+      'BankAccount.automaticSynchronization'.tr();
+  static String get synchronizationEnabled =>
+      'BankAccount.synchronizationEnabled'.tr();
+  static String get synchronizationPaused =>
+      'BankAccount.synchronizationPaused'.tr();
+  static String get synchronizationChanging =>
+      'BankAccount.synchronizationChanging'.tr();
   static String get connectionState => 'BankAccount.connection_state'.tr();
   static String get bankPull => 'BankAccount.bank_pull'.tr();
   static String get receiverCommit => 'BankAccount.receiver_commit'.tr();
@@ -111,7 +122,8 @@ class BankAccountStrings {
       'BankAccount.humanReadableHelper'.tr();
   static String get usedIn => 'BankAccount.usedIn'.tr();
   static String get bankAccountsTitle => 'BankAccount.bankAccountsTitle'.tr();
-  static String get manageInSettings => 'BankAccount.manageInSettings'.tr();
+  static String get organizationSettings =>
+      'BankAccount.organizationSettings'.tr();
   static String get lastFioFetchTime => 'BankAccount.lastFioFetchTime'.tr();
   static String get fioFetchNever => 'BankAccount.fioFetchNever'.tr();
   static String get lastFetchTime => 'BankAccount.lastFetchTime'.tr();
@@ -124,6 +136,12 @@ class BankAccountStrings {
   static String get removeAccountConfirmation =>
       'BankAccount.removeAccountConfirmation'.tr();
   static String get deleteAccountTitle => 'BankAccount.deleteAccountTitle'.tr();
+  static String missingAccountForCurrencies(String currencies) =>
+      'BankAccount.missingAccountForCurrencies'.tr(args: [currencies]);
+  static String get addAccountForPayments =>
+      'BankAccount.addAccountForPayments'.tr();
+  static String get askManagerForPaymentAccount =>
+      'BankAccount.askManagerForPaymentAccount'.tr();
   static String get manageInUnitSettings =>
       'BankAccount.manageInUnitSettings'.tr();
 

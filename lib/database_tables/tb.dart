@@ -88,6 +88,7 @@ class OccasionsTb {
   String get data_features_code => "code";
   String get data_features_is_enabled => "is_enabled";
 
+  String get data_place_name => "place_name";
   String get data_timezone => "timezone";
   String get data_reply_to => "reply_to";
   // Legacy - deadline config now stored in deposit feature (features JSONB)
@@ -400,6 +401,11 @@ class FormsTb {
   String get header => "header";
   String get header_off => "header_off";
   String get link => "link";
+  String get participant_capacity => "participant_capacity";
+  String get waitlist_enabled => "waitlist_enabled";
+  String get show_remaining_capacity => "show_remaining_capacity";
+  String get waitlist_offer_duration_seconds => "waitlist_offer_duration_seconds";
+  String get capacity_revision => "capacity_revision";
 }
 
 class FormFieldsTb {

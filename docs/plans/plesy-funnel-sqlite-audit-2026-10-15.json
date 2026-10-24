@@ -1,0 +1,83 @@
+{
+  "inspected_at": "2026-10-15",
+  "source": "/Users/miakh/.local/share/festapp/plesy-research/prospects.sqlite3",
+  "mode": "SQLite read-only; no live verification",
+  "sheet_records": 4012,
+  "archive_observations": 41574,
+  "snapshots": [
+    {
+      "sheet": "K doplnění",
+      "captured_at": "2026-10-08T16:05:07Z",
+      "last_row": 6
+    },
+    {
+      "sheet": "Kontakty",
+      "captured_at": "2026-10-08T22:17:32+00:00",
+      "last_row": 4032
+    }
+  ],
+  "records_per_sheet": {
+    "146404068": 4007,
+    "201": 5
+  },
+  "nonempty_fields": {
+    "Kraj": 4006,
+    "Místo": 4008,
+    "Ples / akce": 4012,
+    "Doložený ročník / datum": 3987,
+    "Zdroj akce": 3997,
+    "Zdroj ceny": 1624,
+    "Cena vstupenky / rozpětí (Kč)": 3465,
+    "Datum rešerše": 3995,
+    "Prodej vstupenek": 3775
+  },
+  "source_fields_containing_http_url": {
+    "Zdroj akce": 3618,
+    "Zdroj ceny": 1440
+  },
+  "edition_text_year_mentions": {
+    "2001": 1,
+    "2016": 2,
+    "2017": 1,
+    "2019": 2,
+    "2020": 1,
+    "2022": 1,
+    "2023": 14,
+    "2024": 32,
+    "2025": 282,
+    "2026": 2422,
+    "2027": 1354,
+    "2028": 3,
+    "2029": 1,
+    "2030": 1
+  },
+  "edition_text_uncertainty_keyword_matches": 57,
+  "edition_text_matches_2026_and_2027": 91,
+  "named_examples": [
+    {
+      "Pořadatel": "Florbal Hradec Králové",
+      "Ples / akce": "Florbalový ples FbC Hradec Králové - 22. 1. 2027 (termín dle kapely; ověřit)",
+      "Doložený ročník / datum": "22. 1. 2027; Nové Adalbertinum Hradec Králové (dle kalendáře kapely, nepotvrzeno klubem)",
+      "Zdroj akce": "https://www.fandaajehobanda.cz/kalendar-akci/"
+    },
+    {
+      "Pořadatel": "Myslivecký spolek Pilníkov",
+      "Ples / akce": "Myslivecký ples - další ročník plánovaný na leden 2027",
+      "Doložený ročník / datum": "leden 2027 - přesný den zatím neoznámen",
+      "Zdroj akce": "Otevřít zpravodaj"
+    },
+    {
+      "Pořadatel": "Newitcherpatelní z.s. (Con Morhen)",
+      "Ples / akce": "Zaklínačský ples - ročník 2027",
+      "Doložený ročník / datum": "Leden 2027 (přesný termín čeká na zveřejnění)",
+      "Zdroj akce": "https://conmorhen.cz/ples/"
+    }
+  ],
+  "limitations": [
+    "Counts are local imported organizer rows, not unique balls or verified future editions.",
+    "Keyword and year counts are textual signals, not certainty classifications.",
+    "Nonempty price/source fields can contain prose or link labels rather than a valid current price or recoverable URL.",
+    "Archive observations overlap with sheet records and one another; they are not additional unique balls.",
+    "Evidence URLs and live source contents were not revalidated in this inspection."
+  ]
+}

@@ -5,10 +5,15 @@
 Target architecture for new writes and for migrations away from direct
 PostgREST DML. This document defines the application-wide write boundary; it
 does not change the read model or require every domain to share one payload.
+The problem statement and illustrative `*_v1` names below describe the original
+migration design, not a current RPC inventory or unfinished-work list. Current
+attendance uses `set_event_attendance_client_sync_v1`; consult the typed domain
+command adapters and [implementation status](../archive/operations/client-sync-v1-implementation-status-2026-08-03.md)
+for implemented boundaries and their dated evidence.
 
-## Problem
+## Original design context
 
-Festapp currently contains three materially different write styles:
+The original migration analysis identified three materially different write styles:
 
 1. Dart composes several direct table operations. Event, map, information,
    news and group editors use this style. Authorization and constraints are
@@ -284,7 +289,7 @@ it. Topics use their own `save/delete_speaker_topic_client_sync_v1` version.
 speaker-selection edit conflicts with a concurrent event edit instead of
 maintaining a second clock for the same program row.
 
-### Coverage and cutover
+### Coverage and adoption gates
 
 The component-source registry is verification metadata, not a runtime router.
 For every synchronized relation it records the owning aggregate, canonical
@@ -308,19 +313,11 @@ The sync capability must not be enabled while a supported writer can bypass the
 receipt kernel. Database-owner or service-role break-glass writes use a separate
 explicit gateway with a required reason and externally retained audit evidence.
 
-## Immediate implications for client sync v1
+## Applying the contract
 
-- Remove the cross-domain mutation dispatcher from the in-progress migration.
-- Replace it with explicit event, map, content, group, profile, attendance,
-  cleaning, inventory and activities command RPCs.
-- Refactor the current commit helper into begin/finalize receipt helpers so
-  idempotency is claimed before DML and the replay result is exact.
-- Keep `client_mutation_receipts` separate from `client_commits`; only actual
-  state changes create audit commits and component revisions.
-- Rewrite attendance around authoritative locks instead of merely wrapping the
-  current race-prone function, and make activities publish one command that
-  records history and replaces the live graph atomically.
-- Treat existing inventory/form bundle RPCs as migration exemplars, but align
-  their future versions with the standard response and receipt kernel.
-- Keep SQL conflict reconciliation internal where appropriate; remove direct
-  client upserts from the v1 path.
+Typed domain commands and the receipt kernel implement this boundary. New or
+remaining caller migrations follow the coverage and adoption gates above.
+The original dispatcher-removal and attendance rewrite checklist is historical;
+it is not an independent backlog. Check the current adapters and source registry
+before identifying a remaining bypass, and record any confirmed gap in its
+own implementation plan.

@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PublishActivitiesResult {
@@ -26,7 +27,7 @@ abstract interface class ActivityCommands {
 
 class SupabaseActivityCommands implements ActivityCommands {
   SupabaseActivityCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   final ClientCommandTransport _transport;
 
@@ -46,7 +47,7 @@ class SupabaseActivityCommands implements ActivityCommands {
       'p_parent_history_id': parentHistoryId,
     });
     final response = ClientCommandResponse.from(raw);
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     final data = response.data;
     return PublishActivitiesResult(
       status: response.status,

@@ -1,5 +1,6 @@
+import 'occasion_setup_story.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/services/utilities_all.dart';
+import 'package:fstapp/components/forms/views/form_public_link.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -28,16 +29,27 @@ class OccasionSetupDraft {
           .intersection(supportedSteps.toSet())
           .length;
 
+  bool get isFinalized => data.containsKey('finalizedOccasion');
+
   String get title => data['title'] as String? ?? '';
-  int get progress => data['completed'] is List
-      ? ((completedCount(data) / supportedSteps.length) * 100)
-          .round()
-          .clamp(0, 100)
-      : (basicsReady ? 20 : 0);
+  int get progress {
+    final required =
+        OccasionSetupStory.questions(AppConfig.isAppSupported, data: data)
+            .where((q) => !q.optional)
+            .map((q) => q.key)
+            .toSet();
+    final completed = (data['completedQuestions'] as List? ?? [])
+        .whereType<String>()
+        .toSet()
+        .intersection(required);
+    if (data['reviewed'] != true || data['reviewConfirmed'] != true)
+      completed.remove('review');
+    return (100 * completed.length / required.length).round();
+  }
 
   bool get basicsReady =>
       title.trim().isNotEmpty &&
-      Utilities.isValidUrl(data['link'] as String? ?? '') &&
+      isValidPublicSlug(data['link'] as String? ?? '', allowEmpty: true) &&
       DateTime.tryParse(
               (data['start'] ?? data['start_time']) as String? ?? '') !=
           null &&
@@ -57,8 +69,13 @@ class OccasionSetupDrafts {
     return (rows as List)
         .map((row) =>
             OccasionSetupDraft.fromJson(Map<String, dynamic>.from(row)))
+        .where((draft) => !draft.isFinalized)
         .toList();
   }
+
+  Future<OccasionSetupDraft> get(String id) async =>
+      OccasionSetupDraft.fromJson(Map<String, dynamic>.from(
+          await client.rpc('get_occasion_setup_draft', params: {'p_id': id})));
 
   Future<OccasionSetupDraft> create(int unit, String id) async =>
       OccasionSetupDraft.fromJson(Map<String, dynamic>.from(await client.rpc(
@@ -82,6 +99,16 @@ class OccasionSetupDrafts {
         'p_data': data,
         'p_step': step
       })));
+
+  Future<String> finalize(OccasionSetupDraft draft, String commandId) async {
+    final response = Map<String, dynamic>.from(
+        await client.rpc('finalize_occasion_setup_draft', params: {
+      'p_id': draft.id,
+      'p_expected_revision': draft.revision,
+      'p_command_id': commandId,
+    }));
+    return (response['data'] as Map)['link'] as String;
+  }
 
   Future<void> delete(OccasionSetupDraft draft) async {
     await client.rpc('delete_occasion_setup_draft', params: {

@@ -28,6 +28,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  festapp_core:
+    path: packages/festapp_core
   flutter_web_plugins:
     sdk: flutter
   flutter:
@@ -35,9 +37,6 @@ dependencies:
   flutter_svg: ^2.2.3
   fluttertoast: 9.0.0
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   maplibre: 0.3.6
   app_links: ^7.2.1
   crypto: ^3.0.6
@@ -61,7 +60,6 @@ dependencies:
   trina_grid: ^2.3.0
   # Our grids provide their own ShadTheme (see single_table_data_grid.dart).
   shadcn_ui: ^0.55.1
-  url_strategy: ^0.3.0
   desktop_drop: ^0.7.0
   csv: ^6.0.0
   sembast: ^3.8.11
@@ -70,7 +68,6 @@ dependencies:
   select_dialog: ^2.0.1
   onesignal_flutter: ^5.3.5
   package_info_plus: ^9.0.0
-  flutter_animate: ^4.5.2
   easy_localization: ^3.0.8
   simple_shadow: ^0.3.1
   pwa_install:
@@ -89,19 +86,8 @@ dependencies:
   auto_route: ^11.1.0
   adaptive_theme: 3.7.2
   connectivity_plus: ^7.0.0
-  vector_map_tiles:
-    git:
-      url: https://github.com/miakh/flutter-vector-map-tiles.git
-      ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
-  vector_map_tiles_mbtiles:
-    git:
-      url: https://github.com/miakh/flutter_map_plugins.git
-      ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
-      path: vector_map_tiles_mbtiles
-  mbtiles: ^0.5.1
   file_saver: ^0.3.1
   youtube_player_flutter: ^10.0.1
-  flutter_widget_from_html_core: ^0.17.4
   fwfh_cached_network_image: ^0.16.3
   multi_split_view: ^3.6.1
   timezone: ^0.10.1
@@ -121,12 +107,14 @@ dependencies:
   url_launcher: ^6.3.3
   html: ^0.15.7
   http: any
-  vector_tile_renderer: any
   uuid: any
   web: any
   path: any
   timeago: ^3.7.1
 dev_dependencies:
+  shared_preferences: 2.5.5 # Existing locked version, public widget fixtures.
+  supabase: 2.16.2 # Same locked client re-exported by supabase_flutter, for VM SDK contracts.
+  test: ^1.31.1
   auto_route_generator: ^10.3.0
   build_runner: ^2.11.0
   flutter_launcher_icons: ^0.14.3
@@ -151,12 +139,6 @@ dependency_overrides:
       url: https://github.com/festappnet/venue_seat_picker.git
       ref: 143026c6c733662d417471a3eb448dee0b0d7252
       path: packages/venue_layout_core
-  # Keep the adapter's hosted vector_map_tiles dependency on our verified 9.x
-  # fork until compatible upstream releases are available for both packages.
-  vector_map_tiles:
-    git:
-      url: https://github.com/miakh/flutter-vector-map-tiles.git
-      ref: 429de4cda07a6dfa7141a9f044aa5f7576765c5b
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:
@@ -184,7 +166,7 @@ flutter:
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
   assets:
-    - assets/fonts/
+    - supabase/functions/_shared/ticket-assets/font-catalog.json
     - assets/icons/
     - assets/translations/
     - packages/timezone/data/latest.tzf

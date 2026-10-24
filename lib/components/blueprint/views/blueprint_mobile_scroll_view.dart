@@ -1,7 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
+import '../blueprint_strings.dart';
+
+/// Keeps the canvas mounted while exposing the editor panels at phone width.
 class BlueprintMobileScrollView extends StatefulWidget {
   final Widget leftPanel;
   final Widget mainContent;
@@ -22,197 +23,53 @@ class BlueprintMobileScrollView extends StatefulWidget {
 }
 
 class _BlueprintMobileScrollViewState extends State<BlueprintMobileScrollView> {
-  late final ScrollController _mobileHorizontalController;
-  bool _canScrollLeft = false;
-  bool _canScrollRight = true;
-  Timer? _arrowFadeTimer;
-  bool _arrowsVisible = true;
-  bool _hasCenteredMobileView = false;
+  int _panel = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _mobileHorizontalController = ScrollController();
-    _mobileHorizontalController.addListener(_updateScrollArrows);
-    _resetArrowFadeTimer();
-  }
-
-  @override
-  void dispose() {
-    _mobileHorizontalController.dispose();
-    _arrowFadeTimer?.cancel();
-    super.dispose();
-  }
-
-  void _updateScrollArrows() {
-    if (!_mobileHorizontalController.hasClients) return;
-    final offset = _mobileHorizontalController.offset;
-    final maxScroll = _mobileHorizontalController.position.maxScrollExtent;
-
-    final canScrollLeft = offset > 10;
-    final canScrollRight = offset < maxScroll - 10;
-
-    if (canScrollLeft != _canScrollLeft || canScrollRight != _canScrollRight) {
-      setState(() {
-        _canScrollLeft = canScrollLeft;
-        _canScrollRight = canScrollRight;
-      });
-    }
-    _resetArrowFadeTimer();
-  }
-
-  void _resetArrowFadeTimer() {
-    _arrowFadeTimer?.cancel();
-    if (!_arrowsVisible) {
-      setState(() {
-        _arrowsVisible = true;
-      });
-    }
-    _arrowFadeTimer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _arrowsVisible = false;
-        });
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_hasCenteredMobileView) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        if (_mobileHorizontalController.hasClients) {
-          _mobileHorizontalController.jumpTo(250.0);
-          _updateScrollArrows();
-        }
-      });
-      _hasCenteredMobileView = true;
-    }
-
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          controller: _mobileHorizontalController,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 250,
-                padding: const EdgeInsets.all(16.0),
-                child: widget.leftPanel,
+  Widget build(BuildContext context) => Column(
+        children: [
+          Expanded(
+            child: IndexedStack(
+              index: _panel,
+              sizing: StackFit.expand,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: widget.mainContent,
+                ),
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: widget.leftPanel,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: widget.rightPanel,
+                ),
+              ],
+            ),
+          ),
+          NavigationBar(
+            height: 64,
+            selectedIndex: _panel,
+            onDestinationSelected: (value) => setState(() => _panel = value),
+            destinations: [
+              NavigationDestination(
+                key: const ValueKey('blueprint-plan'),
+                icon: const Icon(Icons.grid_on),
+                label: BlueprintStrings.plan,
               ),
-              Container(
-                width: widget.screenWidth,
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: widget.mainContent,
+              NavigationDestination(
+                key: const ValueKey('blueprint-tools'),
+                icon: const Icon(Icons.touch_app_outlined),
+                label: BlueprintStrings.editingTools,
               ),
-              Container(
-                width: 250,
-                padding: const EdgeInsets.all(16.0),
-                child: widget.rightPanel,
+              NavigationDestination(
+                key: const ValueKey('blueprint-groups'),
+                icon: const Icon(Icons.table_restaurant_outlined),
+                label: BlueprintStrings.groups,
               ),
             ],
           ),
-        ),
-        if (_canScrollLeft)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: AnimatedOpacity(
-              opacity: _arrowsVisible ? 1.0 : 0.3,
-              duration: const Duration(milliseconds: 300),
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () {
-                        final target =
-                            (_mobileHorizontalController.offset - 250.0).clamp(
-                                0.0,
-                                _mobileHorizontalController
-                                    .position.maxScrollExtent);
-                        _mobileHorizontalController.animateTo(
-                          target,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                      child: const Center(
-                        child: Icon(Icons.chevron_left,
-                            size: 24, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        if (_canScrollRight)
-          Align(
-            alignment: Alignment.centerRight,
-            child: AnimatedOpacity(
-              opacity: _arrowsVisible ? 1.0 : 0.3,
-              duration: const Duration(milliseconds: 300),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () {
-                        final target =
-                            (_mobileHorizontalController.offset + 250.0).clamp(
-                                0.0,
-                                _mobileHorizontalController
-                                    .position.maxScrollExtent);
-                        _mobileHorizontalController.animateTo(
-                          target,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                      child: const Center(
-                        child: Icon(Icons.chevron_right,
-                            size: 24, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+        ],
+      );
 }

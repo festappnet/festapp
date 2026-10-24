@@ -12,7 +12,9 @@ BEGIN
     WHERE pi.id = payment_info_id
     LIMIT 1;
 
-    PERFORM public.check_is_admin_for_bank_account(bank_acc);
+    IF NOT EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=bank_acc AND public.get_is_editor_order_view_on_occasion(demo_bank.occasion)) THEN
+        PERFORM public.check_is_admin_for_bank_account(bank_acc);
+    END IF;
 
     RETURN (
         SELECT jsonb_agg(t ORDER BY t.date DESC)

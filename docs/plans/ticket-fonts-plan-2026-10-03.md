@@ -53,7 +53,7 @@ Pouze lokální implementace. Nasazení, produkční migrace, publikace a rollou
 | Dart/TS/SQL používají `schemaVersion: 1`; SQL `merge_ticket_layout_features` kontroluje expected/next a chrání nepodporované schema | Pouhá nová nepovinná pole ve v1 by starší klient mohl zahodit. Nutná verzovaná ochrana. |
 | Nainstalováno `google_fonts` 8.2.1 dle `.dart_tool/package_config.json`; `pubspec.yaml` deklaruje ^8.0.1 | Verzi generátoru odvodit z lockfile a package_config, ne z absolutní lokální cesty. |
 | Balíček obsahuje `GoogleFontsFile(expectedFileHash, expectedLength)` a URL `https://fonts.gstatic.com/s/a/<hash>.ttf` v `lib/src/google_fonts_descriptor.dart`; `google_fonts_parts` obsahují varianty | Katalog lze reprodukovat z již použitého balíčku bez nového API klíče a CSS scraperu. Interní formát je build-time vstup, ne runtime import. |
-| `docs/operations/supabase-self-hosted/storage-authority.md`: canonical self-hosted Storage existuje vedle samostatného R2 image systému | Použít vlastní privátní Storage bucket; nerozšiřovat image-worker na obecný font proxy. |
+| `docs/archive/operations/supabase-self-hosted/storage-authority.md`: canonical self-hosted Storage existuje vedle samostatného R2 image systému | Použít vlastní privátní Storage bucket; nerozšiřovat image-worker na obecný font proxy. |
 
 Screenshotový seznam čtyř fontů se ve zkoumaných zdrojích editoru nenašel. Plán vychází z aktuálního produkčního toku v repozitáři, ne z předpokladu, že screenshot odpovídá tomuto working tree. Před editací stačí zkontrolovat změny přes `git diff --name-only` a cíleně relevantní soubory; nový architektonický průzkum není potřeba.
 

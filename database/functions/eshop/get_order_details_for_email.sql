@@ -13,7 +13,8 @@ DECLARE
 BEGIN
     -- Retrieve the order, occasion, payment info, and bank account as separate objects
     SELECT jsonb_build_object(
-        'order', to_jsonb(o.*),
+        'order', to_jsonb(o.*) || jsonb_build_object('data', o.data || jsonb_build_object(
+          'tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))),
         'occasion', to_jsonb(occ.*),
         'payment_info', to_jsonb(pi.*),
         'bank_account', CASE

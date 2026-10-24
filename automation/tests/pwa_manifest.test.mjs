@@ -1,10 +1,26 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { collectPwaShellManifest } from '../lib/pwa_shell_manifest.mjs';
+
+test('all deferred font modules are installed for first use offline', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'festapp-font-modules-'));
+  try {
+    for (const name of ['flutter', 'webclient', 'main.dart.js',
+      'main.dart.js_1.part.js', 'main.dart.js_2.part.js', 'main.dart.js_3.part.js']) {
+      await writeFile(path.join(root, name), name);
+    }
+    const manifest = await collectPwaShellManifest(root);
+    for (const name of ['main.dart.js_1.part.js', 'main.dart.js_2.part.js', 'main.dart.js_3.part.js']) {
+      assert.ok(manifest.coreResources.includes(`/${name}`));
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test('worker and budget share normalized resource sets and raw bytes', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-manifest-'));
@@ -44,4 +60,25 @@ test('worker and budget share normalized resource sets and raw bytes', async () 
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+
+test('marketing offline document is critical but demonstration videos are never precached', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'festapp-marketing-cache-'));
+  t.after(() => rm(root, {recursive: true, force: true}));
+  for (const name of ['flutter', 'webclient', 'organizers-page', 'demo.mp4', 'demo.webm']) await writeFile(path.join(root, name), name);
+  const manifest = await collectPwaShellManifest(root);
+  assert.equal(manifest.marketingEntry, '/organizers-page?pwa-cache=1');
+  assert.ok(manifest.coreResources.includes(manifest.marketingEntry));
+  assert.ok(!manifest.knownResources.some(url => /\.(mp4|webm)$/.test(url)));
+  const generated = spawnSync(process.execPath, [path.resolve(import.meta.dirname, '../generate_pwa_service_worker.mjs'), root, 'fixture-marketing'], {encoding: 'utf8'});
+  assert.equal(generated.status, 0, generated.stderr);
+  const source = await readFile(path.join(root, 'festapp_service_worker.js'), 'utf8');
+  const body = source.match(/function cachedNavigationTarget\(pathname\) \{([\s\S]*?)\n\}/)[1];
+  const target = new Function('pathname', 'MARKETING_ENTRY', 'WEB_CLIENT_ENTRY', 'FLUTTER_ENTRY', 'STANDALONE_DOCUMENT_PATHS', 'resolveScannerRoute', body);
+  const route = pathname => target(pathname, manifest.marketingEntry, manifest.webClientEntry, manifest.flutterEntry, new Set(), () => false);
+  assert.equal(route('/'), manifest.marketingEntry);
+  assert.equal(route('/events'), manifest.webClientEntry);
+  assert.equal(route('/form/tickets'), manifest.webClientEntry);
+  assert.equal(route('/admin'), manifest.flutterEntry);
 });

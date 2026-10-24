@@ -1,12 +1,17 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class OccasionCommands {
   Future<OccasionModel> create(OccasionModel occasion);
   Future<OccasionModel> save(OccasionModel occasion);
-  Future<int> duplicate(int occasionId);
+  Future<OccasionModel> saveTicketLayout(
+      int occasionId, int expectedVersion, Map<String, dynamic> change,
+      {String? commandId});
+  Future<int> duplicate(int occasionId,
+      {int? targetUnitId, String locale = 'en'});
   Future<void> delete(int occasionId);
   Future<Map<String, dynamic>> deleteService(
     int occasionId,
@@ -81,17 +86,40 @@ class SupabaseOccasionCommands implements OccasionCommands {
     if (response.status == 'rejected') {
       throw StateError('Occasion save was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return OccasionModel.fromJson(
       (response.data['occasion'] as Map).cast<String, dynamic>(),
     );
   }
 
   @override
-  Future<int> duplicate(int occasionId) async {
+  Future<OccasionModel> saveTicketLayout(
+      int occasionId, int expectedVersion, Map<String, dynamic> change,
+      {String? commandId}) async {
+    final response = ClientCommandResponse.from(
+        await _transport.invoke('save_occasion_client_sync_v1', {
+      'p_occasion': occasionId,
+      'p_expected_version': expectedVersion,
+      'p_config': {'id': occasionId, 'ticket_layout_change': change},
+      if (commandId != null) 'p_command_id': commandId,
+    }));
+    if (response.code != 200)
+      throw StateError('Ticket layout save was rejected');
+    await applyClientCommandReplacements(response);
+    return OccasionModel.fromJson(
+        (response.data['occasion'] as Map).cast<String, dynamic>());
+  }
+
+  @override
+  Future<int> duplicate(int occasionId,
+      {int? targetUnitId, String locale = 'en'}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'duplicate_occasion_client_sync_v1',
-      {'p_occasion': occasionId},
+      {
+        'p_occasion': occasionId,
+        'p_target_unit': targetUnitId,
+        'p_locale': locale,
+      },
     ));
     if (response.code != 200 || response.data['occasionId'] is! num) {
       throw StateError('Occasion duplication was rejected');
@@ -126,7 +154,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
         'p_force': force,
       },
     ));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return {'code': response.code, ...response.data};
   }
 
@@ -181,7 +209,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
     final response = ClientCommandResponse.from(
       await _transport.invoke(functionName, parameters),
     );
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return {'code': response.code, ...response.data};
   }
 }

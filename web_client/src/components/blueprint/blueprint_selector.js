@@ -1,3 +1,5 @@
+import { RouterService } from '../../services/router_service.js';
+import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
 
 import { FormStrings } from '../forms/form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -26,6 +28,8 @@ export class BlueprintSelector {
     async open(session, field, initialSeats) {
         // Extract from session
         const formModel = session.formModel;
+        const previousFocus = document.activeElement;
+        const restoreScroll = preserveCheckoutScroll();
         // --- Viewport Lock ---
         // Removed global viewport modification which risks breaking host page
 
@@ -64,7 +68,24 @@ export class BlueprintSelector {
         // --- History / Navigation ---
         // Push a new state so the back button closes the modal instead of navigating away
         const stateId = 'seat-selection';
-        window.history.pushState({ overlay: stateId }, '', '#seat-selection');
+        RouterService.pushOverlayState(stateId);
+        revealEmbedStep(container);
+        let closeRequested = false;
+        const requestClose = () => {
+            if (closeRequested || !container.isConnected) return;
+            closeRequested = true;
+            window.history.back();
+        };
+        const keyHandler = event => {
+            if (event.key !== 'Escape' || event.defaultPrevented) return;
+            event.preventDefault();
+            event.stopPropagation();
+            requestClose();
+        };
+        // Clicking the non-focusable map can leave focus on the document body.
+        // Own Escape while the picker is open, including that focus state.
+        document.addEventListener('keydown', keyHandler);
+        confirmBtn.focus({ preventScroll: true });
 
         // Global Event Killer removed in favor of CSS handling (touch-action: none on container)
         // and targeted gesture handling in BlueprintRenderer/GestureController
@@ -96,14 +117,19 @@ export class BlueprintSelector {
              
              document.body.classList.remove('blueprint-active');
              document.documentElement.classList.remove('blueprint-active');
+             document.removeEventListener('keydown', keyHandler);
              container.remove();
+             // Returning from the picker restores keyboard focus, not a new
+             // checkout step. Revealing it would scroll both iframe and host.
+             previousFocus?.focus({ preventScroll: true });
+             restoreScroll();
              window.removeEventListener('popstate', popHandler);
         };
 
         // When clicking continue/back explicitly
         confirmBtn.onclick = () => {
              // Invokes cleanup via history back, which triggers popHandler
-             window.history.back(); 
+             requestClose();
         };
         
         window.addEventListener('popstate', popHandler);

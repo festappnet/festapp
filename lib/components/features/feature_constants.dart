@@ -69,7 +69,9 @@ class FeatureConstants {
   static const String ticketDarkColor = "darkColor";
   static const String ticketBackground = "background";
   static const String ticketType = "ticket_type";
+  static const String ticketDeliveryMode = "delivery_mode";
   static const String ticketLayout = "layout";
+  static const String ticketPregeneratedTickets = "pregenerated_tickets";
   static const String ticketCanScanManually = "can_scan_manually";
   static const String ticketShowHiddenNote = "show_hidden_note";
 
@@ -95,10 +97,6 @@ class FeatureConstants {
   static const String defaultMapLocation = "defaultMapLocation";
 
   // Offline map extra fields (for offline map layer)
-  static const String offlineMapPackageURL = "offlineMapPackageURL";
-  static const String offlineMapStyleURL = "offlineMapStyleURL";
-  static const String offlineMapLayerName = "offlineMapLayerName";
-  static const String offlineMapRenderer = "offlineMapRenderer";
   static const String offlineMapBundleManifestURL =
       "offlineMapBundleManifestURL";
   static const String forceOfflineMap = "forceOfflineMap";

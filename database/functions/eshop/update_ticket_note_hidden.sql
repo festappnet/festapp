@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_ticket_note_hidden(ticket_id bigint, new_note_hidden text)
+CREATE OR REPLACE FUNCTION public.update_ticket_note_hidden(ticket_id bigint, new_note_hidden text)
 RETURNS jsonb SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -16,6 +16,12 @@ BEGIN
     IF (get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
         -- Return an error if the user is not authorized
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
+    END IF;
+
+    PERFORM public.check_occasion_writable(occasion_id);
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=ticket_id));
+    IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders o ON o.id=x."order" WHERE x.ticket=ticket_id AND o.state='stock') THEN
+      PERFORM public.check_ticket_is_mutable(ticket_id);
     END IF;
 
     -- Proceed to update note_hidden if the user is authorized

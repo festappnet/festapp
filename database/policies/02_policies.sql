@@ -97,10 +97,11 @@ USING (get_is_editor_on_occasion(( SELECT events.occasion
 ----------------------------------------------------------------
 
 DROP POLICY IF EXISTS "Enable read for all" ON public.event_users;
-CREATE POLICY "Enable read for all" ON public.event_users
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+-- Public counts use get_event_attendance_summary; participant identities are private.
+DROP POLICY IF EXISTS "Editors read occasion participants" ON public.event_users;
+CREATE POLICY "Editors read occasion participants" ON public.event_users
+AS PERMISSIVE FOR SELECT TO authenticated
+USING (public.get_is_editor_view_on_occasion((SELECT occasion FROM public.events WHERE id=event)));
 
 DROP POLICY IF EXISTS "Enable all on own record" ON public.event_users;
 CREATE POLICY "Enable all on own record" ON public.event_users

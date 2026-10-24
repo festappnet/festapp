@@ -1,3 +1,4 @@
+import 'package:fstapp/components/schedule/event_presentation.dart';
 // schedule_helper.dart
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -5,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
-import 'package:fstapp/components/schedule/event_model.dart';
+import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/time_helper.dart';
 
-import '../map/place_model.dart';
+import 'package:festapp_core/map.dart';
 
 /// Determines available actions/state for an event.
 enum TimeBlockType {
@@ -133,7 +134,7 @@ class TimeBlockItem {
       timeBlockType: TimeBlockHelper.getTimeBlockTypeFromModel(model),
       data: {
         "leftText": model.startTimeString(),
-        "rightText": model.toString()
+        "rightText": model.displayLabel()
       },
       timeBlockPlace: model.place != null && model.place!.id != null
           ? TimeBlockPlace.fromPlaceModel(model.place!)
@@ -148,7 +149,7 @@ class TimeBlockItem {
       startTime: model.startTime,
       endTime: model.endTime,
       timeBlockType: TimeBlockHelper.getTimeBlockTypeFromModel(model),
-      data: model.toString(),
+      data: model.displayLabel(),
       description: model.description,
       eventType: model.type,
       timeBlockPlace: model.place != null && model.place!.id != null
@@ -181,7 +182,7 @@ class TimeBlockItem {
       timeBlockType: TimeBlockHelper.getTimeBlockTypeFromModel(model),
       data: {
         "leftText": model.durationTimeString(),
-        "rightText": model.toString()
+        "rightText": model.displayLabel()
       },
       description: model.description,
       eventType: model.type,
@@ -206,7 +207,7 @@ class TimeBlockItem {
       timeBlockType: TimeBlockType.signedIn,
       data: {
         "leftText": model.durationTimeString(),
-        "rightText": model.toString()
+        "rightText": model.displayLabel()
       },
       isCancelled: model.isCancelled, // Added
     );
@@ -545,9 +546,4 @@ class TimeBlockHelper {
     ];
   }
 
-  static bool? getTimetableItemTypeAsCanSignIn(TimeBlockType type) {
-    if (type == TimeBlockType.canSave) return true;
-    if (type == TimeBlockType.saved) return false;
-    return null;
-  }
 }

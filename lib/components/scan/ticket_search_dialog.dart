@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
@@ -57,7 +58,9 @@ class _TicketSearchDialogState extends State<TicketSearchDialog> {
                 Utilities.removeDiacritics((data['email'] ?? "").toLowerCase());
           }
 
-          return symbol.contains(normalizedQuery) ||
+          return Utilities.removeDiacritics(ticket.scanLabel.toLowerCase())
+                  .contains(normalizedQuery) ||
+              symbol.contains(normalizedQuery) ||
               holderName.contains(normalizedQuery) ||
               email.contains(normalizedQuery);
         }).toList();
@@ -67,7 +70,8 @@ class _TicketSearchDialogState extends State<TicketSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(FeaturesStrings.selectTicket),
       content: SizedBox(
         width: 300,
@@ -91,15 +95,17 @@ class _TicketSearchDialogState extends State<TicketSearchDialog> {
                 itemBuilder: (context, index) {
                   final ticket = _filteredTickets[index];
                   final orderData = ticket.relatedOrder?.toCustomerData() ?? "";
+                  final title = [ticket.batch?['title'], ticket.ticketSymbol]
+                      .whereType<String>()
+                      .where((value) => value.trim().isNotEmpty)
+                      .join(' · ');
                   return ListTile(
                     visualDensity: VisualDensity.compact,
                     title: Text(
-                      ticket.ticketSymbol ?? FeaturesStrings.unknown,
+                      title.isNotEmpty ? title : FeaturesStrings.unknown,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(orderData.isNotEmpty
-                        ? orderData
-                        : FeaturesStrings.noData),
+                    subtitle: orderData.isNotEmpty ? Text(orderData) : null,
                     onTap: () {
                       Navigator.of(context).pop(ticket);
                     },

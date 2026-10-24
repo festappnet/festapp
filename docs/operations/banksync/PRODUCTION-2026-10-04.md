@@ -4,7 +4,7 @@ The user explicitly authorized production cutover and verification of actual pai
 
 Preflight: vstupenky.online activation resolves tenant festapptickets, generation 1, canonical backend. The protected SSH hostname and runtime database match the installed target assertions; canonical organization 3 exists. Migration timestamp changed to 20261004193000 because current upstream already uses 20261004180000 for product price waves.
 
-Operational evidence and final results will be appended after verification. No credentials or bank tokens belong in this document.
+This is the dated pilot snapshot below, including its unresolved payment check. It is not a current health report or proof of the later all-account sequence. No credentials or bank tokens belong in this document.
 
 ## Production state verified at 2026-10-04 15:40 UTC
 

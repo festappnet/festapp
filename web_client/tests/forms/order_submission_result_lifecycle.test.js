@@ -5,6 +5,48 @@ import { JSDOM } from 'jsdom';
 
 register('../css_loader.mjs', import.meta.url);
 
+test('submitting the real preview never restores its old scroll over the confirmation', async () => {
+  const dom = new JSDOM('<body><div id="form-page-container"><form></form></div></body>', {
+    url: 'https://example.test/form/test?embed=1',
+  });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.CustomEvent = dom.window.CustomEvent;
+  window.scrollTo = () => {};
+  const events = [];
+  window.addEventListener('festapp-embed-scroll-state', event => events.push(event.detail.type));
+  const [{ FormPage }, { FormNetwork }, { RouterService }, { OrderPreview }] = await Promise.all([
+    import('../../src/components/forms/form_page.js'),
+    import('../../src/components/forms/form_network.js'),
+    import('../../src/services/router_service.js'),
+    import('../../src/components/forms/order_preview.js'),
+  ]);
+  const originals = [FormNetwork.submitOrder, RouterService.goBackProgrammatically, RouterService.pushOverlayState];
+  try {
+    FormNetwork.submitOrder = async () => ({success: true, data: {code: 200}});
+    RouterService.goBackProgrammatically = () => setTimeout(() => window.dispatchEvent(new window.PopStateEvent('popstate')), 0);
+    RouterService.pushOverlayState = () => {};
+    const page = new FormPage('form-page-container');
+    page.currentSession = {payload: {form: 'test'}};
+    page.cleanup = () => {};
+    page.renderForm = () => {};
+    const form = document.querySelector('form');
+    const model = {visibleFields: [], relatedFields: [], communicationTone: 'formal'};
+    OrderPreview.show(form, model, {totalPrice: 0, currency: 'CZK'}, overlay => page.submitOrder(form, model, overlay),
+      () => assert.equal(document.querySelector('.fullscreen-result-overlay'), null, 'preview cleanup must finish before the result'),
+      {fields: [], ticket: []});
+    document.querySelector('.btn-submit-order').click();
+    await new Promise(resolve => setTimeout(resolve, 350));
+    assert.ok(document.querySelector('.fullscreen-result-overlay .result-title'));
+    assert.equal(events.includes('scroll-restore'), false, 'stale preview restoration scrolls the receipt past its icon');
+    assert.deepEqual(events, ['scroll-save', 'scroll-discard']);
+  } finally {
+    [FormNetwork.submitOrder, RouterService.goBackProgrammatically, RouterService.pushOverlayState] = originals;
+    dom.window.close();
+  }
+});
+
 test('a successful fast submission keeps its confirmation visible after closing the preview', async () => {
   const dom = new JSDOM(`<!doctype html><html><body>
     <div id="form-page-container"></div>

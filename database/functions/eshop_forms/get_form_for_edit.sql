@@ -1,7 +1,7 @@
 -- Fix get_form_for_edit: Remove bigint = uuid comparison and add can_delete
 CREATE OR REPLACE FUNCTION public.get_form_for_edit(form_link text)
  RETURNS jsonb
- LANGUAGE plpgsql
+ LANGUAGE plpgsql STABLE
  SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
@@ -26,7 +26,7 @@ BEGIN
         v_unit_id
     FROM public.forms f
     JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.link = form_link;
+    WHERE f.id = public.resolve_form_link_internal(form_link);
 
     IF v_form_id IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Form not found for the provided link.');
@@ -41,7 +41,11 @@ BEGIN
     ) INTO canDelete;
 
     SELECT jsonb_build_object(
-        'id', f.id,
+        'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='form' AND scope_type='occasion' AND scope_id=f.occasion AND aggregate_id=f.id::text),0),
+        'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+        'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+        'organizationIdentity',(SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
+        'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
         'key', f.key,
         'is_open', f.is_open,
         'created_at', f.created_at,
@@ -64,6 +68,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', pt.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product_type' AND scope_type='occasion' AND scope_id=pt.occasion AND aggregate_id=pt.id::text),0),
             'title', pt.title,
             'description', pt.description,
             'type', pt.type,
@@ -91,6 +96,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
             'can_delete', usage.reason IS NULL,
             'delete_blocked_reason', usage.reason,
             'occasion', p.occasion,
@@ -158,6 +164,10 @@ BEGIN
         OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(s.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
     ) OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM form_tickets))
       OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (SELECT 1 FROM form_tickets WHERE NULLIF(note, '') IS NOT NULL))
+      OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+        WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+      OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form))
     THEN 'responses' ELSE (
       SELECT p->>'delete_blocked_reason' FROM public.form_fields member
       JOIN jsonb_array_elements(productsData) p ON (p->>'product_type')::bigint = member.product_type

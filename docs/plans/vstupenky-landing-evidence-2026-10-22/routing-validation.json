@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-22",
+  "scope": "local only; no production writes",
+  "node_checks": {
+    "public_seo": "12/12 passed",
+    "organizer_page": "2/2 passed",
+    "pwa_manifest": "3/3 passed",
+    "pwa_offline": "passed",
+    "router_startup_scanner_intent": "passed"
+  },
+  "build": {
+    "command": "pnpm --dir web_client run build",
+    "pnpm": "11.24.0",
+    "result": "passed",
+    "landing_entry_bytes": 4375,
+    "landing_entry_gzip_bytes": 1883,
+    "shared_normalizer_bytes": 667,
+    "shared_normalizer_gzip_bytes": 370,
+    "generated_html_bytes": 32329,
+    "generated_html_gzip_bytes": 8199
+  },
+  "offline_browser": {
+    "method": "agent-browser isolated local headless session landing-offline, explicit empty config",
+    "fixture": "node automation/tests/pwa_browser_fixture_server.mjs 4187",
+    "observations": [
+      "Online v1 root: Festapp PWA catalog 1.0.0+1",
+      "Switched fixture to 2.0.0+2 and applied waiting service worker; root: Festapp PWA marketing 2.0.0+2",
+      "Enabled browser offline mode; /events: Festapp PWA catalog 2.0.0+2",
+      "Offline /: Festapp PWA marketing 2.0.0+2",
+      "Cache storage: only festapp-app-shell-2.0.0+2"
+    ],
+    "cleanup": "browser session closed; fixture process stopped",
+    "limits": "Fixture proves generated SW upgrade/offline routing contract, not full production landing/backend deployment."
+  }
+}

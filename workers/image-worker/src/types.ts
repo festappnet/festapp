@@ -1,6 +1,7 @@
-export type ProjectId = 'default' | 'a' | 'akhweb';
+export type ProjectId = 'default' | 'a' | 'akhweb' | 'slunovrat';
 
 export interface Env {
+  IMAGE_READ_MISS_BUDGET?: { limit(input: { key: string }): Promise<{ success: boolean }> };
   IMAGES_BUCKET: R2Bucket;
   IMAGES_BUCKET_A: R2Bucket;
   IMAGES_BUCKET_AKHWEB: R2Bucket;
@@ -13,11 +14,12 @@ export interface Env {
   SUPABASE_ANON_KEY_A: string;
   SUPABASE_URL_AKHWEB: string;
   SUPABASE_ANON_KEY_AKHWEB: string;
+  SUPABASE_URL_SLUNOVRAT?: string;
+  SUPABASE_ANON_KEY_SLUNOVRAT?: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   CF_ACCOUNT_ID: string;
   CF_ZONE_ID: string;
   CF_CACHE_PURGE_TOKEN: string;
   CONTROL_ALLOWED_ORIGINS: string;
-  PRIVATE_MIGRATION_FALLBACK?: string;
 }

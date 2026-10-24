@@ -1,12 +1,13 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/forms/models/form_model.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import '../form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class CreateOrCopyFormDialog extends StatefulWidget {
-  final List<FormModel> existingForms;
+  final List<FormBundle> existingForms;
 
   const CreateOrCopyFormDialog({super.key, required this.existingForms});
 
@@ -45,17 +46,17 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
 
   void _filterAndGroupForms() {
     final query = _searchController.text;
-    List<FormModel> tempFilteredForms;
+    List<FormBundle> tempFilteredForms;
 
     if (query.isEmpty) {
       tempFilteredForms = widget.existingForms;
     } else {
       final normalizedQuery = Utilities.removeDiacritics(query.toLowerCase());
       tempFilteredForms = widget.existingForms.where((form) {
-        final normalizedTitle =
-            Utilities.removeDiacritics((form.title ?? "").toLowerCase());
+        final normalizedTitle = Utilities.removeDiacritics(
+            (form.definition.title ?? "").toLowerCase());
         final normalizedOccasionTitle = Utilities.removeDiacritics(
-            (form.occasionModel?.title ?? "").toLowerCase());
+            (form.occasion?.title ?? "").toLowerCase());
         return normalizedTitle.contains(normalizedQuery) ||
             normalizedOccasionTitle.contains(normalizedQuery);
       }).toList();
@@ -63,20 +64,20 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
 
     // Sort by occasion start time descending (newest first)
     tempFilteredForms.sort((a, b) {
-      final dateA = a.occasionModel?.startTime ?? DateTime(0);
-      final dateB = b.occasionModel?.startTime ?? DateTime(0);
+      final dateA = a.occasion?.startTime ?? DateTime(0);
+      final dateB = b.occasion?.startTime ?? DateTime(0);
       return dateB.compareTo(dateA);
     });
 
     final List<dynamic> newGroupedList = [];
     final now = DateTime.now();
-    final List<FormModel> currentOccasions = [];
-    final List<FormModel> upcomingOccasions = [];
-    final List<FormModel> pastOccasions = [];
-    final List<FormModel> datelessOccasions = [];
+    final List<FormBundle> currentOccasions = [];
+    final List<FormBundle> upcomingOccasions = [];
+    final List<FormBundle> pastOccasions = [];
+    final List<FormBundle> datelessOccasions = [];
 
     for (var form in tempFilteredForms) {
-      final occasion = form.occasionModel;
+      final occasion = form.occasion;
       if (occasion?.startTime == null || occasion?.endTime == null) {
         datelessOccasions.add(form);
         continue;
@@ -103,9 +104,9 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
 
     // Group past occasions by year
     if (pastOccasions.isNotEmpty) {
-      final Map<int, List<FormModel>> pastByYear = {};
+      final Map<int, List<FormBundle>> pastByYear = {};
       for (final form in pastOccasions) {
-        final year = form.occasionModel!.startTime!.year;
+        final year = form.occasion!.startTime!.year;
         (pastByYear[year] ??= []).add(form);
       }
 
@@ -130,7 +131,8 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: Text(FormStrings.createFormTitle),
       contentPadding: EdgeInsets.zero,
       // We wrap the content in a Container with BoxConstraints to make it responsive.
@@ -197,10 +199,10 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
                             ),
                       ),
                     );
-                  } else if (item is FormModel) {
+                  } else if (item is FormBundle) {
                     final form = item;
-                    final occasion = form.occasionModel;
-                    final stats = form.stats;
+                    final occasion = form.occasion;
+                    final stats = form.definition.stats;
                     final totalResponses = stats?.total ?? 0;
                     final theme = Theme.of(context);
                     final hintColor = theme.hintColor;
@@ -217,7 +219,7 @@ class _CreateOrCopyFormDialogState extends State<CreateOrCopyFormDialog> {
                     return ListTile(
                       leading: const Icon(Icons.article_outlined, size: 24),
                       title: Text(
-                        form.toString(),
+                        form.definition.toString(),
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w500),
                         maxLines: 1,

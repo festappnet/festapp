@@ -1,15 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
-import 'package:fstapp/components/images/db_images.dart';
-import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
-import '../../_shared/common_strings.dart';
 import '../blueprint_object_model.dart';
 
 class BlueprintControlsBar extends StatefulWidget {
@@ -17,6 +10,9 @@ class BlueprintControlsBar extends StatefulWidget {
   final VenueSeatController<BlueprintObjectModel, Object> seatLayoutController;
   final bool canEdit;
   final bool allowRemoteUpload;
+  final VoidCallback onImportSvg;
+  final VoidCallback onImportImage;
+  final VoidCallback onRemoveBackground;
 
   const BlueprintControlsBar({
     super.key,
@@ -24,6 +20,9 @@ class BlueprintControlsBar extends StatefulWidget {
     required this.seatLayoutController,
     required this.canEdit,
     this.allowRemoteUpload = true,
+    required this.onImportSvg,
+    required this.onImportImage,
+    required this.onRemoveBackground,
   });
 
   @override
@@ -74,8 +73,11 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
     if (widget.blueprint == null) {
       return const SizedBox.shrink();
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 8,
       children: [
         _buildDimensionEditor(
           label: BlueprintStrings.width,
@@ -92,7 +94,6 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
             }
           },
         ),
-        const SizedBox(width: 12),
         _buildDimensionEditor(
           label: BlueprintStrings.height,
           currentValue: widget.blueprint!.configuration!.height!,
@@ -108,7 +109,6 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
             }
           },
         ),
-        const SizedBox(width: 24),
         _buildBackgroundControls(),
       ],
     );
@@ -123,20 +123,21 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
           enabled: widget.canEdit,
           onSelected: (value) {
             if (value == 'svg') {
-              _uploadSvgBackground();
+              widget.onImportSvg();
             } else if (value == 'image') {
-              _uploadImageBackground();
+              widget.onImportImage();
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            if (widget.allowRemoteUpload) PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'svg',
               child: Text(BlueprintStrings.uploadSVG),
             ),
-            PopupMenuItem<String>(
-              value: 'image',
-              child: Text(BlueprintStrings.uploadImage),
-            ),
+            if (widget.allowRemoteUpload)
+              PopupMenuItem<String>(
+                value: 'image',
+                child: Text(BlueprintStrings.uploadImage),
+              ),
           ],
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
@@ -155,7 +156,7 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: BlueprintStrings.removeBackground,
-            onPressed: widget.canEdit ? _removeBackground : null,
+            onPressed: widget.canEdit ? widget.onRemoveBackground : null,
           ),
       ],
     );
@@ -168,6 +169,7 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
     bool isDecreaseEnabled = true, // New parameter
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
@@ -177,12 +179,12 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
         ),
         const SizedBox(height: 4),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.remove),
-              iconSize: 16,
-              padding: const EdgeInsets.all(4),
-              constraints: const BoxConstraints(),
+              iconSize: 20,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               // Use the flag here to disable the button
               onPressed: isDecreaseEnabled && widget.canEdit
                   ? () {
@@ -200,9 +202,8 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
             ),
             IconButton(
               icon: const Icon(Icons.add),
-              iconSize: 16,
-              padding: const EdgeInsets.all(4),
-              constraints: const BoxConstraints(),
+              iconSize: 20,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: widget.canEdit
                   ? () {
                       onChanged(currentValue + 1);
@@ -213,80 +214,5 @@ class _BlueprintControlsBarState extends State<BlueprintControlsBar> {
         ),
       ],
     );
-  }
-
-  void _uploadSvgBackground() async {
-    // Using the new DialogHelper API structure from your file
-    var file = await DialogHelper.dropFilesHere(
-      context,
-      BlueprintStrings.dialogImportSvgTitle,
-      CommonStrings.ok,
-      CommonStrings.storno,
-    );
-    if (file != null) {
-      try {
-        var content = await file.readAsString();
-        if (!content.trim().startsWith('<svg')) {
-          ToastHelper.Show(context, BlueprintStrings.toastInvalidSvg,
-              severity: ToastSeverity.NotOk);
-          return;
-        }
-        setState(() {
-          widget.blueprint!.backgroundSvg = content;
-        });
-        widget.seatLayoutController.setBackdrop(
-          VenueBackdrop.parse(content),
-        );
-        ToastHelper.Show(context, BlueprintStrings.toastSvgUploadSuccess);
-      } catch (e) {
-        ToastHelper.Show(context, BlueprintStrings.toastSvgReadFail,
-            severity: ToastSeverity.NotOk);
-      }
-    }
-  }
-
-  void _uploadImageBackground() async {
-    var file = await DialogHelper.dropFilesHere(
-      context,
-      BlueprintStrings.dialogImportImageTitle,
-      CommonStrings.ok,
-      CommonStrings.storno,
-    );
-    if (file != null) {
-      try {
-        Uint8List imageData = await file.readAsBytes();
-        var compressedImageData = await ImageCompressionHelper.compress(
-            imageData, 3000,
-            quality: 100);
-        final publicUrl = await DbImages.uploadImage(
-            compressedImageData, widget.blueprint!.occasion, null);
-        setState(() {
-          widget.blueprint!.backgroundSvg = publicUrl;
-        });
-        widget.seatLayoutController.setBackdrop(
-          VenueBackdrop.parse(publicUrl),
-        );
-        ToastHelper.Show(context, BlueprintStrings.toastImageUploadSuccess);
-      } catch (e) {
-        ToastHelper.Show(context, BlueprintStrings.toastImageUploadFail,
-            severity: ToastSeverity.NotOk);
-      }
-    }
-  }
-
-  void _removeBackground() async {
-    // Using the new DialogHelper API structure from your file
-    final confirmed = await DialogHelper.showConfirmationDialog(
-        context,
-        BlueprintStrings.dialogConfirmRemoveBackgroundTitle,
-        BlueprintStrings.dialogConfirmRemoveBackgroundContent);
-
-    if (confirmed == true) {
-      setState(() {
-        widget.blueprint!.backgroundSvg = null;
-      });
-      widget.seatLayoutController.setBackdrop(null);
-      ToastHelper.Show(context, BlueprintStrings.toastBackgroundRemoved);
-    }
   }
 }

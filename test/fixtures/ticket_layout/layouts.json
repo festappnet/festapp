@@ -1,7 +1,7 @@
 {
   "valid": [
     {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -74,7 +74,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -89,7 +89,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -281,7 +283,7 @@
       }
     },
     {
-      "schemaVersion": 2,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -354,7 +356,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -369,7 +371,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -637,7 +641,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -652,7 +656,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -844,11 +850,11 @@
       }
     },
     "emptyTemplates": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {}
     },
     "outsidePage": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -921,7 +927,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -936,7 +942,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -1128,7 +1136,7 @@
       }
     },
     "duplicateQR": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -1201,7 +1209,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -1216,7 +1224,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -1427,7 +1437,7 @@
       }
     },
     "hiddenQR": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -1500,7 +1510,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -1515,7 +1525,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -1707,7 +1719,7 @@
       }
     },
     "smallQR": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -1780,7 +1792,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -1795,7 +1807,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -1987,7 +2001,7 @@
       }
     },
     "overlap": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -2060,7 +2074,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -2075,7 +2089,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -2267,7 +2283,7 @@
       }
     },
     "invalidStyle": {
-      "schemaVersion": 1,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -2340,7 +2356,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -2355,7 +2371,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -2620,7 +2638,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -2635,7 +2653,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -2828,7 +2848,7 @@
       }
     },
     "invalidFont": {
-      "schemaVersion": 2,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -2901,7 +2921,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -2916,7 +2936,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -3109,7 +3131,7 @@
       }
     },
     "unknownFont": {
-      "schemaVersion": 2,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -3182,7 +3204,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -3197,7 +3219,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",
@@ -3390,7 +3414,7 @@
       }
     },
     "v2NullFont": {
-      "schemaVersion": 2,
+      "schemaVersion": 3,
       "templates": {
         "wide": {
           "page": {
@@ -3463,7 +3487,7 @@
             },
             {
               "id": "food",
-              "binding": "food",
+              "binding": "productType",
               "box": {
                 "x": 50,
                 "y": 189.87599999999998,
@@ -3478,7 +3502,9 @@
                 "maxLines": 1,
                 "color": "2A2A2A",
                 "align": "left"
-              }
+              },
+              "productTypeId": 123,
+              "label": "Večeře"
             },
             {
               "id": "note",

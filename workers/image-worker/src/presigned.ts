@@ -1,8 +1,9 @@
 import { AwsClient } from 'aws4fetch';
 import type { Env } from './types';
-import { extractBearerToken, checkIsEditorOnAnyOccasion } from './auth';
+import { extractBearerToken, checkImageProjectAccess } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
+import { isPrivateKey } from './private-key';
 
 const DEFAULT_EXPIRES_IN = 3600; // 1 hour
 const MAX_EXPIRES_IN = 604800; // 7 days
@@ -50,7 +51,7 @@ export async function handlePresign(
   const auth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
 
   // Check editor-on-any-occasion permission via RPC
-  const isEditor = await checkIsEditorOnAnyOccasion(userJwt, auth);
+  const isEditor = await checkImageProjectAccess(userJwt, auth, project.id);
   if (!isEditor) {
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }
@@ -58,7 +59,7 @@ export async function handlePresign(
   if (!key) {
     return errorResponse(400, 'MISSING_KEY', 'Missing key');
   }
-  if (key.length > 1024 || !key.startsWith('private/') || key.includes('..') || key.includes('%')) {
+  if (!isPrivateKey(key)) {
     return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Invalid private key');
   }
 
@@ -91,5 +92,7 @@ export async function handlePresign(
     aws: { signQuery: true },
   });
 
-  return jsonResponse({ url: signed.url, expiresIn, projectId: project.id });
+  const response = jsonResponse({ url: signed.url, expiresIn, projectId: project.id });
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
 }

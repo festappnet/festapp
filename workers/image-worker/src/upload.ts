@@ -1,21 +1,14 @@
+import { MAX_IMAGE_INPUT_BYTES, readUploadForm, resolveUploadPolicy, processUploadImage, ImageProcessingError } from './upload-policy';
 import type { Env } from './types';
 import {
   checkAkhEventManagerPermission,
-  checkEditorPermission,
-  checkUnitEditorPermission,
+  checkImageProjectAccess,
   extractBearerToken,
   type SupabaseAuth,
 } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
-
-/** Absolute maximum upload size (before any transform). */
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
-/** Default transform thresholds — used when the caller doesn't specify overrides. */
-const DEFAULT_MAX_EDGE = 1200;          // longer-edge limit (px)
-const DEFAULT_MAX_BYTES = 800 * 1024;   // 800 KB — skip transform if already under
-const DEFAULT_JPEG_QUALITY = 70;        // ~200-400 KB at 1200 px
+import { isPrivateKey } from './private-key';
 
 /**
  * Sanitize a filename: remove special chars, keep alphanumeric, hyphens, underscores, dots.
@@ -46,12 +39,6 @@ export async function handleUpload(
     return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Method not allowed');
   }
 
-  // Check file size before reading body
-  const contentLength = request.headers.get('Content-Length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
-    return errorResponse(413, 'FILE_TOO_LARGE', 'File too large');
-  }
-
   // Authenticate
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
@@ -68,8 +55,9 @@ export async function handleUpload(
   // Parse multipart form data
   let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
+    formData = await readUploadForm(request);
+  } catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
     return errorResponse(400, 'INVALID_FORM_DATA', 'Invalid form data');
   }
 
@@ -81,14 +69,14 @@ export async function handleUpload(
     return errorResponse(400, 'MISSING_FILE', 'Missing file field');
   }
 
-  const occasionId = occasionIdRaw ? parseInt(String(occasionIdRaw), 10) : null;
-  const unitId = unitIdRaw ? parseInt(String(unitIdRaw), 10) : null;
+  const occasionId = occasionIdRaw ? Number(occasionIdRaw) : null;
+  const unitId = unitIdRaw ? Number(unitIdRaw) : null;
 
-  if (occasionIdRaw && (occasionId === null || isNaN(occasionId))) {
+  if (occasionIdRaw && (occasionId === null || !Number.isSafeInteger(occasionId) || occasionId <= 0)) {
     return errorResponse(400, 'INVALID_OCCASION', 'Invalid occasionId');
   }
 
-  if (unitIdRaw && (unitId === null || isNaN(unitId))) {
+  if (unitIdRaw && (unitId === null || !Number.isSafeInteger(unitId) || unitId <= 0)) {
     return errorResponse(400, 'INVALID_UNIT', 'Invalid unitId');
   }
 
@@ -119,40 +107,28 @@ export async function handleUpload(
   let isEditor = false;
   if (project.authContract === 'akhweb') {
     isEditor = await checkAkhEventManagerPermission(userJwt, auth);
-  } else if (occasionId !== null) {
-    isEditor = await checkEditorPermission(userJwt, occasionId, auth);
-  } else if (unitId !== null) {
-    isEditor = await checkUnitEditorPermission(userJwt, unitId, auth);
+  } else {
+    isEditor = await checkImageProjectAccess(userJwt, auth, project.id, occasionId, unitId);
   }
   if (!isEditor) {
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }
 
-  // Validate file size from actual body
-  const buffer = await file.arrayBuffer();
-  if (buffer.byteLength > MAX_FILE_SIZE) {
-    return errorResponse(413, 'FILE_TOO_LARGE', 'File too large');
-  }
-
-  // Read optional per-request transform overrides from form fields
-  const maxEdgeRaw = formData.get('maxEdge');
-  const maxBytesRaw = formData.get('maxBytes');
-  const qualityRaw = formData.get('quality');
-
-  const maxEdge = maxEdgeRaw ? parseInt(String(maxEdgeRaw), 10) : DEFAULT_MAX_EDGE;
-  const maxBytes = maxBytesRaw ? parseInt(String(maxBytesRaw), 10) : DEFAULT_MAX_BYTES;
-  const jpegQuality = qualityRaw ? parseInt(String(qualityRaw), 10) : DEFAULT_JPEG_QUALITY;
-  if (!Number.isInteger(maxEdge) || maxEdge < 1 || maxEdge > 4000 ||
-      !Number.isInteger(maxBytes) || maxBytes < 0 || maxBytes > MAX_FILE_SIZE ||
-      !Number.isInteger(jpegQuality) || jpegQuality < 1 || jpegQuality > 100) {
-    return errorResponse(400, 'INVALID_TRANSFORM_INPUT', 'Upload transform values are out of bounds');
+  if (file.size > MAX_IMAGE_INPUT_BYTES) return errorResponse(413, 'FILE_TOO_LARGE', 'Image exceeds 20 MB');
+  let policy;
+  try { policy = resolveUploadPolicy(formData); }
+  catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message);
+    throw error;
   }
 
   // Use explicit key for private uploads, otherwise generate one
   const explicitKey = formData.get('key') as string | null;
   let key: string;
-  if (explicitKey && /^private\/[A-Za-z0-9._/-]+$/.test(explicitKey) &&
-      !explicitKey.includes('..') && explicitKey.length <= 1024) {
+  if (explicitKey && !project.supportsPrivate) {
+    return errorResponse(400, 'PRIVATE_NOT_SUPPORTED', 'Private images are not supported for this project');
+  }
+  if (explicitKey && isPrivateKey(explicitKey)) {
     key = explicitKey;
   } else if (explicitKey) {
     return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Explicit keys must be canonical private keys');
@@ -181,52 +157,55 @@ export async function handleUpload(
     key = `${prefix}/${uid}-${safeName}`;
   }
 
-  // Detect if PNG (has alpha channel — preserve format)
-  const bytes = new Uint8Array(buffer);
-  const isPng =
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47;
-
-  // Only transform if the file exceeds the byte threshold.
-  // Images already under the limit are stored as-is (no quality loss).
-  let body: ArrayBuffer | ReadableStream | null;
-  let contentType: string;
-
-  const needsTransform = buffer.byteLength > maxBytes;
-
-  if (needsTransform && env.IMAGES) {
-    const outputFormat = isPng ? 'image/png' : 'image/jpeg';
-    const outputOptions: Record<string, unknown> = { format: outputFormat };
-    if (!isPng) {
-      outputOptions.quality = jpegQuality;
-    }
+  if (project.authContract === 'festapp') {
     try {
-      const transformed = await env.IMAGES
-        .input(buffer)
-        .transform({ width: maxEdge, height: maxEdge, fit: 'scale-down' })
-        .output(outputOptions);
-      const resp = transformed.response();
-      body = resp.body!;
-      contentType = outputFormat;
-    } catch (err) {
-      body = buffer;
-      contentType = file.type || 'application/octet-stream';
-      console.error('Images transform failed, storing original:', err);
-    }
-  } else {
-    // Already small enough or Images binding not available — store as-is
-    body = buffer;
-    contentType = file.type || 'application/octet-stream';
+      const admission = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_upload_v1`, {
+        method: 'POST',
+        headers: { apikey: auth.anonKey, Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_bytes: file.size, p_occasion_id: occasionId, p_unit_id: unitId }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!admission.ok) {
+        const error = await admission.json() as { code?: string };
+        return errorResponse(error.code === 'PT429' ? 429 : 503, 'UPLOAD_ADMISSION', 'Upload temporarily limited', true);
+      }
+      if (await admission.json() !== true) return errorResponse(503, 'UPLOAD_ADMISSION', 'Upload temporarily limited', true);
+    } catch { return errorResponse(503, 'UPLOAD_ADMISSION', 'Upload temporarily unavailable', true); }
+  }
+
+  let processed;
+  try {
+    processed = key.startsWith('private/')
+      ? { body: file.stream(), contentType: file.type || 'application/octet-stream', extension: undefined }
+      : await processUploadImage(file, policy, env);
+  } catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
+    throw error;
+  }
+  if (processed.extension) key = key.replace(/\.[^./]+$/, `.${processed.extension}`);
+
+  // Charge actual transformed bytes before the R2 write. Streaming original
+  // bodies have the measured File size; processed raster bodies are ArrayBuffers.
+  if (project.authContract === 'festapp') {
+    const storedBytes=processed.body instanceof ArrayBuffer ? processed.body.byteLength : file.size;
+    try {
+      const admission=await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_storage_v1`, {
+        method:'POST', headers:{apikey:auth.anonKey,Authorization:`Bearer ${userJwt}`,'Content-Type':'application/json'},
+        body:JSON.stringify({p_bytes:storedBytes,p_occasion_id:occasionId,p_unit_id:unitId}), signal:AbortSignal.timeout(8000),
+      });
+      if(!admission.ok) {
+        const error=await admission.json() as {code?:string};
+        return errorResponse(error.code==='PT429'?429:503,'STORAGE_ADMISSION','Storage allocation limited',true);
+      }
+      if(await admission.json()!==true)return errorResponse(503,'STORAGE_ADMISSION','Storage allocation unavailable',true);
+    } catch {return errorResponse(503,'STORAGE_ADMISSION','Storage allocation unavailable',true);}
   }
 
   const isPrivate = key.startsWith('private/');
   const bucket = isPrivate ? project.privateBucket : project.publicBucket;
-  await bucket.put(key, body, {
+  await bucket.put(key, processed.body, {
     httpMetadata: {
-      contentType,
+      contentType: processed.contentType,
       ...(isPrivate ? {} : { cacheControl: 'public, max-age=31536000, immutable' }),
     },
   });
@@ -241,6 +220,7 @@ export async function handleUpload(
     } catch (error) {
       await bucket.delete(key);
       console.error('image_upload_failed', { operation: 'upload', status: 'db_failed_compensated' });
+      if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
       return errorResponse(502, 'IMAGE_RECORD_FAILED', 'Image record could not be persisted', true);
     }
   }
@@ -287,8 +267,8 @@ async function addImageRecord(
     }
   );
   if (!response.ok) {
-    const text = await response.text();
-    console.warn('add_image_record failed:', response.status, text);
+    if (response.status === 429) throw new ImageProcessingError(429, 'IMAGE_RECORD_LIMIT', 'Image metadata capacity is limited');
+    console.warn('add_image_record failed:', response.status);
     throw new Error('add_image_record failed');
   }
 }

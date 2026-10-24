@@ -1,0 +1,14 @@
+{
+  "festapp-overview-js": {
+    "view": true,
+    "text": "Waitlist UI E2E - 3F9Q7C3A6G\n\nLoaded: 10/15/2026, 12:22:05 PM\n\nRefresh\nRegistered people\n\nFinal One - Accepted\n\nFinal Two - Accepted\n\nAccepted: 0 - 10/15/2026, 1:17:45 PM\n\n3F9Q7C3A6G\n\nOrder state: Ordered\n\nTotal: 100 CZK\n\nSynthetic Admission: 100 CZK\n\nUnpaid\n\nRecorded payment: 0 CZK\n\nOutstanding: 100 CZK\n\nReturned: 0 CZK\n\nOverpaid: 0 CZK\n\nDue now: 100 CZK\n\nDue date: 10/22/2026, 12:20:59 PM\n\nAccount: 123456/0100\n\nVS: 7248\n\nFinal One - Awaiting payment\n\n8E9X9G7U9Q\n\nOrder state: Confirmed as paid\n\nTotal: 1000 CZK\n\nSynthetic Admission: 100 CZK\n\nDeposit paid\n\nRecorded payment: 300 CZK\n\nOutstanding: 700 CZK\n\nReturned: 0 CZK\n\nOverpaid: 0 CZK\n\nDue now: 700 CZK\n\nDue date: 10/22/2026, 12:19:57 PM\n\nAccount: 123456/0100\n\nVS: 7860\n\nFinal Two - Used",
+    "tokenInHistory": false,
+    "writeInputs": 0
+  },
+  "festapp-overview-flutter": {
+    "view": true,
+    "text": "Waitlist UI E2E - 3F9Q7C3A6G\nNačteno: 2026-10-15T10:22:05.770332+00:00\nObnovit\nPřihlášené osoby\nFinal One - Přijato\nFinal Two - Přijato\nPřijato: 0 - 2026-10-15T11:17:45.230162+00:00\n3F9Q7C3A6G Stav objednávky: Objednáno Cena: 100 CZK Synthetic Admission: 100 CZK Dosud neuhrazeno Evidovaná úhrada: 0 CZK Zbývá uhradit: 100 CZK Vráceno: 0 CZK Přeplatek: 0 CZK Nyní k úhradě: 100 CZK Termín: 2026-10-22T10:20:59.746003+00:00 Účet: 123456/0100 VS: 7248 Final One - Čeká na úhradu\n8E9X9G7U9Q Stav objednávky: Potvrzeno jako zaplacené Cena: 1000 CZK Synthetic Admission: 100 CZK Záloha uhrazena Evidovaná úhrada: 300 CZK Zbývá uhradit: 700 CZK Vráceno: 0 CZK Přeplatek: 0 CZK Nyní k úhradě: 700 CZK Termín: 2026-10-22T10:19:57.573747+00:00 Účet: 123456/0100 VS: 7860 Final Two - Použitá",
+    "tokenInHistory": false,
+    "writeInputs": 0
+  }
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "path": "web/organizers-media/layout-build.mp4",
+    "width": 1140,
+    "height": 824,
+    "duration": 30.833,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/layout-build-mobile.mp4",
+    "width": 820,
+    "height": 824,
+    "duration": 30.833,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/layout-style.mp4",
+    "width": 1140,
+    "height": 824,
+    "duration": 14.867,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/layout-style-mobile.mp4",
+    "width": 820,
+    "height": 824,
+    "duration": 14.867,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/form-build.mp4",
+    "width": 1200,
+    "height": 804,
+    "duration": 22.5,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/form-build-mobile.mp4",
+    "width": 720,
+    "height": 638,
+    "duration": 22.5,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/form-style.mp4",
+    "width": 1200,
+    "height": 804,
+    "duration": 5.0,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/form-style-mobile.mp4",
+    "width": 720,
+    "height": 638,
+    "duration": 5.0,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/ticket-design.mp4",
+    "width": 1200,
+    "height": 822,
+    "duration": 14.833,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/ticket-design-mobile.mp4",
+    "width": 900,
+    "height": 720,
+    "duration": 14.833,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/seat-select.mp4",
+    "width": 1440,
+    "height": 900,
+    "duration": 9.067,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/seat-select-mobile.mp4",
+    "width": 390,
+    "height": 844,
+    "duration": 10.433,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/payment-qr.mp4",
+    "width": 1440,
+    "height": 900,
+    "duration": 5.6,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/payment-qr-mobile.mp4",
+    "width": 390,
+    "height": 844,
+    "duration": 5.633,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/check-in.mp4",
+    "width": 1200,
+    "height": 800,
+    "duration": 8.5,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/check-in-mobile.mp4",
+    "width": 500,
+    "height": 1000,
+    "duration": 8.5,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/orders-overview.mp4",
+    "width": 1200,
+    "height": 760,
+    "duration": 13.1,
+    "decode": "pass"
+  },
+  {
+    "path": "web/organizers-media/orders-overview-mobile.mp4",
+    "width": 720,
+    "height": 900,
+    "duration": 13.1,
+    "decode": "pass"
+  }
+]

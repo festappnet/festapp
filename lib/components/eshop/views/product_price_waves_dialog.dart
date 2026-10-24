@@ -1,3 +1,6 @@
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -6,8 +9,7 @@ import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import '../db_eshop.dart';
 import '../models/product_edit_bundle.dart';
-import '../models/product_model.dart';
-import '../models/product_price_wave.dart';
+import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'product_price_changes_dialog.dart';
 
@@ -60,11 +62,22 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   }
 
   Future<void> term([ProductPriceWave? wave]) async {
+    final occasion = RightsService.currentOccasion();
+    final end = occasion?.link == widget.occasionLink ? occasion?.endTime :
+        bundle.forms.map((f) => f.occasion?.endTime).whereType<DateTime>().firstOrNull;
+    final suggested = wave?.time ?? ProductPriceWave.suggestTime(now: DateTime.now(), end: end,
+        terms: ProductPriceWave.columns(bundle.priceWaves,bundle.products).map((w) => w.time));
+    if (wave == null && suggested == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(end == null
+          ? 'Nejprve doplňte konec akce.' : 'Před koncem akce už není volný termín pro další vlnu.')));
+      return;
+    }
     setState(() => busy = true);
     final changed = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (_) => _WaveTermDialog(
+            initialTime: suggested, end: end,
             wave: wave,
             save: (time) async {
               if (wave == null) {
@@ -87,17 +100,24 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
             wave: wave,
             product: product,
             save: (price, hidden) async {
-              final persisted = wave.id == null
-                  ? await DbEshop.createProductPriceWave(
-                      widget.occasionLink, wave.time)
-                  : wave;
-              await DbEshop.saveProductWaveTarget(
-                  persisted,
-                  product.id!,
-                  price,
-                  hidden,
-                  wave.prices(product).firstOrNull?.revision,
-                  wave.visibility(product).firstOrNull?.revision);
+              if (wave.id == null) {
+                await DbEshop.saveNewProductWaveTarget(
+                    widget.occasionLink,
+                    wave,
+                    product.id!,
+                    price,
+                    hidden,
+                    wave.prices(product).firstOrNull?.revision,
+                    wave.visibility(product).firstOrNull?.revision);
+              } else {
+                await DbEshop.saveProductWaveTarget(
+                    wave,
+                    product.id!,
+                    price,
+                    hidden,
+                    wave.prices(product).firstOrNull?.revision,
+                    wave.visibility(product).firstOrNull?.revision);
+              }
             }));
     if (!mounted) return;
     setState(() => busy = false);
@@ -107,7 +127,8 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   Future<void> remove(ProductPriceWave wave) async {
     final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (_) => AppAlertDialog(
+                onClose: () => Navigator.pop(context, false),
                 scrollable: true,
                 title: Text(OrdersStrings.cancelWave),
                 content: Text(OrdersStrings.cancelWaveConfirm),
@@ -130,16 +151,15 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final localNow = TimeHelper.currentTime ?? DateTime.now();
     final waves = ProductPriceWave.columns(bundle.priceWaves, bundle.products);
-    return Dialog.fullscreen(
+    return AppDialog.fullscreen(
+      dismissible: !busy,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: AppDialogAppBar(
           title: Text(OrdersStrings.priceWaves),
-          leading: IconButton(
-            tooltip: CommonStrings.close,
-            onPressed: busy ? null : () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
-          ),
+          onClose: () => Navigator.pop(context),
+          closeEnabled: !busy,
           actions: [
             IconButton(
               tooltip: OrdersStrings.priceRefreshAction,
@@ -275,7 +295,8 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
                                             onOpen: widget.canEdit &&
                                                     !busy &&
                                                     waves[i].time.isAfter(
-                                                          product.priceNow,
+                                                          product.priceTime(
+                                                              localNow),
                                                         ) &&
                                                     waves[i]
                                                             .prices(product)
@@ -478,8 +499,9 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
   late final TextEditingController price = TextEditingController(
       text: widget.wave.prices(widget.product).firstOrNull?.price?.toString() ??
           '');
-  late bool? hidden =
+  late final bool? originalHidden =
       widget.wave.visibility(widget.product).firstOrNull?.hidden;
+  late bool? hidden = originalHidden;
   bool busy = false, dirty = false, allowClose = false;
   String? error;
   @override
@@ -493,7 +515,8 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (dirty) {
       final discard = await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(
+          builder: (_) => AppAlertDialog(
+                  onClose: () => Navigator.pop(context, false),
                   scrollable: true,
                   title: Text(CommonStrings.discardChanges),
                   content: Text(CommonStrings.discardChangesConfirmation),
@@ -532,13 +555,70 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
     if (success) Navigator.pop(context, true);
   }
 
+  Widget availabilityNotice(BuildContext context) {
+    final knownSeatProduct = widget.product.isUsedInBlueprint == true;
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: colors.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: colors.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              knownSeatProduct
+                  ? OrdersStrings.waveSeatProductTitle
+                  : OrdersStrings.waveAvailabilityUnknownTitle,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(knownSeatProduct
+                ? OrdersStrings.waveSeatProductHint
+                : OrdersStrings.waveAvailabilityUnknownHint),
+            if (originalHidden != null) ...[
+              const Divider(height: 24),
+              Text(OrdersStrings.waveExistingAvailability,
+                  style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(originalHidden!
+                  ? OrdersStrings.waveHidden
+                  : OrdersStrings.waveShown),
+              const SizedBox(height: 8),
+              Text(OrdersStrings.waveExistingAvailabilityHint),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: hidden == null,
+                title: Text(OrdersStrings.waveCancelAvailability),
+                subtitle: Text(OrdersStrings.waveCancelAvailabilityHint),
+                onChanged: busy
+                    ? null
+                    : (cancel) => setState(() {
+                          hidden = cancel == true ? null : originalHidden;
+                          dirty = true;
+                        }),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: allowClose,
       onPopInvokedWithResult: (popped, _) {
         if (!popped) close();
       },
-      child: AlertDialog(
+      child: AppAlertDialog(
+          onClose: close,
+          dismissible: !(busy),
           scrollable: true,
           title: Text(widget.product.title ?? ''),
           content: SizedBox(
@@ -560,29 +640,66 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
                             suffixText: widget.product.currencyCode),
                         onChanged: (_) => setState(() => dirty = true)),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                        initialValue: hidden == null
-                            ? 0
-                            : hidden!
-                                ? 2
-                                : 1,
-                        decoration: InputDecoration(
-                            labelText: OrdersStrings.waveAvailability),
-                        items: [
-                          DropdownMenuItem(
-                              value: 0,
-                              child: Text(OrdersStrings.waveNoChange)),
-                          DropdownMenuItem(
-                              value: 1, child: Text(OrdersStrings.waveShown)),
-                          DropdownMenuItem(
-                              value: 2, child: Text(OrdersStrings.waveHidden))
-                        ],
-                        onChanged: busy
-                            ? null
-                            : (value) => setState(() {
-                                  hidden = value == 0 ? null : value == 2;
-                                  dirty = true;
-                                })),
+                    if (widget.product.isUsedInBlueprint != false)
+                      availabilityNotice(context)
+                    else
+                      DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          itemHeight: null,
+                          initialValue: hidden == null
+                              ? 0
+                              : hidden!
+                                  ? 2
+                                  : 1,
+                          decoration: InputDecoration(
+                              labelText: OrdersStrings.waveAvailability,
+                              helper: Semantics(
+                                liveRegion: true,
+                                child: Text(hidden == null
+                                    ? OrdersStrings.waveAvailabilityKeepHint
+                                    : hidden!
+                                        ? OrdersStrings.waveAvailabilityHideHint
+                                        : OrdersStrings
+                                            .waveAvailabilityShowHint),
+                              ),
+                              suffixIcon: IconButton(
+                                tooltip:
+                                    OrdersStrings.waveAvailabilityHelpTitle,
+                                constraints: const BoxConstraints(
+                                    minWidth: 48, minHeight: 48),
+                                icon: const Icon(Icons.info_outline),
+                                onPressed: busy
+                                    ? null
+                                    : () => showDialog<void>(
+                                          context: context,
+                                          builder: (dialogContext) =>
+                                              AppAlertDialog(
+                                            onClose: () =>
+                                                Navigator.pop(dialogContext),
+                                            scrollable: true,
+                                            title: Text(OrdersStrings
+                                                .waveAvailabilityHelpTitle),
+                                            content: Text(OrdersStrings
+                                                .waveAvailabilityHelp),
+                                          ),
+                                        ),
+                              )),
+                          items: [
+                            DropdownMenuItem(
+                                value: 0,
+                                child: Text(
+                                    OrdersStrings.waveAvailabilityNoChange)),
+                            DropdownMenuItem(
+                                value: 1, child: Text(OrdersStrings.waveShown)),
+                            DropdownMenuItem(
+                                value: 2, child: Text(OrdersStrings.waveHidden))
+                          ],
+                          onChanged: busy
+                              ? null
+                              : (value) => setState(() {
+                                    hidden = value == 0 ? null : value == 2;
+                                    dirty = true;
+                                  })),
                     if (error != null)
                       Text(error!,
                           style: TextStyle(
@@ -600,21 +717,18 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
 
 class _WaveTermDialog extends StatefulWidget {
   final ProductPriceWave? wave;
+  final DateTime? initialTime, end;
   final Future<void> Function(DateTime) save;
-  const _WaveTermDialog({this.wave, required this.save});
+  const _WaveTermDialog({this.wave, this.initialTime, this.end, required this.save});
   @override
   State<_WaveTermDialog> createState() => _WaveTermDialogState();
 }
 
 class _WaveTermDialogState extends State<_WaveTermDialog> {
   late final date = TextEditingController(
-      text: widget.wave == null
-          ? ''
-          : DateFormat('dd.MM.yyyy').format(widget.wave!.time.toLocal()));
+      text: (widget.wave?.time ?? widget.initialTime) == null ? '' : DateFormat('dd.MM.yyyy').format((widget.wave?.time ?? widget.initialTime)!.toLocal()));
   late final time = TextEditingController(
-      text: widget.wave == null
-          ? ''
-          : DateFormat('HH:mm').format(widget.wave!.time.toLocal()));
+      text: (widget.wave?.time ?? widget.initialTime) == null ? '' : DateFormat('HH:mm').format((widget.wave?.time ?? widget.initialTime)!.toLocal()));
   bool busy = false;
   String? error;
   @override
@@ -627,7 +741,7 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   Future<void> submit() async {
     final instant =
         localScheduleTime(date.text, time.text, existing: widget.wave?.time);
-    if (instant == null || !instant.isAfter(DateTime.now().toUtc())) {
+    if (instant == null || !instant.isAfter(DateTime.now().toUtc()) || (widget.end != null && !instant.isBefore(widget.end!))) {
       setState(() => error = OrdersStrings.priceInvalid);
       return;
     }
@@ -643,7 +757,9 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !busy,
-      child: AlertDialog(
+      child: AppAlertDialog(
+          onClose: () => Navigator.pop(context, false),
+          dismissible: !(busy),
           scrollable: true,
           title: Text(widget.wave == null
               ? OrdersStrings.addWave

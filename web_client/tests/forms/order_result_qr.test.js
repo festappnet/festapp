@@ -10,6 +10,56 @@ const cases = [
   { format: 'EPC_SCT', payload: 'BCD\n002\n1\nSCT\n\nExample\nDE89370400440532013000\nEUR12.50\n\nRF18539007547034\n\n', reference_kind: 'RF', reference: 'RF18 5390 0754 7034', amount: 12.5, currency_code: 'EUR' },
 ];
 
+test('payment copy preserves its size and restores its icon and tooltip after the last click', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const dom = new JSDOM('<div id="host"></div>', { url: 'http://localhost/' });
+  global.document = dom.window.document;
+  LocalizationService.translations = cs;
+  const copied = [];
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true, value: { clipboard: { writeText: async value => copied.push(value) } },
+  });
+  try {
+    const host = document.querySelector('#host');
+    OrderResult.render(host, true, {
+      payment_qr: { account_number: '2300409288/2010', reference: '2802', amount: 100, currency_code: 'CZK' },
+    }, { communicationTone: 'formal', visibleFields: [] }, () => {});
+    const button = host.querySelectorAll('.result-copy')[1];
+    const icon = button.querySelector('.material-icons');
+    const tooltip = button.querySelector('.result-copy-tooltip');
+    const size = () => {
+      const style = dom.window.getComputedStyle(button);
+      return [style.width, style.height, style.flexBasis];
+    };
+    const initialSize = size();
+    assert.deepEqual(initialSize, ['40px', '40px', '40px']);
+    assert.equal(tooltip.textContent, 'Kopírovat');
+    button.click();
+    await Promise.resolve();
+    assert.deepEqual(copied, ['2802']);
+    assert.equal(icon.textContent, 'check');
+    assert.equal(tooltip.textContent, 'Zkopírováno');
+    assert.deepEqual(size(), initialSize);
+    t.mock.timers.tick(1500);
+    button.click();
+    await Promise.resolve();
+    t.mock.timers.tick(500);
+    assert.equal(icon.textContent, 'check');
+    t.mock.timers.tick(1500);
+    assert.equal(button.querySelector('.material-icons'), icon);
+    assert.equal(icon.textContent, 'content_copy');
+    assert.equal(tooltip.textContent, 'Kopírovat');
+    assert.equal(button.classList.contains('is-copied'), false);
+    assert.equal(button.getAttribute('aria-label'), 'Kopírovat: Variabilní symbol');
+    assert.deepEqual(size(), initialSize);
+  } finally {
+    if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
+    else delete globalThis.navigator;
+    dom.window.close();
+  }
+});
+
 for (const payment of cases) {
   test(`order result renders downloadable ${payment.format} QR from server payload`, async () => {
     const dom = new JSDOM('<div id="host"></div>', { url: 'http://localhost/' });
@@ -18,9 +68,9 @@ for (const payment of cases) {
     const host = document.querySelector('#host');
     OrderResult.render(host, true, {
       payment_qr: { ...payment, account_number: payment.currency_code === 'EUR' ? 'DE89370400440532013000' : 'CZ6508000000192000145399' },
-      ticketOrder: { order: { data: { email: 'zakaznik@example.cz' } } },
+      ticketOrder: { order: { order_symbol: '0012345678', data: { email: 'zakaznik@example.cz' } } },
     },
-      { communicationTone: 'formal', visibleFields: [{ type: 'ticket' }] }, () => {});
+      { occasionId: { title: 'Žďárský ples / 2026' }, title: 'Formulář', communicationTone: 'formal', visibleFields: [{ type: 'ticket' }] }, () => {});
     for (let attempt = 0; attempt < 30 && !host.querySelector('.result-payment-qr'); attempt++) {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
@@ -28,7 +78,7 @@ for (const payment of cases) {
     assert.ok(image, 'QR image should be visible');
     assert.match(image.src, /^data:image\/png;base64,iVBOR/);
     assert.equal(host.querySelector('.result-download')?.href, image.src);
-    assert.equal(host.querySelector('.result-download')?.download, 'platba-qr.png');
+    assert.equal(host.querySelector('.result-download')?.download, 'zdarsky-ples-2026-objednavka-0012345678-qr.png');
     assert.equal(host.querySelector('.result-payment-more')?.open, false);
     assert.equal(host.querySelector('.result-payment-more summary')?.textContent, 'Zobrazit možnosti platby');
     host.querySelector('.result-payment-more').open = true;

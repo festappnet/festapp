@@ -54,6 +54,14 @@ class FeatureService {
         .any((feature) => feature.code == featureCode && feature.isEnabled);
   }
 
+  static bool isTicketPregenerationEnabled({List<Feature>? features}) {
+    final ticket =
+        getFeatureDetails(FeatureConstants.ticket, features: features);
+    return isFeatureEnabled(FeatureConstants.ticket, features: features) &&
+        ticket is TicketFeature &&
+        ticket.pregeneratedTickets;
+  }
+
   /// Returns a default list of features.
   static List<Feature> getDefaultFeatures() {
     return [
@@ -194,12 +202,6 @@ class FeatureService {
   static bool isServiceFoodEnabled() =>
       isFeatureEnabled(FeatureConstants.services) &&
       (getServicesFeature()?.allowsFood ?? true);
-
-  /// True when the services feature is enabled AND generic capacity groups are
-  /// permitted (capacity-groups mode).
-  static bool isServiceCapacityGroupsEnabled() =>
-      isFeatureEnabled(FeatureConstants.services) &&
-      (getServicesFeature()?.allowsCapacityGroups ?? true);
 
   /// Returns the [CounselingFeature] config, or null when the feature is absent
   /// or stored as a plain feature.

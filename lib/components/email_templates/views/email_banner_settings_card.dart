@@ -6,7 +6,6 @@ import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:fstapp/components/images/image_compression_helper.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -243,16 +242,15 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                       Uint8List imageData =
                                           await file.readAsBytes();
                                       try {
-                                        var compressedImageData =
-                                            await ImageCompressionHelper
-                                                .compress(imageData, 900);
                                         final publicUrl =
                                             await DbImages.uploadImage(
-                                                compressedImageData,
+                                                imageData,
                                                 _isOccasion
                                                     ? _occasion!.id
                                                     : null,
-                                                !_isOccasion ? _unit.id : null);
+                                                !_isOccasion ? _unit.id : null,
+                                                profile:
+                                                    ImageUploadProfile.banner);
                                         await _updateBanner(publicUrl);
                                         return publicUrl;
                                       } catch (e) {
@@ -288,16 +286,15 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                       Uint8List imageData =
                                           await file.readAsBytes();
                                       try {
-                                        var compressedImageData =
-                                            await ImageCompressionHelper
-                                                .compress(imageData, 900);
                                         final publicUrl =
                                             await DbImages.uploadImage(
-                                                compressedImageData,
+                                                imageData,
                                                 _isOccasion
                                                     ? _occasion!.id
                                                     : null,
-                                                !_isOccasion ? _unit.id : null);
+                                                !_isOccasion ? _unit.id : null,
+                                                profile:
+                                                    ImageUploadProfile.banner);
                                         await _updateBanner(publicUrl);
                                         return publicUrl;
                                       } catch (e) {

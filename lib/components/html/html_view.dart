@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'html_document_codec.dart';
+import 'html_embedded_block.dart';
 import 'html_text_style.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -80,6 +81,7 @@ class HtmlWithAppLinksWidget extends HtmlWidget {
 
 class HtmlView extends StatefulWidget {
   final String html;
+  final HtmlEmbeddedBlock? embeddedBlock;
   final double fontSize;
   final bool isSelectable;
   final Color? color;
@@ -95,6 +97,7 @@ class HtmlView extends StatefulWidget {
   const HtmlView({
     super.key,
     required this.html,
+    this.embeddedBlock,
     this.fontSize = 18,
     this.isSelectable = false,
     this.color,
@@ -156,6 +159,10 @@ class _HtmlViewState extends State<HtmlView> {
         return null;
       },
       customWidgetBuilder: (el) {
+        final block = widget.embeddedBlock;
+        if (block != null &&
+            el.classes.contains('html-editor-block') &&
+            el.classes.contains(block.cssClass)) return block.builder(context);
         if (el.localName == 'img') {
           final src = el.attributes['src'] ?? el.attributes['data-src'];
           if (src == null || src.isEmpty)
@@ -201,10 +208,10 @@ class _HtmlViewState extends State<HtmlView> {
       },
     );
 
-    return widget.isSelectable
+    // Join the page's selection region so dragging can include its header and
+    // neighbouring text instead of stopping at a nested HTML selection region.
+    return widget.isSelectable && SelectionContainer.maybeOf(context) == null
         ? SelectionArea(
-            focusNode: FocusNode(),
-            selectionControls: materialTextSelectionControls,
             child: content,
           )
         : content;

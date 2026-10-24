@@ -1,0 +1,6 @@
+[44172.6462] POST http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Fetch) 200
+[D9CEE15D981C1A1B332FE389130AC47E] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Other) 200
+[44172.6475] POST http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Fetch)
+[2C94091EA42A7DC4770EC1A3353404E1] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Other)
+[44172.6476] POST http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Fetch)
+[28B6FC83958BD3DA11C3D754897E18D9] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/save_speaker_client_sync_v1 (Other)

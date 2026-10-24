@@ -1,5 +1,7 @@
+import { documentLimits, boundDocumentInput, boundDocumentOutput } from '../_shared/documentLimits.ts';
+import { storedBatchTicketPdf } from '../_shared/ticketBatchStorage.ts';
 import { prepareTicketRenderer } from '../_shared/ticketGeneration.ts';
-import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { supabaseAdmin, createUserClient } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 // Import Buffer for easy Base64 encoding (Supabase Deno supports Node polyfills)
 import { Buffer } from "node:buffer";
@@ -25,23 +27,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: result, error: rpcError } = await supabaseAdmin.rpc('get_ticket_details_for_generating', {
-      ticket_id_input: ticketId
-    });
-
-    if (rpcError || !result) {
-      throw new Error("Failed to fetch ticket details.");
-    }
-
+    const authorizationHeader = req.headers.get("Authorization");
+    let client;
+    if (requestSecret) {
+      await authorizeRequest({ requestSecret });
+      client = supabaseAdmin;
+    } else if (authorizationHeader) client = createUserClient(authorizationHeader);
+    else throw new AuthError("Unauthorized", 401);
+    const { data: result, error: rpcError } = await client.rpc('get_ticket_document_data_v1', { p_ticket: ticketId });
+    if (rpcError) throw new AuthError("Ticket document temporarily unavailable", rpcError.code === 'PT429' ? 429 : 403);
+    if (!result) throw new Error("Ticket document unavailable");
+    const limits=documentLimits(result);
+    boundDocumentInput(result,limits.inputBytes);
     const { ticket, occasion } = result;
 
-    const authorizationHeader = req.headers.get("Authorization");
-    await authorizeRequest({ requestSecret, authorizationHeader, occasionId: occasion.id });
+    let pdfBytes:Uint8Array;
+    if(ticket.batch_id) {
+      const stored=await storedBatchTicketPdf(ticketId,client);
+      if(!stored)throw new Error('batch_document_missing');
+      pdfBytes=stored;
+    } else {
+      const render = await prepareTicketRenderer(occasion, ticket, result.order_data);
+      pdfBytes=(await render(ticket)).bytes;
+    }
 
-    const render = await prepareTicketRenderer(occasion, ticket, result.order_data);
-    const { bytes: pdfBytes } = await render(ticket);
-
-    // --- CHANGED HERE: Encode to Base64 ---
+    boundDocumentOutput(pdfBytes,1,limits);
+    // Encode only after enforcing the output cap.
     const base64Pdf = Buffer.from(pdfBytes).toString('base64');
 
     // Return JSON with the Base64 string

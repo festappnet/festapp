@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -12,14 +13,17 @@ import 'package:fstapp/components/forms/form_strings.dart';
 import 'description_tooltip.dart';
 
 class TicketProductEditorRow extends StatefulWidget {
-  final ProductModel product;
+  final ProductModel Function() readProduct;
+  final ValueChanged<ProductModel> replaceProduct;
+  ProductModel get product => readProduct();
   final VoidCallback onDelete;
   final VoidCallback? onChanged;
   final List<String> availableCurrencies;
 
   const TicketProductEditorRow({
     super.key,
-    required this.product,
+    required this.readProduct,
+    required this.replaceProduct,
     required this.onDelete,
     this.onChanged,
     required this.availableCurrencies,
@@ -58,13 +62,14 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     _surchargeCurrencyController =
         TextEditingController(text: widget.product.metaSurchargeCurrency ?? "");
     _titleController.addListener(() {
-      widget.product.title = _titleController.text;
+      widget.replaceProduct(
+          widget.product.copyWith(title: _titleController.text));
     });
     _priceController.addListener(() {
       final text = _priceController.text.replaceAll(RegExp(r'\s+'), '');
       final newPrice = double.tryParse(text);
       if (newPrice != null) {
-        widget.product.price = newPrice;
+        widget.replaceProduct(widget.product.copyWith(price: newPrice));
       }
       _validateDeposit();
     });
@@ -76,7 +81,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
         (widget.availableCurrencies.isNotEmpty
             ? widget.availableCurrencies.first
             : '');
-    widget.product.currencyCode = selectedCurrency;
+    widget.replaceProduct(
+        widget.product.copyWith(currencyCode: selectedCurrency));
   }
 
   void _validateDeposit() {
@@ -94,8 +100,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       }
       // Keep the entered value on the model — backend validates on save and surfaces
       // a server-side error toast if the value is still invalid at submit time.
-      widget.product.depositAmount =
-          (deposit != null && deposit > 0) ? deposit : null;
+      widget.replaceProduct(widget.product.withDepositAmount(
+          (deposit != null && deposit > 0) ? deposit : null));
     });
   }
 
@@ -103,15 +109,16 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     final t = _metaSurchargeController.text.replaceAll(RegExp(r'\s+'), '');
     final parsed = t.isEmpty ? null : double.tryParse(t);
     // Allow negative amounts (slevy / discounts); only null/0 clears the field.
-    widget.product.metaSurchargeAmount =
-        (parsed != null && parsed != 0) ? parsed : null;
+    widget.replaceProduct(widget.product.withMetaSurchargeAmount(
+        (parsed != null && parsed != 0) ? parsed : null));
     widget.onChanged?.call();
   }
 
   void _onSurchargeCurrencyChanged() {
     final raw = _surchargeCurrencyController.text.trim().toUpperCase();
     final t = raw.length > 3 ? raw.substring(0, 3) : raw;
-    widget.product.metaSurchargeCurrency = t.isEmpty ? null : t;
+    widget.replaceProduct(
+        widget.product.withMetaSurchargeCurrency(t.isEmpty ? null : t));
     widget.onChanged?.call();
   }
 
@@ -133,7 +140,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           final result = await showDialog<String>(
             context: context,
             builder: (context) {
-              return SimpleDialog(
+              return AppSimpleDialog(
                 title: Text(CommonStrings.currency),
                 children: widget.availableCurrencies.map((currency) {
                   return SimpleDialogOption(
@@ -163,7 +170,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
   Widget buildCurrencySelectBox() => _buildCurrencyBox(selectedCurrency, (v) {
         _refresh(() {
           selectedCurrency = v;
-          widget.product.currencyCode = selectedCurrency;
+          widget.replaceProduct(
+              widget.product.copyWith(currencyCode: selectedCurrency));
         });
       });
 
@@ -202,14 +210,15 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           controller: _titleController,
           decoration: InputDecoration(
             labelText: CommonStrings.title,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             border: const UnderlineInputBorder(),
             suffixIcon:
                 !HtmlHelper.isHtmlEmptyOrNull(widget.product.description)
-                ? DescriptionTooltip(
-                    description: widget.product.description!,
-                    child: const Icon(Icons.description, size: 20),
-                  )
-                : null,
+                    ? DescriptionTooltip(
+                        description: widget.product.description!,
+                        child: const Icon(Icons.description, size: 20),
+                      )
+                    : null,
           ),
         ),
         const SizedBox(height: 6),
@@ -240,7 +249,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
             Switch(
               value: !(widget.product.isHidden ?? false),
               onChanged: (value) {
-                _refresh(() => widget.product.isHidden = !value);
+                _refresh(() => widget
+                    .replaceProduct(widget.product.copyWith(isHidden: !value)));
               },
             ),
           ],
@@ -252,7 +262,8 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
               showDialog(
                 context: context,
                 builder: (context) => ProductDetailEditorDialog(
-                  product: widget.product,
+                  readProduct: widget.readProduct,
+                  replaceProduct: widget.replaceProduct,
                   coordinator: coordinator,
                 ),
               ).then((_) {
@@ -283,32 +294,32 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       Widget currency, {
       bool signed = false,
       String? error,
-    }) => Padding(
-      padding: EdgeInsets.zero,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.numberWithOptions(
-                decimal: true,
-                signed: signed,
+    }) =>
+        Padding(
+          padding: EdgeInsets.zero,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: signed,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: label,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    border: const UnderlineInputBorder(),
+                    errorText: error,
+                  ),
+                ),
               ),
-              decoration: InputDecoration(
-                labelText: label,
-                isDense: true,
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                border: const UnderlineInputBorder(),
-                errorText: error,
-              ),
-            ),
+              const SizedBox(width: 8),
+              currency,
+            ],
           ),
-          const SizedBox(width: 8),
-          currency,
-        ],
-      ),
-    );
+        );
     final price = amountField(
       _priceController,
       CommonStrings.price,
@@ -317,25 +328,24 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     final extra = !hasDeposit
         ? null
         : _isVirtualMode
-        ? amountField(
-            _metaSurchargeController,
-            OrdersStrings.gridSurcharge,
-            buildSurchargeCurrencyField(),
-            signed: true,
-          )
-        : amountField(
-            _depositController,
-            OrdersStrings.gridDeposit,
-            Text(selectedCurrency),
-            error: _depositError,
-          );
+            ? amountField(
+                _metaSurchargeController,
+                OrdersStrings.gridSurcharge,
+                buildSurchargeCurrencyField(),
+                signed: true,
+              )
+            : amountField(
+                _depositController,
+                OrdersStrings.gridDeposit,
+                Text(selectedCurrency),
+                error: _depositError,
+              );
 
     return Opacity(
       opacity: (widget.product.isHidden ?? false) ? .5 : 1,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact =
-              constraints.maxWidth < 480 ||
+          final compact = constraints.maxWidth < 480 ||
               MediaQuery.textScalerOf(context).scale(1) > 1.4;
           if (hasDeposit && constraints.maxWidth >= 720 && !compact) {
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

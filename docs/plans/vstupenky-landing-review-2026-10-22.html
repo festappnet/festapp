@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="cs">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vstupenky.online - návrh, kritika a porovnání</title>
+<style>
+:root{--paper:#f6f5ef;--ink:#172b43;--blue:#4465a6;--pale:#e6edf5;--line:#c9d0d9;--muted:#4d5968}*{box-sizing:border-box}body{margin:0;font:17px/1.55 system-ui,sans-serif;background:var(--paper);color:var(--ink)}main{max-width:1180px;margin:auto;padding:48px 28px 88px}h1{font-size:clamp(34px,5vw,62px);line-height:1.05;letter-spacing:-.04em;max-width:1000px}h2{font-size:29px;line-height:1.2;margin:0 0 20px}h3{font-size:21px;line-height:1.25}a{color:#294e8b}a:focus-visible,button:focus-visible{outline:3px solid var(--blue);outline-offset:4px}.eyebrow{font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}.lead{font-size:23px;max-width:900px}section{padding:36px 0;border-top:1px solid var(--line);margin-top:30px}.notice{padding:20px;background:var(--pale);border-left:4px solid var(--blue)}nav{display:flex;gap:12px 24px;flex-wrap:wrap;padding:20px 0}small{font-size:13px;color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:16px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:16px 12px}th{font-size:13px;text-transform:uppercase;letter-spacing:.04em}td:first-child{font-weight:650}li{margin:9px 0}.scroll{overflow-x:auto}.scroll table{min-width:720px}.frame{border:1px solid var(--line);background:white}.frame-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 28px;border-bottom:1px solid var(--line);font-size:14px}.frame-head b{font-size:19px}.mock-nav{display:flex;gap:18px}.mock-nav span:last-child{font-weight:750;color:var(--blue)}.hero{display:grid;grid-template-columns:1fr 1.12fr;align-items:center;gap:30px;padding:48px 28px}.hero h3{font-size:clamp(30px,3.8vw,47px);line-height:1.08;letter-spacing:-.035em;margin:12px 0 20px}.hero p{font-size:18px}.mock-cta{display:inline-block;background:var(--blue);color:white;padding:12px 18px;font-size:16px;font-weight:700;border-radius:8px}.mock-sub{display:block;font-size:14px;color:var(--blue);margin-top:12px}.drawing{background:#f0f4f8;padding:16px;border-radius:14px}.drawing svg{width:100%;height:auto;display:block}.proof{padding:24px 28px;background:#edf2f7;border-top:1px solid var(--line);font-size:16px}.blueprint-note{margin:14px 0 0;font-size:13px;color:var(--muted)}.beats{display:flex;gap:0;border:1px solid var(--line);margin:22px 0}.beat{padding:18px 15px;border-right:1px solid var(--line);flex:1}.beat:first-child{flex:2.3;background:var(--pale)}.beat:last-child{border:0}.beat strong{display:block;font-size:18px}.beat span{font-size:13px}.route{display:grid;grid-template-columns:1fr 1fr;gap:16px}.route article{padding:24px;background:var(--pale)}.route code{font-size:24px;font-weight:750}.iteration{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.iteration article{border-top:3px solid var(--blue)}.status{font-size:12px;padding:5px 9px;background:#dcebdc;color:#244929;display:inline-block;font-weight:750}.status.pending{background:#eee5d5;color:#624515}.comparison td:first-child{width:155px}.comparison td:nth-child(2){width:27%}@media(max-width:760px){main{padding:30px 18px 60px}.hero{grid-template-columns:1fr;padding:28px 20px}.hero h3{font-size:38px}.mock-nav span:not(:last-child){display:none}.frame-head{padding:16px 20px}.beats{display:grid;grid-template-columns:1fr 1fr}.beat{border-bottom:1px solid var(--line)}.beat:first-child{grid-column:1/-1}.iteration,.route{grid-template-columns:1fr}.lead{font-size:20px}}
+</style>
+<main>
+<p class="eyebrow">Návrhová revize R2 / 22. 10. 2026</p>
+<h1>Váš plánek je začátek celého příběhu.</h1>
+<p class="lead">Vstupenky.online se po otevření představí jako služba pro pořadatele. Vlastní sál, skutečné skládání, prodej konkrétních míst a reference klientů. Katalog dostane anglickou adresu <strong>/events</strong>.</p>
+<p class="notice"><strong>Stav:</strong> přesný plán a kritika návrhu jsou hotové. Níže je schematická kompozice a závazný produkční brief, nikoli implementovaná stránka nebo natočené vlastní video. Porovnání skutečné implementace následuje ve vymezených iteracích R3/R4.</p>
+<nav><a href="vstupenky-landing-plan-2026-10-22.md">Celý autoritativní plán</a><a href="vstupenky-landing-EXECUTION-PROMPT-2026-10-22.md">Zadání realizace</a><a href="#video">Klipy jednotlivých funkcí</a><a href="#compare">Porovnání a kritika</a><a href="#iterations">Další iterace</a></nav>
+
+<section aria-labelledby="composition">
+<p class="eyebrow">Kompozice první obrazovky / schéma</p><h2 id="composition">Nejprve produkt a důvěra.</h2>
+<div class="frame">
+<div class="frame-head"><b>vstupenky.online</b><div class="mock-nav"><span>Ukázka</span><span>Reference</span><span>Cena</span><span>Akce ↗</span></div></div>
+<div class="hero"><div><p class="eyebrow">Pro pořadatele plesů</p><h3>Od plánku sálu po poslední vstupenku.</h3><p>Sestavte sál, prodávejte konkrétní místa a mějte platby i příchod hostů pod kontrolou.</p><span class="mock-cta">Připravit ples</span><span class="mock-sub">Podívat se, jak to funguje ↓</span></div>
+<div class="drawing"><svg viewBox="0 0 520 400" role="img" aria-label="Schematický storyboard sálu se stoly, židlemi, pódiem a parketem; není to screenshot skutečného editoru">
+<defs><g id="table"><rect x="-37" y="-21" width="74" height="42" rx="8" fill="#4465a6"/><g fill="#c5d7ec" stroke="#4465a6" stroke-width="1.5"><rect x="-29" y="-37" width="19" height="11" rx="3"/><rect x="10" y="-37" width="19" height="11" rx="3"/><rect x="-29" y="26" width="19" height="11" rx="3"/><rect x="10" y="26" width="19" height="11" rx="3"/><rect x="-51" y="-9" width="10" height="18" rx="3"/><rect x="41" y="-9" width="10" height="18" rx="3"/></g></g></defs>
+<rect x="12" y="12" width="496" height="376" fill="white" rx="10" stroke="#bbc8da"/><rect x="185" y="26" width="150" height="35" rx="4" fill="#253759"/><text x="260" y="49" font-size="15" fill="white" text-anchor="middle">PÓDIUM</text><rect x="186" y="112" width="148" height="170" rx="5" fill="#edf2f7" stroke="#c9d0d9" stroke-dasharray="5 5"/><text x="260" y="202" text-anchor="middle" font-size="16" fill="#536680">PARKET</text>
+<use href="#table" x="91" y="120"/><use href="#table" x="91" y="221"/><use href="#table" x="91" y="322"/><use href="#table" x="429" y="120"/><use href="#table" x="429" y="221"/><use href="#table" x="429" y="322"/>
+<g fill="white" font-size="15" text-anchor="middle"><text x="91" y="125">1</text><text x="91" y="226">2</text><text x="91" y="327">3</text><text x="429" y="125">4</text><text x="429" y="226">5</text><text x="429" y="327">6</text></g><path d="M207 347h106" stroke="#4465a6" stroke-width="4"/><text x="260" y="372" text-anchor="middle" font-size="13" fill="#536680">VSTUP</text>
+</svg><p class="blueprint-note">Finální hero použije skutečný produktový záběr a krátký ovladatelný klip skládání. Toto je pouze schéma rozmístění.</p></div></div>
+<div class="proof"><strong>Skuteční pořadatelé, skutečné výsledky.</strong><br>Hned zde budou dostupné klientské reference, loga a doložené údaje. Bez vymyšlených čísel a demo statistik vydávaných za klientské výsledky.</div>
+</div>
+<p><small>Schéma nepoužívá finální font ani všechny tokeny aplikace. Produkční návrh zachová Futura, naše logo a tenantové barvy. Tlačítka v tomto schématu jsou popisky návrhu; skutečné cíle definuje plán.</small></p>
+</section>
+
+<section id="video"><p class="eyebrow">Samostatná videa přímo u funkcí</p><h2>Scrollujete. Vidíte funkci. Vidíte, co si přizpůsobíte.</h2>
+<p class="notice"><strong>Poslední upřesnění je zapracované:</strong> hlavní formát jsou krátká videa v jednotlivých sekcích. Dřívější návrh společného 55s filmu je nahrazen. Případný dlouhý YouTube sestřih je samostatná volitelná dodávka.</p>
+<div class="beats"><div class="beat"><strong>Plánek</strong>12-18 s + 8-12 s<br><span>Sestavení / Vzhled</span></div><div class="beat"><strong>Formulář</strong>10-14 s + 8-12 s<br><span>Vlastní pole / Vzhled</span></div><div class="beat"><strong>Vstupenka</strong>10-15 s<br><span>Vlastní motiv, sazba a PDF</span></div></div>
+<div class="scroll"><table><thead><tr><th>Sekce stránky</th><th>Vlastní video</th><th>Možnosti přizpůsobení</th></tr></thead><tbody>
+<tr><td>Sál poskládáte podle sebe.</td><td>Drag stolu, židle, kopie a hotový sál.</td><td>Samostatný klip: výběr více objektů, barva/styl a označení.</td></tr>
+<tr><td>Formulář podle vaší akce.</td><td>Přidání vlastního pole a jeho nastavení, veřejný výsledek.</td><td>Samostatný klip: barevný preset, vlastní barva a písmo na stejném obsahu.</td></tr>
+<tr><td>Vstupenka ve vašem stylu.</td><td>Skutečný editor šablony a výsledná PDF vstupenka.</td><td>Obrazový motiv, rozmístění a typografie podle existujících ovládání.</td></tr>
+<tr><td>Hosté si vyberou konkrétní místo.</td><td>8-10 s: skutečný mobilní picker, dvě místa a součet.</td><td>Vzhled a geometrie navazují na tentýž plánek.</td></tr>
+<tr><td>U vstupu máte jasno.</td><td>6-10 s: přijetí QR, opakované načtení a varování.</td><td>Samostatný provozní důkaz.</td></tr>
+<tr><td>Objednávky a platby po ruce.</td><td>8-10 s: skutečný přehled, stavy a export.</td><td>Čitelný výsledek a vlastní ovládání přehrávání.</td></tr>
+</tbody></table></div>
+<p>Každá sekce má krátký text a velké video vedle něj; při scrollování se spustí odpovídající klip. Plánek a formulář mohou lokálně přepnout obsah/vzhled. Každý soubor je samostatný a pochopitelný bez sledování předchozího. Scroll je nativní, bez čekání na dohrání.</p>
+<p class="notice">Při záběrech ověřit skutečné ovládání a výsledek. Editor-only example nesmí předstírat integraci s objednávkami a platbami. Samostatný design vstupenky nesmí být nahrazen jen záběrem doručeného PDF.</p>
+</section>
+
+<section><p class="eyebrow">Pohyb celé stránky</p><h2>Stejná elegance, vlastní vizuální jazyk.</h2>
+<p class="notice"><strong>Vybraný charakter:</strong> velká čistá produktová scéna, vedený kurzor, skutečné gesto, okamžitá proměna a chvíle na přečtení výsledku. Sekce a klip jsou komponované společně. Tickender je konkrétní režijní reference; nehledáme další odlišný koncept a nestačí běžný screencast vedle textu.</p>
+<p>Nejdříve vznikne jeden pilot skládání plánku. Porovná se s referencí v čitelnosti UI, tempu, vedení oka, přiblížení a souhře se scrollováním. Až potom se stejný charakter přenese do formuláře a vstupenky.</p>
+<div class="scroll"><table><thead><tr><th>Vrstva</th><th>Cílové chování</th><th>Proč</th></tr></thead><tbody>
+<tr><td>Odhalování</td><td>12-16 px, přibližně 0,5 s, související prvky po 70 ms.</td><td>Čitelný rytmus a jemné vedení oka.</td></tr>
+<tr><td>Nadpisy a linky</td><td>Stěrka v naší barvě, postupné kreslení hran, pouze na vybraných místech.</td><td>Vlastní charakter bez kopírování konkurenční grafiky.</td></tr>
+<tr><td>Video</td><td>Vlastní klip každé sekce, spuštění při viditelnosti, ostatní pauza. Ruční pauza drží; po dohrání zůstane výsledek a možnost Znovu přehrát.</td><td>Pohyb podporuje právě čtený příběh.</td></tr>
+<tr><td>Ovládání</td><td>Rychlé reakce 180-240 ms, viditelný focus, dostatečné dotykové plochy.</td><td>Působí aktivně a zůstává použitelné.</td></tr>
+<tr><td>Omezení pohybu</td><td>Statický poster, obsah ihned, žádný autoplay; ruční přehrání zůstává.</td><td>Stejná srozumitelnost a dostupnost pro různé uživatele.</td></tr>
+<tr><td>Chyba skriptu</td><td>Ve výchozím stavu viditelné HTML, textový postup, funkční CTA.</td><td>Animace nesmí rozhodovat, zda lze stránku přečíst.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="compare"><p class="eyebrow">Provedená kritika návrhu</p><h2>Co R2 opravuje proti původnímu briefu.</h2>
+<div class="scroll"><table class="comparison"><thead><tr><th>Téma</th><th>Tickender / pozorování</th><th>Slabina původního R1</th><th>Naše R2 / rozhodnutí</th></tr></thead><tbody>
+<tr><td>Hlavní adresa</td><td>Marketing na rootu.</td><td>Redesign vedle katalogu by nesplnil nové zadání.</td><td>Landing na /, katalog na /events.</td></tr>
+<tr><td>Plánek</td><td>Příběh obecné akce, stylování stránky.</td><td>Hotový plánek a výběr míst by nedokázaly skládání.</td><td>Vlastní sekce s klipem sestavení a lokální variantou vzhledu plánku.</td></tr>
+<tr><td>Formát videí</td><td>Hlavní animované demo i další názorné sekce.</td><td>Společný 55s film by neodpovídal poslednímu upřesnění.</td><td>Samostatný krátký klip přímo u každé funkce. YouTube sestřih volitelně.</td></tr>
+<tr><td>Customizace</td><td>Styling je výrazná součást prezentace.</td><td>Formulář a design vstupenky byly podhodnocené.</td><td>Vlastní pole, barvy a fonty formuláře; samostatný editor a vzhled vstupenky.</td></tr>
+<tr><td>Důvěra</td><td>Na prohlédnuté landing page nenalezen pojmenovaný klientský blok.</td><td>Reference zůstaly jen budoucím doplňkem.</td><td>Konkrétní klienti hned po hero a výrazná případová studie.</td></tr>
+<tr><td>Pohyb</td><td>Reveal, stěrky, linky, vnitřní demonstrace.</td><td>Statické napodobení by nezachytilo zásadní kvalitu.</td><td>Přesná motion pravidla a druhé srovnání na videu scrollování.</td></tr>
+<tr><td>Kontinuita</td><td>Jedna animovaná akce přes celý příběh.</td><td>Editorové demo nemusí mít návaznost na host prodej.</td><td>Jeden dokument, ověřený handoff a poctivá hranice ukázky.</td></tr>
+<tr><td>Kupující</td><td>Landing orientovaná na pořadatele.</td><td>Přesun katalogu může lidem zhoršit hledání akce.</td><td>Viditelné Akce na desktopu i mobilu, jeden klik do katalogu.</td></tr>
+<tr><td>Výkon/PWA</td><td>Hlavní ukázka je renderovaná animace.</td><td>Naše MP4 by se mohla stáhnout celá už při instalaci PWA.</td><td>Lazy média, postery a explicitní video exclusion z precache.</td></tr>
+</tbody></table></div>
+<p><small>Toto je srovnání pozorované konkurence a návrhů. Není to tvrzení, že dosud nepostavená stránka už konkurenci překonala nebo zlepšila konverzi.</small></p>
+</section>
+
+<section><h2>Dvě jasné cesty z jedné domény.</h2><div class="route"><article><code>/</code><h3>Pro pořadatele</h3><p>Produktové sekce s vlastními klipy, customizace, reference, cena, ukázka a vstup do přípravy akce.</p></article><article><code>/events</code><h3>Pro návštěvníky</h3><p>Existující katalog, hledání, probíhající a budoucí akce, archiv a přímé odkazy na nákup.</p></article></div><p>Primární CTA: <code>/events?create=1</code>. Staré <code>/?create=1</code> přesměruje. <code>/pro-poradatele</code> přesměruje na root. Přihlášení, skener, formuláře a podporované staré hash odkazy zůstanou funkční.</p></section>
+
+<section id="iterations"><p class="eyebrow">Kritika není jednorázové razítko</p><h2>Další iterace mají konkrétní výstup.</h2><div class="iteration"><article><h3>R2 / tento návrh</h3><span class="status">HOTOVO</span><p>Obsah, routing, natáčecí list, pohyb, kritika R1 a přesné brány realizace.</p></article><article><h3>R3 / kompozice</h3><span class="status pending">PŘI REALIZACI</span><p>Skutečná HTML/CSS stránka s referencemi a postery. Porovnání ve stejném desktop/mobil viewportu. Oprava nejvýše pěti nejdůležitějších konkrétních nálezů.</p></article><article><h3>R4 / pohyb a funkce</h3><span class="status pending">PŘI REALIZACI</span><p>Samostatné klipy plánku, formuláře, vstupenky a jejich vzhledu; společný scroll scénář, porovnání před/po, test CTA, starých odkazů, přehrávání a PWA. Přetáčet jen nevyhovující samostatné klipy.</p></article></div>
+<p><strong>Kontrolní profil:</strong> 1440×1000 a 390×844, zoom 100 %, shodná síť/cache situace a přibližně 500 px scrollu po sekundě. Navíc 320/768 px, keyboard, reduced-motion, video/JS error a registrace host/přihlášený. Výsledkem jsou skutečné screenshoty, časy v záznamu a konkrétní opravy.</p><p>Nezavádíme nový browser analytics beacon. Aktuální rozhodnutí jsou pouze serverové souhrny; laboratorní porovnání není důkaz produkčního konverzního růstu.</p>
+</section>
+<section><h2>Podklady pro realizaci</h2><p><a href="vstupenky-landing-plan-2026-10-22.md">Autoritativní plán včetně souborů, vln, testů a definice hotova</a><br><a href="vstupenky-landing-EXECUTION-PROMPT-2026-10-22.md">Stručný execution prompt</a><br><a href="https://tickender.com/">Živá referenční stránka Tickender</a></p><p><small>Místní původní video rozbor: /Users/miakh/Downloads/festapp-tickender-reference-2026-10-22/index.html. Tento dokument běží přímo z disku a nespouští žádný server.</small></p></section>
+</main>
+</html>

@@ -18,7 +18,7 @@
  * The test creates a temporary user via direct DB insert, signs in via
  * Supabase Auth to get a JWT, runs all tests, then cleans up everything.
  *
- * Run: npm run test:integration
+ * Run: pnpm run test:integration
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'fs';

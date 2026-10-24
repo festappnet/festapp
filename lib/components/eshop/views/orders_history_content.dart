@@ -1,4 +1,5 @@
-import '../orders_strings.dart';import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -10,6 +11,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 
 import '../models/orders_history_model.dart';
+import '../order_grid_filters.dart';
 
 class OrdersHistoryContent extends StatefulWidget {
   const OrdersHistoryContent({super.key});
@@ -36,7 +38,8 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
   void _initializeController() {
     if (occasionLink == null) return;
 
-    final newController = SingleDataGridController<OrderHistoryModel>(
+    late final SingleDataGridController<OrderHistoryModel> newController;
+    newController = SingleDataGridController<OrderHistoryModel>(
       context: context,
       loadData: () async {
         final bundle = await DbOrders.getAllOrdersBundle(
@@ -44,6 +47,15 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
           includeOrdersHistory: true,
           includeOrderDetails: true,
         );
+
+        final formColumn = newController.columns
+            .firstWhere((column) => column.field == EshopColumnIds.ORDER_FORM);
+        final hideFormColumn = bundle.forms.length <= 1;
+        if (newController.isGridLoaded) {
+          newController.stateManager.hideColumn(formColumn, hideFormColumn);
+        } else {
+          formColumn.hide = hideFormColumn;
+        }
 
         final List<OrderHistoryModel> allHistoryItems = [];
 
@@ -96,22 +108,23 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
         return allHistoryItems;
       },
       fromPlutoJson: (json) => OrderHistoryModel.fromPlutoJson(json),
-      idColumn: EshopColumns.HISTORY_ID,
+      idColumn: EshopColumnIds.HISTORY_ID,
       actionsExtended: DataGridActionsController(
         isAddActionPossible: () => false,
+        canDeleteRow: OrderGridFilters.orderIsNonCancelled,
       ),
       columns: EshopColumns.generateColumns(context, [
-        EshopColumns.HISTORY_ID,
-        EshopColumns.HISTORY_CHANGED_AT,
-        EshopColumns.HISTORY_CHANGED_BY,
-        EshopColumns.ORDER_SEQUENCE,
-        EshopColumns.HISTORY_ORDER_SYMBOL,
-        EshopColumns.ORDER_DATA,
-        EshopColumns.ORDER_EMAIL,
-        EshopColumns.ORDER_FORM,
-        EshopColumns.HISTORY_STATE,
-        EshopColumns.HISTORY_PRICE,
-        EshopColumns.HISTORY_CHANGES_SUMMARY,
+        EshopColumnIds.HISTORY_ID,
+        EshopColumnIds.HISTORY_CHANGED_AT,
+        EshopColumnIds.HISTORY_CHANGED_BY,
+        EshopColumnIds.ORDER_SEQUENCE,
+        EshopColumnIds.HISTORY_ORDER_SYMBOL,
+        EshopColumnIds.ORDER_DATA,
+        EshopColumnIds.ORDER_EMAIL,
+        EshopColumnIds.ORDER_FORM,
+        EshopColumnIds.HISTORY_STATE,
+        EshopColumnIds.HISTORY_PRICE,
+        EshopColumnIds.HISTORY_CHANGES_SUMMARY,
       ]),
       firstColumnType: RightsService.isUnitManager()
           ? DataGridFirstColumn.delete

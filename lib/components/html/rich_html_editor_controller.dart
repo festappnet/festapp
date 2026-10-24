@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -10,6 +11,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import 'html_editor_document.dart';
+import 'html_embedded_block.dart';
 import 'html_document_codec.dart';
 import 'html_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -21,6 +23,7 @@ export 'html_media_service.dart' show HtmlMediaOwner, HtmlContentProfile;
 class RichHtmlEditorController extends ChangeNotifier {
   RichHtmlEditorController(
       {String? initialHtml,
+      this.embeddedBlock,
       required this.owner,
       this.profile = HtmlContentProfile.appContent,
       HtmlMediaDraft? media})
@@ -30,6 +33,7 @@ class RichHtmlEditorController extends ChangeNotifier {
     _load(initialHtml);
   }
   final HtmlMediaOwner owner;
+  final HtmlEmbeddedBlock? embeddedBlock;
   final HtmlContentProfile profile;
   String originalHtml;
   final HtmlMediaDraft media;
@@ -104,6 +108,18 @@ class RichHtmlEditorController extends ChangeNotifier {
 
   void toggle(Attribution attribution) =>
       operations.toggleAttributionsOnSelection({attribution});
+  bool canMoveBlock(String nodeId, int offset) => _codec.canMoveNode(
+      nodeId, editor.document.getNodeIndexById(nodeId) + offset);
+
+  void moveBlock(String nodeId, int offset) {
+    if (!canMoveBlock(nodeId, offset)) return;
+    editor.execute([
+      MoveNodeRequest(
+          nodeId: nodeId,
+          newIndex: editor.document.getNodeIndexById(nodeId) + offset)
+    ]);
+  }
+
   void undo() => editor.undo();
   void redo() => editor.redo();
 
@@ -469,15 +485,17 @@ Future<bool> confirmHtmlDiscard(
   if (!coordinator.hasDraft) return true;
   return await showDialog<bool>(
           context: context,
-          builder: (context) =>
-              AlertDialog(title: Text(HtmlStrings.discardDraft), actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(CommonStrings.storno)),
-                TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(CommonStrings.ok)),
-              ])) ==
+          builder: (context) => AppAlertDialog(
+                  onClose: () => Navigator.pop(context, false),
+                  title: Text(HtmlStrings.discardDraft),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(CommonStrings.storno)),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(CommonStrings.ok)),
+                  ])) ==
       true;
 }
 
@@ -488,15 +506,17 @@ Future<bool> confirmHtmlUploadRetry(BuildContext context, HtmlMediaDraft media,
       : !media.hasUnknownUploadsIn(html)) return true;
   final retry = await showDialog<bool>(
       context: context,
-      builder: (context) =>
-          AlertDialog(content: Text(HtmlStrings.unknownUpload), actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(CommonStrings.storno)),
-            FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(HtmlStrings.retryUpload)),
-          ]));
+      builder: (context) => AppAlertDialog(
+              onClose: () => Navigator.pop(context, false),
+              content: Text(HtmlStrings.unknownUpload),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(CommonStrings.storno)),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(HtmlStrings.retryUpload)),
+              ]));
   if (retry == true) media.allowExplicitUnknownRetry();
   return retry == true;
 }

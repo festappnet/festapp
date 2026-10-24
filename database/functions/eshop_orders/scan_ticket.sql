@@ -27,6 +27,9 @@ DECLARE
     v_deposit_feature JSONB;
     v_deposit_info JSONB;
 BEGIN
+    IF NOT public.check_scan_attempt_budget_v1((SELECT occasion FROM eshop.tickets WHERE ticket_symbol=scanned_id LIMIT 1)) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
     -----------------------------------------------------
     -- 1. Attempt to find ticket by Ticket Symbol
     -----------------------------------------------------
@@ -62,7 +65,8 @@ BEGIN
     -----------------------------------------------------
     -- 1.b. Final Check if Ticket is still missing
     -----------------------------------------------------
-    IF ticket_row IS NULL THEN
+    IF ticket_row IS NULL OR ticket_row.state='waitlisted' OR ticket_row.ticket_symbol IS NULL THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object('code', 404, 'message', 'Ticket or User with valid ticket not found');
     END IF;
 
@@ -75,19 +79,22 @@ BEGIN
     LIMIT 1;
 
     IF order_id IS NULL THEN
+        PERFORM public.admit_scan_access_v1(NULL,false);
         RETURN jsonb_build_object('code', 404, 'message', 'Order for ticket not found');
     END IF;
 
     -----------------------------------------------------
     -- 3. Retrieve the occasion ID from the order
     -----------------------------------------------------
-    SELECT o.occasion, occ.link = 'r48vetrkovice2026'
+    SELECT o.occasion, NOT coalesce((ss.config#>>'{sensitive,price}')::boolean,true)
       INTO occasion_id, hide_price
     FROM eshop.orders o
     JOIN public.occasions occ ON occ.id = o.occasion
+    LEFT JOIN public.scanner_settings ss ON ss.occasion_id=occ.id
     WHERE o.id = order_id
     LIMIT 1;
 
+    PERFORM public.check_occasion_writable(occasion_id);
     IF occasion_id IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Occasion for order not found');
     END IF;
@@ -115,19 +122,28 @@ BEGIN
     LIMIT 1;
 
     IF expected_scan_code IS NULL THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object('code', 400, 'message', 'Scan code not defined for this occasion');
     END IF;
 
     -----------------------------------------------------
     -- 5. Validate the scanned_code
     -----------------------------------------------------
-    IF scanned_code != expected_scan_code THEN
+    IF scanned_code IS DISTINCT FROM expected_scan_code THEN
+        PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object('code', 401, 'message', 'Scan code is not correct');
     END IF;
 
     -----------------------------------------------------
     -- 6. Fetch order, products, spot, AND GROUPS
     -----------------------------------------------------
+
+    IF NOT public.admit_scan_access_v1(occasion_id,true) THEN
+        RETURN jsonb_build_object('code',429,'message','abuse_limit_exceeded');
+    END IF;
+    IF NOT public.stripe_ticket_admission_allowed_internal(ticket_row.id) THEN
+        RETURN jsonb_build_object('code',403,'message','stripe_admission_hold');
+    END IF;
 
     -- A. Fetch Order
     SELECT CASE
@@ -280,7 +296,10 @@ BEGIN
     -----------------------------------------------------
     RETURN jsonb_build_object(
         'code', 200,
-        'ticket', row_to_json(ticket_row),
+        'ticket', to_jsonb(ticket_row)||jsonb_build_object('online_required',public.stripe_ticket_requires_online_internal(ticket_row.id),
+            'batch',(SELECT jsonb_build_object('title',b.title) FROM eshop.ticket_batch_items i
+                JOIN eshop.ticket_batches b ON b.id=i.batch_id
+                WHERE i.ticket_id=ticket_row.id AND b.occasion=occasion_id)),
         'order', order_json,
         'products', products_json,
         'spot', spot_json,

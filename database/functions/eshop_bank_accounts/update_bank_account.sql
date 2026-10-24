@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[])
 DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[],text,bigint);
 DROP FUNCTION IF EXISTS public.update_bank_account(bigint,text,text,text,text[],text,bigint,text);
 
-CREATE FUNCTION public.update_bank_account(
+CREATE OR REPLACE FUNCTION public.update_bank_account(
     p_id bigint,
     p_account_number text,
     p_title text,
@@ -23,6 +23,7 @@ DECLARE
     v_operation_id uuid;
     v_request jsonb;
 BEGIN
+    PERFORM public.check_bank_account_writable(p_id);
     -- Prevent manual manipulation of CASH accounts
     IF p_type = 'CASH' THEN
         RAISE EXCEPTION 'CASH_ACCOUNT_MANUAL_UPDATE_FORBIDDEN';
@@ -77,6 +78,9 @@ BEGIN
             AND (account_number IS DISTINCT FROM v_account_number OR type IS DISTINCT FROM p_type)) THEN
           RAISE EXCEPTION 'BANK_SYNC_ACCOUNT_IDENTITY_IMMUTABLE';
         END IF;
+        IF EXISTS(SELECT 1 FROM eshop.payment_reference_accounts a JOIN eshop.payment_reference_namespaces n ON n.id=a.namespace_id
+          WHERE a.bank_account_id=p_id AND (n.canonical_account IS DISTINCT FROM public.canonical_payment_reference_account_internal(v_account_number)
+           OR p_type='CASH')) THEN RAISE EXCEPTION 'PAYMENT_REFERENCE_ACCOUNT_IDENTITY_IMMUTABLE'; END IF;
         UPDATE eshop.bank_accounts
         SET
             account_number = v_account_number,

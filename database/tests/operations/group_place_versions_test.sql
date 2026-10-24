@@ -1,0 +1,33 @@
+DO $$
+DECLARE actor uuid; outsider uuid; org bigint; un bigint; oc bigint; group_id bigint; place_id bigint; cmd uuid; result jsonb; payload jsonb; snapshot jsonb;
+BEGIN
+ PERFORM public.create_user_for_test('group-place-editor','group-place-editor@example.invalid');actor:=public.get_user_id('group-place-editor');
+ PERFORM public.create_user_for_test('group-place-outsider','group-place-outsider@example.invalid');outsider:=public.get_user_id('group-place-outsider');
+ INSERT INTO public.organizations(title) VALUES('Group place') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id IN(actor,outsider);
+ INSERT INTO public.units(title,organization) VALUES('Group place',org) RETURNING id INTO un;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Group place',org,un,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view) VALUES(oc,actor,true,true);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ payload:=jsonb_build_object('title','Group','description',NULL,'type',NULL,'placeId',NULL,'privatePlace',jsonb_build_object('title','Private place','coordinates','{"latLng":{"lat":0,"lng":0}}'::jsonb,'order',0),'participants',jsonb_build_array(jsonb_build_object('user_id',actor,'is_admin',true)));
+ result:=public.save_user_group_client_sync_v1(oc,gen_random_uuid(),NULL,payload);ASSERT result->>'status'='applied';
+ group_id:=(result#>>'{data,group,id}')::bigint;place_id:=(result#>>'{data,group,placeData,id}')::bigint;
+ ASSERT result#>>'{data,group,placeData,aggregate_version}'='1';
+ payload:=payload||jsonb_build_object('id',group_id,'privatePlace',jsonb_build_object('id',place_id,'title','Old place','coordinates','{"latLng":{"lat":0,"lng":0}}'::jsonb,'order',0));
+ UPDATE public.occasion_users SET is_editor=false,is_editor_view=false WHERE occasion=oc AND "user"=actor;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ snapshot:=public.get_group_places_for_map_v1(oc);ASSERT snapshot#>>'{0,places,aggregate_version}'='1';
+ cmd:=gen_random_uuid();result:=public.move_place_client_sync_v1(oc,place_id,cmd,1,2,3);ASSERT result->>'status'='applied';
+ ASSERT public.move_place_client_sync_v1(oc,place_id,cmd,1,2,3)=result;
+ ASSERT public.move_place_client_sync_v1(oc,place_id,gen_random_uuid(),1,4,5)->>'status'='conflict';
+ ASSERT public.save_user_group_client_sync_v1(oc,gen_random_uuid(),1,payload)->>'status'='conflict','old group draft cannot overwrite a moved private place';
+ snapshot:=public.get_user_group_info_with_users(group_id);ASSERT snapshot#>>'{places,aggregate_version}'='2';
+ payload:=payload||jsonb_build_object('title','Changed metadata','placeId',place_id,'privatePlace',NULL);
+ result:=public.save_user_group_client_sync_v1(oc,gen_random_uuid(),2,payload);ASSERT result->>'status'='applied';ASSERT result#>>'{data,group,placeData,aggregate_version}'='2';
+ EXECUTE 'RESET ROLE';
+ ASSERT (SELECT coordinates='{"latLng":{"lat":2,"lng":3}}'::jsonb FROM public.places WHERE id=place_id),'metadata-only group save preserves private location';
+ ASSERT (SELECT version=3 FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND scope_id=oc AND aggregate_id=group_id::text);
+ PERFORM set_config('request.jwt.claim.sub',outsider::text,true);
+ BEGIN PERFORM public.get_group_places_for_map_v1(oc);RAISE EXCEPTION 'outsider loaded group place revisions';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ ASSERT NOT has_function_privilege('authenticated','public.lock_group_place_scope_internal_v1(bigint,bigint)','EXECUTE');
+END $$;

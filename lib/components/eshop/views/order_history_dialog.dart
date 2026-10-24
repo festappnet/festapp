@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -9,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../models/orders_history_model.dart';
 import '../orders_strings.dart';
 import 'order_state_display.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OrderHistoryDialog extends StatefulWidget {
   final int orderId;
@@ -110,7 +110,8 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(),
       title: SelectableText(
           "${OrdersStrings.gridHistory} $_orderSymbol - $_customerName"),
       content: SizedBox(
@@ -132,12 +133,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                     ),
                   ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.close),
-        ),
-      ],
+      actions: [],
     );
   }
 
@@ -151,7 +147,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
     final changedBy =
         item.createdBy?.toFullNameString() ?? OrdersStrings.systemUser;
     final trinaRow = item.toTrinaRow(context);
-    final stateCellFormat = trinaRow.cells[EshopColumns.HISTORY_STATE]!.value;
+    final stateCellFormat = trinaRow.cells[EshopColumnIds.HISTORY_STATE]!.value;
 
     final previousRecord = item.previousHistoryRecord;
     final priceHasChanged =
@@ -215,7 +211,9 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                       children: [
                         Text(
                           Utilities.formatPrice(context, previousRecord.price!,
-                              currencyCode: previousRecord.currencyCode),
+                              currencyCode: previousRecord.currencyCode,
+                              decimalDigits:
+                                  item.orderModel?.amountDecimalDigits ?? 0),
                           style: TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: theme.textTheme.bodySmall?.color),
@@ -226,7 +224,9 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                         ),
                         Text(
                           Utilities.formatPrice(context, item.price!,
-                              currencyCode: item.currencyCode),
+                              currencyCode: item.currencyCode,
+                              decimalDigits:
+                                  item.orderModel?.amountDecimalDigits ?? 0),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -234,7 +234,9 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
                   else
                     Text(
                       Utilities.formatPrice(context, item.price!,
-                          currencyCode: item.currencyCode),
+                          currencyCode: item.currencyCode,
+                          decimalDigits:
+                              item.orderModel?.amountDecimalDigits ?? 0),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                 ],

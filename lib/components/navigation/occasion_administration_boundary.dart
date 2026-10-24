@@ -1,3 +1,4 @@
+import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +33,10 @@ class RightsAdministrationAccess implements AdministrationAccess {
           : RightsService.canSeeAdministration());
   @override
   Future<bool> load(String link, {required bool reservations}) async {
+    if (loadedLink == link) return canAccess(reservations: reservations);
     await RightsService.updateAppData(link: link, refreshOffline: false);
-    return loadedLink == link && canAccess(reservations: reservations);
+    // A successful scoped load may return the canonical slug for this alias.
+    return loadedLink != null && canAccess(reservations: reservations);
   }
 }
 
@@ -132,6 +135,21 @@ class _OccasionAdministrationBoundaryState
       final allowed =
           await widget.access.load(link, reservations: widget.reservations);
       if (!mounted || generation != _generation) return;
+      final canonical = widget.access.loadedLink;
+      if (allowed && canonical != null && canonical != link) {
+        final current = _root!.urlState.uri.toString();
+        final target =
+            canonicalPublicPath(current, 'occasion', link, canonical);
+        if (target != current) {
+          final matches =
+              _root!.matcher.match(target, includePrefixMatches: false);
+          if (matches != null) {
+            _root!.markUrlStateForReplace();
+            await _root!.navigateAll(matches);
+          }
+        }
+        return;
+      }
       setState(() {
         final ready = allowed && widget.access.loadedLink == link;
         _ready = _ready || ready;
@@ -184,10 +202,7 @@ class _OccasionAdministrationBoundaryState
               enabled: !_denied && !waiting,
               child: KeyedSubtree(
                   key: ValueKey(_link), child: widget.builder(context)))),
-      if (_denied)
-        failure
-      else if (waiting)
-        loading,
+      if (_denied) failure else if (waiting) loading,
     ]);
   }
 }

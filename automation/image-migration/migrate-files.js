@@ -202,7 +202,7 @@ async function uploadToR2(r2Key, localPath, contentType) {
     '--content-type', contentType,
     '--remote',
   ];
-  await execFileAsync('npx', args, { timeout: 30000 });
+  await execFileAsync('pnpm', ['dlx', ...args], { timeout: 30000 });
 }
 
 /**
@@ -210,7 +210,7 @@ async function uploadToR2(r2Key, localPath, contentType) {
  */
 async function r2ObjectExists(r2Key) {
   try {
-    await execFileAsync('npx', [
+    await execFileAsync('pnpm', ['dlx',
       'wrangler', 'r2', 'object', 'get',
       `festapp-images/${r2Key}`,
       '--pipe',

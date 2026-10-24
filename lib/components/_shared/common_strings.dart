@@ -116,6 +116,7 @@ class CommonStrings {
       .tr(); // "The processing has completed successfully."
   static String get processingFailed => 'Common.processingFailed'
       .tr(); // "The processing has finished with error."
+  static String get resourceLimited => 'Common.resourceLimited'.tr();
   static String get unknownDatabaseError => 'Common.unknownDatabaseError'
       .tr(); // "An unknown database error occurred."
   static String get detailsLabel => 'Common.detailsLabel'.tr(); // "Details:"

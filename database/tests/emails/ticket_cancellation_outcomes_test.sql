@@ -58,6 +58,7 @@ BEGIN
  PERFORM assert_eq(replay,result,'Transport replay returns the same email outcome');
  result:=public.storno_tickets_client_sync_v1(ARRAY[t1],gen_random_uuid());
  PERFORM assert_eq(result#>'{data,updatedOrders}','[]'::jsonb,'Already cancelled ticket does not offer another update');
+ PERFORM assert_eq(result->>'status','unchanged','A new intent for an already cancelled selection has no command effects');
  BEGIN
   PERFORM public.storno_tickets_client_sync_v1(ARRAY[t2,t3],gen_random_uuid());
   RAISE EXCEPTION 'rollback-proof';

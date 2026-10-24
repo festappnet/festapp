@@ -16,7 +16,7 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/update_service.dart';
 import 'package:fstapp/data_services/auth_service.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_protocol.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/news/db_news.dart';
@@ -490,10 +490,6 @@ class OccasionTab {
       }
     }
     return const ScheduleBasicRoute();
-  }
-
-  static List<PageRouteInfo<dynamic>> getTabRoutes(List<String> tabKeys) {
-    return tabKeys.map((key) => getAvailableTabs()[key]!.route).toList();
   }
 
   Widget buildIcon(BuildContext context, int messageCount,

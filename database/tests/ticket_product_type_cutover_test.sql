@@ -1,0 +1,52 @@
+BEGIN;
+DO $$
+DECLARE org bigint; unit_id bigint; oc bigint; other_oc bigint; typ bigint; other_typ bigint;
+ layout jsonb; changed jsonb; field jsonb; actor uuid; product_id bigint; ticket_id bigint; move_type bigint; form_id bigint; result jsonb; occasion_count bigint;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Ticket product contract') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Ticket product unit',org) RETURNING id INTO unit_id;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Local product test',org,unit_id,'local-product-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Other product test',org,unit_id,'local-other-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO other_oc;
+ INSERT INTO eshop.product_types(title,type,occasion) VALUES('VIP','same',oc) RETURNING id INTO typ;
+ INSERT INTO eshop.product_types(title,type,occasion) VALUES('Transport','same',other_oc) RETURNING id INTO other_typ;
+ layout:='{"schemaVersion":3,"templates":{"wide":{"page":{"width":595.28,"height":841.89},"ticketArea":{"x":10,"y":10,"width":500,"height":300},"elements":[{"id":"scan","binding":"qr","visible":true,"locked":false,"box":{"x":350,"y":100,"width":100,"height":100},"style":{"fontSize":12,"minFontSize":6,"maxLines":1,"color":"000000","align":"left"}},{"id":"code","binding":"ticketSymbol","visible":true,"locked":false,"box":{"x":350,"y":210,"width":100,"height":25},"style":{"fontSize":12,"minFontSize":6,"maxLines":1,"color":"000000","align":"left"}}]}}}';
+ field:=jsonb_build_object('id','vip','binding','productType','productTypeId',typ,'label','VIP','visible',true,'locked',false,'box','{"x":10,"y":10,"width":180,"height":24}'::jsonb,'style','{"fontSize":12,"minFontSize":6,"maxLines":2,"color":"000000","align":"left"}'::jsonb);
+ layout:=jsonb_set(layout,'{templates,wide,elements}',(layout#>'{templates,wide,elements}')||jsonb_build_array(field));
+ PERFORM public.validate_ticket_layout_references(oc,layout);
+ UPDATE public.occasions SET features=jsonb_build_array(jsonb_build_object('code','ticket','layout',layout)) WHERE id=oc;
+ PERFORM assert_true(public.ticket_layout_uses_product_type(oc,typ),'explicit product reference is indexed');
+ changed:=jsonb_set(layout,'{templates,wide,elements,2,productTypeId}',to_jsonb(other_typ));
+ BEGIN PERFORM public.validate_ticket_layout_references(oc,changed);RAISE EXCEPTION 'foreign reference accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='foreign reference accepted' THEN RAISE;END IF;END;
+ FOR changed IN SELECT jsonb_set(layout,'{templates,wide,elements,2,productTypeId}',value) FROM jsonb_array_elements('[-1,0,1.5,9007199254740992]') LOOP
+  BEGIN PERFORM public.validate_ticket_layout(changed);RAISE EXCEPTION 'invalid ID accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='invalid ID accepted' THEN RAISE;END IF;END;
+ END LOOP;
+ BEGIN PERFORM public.validate_ticket_layout(jsonb_set(layout,'{templates,wide,flow}','["scan"]'));RAISE EXCEPTION 'invalid flow accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='invalid flow accepted' THEN RAISE;END IF;END;
+ BEGIN PERFORM public.merge_ticket_layout_features(jsonb_build_array(jsonb_build_object('code','ticket','layout',layout)),'[]',jsonb_build_object('expected',layout,'next',null));RAISE EXCEPTION 'reset accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='reset accepted' THEN RAISE;END IF;END;
+ PERFORM create_user_for_test('product_type_editor','product_type_editor@test.local');
+ actor:=get_user_id('product_type_editor');
+ INSERT INTO public.unit_users(unit,"user",is_editor,is_manager) VALUES(unit_id,actor,true,true);
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_order,is_editor) VALUES(oc,actor,true,true);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ INSERT INTO eshop.product_types(title,type,occasion) VALUES('Other local group','same',oc) RETURNING id INTO move_type;
+ INSERT INTO eshop.products(title,price,currency_code,occasion,product_type) VALUES('Historical product',170,'CZK',oc,typ) RETURNING id INTO product_id;
+ INSERT INTO eshop.tickets(occasion) VALUES(oc) RETURNING id INTO ticket_id;
+ INSERT INTO eshop.order_product_ticket(ticket,product) VALUES(ticket_id,product_id);
+ BEGIN
+  PERFORM public.update_product(jsonb_build_object('id',product_id,'product_type',move_type));RAISE EXCEPTION 'purchased move accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Purchased product type cannot change%' THEN RAISE;END IF;END;
+ PERFORM public.update_product(jsonb_build_object('id',product_id,'title','Updated historical title','is_hidden',true));
+ PERFORM assert_true((SELECT is_hidden AND title='Updated historical title' FROM eshop.products WHERE id=product_id),'hide/title edit preserves history');
+ UPDATE public.occasions SET features=jsonb_build_array(jsonb_build_object('code','ticket','layout',jsonb_set(layout,'{templates,wide,elements,2,productTypeId}',to_jsonb(move_type)))) WHERE id=oc;
+ INSERT INTO public.forms(occasion,title,link) VALUES(oc,'Referenced empty group','referenced-empty-'||gen_random_uuid()) RETURNING id INTO form_id;
+ INSERT INTO public.form_fields(form,title,type,product_type,is_hidden) VALUES(form_id,'Hidden group','product_type',move_type,true);
+ BEGIN PERFORM public.delete_form_ws(form_id);RAISE EXCEPTION 'layout cleanup accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'ticket_product_type_in_use' THEN RAISE;END IF;END;
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields WHERE form=form_id),'failed cleanup rolls back form fields');
+ UPDATE public.occasions SET features=jsonb_build_array(jsonb_build_object('code','ticket','layout',jsonb_set(layout,'{templates,wide,elements,2,productTypeId}',to_jsonb(other_typ)))) WHERE id=oc;
+ SELECT count(*) INTO occasion_count FROM public.occasions WHERE organization=org;
+ BEGIN PERFORM public.duplicate_occasion(oc);RAISE EXCEPTION 'incomplete type map accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Invalid layout%' THEN RAISE;END IF;END;
+ PERFORM assert_eq((SELECT count(*) FROM public.occasions WHERE organization=org),occasion_count,'failed type map rolls back the entire copy');
+ PERFORM assert_true(NOT has_table_privilege('authenticated','eshop.product_types','DELETE'),'direct delete is closed');
+ PERFORM assert_true(NOT has_table_privilege('authenticated','eshop.product_types','UPDATE'),'direct reparent is closed');
+END $$;
+ROLLBACK;

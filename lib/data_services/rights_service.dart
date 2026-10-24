@@ -15,13 +15,11 @@ import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/occasion/link_model.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class RightsService {
-  static final _supabase = Supabase.instance.client;
 
   // The model is now wrapped in a ValueNotifier.
   static final occasionLinkModelNotifier =
@@ -34,8 +32,6 @@ class RightsService {
       occasionLinkModelNotifier.value?.userInfo;
   static OccasionUserModel? currentOccasionUser() =>
       occasionLinkModelNotifier.value?.occasionUser;
-  static OccasionUserModel? currentUnitUser() =>
-      occasionLinkModelNotifier.value?.unitUser;
   static int? currentOccasionId() =>
       occasionLinkModelNotifier.value?.occasion?.id;
   static OccasionModel? currentOccasion() =>
@@ -94,14 +90,19 @@ class RightsService {
     if (needsUpdate) {
       LinkModel model =
           LinkModel(occasionLink: link, unitId: unitId, formLink: formLink);
-      if (unitId == null) {
-        var occasionLink = link ?? RouterService.currentOccasionLink;
-        if (occasionLink.isEmpty) {
-          model = LinkModel.extractOccasionLink(Uri.base.toString());
-        }
+      if (unitId == null &&
+          (link == null || link.isEmpty) &&
+          (formLink == null || formLink.isEmpty)) {
+        model = LinkModel.extractOccasionLink(
+            RouterService.getCurrentBrowserUri().toString());
       }
 
-      if (AppConfig.forceOccasionLink != null) {
+      // Resolve an explicit public/admin path before applying a tenant landing
+      // default, including when an older context was restored from offline data.
+      if (unitId == null &&
+          (model.occasionLink?.isEmpty ?? true) &&
+          (model.formLink?.isEmpty ?? true) &&
+          AppConfig.forceOccasionLink != null) {
         model.occasionLink = AppConfig.forceOccasionLink;
       }
 
@@ -119,6 +120,8 @@ class RightsService {
         throw Exception("Cannot continue. Access denied or not found.");
       }
 
+      RouterService.canonicalizePublicLink(
+          'occasion', model.occasionLink, checkedObject.occasion?.link);
       // This is the key change: update the notifier's value,
       // which will automatically alert any listening widgets.
       occasionLinkModelNotifier.value = checkedObject;
@@ -133,8 +136,12 @@ class RightsService {
         var globalSettings =
             OccasionSettingsModel.fromOccasion(occasionLinkModel!.occasion!);
         SynchroService.globalSettingsModel = globalSettings;
-        await OfflineDataService.saveGlobalSettings(globalSettings);
-        if (refreshOffline && !ClientSyncRuntime.isV1Selected) {
+        if (!checkedObject.demoReadOnly) {
+          await OfflineDataService.saveGlobalSettings(globalSettings);
+        }
+        if (refreshOffline &&
+            !checkedObject.demoReadOnly &&
+            !ClientSyncRuntime.isV1Selected) {
           await SynchroService.refreshOfflineData();
         }
       } else {
@@ -145,13 +152,8 @@ class RightsService {
     return true;
   }
 
-  static Future<bool> getIsAdmin() async {
-    var data = await _supabase.rpc("get_is_admin_on_occasion",
-        params: {"oc": RightsService.currentOccasionId()!});
-    return data;
-  }
-
   static bool canSeeAdmin() {
+    if (isDemoReadOnly) return true;
     return isEditor() || isManager() || isUnitEditorView() || isAdmin();
   }
 
@@ -196,36 +198,42 @@ class RightsService {
     return isManager() || isEditor();
   }
 
-  static bool canSignInOutUsersFromEvents() {
-    return currentOccasionUser()?.isEditor ?? false;
-  }
+  static bool get isDemoReadOnly =>
+      occasionLinkModelNotifier.value?.demoReadOnly == true;
 
   static bool canSeeReservations() {
+    if (isDemoReadOnly) return true;
     return isUnitEditorView() || isEditorOrderView();
   }
 
   static bool canSeeAdministration() {
+    if (isDemoReadOnly) return true;
     return isUnitEditorView() || isEditorView();
   }
 
   static bool isAdmin() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.isAdmin ?? false;
   }
 
   static bool isEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditor ?? false;
   }
 
   static bool isEditorView() {
+    if (isDemoReadOnly) return true;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorView ?? false;
   }
 
   static bool isOrderEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
         false;
   }
 
   static bool isUnitEditor() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.unitUser?.isEditor ?? false;
   }
 
@@ -234,11 +242,13 @@ class RightsService {
   }
 
   static bool isEditorOrderView() {
+    if (isDemoReadOnly) return true;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrderView ??
         false;
   }
 
   static bool isEditorOrder() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
         false;
   }
@@ -251,10 +261,12 @@ class RightsService {
   }
 
   static bool isManager() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.occasionUser?.isManager ?? false;
   }
 
   static bool isUnitManager() {
+    if (isDemoReadOnly) return false;
     return occasionLinkModelNotifier.value?.unitUser?.isManager ?? false;
   }
 
@@ -289,6 +301,7 @@ class RightsService {
         isAdmin: valid.isAdmin,
         organization: newOrg,
         clientSyncV1: valid.clientSyncV1,
+        demoReadOnly: valid.demoReadOnly,
       );
     }
   }

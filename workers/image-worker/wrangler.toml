@@ -43,6 +43,8 @@ binding = "IMAGES"
 # SUPABASE_ANON_KEY
 # SUPABASE_URL_A
 # SUPABASE_ANON_KEY_A
+# Festapp default/a secrets must use https://api.festapp.net and its anon key.
+# Stale cloud endpoints are rejected by the registry and deployment probe.
 # SUPABASE_URL_AKHWEB
 # SUPABASE_ANON_KEY_AKHWEB
 # R2_ACCESS_KEY_ID
@@ -52,6 +54,14 @@ binding = "IMAGES"
 
 [vars]
 CF_ZONE_ID = "02fd6ca8f4652d62e9b05f24a5e9d84f"
-CONTROL_ALLOWED_ORIGINS = "https://live.festapp.net,https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app"
-# P1-only: set to "enabled" during verified private-object copying, then remove.
-PRIVATE_MIGRATION_FALLBACK = "disabled"
+CONTROL_ALLOWED_ORIGINS = "https://live.festapp.net,https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app,https://slunovrat.festapp.net,https://app.festivalslunovrat.cz,https://app.absolventskyvelehrad.cz,https://csa2024.festapp.net,https://clovekavira.festapp.net,https://biscup.festapp.net,https://farnostopava.festapp.net,https://hvezdamorska.festapp.net,https://jubileum2025.festapp.net"
+
+# Public canonical Auth endpoint and anon key, scoped to Slunovrat uploads.
+SUPABASE_URL_SLUNOVRAT = "https://api.festapp.net"
+SUPABASE_ANON_KEY_SLUNOVRAT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3OTA4NjQyLCJleHAiOjE5NDU1ODg2NDJ9.uE20X1ueXZlul4F1fRfV5wXFVlGd8QKBFUHMIo1XD4M"
+
+# Native per-location best effort for uncached public reads. No DB on CDN hit.
+[[ratelimits]]
+name = "IMAGE_READ_MISS_BUDGET"
+namespace_id = "2026101602"
+simple = { limit = 5000, period = 60 }

@@ -440,7 +440,8 @@ Deno.test("a preparation timeout keeps its permit until the renderer stops", asy
     send: async () => {
       throw Error("timed-out work must not send");
     },
-    now: Date.now,
+    // Keep the outer work window deterministic; the preparation timer is real.
+    now: () => 0,
   }, 5);
   await new Promise((resolve) => setTimeout(resolve, 15));
   assertEquals(
@@ -485,4 +486,20 @@ Deno.test("only explicit permanent address DSN statuses report an invalid recipi
     normalizeSesEvents(event, "topic", "event")[0].invalid_recipient,
     false,
   );
+});
+
+Deno.test("legacy PDF and CID PNG snapshots roundtrip with backward compatible SES dispositions", async () => {
+  Deno.env.set("EMAIL_PAYLOAD_KEY", btoa("k".repeat(32)));
+  const legacy = await openEmail<typeof prepared>(await sealEmail(prepared));
+  assertEquals(legacy, prepared);
+  assert(sesBody(legacy, config, {}, false).Content.Simple.Attachments.every(a => a.ContentDisposition === "ATTACHMENT"));
+  const inline = { ...prepared, html: '<img src="cid:qr-1@inline">', attachments: [
+    { filename: "qr-1.png", content: "AQID", contentType: "image/png", encoding: "base64" as const,
+      disposition: "INLINE" as const, contentId: "qr-1@inline" },
+  ] };
+  const restored = await openEmail<typeof inline>(await sealEmail(inline));
+  assertEquals(restored, inline);
+  const attachment = sesBody(restored, config, {}, false).Content.Simple.Attachments[0];
+  assertEquals(attachment.ContentDisposition, "INLINE");
+  assertEquals(attachment.ContentId, "qr-1@inline");
 });

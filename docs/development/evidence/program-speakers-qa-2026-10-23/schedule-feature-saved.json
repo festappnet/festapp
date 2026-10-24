@@ -1,0 +1,1 @@
+[{"code": "schedule", "is_enabled": true, "event_types": [{"code": "new_type_2", "title": "Nový typ události", "colorDefinition": "seed1"}, {"code": "new_type_2", "title": "Nový typ události", "colorDefinition": "seed1"}], "schedule_type": "basic", "enable_children": true, "break_definition": "time", "evening_break_time": "18:00", "afternoon_break_time": "12:00"}]

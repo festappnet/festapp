@@ -1,6 +1,9 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/forms/card_payment_strings.dart';
+import 'package:fstapp/components/stripe_payments/card_refund_decision_api.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -13,11 +16,16 @@ import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../orders_strings.dart';
+import '../models/order_model.dart';
 import 'edit_price_dialog.dart';
+import 'package:fstapp/components/stripe_payments/card_refund_decision_panel.dart';
 
 class ProductsDialog extends StatefulWidget {
   final int ticketId;
-  const ProductsDialog({super.key, required this.ticketId});
+  const ProductsDialog(
+      {super.key, required this.ticketId, this.loadTicket, this.refundApi});
+  final Future<TicketDetailsBundle?> Function(int)? loadTicket;
+  final CardRefundDecisionApi? refundApi;
 
   @override
   State<ProductsDialog> createState() => _ProductsDialogState();
@@ -25,6 +33,13 @@ class ProductsDialog extends StatefulWidget {
 
 class _ProductsDialogState extends State<ProductsDialog> {
   bool _loading = true;
+  bool get _isStripe => _bundle?.order.isStripePayment == true;
+  bool get _canEditProducts => _canManageOrder && !_isStripe;
+  bool get _canManageOrder =>
+      !_loading &&
+      _bundle != null &&
+      _bundle!.order.canEdit &&
+      _bundle!.ticket.state != OrderModel.stornoState;
   TicketDetailsBundle? _bundle;
   List<ProductModel> _orig = [], _current = [];
   double _sumOrig = 0, _sumCur = 0;
@@ -38,7 +53,8 @@ class _ProductsDialogState extends State<ProductsDialog> {
   Future<void> _fetch() async {
     if (!mounted) return;
     setState(() => _loading = true);
-    _bundle = await DbEshop.getProductsForTicket(widget.ticketId);
+    _bundle = await (widget.loadTicket ??
+        DbEshop.getProductsForTicket)(widget.ticketId);
     if (_bundle != null) {
       _orig =
           _bundle!.ticket.relatedProducts?.map((p) => p.copyWith()).toList() ??
@@ -58,6 +74,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _add() async {
+    if (!_canEditProducts) return;
     final added = await Navigator.of(context).push<List<ProductModel>>(
       MaterialPageRoute(
         builder: (_) => SearchProductsScreen(
@@ -75,6 +92,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   void _remove(ProductModel p) {
+    if (!_canEditProducts) return;
     setState(() {
       _current.removeWhere((c) => c.id == p.id);
       _recalc();
@@ -82,6 +100,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   void _addBack(ProductModel p) {
+    if (!_canEditProducts) return;
     setState(() {
       _current.add(p.copyWith());
       _recalc();
@@ -89,6 +108,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _editPrice(ProductModel product) async {
+    if (!_canEditProducts) return;
     final newPrice = await showDialog<double>(
       context: context,
       builder: (context) {
@@ -100,7 +120,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
       setState(() {
         final pIndex = _current.indexWhere((p) => p.id == product.id);
         if (pIndex != -1) {
-          _current[pIndex].price = newPrice;
+          _current[pIndex] = _current[pIndex].copyWith(price: newPrice);
           _recalc();
         }
       });
@@ -108,6 +128,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   Future<void> _save() async {
+    if (!_canEditProducts) return;
     setState(() => _loading = true);
     try {
       // The rpc call now either returns the success data or throws an exception.
@@ -135,14 +156,12 @@ class _ProductsDialogState extends State<ProductsDialog> {
     }
   }
 
-  bool get _hasUnsavedChanges => !const ListEquality<(int?, double?)>().equals(
-      _orig.map((p) => (p.id, p.price)).toList(),
-      _current.map((p) => (p.id, p.price)).toList());
+  bool get _hasUnsavedChanges => !sameProductSelection(_orig, _current);
 
   Future<void> _showSendUpdateConfirmDialog() async {
-    if (_hasUnsavedChanges) return;
+    if (!_canManageOrder || _hasUnsavedChanges) return;
     await _fetch();
-    if (!mounted) return;
+    if (!mounted || !_canManageOrder) return;
     final order = _bundle?.order;
     final payment = _bundle?.paymentInfo;
     if (order == null) return;
@@ -192,18 +211,15 @@ class _ProductsDialogState extends State<ProductsDialog> {
 
     // Combine order symbol and customer name for the title
     final dialogTitle =
-        "${_bundle?.order.toBasicString() ?? ""} $customerName".trim();
+        "${_bundle?.order.orderSymbol ?? ""} $customerName".trim();
 
-    return AlertDialog(
+    return AppAlertDialog(
+      onClose: () => Navigator.of(context).pop(false),
       insetPadding: const EdgeInsets.all(16),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       title: Row(
         children: [
           Expanded(child: SelectableText(dialogTitle)),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(false),
-          )
         ],
       ),
       content: _loading
@@ -221,8 +237,23 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         paymentInfo: _bundle!.paymentInfo,
                         ticket: _bundle!.ticket,
                         orderHistory: _bundle!.orderHistory,
-                        onSendUpdate: _hasUnsavedChanges ? null : _showSendUpdateConfirmDialog,
+                        onSendUpdate: !_canManageOrder || _hasUnsavedChanges
+                            ? null
+                            : _showSendUpdateConfirmDialog,
                       ),
+                      if (_bundle!.order.id != null)
+                        CardRefundDecisionPanel(
+                          orderId: _bundle!.order.id!,
+                          allowEdit: _canManageOrder && !_hasUnsavedChanges,
+                          onChanged: _fetch,
+                          api: widget.refundApi,
+                        ),
+                      if (_isStripe)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                              CardPaymentStrings.text('productsImmutable')),
+                        ),
                       const Divider(height: 32),
                     ],
                     Row(
@@ -307,24 +338,29 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                         color: priceColor),
                                   ),
                                   const SizedBox(width: 8),
-                                  if (!isRemoved)
+                                  if (!isRemoved && !_isStripe)
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
                                       tooltip: OrdersStrings.editPriceTooltip,
-                                      onPressed: pCurrent == null
-                                          ? null
-                                          : () => _editPrice(pCurrent),
+                                      onPressed:
+                                          !_canEditProducts || pCurrent == null
+                                              ? null
+                                              : () => _editPrice(pCurrent),
                                     ),
-                                  IconButton(
-                                    icon: Icon(isRemoved
-                                        ? Icons.add
-                                        : Icons.delete_outline),
-                                    tooltip: isRemoved
-                                        ? OrdersStrings.addBackTooltip
-                                        : OrdersStrings.removeTooltip,
-                                    onPressed: () =>
-                                        isRemoved ? _addBack(p) : _remove(p),
-                                  ),
+                                  if (!_isStripe)
+                                    IconButton(
+                                      icon: Icon(isRemoved
+                                          ? Icons.add
+                                          : Icons.delete_outline),
+                                      tooltip: isRemoved
+                                          ? OrdersStrings.addBackTooltip
+                                          : OrdersStrings.removeTooltip,
+                                      onPressed: !_canEditProducts
+                                          ? null
+                                          : () => isRemoved
+                                              ? _addBack(p)
+                                              : _remove(p),
+                                    ),
                                 ],
                               ),
                             ),
@@ -332,14 +368,15 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         },
                       ),
                     const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton.icon(
-                        onPressed: _add,
-                        icon: const Icon(Icons.add_shopping_cart),
-                        label: Text(OrdersStrings.addProductsButton),
+                    if (!_isStripe)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton.icon(
+                          onPressed: _canEditProducts ? _add : null,
+                          icon: const Icon(Icons.add_shopping_cart),
+                          label: Text(OrdersStrings.addProductsButton),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -349,10 +386,11 @@ class _ProductsDialogState extends State<ProductsDialog> {
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(CommonStrings.storno),
         ),
-        ElevatedButton(
-          onPressed: _hasUnsavedChanges ? _save : null,
-          child: Text(CommonStrings.save),
-        ),
+        if (!_isStripe)
+          ElevatedButton(
+            onPressed: _canEditProducts && _hasUnsavedChanges ? _save : null,
+            child: Text(CommonStrings.save),
+          ),
       ],
     );
   }

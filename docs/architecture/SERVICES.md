@@ -53,8 +53,10 @@ final occasion = RightsService.occasionLinkModel;
 final user = RightsService.currentUser();
 ```
 
-**CRITICAL**: Always check `currentUnit()` and `occasionLinkModel` before
-displaying data - critical for multi-tenancy security!
+Check the active unit/occasion before displaying context-sensitive data.
+`RightsService` controls UI availability; SQL/RLS and Edge authorization enforce
+tenant isolation. A visible/hidden button or populated client context is not
+server-side permission proof.
 
 ---
 
@@ -74,7 +76,10 @@ displaying data - critical for multi-tenancy security!
 
 ### Pattern
 
-No automatic fallback. Code manually fetches remote, saves to cache, and reads from cache when offline:
+The legacy refresh explicitly fetches and caches data. With v1 selected,
+domain accessors such as `getAllEvents()` read `ClientSyncStore` projections
+instead of legacy JSON. The generic JSON storage helpers do not fetch remote
+data or select a fallback backend. For the legacy cache:
 
 ```dart
 // Save remote data to cache
@@ -100,9 +105,11 @@ reads and populate `OfflineDataService`.
   index when v1 is selected; otherwise fetches user info, events, activities,
   inventory, map data, information, speakers, cleaning status and news into the
   legacy cache
-- `getAppConfig(LinkModel)` — Retrieves app configuration through
-  `AppConfigRpc` (`get_app_config_v219`, with explicit legacy fallback only when
-  the selected backend profile requires it)
+- `getAppConfig(LinkModel)` calls `loadAppConfigWithLegacyFallback`:
+  `get_app_config_v219` first, then `get_app_config_v218` / `get_app_config_v2`
+  only for the exact PostgREST missing-function error. `useLegacyContract` can
+  select the legacy sequence directly. Authorization, network and server errors
+  propagate instead of triggering fallback.
 
 ### Data Flow
 
@@ -126,8 +133,19 @@ sequenceDiagram
 
     U->>EF: Submit order payload
     EF->>DB: Validate & create order
-    DB-->>EF: Order + tickets
-    EF-->>U: Order confirmation + email sent
+    participant Q as email_messages queue
+    participant W as process-email-queue
+    participant SES as SES
+    DB->>Q: Transactional confirmation intent
+    DB-->>EF: Committed order + tickets
+    EF-->>U: Order confirmation, delivery queued + optional receipt
+    DB->>W: Post-commit wake (cron recovers)
+    W->>DB: Claim + fenced global send permit
+    W->>SES: Send rendered snapshot content
+    SES-->>W: Provider acceptance
+    W->>DB: Persist acceptance and post-actions
+    U->>EF: Poll email-confirmation-status with receipt
+    EF-->>U: Bounded confirmation status
 ```
 
 **Offline Cache Flow**:
@@ -135,11 +153,16 @@ sequenceDiagram
 ```mermaid
 graph LR
     A[App starts] --> B["SynchroService<br/>.refreshOfflineData()"]
-    B --> C[Supabase RPCs/queries]
-    C --> D["OfflineDataService<br/>.saveAll*()"]
+    B --> C{Selected sync capability}
+    C -->|Client Sync v1| V[ClientSyncRuntime]
+    V --> H[Versioned public/private artifacts]
+    H --> S[ClientSyncStore projections]
+    S --> G[Previously synchronized data served offline]
+    C -->|Legacy| R[Supabase RPCs/queries]
+    R --> D["OfflineDataService<br/>.saveAll*()"]
     D --> E[StorageHelper JSON]
     E -->|No connection| F["OfflineDataService<br/>.getAll*()"]
-    F --> G[Cached data served]
+    F --> G
 ```
 
 **For complete implementation details**, refer to:
@@ -150,4 +173,9 @@ graph LR
 
 ---
 
-**Last updated**: 2026-09-10
+Offline reads require previously populated stores; these flows do not promise
+offline authentication, payments or server-confirmed writes. See the
+[Client Sync runbook](../runbooks/client-sync-v1.md) and
+[email queue guide](../setup/aws_ses.md) for operational boundaries.
+
+**Last reviewed**: 2026-10-19

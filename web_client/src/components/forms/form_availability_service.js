@@ -1,3 +1,5 @@
+import { sanitizeHtml } from '../../utils/html.js';
+import { WaitlistStrings } from './waitlist_strings.js';
 import { CountdownWidget } from './widgets/countdown_widget.js';
 import { NotAvailableWidget } from './widgets/not_available_widget.js';
 
@@ -16,6 +18,8 @@ export class FormAvailabilityService {
      * @returns {Object} { status, message, targetTime? }
      */
     static getStatus(formModel) {
+        if (formModel.registrationMode === 'offer') return { status: this.Status.OPEN };
+        if (formModel.isOpen === false) return { status: this.Status.CLOSED };
         const now = new Date();
         
         if (formModel.startTime && now < formModel.startTime) {
@@ -25,6 +29,9 @@ export class FormAvailabilityService {
             };
         } 
         
+        if (formModel.registrationMode === 'full') return { status: 'FULL' };
+        if (formModel.registrationMode === 'closed') return { status: this.Status.CLOSED };
+
         if (formModel.endTime && now > formModel.endTime) {
             return { status: FormAvailabilityService.Status.CLOSED };
         } 
@@ -48,12 +55,29 @@ export class FormAvailabilityService {
         const { showPreview } = context;
         const { status } = statusResult;
 
+        if (status === 'FULL' && !showPreview) {
+            container.replaceChildren();
+            if (formModel.header) {
+                const intro = document.createElement('div');
+                intro.className = 'form-header'; intro.innerHTML = sanitizeHtml(formModel.header); container.appendChild(intro);
+            }
+            const message = document.createElement('p');
+            message.textContent = WaitlistStrings.full;
+            container.appendChild(message);
+            return true;
+        }
         // Preview Mode overrides everything
         if (showPreview) return false;
 
         if (status === FormAvailabilityService.Status.BEFORE_START) {
             if (formModel.enableCountdown) {
                 CountdownWidget.render(container, formModel, context.onReload);
+                if (formModel.showBeforeStartMessage && formModel.beforeStartMessage) {
+                    const information = document.createElement('div');
+                    information.className = 'form-before-start-message form-header';
+                    information.innerHTML = sanitizeHtml(formModel.beforeStartMessage);
+                    container.appendChild(information);
+                }
                 return true; // Stop flow
             }
             // If countdown disabled, fall through to Not Available

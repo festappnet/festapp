@@ -1,0 +1,8 @@
+- generic "ZavřítPostgrestException(message: Public link is already in use, code: 23505, details: Conflict, hin" [ref=e1] focusable [tabindex]
+  - alertdialog "ZavřítPostgrestException(message: Public link is already in use, code: 23505, details: Conflict, hin" [ref=e2] focusable [tabindex]
+    - button "Zavřít" [ref=e5]
+    - textbox "Název formuláře" [ref=e6]: QA Kolize odkazu
+    - textbox "Odkaz formuláře" [ref=e7]: qa-workshop
+    - textbox [disabled, ref=e8]
+    - button "Storno" [ref=e3]
+    - button "Vytvořit" [ref=e4]

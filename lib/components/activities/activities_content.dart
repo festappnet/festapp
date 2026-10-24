@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -43,7 +44,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   final _htmlSave = HtmlSaveCoordinator();
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-    coordinator: _htmlSave, child: _buildHtmlParent(context));
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   EditDataBundle? _bundle;
   DateTime? _timelineStart, _timelineEnd;
@@ -207,13 +208,24 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
   Future<EditDataBundle> _prepareActivityHtml() async {
     final bundle = _bundle!;
-    final snapshot = EditDataBundle(id: bundle.id, parentHistoryId: bundle.parentHistoryId,
-      aggregateVersion: bundle.aggregateVersion, events: bundle.events, places: bundle.places,
-      users: bundle.users, assignmentPlaceLinks: bundle.assignmentPlaceLinks,
-      assignmentEventLinks: bundle.assignmentEventLinks, activityAssignments: bundle.activityAssignments,
-      activities: bundle.activities?.map((activity) => ActivityModel.fromJson(activity.toJson())).toList());
+    final snapshot = EditDataBundle(
+        id: bundle.id,
+        autosaveHistoryId: bundle.autosaveHistoryId,
+        autosaveCreatedAt: bundle.autosaveCreatedAt,
+        parentHistoryId: bundle.parentHistoryId,
+        aggregateVersion: bundle.aggregateVersion,
+        events: bundle.events,
+        places: bundle.places,
+        users: bundle.users,
+        assignmentPlaceLinks: bundle.assignmentPlaceLinks,
+        assignmentEventLinks: bundle.assignmentEventLinks,
+        activityAssignments: bundle.activityAssignments,
+        activities: bundle.activities
+            ?.map((activity) => ActivityModel.fromJson(activity.toJson()))
+            .toList());
     for (final activity in snapshot.activities ?? <ActivityModel>[]) {
-      activity.description = await _htmlSave.prepare(activity.description ?? '', HtmlMediaOwner.occasion(widget.occasionId));
+      activity.description = await _htmlSave.prepare(activity.description ?? '',
+          HtmlMediaOwner.occasion(widget.occasionId));
     }
     return snapshot;
   }
@@ -221,7 +233,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   Future<void>? _autosaving;
   Future<void> _autosave() {
     if (_autosaving != null) return _autosaving!;
-    if (_isPublishing || _htmlSave.media.hasUnknownUploads) return Future.value();
+    if (_isPublishing || _htmlSave.media.hasUnknownUploads)
+      return Future.value();
     final operation = _performAutosave();
     _autosaving = operation;
     return operation.whenComplete(() => _autosaving = null);
@@ -236,8 +249,8 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
     bool didSaveSuccessfully = false;
     try {
-      final response =
-          await DbActivities.autosaveActivities(widget.occasionId, await _prepareActivityHtml());
+      final response = await DbActivities.autosaveActivities(
+          widget.occasionId, await _prepareActivityHtml());
 
       if (response != null && response['code'] == 409) {
         final conflictData = response['data'] as Map<String, dynamic>?;
@@ -272,9 +285,11 @@ class _ActivitiesContentState extends State<ActivitiesContent>
         }
       } else if (response != null && response['code'] == 200) {
         didSaveSuccessfully = true;
-      } else {
-
-      }
+        _bundle!.autosaveHistoryId =
+            (response['data']['historyId'] as num).toInt();
+        _bundle!.autosaveCreatedAt =
+            DateTime.parse(response['data']['created_at'] as String);
+      } else {}
     } catch (e) {
       // Autosave failed
     }
@@ -355,7 +370,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     final String? choice = await showDialog<String>(
       context: context,
       barrierDismissible: true, // Allow dismissing by tapping the background
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AppAlertDialog(
         title: Text(ActivitiesComponentStrings.dialogTitleUpdateConflict),
         content: Text(message),
         actions: <Widget>[
@@ -402,6 +417,9 @@ class _ActivitiesContentState extends State<ActivitiesContent>
 
       // Copy the metadata
       id: bundle.id,
+      aggregateVersion: bundle.aggregateVersion,
+      autosaveHistoryId: bundle.autosaveHistoryId,
+      autosaveCreatedAt: bundle.autosaveCreatedAt,
       parentHistoryId: bundle.parentHistoryId,
     );
 
@@ -520,6 +538,10 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       loadedFromAutosave = false;
     }
 
+    if (loadedFromAutosave) {
+      dataToLoad.autosaveHistoryId = autosavedBundle?.autosaveHistoryId;
+      dataToLoad.autosaveCreatedAt = autosavedBundle?.autosaveCreatedAt;
+    }
     setState(() {
       _isAutosaveLoaded = loadedFromAutosave;
       _justAutosaved = loadedFromAutosave;
@@ -772,7 +794,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
     final isDark = ActivityConstants.isDarkMode(context);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => AppAlertDialog(
         backgroundColor: isDark ? Colors.grey[800] : Colors.white,
         titleTextStyle: TextStyle(color: isDark ? Colors.white : Colors.black),
         contentTextStyle:
@@ -970,7 +992,7 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       context: context,
       builder: (ctx) {
         final isDark = ActivityConstants.isDarkMode(ctx);
-        return AlertDialog(
+        return AppAlertDialog(
           title: Text(ActivitiesComponentStrings.dialogTitleVersionHistory),
           backgroundColor: isDark ? Colors.grey[800] : Colors.white,
           titleTextStyle:
@@ -1384,7 +1406,12 @@ class _ActivitiesContentState extends State<ActivitiesContent>
   }
 
   void _showActivityDescriptionEditor(ActivityModel activity) {
-    RichHtmlEditorDialog.show(context, initialHtml: activity.description, loadHtml: () async => activity.description, owner: HtmlMediaOwner.occasion(widget.occasionId), coordinator: _htmlSave).then((value) {
+    RichHtmlEditorDialog.show(context,
+            initialHtml: activity.description,
+            loadHtml: () async => activity.description,
+            owner: HtmlMediaOwner.occasion(widget.occasionId),
+            coordinator: _htmlSave)
+        .then((value) {
       if (value != null && value != activity.description) {
         setState(() {
           activity.description = value;
@@ -1393,7 +1420,6 @@ class _ActivitiesContentState extends State<ActivitiesContent>
       }
     });
   }
-
 
   Widget _buildHtmlParent(BuildContext context) {
     if (_bundle == null || _timelineStart == null || _timelineEnd == null) {
@@ -1651,7 +1677,14 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                                 // Cancel any pending autosave operation to prevent race conditions.
                                 _autosaveDebounce?.cancel();
 
-                                if (!await confirmHtmlUploadRetry(context, _htmlSave.media, html: _bundle?.activities?.map((activity) => activity.description ?? '').join() ?? '') || !mounted) return;
+                                if (!await confirmHtmlUploadRetry(
+                                        context, _htmlSave.media,
+                                        html: _bundle?.activities
+                                                ?.map((activity) =>
+                                                    activity.description ?? '')
+                                                .join() ??
+                                            '') ||
+                                    !mounted) return;
                                 setState(() => _isPublishing = true);
                                 await _autosaving;
                                 if (!mounted) return;
@@ -1674,10 +1707,10 @@ class _ActivitiesContentState extends State<ActivitiesContent>
                                 }
                                 try {
                                   await DbActivities.saveActivitiesForEdit(
-                                      context, widget.occasionId, await _prepareActivityHtml());
+                                      context,
+                                      widget.occasionId,
+                                      await _prepareActivityHtml());
                                   _htmlSave.markSaved();
-                                  await DbActivities.deleteAutosave(
-                                      widget.occasionId);
                                   _isAutosaveLoaded = false;
                                   await _loadData(
                                       initialPanOffset: _panOffset,

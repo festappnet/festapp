@@ -1,9 +1,23 @@
 // ticket_feature.dart
-import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'feature.dart';
 import 'feature_constants.dart';
+
+enum TicketDeliveryMode {
+  pdfAttachment('pdf_attachment'),
+  inlineQr('inline_qr'),
+  both('both');
+
+  const TicketDeliveryMode(this.value);
+  final String value;
+  bool get includesPdf => this != inlineQr;
+  static TicketDeliveryMode parse(Object? value, {bool present = true}) {
+    if (!present) return pdfAttachment;
+    return values.firstWhere((mode) => mode.value == value,
+        orElse: () => throw FormatException('Invalid ticket delivery mode'));
+  }
+}
 
 /// Ticket settings and the saved layout draft.
 class TicketFeature extends Feature {
@@ -11,6 +25,8 @@ class TicketFeature extends Feature {
   String? ticketDarkColor;
   String? ticketBackground;
   String? ticketType;
+  TicketDeliveryMode deliveryMode;
+  bool pregeneratedTickets;
   bool? canScanManually;
   bool? showHiddenNote;
 
@@ -23,6 +39,8 @@ class TicketFeature extends Feature {
     this.ticketDarkColor,
     this.ticketBackground,
     this.ticketType,
+    this.deliveryMode = TicketDeliveryMode.pdfAttachment,
+    this.pregeneratedTickets = false,
     this.canScanManually,
     this.showHiddenNote,
   });
@@ -35,6 +53,11 @@ class TicketFeature extends Feature {
       ticketDarkColor: json[FeatureConstants.ticketDarkColor],
       ticketBackground: json[FeatureConstants.ticketBackground],
       ticketType: json[FeatureConstants.ticketType],
+      deliveryMode: TicketDeliveryMode.parse(
+          json[FeatureConstants.ticketDeliveryMode],
+          present: json.containsKey(FeatureConstants.ticketDeliveryMode)),
+      pregeneratedTickets:
+          json[FeatureConstants.ticketPregeneratedTickets] == true,
       canScanManually: json[FeatureConstants.ticketCanScanManually] ?? false,
       showHiddenNote: json[FeatureConstants.ticketShowHiddenNote] ?? false,
     )
@@ -50,6 +73,8 @@ class TicketFeature extends Feature {
   Map<String, dynamic> toJson() {
     final data = {
       FeatureConstants.metaCode: code,
+      FeatureConstants.ticketDeliveryMode: deliveryMode.value,
+      FeatureConstants.ticketPregeneratedTickets: pregeneratedTickets,
       FeatureConstants.metaIsEnabled: isEnabled,
     };
     if (ticketLightColor != null) {
@@ -71,9 +96,6 @@ class TicketFeature extends Feature {
     if (layout != null) data[FeatureConstants.ticketLayout] = layout!;
     return data;
   }
-
-  @override
-  Widget buildFormField(BuildContext context) => const SizedBox.shrink();
 
   Map<String, dynamic>? layout;
   Map<String, dynamic>? _savedLayout;

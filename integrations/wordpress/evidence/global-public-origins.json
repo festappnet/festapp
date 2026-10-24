@@ -1,0 +1,71 @@
+{
+  "origin": "https://tickets.festapp.net",
+  "browser": "isolated actual Chrome",
+  "resources": [
+    {
+      "path": "/embed.js",
+      "protocol": {
+        "attribute": true,
+        "protocol1": true
+      },
+      "status": 200,
+      "type": "application/javascript"
+    },
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/terms/",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/support/",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/privacy/choices/",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "manifest": {
+        "tenant": "festappticketsglobal",
+        "generation": 1,
+        "backend_phase": "canonical"
+      },
+      "path": "/backend-activation.json",
+      "status": 200,
+      "type": "application/json"
+    }
+  ],
+  "legal_pages_rendered": [
+    {
+      "path": "/privacy/",
+      "status": 200,
+      "language": "en",
+      "h1": "Privacy - Festapp Tickets"
+    },
+    {
+      "path": "/terms/",
+      "status": 200,
+      "language": "en",
+      "h1": "Terms of use - Festapp Tickets"
+    },
+    {
+      "path": "/support/",
+      "status": 200,
+      "language": "en",
+      "h1": "Support - Festapp Tickets"
+    },
+    {
+      "path": "/privacy/choices/",
+      "status": 200,
+      "language": "en",
+      "h1": "Your choices and rights - Festapp Tickets"
+    }
+  ]
+}

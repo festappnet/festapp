@@ -1,3 +1,4 @@
+import 'package:festapp_core/map.dart';
 import 'dart:convert';
 
 import 'package:fstapp/components/map/map_scene.dart';

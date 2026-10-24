@@ -1,5 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -58,7 +59,7 @@ class SupabaseEventFeedbackCommands implements EventFeedbackCommands {
     if (response.code != 200 || raw is! Map) {
       throw StateError('Feedback command omitted its authoritative result');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return EventFeedbackModel.fromJson(raw.cast<String, dynamic>());
   }
 
@@ -84,7 +85,7 @@ class SupabaseEventFeedbackCommands implements EventFeedbackCommands {
         (response.status != 'applied' && response.status != 'unchanged')) {
       throw StateError('Feedback delete command failed');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 
   @override
@@ -107,6 +108,6 @@ class SupabaseEventFeedbackCommands implements EventFeedbackCommands {
         (response.status != 'applied' && response.status != 'unchanged')) {
       throw StateError('Admin feedback delete command failed');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 }

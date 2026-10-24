@@ -1,5 +1,6 @@
+GRANT EXECUTE ON FUNCTION public.assert_true(boolean,text), public.assert_false(boolean,text), public.assert_eq(anyelement,anyelement,text) TO authenticated;
 DO $$
-DECLARE actor uuid; org bigint; target bigint; foreign_unit bigint;
+DECLARE actor uuid; org bigint; target bigint; foreign_unit bigint; sibling bigint; sibling_occ bigint; denied_occ bigint;
   occ bigint; pt bigint; product bigint; form_id bigint; plan bigint; result jsonb; source jsonb;
 BEGIN
   SELECT ui.id,ui.organization INTO actor,org FROM public.user_info ui LIMIT 1;
@@ -17,8 +18,17 @@ BEGIN
     VALUES(occ,'Original registration','source-form-'||gen_random_uuid(),plan,true) RETURNING id INTO form_id;
   INSERT INTO public.form_fields(form,title,type,is_required,"order") VALUES(form_id,'Name','name',true,0);
   INSERT INTO public.form_fields(form,title,type,product_type,"order") VALUES(form_id,'Tickets','product_type',pt,1);
+  INSERT INTO public.units(title,organization) VALUES('Other authorized unit',org) RETURNING id INTO sibling;
+  INSERT INTO public.unit_users("user",unit,is_editor,is_manager) VALUES(actor,sibling,true,true);
+  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
+   VALUES(org,sibling,'Sibling source','sibling-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO sibling_occ;
+  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
+   VALUES(org,foreign_unit,'Denied source','denied-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO denied_occ;
   PERFORM set_config('request.jwt.claim.sub',actor::text,true);
   EXECUTE 'SET LOCAL ROLE authenticated';
+  result:=public.get_occasion_setup_source_list(target);
+  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(result) s WHERE (s->'occasion'->>'id')::bigint=sibling_occ),'All authorized same-tenant units are searched');
+  PERFORM assert_false(EXISTS(SELECT 1 FROM jsonb_array_elements(result) s WHERE (s->'occasion'->>'id')::bigint=denied_occ),'Discovery does not widen copy rights');
   result := public.get_occasion_setup_sources(target);
   SELECT x INTO source FROM jsonb_array_elements(result) x WHERE (x->'occasion'->>'id')::bigint=occ;
   PERFORM assert_true(source IS NOT NULL,'Real source occasion is available');

@@ -1,9 +1,9 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
-import 'package:fstapp/components/eshop/models/product_model.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:collection/collection.dart';
 import 'blueprint_strings.dart';
@@ -177,7 +177,7 @@ class BlueprintObjectModel {
 
         final productsSection =
             productsString.isEmpty ? "" : "\n$productsString";
-        return "${product?.title} ${title ?? ""}\n${OrdersStrings.itemSingular} ${ticket.ticketSymbol}$ticketNoteString$noteHiddenString$productsSection$orderString";
+        return "${product?.title} ${title ?? ""}\n${OrderItemStrings.itemSingular} ${ticket.ticketSymbol}$ticketNoteString$noteHiddenString$productsSection$orderString";
       }
     }
 

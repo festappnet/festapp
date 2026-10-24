@@ -18,16 +18,17 @@ for (const version of versions) {
   await mkdir(root);
   await writeFile(path.join(root, 'flutter'), 'fixture');
   await writeFile(path.join(root, 'webclient'), 'fixture');
+  if (version === versions[1]) await writeFile(path.join(root, 'organizers-page'), 'marketing');
   await writeFile(path.join(root, 'main.dart.js'), `self.fixtureBuild=${JSON.stringify(version)};`);
   const result = spawnSync(process.execPath, [generator, root, version], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr);
   workers.set(version, await readFile(path.join(root, 'festapp_service_worker.js'), 'utf8'));
 }
 
-function fixtureHtml(version) {
+function fixtureHtml(version, page = 'catalog') {
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>Festapp PWA ${version}</title></head>
-<body><h1>Festapp PWA fixture ${version}</h1><p id="status">starting</p>
+<body data-page="${page}"><h1>Festapp PWA ${page} ${version}</h1><p id="status">starting</p>
 <script>
 const FIXTURE_VERSION=${JSON.stringify(version)};
 window.__fixtureVersion=FIXTURE_VERSION;
@@ -85,9 +86,9 @@ const server = http.createServer((request, response) => {
   } else if (url.pathname === '/main.dart.js') {
     response.setHeader('content-type', 'text/javascript');
     response.end(`self.fixtureBuild=${JSON.stringify(currentVersion)};`);
-  } else if (url.pathname === '/' || url.pathname === '/webclient' || url.pathname === '/flutter') {
+  } else if (url.pathname === '/' || url.pathname === '/webclient' || url.pathname === '/flutter' || url.pathname === '/events' || url.pathname === '/organizers-page') {
     response.setHeader('content-type', 'text/html; charset=utf-8');
-    response.end(fixtureHtml(currentVersion));
+    response.end(fixtureHtml(currentVersion, currentVersion === versions[1] && ['/', '/organizers-page'].includes(url.pathname) ? 'marketing' : 'catalog'));
   } else {
     response.writeHead(404).end('not found');
   }

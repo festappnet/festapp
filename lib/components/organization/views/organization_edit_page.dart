@@ -1,9 +1,12 @@
+import '../../unit/verification/verification_queue.dart';
+import '../../unit/verification/verification_strings.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/organization/db_organizations.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/organization/organization_admin_guard.dart';
 import 'package:fstapp/components/forms/logic/phone_country_codes.dart';
@@ -168,6 +171,26 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (orgId == 3)
+                              ListTile(
+                                leading: const Icon(Icons.bar_chart_outlined),
+                                title: Text(AdministrationStrings.webAnalytics),
+                                subtitle: Text(AdministrationStrings
+                                    .openCloudflareAnalytics),
+                                trailing: const Icon(Icons.open_in_new),
+                                onTap: () => LaunchUrlService.openExternalUrl(
+                                  'https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/vstupenky.online/analytics/requests'
+                                  '?filters=%5B%5B%7B%22key%22%3A%22clientRequestHTTPHost%22%2C%22operator%22%3A%22eq%22%2C%22value%22%3A%22vstupenky.online%22%7D%5D%5D',
+                                ),
+                              ),
+                            ListTile(
+                                leading: const Icon(Icons.verified_outlined),
+                                title: Text(VerificationStrings.text('queue')),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) => VerificationQueue(
+                                            organizationId: orgId)))),
                             Text("Organization Settings",
                                 style:
                                     Theme.of(context).textTheme.headlineMedium),

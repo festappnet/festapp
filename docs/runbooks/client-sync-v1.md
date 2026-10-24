@@ -6,19 +6,40 @@
 canonical GET key and a five-second TTL. A cache hit, including a matching ETag
 304, performs no R2 read.
 
-## Read-only health and preflight
+## Canonical target and tool scope
+
+Production authority is the tenant's published `backend-activation.json`,
+canonical generation and organization, with any forced occasion verified in
+that same database. Follow [AI context](../architecture/ai_context.md).
+`SUPABASE_URL` may retain a legacy fallback and must not select live authority.
+The legacy application read/cache path is distinct from this v1 protocol;
+capability selection is described in [Services](../architecture/SERVICES.md).
+
+`automation/client_sync_preflight.mjs`,
+`automation/release/client_sync_health.mjs`,
+`automation/release/client_sync_cutover.mjs` and
+`automation/release/configure_client_sync_publisher_schedule.mjs` still resolve
+managed-cloud targets from `SUPABASE_URL`. The helper named
+`loadCanonicalSupabaseTarget` in `automation/lib/supabase_management.mjs` also
+requires a `.supabase.co` project ref and queries the cloud management API;
+its name is not evidence of self-hosted support. These commands are not
+canonical production health or mutation procedures.
+Do not run their apply/enable/disable paths against retained sources. Until
+those mutators are adapted, use a separately reviewed canonical SQL/Worker
+operation through the protected backend-access channel, preserving the ordered
+gates below. This documentation update does not adapt or execute those tools.
+
+## Local contract check and health criteria
 
 ```bash
 node automation/check_client_sync_registry.mjs
-node automation/client_sync_preflight.mjs
-node automation/release/client_sync_health.mjs --pretty
-node automation/release/configure_client_sync_publisher_schedule.mjs --status
-node automation/release/client_sync_cutover.mjs
 ```
 
-The target project comes only from `SUPABASE_URL` in
-`automation/project.conf`; the configured occasion link must exist there.
-Health fails on registry/revision lag, dirty work older than two ticks, claims
+This registry check is local and does not prove production health. Read-only
+canonical health inspection must use the verified self-hosted target; the
+cloud-only health script above must not substitute for it.
+
+The existing health contract fails on registry/revision lag, dirty work older than two ticks, claims
 older than their lease, live p95 above 25 seconds, structural p95 above 45
 seconds, projection drift, stuck receipts, invalid current hashes or a pending
 head.
@@ -27,19 +48,21 @@ head.
 
 `ClientSyncPublisher.runOnce()` is the sole publisher. Its adapters are the
 authenticated internal HTTP tick, the one-minute Cloudflare recovery tick and
-authorized `npm run once`. The five-second named Supabase cron first performs
+authorized `pnpm run once`. The five-second named Supabase cron first performs
 an indexed dirty-key `EXISTS` restricted to `SYNC_SCOPE_IDS`; an empty queue
 causes no HTTP request. The wake endpoint and bearer token live in Cloudflare
 secret/Vault, never repository vars or output.
 
-Configure through `configure_client_sync_publisher_schedule.mjs`. It is
+The historical `configure_client_sync_publisher_schedule.mjs` interface is
 dry-run/read-only by default; apply and disable require the configured occasion
 confirmation. Rotate the wake token Cloudflare first, Vault second, verify a
 tick, then remove the old value. Never expose an unauthenticated fallback.
 
 ## Occasion lifecycle
 
-`automation/release/client_sync_cutover.mjs` is the only enable/disable seam.
+The historical `automation/release/client_sync_cutover.mjs` implements these
+ordered enable/disable gates, but its cloud target resolver must not be used
+for canonical production. A reviewed canonical operation must preserve them.
 Create and duplicate force the flag false; save preserves the server flag;
 enabled occasions cannot be hidden or deleted.
 

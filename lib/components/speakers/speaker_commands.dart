@@ -1,6 +1,7 @@
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/speakers/speaker_model.dart';
 import 'package:fstapp/components/speakers/speaker_topic_model.dart';
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -227,7 +228,7 @@ class SupabaseSpeakerCommands implements SpeakerCommands {
       String functionName, Map<String, dynamic> parameters) async {
     final response = ClientCommandResponse.from(
         await _transport.invoke(functionName, parameters));
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return response;
   }
 

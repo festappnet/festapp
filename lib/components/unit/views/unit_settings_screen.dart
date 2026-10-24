@@ -1,3 +1,5 @@
+import '../verification/unit_legal_profile_section.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -18,6 +20,7 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
 
@@ -205,7 +208,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   Future<void> _deleteUnit() async {
     bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
         title: Text(UnitSettingsStrings.deleteUnit),
         content: Text(UnitSettingsStrings.deleteUnitConfirmation),
         actions: [
@@ -262,273 +266,288 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
               const BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_isLoading)
-                    const Center(child: CircularProgressIndicator())
-                  else ...[
-                    TextFormField(
-                      initialValue: _title,
-                      enabled: _canEdit,
-                      maxLength: maxTitleLength,
-                      buildCounter: (context,
-                          {required currentLength,
-                          required isFocused,
-                          required maxLength}) {
-                        return isFocused
-                            ? Text(
-                                '$currentLength/$maxLength',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              )
-                            : null;
-                      },
-                      decoration: InputDecoration(
-                        labelText: OccasionSettingsStrings.title,
-                      ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return OccasionSettingsStrings.titleIsRequired;
-                        }
-                        return null;
-                      },
-                      onSaved: (val) {
-                        _title = val;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _replyToEmailController,
-                      enabled: _canEdit,
-                      decoration: InputDecoration(
-                        labelText: UnitSettingsStrings.labelReplyToEmail,
-                        border: const OutlineInputBorder(),
-                        helperText: OccasionSettingsStrings.helperReplyToEmail,
-                        helperMaxLines: 3,
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: FormBuilderValidators.compose([
-                        FormBuilderValidators.required(
-                            errorText: CommonStrings.fieldCannotBeEmpty),
-                        FormBuilderValidators.email(
-                            errorText:
-                                OccasionSettingsStrings.validationEmailInvalid),
-                      ]),
-                    ),
-                    const SizedBox(height: 24),
-                    DropdownButtonFormField<String>(
-                      initialValue: _communicationTone,
-                      decoration: InputDecoration(
-                        labelText:
-                            UnitSettingsStrings.labelDefaultCommunicationTone,
-                        border: const OutlineInputBorder(),
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'formal',
-                          child: Text(FormStrings.toneFormal),
+            child: Column(children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else ...[
+                      TextFormField(
+                        initialValue: _title,
+                        enabled: _canEdit,
+                        maxLength: maxTitleLength,
+                        buildCounter: (context,
+                            {required currentLength,
+                            required isFocused,
+                            required maxLength}) {
+                          return isFocused
+                              ? Text(
+                                  '$currentLength/$maxLength',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                )
+                              : null;
+                        },
+                        decoration: InputDecoration(
+                          labelText: OccasionSettingsStrings.title,
                         ),
-                        DropdownMenuItem(
-                          value: 'informal',
-                          child: Text(FormStrings.toneInformal),
-                        ),
-                      ],
-                      onChanged: _canEdit
-                          ? (value) {
-                              if (value != null) {
-                                setState(() => _communicationTone = value);
-                              }
-                            }
-                          : null,
-                    ),
-                    const SizedBox(height: 24),
-                    if (_allTimezones.isNotEmpty)
-                      Autocomplete<String>(
-                        initialValue: _selectedTimezone != null &&
-                                _allTimezones.contains(_selectedTimezone)
-                            ? TextEditingValue(text: _selectedTimezone!)
-                            : null,
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return _allTimezones.take(50);
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return OccasionSettingsStrings.titleIsRequired;
                           }
-                          return _allTimezones.where((String option) {
-                            return option
-                                .toLowerCase()
-                                .contains(textEditingValue.text.toLowerCase());
-                          });
+                          return null;
                         },
-                        onSelected: (String selection) {
-                          setState(() {
-                            _selectedTimezone = selection;
-                          });
+                        onSaved: (val) {
+                          _title = val;
                         },
-                        fieldViewBuilder: (BuildContext context,
-                            TextEditingController fieldTextEditingController,
-                            FocusNode fieldFocusNode,
-                            VoidCallback onFieldSubmitted) {
-                          return TextFormField(
-                            controller: fieldTextEditingController,
-                            focusNode: fieldFocusNode,
-                            enabled: _canEdit,
-                            decoration: InputDecoration(
-                              labelText:
-                                  UnitSettingsStrings.labelDefaultTimezone,
-                              border: const OutlineInputBorder(),
-                              suffixIcon:
-                                  fieldTextEditingController.text.isNotEmpty &&
-                                          _canEdit
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear),
-                                          onPressed: () {
-                                            fieldTextEditingController.clear();
-                                            setState(() {
-                                              _selectedTimezone = null;
-                                            });
-                                          },
-                                        )
-                                      : null,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return OccasionSettingsStrings
-                                    .timezoneIsRequired;
-                              }
-                              if (!_allTimezones.contains(value)) {
-                                if (_selectedTimezone != value) {
-                                  return OccasionSettingsStrings
-                                      .invalidTimezone;
-                                }
-                              }
-                              if (_allTimezones.contains(value) &&
-                                  _selectedTimezone != value) {
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
-                                  if (mounted) {
-                                    setState(() {
-                                      _selectedTimezone = value;
-                                    });
-                                  }
-                                });
-                              }
-                              return null;
-                            },
-                            onFieldSubmitted: (_) => onFieldSubmitted(),
-                          );
-                        },
-                        optionsViewBuilder: (BuildContext context,
-                            AutocompleteOnSelected<String> onSelected,
-                            Iterable<String> options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 4.0,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                    maxHeight: 300,
-                                    maxWidth: MediaQuery.of(context)
-                                                    .size
-                                                    .width -
-                                                40 >
-                                            0
-                                        ? MediaQuery.of(context).size.width - 40
-                                        : 300),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  itemCount: options.length,
-                                  shrinkWrap: true,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    final String option =
-                                        options.elementAt(index);
-                                    return InkWell(
-                                      onTap: () {
-                                        onSelected(option);
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Text(option),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        child: Text(OccasionSettingsStrings.timezonesLoading),
                       ),
-                    const SizedBox(height: 24),
-                    if (_canEdit)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ElevatedButton.icon(
-                            icon: _isSaving
-                                ? const SizedBox.shrink()
-                                : const Icon(Icons.save, size: 18),
-                            label: _isSaving
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2))
-                                : Text(CommonStrings.save),
-                            onPressed: _isSaving ? null : _saveSettings,
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _replyToEmailController,
+                        enabled: _canEdit,
+                        decoration: InputDecoration(
+                          labelText: UnitSettingsStrings.labelReplyToEmail,
+                          border: const OutlineInputBorder(),
+                          helperText:
+                              OccasionSettingsStrings.helperReplyToEmail,
+                          helperMaxLines: 3,
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: FormBuilderValidators.compose([
+                          FormBuilderValidators.required(
+                              errorText: CommonStrings.fieldCannotBeEmpty),
+                          FormBuilderValidators.email(
+                              errorText: OccasionSettingsStrings
+                                  .validationEmailInvalid),
+                        ]),
+                      ),
+                      const SizedBox(height: 24),
+                      DropdownButtonFormField<String>(
+                        initialValue: _communicationTone,
+                        decoration: InputDecoration(
+                          labelText:
+                              UnitSettingsStrings.labelDefaultCommunicationTone,
+                          border: const OutlineInputBorder(),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'formal',
+                            child: Text(FormStrings.toneFormal),
+                          ),
+                          DropdownMenuItem(
+                            value: 'informal',
+                            child: Text(FormStrings.toneInformal),
                           ),
                         ],
+                        onChanged: _canEdit
+                            ? (value) {
+                                if (value != null) {
+                                  setState(() => _communicationTone = value);
+                                }
+                              }
+                            : null,
                       ),
-                    const SizedBox(height: 24),
-                    const SizedBox(height: 24),
-                    if (_canEdit)
-                      ListTile(
-                        leading: const Icon(Icons.account_balance),
-                        title: Text(BankAccountStrings.bankAccountsTitle),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          context.tabsRouter.navigate(
-                              const UnitBankAccountsNavigationRoute());
-                        },
-                      ),
-                    const SizedBox(height: 48),
-                    if (_canEdit)
-                      Center(
-                        child: Tooltip(
-                          message: _deleteDisabledMessage ?? "",
-                          child: TextButton(
-                            onPressed: _canDeleteUnit ? _deleteUnit : null,
-                            child: Text(
-                              UnitSettingsStrings.deleteUnit,
-                              style: TextStyle(
-                                color: _canDeleteUnit
-                                    ? ThemeConfig.redColor(context)
-                                    : Colors.grey,
+                      const SizedBox(height: 24),
+                      if (_allTimezones.isNotEmpty)
+                        Autocomplete<String>(
+                          initialValue: _selectedTimezone != null &&
+                                  _allTimezones.contains(_selectedTimezone)
+                              ? TextEditingValue(text: _selectedTimezone!)
+                              : null,
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return _allTimezones.take(50);
+                            }
+                            return _allTimezones.where((String option) {
+                              return option.toLowerCase().contains(
+                                  textEditingValue.text.toLowerCase());
+                            });
+                          },
+                          onSelected: (String selection) {
+                            setState(() {
+                              _selectedTimezone = selection;
+                            });
+                          },
+                          fieldViewBuilder: (BuildContext context,
+                              TextEditingController fieldTextEditingController,
+                              FocusNode fieldFocusNode,
+                              VoidCallback onFieldSubmitted) {
+                            return TextFormField(
+                              controller: fieldTextEditingController,
+                              focusNode: fieldFocusNode,
+                              enabled: _canEdit,
+                              decoration: InputDecoration(
+                                labelText:
+                                    UnitSettingsStrings.labelDefaultTimezone,
+                                border: const OutlineInputBorder(),
+                                suffixIcon: fieldTextEditingController
+                                            .text.isNotEmpty &&
+                                        _canEdit
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          fieldTextEditingController.clear();
+                                          setState(() {
+                                            _selectedTimezone = null;
+                                          });
+                                        },
+                                      )
+                                    : null,
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return OccasionSettingsStrings
+                                      .timezoneIsRequired;
+                                }
+                                if (!_allTimezones.contains(value)) {
+                                  if (_selectedTimezone != value) {
+                                    return OccasionSettingsStrings
+                                        .invalidTimezone;
+                                  }
+                                }
+                                if (_allTimezones.contains(value) &&
+                                    _selectedTimezone != value) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _selectedTimezone = value;
+                                      });
+                                    }
+                                  });
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) => onFieldSubmitted(),
+                            );
+                          },
+                          optionsViewBuilder: (BuildContext context,
+                              AutocompleteOnSelected<String> onSelected,
+                              Iterable<String> options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4.0,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                      maxHeight: 300,
+                                      maxWidth: MediaQuery.of(context)
+                                                      .size
+                                                      .width -
+                                                  40 >
+                                              0
+                                          ? MediaQuery.of(context).size.width -
+                                              40
+                                          : 300),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    itemCount: options.length,
+                                    shrinkWrap: true,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      final String option =
+                                          options.elementAt(index);
+                                      return InkWell(
+                                        onTap: () {
+                                          onSelected(option);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Text(option),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Text(OccasionSettingsStrings.timezonesLoading),
+                        ),
+                      const SizedBox(height: 24),
+                      if (_canEdit)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton.icon(
+                              icon: _isSaving
+                                  ? const SizedBox.shrink()
+                                  : const Icon(Icons.save, size: 18),
+                              label: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : Text(CommonStrings.save),
+                              onPressed: _isSaving ? null : _saveSettings,
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    const SizedBox(height: 24),
-                    if (_versionInfo.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: Center(
-                          child: Text(
-                            "Version: $_versionInfo",
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
+              if (!_isLoading && _unit.id != null)
+                UnitLegalProfileSection(
+                    key: ValueKey(_unit.id),
+                    unitId: _unit.id!,
+                    canEdit: _canEdit),
+              if (!_isLoading) ...[
+                const SizedBox(height: 24),
+                const SizedBox(height: 24),
+                if (_canEdit)
+                  ListTile(
+                    leading: const Icon(Icons.account_balance),
+                    title: Text(BankAccountStrings.bankAccountsTitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      context.tabsRouter
+                          .navigate(const UnitBankAccountsNavigationRoute());
+                    },
+                  ),
+                const SizedBox(height: 48),
+                if (RightsService.isUnitManager())
+                  ListTile(leading: const Icon(Icons.credit_card),
+                    title: Text(StripeConnectionStrings.title),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.tabsRouter.navigate(const UnitCardPaymentsRoute())),
+                if (_canEdit)
+                  Center(
+                    child: Tooltip(
+                      message: _deleteDisabledMessage ?? "",
+                      child: TextButton(
+                        onPressed: _canDeleteUnit ? _deleteUnit : null,
+                        child: Text(
+                          UnitSettingsStrings.deleteUnit,
+                          style: TextStyle(
+                            color: _canDeleteUnit
+                                ? ThemeConfig.redColor(context)
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                if (_versionInfo.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24.0),
+                    child: Center(
+                      child: Text(
+                        "Version: $_versionInfo",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ),
+              ],
+            ]),
           ),
         ),
       ),

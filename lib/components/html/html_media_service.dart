@@ -8,10 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image_headers;
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
+import 'package:fstapp/components/images/image_upload_limits.dart';
 import 'package:fstapp/components/images/image_file_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'html_document_codec.dart';
+import 'html_image_preview.dart';
 export 'html_document_codec.dart' show HtmlContentProfile;
 
 /// The destination scope is fixed when an editing session starts.
@@ -47,9 +49,9 @@ class HtmlMediaDraft {
         _upload = upload ?? _uploadImage,
         _owns = owns ?? _ownsImage;
 
-  static const maxImageBytes = 10 * 1024 * 1024;
+  static const maxImageBytes = ImageUploadLimits.maxInputBytes;
   static const maxPendingBytes = 32 * 1024 * 1024;
-  static const maxPixels = 16 * 1000 * 1000;
+  static const maxPixels = ImageUploadLimits.maxPixels;
   static const _draftPrefix = 'https://html-draft.invalid/';
   final Future<Uint8List> Function(String, HtmlMediaOwner) _fetch;
   final Future<String> Function(Uint8List, HtmlMediaOwner) _upload;
@@ -95,7 +97,7 @@ class HtmlMediaDraft {
     if (_disposed) throw StateError('Media draft disposed');
     if (!owner.canImport)
       throw StateError('Image import is unavailable in this scope');
-    if (bytes.length > maxImageBytes) throw StateError('Image exceeds 10 MiB');
+    if (bytes.length > maxImageBytes) throw StateError('Image exceeds 20 MB');
     final inputKey = 'bytes:${owner.key}:${sha256.convert(bytes)}';
     final existing = _sources[inputKey];
     if (existing != null) return existing;
@@ -153,8 +155,8 @@ class HtmlMediaDraft {
     if (!owner.canImport)
       throw StateError('Image import is unavailable in this scope');
     if (source.startsWith('data:')) {
-      if (source.length > 14 * 1024 * 1024)
-        throw StateError('Image exceeds 10 MiB');
+      if (source.length > ImageUploadLimits.maxBase64Characters + 1024)
+        throw StateError('Image exceeds 20 MB');
       return addBytes(UriData.parse(source).contentAsBytes(), owner);
     }
     final uri = Uri.tryParse(source);
@@ -274,6 +276,11 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
     if (!header.contains('ftyp') ||
         !RegExp('heic|heix|hevc|hevx|mif1').hasMatch(header)) rethrow;
   }
+  final headers = image_headers.findDecoderForData(bytes)?.startDecode(bytes);
+  if (headers != null &&
+      headers.width * headers.height > HtmlMediaDraft.maxPixels) {
+    throw StateError('Image exceeds 40 MP');
+  }
   final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
   ui.ImageDescriptor? descriptor;
   ui.Codec? codec;
@@ -296,18 +303,27 @@ Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
       height = descriptor.height;
     }
     if (width * height > HtmlMediaDraft.maxPixels) {
-      throw StateError('Image exceeds 16 MP');
+      throw StateError('Image exceeds 40 MP');
     }
     // HEIC must be genuinely decoded and normalized. Unsupported platform
     // decoders fail explicitly rather than storing HEIC bytes with a JPG name.
-    codec = await descriptor.instantiateCodec();
+    final longerEdge = width > height ? width : height;
+    final previewScale = HtmlImagePreview.maxDecodeEdge / longerEdge;
+    codec = await descriptor.instantiateCodec(
+      targetWidth: format != null && previewScale < 1
+          ? (width * previewScale).round().clamp(1, width)
+          : null,
+      targetHeight: format != null && previewScale < 1
+          ? (height * previewScale).round().clamp(1, height)
+          : null,
+    );
     image = (await codec.getNextFrame()).image;
     if (format != null) return bytes;
     final normalized = await image.toByteData(format: ui.ImageByteFormat.png);
     if (normalized == null) throw StateError('Image normalization failed');
     final png = normalized.buffer.asUint8List();
     if (png.length > HtmlMediaDraft.maxImageBytes)
-      throw StateError('Normalized image exceeds 10 MiB');
+      throw StateError('Normalized image exceeds 20 MB');
     return png;
   } finally {
     image?.dispose();
@@ -327,8 +343,8 @@ Future<Uint8List> _fetchImage(String source, HtmlMediaOwner owner) async {
     throw StateError('Authorized image fetch failed');
   }
   final encoded = response.data['data'] as String;
-  if (encoded.length > 14 * 1024 * 1024)
-    throw StateError('Image exceeds 10 MiB');
+  if (encoded.length > ImageUploadLimits.maxBase64Characters)
+    throw StateError('Image exceeds 20 MB');
   return base64Decode(encoded);
 }
 
@@ -338,7 +354,4 @@ Future<bool> _ownsImage(String source, HtmlMediaOwner owner) =>
         unit: owner.isUnit ? owner.id : null);
 Future<String> _uploadImage(Uint8List bytes, HtmlMediaOwner owner) =>
     DbImages.uploadImage(
-        bytes, owner.isUnit ? null : owner.id, owner.isUnit ? owner.id : null,
-        // Preserve GIF/WebP animation and source format. The input was validated and
-        // bounded; server transformation is unnecessary for this editor contract.
-        maxBytes: HtmlMediaDraft.maxImageBytes);
+        bytes, owner.isUnit ? null : owner.id, owner.isUnit ? owner.id : null);

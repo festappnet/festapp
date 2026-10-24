@@ -73,7 +73,6 @@ const filesToStage = [
     'automation/project.conf',
     'pubspec.yaml',
     'web_client/package.json',
-    'web_client/package-lock.json',
     'web_client/src/version.js',
     'web/index.html'
 ];

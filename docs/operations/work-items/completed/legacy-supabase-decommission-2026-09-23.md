@@ -33,7 +33,7 @@ with a fresh inventory and explicit authorization for that resource.
   clients and their legacy credential use were not independently inventoried.
   These uncertainties do not block the canonical service, but they preclude a
   claim that all legacy clients or resources are gone.
-- The [deletion ledger](../../supabase-self-hosted/deletion-ledger.md) retains
+- The [deletion ledger](../../../archive/operations/supabase-self-hosted/deletion-ledger.md) retains
   the 2026-08-27 instruction to delete nothing. The latest observed encrypted
   R2 backup run was `20260922T024347Z`, with five nonempty expected objects and
   a manifest declaring 30-day retention.

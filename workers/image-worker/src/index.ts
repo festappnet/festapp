@@ -13,7 +13,7 @@ import { handleDelete } from './delete';
 import { errorResponse } from './responses';
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const isControlHost = url.hostname === 'image-api.festapp.net';
     const isControlPath = url.pathname === '/upload'
@@ -40,7 +40,7 @@ export default {
       } else if (url.pathname.startsWith('/presign/')) {
         response = await handlePresign(request, env);
       } else if (!isControlHost) {
-        response = await handlePublicServe(request, env);
+        response = await handlePublicServe(request, env, ctx);
       } else {
         response = new Response(JSON.stringify({ error: { code: 'CONTROL_ROUTE_NOT_FOUND', message: 'Control route not found', retryable: false } }), {
           status: 404, headers: { 'Content-Type': 'application/json' },

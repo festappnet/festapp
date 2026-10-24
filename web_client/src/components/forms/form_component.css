@@ -66,6 +66,21 @@
     margin-top: 0 !important;
 }
 
+.form-before-start-message {
+    width: 100%;
+    max-width: var(--form-max-width, 600px);
+    box-sizing: border-box;
+    margin: 24px auto 0;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    overflow-x: auto;
+}
+
+.form-before-start-message table {
+    display: block;
+    overflow-x: auto;
+}
+
 .form-description {
     margin-bottom: calc(24px * var(--font-scale));
     white-space: pre-wrap;
@@ -374,7 +389,7 @@ body.dark-mode .option-description {
 .form-actions {
     margin-top: calc(32px * var(--font-scale));
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 0;
 }
 
 .btn {
@@ -665,3 +680,23 @@ body.dark-mode .surcharge-info {
     color: var(--primary-color, #6f42c1); /* Keep price prominent */
 }
 
+
+.organization-identity-slot { margin:8px auto 0; padding:0 16px; max-width:850px; text-align:center; color:var(--text-color,#222); }
+.organization-identity-button { border:0; background:transparent; color:inherit; font:inherit; font-size:14px; min-height:44px; padding:8px; cursor:pointer; overflow-wrap:anywhere; }
+.organization-identity-button:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:4px; }
+.organization-identity-tail { display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.organization-identity-tail svg, .organization-identity-dialog h2 svg { margin-inline-start:6px; vertical-align:middle; }
+.organization-identity-dialog { box-sizing:border-box; width:calc(100% - 32px); max-width:480px; max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:0; border-radius:12px; box-shadow:0 4px 20px #0003; background:var(--surface-color,#fff); color:var(--text-color,#222); text-align:start; overflow-wrap:anywhere; }
+.organization-identity-dialog::backdrop { background:#0008; }
+.organization-identity-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:16px; }
+.organization-identity-dialog h2 { flex:1; min-width:0; font-size:20px; margin:0; }
+.organization-identity-dialog dt { font-weight:600; margin-top:16px; }
+.organization-identity-dialog dd { margin:4px 0 0; }
+.organization-identity-close { display:inline-flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; height:44px; margin:-8px -8px 0 0; padding:10px; border:0; border-radius:50%; background:transparent; color:inherit; cursor:pointer; }
+.organization-identity-close:hover { background:var(--hover-color,rgba(128,128,128,.12)); }
+.organization-identity-close:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+
+/* Explicit shared appearance keeps labels and inputs on a readable surface. */
+body[data-shared-appearance] { background: var(--form-background); }
+body[data-shared-appearance] #form-page-container { box-sizing: border-box; margin: 20px auto; border-radius: 12px; background: var(--card-bg, #fff); padding: 24px; }
+@media (max-width: 640px) { body[data-shared-appearance] #form-page-container { margin: 12px; width: calc(100% - 24px); } }

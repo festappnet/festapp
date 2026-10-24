@@ -1,0 +1,8 @@
+{
+  "lib/components/forms/models/holder_models/form_holder.dart": "03eaa8ffaa4eec061ef59ff64ea05ee63808147a9b3ba0ef69ddebebff456bb5",
+  "lib/components/forms/views/form_page.dart": "a1767286715d7bcb045e6094999ab9c37f9c834c68a12a001cba5478bf925b7e",
+  "lib/components/forms/views/form_settings_content.dart": "834927621900c58ab48dd8ede3e69db825209b86af45a75e5c74a70cf143120d",
+  "lib/components/forms/views/form_creation_helper.dart": "d3508ce788426e63a40e6edb211543814d0e1c51175a1f86582557280dd64c97",
+  "lib/components/occasion/occasion_creation_helper.dart": "df8b7fac88ec8c95da6319c1817cf02aad67f35c54de0b5b98853a3a5ba1ee25",
+  "database/functions/eshop_forms/duplicate_form_to_occasion.sql": "6701751d35390c12ee194d653e93f8d3bafc37391ae2ee8542172b7dc207da43"
+}

@@ -1,0 +1,36 @@
+The following NoSuchMethodError was thrown building _Cell(state: _CellState#9d650):
+'indexOf'
+Dynamic call failed.
+Tried to invoke `null` like a method.
+Receiver: null
+Arguments: [":"]
+
+The relevant error-causing widget was:
+  _Cell
+  _Cell:file:///Users/miakh/.pub-cache/hosted/pub.dev/trina_grid-2.3.0/lib/src/ui/trina_base_cell.dart:129:14
+
+When the exception was thrown, this was the stack:
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 1254:3  defaultNoSuchMethod
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 1220:5  noSuchMethod
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 560:12  callNSM
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 575:25  _checkAndCall
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 883:10  callMethod
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 887:5   dsend
+package:fstapp/components/single_data_grid/data_grid_helper.dart 210:30                                  getValueFromFormatted
+http://127.0.0.1:56880/dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:trina_grid/src/model/trina_column.dart 429:14                                                    formattedValueForDisplay
+package:trina_grid/src/ui/cells/trina_default_cell.dart 123:21                                           updateState
+package:trina_grid/src/ui/cells/trina_default_cell.dart 100:5                                            initState
+package:flutter/src/widgets/framework.dart 5963:55                                                       [_firstBuild]
+package:flutter/src/widgets/framework.dart 5806:5                                                        mount
+...     Normal element mounting (55 frames)
+package:flutter/src/widgets/framework.dart 4600:19                                                       inflateWidget
+package:trina_grid/src/ui/miscellaneous/trina_visibility_layout.dart 383:36                              inflateWidget
+package:trina_grid/src/ui/miscellaneous/trina_visibility_layout.dart 249:34                              mount
+...     Normal element mounting (81 frames)
+package:flutter/src/widgets/framework.dart 4600:19                                                       inflateWidget
+package:flutter/src/widgets/framework.dart 4072:18                                                       updateChild
+package:flutter/src/widgets/sliver.dart 1092:37                                                          updateChild
+package:flutter/src/widgets/sliver.dart 985:35                                                           processElement
+package:flutter/src/widgets/sliver.dart 1052:9                                                           performRebuild

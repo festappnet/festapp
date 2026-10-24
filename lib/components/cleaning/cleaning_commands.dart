@@ -1,4 +1,5 @@
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,7 +35,7 @@ abstract interface class CleaningCommands {
 
 class SupabaseCleaningCommands implements CleaningCommands {
   SupabaseCleaningCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseCleaningCommands.withTransport(this._transport);
 
@@ -85,7 +86,7 @@ class SupabaseCleaningCommands implements CleaningCommands {
     final response = ClientCommandResponse.from(
       await _transport.invoke(name, parameters),
     );
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return CleaningCommandResult(
       status: response.status,
       code: response.code,

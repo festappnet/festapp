@@ -1,3 +1,7 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'ticket_delivery_selector.dart';
+import 'ticket_delivery_preview.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
@@ -14,10 +18,16 @@ import '../ticket_layout_service.dart';
 import '../ticket_layout_strings.dart';
 import 'ticket_layout_editor.dart';
 import 'ticket_layout_canvas.dart';
+import 'ticket_template_gallery.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
   final int occasionId;
+  final bool productEditing, borrowResourcesOnly;
+  final bool showTemplateGallery;
+  final bool showDeliverySelector;
+  final TicketTemplate Function(TicketTemplate)? styleTemplate;
   final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
   TicketSettings(
@@ -25,6 +35,11 @@ class TicketSettings extends StatefulWidget {
       required this.feature,
       required this.occasionId,
       this.onSave,
+      this.productEditing = true,
+      this.borrowResourcesOnly = false,
+      this.showTemplateGallery = false,
+      this.showDeliverySelector = true,
+      this.styleTemplate,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -41,16 +56,27 @@ class _TicketSettingsState extends State<TicketSettings> {
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
   bool busy = false;
+  bool _previewFailed = false;
   int generation = 0;
   // Keep the persisted slot for compatibility; visual choices belong to templates.
   String get type => widget.feature.ticketType == 'named' ? 'named' : 'wide';
   bool get unsupported =>
       widget.feature.layout != null &&
-      ![1, 2].contains(widget.feature.layout!['schemaVersion']);
+      widget.feature.layout!['schemaVersion'] != 3;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
+  }
+
+  @override
+  void didUpdateWidget(covariant TicketSettings oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.feature.deliveryMode.includesPdf &&
+        !oldWidget.feature.deliveryMode.includesPdf &&
+        thumbnail == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
+    }
   }
 
   @override
@@ -62,22 +88,70 @@ class _TicketSettingsState extends State<TicketSettings> {
   }
 
   Future<void> refresh() async {
+    if (!mounted) return;
     final request = ++generation;
-    if (unsupported) return;
-    await ExceptionHandler.guard(context, futureFunction: () async {
+    if (unsupported || !widget.feature.deliveryMode.includesPdf) return;
+    if (widget.showTemplateGallery) setState(() => _previewFailed = false);
+    Future<void> load() async {
       final next = await service.resolve(widget.occasionId, type,
-          widget.feature.layout, widget.feature.ticketBackground);
+          widget.feature.layout, widget.feature.ticketBackground,
+          borrowResourcesOnly: widget.borrowResourcesOnly);
       if (!mounted || request != generation) {
         next.dispose();
         return;
       }
+      _styleChoices(next);
       final old = thumbnail, oldController = thumbnailController;
-      _refresh(() {
+      setState(() {
         thumbnail = next;
         thumbnailController = TicketLayoutController(next.template);
       });
       old?.dispose();
       oldController?.dispose();
+    }
+
+    if (widget.showTemplateGallery) {
+      try {
+        await load();
+      } catch (_) {
+        if (mounted && request == generation) {
+          setState(() => _previewFailed = true);
+        }
+      }
+    } else {
+      await ExceptionHandler.guard(context, futureFunction: load);
+    }
+  }
+
+  void _styleChoices(TicketLayoutResources resources) {
+    final style = widget.styleTemplate;
+    if (style == null) return;
+    resources.presets.updateAll((key, template) => style(template));
+    // Event colors replace the curated artwork so opaque images cannot hide them.
+    for (final key in resources.presets.keys) {
+      final old = resources.artworks[key];
+      old?.image?.dispose();
+      resources.artworks[key] =
+          TicketLayoutArtwork(label: old?.label, background: null, image: null);
+    }
+  }
+
+  void _selectTemplate(String key) {
+    final template = thumbnail!.presets[key] ?? thumbnail!.preset;
+    _refresh(() {
+      widget.feature.ticketType = type;
+      widget.feature.layout = ticketLayoutDocument({
+        'schemaVersion': 3,
+        'templates': {
+          ...?(widget.feature.layout?['templates'] as Map?),
+          type: template.toJson(),
+        }
+      });
+      widget.feature.ticketBackground = thumbnail!.artworks.containsKey(key)
+          ? thumbnail!.artworks[key]!.background
+          : widget.feature.ticketBackground;
+      thumbnailController?.dispose();
+      thumbnailController = TicketLayoutController(template, artworkKey: key);
     });
   }
 
@@ -110,11 +184,13 @@ class _TicketSettingsState extends State<TicketSettings> {
     try {
       await ExceptionHandler.guard(context, futureFunction: () async {
         final r = await service.resolve(widget.occasionId, type,
-            widget.feature.layout, widget.feature.ticketBackground);
+            widget.feature.layout, widget.feature.ticketBackground,
+            borrowResourcesOnly: widget.borrowResourcesOnly);
         if (!mounted) {
           r.dispose();
           return;
         }
+        _styleChoices(r);
         final showTemplatePicker = await service.openTemplatePickerOnce(
             widget.occasionId, RightsService.currentUser()?.id ?? 'editor',
             configured: widget.feature.layout?['templates']?[type] != null ||
@@ -134,9 +210,10 @@ class _TicketSettingsState extends State<TicketSettings> {
         final result = await showDialog<TicketLayoutResult>(
             context: context,
             useSafeArea: false,
-            builder: (c) => Dialog.fullscreen(
+            builder: (c) => AppDialog.fullscreen(
                 child: TicketLayoutEditor(
                     routeRouter: routeRouter,
+                    productEditing: widget.productEditing,
                     showTemplatePicker: showTemplatePicker,
                     onSave: widget.onSave == null
                         ? null
@@ -145,8 +222,8 @@ class _TicketSettingsState extends State<TicketSettings> {
                                 TicketFeature.fromJson(widget.feature.toJson());
                             draft.ticketType = type;
                             draft.ticketBackground = result.background;
-                            draft.layout = upgradeTicketLayout({
-                              'schemaVersion': 1,
+                            draft.layout = ticketLayoutDocument({
+                              'schemaVersion': 3,
                               'templates': {
                                 ...?(widget.feature.layout?['templates']
                                     as Map?),
@@ -167,8 +244,8 @@ class _TicketSettingsState extends State<TicketSettings> {
         if (result != null) {
           _refresh(() {
             widget.feature.ticketType = type;
-            widget.feature.layout = upgradeTicketLayout({
-              'schemaVersion': 1,
+            widget.feature.layout = ticketLayoutDocument({
+              'schemaVersion': 3,
               'templates': {
                 ...?(widget.feature.layout?['templates'] as Map?),
                 type: result.template.toJson()
@@ -196,25 +273,72 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        if (widget.showDeliverySelector) ...[
+          TicketDeliverySelector(
+              value: widget.feature.deliveryMode,
+              enabled: widget.feature.isEnabled,
+              onChanged: (mode) {
+                _refresh(() => widget.feature.deliveryMode = mode);
+                if (mode.includesPdf && thumbnail == null) refresh();
+              }),
+          const SizedBox(height: 24),
+          if (widget.feature.isEnabled && widget.occasionId > 0)
+            TicketDeliveryPreview(
+                revision: widget.occasionId,
+                mode: widget.feature.deliveryMode,
+                load: () async {
+                  final data = await Supabase.instance.client
+                      .rpc('get_occasion_setup_email_preview', params: {
+                    'p_id': null,
+                    'p_expected_revision': null,
+                    'p_tone': null,
+                    'p_reply_to': null,
+                    'p_message_type': 'order_tickets',
+                    'p_occasion': widget.occasionId,
+                    'p_delivery_mode': null,
+                  });
+                  return Map<String, dynamic>.from(data as Map);
+                }),
+          const SizedBox(height: 24),
+        ],
+        if (widget.feature.deliveryMode.includesPdf &&
+            widget.showTemplateGallery &&
+            !unsupported) ...[
+          if (_previewFailed)
+            Column(children: [
+              Text(CommonStrings.unexpectedError),
+              TextButton.icon(
+                  onPressed: refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(CommonStrings.retry)),
+            ])
+          else if (thumbnail == null)
+            const Center(child: CircularProgressIndicator()),
+          if (thumbnail != null)
+            TicketTemplateGallery(
+                resources: thumbnail!,
+                selected: thumbnailController?.document,
+                onSelected: _selectTemplate),
+          const SizedBox(height: 16),
+        ],
         CheckboxListTile(
-            value: widget.feature.canScanManually ?? false,
-            title: Text(FeaturesStrings.enableManualTicketScan),
-            subtitle: Text(FeaturesStrings.enableManualTicketScanDescription),
-            onChanged: (v) =>
-                _refresh(() => widget.feature.canScanManually = v)),
-        CheckboxListTile(
-            value: widget.feature.showHiddenNote ?? false,
-            title: Text(FeaturesStrings.labelShowHiddenNote),
-            subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
-            onChanged: (v) =>
-                _refresh(() => widget.feature.showHiddenNote = v)),
+            value: widget.feature.pregeneratedTickets,
+            title: Text(FeaturesStrings.enablePregeneratedTickets),
+            subtitle: Text(FeaturesStrings.pregeneratedTicketsDescription),
+            onChanged: (v) => _refresh(
+                () => widget.feature.pregeneratedTickets = v ?? false)),
         const SizedBox(height: 12),
-        if (unsupported) Text(TicketLayoutStrings.unsupported),
-        if (thumbnail?.missingBackground == true)
+        if (widget.feature.deliveryMode.includesPdf && unsupported)
+          Text(TicketLayoutStrings.unsupported),
+        if (widget.feature.deliveryMode.includesPdf &&
+            thumbnail?.missingBackground == true)
           Padding(
               padding: const EdgeInsets.all(12),
               child: Text(TicketLayoutStrings.missingBackground)),
-        if (thumbnail != null && !unsupported)
+        if (widget.feature.deliveryMode.includesPdf &&
+            thumbnail != null &&
+            !unsupported &&
+            !widget.showTemplateGallery)
           SizedBox(
               height: 160,
               child: FittedBox(
@@ -222,8 +346,11 @@ class _TicketSettingsState extends State<TicketSettings> {
                   alignment: Alignment.center,
                   child: CustomPaint(
                       size: thumbnail!.template.area.size,
-                      painter: TicketLayoutPainter(thumbnailController!,
-                          thumbnail!, thumbnail!.scenarios['normal']!,
+                      painter: TicketLayoutPainter(
+                          thumbnailController!,
+                          thumbnail!,
+                          thumbnail!.previewData(
+                              thumbnailController!.document, 'normal'),
                           cropToTicket: true)))),
         const SizedBox(height: 8),
         if (widget.feature.conflictDraft != null)
@@ -233,16 +360,17 @@ class _TicketSettingsState extends State<TicketSettings> {
                 refresh();
               },
               child: Text(TicketLayoutStrings.restoreDraft)),
-        FilledButton.icon(
-            onPressed: busy || unsupported || !RightsService.isUnitEditor()
-                ? null
-                : edit,
-            icon: busy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.edit_outlined),
-            label: Text(TicketLayoutStrings.edit)),
+        if (widget.feature.deliveryMode.includesPdf)
+          FilledButton.icon(
+              onPressed: busy || unsupported || !RightsService.isUnitEditor()
+                  ? null
+                  : edit,
+              icon: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.edit_outlined),
+              label: Text(TicketLayoutStrings.edit)),
       ]);
 }

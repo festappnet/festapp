@@ -87,3 +87,6 @@ BEGIN
     RETURN final_result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_entity_email_templates(text, bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_entity_email_templates(text, bigint) TO authenticated, service_role;

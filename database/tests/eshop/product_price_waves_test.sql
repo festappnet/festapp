@@ -11,6 +11,7 @@ BEGIN
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,pt,'First',450,'CZK',false) RETURNING id INTO prod;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,pt,'Second',100,'CZK',false) RETURNING id INTO prod2;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',occ,NULL,true) WHERE id=occ RETURNING occasions.link INTO link;
  EXECUTE 'SET LOCAL ROLE authenticated';
  w1:=public.create_product_price_wave(link,now()+interval '10 days');
  w2:=public.create_product_price_wave(link,now()+interval '20 days');

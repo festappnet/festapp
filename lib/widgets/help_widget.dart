@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/widgets/info_tooltip_button.dart';
 
 class HelpWidget extends StatelessWidget {
   final String title;
@@ -14,26 +14,10 @@ class HelpWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        Icons.help_outline,
-        color: ThemeConfig.blackColor(context),
-      ),
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(title),
-            content: Text(content),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(CommonStrings.ok),
-              ),
-            ],
-          ),
-        );
-      },
+    return InfoTooltipButton(
+      message: content,
+      semanticLabel: '$title: $content',
+      color: ThemeConfig.blackColor(context),
     );
   }
 }

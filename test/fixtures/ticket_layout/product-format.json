@@ -1,0 +1,5 @@
+[
+ {"label":"VIP menu","value":"Řízek","expected":"VIP menu: Řízek"},
+ {"label":"","value":"Autobus","expected":"Autobus"},
+ {"label":"VIP","value":null,"expected":null}
+]

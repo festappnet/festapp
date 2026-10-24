@@ -1,4 +1,5 @@
-import 'package:fstapp/data_services/client_sync/client_command_response.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,7 +35,7 @@ abstract interface class TicketCommands {
 
 class SupabaseTicketCommands implements TicketCommands {
   SupabaseTicketCommands(SupabaseClient client)
-    : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseTicketCommands.withTransport(this._transport);
 
@@ -44,13 +45,13 @@ class SupabaseTicketCommands implements TicketCommands {
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds) async {
     final response = ClientCommandResponse.from(
       await _transport.invoke('storno_tickets_client_sync_v1', {
-        'p_tickets': ticketIds,
+        'p_tickets': (ticketIds.toSet().toList()..sort()),
       }),
     );
     if (response.code != 200) {
       throw StateError('Ticket cancellation was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
     return TicketCancellationOutcome.fromJson(response.data);
   }
 
@@ -65,6 +66,6 @@ class SupabaseTicketCommands implements TicketCommands {
     if (response.code != 200) {
       throw StateError('Spot ticket swap was rejected');
     }
-    await response.applyReplacements();
+    await applyClientCommandReplacements(response);
   }
 }

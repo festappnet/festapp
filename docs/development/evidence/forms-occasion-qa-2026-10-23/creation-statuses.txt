@@ -1,0 +1,8 @@
+[48833.3225] POST http://127.0.0.1:56821/rest/v1/rpc/create_form_client_sync_v1 (Fetch) 409
+[52B30EFD8CA8F5887D9F5572E7FE801D] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/create_form_client_sync_v1 (Other) 200
+[48833.3226] POST http://127.0.0.1:56821/rest/v1/rpc/create_form_client_sync_v1 (Fetch) 409
+[B02A6C7A2AD94D9FA66428CD6ADB3CA2] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/create_form_client_sync_v1 (Other) 200
+[48833.22462] POST http://127.0.0.1:56821/rest/v1/rpc/create_occasion_client_sync_v1 (Fetch) 409
+[19E10B28B9B36360982B96399ED441DC] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/create_occasion_client_sync_v1 (Other) 200
+[48833.22463] POST http://127.0.0.1:56821/rest/v1/rpc/create_occasion_client_sync_v1 (Fetch) 200
+[13A7EB1639D30167214E526836EE65E3] OPTIONS http://127.0.0.1:56821/rest/v1/rpc/create_occasion_client_sync_v1 (Other) 200

@@ -1,0 +1,1149 @@
+{
+  "baseline": [
+    {
+      "uri": "package:flutter_map/src/dart_io/http_date.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/dart_io/http_exception.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/geo/crs.dart",
+      "libraryBytes": 1650,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/geo/latlng_bounds.dart",
+      "libraryBytes": 845,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/interactive_flag.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/latlng_tween.dart",
+      "libraryBytes": 149,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/map_events.dart",
+      "libraryBytes": 1637,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/map_interactive_viewer.dart",
+      "libraryBytes": 17791,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/multi_finger_gesture.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/positioned_tap_detector_2.dart",
+      "libraryBytes": 2176,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/animation.dart",
+      "libraryBytes": 86,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/source.dart",
+      "libraryBytes": 743,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/widget.dart",
+      "libraryBytes": 3821,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/marker_layer/marker_layer.dart",
+      "libraryBytes": 2344,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/polyline_layer/polyline_layer.dart",
+      "libraryBytes": 5978,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/feature_layer_utils.dart",
+      "libraryBytes": 953,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_interactivity/internal_hit_detectable.dart",
+      "libraryBytes": 286,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_interactivity/layer_hit_result.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_projection_simplification/state.dart",
+      "libraryBytes": 1253,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_projection_simplification/widget.dart",
+      "libraryBytes": 43,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/line_patterns/pixel_hiker.dart",
+      "libraryBytes": 2031,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/line_patterns/stroke_pattern.dart",
+      "libraryBytes": 328,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/mobile_layer_transformer.dart",
+      "libraryBytes": 258,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile.dart",
+      "libraryBytes": 879,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_bounds/tile_bounds.dart",
+      "libraryBytes": 564,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_bounds/tile_bounds_at_zoom.dart",
+      "libraryBytes": 1098,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_coordinates.dart",
+      "libraryBytes": 573,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_display.dart",
+      "libraryBytes": 368,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image.dart",
+      "libraryBytes": 2871,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image_manager.dart",
+      "libraryBytes": 2277,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image_view.dart",
+      "libraryBytes": 1528,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_key.dart",
+      "libraryBytes": 262,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_layer.dart",
+      "libraryBytes": 5499,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/base_tile_provider.dart",
+      "libraryBytes": 888,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/built_in/built_in_caching_provider.dart",
+      "libraryBytes": 68,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/built_in/impl/web/web.dart",
+      "libraryBytes": 109,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/disabled/disabled_caching_provider.dart",
+      "libraryBytes": 43,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/tile_metadata.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/image_provider/consolidate_response.dart",
+      "libraryBytes": 923,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/image_provider/image_provider.dart",
+      "libraryBytes": 5150,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/tile_provider.dart",
+      "libraryBytes": 527,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_range.dart",
+      "libraryBytes": 1904,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_range_calculator.dart",
+      "libraryBytes": 296,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_renderer.dart",
+      "libraryBytes": 183,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_scale_calculator.dart",
+      "libraryBytes": 289,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_update_event.dart",
+      "libraryBytes": 210,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_update_transformer.dart",
+      "libraryBytes": 221,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera.dart",
+      "libraryBytes": 2864,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera_constraint.dart",
+      "libraryBytes": 95,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera_fit.dart",
+      "libraryBytes": 1237,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/controller/map_controller.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/controller/map_controller_impl.dart",
+      "libraryBytes": 2210,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/inherited_model.dart",
+      "libraryBytes": 582,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/cursor_keyboard_rotation.dart",
+      "libraryBytes": 199,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/interaction.dart",
+      "libraryBytes": 320,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/keyboard.dart",
+      "libraryBytes": 224,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/options.dart",
+      "libraryBytes": 452,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/widget.dart",
+      "libraryBytes": 1938,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/bounds.dart",
+      "libraryBytes": 416,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/extensions.dart",
+      "libraryBytes": 631,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/offsets.dart",
+      "libraryBytes": 766,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/simplify.dart",
+      "libraryBytes": 719,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/layer/layer.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/layer/layer_manager.dart",
+      "libraryBytes": 630,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/lng_lat_bounds.dart",
+      "libraryBytes": 672,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_camera.dart",
+      "libraryBytes": 561,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_controller.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_events.dart",
+      "libraryBytes": 885,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/options/map_options.dart",
+      "libraryBytes": 358,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/platform_interface.dart",
+      "libraryBytes": 256,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/queried_layer.dart",
+      "libraryBytes": 416,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style/layers/style_layer.dart",
+      "libraryBytes": 372,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style/sources/source.dart",
+      "libraryBytes": 166,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style_controller.dart",
+      "libraryBytes": 982,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/inherited_model.dart",
+      "libraryBytes": 98,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/map.dart",
+      "libraryBytes": 118,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/map_state.dart",
+      "libraryBytes": 242,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/extensions.dart",
+      "libraryBytes": 411,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/interop/interop.dart",
+      "libraryBytes": 51,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/map_state.dart",
+      "libraryBytes": 9064,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/maplibre_plugin.dart",
+      "libraryBytes": 122,
+      "units": [
+        "outputUnit/main"
+      ]
+    }
+  ],
+  "map-module": [
+    {
+      "uri": "package:flutter_map/src/dart_io/http_date.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/dart_io/http_exception.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/geo/crs.dart",
+      "libraryBytes": 1649,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/geo/latlng_bounds.dart",
+      "libraryBytes": 845,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/interactive_flag.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/latlng_tween.dart",
+      "libraryBytes": 153,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/map_events.dart",
+      "libraryBytes": 1642,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/map_interactive_viewer.dart",
+      "libraryBytes": 17732,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/multi_finger_gesture.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/gestures/positioned_tap_detector_2.dart",
+      "libraryBytes": 2176,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/animation.dart",
+      "libraryBytes": 86,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/source.dart",
+      "libraryBytes": 747,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/attribution_layer/rich/widget.dart",
+      "libraryBytes": 3819,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/marker_layer/marker_layer.dart",
+      "libraryBytes": 2336,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/polyline_layer/polyline_layer.dart",
+      "libraryBytes": 5982,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/feature_layer_utils.dart",
+      "libraryBytes": 953,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_interactivity/internal_hit_detectable.dart",
+      "libraryBytes": 286,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_interactivity/layer_hit_result.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_projection_simplification/state.dart",
+      "libraryBytes": 1251,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/layer_projection_simplification/widget.dart",
+      "libraryBytes": 43,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/line_patterns/pixel_hiker.dart",
+      "libraryBytes": 2028,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/line_patterns/stroke_pattern.dart",
+      "libraryBytes": 328,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/shared/mobile_layer_transformer.dart",
+      "libraryBytes": 258,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile.dart",
+      "libraryBytes": 879,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_bounds/tile_bounds.dart",
+      "libraryBytes": 564,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_bounds/tile_bounds_at_zoom.dart",
+      "libraryBytes": 1098,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_coordinates.dart",
+      "libraryBytes": 573,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_display.dart",
+      "libraryBytes": 368,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image.dart",
+      "libraryBytes": 2879,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image_manager.dart",
+      "libraryBytes": 2275,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_image_view.dart",
+      "libraryBytes": 1526,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_key.dart",
+      "libraryBytes": 270,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_layer.dart",
+      "libraryBytes": 5497,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/base_tile_provider.dart",
+      "libraryBytes": 889,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/built_in/built_in_caching_provider.dart",
+      "libraryBytes": 68,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/built_in/impl/web/web.dart",
+      "libraryBytes": 109,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/disabled/disabled_caching_provider.dart",
+      "libraryBytes": 43,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/caching/tile_metadata.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/image_provider/consolidate_response.dart",
+      "libraryBytes": 932,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/image_provider/image_provider.dart",
+      "libraryBytes": 5152,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_provider/network/tile_provider.dart",
+      "libraryBytes": 526,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_range.dart",
+      "libraryBytes": 1899,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_range_calculator.dart",
+      "libraryBytes": 296,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_renderer.dart",
+      "libraryBytes": 183,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_scale_calculator.dart",
+      "libraryBytes": 289,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_update_event.dart",
+      "libraryBytes": 210,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/layer/tile_layer/tile_update_transformer.dart",
+      "libraryBytes": 221,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera.dart",
+      "libraryBytes": 2864,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera_constraint.dart",
+      "libraryBytes": 95,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/camera/camera_fit.dart",
+      "libraryBytes": 1236,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/controller/map_controller.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/controller/map_controller_impl.dart",
+      "libraryBytes": 2216,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/inherited_model.dart",
+      "libraryBytes": 590,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/cursor_keyboard_rotation.dart",
+      "libraryBytes": 205,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/interaction.dart",
+      "libraryBytes": 318,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/keyboard.dart",
+      "libraryBytes": 224,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/options/options.dart",
+      "libraryBytes": 452,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/map/widget.dart",
+      "libraryBytes": 1938,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/bounds.dart",
+      "libraryBytes": 414,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/extensions.dart",
+      "libraryBytes": 631,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/offsets.dart",
+      "libraryBytes": 765,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:flutter_map/src/misc/simplify.dart",
+      "libraryBytes": 718,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/layer/layer.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/layer/layer_manager.dart",
+      "libraryBytes": 630,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/lng_lat_bounds.dart",
+      "libraryBytes": 672,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_camera.dart",
+      "libraryBytes": 561,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_controller.dart",
+      "libraryBytes": 0,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/map_events.dart",
+      "libraryBytes": 885,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/options/map_options.dart",
+      "libraryBytes": 376,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/platform_interface.dart",
+      "libraryBytes": 256,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/queried_layer.dart",
+      "libraryBytes": 416,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style/layers/style_layer.dart",
+      "libraryBytes": 372,
+      "units": [
+        "outputUnit/2"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style/sources/source.dart",
+      "libraryBytes": 166,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/style_controller.dart",
+      "libraryBytes": 982,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/inherited_model.dart",
+      "libraryBytes": 98,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/map.dart",
+      "libraryBytes": 118,
+      "units": [
+        "outputUnit/2",
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_platform_interface/src/widget/map_state.dart",
+      "libraryBytes": 242,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/extensions.dart",
+      "libraryBytes": 411,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/interop/interop.dart",
+      "libraryBytes": 51,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/map_state.dart",
+      "libraryBytes": 9081,
+      "units": [
+        "outputUnit/main"
+      ]
+    },
+    {
+      "uri": "package:maplibre_web/src/maplibre_plugin.dart",
+      "libraryBytes": 122,
+      "units": [
+        "outputUnit/main"
+      ]
+    }
+  ]
+}

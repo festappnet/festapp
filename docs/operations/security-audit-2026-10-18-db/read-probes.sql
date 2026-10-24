@@ -1,0 +1,14 @@
+BEGIN READ ONLY;
+SET LOCAL statement_timeout='8s';
+SELECT json_build_object('probe','column_inventory','table',table_name,'columns',json_agg(column_name ORDER BY ordinal_position)) FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('user_news','user_group_info','user_groups','news','information','email_templates','occasions') GROUP BY table_name;
+SELECT set_config('request.jwt.claims','{"role":"anon"}',true) IS NOT NULL AS claims_set;
+SET LOCAL ROLE anon;
+SELECT json_build_object('probe','anon_visibility','uid_is_null',auth.uid() IS NULL,'hidden_occasions_visible',EXISTS(SELECT 1 FROM public.occasions WHERE organization=1 AND is_hidden IS TRUE),'hidden_information_visible',EXISTS(SELECT 1 FROM public.information i JOIN public.occasions o ON o.id=i.occasion WHERE o.organization=1 AND i.is_hidden IS TRUE),'closed_occasion_news_visible',EXISTS(SELECT 1 FROM public.news n JOIN public.occasions o ON o.id=n.occasion WHERE o.organization=1 AND (o.is_hidden IS TRUE OR o.is_open IS FALSE)),'user_news_visible',EXISTS(SELECT 1 FROM public.user_news un JOIN public.occasions o ON o.id=un.occasion WHERE o.organization=1));
+RESET ROLE;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000018"}',true) IS NOT NULL AS claims_set;
+SET LOCAL ROLE authenticated;
+SELECT json_build_object('probe','unrelated_authenticated_visibility','member_of_org1_occasion',EXISTS(SELECT 1 FROM public.occasion_users ou JOIN public.occasions o ON o.id=ou.occasion WHERE o.organization=1 AND ou."user"=auth.uid()),'group_memberships_visible',EXISTS(SELECT 1 FROM public.user_groups ug JOIN public.user_group_info gi ON gi.id=ug."group" JOIN public.occasions o ON o.id=gi.occasion WHERE o.organization=1),'group_details_visible',EXISTS(SELECT 1 FROM public.user_group_info gi JOIN public.occasions o ON o.id=gi.occasion WHERE o.organization=1),'user_news_visible',EXISTS(SELECT 1 FROM public.user_news un JOIN public.occasions o ON o.id=un.occasion WHERE o.organization=1));
+RESET ROLE;
+SELECT json_build_object('probe','template_policy','qual',qual,'roles',roles) FROM pg_policies WHERE schemaname='public' AND tablename='email_templates' AND permissive='PERMISSIVE';
+SELECT json_build_object('probe','news_public_policy','qual',qual,'roles',roles,'cmd',cmd) FROM pg_policies WHERE schemaname='public' AND tablename='user_news' AND cmd='SELECT';
+ROLLBACK;

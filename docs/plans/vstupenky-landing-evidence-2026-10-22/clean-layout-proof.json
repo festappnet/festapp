@@ -1,0 +1,61 @@
+{
+  "decodedFrames": 782,
+  "redWarningCandidateFrames": [],
+  "method": "Every decoded frame, native canvas 2x downscale, RGB r>170 g<105 b<105, >4 pixels",
+  "nativeWorkspaceRGB": [
+    235,
+    241,
+    246
+  ],
+  "nativeCanvasRGB": [
+    235,
+    241,
+    246
+  ],
+  "initialObstacles": 0,
+  "initialNodes": [
+    "group",
+    "stage rectangle",
+    "stage label"
+  ],
+  "desktop": {
+    "width": 1140,
+    "height": 828,
+    "duration": 26.066667
+  },
+  "-mobile": {
+    "width": 820,
+    "height": 824,
+    "duration": 26.066667
+  },
+  "decodedRGB": {
+    "(2, 2)": [
+      233,
+      239,
+      244
+    ],
+    "(300, 500)": [
+      235,
+      239,
+      246
+    ],
+    "(500, 500)": [
+      235,
+      239,
+      246
+    ],
+    "(1100, 500)": [
+      235,
+      239,
+      246
+    ]
+  },
+  "hashes": {
+    "web/organizers-media/layout-build.jpg": "9add7d9b92da3f01b15b5fb41d3d186f680cf0345d7fb66be7c82491dd671c16",
+    "web/organizers-media/layout-build-mobile.jpg": "95132314b8baf2efd501cb0a519c43b49fe462b82335948371392e7bd6ed57f8",
+    "web/organizers-media/layout-build-mobile.webp": "457cd448224de40700cfa8c76dcc21fbeddf2d38bea13541fb8839cbe109e363",
+    "web/organizers-media/layout-build-mobile.mp4": "ea634777b73e62fc1d411c59a6fe5cac5fe1d3cabf1df6bb1600d752f1e8b3fe",
+    "web/organizers-media/layout-build.mp4": "47ec708a1c16862eb3ff20a4d38ee5590c74b35976452f8979f181ddc524c519",
+    "web/organizers-media/layout-build.webp": "6368c1629fc646a32823aab4ae8b66db05c95786748bfff4787f091ab91c158b"
+  }
+}

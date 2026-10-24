@@ -3,7 +3,19 @@
 Implementation: `docs/plans/google-sign-in-plan-2026-10-01.md`.
 Local validation and console evidence: `docs/plans/google-sign-in-reference-2026-10-01/`.
 
-## Current state
+## Scope and evidence
+
+This guide describes broker configuration and scoped provisioning. Server installation and
+selected web rollout were subsequently recorded in the
+[FestApp rollout](google-sign-in-live-rollout-2026-10-02.md) and
+[vstupenky rollout](vstupenky-google-rollout-2026-10-02.md), with
+[context fixes](google-login-context-fixes-2026-10-02.md) and
+[organization setting](organization-google-login-setting-2026-10-02.md).
+Those dated receipts supersede the initial "not installed" statement for their
+named scope; they do not prove current native or other-tenant readiness. Select
+and verify the intended tenant/client before applying any provisioning step.
+
+## Broker configuration
 
 Google Cloud project `festapp-d23ef`, brand FestApp, External audience, publishing
 status **In production**. The dedicated Web application OAuth client is recorded
@@ -12,18 +24,21 @@ in `google-console-config.json`. Its sole redirect is
 userinfo.email and userinfo.profile. No native Google SDK/provider credentials
 are shared with Mendelio. This is a server OIDC client for all FestApp adapters.
 Authorized brand domains: vstupenky.online, festapp.net. The consent homepage,
-privacy and terms point to vstupenky.online. No sensitive/restricted scopes or
+privacy and terms were recorded as vstupenky.online in the initial console snapshot; the later FestApp rollout records live.festapp.net. Verify the intended current console configuration before changing it. No sensitive/restricted scopes or
 logo verification were requested.
 
 Local credentials are in ignored `automation/auth/.env.local`, mode 0600.
-Do not print, commit or include that file in build output. They have **not** been
-installed on the server. Google Console configuration is not an application deploy
-or proof of a live end-to-end login.
+Do not print, commit or include that file in build output. Server installation
+was recorded in the linked 2026-10-02 rollout receipts. Those receipts prove
+their named web scope, with full live account mutation and native-device checks
+explicitly unclaimed; they are not a fresh runtime or secret inventory.
 
-## Explicit rollout steps
+## Provisioning a separately authorized client or environment
 
-1. Rehearse migration `20261001150000_google_auth_broker.sql` on the canonical
-   backend. Apply through the existing approved migration path. It creates RLS
+1. Verify the installed broker schema and cleanup job on the canonical backend.
+   Migration `20261001150000_google_auth_broker.sql` was installed in the original
+   rollout; do not reapply it. A new environment requires its reviewed migration
+   sequence through the existing approved path. It creates RLS
    protected identity, attempt, rate-limit and distributed lease tables and an
    cleanup function. No existing UUID/email backfill is performed. The canonical
    self-hosted database has rehearsal cron stubs; its real pg_cron extension is
@@ -44,8 +59,8 @@ or proof of a live end-to-end login.
    google-auth-start/callback/complete; other JWT routes retain their existing
    protection. The patch matches the pinned upstream router and fails on drift.
    All three handlers additionally validate their own attempt/client boundaries.
-4. Provision the **one approved tenant**, FestApp at live.festapp.net, organization 1, using the registry
-   template below. Keep rows disabled until runtime, current clients and callback
+4. Provision only the explicitly selected tenant and verified organization with
+   exact registry origins and callbacks. Keep rows disabled until runtime, current clients and callback
    URLs have been verified. Preview/rehearsal origins need separate exact registry
    entries and a separate Google callback/client; do not reuse production redirects.
 5. Build the selected tenant normally. `/google-auth` serves webclient;

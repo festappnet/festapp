@@ -1,3 +1,16 @@
+import 'package:fstapp/components/notification_center/notification_detail_target.dart';
+import 'package:fstapp/components/navigation/route_visibility.dart';
+import 'order_history_dialog.dart';
+import 'waitlist_order_detail.dart';
+import 'package:fstapp/components/notification_center/notification_center_strings.dart';
+import 'order_delete_dialog.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
+import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
+import '../../forms/waitlist_strings.dart';
+import '../../forms/views/waitlist_offers_dialog.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
@@ -16,7 +29,6 @@ import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 
 import '../eshop_columns.dart';
@@ -33,8 +45,9 @@ class OrdersContent extends StatefulWidget {
 bool canSaveOrderGridChanges({
   required bool isOrderEditor,
   required bool isUnitManager,
+  required bool isUnitEditor,
 }) =>
-    isOrderEditor || isUnitManager;
+    isOrderEditor || isUnitManager || isUnitEditor;
 
 // The state class has been renamed accordingly
 class _OrdersContentState extends State<OrdersContent> {
@@ -42,6 +55,8 @@ class _OrdersContentState extends State<OrdersContent> {
   SingleDataGridController<OrderModel>? controller;
   int? unitId;
   bool loadFailed = false;
+  int? _openedOrder;
+  int _loadGeneration = 0;
 
   @override
   void didChangeDependencies() {
@@ -52,6 +67,11 @@ class _OrdersContentState extends State<OrdersContent> {
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
       _initializeController();
+    } else {
+      final target = int.tryParse(
+          context.routeData.queryParams.optString('orderId') ?? '');
+      if (target == null) _openedOrder = null;
+      if (target != null && target != _openedOrder) _initializeController();
     }
   }
 
@@ -68,24 +88,53 @@ class _OrdersContentState extends State<OrdersContent> {
   Future<void> _loadController() async {
     if (occasionLink == null) return;
 
+    final generation = ++_loadGeneration;
     // Fetch all data in one request
     var futures = await Future.wait([
       DbOrders.getOrdersTabData(occasionLink: occasionLink!),
       DbOccasions.getOccasionByLink(occasionLink!),
     ]);
 
-    final bundle = futures[0] as ReservationsBundle;
+    var bundle = futures[0] as ReservationsBundle;
     final occasion = futures[1] as OccasionModel;
     unitId = occasion.unit;
 
-    if (!mounted) return;
+    if (!mounted || generation != _loadGeneration) return;
 
-    final forms = bundle.forms;
+    final requestedOrder =
+        int.tryParse(context.routeData.queryParams.optString('orderId') ?? '');
+    if (requestedOrder != null && _openedOrder != requestedOrder) {
+      _openedOrder = requestedOrder;
+      final matches =
+          bundle.orders.where((order) => order.id == requestedOrder);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted ||
+            generation != _loadGeneration ||
+            !isVisibleRouteInstance(context)) return;
+        if (matches.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(NotificationCenterStrings.text('unavailable'))));
+        } else {
+          final order = matches.first;
+          await showDialog<void>(
+              context: context,
+              builder: (_) => order.waitlistSummary == null
+                  ? OrderHistoryDialog(orderId: requestedOrder)
+                  : WaitlistOrderDetail(order: order));
+          if (mounted && isVisibleRouteInstance(context)) {
+            await clearNotificationDetailTarget(
+                context, 'orderId', '$requestedOrder');
+          }
+        }
+      });
+    }
+
+    var forms = bundle.forms;
 
     // Check if any field across all forms is a non-ticket 'note' field.
-    final hasOrderNoteField = forms.any((form) => (form.relatedFields).any(
-        (field) =>
-            field.type == FormHelper.fieldTypeNote &&
+    final hasOrderNoteField = forms.any((form) =>
+        (form.definition.relatedFields).any((field) =>
+            field.type == FormMetadata.fieldTypeNote &&
             (field.isTicketField ?? false) == false));
 
     var formFeat =
@@ -93,47 +142,86 @@ class _OrdersContentState extends State<OrdersContent> {
 
     // Start with the base list of columns
     List<String> columnIdentifiers = [
-      EshopColumns.ORDER_ID,
-      EshopColumns.ORDER_SEQUENCE,
-      EshopColumns.ORDER_SYMBOL,
-      EshopColumns.ORDER_DATA,
-      EshopColumns.ORDER_EMAIL,
+      EshopColumnIds.ORDER_ID,
+      EshopColumnIds.ORDER_SEQUENCE,
+      EshopColumnIds.ORDER_SYMBOL,
+      EshopColumnIds.ORDER_DATA,
+      EshopColumnIds.ORDER_EMAIL,
       if (!FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-        EshopColumns.TICKET_PRODUCTS,
-      EshopColumns.ORDER_CREATED_AT,
-      EshopColumns.ORDER_STATE,
+        EshopColumnIds.TICKET_PRODUCTS,
+      EshopColumnIds.ORDER_CREATED_AT,
+      EshopColumnIds.ORDER_STATE,
+      EshopColumnIds.ORDER_WAITLIST,
       if (FeatureService.isFeatureEnabled(FeatureConstants.contract))
-        EshopColumns.ORDER_CONTRACT_DOWNLOAD,
-      EshopColumns.ORDER_PRICE,
-      EshopColumns.PAYMENT_INFO_PAID,
-      EshopColumns.PAYMENT_INFO_RETURNED,
-      EshopColumns.PAYMENT_INFO_VARIABLE_SYMBOL,
-      if (hasOrderNoteField) EshopColumns.ORDER_DATA_NOTE,
-      EshopColumns.ORDER_NOTE_HIDDEN,
+        EshopColumnIds.ORDER_CONTRACT_DOWNLOAD,
+      EshopColumnIds.ORDER_PRICE,
+      EshopColumnIds.PAYMENT_INFO_PAID,
+      EshopColumnIds.PAYMENT_INFO_RETURNED,
+      EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL,
+      if (hasOrderNoteField) EshopColumnIds.ORDER_DATA_NOTE,
+      EshopColumnIds.ORDER_NOTE_HIDDEN,
       if (formFeat.isEnabled && (formFeat.reminderIsEnabled ?? false))
-        EshopColumns.PAYMENT_INFO_REMINDER_SENT,
-      EshopColumns.PAYMENT_INFO_DEADLINE,
+        EshopColumnIds.PAYMENT_INFO_REMINDER_SENT,
+      EshopColumnIds.PAYMENT_INFO_DEADLINE,
       if (FeatureService.isFeatureEnabled(FeatureConstants.deposit))
-        EshopColumns.PAYMENT_INFO_DEPOSIT_DEADLINE,
-      EshopColumns.ORDER_EMAIL_DELIVERY,
-      EshopColumns.ORDER_TRANSACTIONS,
-      EshopColumns.ORDER_HISTORY,
+        EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE,
+      EshopColumnIds.ORDER_EMAIL_DELIVERY,
+      EshopColumnIds.ORDER_TRANSACTIONS,
+      EshopColumnIds.ORDER_HISTORY,
     ];
 
     // Conditionally add the form column if there are multiple forms
     if (forms.length > 1) {
-      final symbolIndex = columnIdentifiers.indexOf(EshopColumns.ORDER_SYMBOL);
-      columnIdentifiers.insert(symbolIndex + 1, EshopColumns.ORDER_FORM);
+      final symbolIndex =
+          columnIdentifiers.indexOf(EshopColumnIds.ORDER_SYMBOL);
+      columnIdentifiers.insert(symbolIndex + 1, EshopColumnIds.ORDER_FORM);
     }
 
     // Create the controller with the final column list
     List<OrderModel>? firstLoadOrders = bundle.orders;
 
+    final sendOffersAction = DataGridAction(
+      name: WaitlistStrings.send,
+      requiresSelection: false,
+      action: (SingleDataGridController singleDataGrid, [_]) async {
+        final eligible =
+            forms.where((f) => f.definition.waitlistEnabled).toList();
+        final chosen = eligible.length == 1
+            ? eligible.first
+            : await showDialog<dynamic>(
+                context: context,
+                builder: (context) => AppSimpleDialog(
+                      title: Text(WaitlistStrings.settings),
+                      children: [
+                        for (final f in eligible)
+                          SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, f),
+                              child: Text(f.definition.title ??
+                                  f.definition.link ??
+                                  ''))
+                      ],
+                    ));
+        if (chosen == null || !mounted) return;
+        await showDialog(
+            context: context,
+            builder: (_) =>
+                WaitlistOffersDialog(form: chosen, orders: bundle.orders));
+        await refreshData();
+      },
+      isEnabled: RightsService.isEditorOrder,
+    );
+
     final newController = SingleDataGridController<OrderModel>(
+      prepareDeletion: prepareOrderDeletion,
+      columnHelp: {
+        EshopColumnIds.PAYMENT_INFO_RETURNED: OrdersStrings.gridReturnedHelp
+      },
       context: context,
       additionalFilterEnabled: true,
-      additionalRowPredicate: OrderGridFilters.orderIsNonCancelled,
-      headerFilterBuilder: OrderGridFilters.filterButton,
+      additionalRowPredicate: OrderGridFilters.orderIsActive,
+      headerFilterBuilder: (context, controller) =>
+          OrderGridFilters.filterButton(context, controller,
+              label: WaitlistStrings.text('active')),
       loadData: () async {
         if (firstLoadOrders != null) {
           final orders = firstLoadOrders;
@@ -143,39 +231,63 @@ class _OrdersContentState extends State<OrdersContent> {
         }
         final newBundle =
             await DbOrders.getOrdersTabData(occasionLink: occasionLink!);
+        bundle = newBundle;
+        forms = newBundle.forms;
+        final actions = controller?.headerChildren;
+        actions?.removeWhere((action) => identical(action, sendOffersAction));
+        if (RightsService.isEditorOrder() &&
+            forms.any((f) => f.definition.waitlistEnabled)) {
+          actions?.insert(0, sendOffersAction);
+        }
         return newBundle.orders;
       },
       fromPlutoJson: OrderModel.fromPlutoJson,
-      firstColumnType: RightsService.isUnitManager()
-          ? DataGridFirstColumn.deleteAndCheck
-          : DataGridFirstColumn.check,
+      firstColumnType:
+          (RightsService.isUnitManager() || RightsService.isUnitEditor())
+              ? DataGridFirstColumn.deleteAndCheck
+              : DataGridFirstColumn.check,
       idColumn: TbEshop.orders.id,
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: () => canSaveOrderGridChanges(
           isOrderEditor: RightsService.isEditorOrder(),
           isUnitManager: RightsService.isUnitManager(),
+          isUnitEditor: RightsService.isUnitEditor(),
         ),
+        canDeleteRow: (row) =>
+            OrderGridFilters.order(row)?.state == OrderModel.stornoState,
         isAddActionPossible: () => false,
       ),
       headerChildren: [
+        if (RightsService.isEditorOrder() &&
+            forms.any((f) => f.definition.waitlistEnabled))
+          sendOffersAction,
         DataGridAction(
           name: CommonStrings.cancel,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (controller?.visibleCheckedRows
+                      .every((row) => OrderGridFilters.allows(row, 'cancel')) ??
+                  false),
         ),
         DataGridAction(
-          name: OrdersStrings.sendActionText,
+          name: OrderItemStrings.sendActionText,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
-          isEnabled: RightsService.isOrderEditor,
+          isEnabled: () =>
+              RightsService.isOrderEditor() &&
+              (controller?.visibleCheckedRows.every((row) =>
+                      OrderGridFilters.allows(row, 'send') ||
+                      OrderGridFilters.allows(row, 'paid')) ??
+                  false),
         ),
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
-        EshopColumns.ORDER_TRANSACTIONS: refreshData,
-        EshopColumns.PAYMENT_INFO_PAID: refreshData,
+        EshopColumnIds.ORDER_TRANSACTIONS: refreshData,
+        EshopColumnIds.PAYMENT_INFO_PAID: refreshData,
         "unitId": unitId,
       }),
     );
@@ -215,19 +327,23 @@ class _OrdersContentState extends State<OrdersContent> {
 
   Future<void> cancelOrders(SingleDataGridController singleDataGrid) async {
     var selected = _getChecked(singleDataGrid);
-    if (selected.isEmpty) {
+    if (selected.isEmpty || selected.any((o) => !o.allows('cancel'))) {
       return;
     }
 
     if (selected.isNotEmpty) {
-      var confirm = await DialogHelper.showConfirmationDialog(
-          context,
-          CommonStrings.cancel,
-          "${OrdersStrings.cancelOrdersConfirmationText} (${selected.length})");
+      var confirm = await DataGridActionConfirmation.show<OrderModel>(
+        context: context,
+        title: CommonStrings.cancel,
+        message: OrderItemStrings.cancelOrdersConfirmationText,
+        items: selected,
+        itemsLabel: OrdersStrings.ordersTab,
+        confirmButtonText: CommonStrings.cancel,
+      );
 
       if (confirm && mounted) {
-        selected = _getChecked(singleDataGrid);
-        var futures = selected.map((s) {
+        final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
+        var futures = selected.where((o) => visibleIds.contains(o.id)).map((s) {
           return () async {
             await DbOrders.stornoOrder(s.id!);
           };
@@ -253,41 +369,61 @@ class _OrdersContentState extends State<OrdersContent> {
 
     var ordersBundle =
         await DbOrders.getAllOrdersBundle(occasionLink: occasionLink!);
+    if (!mounted) return;
+    final currentIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
     for (var s in selected) {
+      if (!currentIds.contains(s.id)) continue;
       var o = ordersBundle.orders.firstWhere((o) => o.id == s.id);
+      if (!(o.allows('send') || o.allows('paid'))) return;
       selectedFull.add(o);
     }
+    if (selectedFull.isEmpty) return;
     var stateChange =
-        selectedFull.where((s) => s.state == OrderModel.orderedState);
+        selectedFull.where((s) => s.state == OrderModel.orderedState).toList();
     if (stateChange.isNotEmpty) {
-      var confirm = await DialogHelper.showConfirmationDialog(
-          context,
-          OrdersStrings.changeStateToPaid,
-          "${OrdersStrings.changeStateToPaidConfirmation} (${stateChange.length})");
+      var confirm = await DataGridActionConfirmation.show<OrderModel>(
+        context: context,
+        title: OrdersStrings.changeStateToPaid,
+        message: OrdersStrings.changeStateToPaidConfirmation,
+        items: stateChange,
+        itemsLabel: OrdersStrings.ordersTab,
+        confirmButtonText: OrdersStrings.changeStateToPaid,
+      );
+      if (!mounted || !confirm) return;
 
-      if (confirm) {
-        final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
-        var futures = stateChange.where((o) => visibleIds.contains(o.id)).map((s) {
-          return () async {
-            await DbOrders.updateOrderAndTicketsToPaid(s.id!);
-          };
-        }).toList();
-
-        await DialogHelper.showProgressDialogAsync(
-            context, OrdersStrings.processing, futures.length,
-            futures: futures, isBasic: true);
-        refreshData();
+      final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
+      var futures =
+          stateChange.where((o) => visibleIds.contains(o.id)).map((s) {
+        return () async {
+          await DbOrders.updateOrderAndTicketsToPaid(s.id!);
+        };
+      }).toList();
+      if (futures.isEmpty) return;
+      final success = await DialogHelper.showProgressDialogAsync(
+          context, OrdersStrings.processing, futures.length,
+          futures: futures, isBasic: true);
+      if (!success) {
+        if (mounted) await refreshData();
+        return;
       }
     }
 
-    var confirm = await DialogHelper.showConfirmationDialog(
-        context,
-        OrdersStrings.sendActionText,
-        "${OrdersStrings.sendActionConfirmationText} (${selected.length})");
+    if (!mounted) return;
+    final checkedIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
+    final sending =
+        selectedFull.where((o) => checkedIds.contains(o.id)).toList();
+    var confirm = await DataGridActionConfirmation.show<OrderModel>(
+      context: context,
+      title: OrderItemStrings.sendActionText,
+      message: OrderItemStrings.sendActionConfirmationText,
+      items: sending,
+      itemsLabel: OrdersStrings.ordersTab,
+      confirmButtonText: OrderItemStrings.sendActionText,
+    );
 
-    if (confirm) {
+    if (confirm && mounted) {
       final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
-      var futures = selectedFull.where((o) => visibleIds.contains(o.id)).map((s) {
+      var futures = sending.where((o) => visibleIds.contains(o.id)).map((s) {
         return () async {
           await sendTicketsToEmail(s);
         };
@@ -296,8 +432,8 @@ class _OrdersContentState extends State<OrdersContent> {
       await DialogHelper.showProgressDialogAsync(
           context, OrdersStrings.processing, futures.length,
           futures: futures);
-      refreshData();
     }
+    if (mounted) await refreshData();
   }
 
   Future<void> sendTicketsToEmail(OrderModel order) async {
@@ -309,8 +445,9 @@ class _OrdersContentState extends State<OrdersContent> {
 
   List<OrderModel> _getChecked(SingleDataGridController singleDataGrid) {
     return List<OrderModel>.from(
-      singleDataGrid.visibleCheckedRows
-          .map((row) => OrderModel.fromPlutoJson(row.toJson())),
+      singleDataGrid.visibleCheckedRows.map((row) =>
+          OrderGridFilters.order(row) ??
+          OrderModel.fromPlutoJson(row.toJson())),
     );
   }
 }

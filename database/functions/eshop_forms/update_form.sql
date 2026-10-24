@@ -100,79 +100,15 @@ BEGIN
                 JSONB_BUILD_OBJECT('code', 4017, 'message', 'Occasion not found or missing required fields')::TEXT;
         END IF;
 
-        -- Validate the link field, which must be unique within the same organization
-        link_param := input_data->>'link';
-        IF link_param IS NULL OR link_param = '' THEN
-            RAISE EXCEPTION '%',
-                JSONB_BUILD_OBJECT('code', 4013, 'message', 'Missing link in input data')::TEXT;
-        END IF;
-
-        -- Determine if we are creating a new form or updating an existing one
-        form_id := NULLIF(input_data->>'id', '')::BIGINT;
-
+        IF NOT public.is_service_role() AND NOT (public.get_is_editor_on_unit(occasion_unit) OR public.get_is_editor_on_occasion(occasion_id)) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
+        form_id := NULLIF(input_data->>'id','')::bigint;
         IF form_id IS NULL THEN
-            -- New form: ensure link uniqueness via a join to occasions
-            SELECT 1
-              INTO conflict_check
-              FROM public.forms f
-              JOIN public.occasions o ON f.occasion = o.id
-             WHERE o.organization = occasion_org
-               AND f.link = link_param
-             LIMIT 1;
-
-            IF conflict_check IS NOT NULL THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4014,
-                        'message', 'Link is already used by another form in the same organization'
-                    )::TEXT;
-            END IF;
-
-            INSERT INTO public.forms (
-                created_at,
-                occasion,
-                link
-            )
-            VALUES (
-                now_ts,
-                occasion_id,
-                link_param
-            )
-            RETURNING id INTO form_id;
+          INSERT INTO public.forms(created_at,occasion) VALUES(now_ts,occasion_id) RETURNING id INTO form_id;
+          link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',true);
         ELSE
-            -- Existing form: ensure form belongs to the occasion and link is still unique
-            IF NOT EXISTS (
-                SELECT 1
-                FROM public.forms
-                WHERE id = form_id
-                  AND occasion = occasion_id
-            ) THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4005,
-                        'message', 'Form does not exist or does not match the given occasion',
-                        'form_id', form_id
-                    )::TEXT;
-            END IF;
-
-            PERFORM 1 FROM public.forms f WHERE f.id = form_id FOR UPDATE;
-
-            SELECT 1
-              INTO conflict_check
-              FROM public.forms f
-              JOIN public.occasions o ON f.occasion = o.id
-             WHERE o.organization = occasion_org
-               AND f.link = link_param
-               AND f.id <> form_id
-             LIMIT 1;
-
-            IF conflict_check IS NOT NULL THEN
-                RAISE EXCEPTION '%',
-                    JSONB_BUILD_OBJECT(
-                        'code', 4014,
-                        'message', 'Link is already used by another form in the same organization'
-                    )::TEXT;
-            END IF;
+          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE id=form_id AND occasion=occasion_id) THEN
+            RAISE invalid_parameter_value USING MESSAGE='Form does not match occasion'; END IF;
+          link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',false);
         END IF;
 
         -- Explicit removals are part of this save transaction, never inferred from
@@ -222,7 +158,10 @@ BEGIN
             OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (
               SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id = opt.ticket
               WHERE opt."order" = o.id AND NULLIF(t.note, '') IS NOT NULL))
-          )) THEN 'responses'
+          )) OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+            CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+            WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+           OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form)) THEN 'responses'
         ELSE (
           SELECT reason FROM public.form_fields member
           JOIN eshop.products p ON p.product_type = member.product_type
@@ -268,6 +207,8 @@ BEGIN
         DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
         DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type IN('products.price','products.is_hidden') AND NOT applied;
         DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
+        DELETE FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion'
+          AND scope_id=occasion_id AND aggregate_id=ANY(ARRAY(SELECT id::text FROM unnest(deleted_products) id));
 
         ----------------------------------------------------------------------------
         -- Process form_fields array from input_data if present
@@ -280,12 +221,34 @@ BEGIN
 
             FOR field_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(input_data->'form_fields')
             LOOP
+                IF field_data->>'type' IN ('select_one','select_many') THEN
+                    IF jsonb_typeof(field_data#>'{data,options}') IS DISTINCT FROM 'array' THEN
+                        RAISE EXCEPTION '%', jsonb_build_object('code', 422,
+                            'message', 'FORM_SELECTION_OPTIONS_REQUIRED', 'fieldId', field_data->'id')::text;
+                    END IF;
+                    IF jsonb_array_length(field_data#>'{data,options}') = 0
+                       OR EXISTS (SELECT 1 FROM jsonb_array_elements(field_data#>'{data,options}') option
+                           WHERE jsonb_typeof(option->'value') IS DISTINCT FROM 'string'
+                              OR btrim(option->>'value') = '') THEN
+                        RAISE EXCEPTION '%', jsonb_build_object('code', 422,
+                            'message', 'FORM_SELECTION_OPTIONS_REQUIRED', 'fieldId', field_data->'id')::text;
+                    END IF;
+                END IF;
                 field_id := NULLIF(field_data->>'id', '')::BIGINT;
 
                 ----------------------------------------------------------------------------
                 -- product_type logic now lives here, inside each form_field
                 ----------------------------------------------------------------------------
                 product_type_data := field_data->'product_type';  -- This is JSONB (could be null)
+                IF field_data->>'type' = 'ticket' AND field_data#>>'{data,max_tickets}' IS NOT NULL THEN
+                    IF (field_data#>>'{data,max_tickets}')::numeric < 1 OR
+                       (field_data#>>'{data,max_tickets}')::numeric > public.ticket_order_limit() OR
+                       trunc((field_data#>>'{data,max_tickets}')::numeric) <> (field_data#>>'{data,max_tickets}')::numeric THEN
+                        RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 400,
+                            'message', 'Invalid maximum tickets per order',
+                            'limit', public.ticket_order_limit())::TEXT;
+                    END IF;
+                END IF;
                 field_product_type := NULL;                        -- We'll store numeric ID here if we have a product_type
 
                 IF product_type_data IS NOT NULL AND product_type_data::TEXT <> 'null' THEN
@@ -351,6 +314,7 @@ BEGIN
                                 )::TEXT;
                         END IF;
 
+                        PERFORM 1 FROM public.occasions WHERE id=occasion_id FOR UPDATE;
                         UPDATE eshop.product_types
                            SET
                                updated_at = now_ts,
@@ -364,6 +328,7 @@ BEGIN
                     ----------------------------------------------------------------------------
                     -- Process products within this product_type, if any
                     ----------------------------------------------------------------------------
+                    PERFORM public.advance_ticketing_authoring_version_internal_v1('product_type',occasion_id,product_type_id);
                     products_data := product_type_data->'products';
                     IF products_data IS NOT NULL AND products_data::TEXT <> 'null' THEN
                         product_array_data := '[]'::JSONB;
@@ -466,6 +431,7 @@ BEGIN
                                    AND product_type = product_type_id;
                             END IF;
 
+                            PERFORM public.advance_ticketing_authoring_version_internal_v1('product',occasion_id,product_id);
                             product_array_data := product_array_data || product_data;
                         END LOOP;
 
@@ -555,6 +521,9 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Validate that deadline_duration_seconds is zero, positive, or null
         ----------------------------------------------------------------------------
+        IF (input_data->'data'->>'reminder_interval_seconds')::bigint < 0 THEN
+            RAISE EXCEPTION 'reminder_interval_seconds must be zero or higher or null';
+        END IF;
         deadline_val := NULLIF(input_data->>'deadline_duration_seconds','')::BIGINT;
         IF deadline_val IS NOT NULL AND deadline_val < 0 THEN
             RAISE EXCEPTION '%',
@@ -599,18 +568,29 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Update the main form record with all validated fields
         ----------------------------------------------------------------------------
+        IF input_data->>'blueprint' IS NOT NULL AND NOT EXISTS(
+          SELECT 1 FROM eshop.blueprints WHERE id=(input_data->>'blueprint')::bigint AND occasion=occasion_id) THEN
+          RAISE EXCEPTION '%',jsonb_build_object('code',403,'message','Foreign blueprint')::text; END IF;
+        PERFORM public.check_form_capacity_settings_internal(form_id,input_data);
         UPDATE public.forms
            SET
-               title = input_data->>'title',
-               data = input_data->'data',
-               header = input_data->>'header',
-               header_off = input_data->>'header_off',
+               participant_capacity = CASE WHEN input_data ? 'participant_capacity' THEN (input_data->>'participant_capacity')::integer ELSE participant_capacity END,
+               waitlist_enabled = CASE WHEN input_data ? 'waitlist_enabled' THEN (input_data->>'waitlist_enabled')::boolean ELSE waitlist_enabled END,
+               show_remaining_capacity = CASE WHEN input_data ? 'show_remaining_capacity' THEN (input_data->>'show_remaining_capacity')::boolean ELSE show_remaining_capacity END,
+               waitlist_offer_duration_seconds = CASE WHEN input_data ? 'waitlist_offer_duration_seconds' THEN (input_data->>'waitlist_offer_duration_seconds')::integer ELSE waitlist_offer_duration_seconds END,
+               capacity_revision = capacity_revision+1,
+               title = CASE WHEN input_data ? 'title' THEN input_data->>'title' ELSE title END,
+               data = CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END,
+               header = CASE WHEN input_data ? 'header' THEN input_data->>'header' ELSE header END,
+               header_off = CASE WHEN input_data ? 'header_off' THEN input_data->>'header_off' ELSE header_off END,
                link = link_param,
-               blueprint = NULLIF(input_data->>'blueprint','')::BIGINT,
-               bank_account = bank_account_val,
-               deadline_duration_seconds = deadline_val,
-               is_open = COALESCE((input_data->>'is_open')::BOOLEAN, true)
+               blueprint = CASE WHEN input_data ? 'blueprint' THEN NULLIF(input_data->>'blueprint','')::BIGINT ELSE blueprint END,
+               bank_account = CASE WHEN input_data ? 'bank_account' THEN bank_account_val ELSE bank_account END,
+               deadline_duration_seconds = CASE WHEN input_data ? 'deadline_duration_seconds' THEN deadline_val ELSE deadline_duration_seconds END,
+               is_open = CASE WHEN input_data ? 'is_open' THEN (input_data->>'is_open')::boolean ELSE is_open END
          WHERE id = form_id;
+
+        PERFORM public.validate_form_payment_configuration_internal(form_id);
 
         ----------------------------------------------------------------------------
         -- After updating the form, requeue payment reminders for the whole occasion
@@ -625,9 +605,7 @@ BEGIN
          LIMIT 1;
 
         -- If the setting is found, call the function to rebuild the reminder queue.
-        IF v_seconds_before_deadline IS NOT NULL THEN
-            PERFORM public.queue_payment_reminders(occasion_id, v_seconds_before_deadline);
-        END IF;
+        PERFORM public.queue_payment_reminders(occasion_id, COALESCE(v_seconds_before_deadline,86400));
 
         ----------------------------------------------------------------------------
         -- Prepare a success response
@@ -636,10 +614,11 @@ BEGIN
             'code', 200,
             'message', 'Form updated successfully',
             'form_id', form_id,
+            'link', link_param,
             'form_fields', form_fields_data
         );
 
-    EXCEPTION WHEN OTHERS THEN
+    EXCEPTION WHEN raise_exception THEN
         -- Catch any exception and attempt to parse it as JSON; if not JSON, wrap it in our own JSON.
         result := CASE
             WHEN left(SQLERRM, 1) = '{' THEN SQLERRM::JSONB
@@ -647,6 +626,9 @@ BEGIN
         END;
     END;
 
+    PERFORM public.notification_center_form_capacity_internal(form_id);
     RETURN result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.update_form_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;

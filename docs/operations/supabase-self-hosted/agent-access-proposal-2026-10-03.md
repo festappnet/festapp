@@ -3,6 +3,13 @@
 Requested during the ticket-font rollout on 2026-10-03. This proposal does not
 change production access policies or provision credentials.
 
+The active administrative transport is now the persisted
+[SSH access channel](../../../.agents/skills/festapp-backend-access/SKILL.md).
+The bounded SQL broker proposed below remains unenabled; inherited PUBLIC grants
+prevent its intended role isolation. Do not treat either this proposal or its
+local prototype as a deployed restricted SQL service. Studio retains named-user
+MFA. The observations below describe the proposal date.
+
 ## Observations
 
 The current CLI fallback uses a named-user, one-hour Cloudflare Access session

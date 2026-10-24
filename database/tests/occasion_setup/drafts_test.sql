@@ -1,3 +1,4 @@
+GRANT EXECUTE ON FUNCTION public.assert_true(boolean,text), public.assert_false(boolean,text), public.assert_eq(anyelement,anyelement,text) TO authenticated;
 DO $$
 DECLARE actor uuid; org bigint; foreign_org bigint; target bigint; foreign_unit bigint;
   id uuid := gen_random_uuid(); d jsonb; saved jsonb; initial_count bigint; initial_forms bigint; initial_products bigint; initial_types bigint;
@@ -18,9 +19,12 @@ BEGIN
   PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_drafts(bigint)','EXECUTE'),'Public callers cannot invoke draft RPC');
   PERFORM assert_false(has_function_privilege('authenticated','public.build_occasion_setup_configuration(bigint,uuid)','EXECUTE'),'Internal creation snapshot cannot be invoked directly');
   d := public.create_occasion_setup_draft(id,target);
+  PERFORM assert_eq(public.get_occasion_setup_draft(id),d,'Single read returns authorized draft');
+  PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_draft(uuid)','EXECUTE'),'Single read is private');
   PERFORM assert_true(d->'data' ? 'defaultConfiguration','Draft is initialized by the canonical creator');
   PERFORM assert_eq(d->'data'->'formDraft'->>'title','Registration','Canonical form title');
-  PERFORM assert_eq((d->'data'->'formDraft'->>'deadline_duration_seconds')::int,604800,'Canonical deadline');
+  PERFORM assert_true(d->'data'->'formDraft'->>'deadline_duration_seconds' IS NULL,'New draft deadline inherits without materializing an override');
+  PERFORM assert_false(d#>'{data,formDraft,data}' ? 'is_reminder_enabled','New draft reminder inherits without materializing an override');
   PERFORM assert_eq(d->'data'->'formDraft'->'fields'->0->>'type','email','Canonical first field');
   PERFORM assert_true((d->'data'->'formDraft'->'fields'->0->>'is_required')::boolean,'Canonical email is required');
   PERFORM assert_eq(d->'data'->'formDraft'->'fields'->1->>'type','ticket','Canonical ticket field');
@@ -47,6 +51,7 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN PERFORM public.save_occasion_setup_draft(id,2,'{}',0); RAISE EXCEPTION 'revoked editor write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.get_occasion_setup_drafts(target); RAISE EXCEPTION 'revoked editor read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN PERFORM public.get_occasion_setup_draft(id); RAISE EXCEPTION 'revoked editor single read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.delete_occasion_setup_draft(id,target,2); RAISE EXCEPTION 'revoked editor delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   EXECUTE 'RESET ROLE';
   INSERT INTO public.unit_users("user",unit,is_editor) VALUES(actor,target,true);
@@ -62,4 +67,20 @@ BEGIN
   PERFORM public.delete_occasion_setup_draft(id,target,4);
   PERFORM assert_false(EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_occasion_setup_drafts(target)) x WHERE x->>'id'=id::text),'Deleted draft disappears');
   EXECUTE 'RESET ROLE';
+END $$;
+
+DO $$
+DECLARE actor uuid; target bigint; draft_id uuid:=gen_random_uuid(); d jsonb; saved jsonb;
+BEGIN
+ SELECT ui.id,uu.unit INTO actor,target FROM public.user_info ui JOIN public.unit_users uu ON uu."user"=ui.id WHERE uu.is_manager OR uu.is_editor LIMIT 1;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ d:=public.create_occasion_setup_draft(draft_id,target);
+ saved:=public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,
+   (d->'data') #- '{defaultConfiguration,communicationDefaults}',3);
+ d:=public.initialize_occasion_setup_draft_defaults(draft_id,(saved->>'revision')::bigint);
+ PERFORM assert_true(d#>'{data,defaultConfiguration}' ? 'communicationDefaults','Older drafts acquire explicit inherited communication context');
+ PERFORM assert_eq(d#>'{data,formDraft}',saved#>'{data,formDraft}','Upgrade preserves the complete authored form');
+ PERFORM assert_eq(public.initialize_occasion_setup_draft_defaults(draft_id,(d->>'revision')::bigint),d,'Upgrade is idempotent');
+ EXECUTE 'RESET ROLE';
 END $$;

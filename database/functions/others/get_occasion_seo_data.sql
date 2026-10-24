@@ -1,52 +1,40 @@
--- Add RPC for SEO Data Retrieval
--- Accessed by public (anon) role to generate OG tags
-CREATE OR REPLACE FUNCTION get_occasion_seo_data(p_link_slug TEXT)
-RETURNS JSON
-LANGUAGE plpgsql
-SECURITY DEFINER -- Runs with permissions of creator to access potentially restricted org data (for just title)
-SET search_path = public
-AS $$
-DECLARE
-    v_result JSON;
-    v_occasion_id BIGINT;
-    v_form_header TEXT;
+-- Public metadata only. Route kind keeps form and occasion namespaces distinct.
+-- Existing one-argument callers retain their form-first resolution contract.
+CREATE OR REPLACE FUNCTION public.get_occasion_seo_data(p_link_slug text, p_route_type text)
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE v_occasion_id bigint; v_form public.forms%ROWTYPE; v_result json;
 BEGIN
-    -- 1. Try to find occasion via Form Link
-    SELECT occasion, header INTO v_occasion_id, v_form_header
-    FROM public.forms
-    WHERE link = p_link_slug
-    LIMIT 1;
-
-    -- 2. If not found, try to find occasion via Occasion Link
-    IF v_occasion_id IS NULL THEN
-        SELECT id INTO v_occasion_id
-        FROM occasions
-        WHERE link = p_link_slug
-        LIMIT 1;
+    IF p_route_type NOT IN ('form', 'event') OR p_route_type IS NULL THEN
+        RAISE invalid_parameter_value USING MESSAGE = 'Invalid public SEO route';
     END IF;
-
-    -- 3. If occasion found, fetch SEO data
-    IF v_occasion_id IS NOT NULL THEN
-        SELECT json_build_object(
-            'title', o.title,
-            'description', o.description,
-            'form_description', v_form_header,
-            'image', o.data->>'image',
-            'org_title', org.title,
-            'unit_title', u.title
-        )
-        INTO v_result
-        FROM occasions o
-        JOIN organizations org ON o.organization = org.id
-        LEFT JOIN units u ON o.unit = u.id
-        WHERE o.id = v_occasion_id;
+    IF p_route_type = 'form' THEN
+        SELECT * INTO v_form FROM public.forms
+        WHERE id = public.resolve_form_link_internal(p_link_slug);
+        v_occasion_id := v_form.occasion;
+    ELSE
+        v_occasion_id := public.resolve_occasion_link_internal(p_link_slug);
     END IF;
-
+    SELECT json_build_object(
+        'title', o.title, 'description', o.description,
+        'form_title', v_form.title, 'form_description', v_form.header,
+        'form_link', v_form.link, 'occasion_link', o.link,
+        'start_time', o.start_time, 'end_time', o.end_time,
+        'image', o.data->>'image', 'org_title', org.title, 'unit_title', u.title
+    ) INTO v_result
+    FROM public.occasions o
+    JOIN public.organizations org ON org.id = o.organization
+    LEFT JOIN public.units u ON u.id = o.unit
+    WHERE o.id = v_occasion_id;
     RETURN v_result;
-END;
-$$;
+END $$;
+REVOKE ALL ON FUNCTION public.get_occasion_seo_data(text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_occasion_seo_data(text,text) TO anon, authenticated, service_role;
 
--- Grant access to anon
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO service_role;
+CREATE OR REPLACE FUNCTION public.get_occasion_seo_data(p_link_slug text)
+RETURNS json LANGUAGE sql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+    SELECT coalesce(public.get_occasion_seo_data(p_link_slug, 'form'), public.get_occasion_seo_data(p_link_slug, 'event'));
+$$;
+REVOKE ALL ON FUNCTION public.get_occasion_seo_data(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_occasion_seo_data(text) TO anon, authenticated, service_role;

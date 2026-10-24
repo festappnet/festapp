@@ -1,3 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -8,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/router_service.dart';
@@ -29,17 +34,16 @@ class OccasionsScreen extends StatefulWidget {
 }
 
 class _OccasionsScreenState extends State<OccasionsScreen> {
+  static const _yearGroupingThreshold = 9;
   List<OccasionModel> _allOccasions = [];
   List<OccasionModel> _filteredOccasions = [];
   bool _isLoading = true;
   List<OccasionSetupDraft> _drafts = [];
   String? _draftError;
-  bool get _canEditDrafts =>
-      AppConfig.occasionSetupEnabled &&
-      (widget.unit.unitUser?.isEditor == true ||
-          widget.unit.unitUser?.isManager == true ||
-          (RightsService.currentUnit()?.id == widget.unit.id &&
-              (RightsService.isUnitEditor() || RightsService.isUnitManager())));
+  bool get _canEditDrafts => (widget.unit.unitUser?.isEditor == true ||
+      widget.unit.unitUser?.isManager == true ||
+      (RightsService.currentUnit()?.id == widget.unit.id &&
+          (RightsService.isUnitEditor() || RightsService.isUnitManager())));
 
   List<OccasionSetupDraft> get _filteredDrafts {
     final query =
@@ -185,16 +189,27 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
+    final copyLocale = context.locale.languageCode;
+    final sourceUnitId = widget.unit.id;
+    final destinations = await ExceptionHandler.guard(context,
+        futureFunction: () => DbUnits.getOccasionCopyUnits(occasion.id!));
+    if (!mounted ||
+        widget.unit.id != sourceUnitId ||
+        destinations == null ||
+        destinations.isEmpty) {
+      return;
+    }
+    final target = await showOccasionCopyTargetDialog(context, destinations,
+        sourceUnitId: sourceUnitId);
+    if (target == null || !mounted) return;
     if (AppConfig.occasionSetupEnabled) {
       await OccasionCreationHelper.createNewOccasion(
-          context, widget.unit, _allOccasions,
-          source: occasion);
+          context, target, _allOccasions,
+          source: occasion, copyLocale: copyLocale);
       if (mounted) await _loadDrafts();
       return;
     }
-    final conf = await DialogHelper.showConfirmationDialog(
-        context, UnitStrings.createCopy, UnitStrings.createCopyConfirm);
-    if (conf == true && mounted) {
+    if (mounted) {
       bool mediaCopied = false;
       final created = await DialogHelper.showProgressDialogAsync(
         context,
@@ -203,7 +218,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         isBasic: true,
         futures: [
           () async {
-            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!);
+            mediaCopied = await DbOccasions.duplicateOccasion(occasion.id!,
+                targetUnitId: target.id, locale: copyLocale);
           },
         ],
       );
@@ -218,7 +234,11 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
               ? UnitStrings.createCopySuccess
               : UnitStrings.createCopyMediaFailed);
       try {
-        await _loadOccasions();
+        if (target.id == widget.unit.id) {
+          await _loadOccasions();
+        } else {
+          await RouterService.navigateToUnitAdmin(context, target);
+        }
       } catch (e) {
         if (!mounted) return;
         ToastHelper.Show(context, UnitStrings.loadEventFailed);
@@ -252,6 +272,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
+                    const SliverToBoxAdapter(child: DemoOccasionsSection()),
                     if (_canEditDrafts && _draftError != null)
                       SliverToBoxAdapter(
                           child: TextButton(
@@ -294,7 +315,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                       ],
                       if (pastEvents.isNotEmpty) ...[
                         _buildSectionHeader(context, CommonStrings.pastEvents),
-                        _buildGrid(pastEvents),
+                        ..._buildPastEvents(pastEvents),
                       ],
                     ],
                     const SliverToBoxAdapter(child: SizedBox(height: 64)),
@@ -414,6 +435,46 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         child: Text(title, style: Theme.of(context).textTheme.titleLarge),
       ),
     );
+  }
+
+  List<Widget> _buildPastEvents(List<OccasionModel> occasions) {
+    if (occasions.length < _yearGroupingThreshold) {
+      return [_buildGrid(occasions)];
+    }
+    final byYear = <int, List<OccasionModel>>{};
+    for (final occasion in occasions) {
+      final year = occasion.startTime!.year;
+      (byYear[year] ??= []).add(occasion);
+    }
+    if (byYear.length < 2) return [_buildGrid(occasions)];
+    final years = byYear.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    return [
+      for (final year in years) ...[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding:
+                EdgeInsets.fromLTRB(16, year == years.first ? 0 : 24, 16, 12),
+            child: Semantics(
+              header: true,
+              child: Row(
+                children: [
+                  Text('$year', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(width: 12),
+                  Text('${byYear[year]!.length}',
+                      semanticsLabel:
+                          '${CommonStrings.events}: ${byYear[year]!.length}',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(width: 16),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _buildGrid(byYear[year]!),
+      ],
+    ];
   }
 
   Widget _buildGrid(List<OccasionModel> occasions, {bool isPresent = false}) {

@@ -1328,7 +1328,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_operations (
   id uuid PRIMARY KEY,
   bank_account_id bigint NOT NULL REFERENCES eshop.bank_accounts(id),
   actor uuid NOT NULL REFERENCES public.user_info(id),
-  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend')),
+  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend','resume','update_details')),
   payload_sha256 text NOT NULL CHECK(payload_sha256 ~ '^[0-9a-f]{64}$'),
   state text NOT NULL CHECK(state IN ('pending','running','uncertain','completed','failed')),
   remote_reference text,
@@ -1366,3 +1366,405 @@ CREATE TABLE IF NOT EXISTS public.occasion_setup_drafts (
 CREATE INDEX IF NOT EXISTS occasion_setup_drafts_unit_idx ON public.occasion_setup_drafts(unit);
 ALTER TABLE public.occasion_setup_drafts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
+
+-- Canonical form-capacity/waitlist schema. Tickets are the sole identity.
+-- Canonical ticket model. Domain transitions are explicit commands, never triggers.
+ALTER TABLE public.forms ADD COLUMN IF NOT EXISTS participant_capacity integer,
+ ADD COLUMN IF NOT EXISTS waitlist_enabled boolean NOT NULL DEFAULT false,
+ ADD COLUMN IF NOT EXISTS show_remaining_capacity boolean NOT NULL DEFAULT true,
+ ADD COLUMN IF NOT EXISTS waitlist_offer_duration_seconds integer,
+ ADD COLUMN IF NOT EXISTS capacity_revision bigint NOT NULL DEFAULT 0;
+ALTER TABLE eshop.orders ADD COLUMN IF NOT EXISTS source_waitlist_order_id bigint REFERENCES eshop.orders(id);
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='forms_capacity_configuration') THEN
+  ALTER TABLE public.forms ADD CONSTRAINT forms_capacity_configuration CHECK (
+   (participant_capacity IS NULL OR participant_capacity>0) AND
+   (waitlist_offer_duration_seconds IS NULL OR waitlist_offer_duration_seconds>0) AND
+   (NOT waitlist_enabled OR (participant_capacity IS NOT NULL AND waitlist_offer_duration_seconds IS NOT NULL AND waitlist_offer_duration_seconds>0)) AND
+   (blueprint IS NULL OR (participant_capacity IS NULL AND NOT waitlist_enabled)));
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='orders_waitlist_finance') THEN
+  ALTER TABLE eshop.orders ADD CONSTRAINT orders_waitlist_finance CHECK
+   (state IS DISTINCT FROM 'waitlisted' OR (price IS NULL AND payment_info IS NULL));
+ END IF;
+END $$;
+-- Tickets are the only live identity. No participant backfill or shadow state.
+ALTER TABLE eshop.tickets ADD COLUMN IF NOT EXISTS data jsonb NOT NULL DEFAULT '{}',
+ ADD COLUMN IF NOT EXISTS waitlist_queue_at timestamptz;
+ALTER TABLE eshop.tickets DROP CONSTRAINT IF EXISTS tickets_state_check;
+ALTER TABLE eshop.tickets ADD CONSTRAINT tickets_state_check CHECK(state IN ('ordered','paid','sent','used','storno','waitlisted'));
+ALTER TABLE eshop.tickets DROP CONSTRAINT IF EXISTS tickets_waitlist_non_admission;
+ALTER TABLE eshop.tickets ADD CONSTRAINT tickets_waitlist_non_admission CHECK(state IS DISTINCT FROM 'waitlisted' OR ticket_symbol IS NULL);
+CREATE INDEX IF NOT EXISTS tickets_waitlist_queue ON eshop.tickets(waitlist_queue_at,id) WHERE state='waitlisted';
+CREATE TABLE IF NOT EXISTS eshop.waitlist_offers (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(), order_id bigint NOT NULL REFERENCES eshop.orders(id),
+ form_id bigint NOT NULL REFERENCES public.forms(id), created_by uuid REFERENCES auth.users(id),
+ created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL,
+ revision bigint NOT NULL, UNIQUE(id,form_id), CHECK(expires_at>created_at));
+CREATE TABLE IF NOT EXISTS eshop.waitlist_offer_slots (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(), offer_id uuid NOT NULL,
+ ticket_id bigint NOT NULL REFERENCES eshop.tickets(id), form_id bigint NOT NULL,
+ outcome text NOT NULL DEFAULT 'pending' CHECK(outcome IN ('pending','accepted','declined','expired','cancelled')),
+ resulting_order_id bigint REFERENCES eshop.orders(id), updated_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(offer_id,form_id) REFERENCES eshop.waitlist_offers(id,form_id));
+CREATE UNIQUE INDEX IF NOT EXISTS waitlist_one_pending_slot ON eshop.waitlist_offer_slots(ticket_id) WHERE outcome='pending';
+CREATE INDEX IF NOT EXISTS waitlist_slots_offer ON eshop.waitlist_offer_slots(offer_id,outcome);
+CREATE INDEX IF NOT EXISTS waitlist_offers_expiry ON eshop.waitlist_offers(expires_at,form_id);
+CREATE TABLE IF NOT EXISTS eshop.waitlist_capabilities (
+ token_hash text PRIMARY KEY CHECK(token_hash ~ '^[0-9a-f]{64}$'),
+ organization_id bigint NOT NULL REFERENCES public.organizations(id),
+ form_id bigint NOT NULL REFERENCES public.forms(id), order_id bigint NOT NULL REFERENCES eshop.orders(id),
+ offer_id uuid REFERENCES eshop.waitlist_offers(id), kind text NOT NULL CHECK(kind IN ('manage','offer')),
+ expires_at timestamptz, revoked_at timestamptz,
+ CHECK((kind='offer' AND offer_id IS NOT NULL AND expires_at IS NOT NULL) OR (kind='manage' AND offer_id IS NULL)));
+CREATE TABLE IF NOT EXISTS eshop.waitlist_acceptance_attempts (
+ command_id uuid PRIMARY KEY, source_order_id bigint NOT NULL REFERENCES eshop.orders(id),
+ target_order_id bigint NOT NULL REFERENCES eshop.orders(id), offer_id uuid NOT NULL REFERENCES eshop.waitlist_offers(id),
+ conversion text NOT NULL CHECK(conversion IN ('in_place','split')),
+ ticket_ids bigint[] NOT NULL, slot_ids uuid[] NOT NULL,
+ previous_order_data jsonb NOT NULL, previous_tickets jsonb NOT NULL, previous_links jsonb NOT NULL, previous_slots jsonb NOT NULL,
+ state text NOT NULL DEFAULT 'preparing' CHECK(state IN ('preparing','completed','aborted')),
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE eshop.waitlist_acceptance_attempts ADD COLUMN IF NOT EXISTS previous_slots jsonb NOT NULL DEFAULT '[]';
+CREATE INDEX IF NOT EXISTS waitlist_attempt_target ON eshop.waitlist_acceptance_attempts(target_order_id,state);
+CREATE INDEX IF NOT EXISTS orders_waitlist_source ON eshop.orders(source_waitlist_order_id);
+DO $$ DECLARE n text; BEGIN
+ FOREACH n IN ARRAY ARRAY['waitlist_offers','waitlist_offer_slots','waitlist_capabilities','waitlist_acceptance_attempts'] LOOP
+  EXECUTE format('ALTER TABLE eshop.%I ENABLE ROW LEVEL SECURITY',n);
+  EXECUTE format('REVOKE ALL ON TABLE eshop.%I FROM PUBLIC,anon,authenticated',n);
+ END LOOP;
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='orders_id_form_scope') THEN
+  ALTER TABLE eshop.orders ADD CONSTRAINT orders_id_form_scope UNIQUE(id,form);
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='offer_order_scope') THEN
+  ALTER TABLE eshop.waitlist_offers ADD CONSTRAINT offer_order_scope FOREIGN KEY(order_id,form_id) REFERENCES eshop.orders(id,form);
+ END IF;
+END $$;
+
+-- Identity is server-owned and remains protected when removed from the catalogue.
+CREATE UNIQUE INDEX IF NOT EXISTS occasions_id_organization_uidx ON public.occasions(id,organization);
+CREATE TABLE IF NOT EXISTS public.demo_occasions (
+ occasion bigint PRIMARY KEY,
+ organization bigint NOT NULL REFERENCES public.organizations(id),
+ demo_key text NOT NULL CHECK(demo_key IN ('ball','concert','weekend')),
+ fixture_version text NOT NULL,
+ bank_account bigint NOT NULL UNIQUE REFERENCES eshop.bank_accounts(id),
+ is_listed boolean NOT NULL DEFAULT false,
+ sort_order integer NOT NULL,
+ description text NOT NULL,
+ reference_at timestamptz NOT NULL,
+ UNIQUE(organization,demo_key,fixture_version),
+ FOREIGN KEY(occasion,organization) REFERENCES public.occasions(id,organization)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS demo_occasions_listed_uidx
+ ON public.demo_occasions(organization,demo_key) WHERE is_listed;
+ALTER TABLE public.demo_occasions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.demo_occasions FROM PUBLIC,anon,authenticated,service_role;
+
+-- Festapp-owned payment-reference registry.
+-- Festapp-only registry. A migration installs dormant schema, never activates a tenant.
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_scopes (
+ organization_id bigint PRIMARY KEY REFERENCES public.organizations(id),
+ phase text NOT NULL CHECK(phase IN ('inactive','active','paused')),
+ manifest_sha256 text NOT NULL CHECK(manifest_sha256 ~ '^[a-f0-9]{64}$'),
+ updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_namespaces (
+ id text PRIMARY KEY CHECK(id ~ '^[a-f0-9]{64}$'),
+ canonical_account text NOT NULL UNIQUE,
+ allocation_enabled boolean NOT NULL DEFAULT false,
+ manifest_sha256 text CHECK(manifest_sha256 ~ '^[a-f0-9]{64}$'),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+-- Alias tombstones survive bank-account deletion; IDs are never namespace identity.
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_accounts (
+ bank_account_id bigint PRIMARY KEY,
+ namespace_id text NOT NULL REFERENCES eshop.payment_reference_namespaces(id),
+ account_number_snapshot text NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_reservations (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ namespace_id text NOT NULL REFERENCES eshop.payment_reference_namespaces(id),
+ variable_symbol bigint NOT NULL CHECK(variable_symbol BETWEEN 0 AND 9999999999),
+ source_ref text NOT NULL CHECK(length(source_ref) BETWEEN 1 AND 255),
+ policy jsonb NOT NULL,
+ payload_sha256 text NOT NULL CHECK(payload_sha256 ~ '^[a-f0-9]{64}$'),
+ payment_info_id bigint REFERENCES eshop.payment_info(id) ON DELETE SET NULL,
+ original_payment_info_id bigint,
+ form_id bigint,
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ UNIQUE(namespace_id,variable_symbol),UNIQUE(namespace_id,source_ref)
+);
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_sequences (
+ namespace_id text NOT NULL REFERENCES eshop.payment_reference_namespaces(id),
+ form_id bigint NOT NULL,
+ high_water bigint NOT NULL CHECK(high_water BETWEEN 1 AND 9999999999),
+ PRIMARY KEY(namespace_id,form_id)
+);
+CREATE TABLE IF NOT EXISTS eshop.payment_reference_form_watermarks (
+ form_id bigint PRIMARY KEY,
+ high_water bigint NOT NULL CHECK(high_water BETWEEN 0 AND 9999999999)
+);
+DO $$ DECLARE t text; BEGIN
+ FOREACH t IN ARRAY ARRAY['payment_reference_scopes','payment_reference_namespaces','payment_reference_accounts',
+  'payment_reference_reservations','payment_reference_sequences','payment_reference_form_watermarks'] LOOP
+  EXECUTE format('ALTER TABLE eshop.%I ENABLE ROW LEVEL SECURITY',t);
+  EXECUTE format('REVOKE ALL ON eshop.%I FROM PUBLIC,anon,authenticated,service_role',t);
+  EXECUTE format('GRANT SELECT ON eshop.%I TO service_role',t);
+ END LOOP;
+END $$;
+-- End Festapp-owned payment-reference registry.
+
+-- Stripe client-owned payment foundation.
+-- Additive foundation. No live activation, application triggers or bank-ledger aliases.
+CREATE TABLE eshop.stripe_connections (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ organization_id bigint NOT NULL REFERENCES public.organizations(id),
+ unit_id bigint NOT NULL REFERENCES public.units(id),
+ account_id text NOT NULL CHECK(account_id ~ '^acct_[A-Za-z0-9]+$'),
+ livemode boolean NOT NULL,
+ state text NOT NULL CHECK(state IN ('candidate','connected','restricted','revoked','retired')),
+ paused boolean NOT NULL DEFAULT true,
+ business_name text, country text,
+ charges_enabled boolean NOT NULL DEFAULT false,
+ payouts_enabled boolean NOT NULL DEFAULT false,
+ card_payments_active boolean NOT NULL DEFAULT false,
+ model_verified boolean NOT NULL DEFAULT false,
+ checked_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(),
+ UNIQUE(account_id,livemode), UNIQUE(id,organization_id,unit_id,livemode)
+);
+CREATE UNIQUE INDEX stripe_connections_active_unit ON eshop.stripe_connections(unit_id,livemode)
+ WHERE state IN ('connected','restricted');
+CREATE TABLE eshop.stripe_runtime_policy (
+ organization_id bigint NOT NULL REFERENCES public.organizations(id),
+ livemode boolean NOT NULL,
+ new_payments_enabled boolean NOT NULL DEFAULT false,
+ online_admission_verified boolean NOT NULL DEFAULT false,
+ reservation_policy_verified boolean NOT NULL DEFAULT false,
+ dispute_policy_accepted boolean NOT NULL DEFAULT false,
+ supported_surfaces text[] NOT NULL DEFAULT '{}',
+ PRIMARY KEY(organization_id,livemode),
+ CHECK(NOT new_payments_enabled OR (online_admission_verified AND reservation_policy_verified AND dispute_policy_accepted))
+);
+ALTER TABLE eshop.payment_info ADD COLUMN payment_method text NOT NULL DEFAULT 'bank'
+ CHECK(payment_method IN ('bank','stripe'));
+ALTER TABLE eshop.payment_info ADD COLUMN stripe_connection_id uuid REFERENCES eshop.stripe_connections(id);
+ALTER TABLE eshop.payment_info ADD CONSTRAINT payment_info_stripe_identity CHECK(
+ (payment_method='bank' AND stripe_connection_id IS NULL) OR
+ (payment_method='stripe' AND stripe_connection_id IS NOT NULL AND bank_account IS NULL
+  AND variable_symbol IS NULL AND creditor_reference IS NULL AND deposit_amount IS NULL));
+CREATE TABLE eshop.stripe_checkout_attempts (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ order_id bigint NOT NULL REFERENCES eshop.orders(id),
+ payment_info_id bigint NOT NULL REFERENCES eshop.payment_info(id),
+ organization_id bigint NOT NULL REFERENCES public.organizations(id),
+ unit_id bigint NOT NULL REFERENCES public.units(id),
+ connection_id uuid NOT NULL,
+ livemode boolean NOT NULL,
+ amount_minor bigint NOT NULL CHECK(amount_minor>0 AND amount_minor<=9007199254740991),
+ currency text NOT NULL CHECK(currency IN ('CZK','EUR','PLN','USD','GBP')),
+ order_revision bigint NOT NULL,
+ state text NOT NULL DEFAULT 'preparing' CHECK(state IN ('preparing','open','uncertain','paid','expired','action_required')),
+ idempotency_key text NOT NULL UNIQUE CHECK(length(idempotency_key) BETWEEN 8 AND 255),
+ created_at timestamptz NOT NULL DEFAULT now(), reservation_expires_at timestamptz NOT NULL,
+ session_id text, payment_intent_id text, checkout_url text,
+ last_synced_at timestamptz, next_reconcile_at timestamptz NOT NULL DEFAULT now(),
+ reconcile_failures integer NOT NULL DEFAULT 0 CHECK(reconcile_failures>=0),
+ lease_token uuid, lease_expires_at timestamptz,
+ FOREIGN KEY(connection_id,organization_id,unit_id,livemode)
+  REFERENCES eshop.stripe_connections(id,organization_id,unit_id,livemode),
+ UNIQUE(connection_id,session_id), UNIQUE(connection_id,payment_intent_id),
+ UNIQUE(id,organization_id,livemode), UNIQUE(id,connection_id,currency),
+ UNIQUE(id,connection_id), UNIQUE(id,order_id),
+ CHECK(reservation_expires_at>created_at),
+ CHECK((lease_token IS NULL)=(lease_expires_at IS NULL))
+);
+CREATE UNIQUE INDEX stripe_one_active_attempt ON eshop.stripe_checkout_attempts(payment_info_id)
+ WHERE state IN ('preparing','open','uncertain');
+CREATE TABLE eshop.stripe_capabilities (
+ token_hash text PRIMARY KEY CHECK(token_hash ~ '^[a-f0-9]{64}$'),
+ scope text NOT NULL CHECK(scope IN ('order_pay','handoff','return_read')),
+ order_id bigint NOT NULL REFERENCES eshop.orders(id),
+ attempt_id uuid REFERENCES eshop.stripe_checkout_attempts(id),
+ generation bigint NOT NULL DEFAULT 1 CHECK(generation>0),
+ expires_at timestamptz NOT NULL, revoked_at timestamptz, consumed_at timestamptz,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(attempt_id,order_id) REFERENCES eshop.stripe_checkout_attempts(id,order_id),
+ CHECK(scope='order_pay' OR attempt_id IS NOT NULL),
+ CHECK(scope<>'order_pay' OR consumed_at IS NULL)
+);
+CREATE TABLE eshop.stripe_payment_link_sources (
+ token_hash text PRIMARY KEY REFERENCES eshop.stripe_capabilities(token_hash),
+ sealed jsonb NOT NULL, content_hash text NOT NULL CHECK(content_hash ~ '^[a-f0-9]{64}$'),
+ created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL,
+ command_id uuid NOT NULL UNIQUE
+);
+CREATE TABLE eshop.stripe_event_inbox (
+ connection_id uuid NOT NULL REFERENCES eshop.stripe_connections(id),
+ event_id text NOT NULL CHECK(event_id ~ '^evt_[A-Za-z0-9]+$'),
+ body_sha256 text NOT NULL CHECK(body_sha256 ~ '^[a-f0-9]{64}$'),
+ event_type text NOT NULL, provider_created_at timestamptz NOT NULL,
+ received_at timestamptz NOT NULL DEFAULT now(), committed_at timestamptz,
+ receipt jsonb, PRIMARY KEY(connection_id,event_id)
+);
+-- Successful refund facts are separate from dispute holds. No signed fake bank transactions.
+CREATE TABLE eshop.stripe_payment_movements (
+ connection_id uuid NOT NULL REFERENCES eshop.stripe_connections(id),
+ provider_id text NOT NULL,
+ attempt_id uuid NOT NULL REFERENCES eshop.stripe_checkout_attempts(id),
+ kind text NOT NULL CHECK(kind IN ('payment','refund')),
+ amount_minor bigint NOT NULL CHECK(amount_minor>0 AND amount_minor<=9007199254740991),
+ currency text NOT NULL CHECK(currency IN ('CZK','EUR','PLN','USD','GBP')),
+ occurred_at timestamptz NOT NULL, received_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(attempt_id,connection_id,currency) REFERENCES eshop.stripe_checkout_attempts(id,connection_id,currency),
+ PRIMARY KEY(connection_id,provider_id,kind)
+);
+CREATE TABLE eshop.stripe_disputes (
+ connection_id uuid NOT NULL REFERENCES eshop.stripe_connections(id),
+ provider_id text NOT NULL, attempt_id uuid NOT NULL REFERENCES eshop.stripe_checkout_attempts(id),
+ amount_minor bigint NOT NULL CHECK(amount_minor>0),
+ status text NOT NULL CHECK(status IN ('warning_needs_response','warning_under_review','warning_closed','needs_response','under_review','won','lost')),
+ observed_at timestamptz NOT NULL,
+ FOREIGN KEY(attempt_id,connection_id) REFERENCES eshop.stripe_checkout_attempts(id,connection_id),
+ PRIMARY KEY(connection_id,provider_id)
+);
+CREATE TABLE eshop.stripe_admission_decisions (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ attempt_id uuid NOT NULL REFERENCES eshop.stripe_checkout_attempts(id),
+ actor uuid REFERENCES public.user_info(id),
+ reason text NOT NULL CHECK(reason IN ('partial_refund_keep','partial_refund_cancel','dispute_hold','dispute_release','reconciliation_hold','reconciliation_release','full_refund','late_payment','financial_conflict')),
+ ticket_ids bigint[] NOT NULL DEFAULT '{}',
+ provider_revision text NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE eshop.stripe_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_runtime_policy ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_checkout_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_capabilities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_payment_link_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_event_inbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_payment_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_disputes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_admission_decisions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.stripe_connections,eshop.stripe_runtime_policy,eshop.stripe_checkout_attempts,
+ eshop.stripe_capabilities,eshop.stripe_payment_link_sources,eshop.stripe_event_inbox,
+ eshop.stripe_payment_movements,eshop.stripe_disputes,eshop.stripe_admission_decisions
+ FROM PUBLIC,anon,authenticated,service_role;
+-- End Stripe client-owned payment foundation.
+
+-- Stripe connection flow and audit schema.
+CREATE TABLE eshop.stripe_connection_flows (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ state_hash text NOT NULL UNIQUE CHECK(state_hash ~ '^[a-f0-9]{64}$'),
+ actor uuid NOT NULL REFERENCES public.user_info(id),
+ organization_id bigint NOT NULL REFERENCES public.organizations(id),
+ unit_id bigint NOT NULL REFERENCES public.units(id), livemode boolean NOT NULL,
+ previous_connection_id uuid REFERENCES eshop.stripe_connections(id),
+ state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','claimed','uncertain','completed','denied')),
+ lease_token uuid, result jsonb,
+ created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL,
+ CHECK(expires_at>created_at)
+);
+CREATE TABLE eshop.stripe_connection_audit (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(), connection_id uuid REFERENCES eshop.stripe_connections(id),
+ flow_id uuid REFERENCES eshop.stripe_connection_flows(id), actor uuid REFERENCES public.user_info(id),
+ action text NOT NULL CHECK(action IN ('connected','reconnected','replaced','paused','resumed','revoked')),
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE eshop.stripe_connection_flows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE eshop.stripe_connection_audit ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.stripe_connection_flows,eshop.stripe_connection_audit FROM PUBLIC,anon,authenticated,service_role;
+-- End Stripe connection flow and audit schema.
+
+-- Stripe checkout dispatch snapshot schema.
+ALTER TABLE eshop.stripe_checkout_attempts ADD COLUMN return_base_url text;
+ALTER TABLE eshop.stripe_checkout_attempts ADD COLUMN refund_cursor text CHECK(refund_cursor IS NULL OR refund_cursor ~ '^re_[A-Za-z0-9]+$');
+ALTER TABLE eshop.stripe_checkout_attempts ADD COLUMN session_lookup_cursor text CHECK(session_lookup_cursor IS NULL OR session_lookup_cursor ~ '^cs_[A-Za-z0-9_]+$');
+ALTER TABLE eshop.stripe_checkout_attempts ADD COLUMN session_lookup_found text CHECK(session_lookup_found IS NULL OR session_lookup_found ~ '^cs_[A-Za-z0-9_]+$');
+-- End Stripe checkout dispatch snapshot schema.
+
+-- Stripe connection status schema.
+ALTER TABLE eshop.stripe_connections ADD COLUMN status_lease uuid;
+ALTER TABLE eshop.stripe_connections ADD COLUMN status_lease_expires_at timestamptz;
+ALTER TABLE eshop.stripe_connections ADD COLUMN next_check_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE eshop.stripe_connections ADD COLUMN status_failures integer NOT NULL DEFAULT 0 CHECK(status_failures>=0);
+ALTER TABLE eshop.stripe_connections ADD CONSTRAINT stripe_connection_status_lease CHECK((status_lease IS NULL)=(status_lease_expires_at IS NULL));
+ALTER TABLE eshop.stripe_connection_audit DROP CONSTRAINT stripe_connection_audit_action_check;
+ALTER TABLE eshop.stripe_connection_audit ADD CONSTRAINT stripe_connection_audit_action_check
+ CHECK(action IN ('connected','reconnected','replaced','paused','resumed','revoked','status_changed'));
+-- End Stripe connection status schema.
+
+-- Stripe disconnect intent schema.
+CREATE TABLE eshop.stripe_disconnect_intents (
+ id uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+ connection_id uuid NOT NULL REFERENCES eshop.stripe_connections(id),
+ actor uuid NOT NULL REFERENCES public.user_info(id),
+ state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','claimed','uncertain','completed')),
+ result jsonb,created_at timestamptz NOT NULL DEFAULT now(),claimed_at timestamptz,completed_at timestamptz
+);
+CREATE UNIQUE INDEX stripe_one_disconnect_intent ON eshop.stripe_disconnect_intents(connection_id) WHERE state<>'completed';
+ALTER TABLE eshop.stripe_disconnect_intents ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.stripe_disconnect_intents FROM PUBLIC,anon,authenticated,service_role;
+-- End Stripe disconnect intent schema.
+
+-- Organization notification center private projections.
+-- Private projections: no business-entity FK may prevent deletion of an order.
+CREATE TABLE public.notification_center_activation (
+ organization bigint PRIMARY KEY REFERENCES public.organizations(id) ON DELETE CASCADE,
+ enabled boolean NOT NULL DEFAULT false, activated_at timestamptz NOT NULL DEFAULT clock_timestamp(), generation bigint NOT NULL DEFAULT 1,
+ timezone text NOT NULL DEFAULT 'Europe/Prague', collection_started_at timestamptz
+);
+CREATE TABLE public.notification_center_events (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+ occasion bigint, kind text NOT NULL, source_key text NOT NULL, actor uuid, occurred_at timestamptz NOT NULL,
+ created_xid xid8 NOT NULL DEFAULT pg_current_xact_id(),
+ data jsonb NOT NULL DEFAULT '{}', status text NOT NULL DEFAULT 'active', attention_revision bigint NOT NULL DEFAULT 1,
+ affected_occasions bigint[] NOT NULL DEFAULT '{}', projected_revision bigint NOT NULL DEFAULT 0,
+ UNIQUE(organization,source_key)
+);
+CREATE INDEX notification_center_order_projection ON public.notification_center_events(occasion,(data->>'orderId')) WHERE kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted');
+CREATE INDEX notification_center_pending ON public.notification_center_events(organization,occurred_at) WHERE projected_revision<attention_revision;
+CREATE TABLE public.notification_center_recipients (
+ event_id uuid NOT NULL REFERENCES public.notification_center_events(id) ON DELETE CASCADE, recipient uuid NOT NULL,
+ processed_revision bigint NOT NULL DEFAULT 0, eligible_revision bigint NOT NULL DEFAULT 1,
+ PRIMARY KEY(event_id,recipient)
+);
+CREATE TABLE public.notification_center_user_state (
+ organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL,
+ last_delivery_sequence bigint NOT NULL DEFAULT 0, read_through_sequence bigint NOT NULL DEFAULT 0,
+ PRIMARY KEY(organization,recipient), CHECK(read_through_sequence<=last_delivery_sequence)
+);
+CREATE TABLE public.notification_center_deliveries (
+ event_id uuid NOT NULL REFERENCES public.notification_center_events(id) ON DELETE CASCADE, recipient uuid NOT NULL,
+ organization bigint NOT NULL, attention_revision bigint NOT NULL, sequence bigint NOT NULL, group_key text NOT NULL,
+ delivered_at timestamptz NOT NULL DEFAULT clock_timestamp(), PRIMARY KEY(event_id,recipient,attention_revision),
+ UNIQUE(organization,recipient,sequence)
+);
+CREATE INDEX notification_center_personal_history ON public.notification_center_deliveries(organization,recipient,group_key,sequence DESC);
+CREATE TABLE public.notification_center_preferences (
+ organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL, occasion bigint NOT NULL,
+ muted boolean NOT NULL DEFAULT false, PRIMARY KEY(organization,recipient,occasion)
+);
+CREATE TABLE public.notification_center_source_state (
+ organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, source_key text NOT NULL,
+ state jsonb NOT NULL, episode bigint NOT NULL DEFAULT 0, observed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(organization,source_key)
+);
+DO $$ DECLARE t text; BEGIN
+ FOREACH t IN ARRAY ARRAY['activation','events','recipients','user_state','deliveries','preferences','source_state'] LOOP
+  EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY','notification_center_'||t);
+  EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC,anon,authenticated,service_role','notification_center_'||t);
+ END LOOP;
+END $$;
+CREATE TABLE public.notification_center_maintenance (
+ name text PRIMARY KEY, lease_token uuid, lease_until timestamptz, next_at timestamptz NOT NULL DEFAULT '-infinity', cursor bigint NOT NULL DEFAULT 0
+);
+CREATE TABLE public.notification_center_bank_health (
+ connection_id bigint PRIMARY KEY, lease_token uuid, lease_until timestamptz,next_at timestamptz NOT NULL DEFAULT '-infinity',
+ failure_since timestamptz, failures integer NOT NULL DEFAULT 0,last_success timestamptz,reason text
+);
+ALTER TABLE public.notification_center_maintenance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
+-- End organization notification center private projections.

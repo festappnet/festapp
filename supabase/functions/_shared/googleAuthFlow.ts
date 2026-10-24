@@ -135,11 +135,11 @@ async function transition(
 async function rate(
   admin: ReturnType<typeof makeAdmin>,
   key: string,
-  limit = 20,
+  family: "source" | "client" | "global" | "attempt" | "proof" = "source",
 ) {
-  const { data, error } = await admin.rpc("google_auth_rate_limit_v1", {
-    p_key: await hash(key),
-    p_limit: limit,
+  const { data, error } = await admin.rpc("consume_auth_abuse_v1", {
+    p_key_hash: await hash(key),
+    p_family: `google.${family}`,
   });
   if (error || data !== true) throw new Error("rate_limited");
 }
@@ -218,7 +218,7 @@ export async function handleGoogleAuth(
         stored.browser_hash !==
           await hash(requireSecret(readCookie(req, stored.id)))
       ) throw new Error("invalid_provider_proof");
-      await rate(admin, `callback:${stored.id}`, 5);
+      await rate(admin, `callback:${stored.id}`, "proof");
       const { data: client } = await admin.from("external_login_clients")
         .select("*").eq("client_id", stored.client_id).eq("enabled", true)
         .single();
@@ -325,8 +325,8 @@ export async function handleGoogleAuth(
     allowedOrigin = client.origin;
     // Global/client/attempt limits also apply when forwarded IP is unavailable.
     // Only a gateway-owned trusted header may be configured as an extra key.
-    await rate(admin, `global:${endpoint}`, 100);
-    await rate(admin, `${endpoint}:${client.client_id}`, 30);
+    await rate(admin, `global:${endpoint}`, "global");
+    await rate(admin, `${endpoint}:${client.client_id}`, "client");
     const ipHeader = Deno.env.get("GOOGLE_AUTH_TRUSTED_IP_HEADER");
     if (ipHeader) {
       await rate(
@@ -387,7 +387,7 @@ export async function handleGoogleAuth(
     if (!/^[0-9a-f-]{36}$/.test(body.attempt)) {
       throw new Error("invalid_provider_proof");
     }
-    await rate(admin, `attempt:${body.attempt}`, 10);
+    await rate(admin, `attempt:${body.attempt}`, "attempt");
     const challenge = await hash(requireSecret(body.verifier)),
       continuation = randomSecret();
     const { data: stored } = await admin.from("external_login_attempts").select(
@@ -417,7 +417,7 @@ export async function handleGoogleAuth(
         await rate(
           admin,
           `proof:${client.organization}:${body.email.toLowerCase().trim()}`,
-          5,
+          "proof",
         );
         const { data: target } = await admin.rpc(
           "google_auth_resolve_account_v1",
@@ -491,7 +491,7 @@ export async function handleGoogleAuth(
           stored.status !== "awaiting_mfa" ||
           typeof body.mfaCode !== "string" || !/^\d{6}$/.test(body.mfaCode)
         ) throw new Error("account_proof_failed");
-        await rate(admin, `mfa:${stored.id}`, 5);
+        await rate(admin, `mfa:${stored.id}`, "proof");
         const proof = JSON.parse(
           await encryptedProof(
             stored.mfa_session_encrypted,

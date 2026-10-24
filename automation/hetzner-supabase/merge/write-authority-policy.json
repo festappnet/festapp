@@ -13,6 +13,7 @@
     },
     {
       "path": "lib/components/icons/db_place_types.dart",
+      "canonical_only": true,
       "command_modules": ["lib/components/map/map_commands.dart"]
     },
     {
@@ -35,13 +36,14 @@
       "path": "lib/components/schedule/db_events.dart",
       "command_modules": [
         "lib/components/schedule/attendance_commands.dart",
-        "lib/components/schedule/event_commands.dart",
+        "lib/components/schedule/supabase_event_commands.dart",
         "lib/components/schedule/exclusive_group_commands.dart",
         "lib/components/schedule/saved_program_commands.dart"
       ]
     },
     {
       "path": "lib/components/users/db_users.dart",
+      "canonical_only": true,
       "command_modules": [
         "lib/components/unit/unit_commands.dart",
         "lib/components/users/profile_commands.dart"

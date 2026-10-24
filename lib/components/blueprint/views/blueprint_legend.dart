@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/ticket_batch_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -13,6 +14,7 @@ class BlueprintLegend extends StatelessWidget {
   // New properties for the Confirm Button
   final int selectedCount;
   final VoidCallback? onConfirmOrder;
+  final VoidCallback? onCreateBatch;
   final Map<BlueprintSeatState, int> stateCounts;
   final bool allowOrderActions;
 
@@ -22,6 +24,7 @@ class BlueprintLegend extends StatelessWidget {
     required this.onModeSelected,
     this.selectedCount = 0,
     this.onConfirmOrder,
+    this.onCreateBatch,
     this.stateCounts = const {},
     this.allowOrderActions = true,
   });
@@ -87,70 +90,80 @@ class BlueprintLegend extends StatelessWidget {
         if (allowOrderActions) const SizedBox(height: 16),
 
         // --- Action Tools ---
-        if (allowOrderActions) _buildLegendItem(
-          context: context,
-          label: BlueprintStrings.legendSwapSeats,
-          state: BlueprintSeatState.empty,
-          isActive: currentSelectionMode == BlueprintSelectionMode.swapSeats,
-          forceHighlight:
-              true, // Keeps orange border for Swap to indicate "special/warning"
-          onTap: () => onModeSelected(BlueprintSelectionMode.swapSeats),
-        ),
+        if (allowOrderActions)
+          _buildLegendItem(
+            context: context,
+            label: BlueprintStrings.legendSwapSeats,
+            state: BlueprintSeatState.empty,
+            isActive: currentSelectionMode == BlueprintSelectionMode.swapSeats,
+            forceHighlight:
+                true, // Keeps orange border for Swap to indicate "special/warning"
+            onTap: () => onModeSelected(BlueprintSelectionMode.swapSeats),
+          ),
         if (allowOrderActions) const SizedBox(height: 8),
 
         // --- Create Order with Button ---
-        if (allowOrderActions) Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildLegendItem(
-              context: context,
-              label: BlueprintStrings.legendCreateOrder,
-              state: BlueprintSeatState.selectedByMe,
-              isActive:
-                  currentSelectionMode == BlueprintSelectionMode.createNewOrder,
-              forceHighlight: false, // REMOVED orange border here
-              onTap: () =>
-                  onModeSelected(BlueprintSelectionMode.createNewOrder),
-            ),
+        if (allowOrderActions)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildLegendItem(
+                context: context,
+                label: BlueprintStrings.legendCreateOrder,
+                state: BlueprintSeatState.selectedByMe,
+                isActive: currentSelectionMode ==
+                    BlueprintSelectionMode.createNewOrder,
+                forceHighlight: false, // REMOVED orange border here
+                onTap: () =>
+                    onModeSelected(BlueprintSelectionMode.createNewOrder),
+              ),
 
-            // The Button appears here if mode is active
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: currentSelectionMode ==
-                      BlueprintSelectionMode.createNewOrder
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 12.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: selectedCount > 0 ? onConfirmOrder : null,
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor: Colors.black26,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16, horizontal: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+              if (currentSelectionMode ==
+                      BlueprintSelectionMode.createNewOrder &&
+                  onCreateBatch != null)
+                OutlinedButton.icon(
+                    onPressed: selectedCount > 0 ? onCreateBatch : null,
+                    icon: const Icon(Icons.confirmation_number_outlined),
+                    label: Text(TicketBatchStrings.create)),
+              // The Button appears here if mode is active
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: currentSelectionMode ==
+                        BlueprintSelectionMode.createNewOrder
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 12.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                selectedCount > 0 ? onConfirmOrder : null,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              elevation: 4,
+                              shadowColor: Colors.black26,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          ),
-                          icon:
-                              const Icon(Icons.check_circle_outline, size: 20),
-                          label: Text(
-                            "${BlueprintStrings.btnCreateOrder} ($selectedCount)",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                            icon: const Icon(Icons.check_circle_outline,
+                                size: 20),
+                            label: Text(
+                              "${BlueprintStrings.btnCreateOrder} ($selectedCount)",
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
 
         const SizedBox(height: 8),
         const Divider(),
