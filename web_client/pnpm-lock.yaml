@@ -8,15 +8,15 @@ overrides:
   rollup: ^4.62.4
 
 patchedDependencies:
-  '@festapp/venue-layout@0.3.5': d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab
+  '@festapp/venue-layout@0.3.6': d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab
 
 importers:
 
   .:
     dependencies:
       '@festapp/venue-layout':
-        specifier: file:vendor/festapp-venue-layout-0.3.5-c75497ba4a27.tgz
-        version: file:vendor/festapp-venue-layout-0.3.5-c75497ba4a27.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)
+        specifier: file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz
+        version: file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)
       '@supabase/supabase-js':
         specifier: ^2.117.3
         version: 2.117.3
@@ -277,9 +277,9 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-c75497ba4a27.tgz':
-    resolution: {integrity: sha512-97kW1ycrplK6TRwCQNgZKMo1N3WnpN+nQ2jJn6UV/PtJJN46NCk867pkRMXGROtJ86DY4+yjYYSl5fAwcJExyw==, tarball: file:vendor/festapp-venue-layout-0.3.5-c75497ba4a27.tgz}
-    version: 0.3.5
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz':
+    resolution: {integrity: sha512-8H2AjG8jmSWNehYaMQl7P+eR8J+2ix2btoF95idwdFAz/SYE/JhgsQosNPTa7LRuxWPgOy3lOtwZymcgH3N25g==, tarball: file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz}
+    version: 0.3.6
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     resolution: {integrity: sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==}
@@ -1046,7 +1046,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-c75497ba4a27.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)': {}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

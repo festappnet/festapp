@@ -1,5 +1,35 @@
 ## Unreleased
 
+- Keep single-finger panning from the workspace outside the plan responsive
+  in navigation mode independently of ancestor gesture recognition. Transfer two-finger input to
+  the existing pinch navigation without applying camera movement twice.
+
+## JavaScript 0.3.6
+
+- Add registry installation instructions and working public documentation links.
+- Publish the existing successful main CI archive without rebuilding it.
+- Recover an already-published archive with different gzip encoding only when
+  its entire tar payload is identical, preserving the original registry bytes.
+
+## 0.3.7
+
+- Present the library as Venue Layout across the README, package descriptions,
+  showcase and demo titles. Preserve the Flutter `venue_seat_picker` and
+  JavaScript `@festapp/venue-layout` package identifiers.
+- Explain the Flutter editor, shared geometry, JavaScript consumer and host-owned
+  booking responsibilities in the public repository entrypoints.
+- Follow BankSync's protected-tag and npm-environment OIDC release flow; remove
+  the earlier inactive CI publishing path and require exact archive integrity on retries.
+
+## 0.3.6
+
+- Restore the current object-editor showcase README with six workflow GIFs,
+  downloadable videos, the template gallery and current integration examples.
+- Prepare npm trusted publishing from the verified CI archive, without a local
+  login or a stored write token. npm account setup remains a one-time prerequisite.
+
+## 0.3.5
+
 - Add `LayoutSpatialIndex.resolveTap` and `LayoutTapDisposition`: exact targets
   before nearest outlines, an 8 logical pixel tap radius in Flutter consumers,
   and mode-specific blocking/ignored targets without bypassing availability.

@@ -2277,7 +2277,7 @@ packages:
       path: "vendor/blueprint/venue_seat_picker"
       relative: true
     source: path
-    version: "0.3.5"
+    version: "0.3.7"
   video_player:
     dependency: transitive
     description:

@@ -44,6 +44,135 @@ Future<void> fingerDrag(WidgetTester tester, Offset from) async {
 }
 
 void main() {
+  testWidgets(
+    'dark margin follows touch even when an ancestor owns the gesture arena',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 650));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      var taps = 0;
+      final document = VenueLayoutDocument.empty().copyWith(
+        canvas: {'x': 0, 'y': 0, 'width': 800, 'height': 1000},
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RawGestureDetector(
+              gestures: {
+                EagerGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<
+                      EagerGestureRecognizer
+                    >(() => EagerGestureRecognizer(), (_) {}),
+              },
+              child: LayoutSceneSurface(
+                document: document,
+                pan: true,
+                onTap: (_) => taps++,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final surface = find.byType(LayoutSceneSurface);
+      final camera = scenePainter(tester, surface).camera!;
+      for (final delta in [const Offset(-60, 0), const Offset(0, 60)]) {
+        camera.value = Matrix4.diagonal3Values(3, 3, 1)
+          ..setTranslationRaw(120, -180, 0);
+        await tester.pump();
+        final before = camera.value.clone();
+        final finger = await tester.startGesture(
+          const Offset(60, 300),
+          kind: PointerDeviceKind.touch,
+        );
+        await finger.moveBy(delta / 2);
+        await tester.pump();
+        await finger.moveBy(delta / 2);
+        await tester.pump();
+        await finger.up();
+        await tester.pumpAndSettle();
+        expect(
+          camera.value.entry(0, 3),
+          closeTo(before.entry(0, 3) + delta.dx, .001),
+        );
+        expect(
+          camera.value.entry(1, 3),
+          closeTo(before.entry(1, 3) + delta.dy, .001),
+        );
+        expect(camera.value.entry(0, 0), 3);
+      }
+      expect(taps, 0);
+    },
+  );
+
+  testWidgets(
+    'margin pan applies once and hands pinch back to scale navigation',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 650));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      var taps = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LayoutSceneSurface(
+              document: VenueLayoutDocument.empty().copyWith(
+                canvas: {'x': 0, 'y': 0, 'width': 800, 'height': 1000},
+              ),
+              pan: true,
+              onTap: (_) => taps++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final camera = scenePainter(
+        tester,
+        find.byType(LayoutSceneSurface),
+      ).camera!;
+      camera.value = Matrix4.diagonal3Values(3, 3, 1)
+        ..setTranslationRaw(120, -180, 0);
+      await tester.pump();
+      final first = await tester.startGesture(
+        const Offset(60, 300),
+        pointer: 1,
+      );
+      await first.moveBy(const Offset(-30, 0));
+      await tester.pump();
+      expect(
+        camera.value.entry(0, 3),
+        closeTo(90, .001),
+        reason: 'Pointer and scale callbacks must not pan twice',
+      );
+      final second = await tester.startGesture(
+        const Offset(120, 300),
+        pointer: 2,
+      );
+      await second.moveBy(const Offset(30, 0));
+      await tester.pump();
+      await second.moveBy(const Offset(30, 0));
+      await tester.pump();
+      expect(camera.value.entry(0, 0), greaterThan(3));
+      await first.cancel();
+      await tester.pump();
+      final before = camera.value.clone();
+      await second.moveBy(const Offset(0, 40));
+      await tester.pump();
+      expect(camera.value.entry(1, 3), greaterThan(before.entry(1, 3)));
+      await second.up();
+      await tester.pumpAndSettle();
+      expect(taps, 0);
+      camera.value = Matrix4.diagonal3Values(3, 3, 1)
+        ..setTranslationRaw(120, -180, 0);
+      await tester.pump();
+      final next = await tester.startGesture(const Offset(60, 300));
+      await next.moveBy(const Offset(0, 30));
+      await tester.pump();
+      expect(camera.value.entry(1, 3), closeTo(-150, .001));
+      await next.cancel();
+      await tester.pumpAndSettle();
+      expect(taps, 0);
+    },
+  );
+
   testWidgets('pinch and cancel never dispatch a selection tap', (
     tester,
   ) async {

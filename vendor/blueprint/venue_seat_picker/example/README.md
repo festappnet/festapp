@@ -1,6 +1,10 @@
-# Venue layout demo
+# Venue Layout demo
 
-The existing package example now hosts the public `VenueLayoutEditor` and customer picker. It starts with Classic ball. The package gallery supplies all nine editable templates, with new identities for every creation. Demo prices and availability are synthetic and live outside geometry.
+The public `VenueLayoutEditor` studio and customer picker demonstrate the full
+Venue Layout flow: create a plan from the shared template gallery, edit its
+objects, export a portable document and preview customer selection. Creating a
+template allocates fresh identities. Demo prices and availability are synthetic
+host data; the demo creates no real reservation or order.
 
 Build prerequisites: the pinned FVM Flutter SDK, a populated Flutter/Dart dependency cache, Python 3 and Node.js. Dependency setup and browser installation can require internet. From the package root:
 
@@ -8,7 +12,7 @@ Build prerequisites: the pinned FVM Flutter SDK, a populated Flutter/Dart depend
 python3 tool/configure_workspace.py
 fvm flutter pub get
 (cd example && fvm flutter pub get)
-(cd web && npm install && npx playwright install chromium)
+(cd web && pnpm install --frozen-lockfile && pnpm exec playwright install chromium)
 tool/demo.sh build
 tool/demo.sh check
 tool/demo.sh open
