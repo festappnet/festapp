@@ -1,7 +1,7 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "Festapp",
+  "short_name": "Festapp",
+  "description": "Platforma pro správu akcí, programu a vstupenek.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
