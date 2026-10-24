@@ -569,59 +569,87 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   }
 
   Future<void> _link() async {
-    final selection = controller.editor.composer.selection;
-    final text = TextEditingController();
-    final value = await showDialog<String>(
+    final target = controller.linkEditingTarget;
+    if (target == null) return;
+    final text = TextEditingController(text: target.url ?? '');
+    bool isValid(String value) {
+      final variable = controller.authoring?.search('', const {}).any((entry) =>
+              entry.url &&
+              TemplateTokenPlaceholder(entry.code).source == value) ??
+          false;
+      if (variable) return true;
+      final uri = Uri.tryParse(value);
+      if (uri == null) return false;
+      return switch (uri.scheme) {
+        'https' || 'http' => uri.host.isNotEmpty,
+        'mailto' || 'tel' => uri.path.isNotEmpty,
+        _ => false,
+      };
+    }
+
+    final route = DialogRoute<String>(
         context: context,
-        builder: (context) => AppAlertDialog(
-                onClose: () => Navigator.pop(context),
-                title: Text(HtmlStrings.link),
-                content: Column(mainAxisSize: MainAxisSize.min, children: [
-                  TextField(
-                      controller: text,
-                      autofocus: true,
-                      keyboardType: TextInputType.url),
-                  if (controller.authoring != null)
-                    DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                            labelText: controller.authoring!.insertLabel),
-                        items: controller.authoring!
-                            .search('', const {})
-                            .where((entry) => entry.url)
-                            .map((entry) => DropdownMenuItem(
-                                value: entry.code, child: Text(entry.label)))
-                            .toList(),
-                        onChanged: (code) {
-                          if (code != null)
-                            text.text = TemplateTokenPlaceholder(code).source;
-                        }),
-                ]),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(CommonStrings.storno)),
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, text.text.trim()),
-                      child: Text(CommonStrings.save)),
-                ]));
+        builder: (context) => ValueListenableBuilder<TextEditingValue>(
+            valueListenable: text,
+            builder: (context, value, _) => AppAlertDialog(
+                    onClose: () => Navigator.pop(context),
+                    title: Text(HtmlStrings.link),
+                    content: Column(mainAxisSize: MainAxisSize.min, children: [
+                      TextField(
+                          controller: text,
+                          autofocus: true,
+                          keyboardType: TextInputType.url,
+                          decoration: InputDecoration(
+                              labelText: 'URL',
+                              errorText: text.text.trim().isNotEmpty &&
+                                      !isValid(text.text.trim())
+                                  ? CommonStrings.invalidFormat
+                                  : null),
+                          onSubmitted: (value) {
+                            if (isValid(value.trim()))
+                              Navigator.pop(context, value.trim());
+                          }),
+                      if (controller.authoring != null)
+                        DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                                labelText: controller.authoring!.insertLabel),
+                            items: controller.authoring!
+                                .search('', const {})
+                                .where((entry) => entry.url)
+                                .map((entry) => DropdownMenuItem(
+                                    value: entry.code,
+                                    child: Text(entry.label)))
+                                .toList(),
+                            onChanged: (code) {
+                              if (code != null)
+                                text.text =
+                                    TemplateTokenPlaceholder(code).source;
+                            }),
+                    ]),
+                    actions: [
+                      if (target.url != null)
+                        TextButton.icon(
+                            key: const ValueKey('html-remove-link'),
+                            onPressed: () => Navigator.pop(context, ''),
+                            icon: const Icon(Icons.link_off),
+                            label: Text(HtmlStrings.removeLink)),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(CommonStrings.storno)),
+                      TextButton(
+                          onPressed: isValid(text.text.trim())
+                              ? () => Navigator.pop(context, text.text.trim())
+                              : null,
+                          child: Text(CommonStrings.save)),
+                    ])));
+    final value = await Navigator.of(context).push(route);
+    await route.completed;
     text.dispose();
     if (value == null || !mounted) return;
-    final uri = Uri.tryParse(value);
-    final variable = controller.authoring?.search('', const {}).any((entry) =>
-            entry.url &&
-            TemplateTokenPlaceholder(entry.code).source == value) ??
-        false;
-    if (!variable &&
-        (uri == null ||
-            !{'https', 'http', 'mailto', 'tel'}.contains(uri.scheme)))
-      throw StateError('Invalid link URL');
-    if (selection != null)
-      controller.editor.execute([
-        ChangeSelectionRequest(selection, SelectionChangeType.placeCaret,
-            SelectionReason.userInteraction)
-      ]);
-    controller.toggle(LinkAttribution(value));
+    if (value == target.url) return;
+    controller.setLink(target.selection, value.isEmpty ? null : value);
+    controller.focusNode.requestFocus();
   }
 
   Future<void> _imageUrl() async {

@@ -1,3 +1,4 @@
+import 'package:html/parser.dart' as html_parser;
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -40,6 +41,107 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  for (final scenario in [
+    (name: 'caret inside', start: 10, end: 10),
+    (name: 'caret at end', start: 14, end: 14),
+    (name: 'selected link', start: 7, end: 14),
+    (name: 'partial selection', start: 9, end: 12),
+  ]) {
+    testWidgets('edit existing link from ${scenario.name}', (tester) async {
+      final controller = await mountLinkEditor(tester,
+          start: scenario.start, end: scenario.end);
+      await tester.tap(find.byIcon(Icons.link).first);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          oldLinkUrl);
+      await tester.enterText(find.byType(TextField), newLinkUrl);
+      await tester.tap(find.widgetWithText(TextButton, CommonStrings.save));
+      await tester.pumpAndSettle();
+      final saved = html_parser.parseFragment(controller.html);
+      expect(saved.querySelectorAll('a'), hasLength(2));
+      expect(saved.querySelector('a')!.attributes['href'], newLinkUrl);
+      expect(saved.querySelector('a')!.text, 'Carpool');
+      expect(saved.querySelector('strong')!.text, 'Carpool');
+      expect(saved.querySelectorAll('a').last.attributes['href'], otherLinkUrl);
+      controller.undo();
+      expect(controller.html, linkEditorHtml);
+      controller.redo();
+      expect(
+          html_parser
+              .parseFragment(controller.html)
+              .querySelector('a')!
+              .attributes['href'],
+          newLinkUrl);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
+  testWidgets('cancel and unchanged save preserve existing link',
+      (tester) async {
+    final controller = await mountLinkEditor(tester);
+    for (final action in [CommonStrings.storno, CommonStrings.save]) {
+      await tester.tap(find.byIcon(Icons.link).first);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          oldLinkUrl);
+      await tester.tap(find.widgetWithText(TextButton, action));
+      await tester.pumpAndSettle();
+      expect(controller.html, linkEditorHtml);
+      expect(controller.hasUserChanges, isFalse);
+    }
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  testWidgets('remove link keeps text and bold and supports undo',
+      (tester) async {
+    final controller = await mountLinkEditor(tester);
+    await tester.tap(find.byIcon(Icons.link).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('html-remove-link')));
+    await tester.pumpAndSettle();
+    final saved = html_parser.parseFragment(controller.html);
+    expect(saved.querySelectorAll('a'), hasLength(1));
+    expect(saved.querySelector('a')!.attributes['href'], otherLinkUrl);
+    expect(saved.querySelector('strong')!.text, 'Carpool');
+    expect(saved.text, contains('Before Carpool after Other'));
+    controller.undo();
+    expect(controller.html, linkEditorHtml);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  for (final collapsed in [false, true]) {
+    testWidgets('create link with collapsed=$collapsed and reject invalid URL',
+        (tester) async {
+      final controller = await mountLinkEditor(tester,
+          start: 7,
+          end: collapsed ? 7 : 14,
+          initialHtml: '<p>Before Carpool after</p>');
+      await tester.tap(find.byIcon(Icons.link).first);
+      await tester.pumpAndSettle();
+      final field = find.byType(TextField);
+      expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+      await tester.enterText(field, 'not a URL');
+      await tester.pump();
+      expect(
+          tester
+              .widget<TextButton>(
+                  find.widgetWithText(TextButton, CommonStrings.save))
+              .onPressed,
+          isNull);
+      await tester.enterText(field, newLinkUrl);
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, CommonStrings.save));
+      await tester.pumpAndSettle();
+      final anchor =
+          html_parser.parseFragment(controller.html).querySelector('a')!;
+      expect(anchor.attributes['href'], newLinkUrl);
+      expect(anchor.text, collapsed ? newLinkUrl : 'Carpool');
+      controller.undo();
+      expect(controller.html, '<p>Before Carpool after</p>');
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   testWidgets(
       'countdown renders live inside the editor and moves with controls',
       (tester) async {
@@ -948,4 +1050,34 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+}
+
+const oldLinkUrl = 'https://example.org/carpool';
+const newLinkUrl = 'https://example.org/new-carpool';
+const otherLinkUrl = 'https://example.org/other';
+const linkEditorHtml =
+    '<p>Before <a href="$oldLinkUrl"><strong>Carpool</strong></a>'
+    ' after <a href="$otherLinkUrl">Other</a></p>';
+
+Future<RichHtmlEditorController> mountLinkEditor(WidgetTester tester,
+    {int start = 10, int end = 10, String initialHtml = linkEditorHtml}) async {
+  final controller = RichHtmlEditorController(
+      initialHtml: initialHtml, owner: const HtmlMediaOwner.none());
+  await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+          body: SingleChildScrollView(
+              child: RichHtmlEditor(controller: controller)))));
+  final node = controller.editor.document.first as TextNode;
+  controller.editor.execute([
+    ChangeSelectionRequest(
+        DocumentSelection(
+            base: DocumentPosition(
+                nodeId: node.id, nodePosition: TextNodePosition(offset: start)),
+            extent: DocumentPosition(
+                nodeId: node.id, nodePosition: TextNodePosition(offset: end))),
+        SelectionChangeType.placeCaret,
+        SelectionReason.userInteraction)
+  ]);
+  await tester.pumpAndSettle();
+  return controller;
 }

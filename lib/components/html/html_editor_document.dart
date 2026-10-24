@@ -71,9 +71,10 @@ class HtmlEditorDocument {
                     metadata: metadata)
                 : ParagraphNode(id: id, text: text, metadata: metadata);
             add([child], node, wrapper: child);
-          } else if (_inlineTags.contains(tag) && child.nodes.isEmpty) {
-            // Standalone line breaks and empty inline wrappers are editable
-            // text slots, not opaque decorations that launch another editor.
+          } else if (_inlineTags.contains(tag) &&
+              !_containsBlocksOrImages(child)) {
+            // Read standalone inline wrappers as part of the text. Descending
+            // into them loses link and formatting attributions in the editor.
             add(
                 [child],
                 ParagraphNode(

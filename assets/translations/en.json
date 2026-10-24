@@ -2537,6 +2537,7 @@
     "noResults": "No results."
   },
   "HtmlEditor": {
+    "removeLink": "Remove link",
     "bold": "Bold",
     "italic": "Italic",
     "underline": "Underline",
