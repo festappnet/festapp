@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festivalslunovrat",
-  "baseMainSha": "54eeeefe252b5681014d4669d8c8a2042a60029b",
+  "baseMainSha": "e945293995a732f8fe56ec978d5c5720ff5cfce2",
   "release": {
     "version": "0.20.261+745",
     "note": "Public news read markers and grouped app administration notifications"

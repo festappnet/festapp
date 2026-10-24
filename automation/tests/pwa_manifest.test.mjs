@@ -7,6 +7,25 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { collectPwaShellManifest } from '../lib/pwa_shell_manifest.mjs';
 
+test('offline shell omits standalone editor fixtures but retains runtime font assets', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'festapp-editor-fixture-cache-'));
+  const directory = 'assets/packages/venue_seat_picker/assets/layout_fonts';
+  try {
+    await mkdir(path.join(root, directory), {recursive: true});
+    for (const name of ['flutter', 'webclient', 'main.dart.js']) await writeFile(path.join(root, name), name);
+    for (const name of ['fixtures.json', 'manifest.json', 'Roboto.ttf']) {
+      await writeFile(path.join(root, directory, name), name);
+    }
+    const manifest = await collectPwaShellManifest(root);
+    assert.ok(!manifest.knownResources.includes(`/${directory}/fixtures.json`));
+    assert.ok(manifest.knownResources.includes(`/${directory}/manifest.json`));
+    assert.ok(manifest.knownResources.includes(`/${directory}/Roboto.ttf`));
+    assert.equal(await readFile(path.join(root, directory, 'fixtures.json'), 'utf8'), 'fixtures.json');
+  } finally {
+    await rm(root, {recursive: true, force: true});
+  }
+});
+
 for (const skwasm of [false, true]) {
   test(`cache engines follow the deployed Flutter build selection (skwasm=${skwasm})`, async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'festapp-renderer-cache-'));
