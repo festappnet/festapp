@@ -89,7 +89,7 @@ class TextFieldBuilder extends StatelessWidget {
       validator: validators.isNotEmpty
           ? FormBuilderValidators.compose(validators)
           : null,
-      autovalidateMode: isPhone || isEmail
+      autovalidateMode: isPhone
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {
@@ -136,7 +136,7 @@ class TextFieldBuilder extends StatelessWidget {
       initialValue:
           fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: FormBuilderValidators.compose(validators),
-      autovalidateMode: isPhone || isEmail
+      autovalidateMode: isPhone
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {

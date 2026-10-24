@@ -14,7 +14,7 @@ export class FormValidator {
          
          const currentErrors = { ...session.state.validationErrors };
          const hadError = !!currentErrors[fieldName];
-         // Other fields revalidate on input; email feedback waits for blur.
+         // Logic: If field HAD error, we must validate on input. 
          if (!hadError && !target.classList.contains('invalid') && !(target.type === 'email' && e.type === 'blur')) return;
 
          const isRequired = target.dataset.required === 'true';
@@ -33,7 +33,7 @@ export class FormValidator {
                  nowValid = Array.from(group).some(i => i.checked);
                  if (!nowValid) failureReason = FormStrings.fieldCannotBeEmpty;
              }
-         } else if (!(target.type === 'email' && e.type !== 'blur')) {
+         } else {
              // Text/Select inputs
              // Check Required
              if (isRequired) {
