@@ -13,7 +13,7 @@ async function fixture(c){
  await c.query('INSERT INTO public.user_info(id,organization) VALUES($1,$2)',[user,org.id]);
  const {rows:[oc]}=await c.query("INSERT INTO public.occasions(organization,title,link,start_time,end_time) VALUES($1,'Concurrent',$2,now(),now()+interval '1 day') RETURNING id",[org.id,randomUUID()]);
  await c.query('INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES($1,$2,true)',[oc.id,user]);
- await c.query('INSERT INTO public.notification_center_activation(organization,enabled) VALUES($1,true)',[org.id]);
+ await c.query('INSERT INTO public.notification_center_organizations(organization) VALUES($1)',[org.id]);
  await c.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','first')",[org.id,oc.id]);
  await c.query('SELECT public.project_notification_center(500)');
  return {user,org:org.id,oc:oc.id};
@@ -58,14 +58,14 @@ test('open waits for an uncommitted delivery; two opens never lower the watermar
   await blocked(setup,pidB);await a.query('COMMIT');assert.equal((await second).rows[0].result.readThrough,2);await b.query('COMMIT');
  }finally{for(const c of [setup,a,b]){await c.query('ROLLBACK');await c.end();}}
 });
-test('first activation serializes with producers even before the activation row exists',async()=>{
+test('initialization serializes with producers even before the collection row exists',async()=>{
  const setup=await connect(),activation=await connect(),producer=await connect();
  try{
-  const f=await fixture(setup);await setup.query('DELETE FROM public.notification_center_activation WHERE organization=$1',[f.org]);
+  const f=await fixture(setup);await setup.query('DELETE FROM public.notification_center_organizations WHERE organization=$1',[f.org]);
   await producer.query('BEGIN');
   await producer.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','before-activation')",[f.org,f.oc]);
   await activation.query('BEGIN');const pid=(await activation.query('SELECT pg_backend_pid() pid')).rows[0].pid;
-  const turningOn=activation.query('SELECT public.set_notification_center_activation($1,true)',[f.org]);
+  const turningOn=activation.query('SELECT public.initialize_notification_center_internal($1)',[f.org]);
   await blocked(setup,pid);await producer.query('COMMIT');await turningOn;
   // The activation transaction still owns the gate; a concurrent producer must wait.
   await producer.query('BEGIN');const pidP=(await producer.query('SELECT pg_backend_pid() pid')).rows[0].pid;
@@ -73,8 +73,8 @@ test('first activation serializes with producers even before the activation row 
   await blocked(setup,pidP);await activation.query('COMMIT');await publishing;await producer.query('COMMIT');
   const {rows:[r]}=await setup.query(`SELECT
    count(*) FILTER(WHERE source_key='before-activation')::int before,
-   count(*) FILTER(WHERE source_key='after-activation' AND occurred_at>=a.activated_at)::int after
-   FROM public.notification_center_events e JOIN public.notification_center_activation a ON a.organization=e.organization WHERE e.organization=$1`,[f.org]);
+   count(*) FILTER(WHERE source_key='after-activation' AND occurred_at>=a.initialized_at)::int after
+   FROM public.notification_center_events e JOIN public.notification_center_organizations a ON a.organization=e.organization WHERE e.organization=$1`,[f.org]);
   assert.deepEqual(r,{before:0,after:1});
  }finally{for(const c of [setup,activation,producer]){await c.query('ROLLBACK');await c.end();}}
 });

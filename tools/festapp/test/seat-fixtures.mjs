@@ -14,7 +14,7 @@ export async function install(db){
   'eshop_ticket_batches/schema.sql','eshop_ticket_batches/guards.sql','eshop_orders/check_order_is_mutable.sql'];
  for(const file of prerequisites){
   let sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');
-  if(file==='notification_center/schema.sql'&&(await db.query("select to_regclass('public.notification_center_activation') present")).rows[0].present)continue;
+  if(file==='notification_center/schema.sql'&&(await db.query("select to_regclass('public.notification_center_organizations') present")).rows[0].present)continue;
   if(file==='notification_center/maintenance.sql'&&(await db.query("select to_regclass('public.notification_center_maintenance') present")).rows[0].present)sql=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION'));
   await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);
  }

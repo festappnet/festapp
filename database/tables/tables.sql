@@ -1569,9 +1569,9 @@ ALTER TABLE eshop.blueprint_area_bindings OWNER TO postgres;
 
 -- Organization notification center private projections.
 -- Private projections: no business-entity FK may prevent deletion of an order.
-CREATE TABLE public.notification_center_activation (
+CREATE TABLE public.notification_center_organizations (
  organization bigint PRIMARY KEY REFERENCES public.organizations(id) ON DELETE CASCADE,
- enabled boolean NOT NULL DEFAULT false, activated_at timestamptz NOT NULL DEFAULT clock_timestamp(), generation bigint NOT NULL DEFAULT 1,
+ initialized_at timestamptz NOT NULL DEFAULT clock_timestamp(), generation bigint NOT NULL DEFAULT 1,
  timezone text NOT NULL DEFAULT 'Europe/Prague', collection_started_at timestamptz
 );
 CREATE TABLE public.notification_center_events (
@@ -1611,7 +1611,7 @@ CREATE TABLE public.notification_center_source_state (
  PRIMARY KEY(organization,source_key)
 );
 DO $$ DECLARE t text; BEGIN
- FOREACH t IN ARRAY ARRAY['activation','events','recipients','user_state','deliveries','preferences','source_state'] LOOP
+ FOREACH t IN ARRAY ARRAY['organizations','events','recipients','user_state','deliveries','preferences','source_state'] LOOP
   EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY','notification_center_'||t);
   EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC,anon,authenticated,service_role','notification_center_'||t);
  END LOOP;

@@ -1,17 +1,17 @@
-CREATE OR REPLACE FUNCTION public.notification_center_active_internal(p_org bigint) RETURNS boolean
+CREATE OR REPLACE FUNCTION public.notification_center_initialized_internal(p_org bigint) RETURNS boolean
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
- PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-activation:'||p_org,0));
- RETURN EXISTS(SELECT 1 FROM public.notification_center_activation WHERE organization=p_org AND enabled);
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
+ RETURN EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=p_org);
 END $$;
-REVOKE ALL ON FUNCTION public.notification_center_active_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.notification_center_initialized_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 -- Runs under the existing form/product/inventory locks, never takes a recipient lock.
 CREATE OR REPLACE FUNCTION public.notification_center_capacity_transition_internal(p_org bigint,p_occ bigint,p_key text,p_snapshot jsonb,p_actor uuid DEFAULT auth.uid(),p_cause uuid DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE old public.notification_center_source_state; nc_episode bigint; next_state jsonb; crossing text; high boolean; remaining bigint; lim bigint; used bigint; event uuid;
 BEGIN
- PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-activation:'||p_org,0));
- PERFORM 1 FROM public.notification_center_activation WHERE organization=p_org AND enabled FOR SHARE;
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
+ PERFORM 1 FROM public.notification_center_organizations WHERE organization=p_org FOR SHARE;
  IF NOT FOUND THEN RETURN; END IF;
  lim:=(p_snapshot->>'limit')::bigint; remaining:=(p_snapshot->>'remainingPublic')::bigint;
  IF lim IS NULL OR lim<=0 THEN
@@ -67,7 +67,7 @@ DECLARE f public.forms; org bigint;
 BEGIN
  SELECT * INTO f FROM public.forms WHERE id=p_form;
  SELECT organization INTO org FROM public.occasions WHERE id=f.occasion;
- IF NOT public.notification_center_active_internal(org) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
  PERFORM public.notification_center_capacity_transition_internal(org,f.occasion,'form:'||f.id,
  public.get_form_capacity_snapshot_internal(f.id)||jsonb_build_object('formId',f.id,'title',f.title),p_actor,p_cause);
 END $$;
@@ -77,7 +77,7 @@ DECLARE p eshop.products; org bigint; used bigint;
 BEGIN
  SELECT * INTO p FROM eshop.products WHERE id=p_product;
  SELECT organization INTO org FROM public.occasions WHERE id=p.occasion;
- IF NOT public.notification_center_active_internal(org) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
  -- The product materializer's canonical maximum counts the committed product links.
  SELECT count(*) INTO used FROM eshop.order_product_ticket WHERE product=p.id;
  PERFORM public.notification_center_capacity_transition_internal(org,p.occasion,'product:'||p.id,
@@ -93,7 +93,7 @@ BEGIN
  SELECT * INTO ctx FROM public.inventory_contexts WHERE id=p_context;
  SELECT * INTO pool FROM public.inventory_pools WHERE id=ctx.inventory_pool;
  SELECT organization INTO org FROM public.occasions WHERE id=pool.occasion;
- IF NOT public.notification_center_active_internal(org) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
  SELECT least(count(*),coalesce(pool.sellable_capacity,count(*))),count(*) FILTER(WHERE order_product_ticket IS NOT NULL)
  INTO lim,occupied FROM eshop.spots WHERE inventory_context=ctx.id;
  -- Same physical/commercial limits as apply_allocations. Temporary buyer holds are deliberately excluded.
@@ -105,7 +105,7 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions
 DECLARE bp eshop.blueprints; lim bigint; occupied bigint;
 BEGIN
  SELECT * INTO bp FROM eshop.blueprints WHERE id=p_blueprint;
- IF NOT public.notification_center_active_internal(bp.organization) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(bp.organization) THEN RETURN; END IF;
  SELECT count(*),count(*) FILTER(WHERE s.order_product_ticket IS NOT NULL) INTO lim,occupied
  FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
  WHERE sb.blueprint=bp.id AND s.blueprint=bp.id AND s.occasion=bp.occasion AND NOT sb.blocked;
@@ -117,7 +117,7 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions
 DECLARE item record; bp bigint; org bigint;
 BEGIN
  SELECT oc.organization INTO org FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
- IF NOT public.notification_center_active_internal(org) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
  PERFORM public.notification_center_form_capacity_internal((SELECT form FROM eshop.orders WHERE id=p_order));
  FOR item IN SELECT DISTINCT product FROM eshop.order_product_ticket WHERE "order"=p_order AND product IS NOT NULL LOOP
   PERFORM public.notification_center_product_capacity_internal(item.product);

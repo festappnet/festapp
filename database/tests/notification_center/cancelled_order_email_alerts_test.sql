@@ -12,7 +12,7 @@ BEGIN
  INSERT INTO auth.users(id) VALUES(actor);
  INSERT INTO public.user_info(id,organization) VALUES(actor,org);
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,actor,true);
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data)
  VALUES(oc,public.next_order_sequence(oc),public.generate_order_symbol(),'ordered','{"email":"bad@example.invalid"}') RETURNING id INTO oid;
  INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data)

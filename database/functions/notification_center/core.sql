@@ -32,19 +32,31 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
  AND (oc.id=p_event.occasion OR oc.id=ANY(p_event.affected_occasions))) END
  );
 $$;
+-- Shared administration capability controls availability, never item access.
+CREATE OR REPLACE FUNCTION public.notification_center_administration_internal(p_org bigint,p_occ bigint,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT p_user IS NOT NULL AND (p_occ IS NULL OR EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND organization=p_org)) AND (
+ EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_org AND "user"=p_user AND is_admin)
+ OR EXISTS(SELECT 1 FROM public.units un JOIN public.unit_users um ON um.unit=un.id
+ WHERE un.organization=p_org AND um."user"=p_user AND (um.is_manager OR um.is_editor OR um.is_editor_view)
+ AND (p_occ IS NULL OR EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND unit=un.id)))
+ OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ WHERE oc.organization=p_org AND ou."user"=p_user AND NOT public.is_demo_occasion(oc.id)
+ AND (p_occ IS NULL OR oc.id=p_occ)
+ AND (public.administration_navigation_rule(false,ou.is_editor,ou.is_manager,false,false) OR ou.is_editor_view)));
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_administration_internal(bigint,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.notification_center_check_context(p_org bigint,p_occ bigint DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
  IF auth.uid() IS NULL OR NOT (
+ public.notification_center_administration_internal(p_org,NULL,auth.uid()) OR
  EXISTS(SELECT 1 FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
- JOIN public.units u ON u.id=uba.unit WHERE bu."user"=auth.uid() AND public.notification_center_bank_admin(bu.bank_account,auth.uid()) AND u.organization=p_org) OR
- EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_org AND "user"=auth.uid() AND is_admin)
- OR EXISTS(SELECT 1 FROM public.occasions oc WHERE oc.organization=p_org
-   AND public.notification_center_app_admin_internal(p_org,oc.id,auth.uid()))
+ JOIN public.units u ON u.id=uba.unit WHERE bu."user"=auth.uid() AND public.notification_center_bank_admin(bu.bank_account,auth.uid()) AND u.organization=p_org)
  OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
  WHERE oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id))) THEN
  RAISE insufficient_privilege USING MESSAGE='notification_read_denied'; END IF;
- IF p_occ IS NOT NULL AND NOT public.notification_center_app_admin_internal(p_org,p_occ,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ IF p_occ IS NOT NULL AND NOT public.notification_center_administration_internal(p_org,p_occ,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
  WHERE oc.id=p_occ AND oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)) THEN
  RAISE insufficient_privilege USING MESSAGE='notification_context_denied'; END IF;
 END $$;
@@ -72,13 +84,13 @@ REVOKE ALL ON FUNCTION public.notification_center_capture_recipients_internal(uu
 CREATE OR REPLACE FUNCTION public.notification_center_publish_internal(p_org bigint,p_occ bigint,p_kind text,p_key text,
  p_data jsonb DEFAULT '{}',p_actor uuid DEFAULT NULL,p_at timestamptz DEFAULT NULL,p_affected bigint[] DEFAULT '{}')
 RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE a public.notification_center_activation; e public.notification_center_events; u uuid;
+DECLARE a public.notification_center_organizations; e public.notification_center_events; u uuid;
 BEGIN
- PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-activation:'||p_org,0));
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
  p_at:=coalesce(p_at,clock_timestamp());
- -- The shared activation lock linearizes activation/pause with domain commits.
- SELECT * INTO a FROM public.notification_center_activation WHERE organization=p_org FOR SHARE;
- IF NOT FOUND OR NOT a.enabled OR p_at<coalesce(a.collection_started_at,a.activated_at) THEN RETURN NULL; END IF;
+ -- Source initialization and domain commits share one organization boundary.
+ SELECT * INTO a FROM public.notification_center_organizations WHERE organization=p_org FOR SHARE;
+ IF NOT FOUND OR p_at<coalesce(a.collection_started_at,a.initialized_at) THEN RETURN NULL; END IF;
  IF p_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND organization=p_org) THEN
  RAISE EXCEPTION 'notification_scope_mismatch'; END IF;
  IF EXISTS(SELECT 1 FROM unnest(p_affected) x WHERE NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=x AND organization=p_org)) THEN
@@ -108,10 +120,10 @@ BEGIN
  PERFORM public.notification_center_require_service();
  IF NOT pg_try_advisory_xact_lock(5831290471283) THEN RETURN 0; END IF;
  -- Row locks are the transaction lease. Rollback releases claims, including sequence allocation.
- FOR e IN SELECT ev.* FROM public.notification_center_events ev JOIN public.notification_center_activation a ON a.organization=ev.organization
- WHERE a.enabled AND ev.projected_revision<ev.attention_revision ORDER BY ev.organization,ev.occurred_at,ev.id
+ FOR e IN SELECT ev.* FROM public.notification_center_events ev JOIN public.notification_center_organizations a ON a.organization=ev.organization
+ WHERE ev.projected_revision<ev.attention_revision ORDER BY ev.organization,ev.occurred_at,ev.id
  LIMIT greatest(1,least(p_limit,500)) FOR UPDATE OF ev SKIP LOCKED LOOP
-  SELECT timezone INTO tz FROM public.notification_center_activation WHERE organization=e.organization;
+  SELECT timezone INTO tz FROM public.notification_center_organizations WHERE organization=e.organization;
   FOR u IN SELECT recipient FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision ORDER BY recipient LIMIT budget-n LOOP
    UPDATE public.notification_center_recipients SET processed_revision=e.attention_revision WHERE event_id=e.id AND recipient=u;
    n:=n+1;
@@ -180,13 +192,12 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.get_notification_center_badge(p_organization bigint) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.notification_center_user_state; enabled boolean;
+DECLARE s public.notification_center_user_state;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
- SELECT a.enabled INTO enabled FROM public.notification_center_activation a WHERE organization=p_organization;
  SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
- RETURN jsonb_build_object('enabled',coalesce(enabled,false),'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
- 'unread',coalesce(enabled,false) AND EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+ RETURN jsonb_build_object('enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
+ 'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
  WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
  AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
 END $$;

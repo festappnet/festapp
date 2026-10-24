@@ -12,7 +12,7 @@ BEGIN
  VALUES(oc,editor,true,false),(oc,orders_only,false,true);
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,tenant_admin,true);
  INSERT INTO public.events(occasion,title,start_time,end_time,max_participants) VALUES(oc,'Limited workshop',now()+interval '1 day',now()+interval '1 day 1 hour',1) RETURNING id INTO ev;
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  PERFORM set_config('request.jwt.claim.sub',member::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  response:=public.add_user_to_occasion_client_sync_v1(oc,member,gen_random_uuid());

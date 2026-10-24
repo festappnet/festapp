@@ -20,7 +20,7 @@ BEGIN
  INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,provider,mode,state,manifest_sha256,bank_pull_at)
  VALUES(gen_random_uuid()::text,'festapp','123',account,gen_random_uuid()::text,'FIO','api','connected',repeat('a',64),ts) RETURNING id INTO conn;
  UPDATE eshop.bank_sync_connections SET last_error='fio_token_invalid_or_inactive' WHERE id=conn;
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  -- A known problem at activation stays silent until a genuine successful pull.
  claim:=public.claim_notification_center_bank_health();SELECT (x->>'token')::uuid INTO tok FROM jsonb_array_elements(claim) x WHERE (x->>'id')::bigint=conn;
  PERFORM public.complete_notification_center_bank_health(conn,tok,ts,'fio_token_invalid_or_inactive');

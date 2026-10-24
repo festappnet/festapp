@@ -1,7 +1,7 @@
 # Notification center
 
 The shared administration chrome mounts the bell for every authenticated user
-whose organization has server-side delivery enabled. Visibility does not grant
+with administration access. There is no tenant, email or organization rollout switch. Visibility does not grant
 access: each read and detail action retains its existing authorization. Its
 controller is personal to the authenticated user and organization; route context only selects the current
 occasion's priority. Unit routes do not inherit the previous occasion. Retained
@@ -12,7 +12,9 @@ history. Badge reads, group expansion, pagination and foreground status refresh
 never acknowledge. Successful open fences badge reads already in flight. User,
 organization and rights changes invalidate pending responses and cached content.
 Missing additive RPC capability hides the feature; there is no local inbox or
-Realtime fallback.
+Realtime fallback. Collection metadata is initialized once for every existing
+organization during migration and by the organization creation owner for new
+organizations. Initialization baselines sources without replaying historical alerts.
 
 An open panel keeps its group and row order. Every 15 seconds it reads the badge
 and hydrates already loaded IDs through `get_notification_center_updates` in
