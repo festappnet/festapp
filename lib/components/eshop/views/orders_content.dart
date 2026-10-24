@@ -1,4 +1,3 @@
-import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'order_email_repair_dialog.dart';
@@ -484,13 +483,13 @@ class _OrdersContentState extends State<OrdersContent> {
         _openedOrder = requestedOrder;
         final source =
             context.routeData.queryParams.optString('orderMessageId');
-        WidgetsBinding.instance.addPostFrameCallback((_) => _openNotificationOrder(
+        WidgetsBinding.instance.addPostFrameCallback((_) => _openEmailTarget(
             newController, requestedOrder, source, generation, occasion.id!));
       }
     }
   }
 
-  Future<void> _openNotificationOrder(SingleDataGridController<OrderModel> grid,
+  Future<void> _openEmailTarget(SingleDataGridController<OrderModel> grid,
       int orderId, String? source, int generation, int occasionId) async {
     bool owns() =>
         mounted &&
@@ -517,30 +516,30 @@ class _OrdersContentState extends State<OrdersContent> {
           rows.indexWhere((r) => OrderGridFilters.order(r)?.id == orderId);
       if (index < 0) return;
       final row = rows[index];
-      grid.stateManager.setKeepFocus(true);
+      grid.highlightedRow = row;
       grid.stateManager
           .setCurrentCell(row.cells[EshopColumnIds.ORDER_SYMBOL], index);
       grid.stateManager.moveScrollByRow(TrinaMoveDirection.down, index);
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        if (!mounted ||
+            !identical(grid, controller) ||
+            !identical(grid.highlightedRow, row)) return;
+        grid.highlightedRow = null;
+        grid.stateManager.notifyListeners();
+      });
     }
 
-    final order = grid.stateManager.refRows.originalList
-        .map(OrderGridFilters.order)
-        .whereType<OrderModel>()
-        .where((order) => order.id == orderId)
-        .firstOrNull;
-    final repairDelivery = source != null &&
-        OrderEmailIssue.fromSummary(order?.emailDelivery).isNotEmpty;
-    focusRow(reveal: !repairDelivery);
-    if (repairDelivery) {
-      await showDialog<void>(
-          context: context,
-          builder: (_) => OrderEmailRepairDialog(
-              orderId: orderId,
-              occasionId: occasionId,
-              sourceMessageId: source,
-              onShowOrder: () => focusRow(reveal: true),
-              onChanged: refreshData));
-    }
+    focusRow();
+    // The dialog loads the exact object through the authorized ID reader,
+    // independently of the current grid page and filter.
+    await showDialog<void>(
+        context: context,
+        builder: (_) => OrderEmailRepairDialog(
+            orderId: orderId,
+            occasionId: occasionId,
+            sourceMessageId: source,
+            onShowOrder: () => focusRow(reveal: true),
+            onChanged: refreshData));
     if (!mounted || !owns()) return;
     await clearNotificationDetailTarget(context, 'orderId', '$orderId',
         companions: {if (source != null) 'orderMessageId': source});
