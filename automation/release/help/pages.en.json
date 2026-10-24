@@ -9,15 +9,6 @@
     "label": "All guides"
   },
   {
-    "id": "getting-started",
-    "category": "basics",
-    "slug": "getting-started",
-    "title": "From your event to your first ticket form",
-    "seoTitle": "How to start selling tickets online",
-    "description": "Prepare your event, tickets and public order form, then share its link or embed it in your website.",
-    "label": "Getting started"
-  },
-  {
     "id": "embed",
     "category": "integrations",
     "slug": "embed",
@@ -43,6 +34,78 @@
     "seoTitle": "Webnode: embed a ticket order form",
     "description": "Check the Webnode plan requirements, add an HTML block and verify the published form on mobile.",
     "label": "Webnode"
+  },
+  {
+    "id": "getting-started",
+    "category": "basics",
+    "slug": "getting-started",
+    "title": "How to create an event",
+    "seoTitle": "Create an event: dates, organizer and sales preparation",
+    "description": "Create your event, save a private draft, check the summary and distinguish publishing from opening sales.",
+    "label": "Create an event"
+  },
+  {
+    "id": "form",
+    "category": "basics",
+    "slug": "order-form",
+    "title": "How to prepare and publish an order form",
+    "seoTitle": "Order form: fields, public link and sales availability",
+    "description": "Prepare buyer details, ticket choices, required fields, the saved public link and ordering availability.",
+    "label": "Order form"
+  },
+  {
+    "id": "ticket-pricing",
+    "category": "tickets",
+    "slug": "ticket-prices-capacity",
+    "title": "How to set ticket prices and capacity",
+    "seoTitle": "Tickets: variants, prices, capacity and availability",
+    "description": "Set ticket and extra-product choices, prices, currencies, quantities and shared capacity groups.",
+    "label": "Prices and capacity"
+  },
+  {
+    "id": "seating",
+    "category": "tickets",
+    "slug": "seating-plan",
+    "title": "How to prepare a seating plan",
+    "seoTitle": "Seating plan: seats, products, prices and buyer checks",
+    "description": "Build the venue layout, assign products to seats and verify a particular seat and its price in the form.",
+    "label": "Seating plan"
+  },
+  {
+    "id": "ticket-design",
+    "category": "tickets",
+    "slug": "ticket-design",
+    "title": "How to design tickets and check the PDF",
+    "seoTitle": "Ticket design: templates, QR and PDF preview",
+    "description": "Choose a template, adjust information and artwork and verify QR readability and the generated PDF.",
+    "label": "Ticket design and PDF"
+  },
+  {
+    "id": "payments",
+    "category": "orders",
+    "slug": "payments",
+    "title": "How to prepare ticket payments",
+    "seoTitle": "Ticket payments: account, QR, deadlines and matching",
+    "description": "Check the receiving account, bank connection, payment references, deadlines and buyer instructions.",
+    "label": "Payment setup"
+  },
+  {
+    "id": "orders",
+    "category": "orders",
+    "slug": "orders",
+    "title": "How to manage orders and ticket delivery",
+    "seoTitle": "Orders: payments, email repair and ticket delivery",
+    "description": "Find orders, verify payment and email delivery, fix contact details and resend the appropriate current message.",
+    "label": "Orders and delivery"
+  },
+  {
+    "id": "check-in",
+    "category": "check-in",
+    "slug": "check-in",
+    "title": "How to check in visitors and verify tickets",
+    "seoTitle": "Visitor check-in: QR scanning, ticket states and offline work",
+    "description": "Prepare staff access, scan QR codes, confirm admission and handle used or unpaid tickets and pending offline records.",
+    "label": "Visitor check-in"
   },
   {
     "id": "troubleshooting",

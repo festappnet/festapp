@@ -1,16 +1,19 @@
 # Public Czech help
 
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
-The first implementation slice shares the homepage header/footer fragments,
-canonical organizer CSS and account-header initialization. Six Czech guides
-and matching English preview articles use stable topic IDs and grouped navigation.
-HTML generation and WordPress first-use/block/Custom HTML steps have actual
-localized screenshots; Webnode has verified Czech free-plan screenshots only.
-The English content is explicitly preview-only until its remaining capture and
-content qualification is complete. No Czech screenshot substitutes for English.
-The detailed event/form, ticket/seating, payment/order and check-in guides from
-the approved outline are still outstanding. Videos remain a later phase.
+The implementation shares the homepage header/footer fragments, canonical
+organizer CSS and account-header startup. The hub contains all six agreed areas
+and twelve Czech task guides, with matching English preview articles and stable
+topic IDs. Core guides cover event creation, form publication, ticket prices and
+capacity, seating, ticket design/PDF, payments, order delivery and check-in.
 
+New full-app screenshots show event creation, form/pricing setup, sales opening,
+ticket settings/editor/PDF and payment prerequisites using a disposable loopback
+backend. Seating, public payment instructions, report and native mobile-check-in
+images reuse actual synthetic product recordings with explicit provenance.
+The native check-in image is labelled separately from the current web controls.
+English never substitutes Czech screenshots. English publication and full
+Webnode verification remain separately gated; video tutorials are a later phase.
 
 Source content for `https://vstupenky.online/napoveda/`. `pages.json` owns the
 routes and SEO metadata; each route has an authored HTML body. Keep real UI

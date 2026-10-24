@@ -211,7 +211,7 @@ body.dark-mode .output-card{background:var(--surface)}
 /* The public site shell and buttons use organizers/page.css. Scope reader rules. */
 body[data-page=help]{background:var(--surface);font-size:20px;line-height:1.65}
 .help-layout{display:grid;grid-template-columns:220px minmax(0,740px);gap:64px;max-width:1140px;margin:0 auto;padding:48px 24px 80px}
-.help-sidebar{position:sticky;top:112px;align-self:start;font-size:17px;line-height:1.45}
+.help-sidebar{position:sticky;top:112px;align-self:start;max-height:calc(100dvh - 128px);overflow:auto;scrollbar-color:var(--line) transparent;font-size:17px;line-height:1.45}
 .help-sidebar>p{margin:0 0 14px;font-weight:500}
 .help-sidebar ul{list-style:none;margin:0;padding:0}
 .help-sidebar li{margin:0 0 4px}
@@ -292,3 +292,8 @@ body[data-page=help] [hidden]{display:none!important}
 
 body[data-page=help].dark-mode .embed-generator [data-url-error]{color:#ffb4ab}
 body[data-page=help].dark-mode .embed-generator input[aria-invalid=true]{border-color:#ffb4ab}
+
+.help-main .help-topic-index ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));list-style:none;padding:0;gap:4px 24px;margin:0 0 44px}
+.help-main .help-topic-index li{margin:0;padding:0}
+.help-topic-index a{display:block;min-height:44px;padding:8px 0;font-size:18px;line-height:1.5}
+@media(max-width:650px){.help-main .help-topic-index ul{grid-template-columns:minmax(0,1fr);gap:0}}

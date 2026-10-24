@@ -15,6 +15,9 @@
     "categories": {
       "integrations": "Integrace a vložení na web",
       "basics": "Začínáme s akcí",
+      "tickets": "Vstupenky a plánek",
+      "orders": "Objednávky a platby",
+      "check-in": "Odbavení návštěvníků",
       "troubleshooting": "Řešení potíží"
     }
   },
@@ -34,6 +37,9 @@
     "categories": {
       "integrations": "Integrations and embedding",
       "basics": "Getting started",
+      "tickets": "Tickets and seating",
+      "orders": "Orders and payments",
+      "check-in": "Check-in",
       "troubleshooting": "Troubleshooting"
     }
   }

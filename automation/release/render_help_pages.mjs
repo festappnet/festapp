@@ -34,9 +34,13 @@ const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const assets = {};
 const media = JSON.parse(read('media.json')).filter(item => item.locale === locale);
 const figures = new Map(media.map(item => {
-  if (!/^[a-z0-9/-]+$/.test(item.id) || !/^[a-z0-9/-]+\.png$/.test(item.file)) throw new Error('Invalid help media path');
-  const data = fs.readFileSync(path.join(directory,'media',item.file));
-  const name = `${item.id.replaceAll('/','-')}.${digest(data)}.png`;
+  if (!/^[a-z0-9/-]+$/.test(item.id)) throw new Error('Invalid help media identity');
+  const relative = item.sourceAsset || item.file;
+  const valid = item.sourceAsset ? /^web\/organizers-media\/(?:en\/)?[a-z0-9-]+\.(?:png|jpg|webp)$/ : /^[a-z0-9/-]+\.(?:png|jpg|webp)$/;
+  if (!valid.test(relative)) throw new Error('Invalid help media path');
+  const data = fs.readFileSync(path.join(item.sourceAsset ? root : path.join(directory,'media'),relative));
+  if (item.sha256 && createHash('sha256').update(data).digest('hex') !== item.sha256) throw new Error(`Help screenshot requires review: ${item.id}`);
+  const name = `${item.id.replaceAll('/','-')}.${digest(data)}${path.extname(relative)}`;
   assets[name] = data;
   const href = `${helpRoot}assets/${name}`;
   return [item.id, `<figure class="guide-screenshot"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
@@ -62,7 +66,8 @@ const generator = fs.readFileSync(path.join(source,'embed-generator.html'),'utf8
 const href = page => helpRoot + (page.slug ? page.slug + '/' : '');
 const groups = Object.entries(ui.categories);
 const navigation = current => `<ul><li><a href="${helpRoot}"${current === '' ? ' aria-current="page"' : ''}>${escape(pages[0].label)}</a></li></ul>` + groups.map(([id,label]) => `<p class="help-nav-group">${escape(label)}</p><ul>${pages.filter(p => p.category === id).map(page => `<li><a href="${href(page)}"${page.slug === current ? ' aria-current="page"' : ''}>${escape(page.label)}</a></li>`).join('')}</ul>`).join('');
-const guideDirectory = groups.map(([id,label]) => `<section aria-labelledby="category-${id}"><h2 id="category-${id}">${escape(label)}</h2><div class="guide-list">${pages.filter(p => p.category === id).map(page => `<a href="${href(page)}"><strong>${escape(page.title)}</strong><span>${escape(page.description)}</span></a>`).join('')}</div></section>`).join('');
+const topicIndex = `<nav class="help-topic-index" aria-label="${escape(ui.organizerHelp)}"><ul>${groups.map(([id,label]) => `<li><a href="#category-${id}">${escape(label)}</a></li>`).join('')}</ul></nav>`;
+const guideDirectory = topicIndex + groups.map(([id,label]) => `<section aria-labelledby="category-${id}"><h2 id="category-${id}">${escape(label)}</h2><div class="guide-list">${pages.filter(p => p.category === id).map(page => `<a href="${href(page)}"><strong>${escape(page.title)}</strong><span>${escape(page.description)}</span></a>`).join('')}</div></section>`).join('');
 let accountScript = '', themeLinks = '';
 if (arg('--built-index')) {
   const builtIndex = path.resolve(arg('--built-index'));
