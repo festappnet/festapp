@@ -148,7 +148,40 @@
       "legacy_unknown": "Legacy unknown"
     },
     "organization_scope": "Entire organization",
-    "refreshed": "Refreshed {time}"
+    "refreshed": "Refreshed {time}",
+    "recovery": {
+      "title": "Order delivery",
+      "resolve": "Resolve delivery",
+      "current": "Current contact",
+      "original": "Original failed address",
+      "email": "Contact email",
+      "save": "Save",
+      "resend": "Save and resend",
+      "cancel": "Cancel order",
+      "refund": "Cancellation does not refund payment. Use the existing payment refund procedure.",
+      "recipient": "New message recipient",
+      "cancelled": "The order is cancelled. This does not confirm delivery.",
+      "waiting": "Waiting for new delivery",
+      "queued": "Queued. Delivery has not been confirmed.",
+      "saved": "Contact saved. The original delivery issue remains.",
+      "failed": "Request not confirmed. Check the contact, recipient suppression and send status. Retrying preserves the command identity.",
+      "conflict": "The order or active send changed. The state has been refreshed; review it.",
+      "unavailable": "The order is unavailable or access is denied.",
+      "stale": "Refresh failed. The last known state is out of date.",
+      "readonly": "An order editor can repair this contact.",
+      "uncertain": "The original send is in progress or its outcome is uncertain. You can save the contact, but cannot recall that send. Further sending is blocked.",
+      "obsolete": "The original message no longer matches the order state.",
+      "reload": "Refresh",
+      "filtered": "This order is outside the current filter. The detail loads its exact ID; checked orders are unchanged.",
+      "show": "Show order row",
+      "sendCurrent": "Send current message kind",
+      "blocked": "This address is blocked. Enter a different address or ask an administrator to investigate the suppression.",
+      "hardBounce": "The provider reported a permanent delivery failure.",
+      "spam": "The recipient marked the message as spam.",
+      "paused": "Queue sending is paused.",
+      "limited": "Sending is waiting for available queue capacity or limits.",
+      "staleDelivery": "An earlier message was delivered. The current contact or payment details have changed."
+    }
   },
   "ActivitiesComponentStrings": {
     "buttonCancel": "Cancel",
@@ -1402,7 +1435,6 @@
     "reloadSaved": "Load saved layout",
     "swapServerNotice": "If seats or prices change, the swap will not apply. A new preview is required.",
     "layoutUnavailable": "This layout is not ready for the new editor. Ask an administrator to convert it.",
-    "orderLabel": "Order",
     "ticketLabel": "Ticket",
     "seatCount": "{count} seats",
     "protectedCount": "Occupied seats: {count}.",
@@ -4232,7 +4264,10 @@
   },
   "NotificationCenter": {
     "settingsEmpty": "No events are available yet.",
-    "groups": {"email_problem": "Email delivery", "bank_problem": "Bank connection"},
+    "groups": {
+      "email_problem": "Email delivery",
+      "bank_problem": "Bank connection"
+    },
     "today": "Today",
     "yesterday": "Yesterday",
     "atTime": "{day} at {time}",

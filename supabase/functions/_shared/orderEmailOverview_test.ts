@@ -1,3 +1,4 @@
+import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { completeEmailContent } from "./emailContentCompletion.ts";
 import { renderEmail } from './emailDelivery.ts';
@@ -63,4 +64,57 @@ Deno.test('template substitution preserves text values, subjects and authored li
  assert.equal(email.subject,'2502719268/2010 +420 731 140 198');
  assert.equal(email.html.replace(/<style[\s\S]*?<\/style>/g,'').replace(/<span class="festapp-plain-value">([^<]*)<\/span>/g,'$1'),'<p>2502719268/2010 +420 731 140 198 user@example.invalid</p><a href="https://example.invalid/order?token=abc">Status</a>');
  assert.doesNotMatch(email.html,/mailto:|tel:|&#8203;/);
+});
+
+Deno.test("contact repair reuses the existing order capability without rewriting its historical source", async () => {
+  const previous = Deno.env.get("EMAIL_PAYLOAD_KEY");
+  Deno.env.set("EMAIL_PAYLOAD_KEY", btoa("r".repeat(32)));
+  try {
+    const original = {
+      orderId: 7,
+      organization: 1,
+      occasion: 2,
+      unit: 3,
+      recipient: "old@example.invalid",
+      occasionTitle: "Synthetic",
+      participantCount: 0,
+      formLink: "test",
+    };
+    const source = await prepareOrderOverviewSource(original);
+    const evidence = JSON.stringify(source);
+    const row = {
+      order_id: 7,
+      recipient: "fixed@example.invalid",
+      message_id: "repair-attempt",
+    };
+    const link = await orderEmailOverviewUrl(row, async (_name, args) => {
+      assertEquals(args.p_recipient, row.recipient);
+      return {
+        ...original,
+        recipient: row.recipient,
+        webLink: "https://tenant.example.invalid",
+        source,
+      };
+    });
+    assertEquals(new URL(link!).searchParams.get("order_id"), "7");
+    assertEquals(JSON.stringify(source), evidence);
+    await assertRejects(
+      () =>
+        orderEmailOverviewUrl(
+          row,
+          async () => ({
+            ...original,
+            orderId: 8,
+            recipient: row.recipient,
+            webLink: "https://tenant.example.invalid",
+            source,
+          }),
+        ),
+      Error,
+      "INVALID_OVERVIEW_SOURCE",
+    );
+  } finally {
+    if (previous === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY");
+    else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);
+  }
 });

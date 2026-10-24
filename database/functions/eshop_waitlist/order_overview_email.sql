@@ -16,9 +16,13 @@ BEGIN
  SELECT * INTO STRICT occ FROM public.occasions WHERE id=root.occasion;
  SELECT * INTO f FROM public.forms WHERE id=root.form AND occasion=occ.id;
  IF requested.occasion IS DISTINCT FROM root.occasion OR requested.form IS DISTINCT FROM root.form
- OR requested.data->>'email' IS DISTINCT FROM p_recipient OR root.data->>'email' IS DISTINCT FROM p_recipient THEN
+ OR requested.data->>'email' IS DISTINCT FROM p_recipient THEN
   RAISE EXCEPTION 'INVALID_OVERVIEW_RECIPIENT';
  END IF;
+ -- A repaired split child must not receive the root capability covering other
+ -- orders at its former contact. Omit that optional link; preserve the root
+ -- source and every other order/contact unchanged.
+ IF root.data->>'email' IS DISTINCT FROM p_recipient THEN RETURN NULL; END IF;
  -- Orders without a public form have no public overview route.
  IF f.id IS NULL THEN RETURN NULL; END IF;
  SELECT src.* INTO s FROM eshop.order_overview_sources src JOIN eshop.waitlist_capabilities cap USING(token_hash)

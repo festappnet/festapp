@@ -148,7 +148,40 @@
       "legacy_unknown": "Historický e-mail"
     },
     "organization_scope": "Celá organizace",
-    "refreshed": "Načteno {time}"
+    "refreshed": "Načteno {time}",
+    "recovery": {
+      "title": "Doručení objednávky",
+      "resolve": "Vyřešit doručení",
+      "current": "Současný kontakt",
+      "original": "Původní neúspěšná adresa",
+      "email": "Kontaktní e-mail",
+      "save": "Uložit",
+      "resend": "Uložit a znovu odeslat",
+      "cancel": "Zrušit objednávku",
+      "refund": "Zrušení samo nevrací peníze. Vrácení platby vyřiďte stávajícím platebním postupem.",
+      "recipient": "Příjemce nového odeslání",
+      "cancelled": "Objednávka je zrušená. Doručení tím není potvrzeno.",
+      "waiting": "Čeká se na nové doručení",
+      "queued": "Zařazeno k odeslání. Doručení zatím není potvrzeno.",
+      "saved": "Kontakt uložen. Původní problém doručení trvá.",
+      "failed": "Požadavek nebyl potvrzen. Ověřte kontakt, blokování příjemce a stav odesílání. Opakování zachová identitu příkazu.",
+      "conflict": "Objednávka nebo probíhající odesílání se změnily. Stav byl obnoven; zkontrolujte jej.",
+      "unavailable": "Objednávka není dostupná nebo nemáte oprávnění.",
+      "stale": "Údaje se nepodařilo obnovit. Poslední známý stav není aktuální.",
+      "readonly": "Kontakt může opravit uživatel s oprávněním upravovat objednávky.",
+      "uncertain": "Výsledek původního odeslání není jistý nebo již probíhá. Kontakt lze uložit, původní odeslání však nelze odvolat. Další odeslání je zablokované.",
+      "obsolete": "Původní zpráva již neodpovídá stavu objednávky.",
+      "reload": "Obnovit",
+      "filtered": "Objednávka je mimo aktuální filtr. Detail načítá přesné ID; výběr objednávek se nemění.",
+      "show": "Zobrazit řádek objednávky",
+      "sendCurrent": "Odeslat aktuální druh zprávy",
+      "blocked": "Na tuto adresu nelze opakovaně odesílat. Opravte ji na jinou adresu nebo požádejte správce o prověření blokování.",
+      "hardBounce": "Poskytovatel oznámil trvalé nedoručení.",
+      "spam": "Příjemce označil zprávu za spam.",
+      "paused": "Odesílání fronty je pozastaveno.",
+      "limited": "Odesílání čeká na dostupnou kapacitu nebo limit fronty.",
+      "staleDelivery": "Dřívější zpráva byla doručena. Současný kontakt nebo platební podklady se změnily."
+    }
   },
   "ActivitiesComponentStrings": {
     "buttonCancel": "Zrušit",
@@ -1388,7 +1421,6 @@
     "reloadSaved": "Načíst uložený plánek",
     "swapServerNotice": "Při změně míst nebo cen se prohození neprovede. Bude nutné zobrazit nový náhled.",
     "layoutUnavailable": "Tento plánek zatím není připraven pro nový editor. Požádejte správce o převod.",
-    "orderLabel": "Objednávka",
     "ticketLabel": "Vstupenka",
     "seatCount": "Počet míst: {count}",
     "protectedCount": "Obsazená místa: {count}.",
@@ -4234,7 +4266,10 @@
   },
   "NotificationCenter": {
     "settingsEmpty": "Zatím nejsou k dispozici žádné akce.",
-    "groups": {"email_problem": "Doručování e-mailů", "bank_problem": "Bankovní spojení"},
+    "groups": {
+      "email_problem": "Doručování e-mailů",
+      "bank_problem": "Bankovní spojení"
+    },
     "today": "Dnes",
     "yesterday": "Včera",
     "atTime": "{day} v {time}",

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailDeliveryStrings {
+  static String recovery(String key) => 'EmailDelivery.recovery.$key'.tr();
   static String get title => 'EmailDelivery.title'.tr();
   static String get organizationScope =>
       'EmailDelivery.organization_scope'.tr();

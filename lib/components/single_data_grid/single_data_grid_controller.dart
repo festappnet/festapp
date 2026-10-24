@@ -46,6 +46,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   bool _autoRefreshing = false;
   final bool refreshOnTabActivation;
   late TrinaGridStateManager stateManager;
+  TrinaRow? highlightedRow;
   bool get hasUnsavedChanges =>
       updatedRows.isNotEmpty ||
       deletedRows.isNotEmpty ||

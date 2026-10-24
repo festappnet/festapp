@@ -1,3 +1,4 @@
+import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -20,6 +21,7 @@ double orderStateColumnWidth(
       maxLines: 1,
     )..layout();
     final indicators = (order.bankSyncWarning == null ? 0 : 28) +
+        (OrderEmailIssue.fromSummary(order.emailDelivery).isEmpty ? 0 : 32) +
         (order.state == OrderModel.expiredState ? 24 : 0);
     width = math.max(width, painter.width + 16 + indicators);
     painter.dispose();

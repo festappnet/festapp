@@ -1,3 +1,4 @@
+import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
@@ -47,6 +48,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   @override
   void initState() {
     super.initState();
+    OrderEmailIssue.changes.addListener(_deliveryChanged);
     WidgetsBinding.instance.addObserver(this);
     RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
     auth = Supabase.instance.client.auth.onAuthStateChange
@@ -69,6 +71,10 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _contextChanged();
     });
+  }
+
+  void _deliveryChanged() {
+    controller.refresh();
   }
 
   void _rightsChanged() {
@@ -135,6 +141,22 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   Future<void> _detail(NotificationItem item) async {
     final data = item.data;
     final link = item.occasionLink;
+    if (link != null && data['orderId'] is int) {
+      await pushRootPath(
+          context.router.root,
+          Uri(pathSegments: [
+            '',
+            link,
+            'reservations',
+            'orders',
+            'current'
+          ], queryParameters: {
+            'orderId': data['orderId'].toString(),
+            if (data['messageId'] != null)
+              'orderMessageId': data['messageId'].toString()
+          }).toString());
+      return;
+    }
     if (data['messageId'] != null) {
       if (link != null) {
         await pushRootPath(
@@ -161,15 +183,6 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       await pushRootPath(
           context.router.root,
           Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'])
-              .toString());
-      return;
-    }
-    if (link != null && data['orderId'] is int) {
-      await pushRootPath(
-          context.router.root,
-          Uri(
-                  pathSegments: ['', link, 'reservations', 'orders', 'current'],
-                  queryParameters: {'orderId': data['orderId'].toString()})
               .toString());
       return;
     }
@@ -215,6 +228,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     auth?.cancel();
     controller.dispose();
     focus.dispose();
+    OrderEmailIssue.changes.removeListener(_deliveryChanged);
     super.dispose();
   }
 }
