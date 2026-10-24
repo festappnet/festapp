@@ -509,11 +509,25 @@ void main() {
                       onPressed: () => showDialog<void>(
                           context: context,
                           builder: (_) => NotificationCenterPanel(
-                              controller: controller, onDetail: (_) {})),
+                              controller: controller,
+                              anchor: Rect.fromLTWH(width - 96, 16, 48, 48),
+                              onDetail: (_) {})),
                       child: const Text('Open'))))));
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.text('NotificationCenter.empty'), findsOneWidget);
+      final surface = find.descendant(
+          of: find.byType(Dialog),
+          matching: find.byWidgetPredicate((widget) =>
+              widget is Material && widget.type == MaterialType.card));
+      final rect = tester.getRect(surface);
+      if (width >= 720) {
+        // Follow the bell's bottom and right edges, even with a short inbox.
+        expect(rect.top, 72);
+        expect(rect.right, width - 48);
+      } else {
+        expect(rect.center.dy, closeTo(500, 1));
+      }
       expect(tester.takeException(), isNull);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();

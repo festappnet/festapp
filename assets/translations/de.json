@@ -2238,7 +2238,7 @@
     "revoked": "Der App-Zugriff wurde entfernt."
   },
   "TicketDelivery": {
-    "blockDescription": "Systemblock mit einfachen QR-Codes; bei PDF-Zustellung leer.",
+    "blockDescription": "Vereinfachte QR-Tickets",
     "settingsReference": "Wählen Sie die Zustellungsart in den Ticketeinstellungen der Veranstaltung.",
     "title": "Ticketzustellung",
     "scopeHelp": "Gilt für alle Tickets dieser Veranstaltung. Bereits gesendete oder vorbereitete E-Mails bleiben unverändert.",

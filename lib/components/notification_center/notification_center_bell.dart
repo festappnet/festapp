@@ -41,6 +41,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     with WidgetsBindingObserver {
   final controller = NotificationCenterController();
   final focus = FocusNode();
+  final _bellKey = GlobalKey();
   StreamSubscription<AuthState>? auth;
   StackRouter? _root;
   bool _resumed = true;
@@ -123,11 +124,22 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     _contextChanged();
     if (!_rolloutVisible) return;
     unawaited(controller.open());
+    final desktop = MediaQuery.sizeOf(context).width >= 720;
+    final bell = _bellKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlay = Navigator.of(context, rootNavigator: true)
+        .overlay!
+        .context
+        .findRenderObject() as RenderBox;
+    final anchor = bell == null
+        ? null
+        : bell.localToGlobal(Offset.zero, ancestor: overlay) & bell.size;
     NotificationItem? target;
     await showDialog<void>(
         context: context,
+        barrierColor: desktop ? Colors.transparent : Colors.black54,
         builder: (dialogContext) => NotificationCenterPanel(
             controller: controller,
+            anchor: anchor,
             onDetail: (item) {
               target = item;
               Navigator.of(dialogContext).pop();
@@ -207,6 +219,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       builder: (context, _) => !_rolloutVisible || !controller.enabled
           ? const SizedBox.shrink()
           : IconButton(
+              key: _bellKey,
               focusNode: focus,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               tooltip: NotificationCenterStrings.text(

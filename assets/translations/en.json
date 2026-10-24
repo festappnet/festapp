@@ -4252,7 +4252,7 @@
     "revoked": "App access has been removed."
   },
   "TicketDelivery": {
-    "blockDescription": "System block of simple QR codes; empty for PDF delivery.",
+    "blockDescription": "Simplified QR tickets",
     "settingsReference": "Choose the delivery mode in the event ticket settings.",
     "title": "Ticket delivery",
     "scopeHelp": "Applies to every ticket for this event. Changes do not alter emails already sent or prepared.",

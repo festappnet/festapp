@@ -2240,7 +2240,7 @@
     "revoked": "Dostęp aplikacji został odebrany."
   },
   "TicketDelivery": {
-    "blockDescription": "Systemowy blok prostych kodów QR; pusty przy dostarczaniu PDF.",
+    "blockDescription": "Uproszczone bilety QR",
     "settingsReference": "Wybierz sposób dostarczenia w ustawieniach biletów wydarzenia.",
     "title": "Dostarczenie biletów",
     "scopeHelp": "Dotyczy wszystkich biletów na wydarzenie. Zmiana nie wpływa na wysłane ani przygotowane wiadomości.",

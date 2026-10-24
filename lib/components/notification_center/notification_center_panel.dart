@@ -10,9 +10,10 @@ import 'package:fstapp/components/notification_center/notification_center_string
 
 class NotificationCenterPanel extends StatefulWidget {
   const NotificationCenterPanel(
-      {super.key, required this.controller, required this.onDetail});
+      {super.key, required this.controller, required this.onDetail, this.anchor});
   final NotificationCenterController controller;
   final ValueChanged<NotificationItem> onDetail;
+  final Rect? anchor;
   @override
   State<NotificationCenterPanel> createState() =>
       _NotificationCenterPanelState();
@@ -127,14 +128,25 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                   child: Text(s('more'))),
                           ])),
           ]);
+          final size = MediaQuery.sizeOf(context);
+          final desktop = size.width >= 720;
           return IconTheme.merge(
               data: IconThemeData(
                   color: Theme.of(context).colorScheme.onSurfaceVariant),
               child: AppDialog(
-                  alignment: MediaQuery.sizeOf(context).width < 720
-                      ? Alignment.center
-                      : Alignment.centerRight,
-                  insetPadding: const EdgeInsets.all(16),
+                  alignment: desktop ? Alignment.topRight : Alignment.center,
+                  insetPadding: desktop
+                      ? EdgeInsets.fromLTRB(
+                          16,
+                          ((widget.anchor?.bottom ?? 8) + 8)
+                              .clamp(
+                                  16.0, size.height > 112 ? size.height - 96 : 16.0)
+                              .toDouble(),
+                          (size.width - (widget.anchor?.right ?? size.width))
+                              .clamp(16.0, size.width - 16)
+                              .toDouble(),
+                          16)
+                      : const EdgeInsets.all(16),
                   child: ConstrainedBox(
                       constraints: BoxConstraints(
                           maxHeight: MediaQuery.sizeOf(context).height * .85),

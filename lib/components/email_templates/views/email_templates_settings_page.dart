@@ -684,13 +684,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             : Icons.tune,
                         size: 20)),
               ]),
-              if (widget.template.code == 'TICKET_ORDER_PAYMENT_DONE') ...[
-                Text(TicketDeliveryStrings.text('blockHelp')),
-                Text(TicketDeliveryStrings.text('settingsReference')),
-                if (_duplicateTicketsBlock)
-                  Text(TicketDeliveryStrings.text('duplicateBlock'),
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
+              if (_duplicateTicketsBlock) ...[
+                Text(TicketDeliveryStrings.text('duplicateBlock'),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.error)),
                 const SizedBox(height: 8),
               ],
               DecoratedBox(
