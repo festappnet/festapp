@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/views/order_email_repair_dialog.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -37,6 +38,8 @@ class _Translations extends AssetLoader {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   var fail = false;
+  var includeOrder = false;
+  var repairReads = 0;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -47,6 +50,7 @@ void main() {
           autoRefreshToken: false, localStorage: EmptyLocalStorage()),
       httpClient: MockClient((request) async {
         final isOrders = request.url.path.endsWith('/get_orders_tab_data');
+        if (request.url.path.endsWith('/get_order_history')) repairReads++;
         if (fail && isOrders) {
           return http.Response(
               jsonEncode({'message': 'Unavailable', 'code': 'XX000'}), 500,
@@ -66,7 +70,10 @@ void main() {
                   'orders_history',
                   'users'
                 ])
-                  key: <dynamic>[],
+                  key: key == 'orders' && includeOrder
+                    ? [{'id': 4, 'order_sequence': 4, 'order_symbol': 'ORDER4', 'occasion': 1, 'state': 'ordered',
+                        'currency_code': 'CZK', 'data': {'email': 'customer@example.invalid'}}]
+                    : <dynamic>[],
               }
             : {'id': 1, 'unit': 1, 'link': 'empty', 'data': {}, 'features': []};
         return http.Response(jsonEncode(data), 200,
@@ -76,7 +83,7 @@ void main() {
   });
   tearDownAll(() => Supabase.instance.dispose());
 
-  Future<void> showOrders(WidgetTester tester) async {
+  Future<void> showOrders(WidgetTester tester, {String path = '/empty'}) async {
     final router = _Router();
     addTearDown(router.dispose);
     await tester.pumpWidget(EasyLocalization(
@@ -90,10 +97,16 @@ void main() {
                 supportedLocales: context.supportedLocales,
                 localizationsDelegates: context.localizationDelegates,
                 routerConfig: router.config(
-                    deepLinkBuilder: (_) => DeepLink.path('/empty')),
+                    deepLinkBuilder: (_) => DeepLink.path(path)),
               )),
     ));
-    await tester.pumpAndSettle();
+    if (includeOrder) {
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+    } else {
+      await tester.pumpAndSettle();
+    }
   }
 
   testWidgets('new occasion without orders shows an empty state, not an error',
@@ -123,4 +136,21 @@ void main() {
     expect(find.text('Zatím nejsou žádné objednávky.'), findsOneWidget);
     expect(find.text('Došlo k neočekávané chybě.'), findsNothing);
   });
+  for (final source in ['', '&orderMessageId=old-resolved-message']) {
+    testWidgets('notification selects a healthy order without email repair: $source', (tester) async {
+      fail = false;
+      includeOrder = true;
+      repairReads = 0;
+      addTearDown(() => includeOrder = false);
+      await showOrders(tester, path: '/empty?orderId=4$source');
+      expect(find.byType(OrderEmailRepairDialog), findsNothing);
+      expect(repairReads, 0);
+      final grid = tester.widget<SingleTableDataGrid<OrderModel>>(
+        find.byType(SingleTableDataGrid<OrderModel>)).controller;
+      expect(grid.stateManager.currentCell?.value, 'ORDER4');
+      expect(grid.highlightedRow, isNotNull);
+      await tester.pump(const Duration(seconds: 3));
+    });
+  }
+
 }
