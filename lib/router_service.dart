@@ -1,3 +1,5 @@
+import 'package:fstapp/services/help_destination.dart';
+import 'package:fstapp/components/navigation/help_destination_picker.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/services/last_administration_context.dart';
@@ -465,6 +467,21 @@ class RouterService {
 
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    final helpIntent = HelpDestination.parse(fallbackPath);
+    if (helpIntent != null) {
+      await RightsService.updateAppData(force: true, refreshOffline: false);
+      if (!context.mounted) return;
+      final link = await chooseHelpOccasion(context);
+      if (!context.mounted) return;
+      final target = HelpDestination.path(helpIntent, link);
+      if (target == null) {
+        await handlePostLoginNavigation(context, useReplacement: true);
+        return;
+      }
+      await handlePostLoginNavigation(context,
+          fallbackPath: target, useReplacement: true);
+      return;
+    }
     if (isStripeConnectionReturnPath(fallbackPath)) {
       await replaceRootPath(context.router.root, '/stripe/connect/callback');
       return;

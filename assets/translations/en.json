@@ -4403,5 +4403,10 @@
     "stockValue": "Unsold stock value",
     "receivedAmount": "Received payments",
     "invalidEmail": "Enter a valid email address."
+  },
+  "HelpNavigation": {
+    "chooseEvent": "Which event would you like to manage?",
+    "noEvents": "No events are available. Close this chooser and create an event in your organization, or ask an administrator for access.",
+    "recentEvent": "Recently used event"
   }
 }
