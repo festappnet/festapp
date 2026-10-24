@@ -1,8 +1,7 @@
 import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
-import 'order_history_dialog.dart';
-import 'waitlist_order_detail.dart';
-import 'package:fstapp/components/notification_center/notification_center_strings.dart';
+import 'order_email_repair_dialog.dart';
+import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'order_delete_dialog.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
@@ -34,7 +33,6 @@ import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 
 import '../eshop_columns.dart';
@@ -243,7 +241,9 @@ class _OrdersContentState extends State<OrdersContent> {
     } else {
       final target = int.tryParse(
           context.routeData.queryParams.optString('orderId') ?? '');
-      if (target == null) _openedOrder = null;
+      if (target == null) {
+        _openedOrder = null;
+      }
       if (target != null && target != _openedOrder) _initializeController();
     }
   }
@@ -276,31 +276,6 @@ class _OrdersContentState extends State<OrdersContent> {
 
     final requestedOrder =
         int.tryParse(context.routeData.queryParams.optString('orderId') ?? '');
-    if (requestedOrder != null && _openedOrder != requestedOrder) {
-      _openedOrder = requestedOrder;
-      final matches =
-          bundle.orders.where((order) => order.id == requestedOrder);
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted ||
-            generation != _loadGeneration ||
-            !isVisibleRouteInstance(context)) return;
-        if (matches.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(NotificationCenterStrings.text('unavailable'))));
-        } else {
-          final order = matches.first;
-          await showDialog<void>(
-              context: context,
-              builder: (_) => order.waitlistSummary == null
-                  ? OrderHistoryDialog(orderId: requestedOrder)
-                  : WaitlistOrderDetail(order: order));
-          if (mounted && isVisibleRouteInstance(context)) {
-            await clearNotificationDetailTarget(
-                context, 'orderId', '$requestedOrder');
-          }
-        }
-      });
-    }
 
     var forms = bundle.forms;
     bool waitlistEnabled() =>
@@ -491,8 +466,10 @@ class _OrdersContentState extends State<OrdersContent> {
       ],
       columns: EshopColumns.generateColumns(context, columnIdentifiers, data: {
         EshopColumnIds.ORDER_TRANSACTIONS: refreshData,
+        EshopColumnIds.ORDER_STATE: refreshData,
         EshopColumnIds.PAYMENT_INFO_PAID: refreshData,
         "unitId": unitId,
+        "occasionId": occasion.id,
       }),
     );
 
@@ -502,7 +479,71 @@ class _OrdersContentState extends State<OrdersContent> {
       setState(() {
         controller = newController;
       });
+      if (requestedOrder != null && _openedOrder != requestedOrder) {
+        _openedOrder = requestedOrder;
+        final source =
+            context.routeData.queryParams.optString('orderMessageId');
+        WidgetsBinding.instance.addPostFrameCallback((_) => _openEmailTarget(
+            newController, requestedOrder, source, generation, occasion.id!));
+      }
     }
+  }
+
+  Future<void> _openEmailTarget(SingleDataGridController<OrderModel> grid,
+      int orderId, String? source, int generation, int occasionId) async {
+    bool owns() =>
+        mounted &&
+        generation == _loadGeneration &&
+        identical(grid, controller) &&
+        isVisibleRouteInstance(context) &&
+        int.tryParse(
+                context.routeData.queryParams.optString('orderId') ?? '') ==
+            orderId;
+    // The native grid mounts asynchronously after its controller is assigned.
+    for (var i = 0; i < 100 && owns() && !grid.isGridLoaded; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    if (!mounted || !owns()) return;
+    void focusRow({bool reveal = false}) {
+      if (!owns() || !grid.isGridLoaded) return;
+      if (reveal) {
+        grid.toggleAdditionalFilter(false);
+        grid.stateManager.setFilterRows([]);
+        grid.applyRowFilter();
+      }
+      final rows = grid.stateManager.refRows.filterOrOriginalList;
+      final index =
+          rows.indexWhere((r) => OrderGridFilters.order(r)?.id == orderId);
+      if (index < 0) return;
+      final row = rows[index];
+      grid.highlightedRow = row;
+      grid.stateManager
+          .setCurrentCell(row.cells[EshopColumnIds.ORDER_SYMBOL], index);
+      grid.stateManager.moveScrollByRow(TrinaMoveDirection.down, index);
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        if (!mounted ||
+            !identical(grid, controller) ||
+            !identical(grid.highlightedRow, row)) return;
+        grid.highlightedRow = null;
+        grid.stateManager.notifyListeners();
+      });
+    }
+
+    focusRow();
+    // The dialog loads the exact object through the authorized ID reader,
+    // independently of the current grid page and filter.
+    await showDialog<void>(
+        context: context,
+        builder: (_) => OrderEmailRepairDialog(
+            orderId: orderId,
+            occasionId: occasionId,
+            sourceMessageId: source,
+            onShowOrder: () => focusRow(reveal: true),
+            onChanged: refreshData));
+    if (!mounted || !owns()) return;
+    await clearNotificationDetailTarget(context, 'orderId', '$orderId',
+        companions: {if (source != null) 'orderMessageId': source});
+    _openedOrder = null;
   }
 
   Future<void> refreshData() async {

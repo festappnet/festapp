@@ -1,3 +1,4 @@
+import 'order_email_issue.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -37,18 +38,10 @@ class EmailDeliveryIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = summary?['state']?.toString() ?? 'unavailable';
-    final warning = [
-      'retry_wait',
-      'unknown',
-      'dead',
-      'bounce',
-      'complaint',
-      'suppressed',
-      'reject',
-      'rendering_failure',
-      'delay',
-      'post_action_failed'
-    ].contains(state);
+    final issues = OrderEmailIssue.fromSummary(summary);
+    final warning = issues.isNotEmpty ||
+        (summary?['current_issues'] == null &&
+            OrderEmailIssue.needsAttention(state));
     final waiting =
         ['pending', 'preparing', 'sending', 'blocked'].contains(state);
     final delivered = state == 'delivery';
@@ -72,7 +65,9 @@ class EmailDeliveryIndicator extends StatelessWidget {
         (loadedAt == null
             ? ''
             : '\n${EmailDeliveryStrings.refreshed(DateFormat.yMd().add_Hms().format(loadedAt.toLocal()))}');
-    final attention = (summary?['attention_count'] as num?)?.toInt() ?? 0;
+    final attention = summary?['current_issues'] != null
+        ? issues.length
+        : (summary?['attention_count'] as num?)?.toInt() ?? 0;
     return Tooltip(
       message: description,
       child: SizedBox(

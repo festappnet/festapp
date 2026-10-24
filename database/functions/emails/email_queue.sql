@@ -23,6 +23,7 @@ CREATE OR REPLACE FUNCTION public.enqueue_email(p_kind text,p_context jsonb,p_re
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_hash text; v_row public.email_messages; v_org bigint:=(p_context->>'organization')::bigint; v_occ bigint:=(p_context->>'occasion')::bigint; v_unit bigint:=(p_context->>'unit')::bigint;
 BEGIN
+ p_recipient:=public.normalize_order_email_contact(p_recipient);
  PERFORM public.check_occasion_writable(v_occ);
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
  IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer')
@@ -102,6 +103,7 @@ BEGIN
  END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_message.order_id;
  IF v_order.id IS NULL OR v_order.occasion<>p_message.occasion THEN RETURN false; END IF;
+ IF p_message.data->>'repair_payment_fingerprint' IS NOT NULL AND p_message.data->>'repair_payment_fingerprint' IS DISTINCT FROM public.order_email_payment_fingerprint(v_order.id) THEN RETURN false; END IF;
  IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN
   RETURN v_order.data->>'email'=p_message.recipient AND EXISTS(
    SELECT 1 FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash)
@@ -124,6 +126,10 @@ BEGIN
    AND public.stripe_order_payment_projection_internal(v_order.id)->>'admissionState' IS DISTINCT FROM 'valid' THEN RETURN false; END IF;
   RETURN v_order.state IN ('paid','sent') AND v_order.email_payment_version=p_message.source_version
    AND (p_message.data->>'manual'='true' OR v_order.data->>'email'=p_message.recipient);
+ END IF;
+ IF p_message.message_kind='order_confirmation' THEN
+  RETURN v_order.state='ordered' AND v_order.email_payment_version=p_message.source_version
+   AND v_order.data->>'email'=p_message.recipient;
  END IF;
  IF p_message.message_kind='order_reminder' THEN
   SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;

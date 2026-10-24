@@ -2,7 +2,7 @@ BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
 DO $$
-DECLARE org bigint; un bigint; oc bigint; editor uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); kind text; msg jsonb; message_uuid uuid; old_id uuid; n bigint; result jsonb; paused_fact timestamptz; event_row public.notification_center_events; delivery_row public.notification_center_deliveries;
+DECLARE target_order bigint; org bigint; un bigint; oc bigint; editor uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); kind text; msg jsonb; message_uuid uuid; old_id uuid; n bigint; result jsonb; paused_fact timestamptz; event_row public.notification_center_events; delivery_row public.notification_center_deliveries;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Email inbox ACL') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Email unit',org) RETURNING id INTO un;
@@ -37,6 +37,15 @@ BEGIN
  result:=public.notification_center_dto(event_row,delivery_row);
  PERFORM assert_eq(result#>>'{data,recipient}','waitlist_offer@example.invalid','authorized email DTO identifies the actual recipient');
  PERFORM assert_eq(result#>>'{data,customerName}','Jana Nováková','available recipient name is hydrated');
+ INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data)
+ VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"snapshot@example.invalid"}') RETURNING id INTO target_order;
+ UPDATE public.email_messages m SET order_id=o.id FROM eshop.orders o WHERE m.message_id=message_uuid AND o.id=target_order;
+ PERFORM set_config('request.jwt.claim.sub',editor::text,true);
+ result:=public.notification_center_dto(event_row,delivery_row);
+ PERFORM assert_eq(result#>>'{data,orderId}',target_order::text,'authorized source exposes exact order target');
+ PERFORM assert_eq(result#>>'{data,orderSymbol}',(SELECT order_symbol FROM eshop.orders WHERE id=target_order),'order symbol comes from the same join');
+ PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+
  event_row.data:=event_row.data||jsonb_build_object('messageId',(SELECT message_id FROM public.email_messages WHERE organization=org AND message_kind='registration'));
  result:=public.notification_center_dto(event_row,delivery_row);
  PERFORM assert_false((result->'data') ? 'recipient','message from a different occasion scope cannot leak its recipient');

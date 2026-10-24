@@ -660,29 +660,37 @@ class EshopColumns {
                         child: Text(order!.waitlistSummary!.label));
                   }),
             ],
-        EshopColumnIds.ORDER_STATE: [
-          TrinaColumn(
-            cellPadding: EdgeInsets.zero,
-            readOnly: true,
-            enableEditingMode: false,
-            title: OrdersStrings.gridState,
-            field: EshopColumnIds.ORDER_STATE,
-            type: TrinaColumnType.select(
-              OrderModel.statesToDataGridFormat(),
-            ),
-            renderer: (rendererContext) => _originalOrderStateRenderer(
-                context, rendererContext, OrderModel.singleDataGridStateToColor,
-                label: rendererContext.cell.value.toString().split(';').first ==
-                            OrderModel.waitlistedState &&
-                        OrderGridFilters.order(rendererContext.row)
-                                ?.isWaitlisted ==
-                            true
-                    ? OrderGridFilters.order(rendererContext.row)?.stateLabel
-                    : null),
-            textAlign: TrinaColumnTextAlign.center,
-            width: 140,
-          ),
-        ],
+        EshopColumnIds.ORDER_STATE: (Map<String, dynamic> data) => [
+              TrinaColumn(
+                cellPadding: EdgeInsets.zero,
+                readOnly: true,
+                enableEditingMode: false,
+                title: OrdersStrings.gridState,
+                field: EshopColumnIds.ORDER_STATE,
+                type: TrinaColumnType.select(
+                  OrderModel.statesToDataGridFormat(),
+                ),
+                renderer: (rendererContext) => _originalOrderStateRenderer(
+                    context,
+                    rendererContext,
+                    OrderModel.singleDataGridStateToColor,
+                    onChanged: data[EshopColumnIds.ORDER_STATE],
+                    occasionId: data["occasionId"] as int?,
+                    label: rendererContext.cell.value
+                                    .toString()
+                                    .split(';')
+                                    .first ==
+                                OrderModel.waitlistedState &&
+                            OrderGridFilters.order(rendererContext.row)
+                                    ?.isWaitlisted ==
+                                true
+                        ? OrderGridFilters.order(rendererContext.row)
+                            ?.stateLabel
+                        : null),
+                textAlign: TrinaColumnTextAlign.center,
+                width: 140,
+              ),
+            ],
         EshopColumnIds.ORDER_DATA: [
           TrinaColumn(
             readOnly: true,
@@ -1439,7 +1447,9 @@ class EshopColumns {
       BuildContext context,
       TrinaColumnRendererContext rendererContext,
       Color Function(String) getBackground,
-      {String? label}) {
+      {String? label,
+      Future<void> Function()? onChanged,
+      int? occasionId}) {
     String value = rendererContext.cell.value;
     String firstPart = value.split(";")[0];
     String textValue =
@@ -1448,6 +1458,8 @@ class EshopColumns {
     return OrderStateCell(
       label: textValue,
       background: getBackground(firstPart),
+      onChanged: onChanged,
+      occasionId: occasionId,
       order: OrderGridFilters.order(rendererContext.row),
       expired: firstPart == OrderModel.expiredState,
     );

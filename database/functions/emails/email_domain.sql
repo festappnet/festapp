@@ -35,7 +35,7 @@ BEGIN
     ORDER BY (dedupe_key=v_key) DESC,id LIMIT 1;
   IF v_existing.id IS NOT NULL THEN v_key:=v_existing.dedupe_key; END IF;
  END IF;
- IF v_kind='order_tickets' THEN
+ IF v_kind IN ('order_tickets','order_confirmation') THEN
   SELECT * INTO v_existing FROM public.email_messages WHERE order_id=v_order.id AND message_kind=v_kind AND recipient=v_recipient AND source_version=v_version
     AND workflow_state IN ('pending','preparing','sending','retry_wait','unknown') ORDER BY id DESC LIMIT 1;
   IF v_existing.id IS NOT NULL THEN

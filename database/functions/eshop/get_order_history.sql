@@ -8,7 +8,7 @@ DECLARE
     v_users_data jsonb;
 BEGIN
     -- Retrieve the occasion associated with the order
-    SELECT o.occasion, to_jsonb(o) || jsonb_build_object('payment_method', pi.payment_method)
+    SELECT o.occasion, to_jsonb(o) || jsonb_build_object('payment_method', pi.payment_method,'email_payment_fingerprint',public.order_email_payment_fingerprint(o.id))
     INTO v_occasion_id, v_order_data
     FROM eshop.orders o
     LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info
