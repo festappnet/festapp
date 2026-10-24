@@ -2235,6 +2235,11 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "settingsEmpty": "Zatiaľ nie sú k dispozícii žiadne akcie.",
+    "groups": {"email_problem": "Doručovanie e-mailov", "bank_problem": "Bankové spojenie"},
+    "today": "Dnes",
+    "yesterday": "Včera",
+    "atTime": "{day} o {time}",
     "title": "Upozornenia",
     "unread": "Upozornenia - nové udalosti",
     "settings": "Nastavenia upozornení",

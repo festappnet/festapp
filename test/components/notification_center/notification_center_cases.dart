@@ -380,7 +380,8 @@ void main() {
         home: NotificationCenterPanel(
             controller: controller, onDetail: (_) => details++)));
     await tester.pumpAndSettle();
-    expect(find.text('jana@example.invalid - Jana Nováková'), findsOneWidget);
+    expect(find.text('Jana Nováková'), findsOneWidget);
+    expect(find.text('jana@example.invalid'), findsOneWidget);
     expect(find.textContaining('NotificationCenter.reasons.complaint'),
         findsOneWidget);
     expect(find.text('NotificationCenter.detail'), findsOneWidget);
@@ -430,7 +431,7 @@ void main() {
     expect(find.text('2'), findsOneWidget);
     expect(
         find.textContaining('EmailDelivery.kind.registration'), findsNothing);
-    await tester.tap(find.text('NotificationCenter.kinds.email_problem'));
+    await tester.tap(find.text('NotificationCenter.groups.email_problem'));
     await tester.pumpAndSettle();
     expect(
         find.textContaining('EmailDelivery.kind.registration'), findsOneWidget);
@@ -520,5 +521,125 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
     }
+  });
+  testWidgets(
+      'problem identity and detail remain readable at 200 percent on mobile',
+      (tester) async {
+    final controller =
+        NotificationCenterController(read: (_, params) async => {});
+    addTearDown(controller.dispose);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.physicalSize = const Size(320, 1000);
+    tester.view.devicePixelRatio = 1;
+    const recipient = 'a.very.long.recipient.address@example.invalid';
+    var details = 0;
+    for (final brightness in Brightness.values) {
+      for (final status in ['active', 'recovered']) {
+        controller.groups = [
+          NotificationGroup.fromJson({
+            'key': 'mail',
+            'kind': 'email_problem',
+            'count': 1,
+            'occasionTitle': 'Country bál 2026',
+            'items': [
+              {
+                'id': 'mail',
+                'kind': 'email_problem',
+                'status': status,
+                'data': {
+                  'recipient': recipient,
+                  'customerName': 'Jana Nováková',
+                  'messageId': 'message',
+                  'reason': 'bounce'
+                }
+              }
+            ]
+          })
+        ];
+        await tester.pumpWidget(MaterialApp(
+            theme: ThemeData(brightness: brightness),
+            builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(2)),
+                child: child!),
+            home: NotificationCenterPanel(
+                controller: controller, onDetail: (_) => details++)));
+        await tester.pumpAndSettle();
+        expect(find.text('Jana Nováková'), findsOneWidget);
+        final email = tester.widget<Text>(find.text(recipient));
+        expect(email.maxLines, isNull);
+        expect(email.overflow, isNull);
+        final reason =
+            tester.widget<Text>(find.text('NotificationCenter.reasons.bounce'));
+        final theme = Theme.of(tester.element(find.text(recipient)));
+        expect(
+            reason.style?.color,
+            status == 'active'
+                ? theme.colorScheme.error
+                : theme.colorScheme.onSurfaceVariant);
+        await tester.scrollUntilVisible(
+            find.text('NotificationCenter.detail'), 100,
+            scrollable: find.byType(Scrollable).first);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('NotificationCenter.detail'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('NotificationCenter.detail'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+    }
+    expect(details, 4);
+  });
+  testWidgets('settings preserve history and save the selected event mute',
+      (tester) async {
+    final writes = <Map<String, dynamic>>[];
+    final controller = NotificationCenterController(read: (name, params) async {
+      if (name == 'set_notification_center_muted') writes.add(params);
+      return {};
+    });
+    addTearDown(controller.dispose);
+    controller.occasions = [
+      {'id': 7, 'title': 'Country bál 2026', 'muted': false}
+    ];
+    controller.groups = [
+      NotificationGroup.fromJson(
+          {'key': 'orders', 'kind': 'order_created', 'count': 2})
+    ];
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: NotificationCenterPanel(
+                controller: controller, onDetail: (_) {}))));
+    await tester.tap(find.byTooltip('NotificationCenter.settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('NotificationCenter.muteHelp'), findsOneWidget);
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    expect(writes.single['p_occasion'], 7);
+    expect(writes.single['p_muted'], isTrue);
+    expect(controller.groups.single.count, 2);
+    await tester.tap(find.byTooltip('NotificationCenter.back'));
+    await tester.pumpAndSettle();
+    expect(find.text('NotificationCenter.kinds.order_created'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('page failure retries pagination without acknowledging the inbox',
+      (tester) async {
+    final calls = <String>[];
+    final controller = NotificationCenterController(read: (name, params) async {
+      calls.add(name);
+      return {'groups': []};
+    });
+    addTearDown(controller.dispose);
+    controller.pageFailed = true;
+    controller.nextCursor = {'id': 5};
+    await tester.pumpWidget(MaterialApp(
+        home:
+            NotificationCenterPanel(controller: controller, onDetail: (_) {})));
+    await tester.tap(find.text('Common.retry'));
+    await tester.pumpAndSettle();
+    expect(calls, ['get_notification_center_page']);
+    expect(tester.takeException(), isNull);
   });
 }
