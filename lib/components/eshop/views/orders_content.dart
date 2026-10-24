@@ -517,10 +517,17 @@ class _OrdersContentState extends State<OrdersContent> {
           rows.indexWhere((r) => OrderGridFilters.order(r)?.id == orderId);
       if (index < 0) return;
       final row = rows[index];
-      grid.stateManager.setKeepFocus(true);
+      grid.highlightedRow = row;
       grid.stateManager
           .setCurrentCell(row.cells[EshopColumnIds.ORDER_SYMBOL], index);
       grid.stateManager.moveScrollByRow(TrinaMoveDirection.down, index);
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        if (!mounted ||
+            !identical(grid, controller) ||
+            !identical(grid.highlightedRow, row)) return;
+        grid.highlightedRow = null;
+        grid.stateManager.notifyListeners();
+      });
     }
 
     final order = grid.stateManager.refRows.originalList

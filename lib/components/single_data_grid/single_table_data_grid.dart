@@ -124,6 +124,9 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   Color? _pendingRowColor(TrinaRow row) {
+    if (identical(widget.controller.highlightedRow, row)) {
+      return Theme.of(context).colorScheme.primaryContainer;
+    }
     bool contains(Iterable<TrinaRow> rows) =>
         rows.any((item) => item.key == row.key);
     if (contains(widget.controller.deletedRows)) return Colors.redAccent;

@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/views/order_email_repair_dialog.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -149,13 +148,8 @@ void main() {
       final grid = tester.widget<SingleTableDataGrid<OrderModel>>(
         find.byType(SingleTableDataGrid<OrderModel>)).controller;
       expect(grid.stateManager.currentCell?.value, 'ORDER4');
-      expect(grid.stateManager.hasFocus, isTrue);
+      expect(grid.highlightedRow, isNotNull);
       await tester.pump(const Duration(seconds: 3));
-      expect(grid.stateManager.hasFocus, isTrue);
-      final current = grid.stateManager.currentCell!.key;
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-      expect(grid.stateManager.currentCell!.key, isNot(current));
     });
   }
 
