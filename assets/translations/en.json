@@ -4288,6 +4288,8 @@
     "more": "Show more",
     "unavailable": "This detail is no longer available or you do not have access.",
     "kinds": {
+      "occasion_joined": "New occasion participants",
+      "event_capacity_full": "Event is full",
       "order_created": "New orders",
       "waitlist_registered": "New waiting list registrations",
       "order_cancelled": "Cancelled orders",
@@ -4301,6 +4303,8 @@
       "email_problem": "Email delivery needs attention"
     },
     "states": {
+      "membership_active": "Joined the occasion",
+      "membership_left": "No longer participating",
       "active": "Active",
       "recovered": "Restored",
       "ordered": "Ordered",

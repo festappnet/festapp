@@ -68,6 +68,25 @@ and current states are read at DTO creation, not copied into the event log.
 Bank-account admins who also manage a linked unit receive their authorized account/unit target; organizers
 receive only their affected event links and a safe reason class.
 
+## App participant and program attention
+
+`add_user_to_occasion_internal_v1` publishes new membership once per person,
+occasion and organization-local day. Repeated ensures and same-day leave/rejoin
+reuse the event. The DTO resolves current membership and labels a departed
+participant accordingly; it does not retain names in the event log. Daily
+occasion groups hydrate five participants initially and page their details.
+
+Attendance and event-save commands observe capacity under the existing event
+row lock. A program event has at most one full-capacity attention item per local
+day. Reopen/refill updates that item without allocating another unread delivery.
+Gender-split events become full only when both enforced buckets are full;
+unlimited events never do. Activation/resume silently baselines existing events.
+
+These two kinds are restricted to tenant administrators and occasion editors or
+managers, with current rights rechecked at projection and read. Order-only access
+does not grant access to app participants. Other notification kinds keep their
+existing authorization. No push or email is sent by these producers.
+
 ## Baseline, monitoring and retention
 
 Activation starts disabled. `set_notification_center_activation` seeds existing
@@ -106,6 +125,9 @@ batches, preserving active problems and minimal source dedupe/baseline state.
 Business records and email audit remain owned by their existing domains.
 
 ## Installation and verification
+
+`automation/assemble-app-activity-migration.py --check` verifies the additive
+public-news/app-activity migration against its current canonical owners.
 
 `automation/assemble-notification-center-migration.py` produces the explicit
 forward migration; `--check` verifies parity. Production jobs are installed explicitly in the postgres scheduler using

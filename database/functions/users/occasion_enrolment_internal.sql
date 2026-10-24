@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION public.add_user_to_occasion_internal_v1(oc bigint, us
  SET search_path TO 'public', 'extensions'
 AS $function$
 DECLARE
+    joined_at             timestamptz;
     occasion_open         BOOLEAN;
     user_data             JSONB;
     user_exists           BOOLEAN;
@@ -38,6 +39,8 @@ BEGIN
                   'message', 'User does not belong to the same organization as the occasion'
               );
     END IF;
+
+    PERFORM public.notification_center_active_internal(occasion_org);
 
     -- 4. Retrieve the unit-level role information from unit_users.
     SELECT is_manager, is_editor, is_editor_view
@@ -119,7 +122,10 @@ BEGIN
             FALSE,
             user_data,
             NULL
-        );
+        ) RETURNING created_at INTO joined_at;
+        PERFORM public.notification_center_publish_internal(occasion_org,oc,'occasion_joined',
+            'occasion-member:'||oc||':'||usr||':'||(joined_at AT TIME ZONE (SELECT timezone FROM public.notification_center_activation WHERE organization=occasion_org))::date,
+            jsonb_build_object('userId',usr),auth.uid());
     END IF;
 
     RETURN jsonb_build_object('code', 200);

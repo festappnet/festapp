@@ -4,12 +4,10 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path=public,extensions AS $$
 DECLARE marker bigint;
 BEGIN
- IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.occasion_users
-   WHERE occasion=p_occasion AND "user"=auth.uid()) THEN
-   -- Public visitors can read public news, but never a retained private marker.
-   IF auth.uid() IS NULL THEN RAISE insufficient_privilege USING MESSAGE='identity required'; END IF;
-   PERFORM public.get_occasion_for_context_v1(p_occasion);
-   RETURN jsonb_build_object('newsId',0);
+ IF auth.uid() IS NULL OR NOT public.can_read_news_data_security_v1(p_occasion)
+   OR NOT EXISTS(SELECT 1 FROM public.user_info ui JOIN public.occasions o
+     ON o.organization=ui.organization WHERE ui.id=auth.uid() AND o.id=p_occasion) THEN
+   RAISE insufficient_privilege USING MESSAGE='news read access required';
  END IF;
  SELECT coalesce(max(news_id),0) INTO marker FROM public.user_news
  WHERE occasion=p_occasion AND "user"=auth.uid();

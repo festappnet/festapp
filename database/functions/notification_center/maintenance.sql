@@ -33,6 +33,16 @@ BEGIN
     (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
    JOIN public.units u ON u.id=uba.unit WHERE u.organization=p_organization
    ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state||jsonb_build_object('eventId',notification_center_source_state.state->>'eventId'),observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'schedule-event:'||e.id,jsonb_build_object('eventId',e.id,'title',e.title,
+    'limit',CASE WHEN e.split_for_men_women THEN 2*(e.max_participants/2) ELSE e.max_participants END,
+    'full',coalesce(e.max_participants>0 AND CASE WHEN e.split_for_men_women THEN
+      count(eu."user") FILTER(WHERE ui.sex='male')>=e.max_participants/2 AND count(eu."user") FILTER(WHERE ui.sex<>'male')>=e.max_participants/2
+      ELSE count(eu."user")>=e.max_participants END,false))
+   FROM public.events e JOIN public.occasions o ON o.id=e.occasion
+   LEFT JOIN public.event_users eu ON eu.event=e.id LEFT JOIN public.user_info ui ON ui.id=eu."user"
+   WHERE o.organization=p_organization GROUP BY e.id
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
   -- Seed exact authoritative capacities before enabling publication.
   INSERT INTO public.notification_center_source_state(organization,source_key,state)
    SELECT p_organization,'form:'||f.id,public.get_form_capacity_snapshot_internal(f.id)||jsonb_build_object('high',

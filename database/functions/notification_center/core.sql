@@ -18,7 +18,9 @@ REVOKE ALL ON FUNCTION public.notification_center_bank_admin(bigint,uuid) FROM P
 CREATE OR REPLACE FUNCTION public.notification_center_allowed(p_event public.notification_center_events,p_user uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT p_user IS NOT NULL AND (
- CASE WHEN p_event.kind='email_problem' THEN
+ CASE WHEN p_event.kind IN ('event_capacity_full','occasion_joined') THEN
+ public.notification_center_app_admin_internal(p_event.organization,p_event.occasion,p_user)
+ WHEN p_event.kind='email_problem' THEN
  EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_event.organization AND "user"=p_user AND is_admin) OR (p_event.occasion IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=p_event.organization AND oc.id=p_event.occasion AND ou."user"=p_user AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)))
  WHEN p_event.kind='bank_problem' THEN (EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu ON bu.bank_account=c.bank_account_id OR bu.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
  WHERE c.id=(p_event.data->>'bankConnectionId')::bigint AND bu."user"=p_user AND public.notification_center_bank_admin(bu.bank_account,p_user)
@@ -37,10 +39,12 @@ BEGIN
  EXISTS(SELECT 1 FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
  JOIN public.units u ON u.id=uba.unit WHERE bu."user"=auth.uid() AND public.notification_center_bank_admin(bu.bank_account,auth.uid()) AND u.organization=p_org) OR
  EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_org AND "user"=auth.uid() AND is_admin)
+ OR EXISTS(SELECT 1 FROM public.occasions oc WHERE oc.organization=p_org
+   AND public.notification_center_app_admin_internal(p_org,oc.id,auth.uid()))
  OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
  WHERE oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id))) THEN
  RAISE insufficient_privilege USING MESSAGE='notification_read_denied'; END IF;
- IF p_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ IF p_occ IS NOT NULL AND NOT public.notification_center_app_admin_internal(p_org,p_occ,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
  WHERE oc.id=p_occ AND oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)) THEN
  RAISE insufficient_privilege USING MESSAGE='notification_context_denied'; END IF;
 END $$;
@@ -51,11 +55,14 @@ BEGIN
  SELECT * INTO e FROM public.notification_center_events WHERE id=p_event;
  IF NOT FOUND THEN RETURN; END IF;
  FOR u IN SELECT "user" FROM public.organization_users WHERE organization=e.organization AND is_admin
- UNION SELECT ou."user" FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=e.organization AND ou.is_editor_order_view
+ UNION SELECT ou."user" FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=e.organization AND (ou.is_editor_order_view OR public.participant_contacts_read_rule(ou.is_editor,ou.is_manager,false))
  UNION SELECT bu."user" FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
  JOIN public.units un ON un.id=uba.unit WHERE un.organization=e.organization AND bu.is_admin LOOP
-  IF public.notification_center_allowed(e,u) AND (u IS DISTINCT FROM p_actor OR NOT EXISTS(
-   SELECT 1 FROM public.occasion_users WHERE occasion=e.occasion AND "user"=p_actor AND is_editor_order) AND NOT EXISTS(SELECT 1 FROM public.organization_users WHERE organization=e.organization AND "user"=p_actor AND is_admin)) THEN
+  IF public.notification_center_allowed(e,u) AND (u IS DISTINCT FROM p_actor OR
+   CASE WHEN e.kind IN ('event_capacity_full','occasion_joined') THEN
+     NOT public.notification_center_app_admin_internal(e.organization,e.occasion,p_actor)
+   ELSE NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=e.occasion AND "user"=p_actor AND is_editor_order)
+     AND NOT EXISTS(SELECT 1 FROM public.organization_users WHERE organization=e.organization AND "user"=p_actor AND is_admin) END) THEN
    INSERT INTO public.notification_center_recipients(event_id,recipient,eligible_revision) VALUES(e.id,u,e.attention_revision)
    ON CONFLICT(event_id,recipient) DO UPDATE SET eligible_revision=excluded.eligible_revision;
   END IF;
@@ -117,7 +124,7 @@ BEGIN
    INSERT INTO public.notification_center_deliveries(event_id,recipient,organization,attention_revision,sequence,group_key)
     VALUES(e.id,u,e.organization,e.attention_revision,seq,
      CASE WHEN e.kind='email_problem' THEN coalesce(e.occasion::text,'shared')||':email_problem:'||coalesce(e.data->>'reason','problem')||':'||(e.occurred_at AT TIME ZONE tz)::date::text
-     WHEN e.kind IN ('order_created','waitlist_registered','order_cancelled') THEN
+     WHEN e.kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined') THEN
       coalesce(e.occasion::text,'shared')||':'||e.kind||':'||(e.occurred_at AT TIME ZONE tz)::date::text ELSE e.id::text END);
   END LOOP;
   IF NOT EXISTS(SELECT 1 FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision) THEN
@@ -143,6 +150,13 @@ BEGIN
   WHERE m.message_id=(e.data->>'messageId')::uuid AND m.organization=e.organization
     AND m.occasion IS NOT DISTINCT FROM e.occasion;
   payload:=coalesce(payload,e.data-'bankConnectionId');
+ END IF;
+ IF e.kind='occasion_joined' AND public.notification_center_allowed(e,auth.uid()) THEN
+  SELECT nullif(trim(concat_ws(' ',u.name,u.surname)),'') INTO customer
+  FROM public.user_info u JOIN public.occasion_users m ON m."user"=u.id
+  WHERE m.occasion=e.occasion AND u.organization=e.organization AND u.id=(e.data->>'userId')::uuid;
+  payload:=payload||jsonb_build_object('customerName',customer,'state',CASE WHEN EXISTS(
+   SELECT 1 FROM public.occasion_users m WHERE m.occasion=e.occasion AND m."user"=(e.data->>'userId')::uuid) THEN 'membership_active' ELSE 'membership_left' END);
  END IF;
  IF e.data ? 'orderId' AND e.occasion IS NOT NULL THEN
   SELECT nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),o.state INTO customer,actual_state
@@ -210,13 +224,14 @@ BEGIN
  ), page AS (SELECT * FROM grouped WHERE p_cursor IS NULL OR section>(p_cursor->>'section')::int OR
  (section=(p_cursor->>'section')::int AND (latest,group_key)<((p_cursor->>'sequence')::bigint,p_cursor->>'key'))
  ORDER BY section,latest DESC,group_key DESC LIMIT greatest(1,least(p_limit,100)))
- SELECT coalesce(jsonb_agg(jsonb_build_object('key',group_key,'section',section,'occasionId',occasion,'occasionTitle',title,'kind',kind,'day',CASE WHEN kind IN ('order_created','waitlist_registered','order_cancelled','email_problem') THEN right(group_key,10) END,'count',n,
+ SELECT coalesce(jsonb_agg(jsonb_build_object('key',group_key,'section',section,'occasionId',occasion,'occasionTitle',title,'kind',kind,'day',CASE WHEN kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined','email_problem') THEN right(group_key,10) END,'count',n,
  'lastSequence',latest,'items',public.get_notification_center_group(p_organization,group_key,snap,NULL,5)->'items') ORDER BY section,latest DESC,group_key DESC),'[]'),
  (jsonb_agg(jsonb_build_object('section',section,'sequence',latest,'key',group_key) ORDER BY section DESC,latest,group_key)->0) INTO groups,tail FROM page;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',oc.id,'title',oc.title,'muted',coalesce(p.muted,false)) ORDER BY oc.title),'[]') INTO choices
- FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id AND ou."user"=auth.uid() AND ou.is_editor_order_view
+ FROM public.occasions oc LEFT JOIN public.occasion_users ou ON ou.occasion=oc.id AND ou."user"=auth.uid()
  LEFT JOIN public.notification_center_preferences p ON p.organization=p_organization AND p.recipient=auth.uid() AND p.occasion=oc.id
- WHERE oc.organization=p_organization AND NOT public.is_demo_occasion(oc.id);
+ WHERE oc.organization=p_organization AND NOT public.is_demo_occasion(oc.id)
+ AND (coalesce(ou.is_editor_order_view,false) OR public.notification_center_app_admin_internal(p_organization,oc.id,auth.uid()));
  RETURN jsonb_build_object('snapshot',snap,'groups',groups,'nextCursor',CASE WHEN jsonb_array_length(groups)=greatest(1,least(p_limit,100)) THEN tail END,'occasions',choices);
 END $$;
 CREATE OR REPLACE FUNCTION public.open_notification_center(p_organization bigint,p_current_occasion bigint DEFAULT NULL,p_limit integer DEFAULT 30)

@@ -18,6 +18,53 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('100 new participants stay collapsed and load five at a time',
+      (tester) async {
+    final calls = <Map<String, dynamic>>[];
+    final c = NotificationCenterController(read: (name, params) async {
+      expect(name, 'get_notification_center_group');
+      calls.add(params);
+      return {
+        'items': List.generate(
+            5,
+            (i) => {
+                  'id': i + 1,
+                  'kind': 'occasion_joined',
+                  'data': {
+                    'customerName': 'Participant ${i + 1}',
+                    'state': i == 0 ? 'membership_left' : 'membership_active'
+                  }
+                }),
+        'nextCursor': 96,
+      };
+    });
+    addTearDown(c.dispose);
+    c.groups = [
+      NotificationGroup.fromJson({
+        'key': '7:occasion_joined:2026-10-24',
+        'kind': 'occasion_joined',
+        'occasionTitle': 'Slunovrat',
+        'count': 100,
+        'items': [],
+      })
+    ];
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
+    await tester.pumpAndSettle();
+    expect(find.text('100'), findsOneWidget);
+    expect(find.text('Participant 1'), findsNothing);
+    expect(calls, isEmpty);
+    await tester.tap(find.text('NotificationCenter.kinds.occasion_joined'));
+    await tester.pumpAndSettle();
+    expect(calls.single['p_limit'], 5);
+    expect(find.text('Participant 1'), findsOneWidget);
+    expect(find.text('Participant 6'), findsNothing);
+    expect(
+        find.text('NotificationCenter.states.membership_left'), findsOneWidget);
+    expect(find.text('NotificationCenter.more'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   test('notification center is available to every otherwise eligible account',
       () {
     expect(NotificationCenterRollout.visibleToEveryone, isTrue);

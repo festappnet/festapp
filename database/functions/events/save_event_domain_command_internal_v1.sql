@@ -139,6 +139,10 @@ BEGIN
     RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
   END IF;
 
+  PERFORM public.notification_center_active_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
+  IF v_event_id IS NOT NULL THEN
+    PERFORM public.notification_center_event_capacity_internal(v_event_id,v_actor);
+  END IF;
   IF v_event_id IS NULL THEN
     INSERT INTO public.events(title,start_time,end_time,max_participants,description,
       place,split_for_men_women,is_group_event,is_hidden,occasion,type,data,"order")
@@ -168,6 +172,7 @@ BEGIN
         AND scope_id=p_occasion AND aggregate_id=v_event_id::text
       RETURNING version INTO v_version;
   END IF;
+  PERFORM public.notification_center_event_capacity_internal(v_event_id,v_actor);
   DELETE FROM public.event_groups WHERE event_child=v_event_id;
   INSERT INTO public.event_groups(event_parent,event_child)
     SELECT parent.parent_id,v_event_id

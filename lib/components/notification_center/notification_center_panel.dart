@@ -138,7 +138,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   child: ConstrainedBox(
                       constraints: BoxConstraints(
                           maxHeight: MediaQuery.sizeOf(context).height * .85),
-                      child: SelectionArea(child: SizedBox(width: 440, child: body)))));
+                      child: SelectionArea(
+                          child: SizedBox(width: 440, child: body)))));
         },
       );
   Widget _header(BuildContext context) {
@@ -377,6 +378,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     final grouped = const {
           'order_created',
           'order_cancelled',
+          'occasion_joined',
           'waitlist_registered'
         }.contains(group.kind) ||
         (group.kind == 'email_problem' && group.count > 1);

@@ -2301,6 +2301,8 @@
     "more": "Zobraziť ďalšie",
     "unavailable": "Detail už nie je dostupný alebo nemáte oprávnenie.",
     "kinds": {
+      "occasion_joined": "Noví účastníci akcie",
+      "event_capacity_full": "Udalosť je plne obsadená",
       "order_created": "Nové objednávky",
       "waitlist_registered": "Nové registrácie do poradovníka",
       "order_cancelled": "Stornované objednávky",
@@ -2314,6 +2316,8 @@
       "email_problem": "Doručenie e-mailu vyžaduje pozornosť"
     },
     "states": {
+      "membership_active": "Účastníkom akcie",
+      "membership_left": "Už nie je účastníkom",
       "active": "Aktívne",
       "recovered": "Obnovené",
       "ordered": "Objednané",

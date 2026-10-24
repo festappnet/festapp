@@ -13,10 +13,12 @@ DECLARE
   v_data jsonb;
   v_response jsonb;
   v_request_sha256 text;
+  v_is_member boolean;
 BEGIN
   IF v_user IS NULL
-     OR NOT EXISTS (SELECT 1 FROM public.occasion_users ou
-       WHERE ou.occasion=p_occasion AND ou."user"=v_user)
+     OR NOT public.can_read_news_data_security_v1(p_occasion)
+     OR NOT EXISTS (SELECT 1 FROM public.user_info ui JOIN public.occasions o
+       ON o.organization=ui.organization WHERE ui.id=v_user AND o.id=p_occasion)
      OR NOT EXISTS (SELECT 1 FROM public.news n
        WHERE n.id=p_news_id AND n.occasion=p_occasion)
   THEN RETURN jsonb_build_object('code',403); END IF;
@@ -32,6 +34,7 @@ BEGIN
 
   PERFORM pg_advisory_xact_lock(hashtextextended(v_user::text||':'||p_occasion::text,0));
 
+  SELECT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=v_user) INTO v_is_member;
   SELECT COALESCE(source_revision,0) INTO v_revision
   FROM (SELECT 1) seed LEFT JOIN public.client_sync_private_scopes s
     ON s.component='private_news' AND s.occasion=p_occasion AND s.user_id=v_user;
@@ -58,19 +61,19 @@ BEGIN
   v_commit:=public.record_client_sync_commit_v1(p_occasion,'mark_news_read','private',
     jsonb_build_array(jsonb_build_object('entityType','news_marker',
       'entityId',p_news_id,'operation','update','safeLabel','News read marker',
-    'changedFields',jsonb_build_array('news_id'))),ARRAY['live_public'],jsonb_build_array(
-      jsonb_build_object('component','private_news','userId',v_user)),jsonb_build_array(
+    'changedFields',jsonb_build_array('news_id'))),ARRAY['live_public'],CASE WHEN v_is_member THEN jsonb_build_array(
+      jsonb_build_object('component','private_news','userId',v_user)) ELSE '[]'::jsonb END,jsonb_build_array(
       jsonb_build_object('component','live_public','entityId',p_news_id)),
     'user',NULL);
   SELECT source_revision INTO v_revision FROM public.client_sync_private_scopes
     WHERE component='private_news' AND occasion=p_occasion AND user_id=v_user;
-  v_data:=v_data||jsonb_build_object('revision',v_revision);
+  v_data:=v_data||jsonb_build_object('revision',coalesce(v_revision,0));
   v_response:=jsonb_build_object('status','applied','code',200,'data',v_data,
     'mutation',jsonb_build_object('commandId',p_command_id,
       'receiptId',p_command_id,'commitId',v_commit->>'commitId','replayed',false,
       'occurredAt',v_commit->>'occurredAt'),
-    'sync',jsonb_build_object('replacements',jsonb_build_array(jsonb_build_object(
-      'component','private_news','revision',v_revision,'payload',v_data->'payload'))));
+    'sync',jsonb_build_object('replacements',CASE WHEN v_is_member THEN jsonb_build_array(jsonb_build_object(
+      'component','private_news','revision',v_revision,'payload',v_data->'payload')) ELSE '[]'::jsonb END));
   RETURN public.finish_client_mutation_v1(
     p_command_id,v_response,(v_commit->>'commitId')::uuid);
 END; $function$;
