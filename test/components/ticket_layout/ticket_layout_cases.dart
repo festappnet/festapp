@@ -40,8 +40,9 @@ import 'package:fstapp/components/ticket_layout/views/ticket_layout_editor.dart'
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_properties.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
-import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
-import 'package:fstapp/components/_shared/editor_draft_scope.dart';
+import 'package:fstapp/components/eshop/ticket_code_helper.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:url_launcher/link.dart';
 
 late WidgetEnvironmentFixture _environment;
 
@@ -1349,52 +1350,28 @@ void main() {
   });
 
   testWidgetsWithEnvironment(() => _environment,
-      'optional scanner settings stay separate and notify the shared draft',
+      'scanner settings link replaces the legacy editor without changing feature flags',
       (tester) async {
-    final feature = TicketFeature(code: 'ticket');
+    final previous = RightsService.occasionLinkModel;
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.scannerSettingsWrite: true});
+    final feature = TicketFeature(code: 'ticket', canScanManually: true, showHiddenNote: true);
     final original = feature.toJson();
-    await _environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: SingleChildScrollView(child: TicketSettings(
-                    feature: feature,
-                    occasionId: 7,
-                    service: SettingsService(),
-                    showScanningSettings: false)))));
+    await _environment.pumpWidget(tester, MaterialApp(home: Scaffold(
+      body: SingleChildScrollView(child: TicketSettings(
+        feature: feature, occasionId: 7, service: SettingsService(), showPreview: false)))));
     await tester.pumpAndSettle();
-    expect(find.byType(TicketScanningSettings), findsNothing);
-    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(find.text('Povolit ruční skenování vstupenek'), findsNothing);
+    expect(find.text('Skrytá poznámka'), findsNothing);
+    final link = tester.widget<Link>(find.byType(Link));
+    expect(link.uri?.path, '/scan/settings');
+    expect(link.uri?.queryParameters['occasion'], '7');
+    expect(link.target, LinkTarget.blank);
     expect(feature.toJson(), original);
-    var notifications = 0;
-    var callbacks = 0;
-    await _environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: EditorDraftScope(
-                    onChanged: () => notifications++,
-                    child: TicketScanningSettings(
-                        feature: feature,
-                        onChanged: () => callbacks++)))));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(CheckboxListTile).first);
-    await tester.pump();
-    await tester.tap(find.byType(CheckboxListTile).last);
-    await tester.pump();
-    expect(feature.canScanManually, isTrue);
-    expect(feature.showHiddenNote, isTrue);
-    expect(notifications, 2);
-    expect(callbacks, 2);
-    await _environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: TicketScanningSettings(
-                    feature: feature, readOnly: true))));
-    await tester.pumpAndSettle();
-    expect(tester.widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
-        .every((tile) => tile.onChanged == null), isTrue);
+    final uri = TicketCodeHelper.scannerSettingsUri(occasionId: 7,
+      returnUri: Uri.parse('https://example.invalid/event/reservations/settings?tab=tickets'));
+    expect(uri.queryParameters['returnTo'], '/event/reservations/settings?tab=tickets');
   });
 
   testWidgetsWithEnvironment(() => _environment,

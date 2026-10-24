@@ -159,7 +159,7 @@ void main() {
                         occasionId: 0,
                         service: service,
                         readOnly: true,
-                        showScanningSettings: false)))));
+                        showScannerSettingsLink: false)))));
     await tester.pumpAndSettle();
     expect(service.calls, 0);
     expect(

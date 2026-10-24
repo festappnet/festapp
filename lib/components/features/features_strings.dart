@@ -140,14 +140,8 @@ class FeaturesStrings {
       'FeatureTicket.pregeneratedTicketsDescription'.tr();
 
   // Feature Ticket
-  static String get enableManualTicketScan =>
-      'FeatureTicket.enableManualTicketScan'.tr();
-  static String get enableManualTicketScanDescription =>
-      'FeatureTicket.enableManualTicketScanDescription'.tr();
   static String get labelShowHiddenNote =>
       'FeatureTicket.labelShowHiddenNote'.tr();
-  static String get descriptionShowHiddenNote =>
-      'FeatureTicket.descriptionShowHiddenNote'.tr();
   static String get selectTicket => 'FeatureTicket.selectTicket'.tr();
   static String get unknown => 'FeatureTicket.unknown'.tr();
   static String get noData => 'FeatureTicket.noData'.tr();

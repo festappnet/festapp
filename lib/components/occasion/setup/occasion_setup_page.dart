@@ -2511,7 +2511,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 revision: _stored.revision,
               ),
               productEditing: false,
-              showScanningSettings: false,
+              showScannerSettingsLink: false,
               showDeliverySelector: false,
               showPreview: false,
               previewOccasion: TicketPreviewOccasion(

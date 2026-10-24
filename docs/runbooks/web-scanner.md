@@ -43,6 +43,13 @@ Storage failure blocks confirmation even with working internet. Online lookup
 remains available. Use another prepared device rather than treating an in-memory
 record as saved. A missing offline ticket means unverified, not invalid.
 
+Administration ticket settings and the scan-code dialog link to `/scan/settings`
+with the current occasion ID. The web settings editor is the only administration
+editor for manual search and hidden-note visibility; the former ticket-feature
+checkbox panel is removed. The administration link opens a new tab so unsaved
+ticket-layout drafts remain in place. Historical feature keys remain a retained
+native-client and first-configuration seed boundary, not another web editor.
+
 Shared settings require editor or reservation-editor permission on the same event.
 One server configuration applies to every scanner; per-device field overrides are
 not applied. A scan code never grants settings access. Products use

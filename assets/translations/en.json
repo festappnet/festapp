@@ -1751,13 +1751,10 @@
   "FeatureTicket": {
     "enablePregeneratedTickets": "Pregenerated tickets",
     "pregeneratedTicketsDescription": "Create batches of tickets for printing and manual sales.",
-    "enableManualTicketScan": "Enable Manual Ticket Scan",
-    "enableManualTicketScanDescription": "Allows searching and selecting tickets manually if attendee forgot ticket.",
     "selectTicket": "Select Ticket",
     "unknown": "Unknown",
     "noData": "No Data",
     "labelShowHiddenNote": "Hidden note",
-    "descriptionShowHiddenNote": "Shows hidden note in scan result.",
     "description": "After payment, a ticket is sent to the user. The ticket can have a custom background and text color.",
     "deleteImageConfirm": "Are you sure you want to delete this image?",
     "backgroundColor": "Background color",
