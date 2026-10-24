@@ -854,6 +854,13 @@
         "test/components/blueprint/seat_order_commands_test.dart"
       ]
     },
+    "test/components/eshop/ticket_batch_detail_header_test.dart": {
+      "kind": "environment",
+      "reason": "Localized batch header, selection actions and table space across viewport sizes and themes require Flutter layout and scoped font/catalog fixtures.",
+      "sources": [
+        "test/components/eshop/ticket_batch_detail_header_test.dart"
+      ]
+    },
     "test/components/eshop/ticket_batch_presentation_test.dart": {
       "kind": "environment",
       "reason": "Pregenerated ticket feature visibility, batch creation form selection and native grid rendering require Flutter widgets and a scoped Czech catalog.",

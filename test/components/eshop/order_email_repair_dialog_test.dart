@@ -313,7 +313,7 @@ void main() {
                     background: Colors.white,
                     occasionId: 7,
                     order: order)))));
-    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.mark_email_unread_outlined), findsOneWidget);
     order.emailDelivery = {
       'state': 'bounce',
       'attention_count': 2,
@@ -323,6 +323,6 @@ void main() {
         home: Scaffold(
             body: OrderStateCell(
                 label: 'ORDERED', background: Colors.white, order: order))));
-    expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+    expect(find.byIcon(Icons.mark_email_unread_outlined), findsNothing);
   });
 }

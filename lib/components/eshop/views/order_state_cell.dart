@@ -50,9 +50,9 @@ class OrderStateCell extends StatelessWidget {
                   tooltip:
                       '${issues.map((i) => i.description).join('\n')}\n${EmailDeliveryStrings.recovery('resolve')}',
                   icon: Badge(
-                      isLabelVisible: issues.length > 1,
+                      isLabelVisible: true,
                       label: Text('${issues.length}'),
-                      child: Icon(Icons.warning_amber_rounded,
+                      child: Icon(Icons.mark_email_unread_outlined,
                           size: 20,
                           color: issues.any((i) => i.isFailure)
                               ? Theme.of(context).colorScheme.error
