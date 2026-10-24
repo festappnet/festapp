@@ -248,7 +248,6 @@
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
     "recovery": {
-      "emailHint": "V e-maile zákazníka môže byť preklep. Adresu tu môžete opraviť.",
       "title": "Order delivery",
       "resolve": "Resolve delivery",
       "current": "Current contact",
@@ -2354,8 +2353,6 @@
     "detail": "Detail"
   },
   "TicketBatches": {
-    "selectedCount": "Vybrané: {count}",
-    "selectionHint": "Pre predaj alebo zneplatnenie vyberte vstupenky v tabuľke, prípadne zadajte ich symbol alebo QR.",
     "detailAndPrint": "Detail a tlač",
     "title": "Predgenerované",
     "create": "Vytvoriť dávku",

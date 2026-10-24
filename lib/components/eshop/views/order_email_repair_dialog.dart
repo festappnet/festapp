@@ -132,12 +132,11 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
       OrderEmailIssue.changes.value++;
       await widget.onChanged?.call();
     } catch (error) {
-      if (_sameContext) {
+      if (_sameContext)
         setState(() => _feedback = t(error is PostgrestException &&
                 error.message.contains('email_recipient_suppressed')
             ? 'blocked'
             : 'failed'));
-      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -163,12 +162,11 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
       OrderEmailIssue.changes.value++;
       await widget.onChanged?.call();
     } catch (error) {
-      if (_sameContext) {
+      if (_sameContext)
         setState(() => _feedback = t(error is PostgrestException &&
                 error.message.contains('email_recipient_suppressed')
             ? 'blocked'
             : 'failed'));
-      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -215,13 +213,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                     style: secondaryStyle),
                 if (widget.onShowOrder != null)
                   TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              final showOrder = widget.onShowOrder;
-                              Navigator.of(context).pop();
-                              showOrder?.call();
-                            },
+                      onPressed: _busy ? null : widget.onShowOrder,
                       child: Text(t('show'))),
                 const Divider(height: 24),
                 for (final issue in issues)
@@ -288,11 +280,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                     onChanged: (_) => setState(() {}),
                     enabled: !_busy,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: t('email'),
-                      helperText: t('emailHint'),
-                      helperMaxLines: 4,
-                    ),
+                    decoration: InputDecoration(labelText: t('email')),
                   ),
                   const SizedBox(height: 16),
                   Text(

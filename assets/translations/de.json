@@ -228,7 +228,6 @@
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
     "recovery": {
-      "emailHint": "Die E-Mail-Adresse des Kunden enthält möglicherweise einen Tippfehler. Sie können die Adresse hier korrigieren.",
       "title": "Order delivery",
       "resolve": "Resolve delivery",
       "current": "Current contact",
@@ -2327,8 +2326,6 @@
     "detail": "Details"
   },
   "TicketBatches": {
-    "selectedCount": "Ausgewählt: {count}",
-    "selectionHint": "Wählen Sie Tickets in der Tabelle aus oder geben Sie deren Symbol oder QR-Code ein, um einen Verkauf zu erfassen oder Tickets ungültig zu machen.",
     "detailAndPrint": "Details und Druck",
     "title": "Vorgedruckte Tickets",
     "create": "Serie erstellen",
