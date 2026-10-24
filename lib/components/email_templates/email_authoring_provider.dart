@@ -5,11 +5,16 @@ import '../html/template_authoring.dart';
 import 'email_template_model.dart';
 import 'email_templates_strings.dart';
 import 'email_preview_html.dart';
+import '../ticket_layout/views/ticket_email_preview.dart';
 
 class EmailAuthoringProvider extends TemplateAuthoringProvider {
   EmailAuthoringProvider(this.template, {required this.field, this.scenario});
   final EmailTemplateModel template;
-  late final List<EmailTemplateSub> _subs = template.substitutions;
+  bool inlineTicketsEnabled = false;
+  bool includesPdfTickets = false;
+  List<EmailTemplateSub> get _subs => template.substitutions
+      .where((sub) => sub.code != 'tickets' || inlineTicketsEnabled)
+      .toList();
   final EmailTargetField field;
   EmailPreviewScenario? scenario;
   WidgetBuilder? footerBuilder;
@@ -119,14 +124,26 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   String get tokenLabel => EmailTemplatesStrings.variable;
   @override
-  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) {
+  Widget? preview(BuildContext context, String code,
+      {ValueGetter<int>? occurrence}) {
     Widget render() {
-      final value = completion?.call()?.forToken(code, occurrence?.call() ?? 0) ?? scenario?.values[code];
+      if (code == 'tickets') {
+        return inlineTicketsEnabled
+            ? TicketEmailPreview.inlineSample(
+                count: 1, includesPdf: includesPdfTickets)
+            : const SizedBox.shrink();
+      }
+      final value =
+          completion?.call()?.forToken(code, occurrence?.call() ?? 0) ??
+              scenario?.values[code];
       return value == null
           ? Text(EmailTemplatesStrings.previewUnavailable)
           : EmailPreviewHtml(html: value);
     }
-    return previewChanges == null ? render() : ListenableBuilder(
-        listenable: previewChanges!, builder: (context, child) => render());
+
+    return previewChanges == null
+        ? render()
+        : ListenableBuilder(
+            listenable: previewChanges!, builder: (context, child) => render());
   }
 }

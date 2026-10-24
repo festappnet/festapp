@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +19,37 @@ void main() {
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
+  });
+  testWidgets('ticket variable example shows the delivered QR structure',
+      (tester) async {
+    final provider = EmailAuthoringProvider(
+        EmailTemplateModel(code: 'TICKET_ORDER_PAYMENT_DONE'),
+        field: EmailTargetField.body)
+      ..inlineTicketsEnabled = true;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => provider.preview(context, 'tickets')!))));
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Vaše vstupenka'), findsOneWidget);
+    expect(
+        find.text('Kód vstupenky: festapp-preview:INVALID-1'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  test('QR ticket variable stays hidden without enabled inline delivery', () {
+    final provider = EmailAuthoringProvider(
+        EmailTemplateModel(code: 'TICKET_ORDER_PAYMENT_DONE'),
+        field: EmailTargetField.body);
+    expect(
+        provider.search('', const {}).any((entry) => entry.code == 'tickets'),
+        isFalse);
+    expect(provider.entry('tickets'), isNull);
+    provider.inlineTicketsEnabled = true;
+    expect(
+        provider.search('', const {}).any((entry) => entry.code == 'tickets'),
+        isTrue);
+    provider.inlineTicketsEnabled = false;
+    expect(provider.entry('tickets'), isNull);
   });
   test(
       'catalog variables have generated values and subject supports only scalar',

@@ -1,4 +1,6 @@
 import '../../ticket_layout/ticket_delivery_strings.dart';
+import '../../ticket_layout/views/ticket_email_preview.dart';
+import '../../features/ticket_feature.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -70,6 +72,20 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     EmailTitleMatch match,
     String code
   })? _suggestion;
+  TicketDeliveryMode? get _ticketMode {
+    if (widget.template.code != 'TICKET_ORDER_PAYMENT_DONE') return null;
+    final occasion = widget.emailTemplatesResponse.occasion;
+    if (occasion == null) return null;
+    final current = RightsService.currentOccasion();
+    final features = occasion.features.isNotEmpty
+        ? occasion.features
+        : current?.id == occasion.id
+            ? current!.features
+            : occasion.features;
+    final ticket = features.whereType<TicketFeature>().firstOrNull;
+    return ticket?.isEnabled == true ? ticket!.deliveryMode : null;
+  }
+
   Future<void> _loadAuthoringContext() async {
     _authoringContextLoading = true;
     try {
@@ -125,6 +141,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 s.tone == previous?.tone)
             .firstOrNull ??
         _scenarios.firstOrNull;
+    _bodyProvider.inlineTicketsEnabled =
+        _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
+    _bodyProvider.includesPdfTickets = _ticketMode?.includesPdf == true;
     _subjectProvider.scenario = _scenario;
     _bodyProvider.scenario = _scenario;
   }
@@ -377,18 +396,47 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             _sampleControls(onChanged: () => update(() {})),
                             const SizedBox(height: 16),
                             if (_authoringContext != null)
-                              EmailReceivedMessage(
+                              if (widget.template.code ==
+                                  'TICKET_ORDER_PAYMENT_DONE')
+                                TicketEmailPreview(
                                   senderAddress:
                                       _authoringContext!.senderAddress,
-                                  allowedRemoteImageSources:
-                                      _authoringContext!.bannerImageSources,
-                                  subject: _scenario!
-                                      .composeSubject(_subjectEditor.plainText),
-                                  html: _authoringContext!.composeHtml(
-                                      _scenario!,
-                                      _bodyDraft?.html ?? _htmlContent ?? ''),
                                   imageBytesResolver:
-                                      _htmlSave.media.previewBytes),
+                                      _htmlSave.media.previewBytes,
+                                  sampleCount:
+                                      _bodyProvider.inlineTicketsEnabled
+                                          ? 1
+                                          : 0,
+                                  includesPdf: _ticketMode?.includesPdf == true,
+                                  preview: {
+                                    'subject': _scenario!.composeSubject(
+                                        _subjectEditor.plainText),
+                                    'html': _authoringContext!.composeHtml(
+                                        _scenario!,
+                                        TicketEmailPreview.ticketBody(
+                                            _bodyDraft?.html ??
+                                                _htmlContent ??
+                                                '',
+                                            _ticketMode)),
+                                    'wrapper': _authoringContext!.wrapperHtml,
+                                    'attachments':
+                                        TicketEmailPreview.sampleAttachments(
+                                            _ticketMode, 1),
+                                  },
+                                )
+                              else
+                                EmailReceivedMessage(
+                                    senderAddress:
+                                        _authoringContext!.senderAddress,
+                                    allowedRemoteImageSources:
+                                        _authoringContext!.bannerImageSources,
+                                    subject: _scenario!.composeSubject(
+                                        _subjectEditor.plainText),
+                                    html: _authoringContext!.composeHtml(
+                                        _scenario!,
+                                        _bodyDraft?.html ?? _htmlContent ?? ''),
+                                    imageBytesResolver:
+                                        _htmlSave.media.previewBytes),
                           ]))),
                 )));
   }
@@ -424,6 +472,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         field: EmailTargetField.subject);
     _bodyProvider =
         EmailAuthoringProvider(widget.template, field: EmailTargetField.body);
+    _bodyProvider.inlineTicketsEnabled =
+        _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
+    _bodyProvider.includesPdfTickets = _ticketMode?.includesPdf == true;
     _subjectEditor = RichHtmlEditorController(
         initialHtml: '<p>${htmlEscape.convert(_subject ?? '')}</p>',
         owner: const HtmlMediaOwner.none(),
@@ -686,8 +737,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               ]),
               if (_duplicateTicketsBlock) ...[
                 Text(TicketDeliveryStrings.text('duplicateBlock'),
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error)),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
                 const SizedBox(height: 8),
               ],
               DecoratedBox(
