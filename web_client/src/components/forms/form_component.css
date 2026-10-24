@@ -389,7 +389,7 @@ body.dark-mode .option-description {
 .form-actions {
     margin-top: calc(32px * var(--font-scale));
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 0;
 }
 
 .btn {
@@ -798,7 +798,7 @@ body.dark-mode .surcharge-info {
 .overview-payment-link { display: inline-block; margin-block-start: 8px; color: var(--primary-color, #1565c0); text-underline-offset: 3px; }
 .overview-payment-details, .order-overview .result-payment-more { scroll-margin-block-start: 24px; }
 
-.organization-identity-slot { margin:24px auto 0; padding:0 16px 24px; max-width:850px; text-align:center; color:var(--text-color,#222); }
+.organization-identity-slot { margin:8px auto 0; padding:0 16px; max-width:850px; text-align:center; color:var(--text-color,#222); }
 .organization-identity-button { border:0; background:transparent; color:inherit; font:inherit; font-size:14px; min-height:44px; padding:8px; cursor:pointer; overflow-wrap:anywhere; }
 .organization-identity-button:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:4px; }
 .organization-identity-tail { display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
