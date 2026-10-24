@@ -1,27 +1,23 @@
 # vstupenky.online - podklady pro WordPress.org
 
+**Podáno 2026-10-24:** vstupenky.online 1.0.0, předběžný slug
+`vstupenky-online`. Automatická kontrola WordPress.org: **Pass**.
+Ruční kontrola: **Awaiting Review**. Plugin ještě není veřejně v katalogu.
+Receipt: `evidence/submission-20261024.json`. Další distribuci nepodávat.
+
+
 Aktuální rozsah je pouze **vstupenky.online 1.0.0**, účet vydavatele
 **festappnet**, kontakt **info@festapp.net**. Festapp Tickets se nyní nepodává
 ani se neaktualizuje jeho ZIP nebo SVN návrh.
 
-## Současný stav: podání blokuje produkční služba
+## Současný stav: produkční služba ověřena
 
-SaaS integrace je přípustná, pokud služba poskytuje podstatné funkce a závislost
-je jasně popsaná. Platí také výjimka pro dokumentovaný servisní JavaScript.
-Viz [pravidla 6-8](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/)
-a [externí služby](https://developer.wordpress.org/plugins/wordpress-org/common-issues/).
-To není záruka přijetí konkrétního pluginu.
-
-Produkční `https://vstupenky.online/embed.js` při kontrole 2026-10-24 stále
-obsahoval starší helper (3009 bytes), bez přebírání fontů, hostitelského cenového
-přehledu a nových scroll snapshotů. Před podáním musí být nasazen a přes skutečný
-cross-origin embed ověřen odpovídající klient i helper.
-
-Opravy služby nelze nasadit prostým buildem tohoto pracovního stromu.
-Feature větev obsahuje další rozpracovanou práci a její formuláře/router se
-liší od aktuálního `origin/main`. Je třeba připravit izolovanou integraci,
-zachovat novější kanonické změny, ověřit ji a provést běžný release pouze pro
-vstupenky.online. Audit neprovedl produkční deploy ani externí zápis na WordPress.org.
+Vstupenky.online 0.20.389+889 byla vydána z mainu `db6db44d5` přes tenant
+`fa0de1bd2`. Skutečný cross-origin WordPress embed z finálního ZIPu prošel
+načtením, automatickou výškou, otevřením plánku, Escape a obnovou scrollu.
+Podrobnosti: `evidence/production-release-20261024.json`.
+SaaS integrace je přípustná podle [pravidel 6-8](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/);
+přijetí konkrétního podání posuzuje WordPress.org ručně.
 
 ## Konkrétní balíček a povinná kontrola před podáním
 
