@@ -1,7 +1,8 @@
 # Nápověda: obsah, screenshoty a společný základ CZ/EN
 
 Datum: 2026-10-24
-Stav: návrh osnovy k rozhodnutí; nikoli schválení všech článků k publikaci.
+Stav: osnova odsouhlasena v konverzaci 2026-10-24, pokračování implementace
+potvrzeno 2026-10-25. Publikace kompletního obsahu čeká na dokončení a ověření.
 Nahrazuje představu, že současných šest stránek je konečná struktura nápovědy.
 
 ## Potvrzené požadavky uživatele
@@ -88,7 +89,8 @@ Navrhuji dvanáct skutečně hotových článků, místo mnoha prázdných kateg
 
 Wix se přidává až jako hotová podporovaná integrace. Pokročilé scénáře se
 rozšiřují podle konkrétní potřeby, aby nevznikl neověřený kompletní manuál.
-Tento počet je návrh, nikoli uživatelem potvrzená implementační objednávka.
+První implementační krok ověří společný vzhled a lokalizaci na integračních
+návodech, poté se rozšíří základní a provozní postupy podle této osnovy.
 
 ## Jednotná podoba článku
 

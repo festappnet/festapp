@@ -1,0 +1,56 @@
+[
+  {
+    "id": "overview",
+    "category": "",
+    "slug": "",
+    "title": "Help for event organizers",
+    "seoTitle": "Help: ticket sales and website integration",
+    "description": "Prepare your ticket sales and embed an order form in your own website, WordPress or Webnode.",
+    "label": "All guides"
+  },
+  {
+    "id": "getting-started",
+    "category": "basics",
+    "slug": "getting-started",
+    "title": "From your event to your first ticket form",
+    "seoTitle": "How to start selling tickets online",
+    "description": "Prepare your event, tickets and public order form, then share its link or embed it in your website.",
+    "label": "Getting started"
+  },
+  {
+    "id": "embed",
+    "category": "integrations",
+    "slug": "embed",
+    "title": "How to embed ticket sales in your website",
+    "seoTitle": "Embed ticket sales: HTML order form",
+    "description": "Generate HTML to embed your public order form, with automatic height or a fixed-height option.",
+    "label": "Embed in a website"
+  },
+  {
+    "id": "wordpress",
+    "category": "integrations",
+    "slug": "wordpress",
+    "title": "Sell tickets on WordPress",
+    "seoTitle": "WordPress ticket sales with or without a plugin",
+    "description": "Use the ticket form block and shortcode, or add a Custom HTML block without installing a plugin.",
+    "label": "WordPress"
+  },
+  {
+    "id": "webnode",
+    "category": "integrations",
+    "slug": "webnode",
+    "title": "How to embed ticket sales in Webnode",
+    "seoTitle": "Webnode: embed a ticket order form",
+    "description": "Check the Webnode plan requirements, add an HTML block and verify the published form on mobile.",
+    "label": "Webnode"
+  },
+  {
+    "id": "troubleshooting",
+    "category": "troubleshooting",
+    "slug": "troubleshooting",
+    "title": "When your embedded form does not look right",
+    "seoTitle": "Embedded form help: height, appearance and updates",
+    "description": "Check the public URL, HTML code, automatic height and website cache before contacting support.",
+    "label": "Troubleshooting"
+  }
+]

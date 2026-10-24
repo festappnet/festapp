@@ -4,9 +4,10 @@ import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 const markup = readFileSync(new URL('../../../automation/release/help/embed-generator.html',import.meta.url),'utf8');
 const script = readFileSync(new URL('../../../automation/release/help/help.js',import.meta.url),'utf8');
-function fixture(t) {
-  const dom = new JSDOM(markup,{url:'https://vstupenky.online/napoveda/vlozeni-na-web/',runScripts:'outside-only'});
-  t.after(()=>dom.window.close()); dom.window.eval(script);
+function fixture(t, english = false) {
+  const content = english ? readFileSync(new URL('../../../automation/release/help/en/embed-generator.html',import.meta.url),'utf8').replaceAll('{{FORM_ORIGIN}}','https://example.test') : markup;
+  const dom = new JSDOM(content,{url:'https://vstupenky.online/napoveda/vlozeni-na-web/',runScripts:'outside-only'});
+  t.after(()=>dom.window.close()); dom.window.document.documentElement.lang = english ? 'en' : 'cs'; dom.window.eval(script);
   const form = dom.window.document.querySelector('form');
   const field = form.querySelector('input[type=url]');
   const submit = value => {field.value=value; form.dispatchEvent(new dom.window.Event('submit',{cancelable:true}));};
@@ -23,6 +24,18 @@ test('public generator produces isolated service code without loading checkout',
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
   assert.equal(code.window.document.querySelector('a').rel,'noopener noreferrer');
+});
+test('English generator uses its configured service origin and localized results',t=>{
+  const {form,submit}=fixture(t,true);
+  submit('https://vstupenky.online/form/wrong-tenant');
+  assert.match(form.querySelector('[data-url-error]').textContent,/Paste a saved public form link/);
+  assert.equal(form.querySelector('[data-embed-output]').hidden,true);
+  submit('https://example.test/form/my-event');
+  const code=form.querySelector('textarea').value;
+  assert.match(code,/https:\/\/example.test\/embed.js/);
+  assert.match(code,/title="Order form"/);assert.match(code,/Open the form in a new tab/);
+  assert.match(form.querySelector('[role=status]').textContent,/Your code is ready/);
+  assert.doesNotMatch(code,/vstupenky.online|Objednávkový|Otevřít/);
 });
 test('generator rejects other tenants, credentials, query/fragment and encoded injection', t => {
   const {form,submit}=fixture(t);

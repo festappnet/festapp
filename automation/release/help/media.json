@@ -22,5 +22,101 @@
     "alt": "Webnode po výběru HTML zobrazí výzvu k aktivaci Prémiových služeb s tlačítky Zakoupit služby a Zavřít.",
     "caption": "Takto vypadá omezení HTML v novém bezplatném projektu. Ověřeno 24. října 2026. Kliknutím obrázek zvětšíte.",
     "openLabel": "Zvětšit snímek: požadavek Premium ve Webnode (nová karta)"
+  },
+  {
+    "id": "cs/embed/01-generated-code",
+    "file": "cs/embed/01-generated-code.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25",
+    "source": "Actual standalone HTML generator in isolated headless Chrome; synthetic URL, no checkout loaded",
+    "width": 740,
+    "height": 422,
+    "alt": "Generátor s ukázkovým veřejným odkazem, automatickou výškou a připraveným HTML kódem.",
+    "caption": "Takto vypadá připravený kód. Ukázkový odkaz nahraďte odkazem svého uloženého formuláře. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek generátoru (nová karta)"
+  },
+  {
+    "id": "en/embed/01-generated-code",
+    "file": "en/embed/01-generated-code.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25",
+    "source": "Actual standalone HTML generator in isolated headless Chrome; synthetic URL, no checkout loaded",
+    "width": 740,
+    "height": 422,
+    "alt": "The generator with an example public form link, automatic height and prepared HTML code.",
+    "caption": "The prepared code. Replace the example URL with your own saved public form link. Click to enlarge.",
+    "openLabel": "Enlarge the generator screenshot (new tab)"
+  },
+  {
+    "id": "cs/wordpress/01-get-started",
+    "file": "cs/wordpress/01-get-started.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 1078,
+    "height": 903,
+    "alt": "První kroky po aktivaci doplňku ve WordPressu: příprava účtu a formuláře, vložení do stránky, kontrola a zveřejnění.",
+    "caption": "Po aktivaci otevřete Nastavení → vstupenky.online. Tato stránka propojuje přípravu formuláře s vložením do WordPressu. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek WordPressu (nová karta)"
+  },
+  {
+    "id": "cs/wordpress/02-block-editor",
+    "file": "cs/wordpress/02-block-editor.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 1280,
+    "height": 1000,
+    "alt": "Editor WordPressu s blokem vstupenky.online, veřejným odkazem formuláře, automatickou výškou a převzetím stylu stránky.",
+    "caption": "V bloku vložte veřejný odkaz svého uloženého formuláře. Automatická výška a převzetí stylu jsou výchozí volby. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek WordPressu (nová karta)"
+  },
+  {
+    "id": "cs/wordpress/03-custom-html",
+    "file": "cs/wordpress/03-custom-html.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 406,
+    "height": 514,
+    "alt": "HTML kód vložený do editoru bloku Vlastní HTML ve WordPressu, včetně iframe, samostatného odkazu a pomocného skriptu.",
+    "caption": "Bez doplňku vložte celý kód do bloku Vlastní HTML. Ukázkový odkaz nahraďte odkazem svého formuláře. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek WordPressu (nová karta)"
+  },
+  {
+    "id": "en/wordpress/01-get-started",
+    "file": "en/wordpress/01-get-started.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 1078,
+    "height": 903,
+    "alt": "The WordPress plugin getting-started screen: prepare an account and form, embed it, then preview and publish.",
+    "caption": "After activation, open Settings → vstupenky.online. This page connects form preparation to the WordPress setup. Click to enlarge.",
+    "openLabel": "Enlarge the WordPress screenshot (new tab)"
+  },
+  {
+    "id": "en/wordpress/02-block-editor",
+    "file": "en/wordpress/02-block-editor.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 1280,
+    "height": 968,
+    "alt": "The WordPress editor with the vstupenky.online block, public form URL, automatic height and website styling.",
+    "caption": "Paste your saved public form link into the block. Automatic height and website styling are enabled by default. Click to enlarge.",
+    "openLabel": "Enlarge the WordPress screenshot (new tab)"
+  },
+  {
+    "id": "en/wordpress/03-custom-html",
+    "file": "en/wordpress/03-custom-html.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25",
+    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
+    "width": 406,
+    "height": 514,
+    "alt": "HTML pasted into the WordPress Custom HTML code editor, including the iframe, fallback link and helper script.",
+    "caption": "Without the plugin, paste the complete code into a Custom HTML block. Replace the example URL with your own form link. Click to enlarge.",
+    "openLabel": "Enlarge the WordPress screenshot (new tab)"
   }
 ]

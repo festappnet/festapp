@@ -18,6 +18,8 @@ test('public guides render crawlable linked documents, code generator and exact 
   assert.equal((html.match(/<h1>/g)||[]).length,1);assert.match(html,/<html lang="cs">/);assert.ok(html.includes(page.description));
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{|<iframe/);
+  assert.match(html,/<header class="site-header/);assert.match(html,/<footer class="site-footer wrap"/);
+  assert.doesNotMatch(html,/class="help-header|class="help-footer/);
   for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)) {
    const local=match[1].slice('/napoveda/'.length);const file=local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local);
    assert.ok(fs.existsSync(file),`Missing guide/asset ${match[1]}`);
@@ -28,5 +30,20 @@ test('public guides render crawlable linked documents, code generator and exact 
  const zip=fs.readdirSync(path.join(target,'assets')).find(name=>name.endsWith('.zip'));const packageZip=fs.readFileSync(path.join(root,'integrations/wordpress/dist',zip));
  assert.equal(createHash('sha256').update(fs.readFileSync(path.join(target,'assets',zip))).digest('hex'),createHash('sha256').update(packageZip).digest('hex'));
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
+ const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
+ assert.equal(english.status,0,english.stderr);
+ const englishPages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.en.json')));
+ assert.deepEqual(englishPages.map(p=>p.id),pages.map(p=>p.id),'both locales address the same topics');
+ for(const page of englishPages){
+  const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
+  assert.match(html,/<html lang="en">/);assert.match(html,/noindex,nofollow/);
+  assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
+  for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)){
+   const local=match[1].slice('/napoveda/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local)),match[1]);
+  }
+ }
+ const refused=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en'],{encoding:'utf8'});
+ assert.notEqual(refused.status,0,'English publication requires completed localized evidence');
+ assert.ok(fs.existsSync(path.join(target,'index.html')),'invalid invocation does not delete the preview');
  fs.writeFileSync(config,'WEB_LINK=https://other.invalid\nWEB_ORGANIZER_LANDING_ENABLED=false\n');run=render();assert.equal(run.status,0,run.stderr);assert.equal(fs.existsSync(target),false,'tenant switch removes Czech help and download');
 });

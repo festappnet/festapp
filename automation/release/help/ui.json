@@ -1,0 +1,40 @@
+{
+  "cs": {
+    "languageTag": "cs-CZ",
+    "help": "Nápověda",
+    "organizerHelp": "Nápověda pro pořadatele",
+    "guides": "Návody",
+    "mobileGuides": "Návody pro pořadatele",
+    "home": "Úvod",
+    "onThisPage": "Na této stránce",
+    "related": "Další pomoc",
+    "allGuides": "Všechny návody",
+    "support": "Kontakt na podporu",
+    "breadcrumb": "Drobečková navigace",
+    "skip": "Přejít k obsahu",
+    "categories": {
+      "integrations": "Integrace a vložení na web",
+      "basics": "Začínáme s akcí",
+      "troubleshooting": "Řešení potíží"
+    }
+  },
+  "en": {
+    "languageTag": "en",
+    "help": "Help",
+    "organizerHelp": "Help for event organizers",
+    "guides": "Guides",
+    "mobileGuides": "Guides for event organizers",
+    "home": "Home",
+    "onThisPage": "On this page",
+    "related": "More help",
+    "allGuides": "All guides",
+    "support": "Contact support",
+    "breadcrumb": "Breadcrumb",
+    "skip": "Skip to content",
+    "categories": {
+      "integrations": "Integrations and embedding",
+      "basics": "Getting started",
+      "troubleshooting": "Troubleshooting"
+    }
+  }
+}
