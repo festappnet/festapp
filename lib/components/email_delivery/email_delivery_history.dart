@@ -83,6 +83,7 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   }
 
   int _generation = 0;
+  Map<String, dynamic>? _overview;
   SingleDataGridController<EmailDeliveryModel>? _controller;
   Future<dynamic> _read(String name, {required Map<String, dynamic> params}) =>
       widget.read?.call(name, params) ??
@@ -106,12 +107,13 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
         oldWidget.ordersOnly != widget.ordersOnly ||
         oldWidget.read != widget.read) {
       _organizationScope = false;
+      _overview = null;
       _controller = _createController();
     }
   }
 
   SingleDataGridController<EmailDeliveryModel> _createController() {
-    _generation++;
+    final generation = ++_generation;
     final params = <String, dynamic>{
       'p_occasion': _organizationScope ? null : widget.occasionId,
       'p_organization': widget.organizationId,
@@ -128,6 +130,17 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
         final result =
             await ExceptionHandler.guard(context, futureFunction: () async {
           final rows = await EmailDeliveryModel.loadHistory(read, params);
+          if (!widget.ordersOnly &&
+              widget.orderId == null &&
+              widget.userId == null) {
+            final overview = await read('get_email_delivery_overview', {
+              'p_occasion': params['p_occasion'],
+              'p_organization': params['p_organization'],
+            });
+            if (mounted && generation == _generation && overview is Map) {
+              setState(() => _overview = Map<String, dynamic>.from(overview));
+            }
+          }
           return rows;
         });
         return result ?? <EmailDeliveryModel>[];
@@ -281,8 +294,26 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
               value: _organizationScope,
               onChanged: (value) => setState(() {
                     _organizationScope = value;
+                    _overview = null;
                     _controller = _createController();
                   })),
+        if (_overview != null)
+          Wrap(spacing: 16, children: [
+            for (final key in [
+              'accepted',
+              'delivered',
+              'bounced',
+              'complained',
+              'feedback_overdue',
+              'unknown',
+              'dead'
+            ])
+              Text('${EmailDeliveryStrings.state({
+                    'delivered': 'delivery',
+                    'bounced': 'bounce',
+                    'complained': 'complaint'
+                  }[key] ?? key)}: ${_overview![key]}')
+          ]),
         Expanded(
             child: SingleTableDataGrid<EmailDeliveryModel>(_controller!,
                 key: ObjectKey(_controller))),
