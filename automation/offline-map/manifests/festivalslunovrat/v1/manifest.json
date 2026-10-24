@@ -1,0 +1,1117 @@
+{
+  "schema_version": 2,
+  "occasion": {
+    "slug": "festivalslunovrat",
+    "id": 6
+  },
+  "artifact_version": "v1",
+  "source_name": "versatiles-shortbread",
+  "base_url": "https://assets.festapp.net/festivalslunovrat/v1/",
+  "built_at": "2026-08-29T16:16:11Z",
+  "source": {
+    "url": "https://download.versatiles.org/osm.versatiles",
+    "etag": "\"6fef9cb2804ab456b1653a93b8a2073a-9065\"",
+    "last_modified": ""
+  },
+  "build": {
+    "requested_bounds": [
+      17.85,
+      49.87,
+      17.97,
+      49.98
+    ],
+    "min_zoom": 0,
+    "max_zoom": 14,
+    "bbox_border_tiles": 3,
+    "compression": "gzip"
+  },
+  "live_content": {
+    "bounds": {
+      "west": 17.874839660011553,
+      "south": 49.891321747318145,
+      "east": 17.94466286672688,
+      "north": 49.953055734950965
+    },
+    "margins_km": {
+      "west_km": 1.780,
+      "south_km": 2.374,
+      "east_km": 1.816,
+      "north_km": 2.999
+    },
+    "places": 43,
+    "path_groups": 0,
+    "free_route_points": 0
+  },
+  "tools": {
+    "versatiles": "versatiles 4.6.1",
+    "sqlite": "3.51.0",
+    "jq": "jq-1.7.1-apple",
+    "shasum": "6.02"
+  },
+  "mbtiles": {
+    "tile_count": 828,
+    "metadata": {
+      "bounds": "-90.010986328125,-66.51763851435186,135.010986328125,79.17339847797243",
+      "center": "17.90771484375,49.92989137866401,2",
+      "description": "A basic, lean, general-purpose vector tile schema for OpenStreetMap data. See https://shortbread-tiles.org/",
+      "format": "pbf",
+      "json": "{\"vector_layers\":[{\"fields\":{\"block\":\"String\",\"housename\":\"String\",\"housenumber\":\"String\",\"unit\":\"String\"},\"id\":\"addresses\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\"},\"id\":\"aerialways\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"admin_level\":\"Number\",\"disputed\":\"Boolean\",\"maritime\":\"Boolean\"},\"id\":\"boundaries\",\"maxzoom\":14,\"minzoom\":0},{\"fields\":{\"admin_level\":\"Number\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"way_area\":\"Number\"},\"id\":\"boundary_labels\",\"maxzoom\":14,\"minzoom\":2},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"bridges\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"dummy\":\"Number\",\"height\":\"Number\",\"hide_3d\":\"Boolean\",\"min_height\":\"Number\"},\"id\":\"buildings\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\"},\"id\":\"dam_lines\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\"},\"id\":\"dam_polygons\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"ferries\",\"maxzoom\":14,\"minzoom\":10},{\"fields\":{\"kind\":\"String\"},\"id\":\"land\",\"maxzoom\":14,\"minzoom\":7},{\"fields\":{},\"id\":\"ocean\",\"maxzoom\":14,\"minzoom\":0},{\"fields\":{\"kind\":\"String\"},\"id\":\"pier_lines\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\"},\"id\":\"pier_polygons\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"population\":\"Number\"},\"id\":\"place_labels\",\"maxzoom\":14,\"minzoom\":4},{\"fields\":{\"amenity\":\"String\",\"atm\":\"Boolean\",\"cuisine\":\"String\",\"denomination\":\"String\",\"emergency\":\"String\",\"highway\":\"String\",\"historic\":\"String\",\"housename\":\"String\",\"housenumber\":\"String\",\"information\":\"String\",\"leisure\":\"String\",\"man_made\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"office\":\"String\",\"recycling:clothes\":\"Boolean\",\"recycling:glass_bottles\":\"Boolean\",\"recycling:paper\":\"Boolean\",\"recycling:scrap_metal\":\"Boolean\",\"religion\":\"String\",\"shop\":\"String\",\"sport\":\"String\",\"tourism\":\"String\",\"tower:type\":\"String\",\"vending\":\"String\"},\"id\":\"pois\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"iata\":\"String\",\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"public_transport\",\"maxzoom\":14,\"minzoom\":11},{\"fields\":{\"kind\":\"String\"},\"id\":\"sites\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"ref\":\"String\",\"ref_cols\":\"Number\",\"ref_rows\":\"Number\",\"tunnel\":\"Boolean\"},\"id\":\"street_labels\",\"maxzoom\":14,\"minzoom\":10},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"ref\":\"String\"},\"id\":\"street_labels_points\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"rail\":\"Boolean\",\"service\":\"String\",\"surface\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"street_polygons\",\"maxzoom\":14,\"minzoom\":11},{\"fields\":{\"bicycle\":\"String\",\"bridge\":\"Boolean\",\"horse\":\"String\",\"kind\":\"String\",\"link\":\"Boolean\",\"oneway\":\"Boolean\",\"oneway_reverse\":\"Boolean\",\"rail\":\"Boolean\",\"service\":\"String\",\"surface\":\"String\",\"tracktype\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"streets\",\"maxzoom\":14,\"minzoom\":5},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"streets_polygons_labels\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"water_lines\",\"maxzoom\":14,\"minzoom\":9},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"water_lines_labels\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"way_area\":\"Number\"},\"id\":\"water_polygons\",\"maxzoom\":14,\"minzoom\":4},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"way_area\":\"Number\"},\"id\":\"water_polygons_labels\",\"maxzoom\":14,\"minzoom\":4}]}",
+      "maxzoom": "14",
+      "minzoom": "0",
+      "name": "Shortbread",
+      "type": "baselayer",
+      "version": "1.1"
+    }
+  },
+  "assets": [
+    {
+      "role": "mbtiles",
+      "path": "map-z0-14.mbtiles",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/map-z0-14.mbtiles",
+      "content_type": "application/vnd.sqlite3",
+      "bytes": 29257728,
+      "sha256": "d72a169d1fe9eb8ec5ab5fb942a955fa09c061eccd0fc525def78bca5b334dec"
+    },
+    {
+      "role": "pmtiles",
+      "path": "map-z0-14.pmtiles",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/map-z0-14.pmtiles",
+      "content_type": "application/vnd.pmtiles",
+      "bytes": 28600905,
+      "sha256": "0830316f829a0c862cafb94042e362bacc6004ce14076f16fefacb3359929f6c"
+    },
+    {
+      "role": "style",
+      "path": "style.json",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/style.json",
+      "content_type": "application/json",
+      "bytes": 304314,
+      "sha256": "d246600663ae8d1437d6bbd97b74fba711309fc272cc1efd0a27c715608bfb22"
+    },
+    {
+      "role": "sprite_json_1x",
+      "path": "sprites/sprites.json",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/sprites/sprites.json",
+      "content_type": "application/json",
+      "bytes": 9683,
+      "sha256": "96077f855d9d10317f4b2c88251c7f4c4e88e6e8d16d944fffe3b892e9945726"
+    },
+    {
+      "role": "sprite_png_1x",
+      "path": "sprites/sprites.png",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/sprites/sprites.png",
+      "content_type": "image/png",
+      "bytes": 79640,
+      "sha256": "e78547f3299a509721a7f404c78c40e84d6f3e5f09f2cf232ecf60bad3ffbc04"
+    },
+    {
+      "role": "sprite_json_2x",
+      "path": "sprites/sprites@2x.json",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/sprites/sprites@2x.json",
+      "content_type": "application/json",
+      "bytes": 9725,
+      "sha256": "ca1afe6368f8fadc69857d8f6a86a466987b92c8fa31ab47958b734d5663663d"
+    },
+    {
+      "role": "sprite_png_2x",
+      "path": "sprites/sprites@2x.png",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/sprites/sprites@2x.png",
+      "content_type": "image/png",
+      "bytes": 198396,
+      "sha256": "b240a3c69bbfcc7590b9019c0a0058e04d3fbb4e580cfa24ae29401ae4f73083"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/0-255.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/0-255.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 83533,
+      "sha256": "c3b9d23ff67803011202cbda934f506eede7ca533ece2bc9cc1402829b49dba5"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/256-511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/256-511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 138365,
+      "sha256": "955b5490402dcfa4088bc8e2731933097024ab157226eda9debb0fc6f2732f98"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/512-767.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/512-767.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 103582,
+      "sha256": "4c2247e15f0519101f0ab3d8c356cde6c147b6d54d6e501e04d99cc577913a37"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/768-1023.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/768-1023.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 77406,
+      "sha256": "b0532eb4509cabce660d0723cd15b00a6360e76ca91b4b38d1ca461d16178a35"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/1024-1279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/1024-1279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 134641,
+      "sha256": "73dac6a721759069bd13f0640a540b1a78699b770682610fec115c0cf927a995"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/1280-1535.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/1280-1535.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 92843,
+      "sha256": "d2d0b333a0720db19d8c961b47e4d2119c3da48b45219ea3acff79d0786e1377"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/1536-1791.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/1536-1791.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 122258,
+      "sha256": "a69bdb3a0cc614ea5df5e3f028ebbbba5080179c4ea84e5668ee8b4aa43e8238"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/1792-2047.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/1792-2047.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 32143,
+      "sha256": "39412453f6adad1f5db3c08c46eed975973c9c787ec13d5eabec7299e8e13d7e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/2304-2559.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/2304-2559.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 106651,
+      "sha256": "c1eab8f5646629d020ca14d8114002dd0dfa6c3f56941e4c2fc3d645e6318d25"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/3840-4095.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/3840-4095.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 32,
+      "sha256": "5c3e02613a368ec96837e3967f49e43c478e2a3192c9426404674781a8b19987"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/4096-4351.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/4096-4351.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 133221,
+      "sha256": "f5d8c87895b2dc25d27dc51524fb164b01cc77e977d2a0fdfae6042d2423092d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/4608-4863.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/4608-4863.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 138402,
+      "sha256": "4992bbedb2867c793dd8f26f60072ee62ee9764b286911fc1b1423e8a377ee99"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/4864-5119.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/4864-5119.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 81094,
+      "sha256": "fed0371b76ae334ed14f5c9f9a8d083fa3d8c1cc130baeedd43473034067cd3c"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/5120-5375.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/5120-5375.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 32,
+      "sha256": "897399fc1da162bc006e8e22f73e8b9acc324db2b48d628a535d6caeeedbff3e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/5376-5631.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/5376-5631.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 32,
+      "sha256": "0402705bec0a388cb2b93c7ea889227100b8b19761228cb36e246db29a5d61f9"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/6144-6399.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/6144-6399.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 32,
+      "sha256": "50b275c5dbc83ba71e4568c110d531e1c5c579366be651b892f2f8e06cc1c490"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/7680-7935.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/7680-7935.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 146226,
+      "sha256": "3a0cb3447681abaccd321dbedfdc603422d0fe6fa775e1780c50be8379d7b773"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/7936-8191.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/7936-8191.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 136608,
+      "sha256": "5d9a7a8766a2e5386043df15bfcfcecfdc12a24ba21630baac6c3bebd0872fad"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/8192-8447.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/8192-8447.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 59950,
+      "sha256": "390a076b4921b41d16d849cba3a3f5850e8de19710a33024277f66c3bce40550"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/8448-8703.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/8448-8703.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 86698,
+      "sha256": "6b8a53688bef562ebc9c0ef628e0c2a2c37e9e86a0334fb2323a3b73485bca22"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/11520-11775.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/11520-11775.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 78394,
+      "sha256": "39095c8866c454b69ac6d74e32c2ef05450f2c52a1644f63de1989c18d8df16d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/19968-20223.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/19968-20223.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 207436,
+      "sha256": "325321e1b68036c8059c123c5c176f6c411596f8434bf6e0c478e583bc953ef0"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/20224-20479.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/20224-20479.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 226768,
+      "sha256": "c26e3c2463e1a6cdd07f446db2dddcbcd08d5647fff5ff943c1de3eb8e06e8a5"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/20736-20991.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/20736-20991.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 216521,
+      "sha256": "2fd129f69c3881f7bc791a0e51179dd4cb1f6e319e513d78102fac0a4021d4e0"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/21248-21503.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/21248-21503.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 209958,
+      "sha256": "c9e3c14d608cd8a1db0fb9ae4ecd168ac691c119abf99c1448a68c892f8ef6a1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/21504-21759.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/21504-21759.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 213526,
+      "sha256": "843af597db851a42991403588af835b5eff3a5c7b7a617c3038699c6a5541a80"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/22016-22271.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/22016-22271.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 213701,
+      "sha256": "161a487d52fa0e83809c1ff948864444a685fa92e1768786564e18dd8ffd0a73"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/22272-22527.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/22272-22527.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 218254,
+      "sha256": "922bab66acbdaa03ec79d5af54cf3930231feebf2b6317adeb628e33f5555ae6"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/22784-23039.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/22784-23039.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 221895,
+      "sha256": "efed52cc305959cf52cdd1c4390f579109134707240133d5c6fdb806867ceefb"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/23296-23551.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/23296-23551.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 218168,
+      "sha256": "bcaea6c6a020da932c5d7636092053e3b7b47c30dbe6f194c3df570a0326ee32"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/23552-23807.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/23552-23807.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 215373,
+      "sha256": "ace799b2ca2e0d01bb6199a91f87a38e6025d56b16d1717cf4636de1bd402bd9"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/23808-24063.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/23808-24063.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 216638,
+      "sha256": "16b2dc37ea167c1c72a05c68315225dbd498eb6b8323b4fee1fd30686750e06e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/24064-24319.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/24064-24319.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 220432,
+      "sha256": "2e54285d533c4b44e3fab210858866538666faa643d51d7aaaff9478787bcb5a"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/25088-25343.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/25088-25343.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 223555,
+      "sha256": "5ba030b5552f290aa6948474d1e2928ba005c74032d17f4ce004905e0fceb587"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/25344-25599.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/25344-25599.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225744,
+      "sha256": "9bc0e0fa7b257f6071365ead06b90c58245a99d0270d9da47e2ab19eb02f413a"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/25856-26111.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/25856-26111.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222952,
+      "sha256": "8c37f9bf71498d5c9a7f913f15eac846561f1d8c0ebb3d3f53242d7bfbe9ec32"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/26112-26367.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/26112-26367.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 214202,
+      "sha256": "16f48a1b5618317be71a1aacd046bbba699a8823f8d2bcfa0cea44dfa2f5ec63"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/26368-26623.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/26368-26623.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 224474,
+      "sha256": "e3c8762fe2b0f91dacb0a2074151a2751287a8a5352ade21974c3eea99e7c879"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/26624-26879.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/26624-26879.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 226728,
+      "sha256": "436959430560018d17268f6361a238da43ff73824610e6fa954a3bfd0e25672c"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/27648-27903.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/27648-27903.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 217498,
+      "sha256": "594117e5a739159695a8870723f799840b8dcc13339db990946b3c760828d3db"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/27904-28159.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/27904-28159.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 218028,
+      "sha256": "92b901279d8d2bad4c480287bf21135e59a53653b607320c261abbb239955541"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/28160-28415.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/28160-28415.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 218836,
+      "sha256": "ec7a3e73bd3b8b2d5fb69c1beda977235cba48bcbbec5348670da19d5ab748e4"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/29440-29695.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/29440-29695.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222529,
+      "sha256": "9ed666e7aff52d1d9f2652aa83e619e414dd26d52de853cb5bee79452a225604"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/29952-30207.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/29952-30207.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 219953,
+      "sha256": "00d6067cbdc74e8c121c698a8dffd8e8f2524d4135ac6dfbd756377369b87fcb"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/30208-30463.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/30208-30463.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 221825,
+      "sha256": "efee9d57248308c21a2b1dc233706f0dc103b42782442ed29002420b0fc5db79"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/30464-30719.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/30464-30719.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 216213,
+      "sha256": "ad375127a3396c6ee4a80fd5ad5f760d2ea11ba4ab0ab0f023d42c701b5929c1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/32256-32511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/32256-32511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225270,
+      "sha256": "e26594ed62b792cdfb83a2ee2fa385a0675974605ca8349417fd3935477e8154"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/33024-33279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/33024-33279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222748,
+      "sha256": "0b163da313dc43bfc3b7ec72eb7b18fdbf8b463c3c1bddb9d12a93fc962c3879"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/33280-33535.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/33280-33535.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 220398,
+      "sha256": "04542b52147c488b4b28d95179032e03880dc7e4f471d96847b0cb18cd7cbafc"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/33792-34047.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/33792-34047.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 219348,
+      "sha256": "6e03bba5787735bce91c4c40bfe6e7a2e8fd965c2ea905bd8786d13d5e75d570"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/34048-34303.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/34048-34303.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 220254,
+      "sha256": "8008908c0d5c4df1d8abbdc3d94a9506662803665bb051fdf092a31075355d5d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/35072-35327.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/35072-35327.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 223959,
+      "sha256": "d225bcd77e39cf5d5270fce32d80bb03ec6b4e09747c163e144551be1f95323b"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/36096-36351.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/36096-36351.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 224050,
+      "sha256": "bf4702332c1f61aacddaa6b83ac1abae4aff901ab3eda5b52059e9ff9a289972"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/37120-37375.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/37120-37375.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 219435,
+      "sha256": "649a77ce0e7697a51aebae783d2b634d9fd0cf7765f6bc933099641a9852125d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/38144-38399.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/38144-38399.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 210597,
+      "sha256": "adc27de78aeaff8c14e1030d0a04572dd71a62e88166c31df8b981fd96255675"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/38400-38655.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/38400-38655.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 212119,
+      "sha256": "407f98f9ed3369c673cd4d868a57ca9dfe806de5d87b5fa09c26b06695d87126"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/38656-38911.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/38656-38911.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 216743,
+      "sha256": "5912ae42785351b70078ab2731e26716bbb863c0347a5b8e3b625afc18bba3b6"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/39936-40191.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/39936-40191.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225647,
+      "sha256": "654dda2c3ee0fda28b45157366fb752bf5820e52b22478d480defbd7aa05cee8"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/40448-40703.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/40448-40703.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 221709,
+      "sha256": "c6bd922166502c903e5523787f9b55215380223360f43e233bb6d3305fde6089"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/40704-40959.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/40704-40959.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 205298,
+      "sha256": "f4aee74f3493d5192f0766fc6f59be038015f5766d29f6b5bf70cc5a4c2a13c9"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/64256-64511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/64256-64511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 113520,
+      "sha256": "e88b20b903efebf6407bbf8b90c36e29e4166e3ce9389599192a4a022df2d7aa"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_regular/65024-65279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_regular/65024-65279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 95798,
+      "sha256": "83d2fa3438ba876ace7dd5248a14ca7cf52fee0b660f8fe9c000f7eb38534728"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/0-255.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/0-255.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 88670,
+      "sha256": "343122a35639e017b21e5631fc9da88a1f8f9437fbe695686ae3c70f40111404"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/256-511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/256-511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 147005,
+      "sha256": "fd3734aa5b90a20e5a8e1fa601b1e7120daa7187967f64059b525ad208f74b73"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/512-767.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/512-767.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 110424,
+      "sha256": "c5202c4e40ce9209517a87cb1581c4f5f7d373a22de6a8ade76d33a084284eb5"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/768-1023.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/768-1023.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 82943,
+      "sha256": "0fc24301afbc788b479a0686061471d37ba58aeb93b890fca4d01298109a08f8"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/1024-1279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/1024-1279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 145490,
+      "sha256": "9b75134526e1b0b07947da1e17bc5069d1a1525be42030b46ce9e2de7bd58304"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/1280-1535.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/1280-1535.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 99380,
+      "sha256": "e1e48f38718e01ad488e818b10cb8238e4cfcfaf72f8497bd86038d7b53b90ed"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/1536-1791.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/1536-1791.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 137432,
+      "sha256": "9b23a38650ab1deba305fac21bcc19b4c4b3ebe268bb2e7854bcd0cf9ed21c5d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/1792-2047.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/1792-2047.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 36494,
+      "sha256": "e4e5767c5191fb762a25726690033a35f59a4a7bca5a49343683429a1ef50eb6"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/2304-2559.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/2304-2559.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 114376,
+      "sha256": "986256ff9bdce2c0dca1aff4ecc5923336ac85439f15688f254c86216fc6b88e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/3840-4095.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/3840-4095.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 29,
+      "sha256": "a002622a022cb6a8e9c5c736b43e62fc94b23abe840d59655d1ca83d6443ed2f"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/4096-4351.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/4096-4351.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 140203,
+      "sha256": "7bb08e52a6d36720d99b01e281a3c362e9851a4c96125404b606afc7fa08cc0e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/4608-4863.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/4608-4863.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 147352,
+      "sha256": "aa71481038f6d10e5709f1e778cc6faa39bed67886307f9f0e849777e037571f"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/4864-5119.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/4864-5119.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 87238,
+      "sha256": "d6e06f3dccfad043b1308330e85db057e5957c0725b5efcd5c080e413405b6e1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/5120-5375.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/5120-5375.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 29,
+      "sha256": "e3853d1e8642b52ac97cdc557ee7923eb58884833fea210eb8d0f1fe32956562"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/5376-5631.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/5376-5631.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 29,
+      "sha256": "7657c6d2742153136c524c1909ec02cec153f51da8255fd302e7d7dfaecbdbed"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/6144-6399.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/6144-6399.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 29,
+      "sha256": "83fe6fc3ed501edf82cc0012176553a2c64fe8bea7038fa0a46141ac7d04ebcc"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/7680-7935.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/7680-7935.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 157072,
+      "sha256": "930fd5d5bf79847536e03edbc68ba0b83817d4c21f105b0f15313bb7ce5e2ed8"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/7936-8191.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/7936-8191.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 148124,
+      "sha256": "c9154be01f9ef4219da6528c188b96f22d34106c7cca3f05b2a7f15c077d4c1b"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/8192-8447.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/8192-8447.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 63156,
+      "sha256": "76c31939ecdd84de8cf447e10d4533cc655a98a63bc58b288530f47ac21403a1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/8448-8703.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/8448-8703.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 90319,
+      "sha256": "bab1a709618f0e2ba66b7d30dfab6220d2db9731ca137583bb734daac911d39f"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/11520-11775.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/11520-11775.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 83477,
+      "sha256": "c919df59874c43927bbb0812f327d1b7e717f727a78a4e608808c23689d928d2"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/19968-20223.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/19968-20223.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 217833,
+      "sha256": "9c1f1fae736bd7d90b7c11fb324451b783b60f48db4b6e4e674af379af56ca39"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/20224-20479.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/20224-20479.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 234413,
+      "sha256": "297eb1d4a1a92eb84e53be8e3733ca14ebb25731a519b61b821182a5ab9f4ce5"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/20736-20991.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/20736-20991.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 227314,
+      "sha256": "f2d82b83a2c55265ba5f2bac29bc2f534665dc924006c8dfffd1bda2f65e794c"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/21248-21503.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/21248-21503.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 221258,
+      "sha256": "623b6ad44f02100fb32420e92072e4263a0083b047f9c984a548f7c7860e6a5d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/21504-21759.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/21504-21759.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222620,
+      "sha256": "fb5750228bb9a31df01b0a1ec10c167064215f62d0c963348823765881f9cc35"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/22016-22271.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/22016-22271.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222796,
+      "sha256": "b207c3a813647a4690bc8b964b3bf8c07010ba4177dd6e08b2fea04b628d1aaf"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/22272-22527.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/22272-22527.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 228015,
+      "sha256": "518d275795d47bcd0c5b9d2265666dcdb2aac0a5191e47b4479db3af8bacafd8"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/22784-23039.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/22784-23039.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233008,
+      "sha256": "8a4fc92c0e3008d96290daf14a60f65aff6d66d3c609fb2184c3bab105c96bbd"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/23296-23551.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/23296-23551.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 228634,
+      "sha256": "8d0b2784d175f6ef65289ebfd9fdc77555c5201de43660aabbfd8923b80b4812"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/23552-23807.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/23552-23807.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225632,
+      "sha256": "1976fa7c914eb69d8c2f9c76d2481996bb1762ac84dfe052f7d13720f87e48e1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/23808-24063.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/23808-24063.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 226051,
+      "sha256": "ecf286d014c7950d2079b911e535662de07e430fe2400fe70752745b912ff41f"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/24064-24319.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/24064-24319.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 230080,
+      "sha256": "a1aa749487b5f410b65b410ad691b87d9fcdc6d8ad89f1341b155937eba250c2"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/25088-25343.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/25088-25343.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 232336,
+      "sha256": "a9dabef2fca22ed6057f28991705bc2e56e1d7c38e724e9705547007c9b9cc5b"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/25344-25599.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/25344-25599.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233577,
+      "sha256": "a2fbfc97365f4319bfc4bcf5da5b8567d7721c78c3bcad5d3f625956fcc4819d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/25856-26111.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/25856-26111.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 232180,
+      "sha256": "fd6e26d450afd63475445f1d9bddfa4a1aece00267769c6685d86fe9b9f6f2e2"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/26112-26367.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/26112-26367.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 223032,
+      "sha256": "231944432cdf50ec2609f81a45544b19fefb4c9bd146806ea30e5cac0bc4f905"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/26368-26623.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/26368-26623.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233019,
+      "sha256": "eecc0485296aea472188dfc630ae68babf68cc3cf9c1ddbad72461070f2de4e1"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/26624-26879.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/26624-26879.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 234593,
+      "sha256": "3d43af07aec59e22f6c51c384a31ac541737137d8aacee2e8dbd22a2b4331840"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/27648-27903.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/27648-27903.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 231604,
+      "sha256": "218e59c6567bfbcc01a2c2a2ad1c722b3c9127f13dd97c6c770c6da5268e0887"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/27904-28159.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/27904-28159.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233335,
+      "sha256": "2058f531013b29b9529e1e98d6a60b6f4fe5fbd7e0ef5f3c9f016de0116dfdb9"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/28160-28415.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/28160-28415.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233486,
+      "sha256": "749dab5ba748a824a85e4e366c56d6afbcc3e1cdadd5c6ec8c68209d75591232"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/29440-29695.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/29440-29695.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 231381,
+      "sha256": "8c4b3313b043f1e5e28921701206ec1c6167262aba0c9b80265ab957e99f087d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/29952-30207.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/29952-30207.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 228954,
+      "sha256": "b209e8bb84d190fa3f52d933f9dff3e5111b5eb066f186f484c2873277082427"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/30208-30463.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/30208-30463.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 229471,
+      "sha256": "91494e98d5f6b5e50028884c68acf4113a56b287d6301030b0bfbf1a82b09e2f"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/30464-30719.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/30464-30719.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225370,
+      "sha256": "e7be88e6e75a901c817749fb0eb6e56193fb7b6be0d0bbb79c4bb20ccca07cc7"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/32256-32511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/32256-32511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233227,
+      "sha256": "c1869b27c2af84cc35aa4c8fbfdcf2016240aaf4c1fcfc0b359ab67ffc2543c2"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/33024-33279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/33024-33279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 231711,
+      "sha256": "0e4c0ceba7945285343748d4d5c92b8d8df145839a5323fd43d4f14629a5625b"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/33280-33535.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/33280-33535.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 229041,
+      "sha256": "fb5f44113016f68357da25dd981066c4f7b73c456e59e89786b47eef5f2fdb4b"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/33792-34047.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/33792-34047.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 229036,
+      "sha256": "e77597739f98526a0265e1a533aeaa5809d76d71ef4064cc89181bd5ebe848bb"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/34048-34303.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/34048-34303.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 230435,
+      "sha256": "f7ebdffb864cee8d17bf41c4aa5b348d587426e391466c52f141f0d7e47fa373"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/35072-35327.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/35072-35327.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 232500,
+      "sha256": "dbf281b976d425f77d9b15a1bd002a39f74649c3d9e3e0f5423e5aeaeb18158d"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/36096-36351.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/36096-36351.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 232449,
+      "sha256": "c478d1e99371e42abf7697f3ca7a23a44458ad8901a229d2678c6f88045ae35c"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/37120-37375.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/37120-37375.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 228126,
+      "sha256": "f89f6e3bf5e7ee6143a2dfae92ebb17df7cd168ec98bfa63d3e9bd6872ff718e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/38144-38399.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/38144-38399.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 222553,
+      "sha256": "ba1ddbea42321bb8138c193775564ab160231de0d39c1489ab21fb8494b733f9"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/38400-38655.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/38400-38655.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 225236,
+      "sha256": "6af079b92a63fd21efa8b9cc0bac6cb1970801da28ddbc381d67c7a8c2b0ddbe"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/38656-38911.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/38656-38911.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 229044,
+      "sha256": "74c7aaaabc032214825e356eb499404e71e53bf6e44bde4331fc40919473bb4e"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/39936-40191.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/39936-40191.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 233671,
+      "sha256": "b2b6db0b3073b335cfdc39d49dd986cf0bd8eacaa71f7c2a4f16421e479558a3"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/40448-40703.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/40448-40703.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 231447,
+      "sha256": "f51b1e5fb8992f24fbd7e11d1b2f2c50988290d26a3112bf91b1406ade100037"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/40704-40959.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/40704-40959.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 214441,
+      "sha256": "e739678040704313e7eef3d36defe8d49bd44393a609dc364fd0f12e860af477"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/64256-64511.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/64256-64511.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 129154,
+      "sha256": "b58d23af477f8aaf3b8b1b0abfc70491c8f56f40155b3ba589c9e835e1963420"
+    },
+    {
+      "role": "glyph",
+      "path": "glyphs/noto_sans_bold/65024-65279.pbf",
+      "url": "https://assets.festapp.net/festivalslunovrat/v1/glyphs/noto_sans_bold/65024-65279.pbf",
+      "content_type": "application/x-protobuf",
+      "bytes": 107943,
+      "sha256": "ca3978b559415307c7af2745ef7334c6fe6f671760f535cf331fc797474d21e2"
+    }
+  ],
+  "manifest_note": "The manifest cannot contain its own SHA-256; record it in the rollout log."
+}
