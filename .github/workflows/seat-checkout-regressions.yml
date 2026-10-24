@@ -57,7 +57,7 @@ jobs:
           node-version: '22'
           cache: pnpm
           cache-dependency-path: web_client/pnpm-lock.yaml
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.111.0
       - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
