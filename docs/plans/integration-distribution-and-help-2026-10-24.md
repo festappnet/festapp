@@ -1,7 +1,7 @@
 # Další integrační kanály a veřejná nápověda vstupenky.online
 
 Datum: 2026-10-24
-Stav: doporučení k rozhodnutí; další platforma není schválena k implementaci.
+Stav: veřejná nápověda a Wix release kit implementovány k review; produkční nasazení nápovědy a veřejné Wix podání dosud neproběhly.
 
 ## Požadavek uživatele
 
@@ -77,8 +77,8 @@ Rozsáhlejší návody pro platby, vstupenky a odbavení rozšiřovat podle podp
 
 Nejdříve navrhnout a vytvořit veřejný rozcestník a ověřené WordPress/HTML návody.
 Poté provést omezený průzkum Wix distribuce a widgetu, před plnou implementací
-zhodnotit oslovené pořadatele a odlišení od Wix Events. Uživatel zatím nezadal
-vývoj ani publikaci dalšího marketplace doplňku.
+zhodnotit oslovené pořadatele a odlišení od Wix Events. V původním rozhodování ještě nebyl zadán vývoj dalšího marketplace doplňku;
+navazující autorizace a výsledek jsou uvedeny níže.
 
 ## Upřesnění zadání: námaha 0 Kč a platba za prodané vstupenky
 
@@ -150,3 +150,24 @@ písemné potvrzení konkrétního modelu, nevyvozovat je jen z označení free 
 4. Shoptet: posunout výše po přijatelné smluvní nabídce pro český trh.
 5. Shopify: samostatný model nativního prodeje přes Shopify checkout; současnou
    externí checkout obálku nepublikovat jako automaticky přípustnou aplikaci.
+
+## Potvrzená etapa a stav implementace
+
+Uživatel následně výslovně zadal veřejnou dokumentaci a obecné vložení,
+Webnode kvůli dohledatelnosti, WordPress s doplňkem i bez něj a paralelní
+přípravu Wix vydání subagentem.
+
+Připraveno šest veřejných stránek pod `/napoveda/`, HTML generátor s validací
+odkazu a automatickou/pevnou výškou, přesný WordPress ZIP, SEO metadata,
+sitemap a navigace. Zdroj: `automation/release/help/`. Webové a cílené
+automatizované kontroly prošly; 320px světlý a desktopový tmavý vzhled byly
+ověřeny v izolovaném prohlížeči. Generátor nenačítá checkout.
+
+Subagent dodal `integrations/wix/`: self-managed Site Widget (Custom Element),
+settings panel s pinned Wix SDK a explicitní release gate. Sedm testů a build
+prošly. Veřejné vydání čeká na skutečná Wix ID, hosting, písemné schválení
+platebního modelu a ověření v reálných editorech. Nebyla přijata smlouva ani
+odesláno veřejné podání.
+
+Změny jsou připravené v PR https://github.com/festappnet/festapp/pull/587.
+Main vyžaduje schvalující review; produkční nasazení této etapy dosud neproběhlo.
