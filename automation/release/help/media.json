@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cs/webnode/01-add-html",
+    "file": "cs/webnode/01-add-html.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-24",
+    "source": "Webnode editor, isolated synthetic project",
+    "width": 1440,
+    "height": 1000,
+    "alt": "Editor Webnode s otevřenou nabídkou Přidat obsah. Ve spodní řadě je zvýrazněná položka HTML.",
+    "caption": "V nabídce Přidat obsah vyberte HTML. Pokud spodní řadu nevidíte, posuňte nabídku dolů. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek: výběr HTML ve Webnode (nová karta)"
+  },
+  {
+    "id": "cs/webnode/02-premium-required",
+    "file": "cs/webnode/02-premium-required.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-24",
+    "source": "Webnode editor, free project created on capture date",
+    "width": 1440,
+    "height": 1000,
+    "alt": "Webnode po výběru HTML zobrazí výzvu k aktivaci Prémiových služeb s tlačítky Zakoupit služby a Zavřít.",
+    "caption": "Takto vypadá omezení HTML v novém bezplatném projektu. Ověřeno 24. října 2026. Kliknutím obrázek zvětšíte.",
+    "openLabel": "Zvětšit snímek: požadavek Premium ve Webnode (nová karta)"
+  }
+]

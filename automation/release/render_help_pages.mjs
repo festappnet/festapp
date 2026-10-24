@@ -21,6 +21,15 @@ const origin = new URL(value('WEB_LINK')).origin;
 const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const digest = data => createHash('sha256').update(data).digest('hex').slice(0, 12);
 const assets = {};
+const media = JSON.parse(fs.readFileSync(path.join(directory, 'media.json'), 'utf8'));
+const figures = new Map(media.map(item => {
+  if (!/^[a-z0-9/-]+$/.test(item.id) || !/^[a-z0-9/-]+\.png$/.test(item.file)) throw new Error('Invalid help media path');
+  const data = fs.readFileSync(path.join(directory, 'media', item.file));
+  const name = `${item.id.replaceAll('/', '-')}.${digest(data)}.png`;
+  assets[name] = data;
+  const href = `/napoveda/assets/${name}`;
+  return [item.id, `<figure class="guide-screenshot"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
+}));
 let fontFaces = '';
 for (const [file,weight] of [['FuturaPTBook.ttf',400],['FuturaPTMedium.ttf',500]]) {
   const data = fs.readFileSync(path.join(root, 'web_client/src/assets/fonts', file));
@@ -42,7 +51,10 @@ const generator = fs.readFileSync(path.join(directory, 'embed-generator.html'), 
 const navigation = current => pages.map(page => `<li><a href="/napoveda/${page.slug ? page.slug + '/' : ''}"${page.slug === current ? ' aria-current="page"' : ''}>${escape(page.label)}</a></li>`).join('');
 for (const page of pages) {
   const canonical = `${origin}/napoveda/${page.slug ? page.slug + '/' : ''}`;
-  const body = fs.readFileSync(path.join(directory, `${page.slug || 'index'}.html`), 'utf8').replace('{{EMBED_GENERATOR}}', generator).replaceAll('vstupenky-online-1.0.0.zip', zipName).replaceAll('vstupenky.online 1.0.0', `vstupenky.online ${product.version}`);
+  const body = fs.readFileSync(path.join(directory, `${page.slug || 'index'}.html`), 'utf8').replace('{{EMBED_GENERATOR}}', generator).replace(/\{\{MEDIA:([a-z0-9/-]+)\}\}/g, (_, id) => {
+    if (!figures.has(id)) throw new Error(`Missing help screenshot: ${id}`);
+    return figures.get(id);
+  }).replaceAll('vstupenky-online-1.0.0.zip', zipName).replaceAll('vstupenky.online 1.0.0', `vstupenky.online ${product.version}`);
   const toc = [...body.matchAll(/<h2 id="([^"]+)">([^<]+)<\/h2>/g)].map(([,id,label]) => `<li><a href="#${id}">${label}</a></li>`).join('');
   const structured = {'@context':'https://schema.org','@type':page.slug ? 'TechArticle' : 'CollectionPage',headline:page.title,description:page.description,url:canonical,inLanguage:'cs-CZ',isPartOf:{'@type':'WebSite',name:'vstupenky.online',url:origin+'/'}};
   const json = JSON.stringify(structured).replace(/</g,'\\u003c');

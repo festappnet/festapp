@@ -7,3 +7,5 @@
 @media(max-width:380px){.help-header{padding-inline:18px;gap:12px}.help-header .brand{font-size:22px}.help-layout{padding-inline:18px}h1{font-size:34px}.embed-generator{padding:18px}body{font-size:19px}.help-header nav{font-size:15px}}
 @media(prefers-color-scheme:dark){:root{--ink:#e5ecf7;--muted:#afbdd0;--paper:#252e3d;--surface:#19212d;--line:#46566d;--accent:#9bc8f7;--chrome:#111925}.embed-generator button{color:#152137}.embed-generator [data-url-error]{color:#ffb4ab}.embed-generator input[aria-invalid=true]{border-color:#ffb4ab}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* Screenshots retain the editor's actual appearance and open at full size. */
+.guide-screenshot{margin:2rem 0;max-width:100%}.guide-screenshot a{display:block}.guide-screenshot img{display:block;width:100%;height:auto;border:1px solid #8792a6;border-radius:8px}.guide-screenshot figcaption{margin-top:.65rem;font-size:.9em;line-height:1.5}

@@ -35,3 +35,18 @@ node automation/release/render_help_pages.mjs --output /tmp/help-preview/napoved
 The output must be a dedicated directory named `napoveda`; the renderer owns
 and recreates that directory. Site-root URLs in this production-shaped output
 need conversion to local file URLs for browsing directly from disk.
+
+## Webnode capture status (2026-10-24)
+
+A new free test account/project was created with synthetic content. Credentials
+are in the encrypted agent-browser profile `festapp-webnode-help`; project/session
+metadata are local-only under `.private/webnode/` (never commit these files).
+The project has not been published and no paid service was purchased.
+
+`media.json` records real Czech screenshots, dates, dimensions and accessible
+text. The renderer copies their content-addressed files into both help outputs.
+The new project's HTML action requires Premium. The package selection page
+offered purchases; no free activation was found. Consequently the HTML paste,
+script preservation, automatic height and live published result are still
+unverified on Webnode. Do not describe the integration as end-to-end verified
+until a suitable Premium test project is available.
