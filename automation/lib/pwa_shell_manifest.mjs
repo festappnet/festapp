@@ -14,6 +14,10 @@ const excludedNames = new Set([
 ]);
 
 export function shouldPrecache(relativePath) {
+  // The vendored editor ships optional standalone example resources. Festapp
+  // supplies its own layout resources and never loads this fixture bundle.
+  // Keep it available online without spending users' offline cache budget.
+  if (relativePath === 'assets/packages/venue_seat_picker/assets/layout_fonts/fixtures.json') return false;
   // Marketing demonstrations are streamed, not part of the offline app.
   if (relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
   const name = path.posix.basename(relativePath);
