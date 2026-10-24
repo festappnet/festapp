@@ -28,6 +28,10 @@ class OrderEmailIssue {
   String get kind => data['kind'].toString();
   String get state => data['state'].toString();
   String get originalRecipient => data['original_recipient']?.toString() ?? '';
+  String get recipient {
+    final current = data['recipient']?.toString().trim() ?? '';
+    return current.isNotEmpty ? current : originalRecipient.trim();
+  }
   bool get uncertain => state == 'unknown' || state == 'sending';
   bool get isFailure =>
       const {
@@ -69,13 +73,16 @@ class OrderEmailIssue {
       data['obsolete'] != true &&
       data['resolution'] != 'cancelled' &&
       data['resolution'] != 'waiting_repair';
-  String get description {
+  String get description => _description();
+  String get tooltipDescription => _description(includeRecipient: true);
+
+  String _description({bool includeRecipient = false}) {
     final status = switch (data['resolution']) {
       'cancelled' => EmailDeliveryStrings.recovery('cancelled'),
       'waiting_repair' => EmailDeliveryStrings.recovery('waiting'),
       'stale_delivery' => EmailDeliveryStrings.recovery('staleDelivery'),
       _ => EmailDeliveryStrings.state(state),
     };
-    return '${EmailDeliveryStrings.kind(kind)}: $status';
+    return '${EmailDeliveryStrings.kind(kind)}${!includeRecipient || recipient.isEmpty ? '' : ' ($recipient)'}: $status';
   }
 }
