@@ -193,7 +193,7 @@ void main() {
         expect(html, contains(places));
         expect(html.replaceAll('\u00a0', ' '), contains('29. 3. 2026 3:30'));
         expect(html, contains('white-space:nowrap'));
-        expect(html, contains('29.\u00a03.\u00a02026\u00a003:30'));
+        expect(html, contains('29.\u00a03.\u00a02026\u00a03:30'));
         expect(html, contains('Festival &lt;test&gt;'));
         expect(html, isNot(contains('Europe')));
         expect(html, isNot(contains('UTC')));
