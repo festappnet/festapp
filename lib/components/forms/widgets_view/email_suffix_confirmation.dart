@@ -107,23 +107,21 @@ class _EmailSuffixFieldState extends State<EmailSuffixField> {
             EmailDomainSuffix.classify(value).suffix,
             informal: widget.informal)
         : '';
-    return Focus(
-      onFocusChange: (focused) {
-        if (!focused && mounted && !confirmation.visible) {
-          setState(() => confirmation.visible = true);
-        }
-      },
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Semantics(hint: warning, child: widget.child),
-        if (show) ...[
-          Semantics(liveRegion: true, child: Text(warning)),
-          TextButton(
-            focusNode: _confirmFocus,
-            onPressed: () => setState(confirmation.confirm),
-            child: Text(FormStrings.emailSuffixConfirm),
-          ),
-        ],
-      ]),
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Focus(
+        onFocusChange: (focused) {
+          if (mounted) setState(() => confirmation.visible = !focused);
+        },
+        child: Semantics(hint: warning, child: widget.child),
+      ),
+      if (show) ...[
+        Semantics(liveRegion: true, child: Text(warning)),
+        TextButton(
+          focusNode: _confirmFocus,
+          onPressed: () => setState(confirmation.confirm),
+          child: Text(FormStrings.emailSuffixConfirm),
+        ),
+      ],
+    ]);
   }
 }

@@ -37,6 +37,10 @@ test('blur, correction, explicit confirmation, rerender, edit and one ordinary s
     assert.equal(warning(f.input()).hidden, true);
     f.input().dispatchEvent(new dom.window.Event('blur'));
     assert.equal(warning(f.input()).hidden, false);
+    type(f.input(), 'a@example.czzz');
+    assert.equal(warning(f.input()).hidden, true, 'editing hides an earlier suffix warning');
+    f.input().dispatchEvent(new dom.window.Event('blur'));
+    assert.equal(warning(f.input()).hidden, false);
     type(f.input(), 'a@example.cz');
     assert.equal(warning(f.input()).hidden, true);
     type(f.input(), 'a@example.czz');
@@ -121,6 +125,11 @@ test('invalid contact syntax appears on blur and clears after correction', () =>
     assert.equal(f.input().classList.contains('invalid'), false);
     f.input().dispatchEvent(new dom.window.Event('blur'));
     assert.equal(f.input().classList.contains('invalid'), true);
+    type(f.input(), 'bujnmi@c');
+    assert.equal(f.input().classList.contains('invalid'), false, 'hide the previous error while editing');
+    assert.deepEqual(f.session.state.validationErrors, {});
+    f.input().dispatchEvent(new dom.window.Event('blur'));
+    assert.equal(f.input().classList.contains('invalid'), true, 'revalidate only after leaving again');
     type(f.input(), 'customer@example.co');
     assert.equal(f.input().classList.contains('invalid'), false);
     f.submit();

@@ -65,7 +65,12 @@ export class EmailSuffixConfirmation {
     static install(form, states, session, syntaxValid) {
         const refreshAll = () => form.querySelectorAll('input[type="email"]').forEach(input => this.refresh(input, states, session, false, syntaxValid));
         for (const event of ['input', 'change', 'blur']) form.addEventListener(event, e => {
-            if (e.target.type === 'email') this.refresh(e.target, states, session, event === 'blur', syntaxValid);
+            if (e.target.type !== 'email') return;
+            if (event !== 'blur') {
+                const state = states.get(this.key(e.target, session));
+                if (state) state.visible = false;
+            }
+            this.refresh(e.target, states, session, event === 'blur', syntaxValid);
         }, event === 'blur');
         refreshAll();
         // Ticket widgets can replace controls while the enclosing session survives.

@@ -20,6 +20,29 @@ void main() {
               as Map<String, dynamic>));
 
   for (final card in [false, true]) {
+    testWidgets('design $card: email errors wait for blur, including corrections', (tester) async {
+      final key = GlobalKey<_HarnessState>();
+      await environment.pumpWidget(tester,
+          MaterialApp(home: _Harness(key: key, card: card, tickets: true)));
+      final inputs = find.byType(TextField);
+      final error = find.text(FormHelper.emailInvalidMessage());
+      await tester.enterText(inputs.at(0), 'bujnmi@co');
+      await tester.pumpAndSettle();
+      expect(error, findsNothing);
+      await tester.tap(inputs.at(1));
+      await tester.pumpAndSettle();
+      expect(error, findsOneWidget);
+      await tester.enterText(inputs.at(0), 'bujnmi@c');
+      await tester.pumpAndSettle();
+      expect(error, findsNothing);
+      await tester.tap(inputs.at(1));
+      await tester.pumpAndSettle();
+      expect(error, findsOneWidget);
+      await tester.enterText(inputs.at(0), 'bujnmi@example.co');
+      await tester.tap(inputs.at(1));
+      await tester.pumpAndSettle();
+      expect(error, findsNothing);
+    });
     testWidgets(
         'design $card: blur, correction, per-ticket confirmation, rerender, edit and submit',
         (tester) async {
@@ -28,6 +51,12 @@ void main() {
           MaterialApp(home: _Harness(key: key, card: card, tickets: true)));
       final inputs = find.byType(TextField);
       await tester.enterText(inputs.at(0), 'a@example.czz');
+      expect(find.text(FormStrings.emailSuffixConfirm), findsNothing);
+      await tester.tap(inputs.at(1));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.emailSuffixConfirm), findsOneWidget);
+      await tester.enterText(inputs.at(0), 'a@example.czzz');
+      await tester.pumpAndSettle();
       expect(find.text(FormStrings.emailSuffixConfirm), findsNothing);
       await tester.tap(inputs.at(1));
       await tester.pumpAndSettle();

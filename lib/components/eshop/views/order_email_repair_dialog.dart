@@ -39,6 +39,8 @@ class OrderEmailRepairDialog extends StatefulWidget {
 
 class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   final _email = TextEditingController();
+  final _emailFocus = FocusNode();
+  bool _emailTouched = false;
   late final OrderCommands _commands =
       widget.commands ?? SupabaseOrderCommands(Supabase.instance.client);
   Map<String, dynamic>? _order, _summary;
@@ -57,6 +59,11 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   void initState() {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
+    _emailFocus.addListener(() {
+      if (mounted) setState(() {
+        if (!_emailFocus.hasFocus) _emailTouched = true;
+      });
+    });
     _load();
   }
 
@@ -72,6 +79,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
     _generation++;
+    _emailFocus.dispose();
     _email.dispose();
     super.dispose();
   }
@@ -287,13 +295,16 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                 if (writable) ...[
                   TextField(
                     controller: _email,
+                    focusNode: _emailFocus,
                     onChanged: (_) => setState(() {}),
                     enabled: !_busy,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: t('email'),
                       helperText: t('emailHint'),
-                      errorText: EmailAddress.isValid(_email.text.trim()) ? null : CommonStrings.invalidFormat,
+                      errorText: _emailTouched && !_emailFocus.hasFocus &&
+                              !EmailAddress.isValid(_email.text.trim())
+                          ? CommonStrings.invalidFormat : null,
                       helperMaxLines: 4,
                     ),
                   ),
