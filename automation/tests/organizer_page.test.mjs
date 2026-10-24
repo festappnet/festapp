@@ -30,8 +30,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(head.includes(`name="description" content="${seo.description}"`));
   assert.equal((head.match(/rel="canonical"/g) || []).length, 1);
   assert.ok(head.includes('max-image-preview:large'));
-  assert.ok(head.includes('FESTAPP_CLIENT_VERSION'));
-  assert.ok(head.includes('FESTAPP_REPORT_VERSION'));
+  assert.ok(!head.includes('FESTAPP_CLIENT_VERSION'),
+    'the network homepage must not pin shared imports to an older worker cache');
+  assert.ok(!head.includes('FESTAPP_REPORT_VERSION'));
   assert.ok(head.includes('https://vstupenky.online/organizers-media/organizers-social.png'));
   assert.ok(head.includes('og:image:width" content="1200"'));
   assert.ok(head.includes('name="twitter:card" content="summary_large_image"'));
