@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "We do not recognize the domain suffix .{suffix}. Check the email address.",
+    "warningInformal": "We do not recognize the domain suffix .{suffix}. Check your email address.",
+    "confirm": "The address is correct"
+  },
   "OrganizationVerification": {
     "sourceRequiredLabel": "Verification source (required to approve)",
     "sourceHelp": "Describe how you checked both the legal entity and the applicant’s authority to represent it. For example, compare details against a public register and check the applicant’s authorization. An ARES lookup alone is not enough.",

@@ -1,3 +1,4 @@
+import { EmailSuffixConfirmation } from './email_suffix_confirmation.js';
 import { FormStrings } from './form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { FormFieldBuilder } from './fields/form_field_builder.js';
@@ -39,6 +40,8 @@ export class FormRenderer {
             fieldsContainer.appendChild(fieldComponent);
         });
         
+        EmailSuffixConfirmation.install(form, session.emailSuffixConfirmations, session);
+
         // Bind Callbacks
         form.onsubmit = (e) => {
             e.preventDefault();

@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "Nie rozpoznajemy końcówki domeny .{suffix}. Prosimy sprawdzić adres e-mail.",
+    "warningInformal": "Nie rozpoznajemy końcówki domeny .{suffix}. Sprawdź adres e-mail.",
+    "confirm": "Adres jest poprawny"
+  },
   "FormsFeature": {
     "selectionOptionsRequired": "Dodaj co najmniej jedną niepustą opcję lub usuń to pole."
   },

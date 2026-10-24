@@ -200,7 +200,12 @@ class FormHelper {
 
     // If everything is valid, return true.
     if (mainFormValid && ticketsValid) {
-      return true;
+      return formHolder.emailSuffixConfirmations.validate([
+        formHolder.controller!.globalKey.currentState,
+        if (ticketHolder != null)
+          for (final ticket in ticketHolder.tickets)
+            ticket.ticketKey.currentState,
+      ]);
     }
 
     // Phase 2: Scroll to the first invalid field in the first invalid form.

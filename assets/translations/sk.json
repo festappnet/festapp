@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "Koncovku domény .{suffix} nepoznáme. Skontrolujte e-mailovú adresu.",
+    "warningInformal": "Koncovku domény .{suffix} nepoznáme. Skontroluj e-mailovú adresu.",
+    "confirm": "Adresa je správna"
+  },
   "FormsFeature": {
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
   },

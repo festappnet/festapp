@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "Die Domainendung .{suffix} ist uns unbekannt. Prüfen Sie die E-Mail-Adresse.",
+    "warningInformal": "Die Domainendung .{suffix} ist uns unbekannt. Prüfe deine E-Mail-Adresse.",
+    "confirm": "Die Adresse ist korrekt"
+  },
   "OrganizationVerification": {
     "sourceRequiredLabel": "Prüfquelle (für Genehmigung erforderlich)",
     "sourceHelp": "Beschreiben Sie, wie Sie die juristische Person und die Vertretungsberechtigung des Antragstellers geprüft haben. Zum Beispiel: Daten mit einem öffentlichen Register abgleichen und die Vollmacht prüfen. Eine ARES-Abfrage allein genügt nicht.",

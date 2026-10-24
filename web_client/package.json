@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node --test tests/**/*.test.js",
+    "test": "node ../automation/generate_email_tlds.mjs --check && node --test tests/**/*.test.js",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
     "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs",
     "test:form-access-browser": "node scripts/test_form_access_browser.mjs"

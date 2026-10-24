@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "Koncovku domény .{suffix} neznáme. Zkontrolujte e-mailovou adresu.",
+    "warningInformal": "Koncovku domény .{suffix} neznáme. Zkontroluj e-mailovou adresu.",
+    "confirm": "Adresa je správně"
+  },
   "OrganizationVerification": {
     "sourceRequiredLabel": "Zdroj ověření (povinné pro schválení)",
     "sourceHelp": "Popište, jak jste ověřili právní subjekt i oprávnění žadatele jej zastupovat. Např. porovnání údajů s veřejným rejstříkem a kontrola pověření žadatele. Samotné načtení z ARES nestačí.",

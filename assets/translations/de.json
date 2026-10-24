@@ -1,4 +1,9 @@
 {
+  "EmailDomainSuffix": {
+    "warning": "Die Domainendung .{suffix} ist uns unbekannt. Prüfen Sie die E-Mail-Adresse.",
+    "warningInformal": "Die Domainendung .{suffix} ist uns unbekannt. Prüfe deine E-Mail-Adresse.",
+    "confirm": "Die Adresse ist korrekt"
+  },
   "FormsFeature": {
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },
