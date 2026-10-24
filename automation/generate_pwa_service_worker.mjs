@@ -682,6 +682,24 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith((async () => {
+    // The online homepage can be newer than this installed app shell. Its
+    // account header imports shared chunks too, not just landing-*.js. Keep
+    // that entire graph outside version pinning and stale-module recovery.
+    // Resolve the actual client on each fetch so worker restarts are safe.
+    if (ORGANIZER_HOMEPAGE && url.pathname.startsWith('/web-assets/') && event.clientId) {
+      const client = await self.clients.get(event.clientId);
+      const page = client ? new URL(client.url) : null;
+      if (page?.origin === self.location.origin && page.pathname === '/' &&
+          !page.searchParams.has('q') && !page.searchParams.has('create') &&
+          !page.hash.startsWith('#/')) {
+        try { return await fetch(request); }
+        catch (_) {
+          // Offline / falls back to this worker's cached catalogue document.
+          const cache = await caches.open(CACHE_NAME);
+          return (await cache.match(request, { ignoreSearch: true })) || Response.error();
+        }
+      }
+    }
     // Navigation fetches create a new WindowClient. Browsers expose that new
     // identity as resultingClientId while clientId is commonly empty. Every
     // subsequent subresource request uses the resulting id, so record and

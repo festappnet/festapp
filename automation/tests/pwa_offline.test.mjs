@@ -120,6 +120,7 @@ try {
   let serverVersion = '1.2.3+5';
   let cachePutFails = false;
   let staleHttpExecutable = false;
+  let cachedMarketingModule = false;
   const cachedPuts = [];
   const deletedCaches = [];
   const openedCaches = [];
@@ -166,6 +167,9 @@ try {
       if (url === '/pro-poradatele') return new Response('<html>organizers</html>');
       if (url === '/privacy/') return cachedPrivacy.clone();
       if (url.includes('/assets/translation.json')) return new Response('{}');
+      if (cachedMarketingModule && url.includes('/web-assets/index.js')) {
+        return new Response('offline catalogue module');
+      }
       return undefined;
     },
   };
@@ -494,7 +498,7 @@ try {
   // may never have seen a navigation event (e.g. the HTML came from cache).
   // Execute the real HTML's classic bootstrap while its entry module waits.
   const resumedId = 'resumed-web-page';
-  const resumedClient = { id: resumedId, url: 'https://app.test/', postMessage() {} };
+  const resumedClient = { id: resumedId, url: 'https://app.test/events', postMessage() {} };
   clientsById.set(resumedId, resumedClient);
   const pendingWebModule = dispatchFetch(
     new Request('https://app.test/web-assets/index.js'), resumedId,
@@ -502,7 +506,7 @@ try {
   const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
     .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
   const resumedPage = new JSDOM(bootstrapHtml, {
-    url: 'https://app.test/',
+    url: 'https://app.test/events',
     runScripts: 'dangerously',
     beforeParse(window) {
       const serviceWorker = new window.EventTarget();
@@ -735,6 +739,43 @@ try {
   const marketingRoot = new Request('https://app.test/');
   Object.defineProperty(marketingRoot,'mode',{value:'navigate'});
   assert.equal(await (await dispatchFetch(marketingRoot,'','marketing-client')).text(),'<html>live organizers</html>');
+  const marketingClient = {
+    id: 'marketing-client',
+    url: 'https://app.test/',
+    postMessage: () => {},
+    navigate: async (url) => { navigatedClients.push(['marketing-client', url]); },
+  };
+  clientsById.set(marketingClient.id, marketingClient);
+  // The network homepage already belongs to the next deployment, while the
+  // installed worker still owns the previous app shell. Its shared account
+  // header imports must not send that homepage into a navigation loop.
+  await reportVersion(marketingClient, '1.2.3+5');
+  const navigationsBeforeMarketingImport = navigatedClients.length;
+  const marketingImport = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  );
+  assert.equal(navigatedClients.length, navigationsBeforeMarketingImport,
+    'a newer marketing module must not reload the network homepage');
+  assert.equal(await marketingImport.text(), 'web client bundle');
+  // A restarted worker must classify the page without an in-memory report.
+  vm.runInNewContext('clientVersions.clear(); clientCacheNames.clear();', context);
+  cachedMarketingModule = true;
+  assert.equal(await (await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  )).text(), 'web client bundle', 'online marketing must bypass cached app modules');
+  networkAvailable = false;
+  assert.equal(await (await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  )).text(), 'offline catalogue module', 'the offline root catalogue keeps its cached modules');
+  cachedMarketingModule = false;
+  networkAvailable = true;
+  // Other app pages still recover a missing old-generation module normally.
+  await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
+  const oldAppModule = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), 'older-open-tab',
+  );
+  assert.equal(oldAppModule.type, 'error');
+  assert.equal(navigatedClients.length, navigationsBeforeMarketingImport + 1);
   for (const target of ['/organizers-media/demo.mp4','/web-assets/landing-proof.js']) {
     assert.equal(await (await dispatchFetch(new Request('https://app.test'+target),'unreported-marketing-client')).text(),'streamed marketing');
     assert.ok(!cachedPuts.some(url=>url.includes(target)));
