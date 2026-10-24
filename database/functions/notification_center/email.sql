@@ -9,6 +9,15 @@ BEGIN
  p_at:=coalesce(p_at,clock_timestamp());
  SELECT * INTO a FROM public.notification_center_activation WHERE organization=m.organization FOR SHARE;
  IF NOT FOUND OR NOT a.enabled THEN RETURN; END IF;
+ -- Cancellation retires recovery of the original order messages. Provider
+ -- callbacks can arrive later; preserve their audit facts without re-alerting.
+ -- A failed cancellation notice is a separate, still relevant incident.
+ IF m.order_id IS NOT NULL AND m.message_kind<>'order_storno' AND EXISTS(
+  SELECT 1 FROM eshop.orders o WHERE o.id=m.order_id AND o.occasion=m.occasion AND o.state='storno') THEN
+  UPDATE public.notification_center_events SET status='recovered'
+   WHERE organization=m.organization AND source_key=key AND kind='email_problem';
+  RETURN;
+ END IF;
  reason:=public.email_reporting_state(m);
  SELECT * INTO old FROM public.notification_center_source_state WHERE organization=m.organization AND source_key=key FOR UPDATE;
  due_at:=coalesce((old.state->>'dueAt')::timestamptz,m.target_time);

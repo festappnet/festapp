@@ -31,7 +31,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
    FROM public.email_delivery_events e WHERE e.message_id=m.message_id) events ON true
   JOIN eshop.orders o ON o.id=m.order_id AND o.occasion=m.occasion
   JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization
-  WHERE m.order_id=p_order),
+  WHERE m.order_id=p_order AND o.state<>'storno'),
  chain AS (
   SELECT m.message_id root,m.message_id leaf,ARRAY[m.message_id] path FROM messages m
   WHERE NOT EXISTS(SELECT 1 FROM messages parent WHERE parent.message_id::text=m.data->>'repair_source_message_id' AND parent.message_kind=m.message_kind)
