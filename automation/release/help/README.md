@@ -1,5 +1,12 @@
 # Public Czech help
 
+This is the first content/UI prototype. The next scope decision is documented
+in `docs/plans/help-content-and-localization-2026-10-24.md`: integrations first,
+task-oriented basics, actual localized screenshots, a shared CZ/EN content
+model, and the same public header/footer/buttons as the main website. The
+current simplified help header/footer are not the final agreed site shell.
+Videos are a later phase. Confirm the outline before expanding the articles.
+
 Source content for `https://vstupenky.online/napoveda/`. `pages.json` owns the
 routes and SEO metadata; each route has an authored HTML body. Keep real UI
 names and external-platform instructions verified. The Wix-specific guide is
