@@ -140,7 +140,7 @@ void main() {
   });
 
   testWidgets(
-      'organization switch reloads grid and overview with the same scope',
+      'history loads only rows and organization switch preserves the selected scope',
       (tester) async {
     final calls = <Map<String, dynamic>>[];
     await tester.pumpWidget(MaterialApp(
@@ -151,17 +151,19 @@ void main() {
       organizationId: 2,
       read: (name, args) async {
         calls.add({'name': name, ...args});
-        return name == 'get_email_delivery_overview' ? <String, dynamic>{} : [];
+        expect(name, 'get_email_delivery_page');
+        return [];
       },
     ))));
     await tester.pumpAndSettle();
-    expect(calls.length, 2);
+    expect(calls.length, 1);
+    expect(find.textContaining('EmailDelivery.state.accepted:'), findsNothing);
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
-    expect(calls.length, 4);
+    expect(calls.length, 2);
     expect(
         calls
-            .skip(2)
+            .skip(1)
             .every((p) => p['p_occasion'] == null && p['p_organization'] == 2),
         isTrue);
   });

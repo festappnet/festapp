@@ -846,6 +846,13 @@
       "sources": [
         "test/components/blueprint/seat_order_commands_test.dart"
       ]
+    },
+    "test/components/eshop/ticket_batch_presentation_test.dart": {
+      "kind": "environment",
+      "reason": "Pregenerated ticket feature visibility, batch creation form selection and native grid rendering require Flutter widgets and a scoped Czech catalog.",
+      "sources": [
+        "test/components/eshop/ticket_batch_presentation_test.dart"
+      ]
     }
   }
 }

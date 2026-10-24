@@ -354,6 +354,8 @@
     "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Predgenerované vstupenky",
+    "pregeneratedTicketsDescription": "Umožní vytvárať dávky vstupeniek na tlač a ručný predaj.",
     "scanCameraInstruction": "Namierte kameru na kód účastníka na overenie vstupu.",
     "signedInCompanions": "Prihlásení spoločníci"
   },
@@ -2233,6 +2235,11 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "settingsEmpty": "Zatiaľ nie sú k dispozícii žiadne akcie.",
+    "groups": {"email_problem": "Doručovanie e-mailov", "bank_problem": "Bankové spojenie"},
+    "today": "Dnes",
+    "yesterday": "Včera",
+    "atTime": "{day} o {time}",
     "title": "Upozornenia",
     "unread": "Upozornenia - nové udalosti",
     "settings": "Nastavenia upozornení",

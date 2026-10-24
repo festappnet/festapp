@@ -134,6 +134,11 @@ class FeaturesStrings {
   static String get depositTitle => 'FeatureDeposit.title'.tr();
   static String get depositDescription => 'FeatureDeposit.description'.tr();
 
+  static String get enablePregeneratedTickets =>
+      'FeatureTicket.enablePregeneratedTickets'.tr();
+  static String get pregeneratedTicketsDescription =>
+      'FeatureTicket.pregeneratedTicketsDescription'.tr();
+
   // Feature Ticket
   static String get enableManualTicketScan =>
       'FeatureTicket.enableManualTicketScan'.tr();

@@ -54,6 +54,14 @@ class FeatureService {
         .any((feature) => feature.code == featureCode && feature.isEnabled);
   }
 
+  static bool isTicketPregenerationEnabled({List<Feature>? features}) {
+    final ticket =
+        getFeatureDetails(FeatureConstants.ticket, features: features);
+    return isFeatureEnabled(FeatureConstants.ticket, features: features) &&
+        ticket is TicketFeature &&
+        ticket.pregeneratedTickets;
+  }
+
   /// Returns a default list of features.
   static List<Feature> getDefaultFeatures() {
     return [

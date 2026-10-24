@@ -1,3 +1,4 @@
+import 'package:fstapp/components/features/features_strings.dart';
 import '../ticket_delivery_strings.dart';
 import 'ticket_delivery_selector.dart';
 import 'ticket_delivery_preview.dart';
@@ -317,6 +318,14 @@ class _TicketSettingsState extends State<TicketSettings> {
                 }),
           const SizedBox(height: 16),
         ],
+        CheckboxListTile(
+            value: widget.feature.pregeneratedTickets,
+            title: Text(FeaturesStrings.enablePregeneratedTickets),
+            subtitle: Text(FeaturesStrings.pregeneratedTicketsDescription),
+            onChanged: widget.readOnly
+                ? null
+                : (v) => _refresh(
+                    () => widget.feature.pregeneratedTickets = v ?? false)),
         if (widget.showScanningSettings) ...[
           TicketScanningSettings(
               feature: widget.feature, readOnly: widget.readOnly),

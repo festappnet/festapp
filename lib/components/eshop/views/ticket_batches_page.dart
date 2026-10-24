@@ -1,3 +1,6 @@
+import 'package:fstapp/components/features/feature_service.dart';
+import 'ticket_batch_table.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'ticket_batch_print_downloads.dart';
 import '../models/ticket_batch_document_part.dart';
 import 'order_history_dialog.dart';
@@ -17,13 +20,14 @@ import '../ticket_batch_strings.dart';
 
 Future<bool> createTicketBatchFromSpots(BuildContext context,
     {required int blueprintId, required List<int> spotIds}) async {
+  if (!FeatureService.isTicketPregenerationEnabled()) return false;
   final options = await Supabase.instance.client.rpc(
       'get_ticket_batch_create_options',
       params: {'p_occasion': RightsService.currentOccasionId()});
   if (!context.mounted) return false;
   final id = await showDialog<String>(
       context: context,
-      builder: (_) => _BatchCreateDialog(
+      builder: (_) => TicketBatchCreateDialog(
           options: List.from(options)
               .where((f) => f['blueprint'] == blueprintId)
               .toList(),
@@ -37,7 +41,10 @@ String _text(String key) => TicketBatchStrings.text(key);
 class TicketBatchesPage extends StatelessWidget {
   const TicketBatchesPage({super.key});
   @override
-  Widget build(BuildContext context) => const AutoRouter();
+  Widget build(BuildContext context) =>
+      FeatureService.isTicketPregenerationEnabled()
+          ? const AutoRouter()
+          : const SizedBox.shrink();
 }
 
 @RoutePage()
@@ -78,7 +85,8 @@ class _TicketBatchListState extends State<TicketBatchListPage> {
             params: {'p_occasion': RightsService.currentOccasionId()})));
     if (!mounted || options == null) return;
     final id = await showDialog<String>(
-        context: context, builder: (_) => _BatchCreateDialog(options: options));
+        context: context,
+        builder: (_) => TicketBatchCreateDialog(options: options));
     if (!mounted || id == null) return;
     _reload();
     await context.router.push(TicketBatchDetailRoute(batchId: id));
@@ -88,20 +96,18 @@ class _TicketBatchListState extends State<TicketBatchListPage> {
   @override
   Widget build(BuildContext context) => Column(children: [
         Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(children: [
-              Expanded(
-                  child: Text(TicketBatchStrings.title,
-                      style: Theme.of(context).textTheme.titleLarge)),
               if (RightsService.canUpdateOrders())
-                FilledButton.icon(
+                ElevatedButton.icon(
                     onPressed: _create,
                     icon: const Icon(Icons.add),
                     label: Text(TicketBatchStrings.create)),
+              const SizedBox(width: 8),
               IconButton(
                   onPressed: _reload,
                   tooltip: _text('refresh'),
-                  icon: const Icon(Icons.refresh))
+                  icon: const Icon(Icons.refresh)),
             ])),
         Expanded(
             child: FutureBuilder<List<dynamic>>(
@@ -122,36 +128,27 @@ class _TicketBatchListState extends State<TicketBatchListPage> {
                             padding: const EdgeInsets.all(24),
                             child: Text(_text('empty'))));
                   }
-                  return ListView.separated(
-                      itemCount: rows.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final b = rows[index] as Map;
-                        final counts = b['counts'] as Map;
-                        return ListTile(
-                            title: Text(b['title']),
-                            subtitle: Text(
-                                '${_text('available')}: ${counts['available']}   ${_text('sold')}: ${counts['soldActive']}'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () async {
-                              await context.router.push(
-                                  TicketBatchDetailRoute(batchId: b['id']));
-                              if (mounted) _reload();
-                            });
+                  return TicketBatchTable(
+                      rows: rows.cast<Map>(),
+                      onOpen: (id) async {
+                        await context.router
+                            .push(TicketBatchDetailRoute(batchId: id));
+                        if (mounted) _reload();
                       });
                 }))
       ]);
 }
 
-class _BatchCreateDialog extends StatefulWidget {
-  const _BatchCreateDialog({required this.options, this.spotIds = const []});
+class TicketBatchCreateDialog extends StatefulWidget {
+  const TicketBatchCreateDialog(
+      {super.key, required this.options, this.spotIds = const []});
   final List<int> spotIds;
   final List<dynamic> options;
   @override
-  State<_BatchCreateDialog> createState() => _BatchCreateState();
+  State<TicketBatchCreateDialog> createState() => _BatchCreateState();
 }
 
-class _BatchCreateState extends State<_BatchCreateDialog> {
+class _BatchCreateState extends State<TicketBatchCreateDialog> {
   final _title = TextEditingController(),
       _count = TextEditingController(text: '10');
   final _spotSecret = const Uuid().v4();
@@ -161,6 +158,38 @@ class _BatchCreateState extends State<_BatchCreateDialog> {
   List get _products =>
       widget.options.where((f) => f['id'] == _form).firstOrNull?['products'] ??
       [];
+  @override
+  void initState() {
+    super.initState();
+    if (widget.options.length == 1) {
+      _selectForm(widget.options.single['id'] as int);
+    }
+  }
+
+  void _selectForm(int? id) {
+    _form = id;
+    _product = _products.length == 1 ? _products.single['id'] as int : null;
+    _preview = null;
+  }
+
+  bool get _canSubmit {
+    final count = widget.spotIds.isEmpty
+        ? int.tryParse(_count.text)
+        : widget.spotIds.length;
+    return !_busy &&
+        _title.text.trim().isNotEmpty &&
+        _form != null &&
+        (widget.spotIds.isNotEmpty || _product != null) &&
+        count != null &&
+        count >= 1 &&
+        count <= 200;
+  }
+
+  InputDecoration _decoration(String label) => InputDecoration(
+      labelText: label,
+      border: const OutlineInputBorder(),
+      alignLabelWithHint: true);
+
   @override
   void dispose() {
     _title.dispose();
@@ -214,47 +243,55 @@ class _BatchCreateState extends State<_BatchCreateDialog> {
           title: Text(TicketBatchStrings.create),
           dismissible: !_busy,
           content: SizedBox(
-              width: 440,
+              width: 480,
               child: SingleChildScrollView(
                   child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                    Text(_text('explanation')),
+                    Text(_text('explanation'),
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 24),
                     TextField(
                         controller: _title,
                         maxLength: 200,
                         enabled: !_busy,
-                        decoration: InputDecoration(labelText: _text('name')),
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: _decoration(_text('name')),
                         onChanged: (_) => setState(() => _preview = null)),
-                    DropdownButtonFormField<int>(
-                        initialValue: _form,
-                        decoration: InputDecoration(labelText: _text('form')),
-                        items: [
-                          for (final f in widget.options)
-                            DropdownMenuItem(
-                                value: f['id'] as int,
-                                child: Text(f['title'] ?? '#${f['id']}'))
-                        ],
-                        onChanged: _busy
-                            ? null
-                            : (v) => setState(() {
-                                  _form = v;
-                                  _product = null;
-                                  _preview = null;
-                                })),
-                    if (widget.spotIds.isEmpty)
+                    const SizedBox(height: 8),
+                    if (widget.options.length > 1) ...[
                       DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          initialValue: _form,
+                          decoration: _decoration(_text('form')),
+                          items: [
+                            for (final f in widget.options)
+                              DropdownMenuItem(
+                                  value: f['id'] as int,
+                                  child: Text(f['title'] ?? '#${f['id']}',
+                                      overflow: TextOverflow.ellipsis))
+                          ],
+                          onChanged: _busy
+                              ? null
+                              : (v) => setState(() {
+                                    _selectForm(v);
+                                  })),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.spotIds.isEmpty) ...[
+                      DropdownButtonFormField<int>(
+                          isExpanded: true,
                           key: ValueKey(_form),
                           initialValue: _product,
-                          decoration:
-                              InputDecoration(labelText: _text('product')),
+                          decoration: _decoration(_text('product')),
                           items: [
                             for (final p in _products)
                               DropdownMenuItem(
                                   value: p['id'] as int,
                                   child: Text(
-                                      '${p['title']} - ${p['price']} ${p['currency']}'))
+                                      '${p['title']} - ${p['price']} ${p['currency']}',
+                                      overflow: TextOverflow.ellipsis))
                           ],
                           onChanged: _busy
                               ? null
@@ -262,23 +299,27 @@ class _BatchCreateState extends State<_BatchCreateDialog> {
                                     _product = v;
                                     _preview = null;
                                   })),
-                    if (widget.spotIds.isEmpty)
+                      const SizedBox(height: 16),
                       TextField(
                           controller: _count,
                           enabled: !_busy,
                           keyboardType: TextInputType.number,
-                          decoration:
-                              InputDecoration(labelText: _text('quantity')),
+                          decoration: _decoration(_text('quantity')),
                           onChanged: (_) => setState(() => _preview = null)),
+                    ],
                     if (_preview != null)
                       Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: Text(
-                              '${_text('total')}: ${(_preview!['prices'] as List).map((p) => '${p['amount']} ${p['currency_code']}').join(', ')}')),
+                              '${_text('total')}: ${(_preview!['prices'] as List).map((p) => '${p['amount']} ${p['currency_code']}').join(', ')}',
+                              style: Theme.of(context).textTheme.titleMedium)),
                   ]))),
           actions: [
+            TextButton(
+                onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                child: Text(CommonStrings.cancel)),
             FilledButton(
-                onPressed: _busy ? null : _submit,
+                onPressed: _canSubmit ? _submit : null,
                 child: Text(_busy
                     ? _text('working')
                     : _preview == null

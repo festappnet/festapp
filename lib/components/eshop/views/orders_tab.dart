@@ -1,3 +1,4 @@
+import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -21,11 +22,12 @@ class OrdersTab extends StatelessWidget {
           route: const OrdersCurrentRoute(),
           label: OrdersStrings.ordersTab,
           icon: Icons.shopping_cart),
-      RoutedTabDefinition(
-          slug: NavigationPaths.pregenerated,
-          route: const TicketBatchesRoute(),
-          label: TicketBatchStrings.title,
-          icon: Icons.confirmation_number_outlined),
+      if (FeatureService.isTicketPregenerationEnabled())
+        RoutedTabDefinition(
+            slug: NavigationPaths.pregenerated,
+            route: const TicketBatchesRoute(),
+            label: TicketBatchStrings.title,
+            icon: Icons.confirmation_number_outlined),
       RoutedTabDefinition(
           slug: NavigationPaths.history,
           route: const OrdersHistoryRoute(),

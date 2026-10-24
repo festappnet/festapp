@@ -1,3 +1,4 @@
+import 'package:fstapp/components/features/feature_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../blueprint_command_rejection.dart';
 import 'blueprint_standing_setup_dialog.dart';
@@ -1887,7 +1888,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       key: const ValueKey('blueprint-cancel-operation'),
                       onPressed: _busy ? null : _cancelOperation,
                       child: Text(CommonStrings.storno)),
-                  if (ordering)
+                  if (ordering && FeatureService.isTicketPregenerationEnabled())
                     OutlinedButton.icon(
                         onPressed:
                             valid && controller.selectedSpotIds.length <= 200

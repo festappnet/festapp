@@ -1711,6 +1711,8 @@
     "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Pregenerated tickets",
+    "pregeneratedTicketsDescription": "Create batches of tickets for printing and manual sales.",
     "enableManualTicketScan": "Enable Manual Ticket Scan",
     "enableManualTicketScanDescription": "Allows searching and selecting tickets manually if attendee forgot ticket.",
     "selectTicket": "Select Ticket",
@@ -4224,6 +4226,11 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "settingsEmpty": "No events are available yet.",
+    "groups": {"email_problem": "Email delivery", "bank_problem": "Bank connection"},
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "atTime": "{day} at {time}",
     "title": "Notifications",
     "unread": "Notifications - new events",
     "settings": "Notification settings",

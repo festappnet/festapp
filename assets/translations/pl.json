@@ -336,6 +336,8 @@
     "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Wstępnie wygenerowane bilety",
+    "pregeneratedTicketsDescription": "Twórz partie biletów do druku i sprzedaży ręcznej.",
     "scanCameraInstruction": "Skieruj kamerę na kod uczestnika, aby zweryfikować wejście.",
     "signedInCompanions": "Zalogowani towarzysze"
   },
@@ -2208,6 +2210,11 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "settingsEmpty": "Nie ma jeszcze dostępnych wydarzeń.",
+    "groups": {"email_problem": "Dostarczanie e-maili", "bank_problem": "Połączenie bankowe"},
+    "today": "Dzisiaj",
+    "yesterday": "Wczoraj",
+    "atTime": "{day} o {time}",
     "title": "Powiadomienia",
     "unread": "Powiadomienia - nowe zdarzenia",
     "settings": "Ustawienia powiadomień",
