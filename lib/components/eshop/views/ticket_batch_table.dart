@@ -46,8 +46,30 @@ class TicketBatchTable extends StatelessWidget {
             key: ObjectKey(rows),
             configuration: SingleDataGridHeader.defaultTrinaGridConfiguration(
                 context, Localizations.localeOf(context).languageCode),
-            mode: TrinaGridMode.readOnly,
+            mode: TrinaGridMode.selectWithOneTap,
+            onSelected: (event) {
+              final id = event.row?.cells['id']?.value;
+              if (id is String) onOpen(id);
+            },
             columns: [
+              TrinaColumn(
+                  title: TicketBatchStrings.text('detailAndPrint'),
+                  field: 'actions',
+                  width: 180,
+                  frozen: TrinaColumnFrozen.start,
+                  type: TrinaColumnType.text(),
+                  enableEditingMode: false,
+                  enableSorting: false,
+                  enableFilterMenuItem: false,
+                  enableContextMenu: false,
+                  renderer: (cell) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                          onPressed: () =>
+                              onOpen(cell.row.cells['id']!.value as String),
+                          icon: const Icon(Icons.open_in_new, size: 18),
+                          label: Text(
+                              TicketBatchStrings.text('detailAndPrint'))))),
               column('title', TicketBatchStrings.text('name'), width: 280),
               column('available', TicketBatchStrings.available, numeric: true),
               column('sold', TicketBatchStrings.sold, numeric: true),
@@ -64,6 +86,7 @@ class TicketBatchTable extends StatelessWidget {
               return TrinaRow(cells: {
                 for (final entry in <String, dynamic>{
                   'id': batch['id'],
+                  'actions': '',
                   'title': batch['title'],
                   'available': counts['available'],
                   'sold': counts['soldActive'],

@@ -2498,6 +2498,7 @@
     "detail": "Докладніше"
   },
   "TicketBatches": {
+    "detailAndPrint": "Деталі та друк",
     "title": "Попередньо створені",
     "create": "Створити партію",
     "available": "Не продано",

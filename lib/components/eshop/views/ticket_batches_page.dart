@@ -1,5 +1,6 @@
 import 'package:fstapp/components/features/feature_service.dart';
 import 'ticket_batch_table.dart';
+import 'ticket_batch_items_table.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'ticket_batch_print_downloads.dart';
 import '../models/ticket_batch_document_part.dart';
@@ -617,31 +618,15 @@ class _TicketBatchDetailState extends State<TicketBatchDetailPage> {
                       ])),
               if (_busy) const LinearProgressIndicator(),
               Expanded(
-                  child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final i = items[index] as Map;
-                        final available = i['sale_order_id'] == null &&
-                            i['state'] == 'ordered';
-                        return CheckboxListTile(
-                            value: _selected.contains(i['id']),
-                            onChanged: _busy || !available
-                                ? null
-                                : (value) => setState(() {
-                                      if (value == true) {
-                                        _selected.add(i['id'] as int);
-                                      } else {
-                                        _selected.remove(i['id']);
-                                      }
-                                    }),
-                            title:
-                                Text('${i['ordinal']}. ${i['ticket_symbol']}'),
-                            subtitle: Text(i['state'] == 'storno'
-                                ? _text('voided')
-                                : available
-                                    ? _text('available')
-                                    : '${_text('sold')} - #${i['sale_order_id']}'));
-                      }))
+                  child: TicketBatchItemsTable(
+                      items: items,
+                      selected: _selected,
+                      enabled: !_busy,
+                      onSelectionChanged: (ids) => setState(() {
+                            _selected
+                              ..clear()
+                              ..addAll(ids);
+                          })))
             ]);
       });
 }

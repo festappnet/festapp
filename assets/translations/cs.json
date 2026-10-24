@@ -4345,6 +4345,7 @@
     "detail": "Detail"
   },
   "TicketBatches": {
+    "detailAndPrint": "Detail a tisk",
     "title": "Předgenerované",
     "create": "Vytvořit dávku",
     "available": "Neprodáno",

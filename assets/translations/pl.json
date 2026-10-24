@@ -2328,6 +2328,7 @@
     "detail": "Szczegóły"
   },
   "TicketBatches": {
+    "detailAndPrint": "Szczegóły i druk",
     "title": "Wstępnie wygenerowane",
     "create": "Utwórz partię",
     "available": "Niesprzedane",

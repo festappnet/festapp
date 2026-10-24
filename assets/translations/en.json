@@ -4343,6 +4343,7 @@
     "detail": "Details"
   },
   "TicketBatches": {
+    "detailAndPrint": "Details and print",
     "title": "Pregenerated",
     "create": "Create batch",
     "available": "Unsold",

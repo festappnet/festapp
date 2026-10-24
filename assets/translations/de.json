@@ -2326,6 +2326,7 @@
     "detail": "Details"
   },
   "TicketBatches": {
+    "detailAndPrint": "Details und Druck",
     "title": "Vorgedruckte Tickets",
     "create": "Serie erstellen",
     "available": "Unverkauft",

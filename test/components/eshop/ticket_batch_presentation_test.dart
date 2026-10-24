@@ -11,6 +11,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
 import 'package:fstapp/components/eshop/views/ticket_batch_table.dart';
+import 'package:fstapp/components/eshop/views/ticket_batch_items_table.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:trina_grid/trina_grid.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -171,8 +172,107 @@ void main() {
     expect(grid.columns.firstWhere((c) => c.field == 'available').type.isNumber,
         isTrue);
     expect(find.text('2\u00a0500,50'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Detail a tisk'));
+    expect(opened, 'batch-1');
+    opened = null;
     await tester.tap(find.text('Pokladna'));
+    expect(opened, 'batch-1');
+    opened = null;
+    await tester.tap(find.text('10'));
     expect(opened, 'batch-1');
     expect(tester.takeException(), isNull);
   });
+
+  for (final width in [390.0, 1280.0]) {
+    testWidgets('ticket grid selection, QR updates and busy state at $width',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final items = [
+        {
+          'id': 1,
+          'ordinal': 1,
+          'ticket_symbol': 'QR-1',
+          'state': 'ordered',
+          'sale_order_id': null
+        },
+        {
+          'id': 2,
+          'ordinal': 2,
+          'ticket_symbol': 'QR-2',
+          'state': 'ordered',
+          'sale_order_id': null
+        },
+        {
+          'id': 3,
+          'ordinal': 3,
+          'ticket_symbol': 'QR-3',
+          'state': 'paid',
+          'sale_order_id': 50
+        },
+        {
+          'id': 4,
+          'ordinal': 4,
+          'ticket_symbol': 'QR-4',
+          'state': 'storno',
+          'sale_order_id': null
+        },
+      ];
+      var selected = <int>{};
+      var enabled = true;
+      late StateSetter update;
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              locale: const Locale('cs'),
+              supportedLocales: const [Locale('cs')],
+              localizationsDelegates: GlobalMaterialLocalizations.delegates,
+              theme: ThemeConfig.theme(),
+              home:
+                  Scaffold(body: StatefulBuilder(builder: (context, setState) {
+                update = setState;
+                return TicketBatchItemsTable(
+                    items: items,
+                    selected: selected,
+                    enabled: enabled,
+                    onSelectionChanged: (ids) =>
+                        setState(() => selected = ids));
+              }))));
+      await tester.pumpAndSettle();
+      final manager =
+          tester.state<TrinaGridState>(find.byType(TrinaGrid)).stateManager;
+      // The native select-all checkbox must exclude sold and void tickets.
+      await tester.tap(find.byType(Checkbox).first);
+      await tester.pumpAndSettle();
+      expect(selected, {1, 2});
+      expect(
+          manager.refRows.originalList
+              .where((row) => row.checked == true)
+              .length,
+          2);
+      final column = manager.columns.first;
+      expect(column.disableRowCheckboxWhen!(manager.rows[2]), isTrue);
+      expect(column.disableRowCheckboxWhen!(manager.rows[3]), isTrue);
+      manager.sortDescending(column);
+      update(() => selected = {2}); // Same update as selecting a scanned QR.
+      await tester.pumpAndSettle();
+      expect(tester.state<TrinaGridState>(find.byType(TrinaGrid)).stateManager,
+          same(manager));
+      expect(manager.rows.first.cells['ordinal']!.value, 4);
+      expect(
+          manager.refRows.originalList
+              .where((row) => row.checked == true)
+              .single
+              .cells['id']!
+              .value,
+          2);
+      update(() => enabled = false);
+      await tester.pumpAndSettle();
+      expect(column.disableRowCheckboxWhen!(manager.refRows.originalList.first),
+          isTrue);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
