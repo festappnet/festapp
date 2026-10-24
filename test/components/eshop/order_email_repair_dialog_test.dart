@@ -244,8 +244,8 @@ void main() {
     expect(requests, 1);
     expect(
         tester
-            .widget<OutlinedButton>(find.widgetWithText(
-                OutlinedButton, 'EmailDelivery.recovery.resend'))
+            .widget<ElevatedButton>(find.widgetWithText(
+                ElevatedButton, 'EmailDelivery.recovery.resend'))
             .onPressed,
         isNull);
     pending.complete(commandResponseFixture(sent['p_command_id'],
