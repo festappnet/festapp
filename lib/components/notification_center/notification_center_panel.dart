@@ -138,7 +138,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   child: ConstrainedBox(
                       constraints: BoxConstraints(
                           maxHeight: MediaQuery.sizeOf(context).height * .85),
-                      child: SizedBox(width: 440, child: body))));
+                      child: SelectionArea(child: SizedBox(width: 440, child: body)))));
         },
       );
   Widget _header(BuildContext context) {

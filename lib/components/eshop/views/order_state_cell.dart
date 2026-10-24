@@ -43,10 +43,15 @@ class OrderStateCell extends StatelessWidget {
               OrderBankSyncWarning(order: order),
             ],
             if (issues.isNotEmpty && order?.id != null && scopeOccasion != null)
-              IconButton(
-                  visualDensity: VisualDensity.compact,
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: IconButton(
+                  visualDensity: VisualDensity.standard,
+                  style: IconButton.styleFrom(
+                      minimumSize: const Size(20, 20),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                   constraints:
-                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                      const BoxConstraints.tightFor(width: 20, height: 20),
                   padding: EdgeInsets.zero,
                   tooltip:
                       '${issues.map((i) => i.description).join('\n')}\n${EmailDeliveryStrings.recovery('resolve')}',
@@ -56,7 +61,7 @@ class OrderStateCell extends StatelessWidget {
                       builder: (_) => OrderEmailRepairDialog(
                           orderId: order!.id!,
                           occasionId: scopeOccasion,
-                          onChanged: onChanged))),
+                          onChanged: onChanged)))),
             if (expired)
               Padding(
                 padding: const EdgeInsets.only(left: 4.0),

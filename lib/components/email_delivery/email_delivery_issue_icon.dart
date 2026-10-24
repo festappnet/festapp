@@ -11,10 +11,10 @@ class EmailDeliveryIssueIcon extends StatelessWidget {
         isLabelVisible: count > 1,
         label: Text('$count'),
         child: CircleAvatar(
-          radius: 11,
+          radius: 10,
           backgroundColor: ThemeConfig.redColor(context),
           child: const Icon(Icons.mark_email_unread_outlined,
-              size: 16, color: Colors.white),
+              size: 14, color: Colors.white),
         ),
       );
 }

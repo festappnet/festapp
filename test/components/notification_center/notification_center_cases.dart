@@ -166,6 +166,66 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('notification recipient can be selected and copied', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData')
+          copied = call.arguments['text'] as String;
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final c = NotificationCenterController(read: (_, params) async => {});
+    addTearDown(c.dispose);
+    c.groups = [
+      NotificationGroup.fromJson({
+        'key': 'mail',
+        'kind': 'email_problem',
+        'count': 1,
+        'items': [
+          {
+            'id': 1,
+            'kind': 'email_problem',
+            'data': {
+              'customerName': 'Customer',
+              'recipient': 'copy@example.invalid',
+            },
+          },
+        ],
+      }),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NotificationCenterPanel(controller: c, onDetail: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectableRegion), findsOneWidget);
+    final text = tester.getRect(find.text('copy@example.invalid'));
+    final gesture = await tester.startGesture(
+      Offset(text.left + 1, text.center.dy),
+      kind: ui.PointerDeviceKind.mouse,
+    );
+    await gesture.moveTo(Offset(text.right, text.center.dy));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await tester.pump();
+    expect(copied, 'copy@example.invalid');
+  });
   test('open acknowledges once and late badge cannot restore unread', () async {
     final badge = Completer<dynamic>();
     final calls = <String>[];
