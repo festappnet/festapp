@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.dart';
+import '../navigation/root_route_navigation.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'ticket_batch_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
@@ -415,7 +416,7 @@ class EshopColumns {
                   return const SizedBox.shrink();
                 }
                 return TextButton(
-                    onPressed: () => context.router.navigatePath(
+                    onPressed: () => pushRootPath(context.router.root,
                         '/${context.routeData.inheritedPathParams.getString(AppRouter.linkFormatted)}/reservations/orders/pregenerated/${batch['id']}'),
                     child: Text(batch['title'] as String));
               })

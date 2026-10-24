@@ -91,6 +91,44 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  testWidgets('show order closes the dialog and reveals its grid row',
+      (tester) async {
+    var revealed = false;
+    await tester.pumpWidget(MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                body: TextButton(
+                    onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => OrderEmailRepairDialog(
+                            orderId: 4,
+                            occasionId: 7,
+                            canWrite: false,
+                            onShowOrder: () => revealed = true,
+                            read: (name, args) async =>
+                                name == 'get_order_history'
+                                    ? {
+                                        'code': 200,
+                                        'data': {
+                                          'order': {
+                                            'id': 4,
+                                            'occasion': 7,
+                                            'state': 'ordered',
+                                            'data': {
+                                              'email': 'test@example.invalid'
+                                            }
+                                          }
+                                        }
+                                      }
+                                    : {'current_issues': []})),
+                    child: const Text('Open'))))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EmailDelivery.recovery.show'));
+    await tester.pumpAndSettle();
+    expect(revealed, isTrue);
+    expect(find.byType(OrderEmailRepairDialog), findsNothing);
+  });
   testWidgets('late object read after closing cannot display contact data',
       (tester) async {
     final response = Completer<dynamic>();
