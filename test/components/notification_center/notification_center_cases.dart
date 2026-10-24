@@ -6,6 +6,7 @@ import 'package:fstapp/components/notification_center/notification_center_rollou
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/notification_center/notification_center_controller.dart';
@@ -641,5 +642,64 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls, ['get_notification_center_page']);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+      'app bar icon colors do not leak into notification dialog controls',
+      (tester) async {
+    final controller =
+        NotificationCenterController(read: (_, params) async => {});
+    addTearDown(controller.dispose);
+    controller.occasions = [
+      {'id': 1, 'title': 'Ples AKH 2026', 'muted': false}
+    ];
+    controller.groups = [
+      NotificationGroup.fromJson({
+        'key': 'orders',
+        'kind': 'order_created',
+        'section': 2,
+        'occasionId': 1,
+        'occasionTitle': 'Ples AKH 2026',
+        'count': 2,
+      })
+    ];
+    double contrast(Color a, Color b) {
+      final first = a.computeLuminance(), second = b.computeLuminance();
+      return first > second
+          ? (first + .05) / (second + .05)
+          : (second + .05) / (first + .05);
+    }
+
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeConfig.theme(brightness: brightness),
+        home: Scaffold(
+            appBar: AppBar(actions: [
+          Builder(
+              builder: (context) => IconButton(
+                  icon: const Icon(Icons.notifications),
+                  onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => NotificationCenterPanel(
+                          controller: controller, onDetail: (_) {})))),
+        ])),
+      ));
+      await tester.tap(find.byIcon(Icons.notifications));
+      await tester.pumpAndSettle();
+      final surface = find.byWidgetPredicate(
+          (w) => w is Material && w.type == MaterialType.card);
+      final background = tester.widget<Material>(surface).color!;
+      final arrow = find.byIcon(Icons.expand_more);
+      final menu = find.byType(PopupMenuButton<bool>);
+      for (final control in [arrow, menu]) {
+        final glyph =
+            find.descendant(of: control, matching: find.byType(RichText)).first;
+        final color = tester.widget<RichText>(glyph).text.style!.color!;
+        expect(contrast(color, background), greaterThanOrEqualTo(3),
+            reason:
+                'Notification controls must contrast with the dialog surface in $brightness');
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+    }
   });
 }
