@@ -94,6 +94,11 @@ class DataGridHelper {
       final effectiveTextStyle = baseTextStyle.copyWith(fontSize: 14);
 
       return Tooltip(
+        // This preview contains links and a scrollable body. A pointer-down
+        // dismissal can remove the link before its tap completes.
+        enableTapToDismiss: false,
+        ignorePointer: false,
+        exitDuration: const Duration(milliseconds: 300),
         showDuration: const Duration(seconds: 15),
         preferBelow: true,
         verticalOffset: 52,
