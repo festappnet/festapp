@@ -235,10 +235,8 @@ class FormDefinition {
       data?[metaSchedule] as Map<String, dynamic>? ?? {};
 
   DateTime? get startTimeUtc {
-    if (_scheduleData.containsKey(metaStartTime)) {
-      return DateTime.tryParse(_scheduleData[metaStartTime]);
-    }
-    return null;
+    final value = _scheduleData[metaStartTime];
+    return value is String ? DateTime.tryParse(value) : null;
   }
 
   FormDefinition withStartTimeUtc(DateTime? value) {
@@ -255,10 +253,8 @@ class FormDefinition {
   }
 
   DateTime? get endTimeUtc {
-    if (_scheduleData.containsKey(metaEndTime)) {
-      return DateTime.tryParse(_scheduleData[metaEndTime]);
-    }
-    return null;
+    final value = _scheduleData[metaEndTime];
+    return value is String ? DateTime.tryParse(value) : null;
   }
 
   FormDefinition withEndTimeUtc(DateTime? value) {
