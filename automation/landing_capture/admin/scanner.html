@@ -1,0 +1,11 @@
+<!doctype html><html lang="__LOCALE__"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Odbavení vstupenek</title><body><div id="scanner"></div><script type="module">
+import '/src/theme_config.css';
+import {ScanPage} from '/src/components/scan/scan_page.js';
+import {ThemeService} from '/src/services/theme_service.js';
+import {LocalizationService} from '/src/services/localization_service.js';
+LocalizationService.translations=await(await fetch('/translations')).json();LocalizationService.currentLocale='__LOCALE__';ThemeService.init();
+const fixture=await(await fetch('/fixture')).json();
+const client={rpc:(name,params)=>fetch('/rpc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name,params})}).then(r=>r.json())};
+const page=window.captureScanner=new ScanPage('scanner',{client,backend:{generation:1,origin:'http://127.0.0.1:56843',organization:fixture.organization}});
+await page.init({page:'scan'});await page.open({p_scan_code:fixture.scan_code,p_device_name:'Hlavní vstup'});
+</script></body></html>

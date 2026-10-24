@@ -1,0 +1,8 @@
+{
+  "title": "WordPress UI verified checkout",
+  "link": "embedded-synthetic",
+  "capacity": 20,
+  "version": 2,
+  "status": "PASS",
+  "method": "real Flutter UI login, open saved form, edit title, Save, canonical database readback"
+}

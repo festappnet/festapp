@@ -135,7 +135,7 @@ const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-pag
 // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
 // the bootstrap/loader, and the canvaskit/skwasm wasm runtime). These must be
 // revalidated on every load so a client never mixes assets from two builds.
-const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
+const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:embed\.js|backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
 
 function htmlResponse(body, originHeaders, status = 200, profile = "webclient") {
   const headers = new Headers(originHeaders || {});

@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "deactivation_reactivation": "saved blocks preserved; no plugin-owned options/tables",
+  "uninstall": "actual minimum-WP uninstall/deletion followed by clean final-ZIP installation",
+  "service_orders_before": 7,
+  "service_orders_after": 7,
+  "service_orders_unchanged": true
+}

@@ -3,7 +3,9 @@
     "test/services/locale_date_time_test.dart": {
       "kind": "environment",
       "reason": "Locale mismatch regression exercises the delivery tooltip and dialog with Flutter localization delegates; shared date adapters cover all interface languages and canonical grid values.",
-      "sources": ["test/services/locale_date_time_test.dart"]
+      "sources": [
+        "test/services/locale_date_time_test.dart"
+      ]
     },
     "test/components/forms/email_domain_suffix_test.dart": {
       "kind": "environment",
@@ -871,6 +873,69 @@
       "reason": "Pregenerated ticket feature visibility, batch creation form selection and native grid rendering require Flutter widgets and a scoped Czech catalog.",
       "sources": [
         "test/components/eshop/ticket_batch_presentation_test.dart"
+      ]
+    },
+    "test/components/notification_center/notification_center_time_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies notification center time test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/notification_center/notification_center_time_test.dart"
+      ]
+    },
+    "test/components/scan/scan_ticket_identity_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies scan ticket identity test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/scan/scan_ticket_identity_test.dart"
+      ]
+    },
+    "test/components/eshop/ticket_batch_navigation_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies ticket batch navigation test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/eshop/ticket_batch_navigation_test.dart"
+      ]
+    },
+    "test/components/eshop/order_email_navigation_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies order email navigation test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/eshop/order_email_navigation_test.dart"
+      ]
+    },
+    "test/components/eshop/order_email_repair_design_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies order email repair design test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/eshop/order_email_repair_design_test.dart"
+      ]
+    },
+    "test/components/eshop/ticket_batch_columns_test.dart": {
+      "kind": "adapter",
+      "reason": "Verifies ticket batch columns test through application model and adapter contracts.",
+      "sources": [
+        "test/components/eshop/ticket_batch_columns_test.dart"
+      ]
+    },
+    "test/components/eshop/order_email_repair_dialog_test.dart": {
+      "kind": "widget",
+      "reason": "Verifies order email repair dialog test through Flutter widgets and host fixtures.",
+      "sources": [
+        "test/components/eshop/order_email_repair_dialog_test.dart"
+      ]
+    },
+    "test/components/blueprint/ticket_cancellation_commands_test.dart": {
+      "kind": "adapter",
+      "reason": "Verifies ticket cancellation commands test through application model and adapter contracts.",
+      "sources": [
+        "test/components/blueprint/ticket_cancellation_commands_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_host_margin_pan_test.dart": {
+      "kind": "adapter",
+      "reason": "Verifies blueprint host margin pan test through application model and adapter contracts.",
+      "sources": [
+        "test/components/blueprint/blueprint_host_margin_pan_test.dart"
       ]
     }
   }

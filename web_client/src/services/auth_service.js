@@ -60,7 +60,9 @@ export class AuthService {
         
         // The edge function usually returns { code: 200, ... } or throws error
         if (responseData && responseData.code !== 200) {
-             throw new Error(responseData.message || "Registration failed");
+             const failure = new Error(responseData.message || responseData.error || "Registration failed");
+             failure.code = responseData.code;
+             throw failure;
         }
 
         return responseData;

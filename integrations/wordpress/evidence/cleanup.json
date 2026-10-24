@@ -1,0 +1,107 @@
+{
+  "browsers": [
+    {
+      "session": "vo-wp-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-visitor-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-seat-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-account-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-wp-stable-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-organizer-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-final-visitor-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-catalog-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-storage-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-public-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-ios-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-ios-owned-20261023",
+      "status": "closed"
+    },
+    {
+      "session": "vo-publisher-completion (Panerelay participant only)",
+      "status": "closed"
+    },
+    {
+      "session": "vo-publisher-verify",
+      "status": "closed"
+    },
+    {
+      "session": "vo-publisher-twofactor",
+      "status": "closed"
+    },
+    {
+      "session": "vo-tester-min",
+      "status": "closed"
+    },
+    {
+      "session": "vo-tester-current",
+      "status": "closed"
+    },
+    {
+      "session": "vo-dual-qa",
+      "status": "closed"
+    },
+    {
+      "session": "vo-global-origin",
+      "status": "closed"
+    },
+    {
+      "session": "vo-shared-purchases",
+      "status": "closed"
+    },
+    {
+      "session": "vo-global-art",
+      "status": "closed"
+    },
+    {
+      "session": "vo-dual-admin",
+      "status": "closed"
+    }
+  ],
+  "temporary_auth_vault_removed": true,
+  "task_ios_simulator_deleted": true,
+  "default_ios_device_initial_shutdown_restored": true,
+  "flutter": "owned server quit with q; slot explicitly released to other work",
+  "servers": "both WordPress matrices, own Supabase, three Vite origins, local PDF sink and Edge serve stopped",
+  "owned_listening_ports": [],
+  "owned_running_containers": [],
+  "backend_data": "disposable project stopped with --no-backup; rebuild through documented setup/start/seed",
+  "other_projects": "left running and unmodified by cleanup",
+  "native_safari_session": "released",
+  "native_safari_driver": "stopped",
+  "native_safari_capture_sink": "stopped",
+  "publisher_credentials": "retained in login Keychain; password also encrypted auth vault. Temporary plaintext copies removed.",
+  "verified_at": "2026-10-23T18:49:07.637953+00:00",
+  "final_global_simulator": "owned device deleted; Safari W3C session and driver released"
+}

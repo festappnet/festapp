@@ -1,0 +1,95 @@
+{
+  "environment": "owned disposable canonical Supabase",
+  "source_head": "353394511e7f3fae1efa52c8cc806ee459c5b4cf",
+  "cases": [
+    {
+      "case": "exact UI request replay twice creates no duplicate",
+      "status": "PASS",
+      "order_id": 1,
+      "orders_before": 2,
+      "orders_after": 2
+    },
+    {
+      "case": "organizer authentication through local Auth",
+      "status": "PASS"
+    },
+    {
+      "case": "organizer reads saved form through authoritative editor RPC",
+      "status": "PASS"
+    },
+    {
+      "case": "bank order confirmed by canonical manual transaction, no provider payment",
+      "status": "PASS",
+      "order_ids": [
+        1,
+        2
+      ]
+    },
+    {
+      "case": "canonical form capacity after UI orders",
+      "status": "PASS",
+      "snapshot": {
+        "limit": 20,
+        "enabled": true,
+        "revision": 1,
+        "serverTime": "2026-10-23T18:01:48.663941+00:00",
+        "blockedReason": "WAITLIST_NOT_AVAILABLE",
+        "canSendOffers": false,
+        "offeredPlaces": 0,
+        "showRemaining": true,
+        "waitingPeople": 0,
+        "heldForWaiting": 0,
+        "occupiedPeople": 1,
+        "offerablePlaces": 19,
+        "remainingPublic": 19
+      }
+    },
+    {
+      "case": "real ticket PDF from canonical queued email rendering",
+      "status": "PASS",
+      "order_id": 1,
+      "bytes": 49204,
+      "sha256": "2cb0693cb1797ed3a8dce2bbfc0f29aa0a23f5c70ad85b79f510c778fd983a3f"
+    },
+    {
+      "case": "real ticket PDF from canonical queued email rendering",
+      "status": "PASS",
+      "order_id": 2,
+      "bytes": 49218,
+      "sha256": "f7ce813cf43601876941bf31a71e41e0d2aeeb0ca405b251513f710fe492f2de"
+    },
+    {
+      "case": "confirmation and tickets captured from canonical queue without provider send",
+      "status": "PASS",
+      "kinds": [
+        "order_confirmation",
+        "order_tickets"
+      ],
+      "mode": "capture_only_no_provider_send"
+    },
+    {
+      "case": "real scanner admission, same-operation replay and second-entry rejection",
+      "status": "PASS",
+      "ticket_id": 1,
+      "first": "admitted",
+      "second": "already_used"
+    },
+    {
+      "case": "real scanner admission, same-operation replay and second-entry rejection",
+      "status": "PASS",
+      "ticket_id": 2,
+      "first": "admitted",
+      "second": "already_used"
+    }
+  ],
+  "distribution_hashes": {
+    "vstupenky-online": "947668353092d4d7d25d630a380959a679234196e1893a3240263f45b7356a6b",
+    "festapp-tickets": "38aa92a84fddd0fd8a4cc0db5beeac78c9303b66b29e9e695da46fd65cd75663"
+  },
+  "global_seat": {
+    "seat": "A2",
+    "order": 2,
+    "canonical_ownership_verified": true
+  },
+  "pdf_qr_validation": "Two generated PDF pages rasterized; both QR values matched canonical ticket symbols"
+}

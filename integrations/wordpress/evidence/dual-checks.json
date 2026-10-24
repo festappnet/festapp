@@ -1,0 +1,98 @@
+{
+  "scope": "final shared-source ZIPs; older checks.json is historical",
+  "assertions": 232,
+  "checks": [
+    {
+      "check": "original-contract-current",
+      "assertions": 39,
+      "status": "PASS",
+      "log_sha256": "f4454d80db3c3e7ddb1e1287dead1262bdc27eac609e86b5ad65da88e187bf35"
+    },
+    {
+      "check": "original-contract-minimum",
+      "assertions": 39,
+      "status": "PASS",
+      "log_sha256": "512de2c365611fc4973a70094e875068244bfa090f3a3bc3d7ac52ae4233cfb9"
+    },
+    {
+      "check": "tester-current",
+      "assertions": 37,
+      "status": "PASS",
+      "log_sha256": "3dc9398d17fbaa4a401388b1d1922ee114b23a96516e6f42aa7e42ce40a12426"
+    },
+    {
+      "check": "tester-minimum",
+      "assertions": 37,
+      "status": "PASS",
+      "log_sha256": "3c92f3a6ab707320ca7f31513cfa4edef3e3490d3f4166878741ce878a105388"
+    },
+    {
+      "check": "contract-current",
+      "assertions": 40,
+      "status": "PASS",
+      "log_sha256": "62f34f4abdb4889ffdf74d95786cc7db0cb28485f2abd23bfbd55b6ecd100082"
+    },
+    {
+      "check": "contract-minimum",
+      "assertions": 40,
+      "status": "PASS",
+      "log_sha256": "186afcf5d21fe3647a9eed0ee967b602eac7dfc8e59d61927191ae8028f1dd33"
+    },
+    {
+      "check": "dual-production-gate",
+      "status": "PASS",
+      "log_sha256": "747003656bdaac50f4b3158e0c5e2343fd0610f8bcdbd9cc819c6c3d2df9c22a"
+    },
+    {
+      "check": "dual-lifecycle",
+      "status": "PASS",
+      "log_sha256": "d73fa852f4ce1a69a3830f5813bf2ea6a7cfa090e917f39e23660ce45de82996"
+    },
+    {
+      "check": "dual-translations",
+      "status": "PASS",
+      "log_sha256": "27d37626671eeb18c173e40c39f096060a632d9b195a6fe930615c1f8802f37a"
+    },
+    {
+      "check": "dual-block-browser",
+      "status": "PASS",
+      "log_sha256": "80c72b7726b86d150d25608a8cab24333a594d0719353984091a7fd7400d3f24"
+    },
+    {
+      "check": "dual-classic-browser",
+      "status": "PASS",
+      "log_sha256": "80c72b7726b86d150d25608a8cab24333a594d0719353984091a7fd7400d3f24"
+    },
+    {
+      "check": "dual-service-verification",
+      "status": "PASS",
+      "log_sha256": "8f09f0a04ae888a8ef7c3af3541c9429f088f0aaac99dcc2160527a0194b387a"
+    },
+    {
+      "check": "dual-plugincheck-czech",
+      "errors": 0,
+      "warnings": 1,
+      "warning": "load_plugin_textdomain retained for bundled sideload translations",
+      "log_sha256": "cfc2089329892c3738cb472e8ee006c5552329fab2e0085391af38c902168e69"
+    },
+    {
+      "check": "dual-plugincheck-global",
+      "errors": 0,
+      "warnings": 1,
+      "warning": "load_plugin_textdomain retained for bundled sideload translations",
+      "log_sha256": "0d853812ee2b6908566be954565372b134da06587a3feb5fffb48d02c6a0bb74"
+    }
+  ],
+  "installed": [
+    {
+      "plugin": "vstupenky-online",
+      "files": 12,
+      "both_installed_trees_match_zip": true
+    },
+    {
+      "plugin": "festapp-tickets",
+      "files": 12,
+      "both_installed_trees_match_zip": true
+    }
+  ]
+}

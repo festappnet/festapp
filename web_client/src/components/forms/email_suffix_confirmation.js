@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import { isValidEmail } from '../../logic/email_address.js';
 import { classifyEmailDomainSuffix } from '../../logic/email_domain_suffix.js';
 import { FormStrings } from './form_strings.js';
@@ -47,7 +49,7 @@ export class EmailSuffixConfirmation {
                 if (current?.value !== input.value || !this.eligible(input)) { this.refresh(input, states, session, false, syntaxValid); return; }
                 current.confirmed = true;
                 this.refresh(input, states, session, false, syntaxValid);
-                input.focus();
+                input.focus({preventScroll: true});
             });
             warning.append(text, confirm);
             input.after(warning);
@@ -84,8 +86,9 @@ export class EmailSuffixConfirmation {
         for (const input of form.querySelectorAll('input[type="email"]')) {
             if (this.refresh(input, states, session, true, syntaxValid)) {
                 const warning = input.parentElement.querySelector('[data-email-suffix-warning]');
-                warning.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-                warning.querySelector('button').focus();
+                if (isEmbed()) revealEmbedStep(warning, {block: 'nearest'});
+                else warning.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+                warning.querySelector('button').focus({preventScroll: true});
                 return false;
             }
         }

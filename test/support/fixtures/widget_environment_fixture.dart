@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 /// One explicit locale/catalog environment, loaded through the public widget
 /// API. Each tester owns and disposes its root; incompatible fallback/locale
@@ -62,8 +63,10 @@ void testWidgetsWithEnvironment(WidgetEnvironmentFixture Function() environment,
   testWidgets(description, (tester) async {
     // Load before constructing widgets that evaluate translated labels in their
     // constructor arguments. Subsequent pumps keep this same public root.
-    await environment().pumpWidget(tester, const SizedBox.shrink());
-    await body(tester);
+    final fixture = environment();
+    await fixture.pumpWidget(tester, const SizedBox.shrink());
+    // Match App.build locale selection without leaking global Intl state.
+    await Intl.withLocale(fixture.locale.toString(), () => body(tester));
   });
 }
 

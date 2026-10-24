@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "origin": "https://vstupenky.online",
+  "method": "real isolated Chrome; service pages and helper; no production purchase",
+  "resources": [
+    {
+      "contentType": "text/html; charset=utf-8",
+      "status": 200,
+      "url": "/privacy/"
+    },
+    {
+      "contentType": "text/html; charset=utf-8",
+      "status": 200,
+      "url": "/terms/"
+    },
+    {
+      "contentType": "text/html; charset=utf-8",
+      "status": 200,
+      "url": "/support/"
+    },
+    {
+      "contentType": "application/javascript",
+      "status": 200,
+      "url": "/embed.js"
+    }
+  ],
+  "organizer_offer": "/pro-poradatele redirects to current canonical homepage"
+}

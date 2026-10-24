@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import { isValidEmail } from '../../logic/email_address.js';
 import { EmailSuffixConfirmation } from './email_suffix_confirmation.js';
 import { FormStrings } from './form_strings.js';
@@ -320,7 +322,8 @@ export class FormValidator {
                  if (firstInvalid) {
                      // Try to scroll to container
                      const container = firstInvalid.closest('.form-field-container');
-                     (container || firstInvalid).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                     if (isEmbed()) revealEmbedStep(container || firstInvalid, {block: 'nearest'});
+                     else (container || firstInvalid).scrollIntoView({ behavior: 'smooth', block: 'center' });
                      
                      // Focus: If it's a radio/checkbox, sometimes focusing the input is weird. 
                      // But we should try.

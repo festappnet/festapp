@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "storage": "localStorage/sessionStorage getters throw SecurityError in all frames",
+  "failure": "real task-owned Kong gateway stopped; frontend Order Failed; canonical DB observed 0 matching orders before retry",
+  "http_statuses": [
+    0,
+    200
+  ],
+  "same_command_and_client_identity": true,
+  "orders_after_failure": 0,
+  "orders_after_retry": 1,
+  "method": "real browser actions; same populated form, Continue and Submit after gateway recovery"
+}

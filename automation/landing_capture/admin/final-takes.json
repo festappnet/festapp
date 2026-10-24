@@ -1,0 +1,144 @@
+{
+  "root": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/admin-final",
+  "report_occasion": 8,
+  "form_id": 9,
+  "scanner_occasion": 10,
+  "report_take": "report-editable-cs-1792675506",
+  "form_take": "form-theme-final-cs-1792675738",
+  "form_result_take": "form-public-final-cs-1792676008",
+  "scanner_source_take": "scanner-accept-reject-cs-1792675426",
+  "scanner_desktop_take": "iphone-scanner-desktop-cs-1792676046",
+  "scanner_mobile_take": "iphone-scanner-mobile-cs-1792676057",
+  "outputs": {
+    "ticket-design": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 822
+        }
+      ],
+      "format": {
+        "duration": "14.833333"
+      }
+    },
+    "ticket-design-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 720
+        }
+      ],
+      "format": {
+        "duration": "14.833333"
+      }
+    },
+    "form-build": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 804
+        }
+      ],
+      "format": {
+        "duration": "22.500000"
+      }
+    },
+    "form-build-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 720,
+          "height": 638
+        }
+      ],
+      "format": {
+        "duration": "22.500000"
+      }
+    },
+    "form-style": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 804
+        }
+      ],
+      "format": {
+        "duration": "5.000000"
+      }
+    },
+    "form-style-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 720,
+          "height": 638
+        }
+      ],
+      "format": {
+        "duration": "5.000000"
+      }
+    },
+    "check-in": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "8.500000"
+      }
+    },
+    "check-in-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 500,
+          "height": 1000
+        }
+      ],
+      "format": {
+        "duration": "8.500000"
+      }
+    },
+    "orders-overview": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 760
+        }
+      ],
+      "format": {
+        "duration": "13.100000"
+      }
+    },
+    "orders-overview-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 720,
+          "height": 900
+        }
+      ],
+      "format": {
+        "duration": "13.100000"
+      }
+    }
+  }
+}

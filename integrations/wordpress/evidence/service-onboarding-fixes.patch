@@ -1,0 +1,196 @@
+--- a/web_client/src/services/auth_service.js
++++ b/web_client/src/services/auth_service.js
+@@ -59,7 +59,9 @@
+         
+         // The edge function usually returns { code: 200, ... } or throws error
+         if (responseData && responseData.code !== 200) {
+-             throw new Error(responseData.message || "Registration failed");
++             const registrationError = new Error(responseData.message || responseData.error || "Registration failed");
++             registrationError.code = responseData.code;
++             throw registrationError;
+         }
+ 
+         return responseData;
+--- a/web_client/src/components/users/login_modal.js
++++ b/web_client/src/components/users/login_modal.js
+@@ -117,7 +117,7 @@
+     }
+     
+     _updateContent(preserveFields = false) {
+-        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
++        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].filter(input => input.id).map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
+ 
+         if (!this.authContainer) return;
+         
+@@ -250,7 +250,7 @@
+                 <form id="reset-password-form" novalidate>
+                      <!-- Hidden username field to help browser password managers identify the user -->
+                      <input type="text" name="username" autocomplete="username" style="display:none;" aria-hidden="true">
+-                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 6, '', 'new-password')}
++                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 8, '', 'new-password')}
+                      <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
+                         ${this.isLoading ? CommonStrings.loading : CommonStrings.changePassword}
+                     </button>
+@@ -571,7 +571,7 @@
+             let msg = err.message || CommonStrings.error;
+             
+             // Try to match specific backend errors to localized strings
+-            if (msg.includes("already in use") || msg.includes("already registered")) {
++            if (err.code === 409 || msg.includes("already in use") || msg.includes("already registered")) {
+                 msg = CommonStrings.emailInUse.replace("{email}", email);
+             } else if (msg.includes("Registration failed")) {
+                 msg = CommonStrings.registrationFailed;
+--- a/supabase/functions/register/index.ts
++++ b/supabase/functions/register/index.ts
+@@ -24,7 +24,7 @@
+     }
+ 
+     const reqData = await req.json();
+-    const userEmail = reqData.email.trim();
++    const userEmail = reqData.email.trim().toLowerCase();
+     const organizationId = reqData.organization;
+ 
+     const orgData = await supabaseAdmin
+--- a/database/functions/users/set_user_password_token.sql
++++ b/database/functions/users/set_user_password_token.sql
+@@ -10,14 +10,15 @@
+   email text;
+   encrypted_pw text;
+ BEGIN
++    -- Reject invalid credentials before consuming the one-use recovery capability.
++    IF password IS NULL OR length(password)<8 THEN RETURN json_build_object('code',400); END IF;
++
+     DELETE FROM public.user_reset_token urt
+     WHERE urt.token=$1
+     RETURNING urt."user",urt.created_at INTO v_user_id,token_created_at;
+     IF v_user_id IS NULL OR token_created_at < clock_timestamp()-interval '30 minutes' THEN
+         RETURN json_build_object('code', 403);
+     END IF;
+-
+-    IF length(password)<8 THEN RETURN json_build_object('code',400); END IF;
+ 
+     encrypted_pw := crypt(password, gen_salt('bf'));
+ 
+--- a/web_client/tests/components/login_modal.test.js
++++ b/web_client/tests/components/login_modal.test.js
+@@ -146,6 +146,21 @@
+         assert.equal(document.activeElement, modal.authContainer);
+     });
+ 
++    it('keeps the reset form and password across loading despite an unnamed username input', () => {
++        const modal = new LoginModal();
++        modal._render();
++        modal.resetToken = '00000000-0000-4000-8000-000000000001';
++        const input = modal.authContainer.querySelector('#newPassword');
++        assert.equal(input.minLength, 8);
++        input.value = 'a-valid-local-password';
++        assert.ok(modal.authContainer.querySelector('input[name="username"]:not([id])'));
++        modal._setLoading(true);
++        modal._setLoading(false);
++        assert.ok(modal.authContainer.querySelector('#reset-password-form'));
++        assert.equal(modal.authContainer.querySelector('#newPassword').value, 'a-valid-local-password');
++        assert.equal(modal.authContainer.querySelector('.error'), null);
++    });
++
+     it('prefills Google proof email and preserves manual edits across retry rendering', () => {
+         const modal = new LoginModal();
+         modal._render();
+--- /dev/null
++++ b/web_client/tests/core/registration_response.test.js
+@@ -0,0 +1,24 @@
++import {test,before,after} from 'node:test';
++import assert from 'node:assert/strict';
++import {JSDOM} from 'jsdom';
++let dom,AuthService,SupabaseService,original;
++before(async()=>{
++ dom=new JSDOM('',{url:'http://localhost/'});
++ global.window=dom.window;global.document=dom.window.document;global.HTMLElement=dom.window.HTMLElement;global.customElements=dom.window.customElements;
++ ({AuthService}=await import('../../src/services/auth_service.js'));
++ ({SupabaseService}=await import('../../src/services/supabase_service.js'));
++ original=SupabaseService.getClient;
++});
++after(()=>{SupabaseService.getClient=original;dom.window.close();});
++test('registration preserves duplicate-email status for the localized UI recovery',async()=>{
++ SupabaseService.getClient=()=>({functions:{invoke:async()=>({data:{code:409,email:'existing@example.invalid'},error:null})}});
++ await assert.rejects(AuthService.register({email:'existing@example.invalid'}),e=>e.code===409);
++});
++test('registration preserves successful response and transport rejection',async()=>{
++ const response={code:200,email:'new@example.invalid'};
++ SupabaseService.getClient=()=>({functions:{invoke:async()=>({data:response,error:null})}});
++ assert.deepEqual(await AuthService.register({email:response.email}),response);
++ const failure=new Error('network unavailable');
++ SupabaseService.getClient=()=>({functions:{invoke:async()=>({data:null,error:failure})}});
++ await assert.rejects(AuthService.register({email:response.email}),e=>e===failure);
++});
+--- /dev/null
++++ b/database/tests/users/password_reset_retry_validation_test.sql
+@@ -0,0 +1,20 @@
++BEGIN;
++DO $$
++DECLARE org bigint; usr uuid; reset uuid:=gen_random_uuid(); result jsonb; original text;
++BEGIN
++ INSERT INTO public.organizations(title) VALUES('Password reset retry validation fixture') RETURNING id INTO org;
++ usr:=public.create_user_in_organization_with_data_pure(org,'retry@example.invalid','original-password','{}'::jsonb);
++ SELECT encrypted_password INTO original FROM auth.users WHERE id=usr;
++ INSERT INTO public.user_reset_token(token,"user") VALUES(reset,usr);
++ FOREACH result IN ARRAY ARRAY[public.set_user_password_token(reset,'1234567'),public.set_user_password_token(reset,NULL)] LOOP
++  IF (result->>'code')::int<>400 THEN RAISE EXCEPTION 'Weak/null password must return 400'; END IF;
++  IF NOT EXISTS(SELECT 1 FROM public.user_reset_token WHERE token=reset) THEN RAISE EXCEPTION 'Invalid password consumed a valid reset token'; END IF;
++  IF (SELECT encrypted_password FROM auth.users WHERE id=usr) IS DISTINCT FROM original THEN RAISE EXCEPTION 'Invalid password changed credentials'; END IF;
++ END LOOP;
++ result:=public.set_user_password_token(reset,'valid-replacement-password');
++ IF (result->>'code')::int<>200 THEN RAISE EXCEPTION 'Corrected password could not use the preserved token'; END IF;
++ IF EXISTS(SELECT 1 FROM public.user_reset_token WHERE token=reset) THEN RAISE EXCEPTION 'Successful reset did not consume token'; END IF;
++ result:=public.set_user_password_token(reset,'another-valid-password');
++ IF (result->>'code')::int<>403 THEN RAISE EXCEPTION 'Reset token could be reused after success'; END IF;
++END $$;
++ROLLBACK;
+--- /dev/null
++++ b/supabase/migrations/20261024004000_password_reset_retry_validation.sql
+@@ -0,0 +1,46 @@
++-- Source: database/functions/users/set_user_password_token.sql
++-- Keep recovery retryable after a rejected short or null password.
++CREATE OR REPLACE FUNCTION public.set_user_password_token(token uuid, password text)
++ RETURNS jsonb
++ LANGUAGE plpgsql
++ SECURITY DEFINER
++SET search_path = public, extensions
++AS $$
++  declare
++  v_user_id uuid;
++  token_created_at timestamptz;
++  email text;
++  encrypted_pw text;
++BEGIN
++    -- Reject invalid credentials before consuming the one-use recovery capability.
++    IF password IS NULL OR length(password)<8 THEN RETURN json_build_object('code',400); END IF;
++
++    DELETE FROM public.user_reset_token urt
++    WHERE urt.token=$1
++    RETURNING urt."user",urt.created_at INTO v_user_id,token_created_at;
++    IF v_user_id IS NULL OR token_created_at < clock_timestamp()-interval '30 minutes' THEN
++        RETURN json_build_object('code', 403);
++    END IF;
++
++    encrypted_pw := crypt(password, gen_salt('bf'));
++
++    UPDATE auth.users
++    SET encrypted_password = encrypted_pw
++    WHERE auth.users.id = v_user_id;
++    IF NOT FOUND THEN RETURN json_build_object('code',404); END IF;
++
++    UPDATE auth.refresh_tokens SET revoked=true WHERE auth.refresh_tokens.user_id=v_user_id::text;
++    DELETE FROM auth.sessions WHERE auth.sessions.user_id=v_user_id;
++
++    SELECT email_readonly INTO email FROM user_info WHERE user_info.id = v_user_id;
++    IF email is NULL THEN
++        RETURN json_build_object('code', 404);
++    END IF;
++
++    RETURN json_build_object('code', 200, 'email', email);
++END;
++$$;
++
++REVOKE ALL ON FUNCTION public.set_user_password_token(uuid,text) FROM PUBLIC;
++GRANT EXECUTE ON FUNCTION public.set_user_password_token(uuid,text)
++  TO anon, authenticated, service_role;

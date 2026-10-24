@@ -34,13 +34,13 @@ export class FormRenderer {
 
         // Append Fields (FormFieldBuilder still returns Nodes)
         (formModel.displayFields || formModel.visibleFields).forEach(field => {
-            const definition = session.state.fields.has(String(field.id))
+            const definition = session?.state?.fields?.has(String(field.id))
                 ? { ...field, value: session.state.fields.get(String(field.id)) } : field;
             const fieldComponent = FormFieldBuilder.createFormField(definition, formModel, session);
             fieldsContainer.appendChild(fieldComponent);
         });
         
-        EmailSuffixConfirmation.install(form, session.emailSuffixConfirmations, session);
+        if (session) EmailSuffixConfirmation.install(form, session.emailSuffixConfirmations, session);
 
         // Bind Callbacks
         form.onsubmit = (e) => {

@@ -22,13 +22,13 @@ test('generated Pages worker secures HTML and assets while preserving route bodi
   for (const [path, body] of [
     ['/', '/webclient'],
     ['/login', '/flutter'], ['/auth_bridge', '/auth_bridge'], ['/unknown', '/unknown'],
-    ['/web-assets/app.js', '/web-assets/app.js'], ['/main.dart.js', '/main.dart.js'],
+    ['/web-assets/app.js', '/web-assets/app.js'], ['/main.dart.js', '/main.dart.js'], ['/embed.js', '/embed.js'],
   ]) {
     const response = await worker.fetch(new Request(origin + path), env);
     assertPolicy(response);
     assert.equal(response.status, 200);
     assert.equal(await response.text(), body);
-    if (path === '/main.dart.js') assert.equal(response.headers.get('cache-control'), 'no-cache, must-revalidate');
+    if (path === '/main.dart.js' || path === '/embed.js') assert.equal(response.headers.get('cache-control'), 'no-cache, must-revalidate');
   }
   const temporary=await worker.fetch(new Request(origin+'/form/example'),env);
   assertPolicy(temporary);

@@ -8,6 +8,7 @@ function initHeroSketch(root, win, preference) {
   let frame;
   let origin;
   let disposed = false;
+  let visible = !win.IntersectionObserver;
   function compose() {
     svg.setAttribute('viewBox', compact.matches ? '0 0 350 650' : '0 0 1200 650');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -31,9 +32,15 @@ function initHeroSketch(root, win, preference) {
       })
     );
   }
+  function measureScale() {
+    // Read geometry together, before writing styles. Never force layout per frame.
+    const widths = lanes.flat().map(scene => {
+      const matrix = scene.element.getScreenCTM();
+      return (compact.matches ? 1.65 : 1.45) / (matrix ? Math.hypot(matrix.a, matrix.b) || 1 : 1);
+    });
+    lanes.flat().forEach((scene, index) => { scene.element.style.strokeWidth = String(widths[index]); });
+  }
   function render(scene, progress, fill, showPen = false) {
-    const matrix = scene.element.getScreenCTM();
-    scene.element.style.strokeWidth = String((compact.matches ? 1.65 : 1.45) / (matrix ? Math.hypot(matrix.a, matrix.b) || 1 : 1));
     scene.element.style.opacity = '1';
     scene.element.dataset.progress = progress.toFixed(3);
     scene.element.style.setProperty('--sketch-fill', String(fill));
@@ -66,7 +73,7 @@ function initHeroSketch(root, win, preference) {
     lanes.forEach(lane => render(lane[0], 1, 1));
   }
   function draw(now) {
-    if (disposed || preference.matches) return;
+    if (disposed || !visible || root.hidden || preference.matches) return;
     origin ??= now;
     const elapsed = (now - origin) / 1000;
     const step = Math.floor(elapsed / 4.8);
@@ -108,16 +115,26 @@ function initHeroSketch(root, win, preference) {
   function preferences() {
     win.cancelAnimationFrame(frame);
     if (preference.matches) still();
-    else { origin = undefined; frame = win.requestAnimationFrame(draw); }
+    else if (visible && !root.hidden && !disposed) { origin = undefined; frame = win.requestAnimationFrame(draw); }
   }
-  function resize() { compose(); preferences(); }
+  function resize() { compose(); measureScale(); preferences(); }
+  const observer = win.IntersectionObserver ? new win.IntersectionObserver(entries => {
+    visible = entries.some(entry => entry.isIntersecting); preferences();
+  }) : null;
   compose();
+  measureScale();
+  observer?.observe(svg);
+  win.addEventListener('resize', resize);
+  root.addEventListener('visibilitychange', preferences);
   compact.addEventListener('change', resize);
   preference.addEventListener('change', preferences);
   preferences();
   return () => {
     disposed = true;
     win.cancelAnimationFrame(frame);
+    observer?.disconnect();
+    win.removeEventListener('resize', resize);
+    root.removeEventListener('visibilitychange', preferences);
     preference.removeEventListener('change', preferences);
     compact.removeEventListener('change', resize);
     still();
@@ -143,9 +160,14 @@ function initClosingArt(root, win, preference) {
     scenes.forEach(scene => { scene.element.style.opacity = '0'; });
     pen.style.opacity = '0';
   };
+  function measureScale() {
+    const widths = scenes.map(scene => {
+      const matrix = scene.element.getScreenCTM();
+      return 1.2 / (matrix ? Math.hypot(matrix.a, matrix.b) || 1 : 1);
+    });
+    scenes.forEach((scene, index) => { scene.element.style.strokeWidth = String(widths[index]); });
+  }
   function render(scene, progress, fill, drawing) {
-    const matrix = scene.element.getScreenCTM();
-    scene.element.style.strokeWidth = String(1.2 / (matrix ? Math.hypot(matrix.a, matrix.b) || 1 : 1));
     scene.element.style.opacity = '1';
     scene.element.style.setProperty('--closing-fill', String(fill));
     const distance = scene.total * progress;
@@ -166,7 +188,7 @@ function initClosingArt(root, win, preference) {
     art.dataset.phase = 'still'; art.dataset.motif = scenes[0].element.dataset.closingMotif;
   }
   function draw(now) {
-    if (disposed || !visible || preference.matches) return;
+    if (disposed || !visible || root.hidden || preference.matches) return;
     origin ??= now;
     const elapsed = (now - origin) / 1000, step = Math.floor(elapsed / 4.8), time = elapsed % 4.8;
     const erase = step > 0 ? .45 : 0;
@@ -188,15 +210,26 @@ function initClosingArt(root, win, preference) {
   function update() {
     win.cancelAnimationFrame(frame);
     if (preference.matches) still();
-    else if (visible) { origin = undefined; frame = win.requestAnimationFrame(draw); }
+    else if (visible && !root.hidden && !disposed) { origin = undefined; frame = win.requestAnimationFrame(draw); }
   }
   const observer = win.IntersectionObserver ? new win.IntersectionObserver(entries => {
     visible = entries.some(entry => entry.isIntersecting); update();
   }) : null;
+  measureScale();
   observer?.observe(art);
+  win.addEventListener('resize', measureScale);
+  root.addEventListener('visibilitychange', update);
   preference.addEventListener('change', update);
   still(); update();
-  return () => { disposed = true; win.cancelAnimationFrame(frame); observer?.disconnect(); preference.removeEventListener('change', update); still(); };
+  return () => {
+    disposed = true;
+    win.cancelAnimationFrame(frame);
+    observer?.disconnect();
+    win.removeEventListener('resize', measureScale);
+    root.removeEventListener('visibilitychange', update);
+    preference.removeEventListener('change', update);
+    still();
+  };
 }
 
 export function initMotion(root = document) {

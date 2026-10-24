@@ -131,7 +131,7 @@ class ScanResultDisplay extends StatelessWidget {
       String formattedPrice = Utilities.formatPrice(
         context,
         price,
-        currencyCode: scannedObject!.relatedOrder!.currencyCode,
+        currencyCode: scannedObject!.relatedOrder?.currencyCode,
       );
 
       String statusText = "";
@@ -227,7 +227,7 @@ class ScanResultDisplay extends StatelessWidget {
 
                 // 2. Customer data, symbol, state
                 Text(
-                  "${scannedObject!.relatedOrder!.toCustomerData()}   ${scannedObject!.ticketSymbol}   $stateString",
+                  "${scannedObject!.scanLabel}   $stateString",
                   style: TextStyle(
                     color: foregroundColor,
                     fontSize: 16,

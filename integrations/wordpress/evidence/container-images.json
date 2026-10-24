@@ -1,0 +1,53 @@
+[
+  {
+    "container": "wp-env-wordpress-21715235-wordpress-1",
+    "image_id": "sha256:f58bf0e054a4630b90668e433b8bb238b67ff6bf62ee714d29fc31134b173832",
+    "image": "wp-env-wordpress-21715235-wordpress",
+    "ports": {
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "59811"
+        }
+      ]
+    }
+  },
+  {
+    "container": "wp-env-wordpress-21715235-cli-1",
+    "image_id": "sha256:5e0577e2e53c0a0b06f0eaa4bd8108aaa91427d815e9d8d75b3b762214a2cdfe",
+    "image": "wp-env-wordpress-21715235-cli",
+    "ports": {}
+  },
+  {
+    "container": "wp-env-wordpress-21715235-tests-wordpress-1",
+    "image_id": "sha256:70f4ee1bcab1c952d4dffaa6d3f0b9bd9f631fe8ac59a0c353c2efe1931f932e",
+    "image": "wp-env-wordpress-21715235-tests-wordpress",
+    "ports": {
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "59812"
+        }
+      ]
+    }
+  },
+  {
+    "container": "wp-env-wordpress-21715235-tests-cli-1",
+    "image_id": "sha256:0e3876b41b4d39d0605c18185a31e2053ed7b205b0432c19918ad53a09363a8a",
+    "image": "wp-env-wordpress-21715235-tests-cli",
+    "ports": {}
+  },
+  {
+    "container": "wp-env-wordpress-21715235-mysql-1",
+    "image_id": "sha256:99c125f103f5d081ebbc9ffe064e63daf7f688ac33a5f7f29af2d7260a96debf",
+    "image": "mariadb:lts@sha256:99c125f103f5d081ebbc9ffe064e63daf7f688ac33a5f7f29af2d7260a96debf",
+    "ports": {
+      "3306/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "32773"
+        }
+      ]
+    }
+  }
+]

@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     }
 
     const reqData = await req.json();
-    const userEmail = reqData.email.trim();
+    const userEmail = reqData.email.trim().toLowerCase();
     const organizationId = reqData.organization;
 
     const orgData = await supabaseAdmin

@@ -1,0 +1,61 @@
+{
+  "browser": "isolated headless Google Chrome 155.0.8059.86",
+  "cases": [
+    {
+      "case": "mobile, two independent automatic forms, one helper",
+      "status": "PASS",
+      "frames": [
+        {
+          "height": 1713,
+          "title": "Ticket sales - vstupenky.online",
+          "width": 360
+        },
+        {
+          "height": 457,
+          "title": "Ticket sales - vstupenky.online",
+          "width": 360
+        }
+      ],
+      "helpers": 1,
+      "links": 2,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "case": "blocked helper preserves fixed iframe and standalone fallback",
+      "status": "PASS",
+      "fallback": true,
+      "height": "800"
+    },
+    {
+      "case": "fixed shortcode never loads automatic helper",
+      "status": "PASS",
+      "automatic": false,
+      "height": "800",
+      "helpers": 0
+    },
+    {
+      "case": "host fallback stays accessible with a backend-abort rule installed",
+      "status": "PASS",
+      "fallback": true,
+      "fatal": false,
+      "frames": 1,
+      "scope": "Host observation only; actual child service outage is separately tested by stopping the owned Edge runtime."
+    },
+    {
+      "case": "invalid URL renders no external resource",
+      "status": "PASS",
+      "errors": 1,
+      "frames": 0,
+      "helpers": 0
+    },
+    {
+      "case": "accessible title and keyboard focus on fallback",
+      "status": "PASS",
+      "focused": true,
+      "title": "Testovac\u00ed vstupenky",
+      "viewport": 1280,
+      "width": 1280
+    }
+  ]
+}
