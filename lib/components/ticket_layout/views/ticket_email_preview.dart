@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../email_templates/email_preview_html.dart';
 import '../../email_templates/db_email_templates.dart';
@@ -12,9 +13,73 @@ import '../ticket_delivery_strings.dart';
 /// Uses the template editor's inert received-message renderer and local QR samples.
 class TicketEmailPreview extends StatelessWidget {
   const TicketEmailPreview(
-      {super.key, required this.preview, this.sampleCount = 0});
+      {super.key,
+      required this.preview,
+      this.sampleCount = 0,
+      this.senderAddress,
+      this.imageBytesResolver,
+      this.includesPdf = false});
   final Map<String, dynamic> preview;
   final int sampleCount;
+  final bool includesPdf;
+  final String? senderAddress;
+  final Uint8List? Function(String)? imageBytesResolver;
+
+  static Widget inlineSample({required int count, bool includesPdf = false}) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (includesPdf)
+          const Text('Stejné vstupenky najdete také v PDF příloze.'),
+        for (var i = 1; i <= count; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(count > 1 ? 'Vstupenka $i z $count' : 'Vaše vstupenka',
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text(
+                  'Toto je vaše vstupenka. U vstupu ukažte tento QR kód.'),
+              const SizedBox(height: 16),
+              QrImageView(
+                  data: 'festapp-preview:INVALID-$i',
+                  size: 256,
+                  padding: const EdgeInsets.all(32),
+                  errorCorrectionLevel: QrErrorCorrectLevel.M,
+                  backgroundColor: Colors.white),
+              const SizedBox(height: 16),
+              Text('Kód vstupenky: festapp-preview:INVALID-$i'),
+            ]),
+          ),
+      ]);
+
+  static String ticketBody(String body, TicketDeliveryMode? mode) {
+    final tokens = RegExp(r'\{\{\s*tickets\s*\}\}');
+    if (!tokens.hasMatch(body) &&
+        mode != null &&
+        mode != TicketDeliveryMode.pdfAttachment) {
+      body += '{{tickets}}';
+    }
+    var seen = false;
+    return body.replaceAllMapped(tokens, (_) {
+      if (seen) return '';
+      seen = true;
+      return mode == null || mode == TicketDeliveryMode.pdfAttachment
+          ? ''
+          : _ticketMarker;
+    });
+  }
+
+  static List<Map<String, String>> sampleAttachments(
+          TicketDeliveryMode? mode, int count) =>
+      [
+        if (mode?.includesPdf == true)
+          for (var i = 1; i <= count; i++)
+            {
+              'filename': 'ticket_UKAZKA-$i.pdf',
+              'contentType': 'application/pdf'
+            },
+      ];
 
   static const _ticketMarker = 'FESTAPP_TICKET_PREVIEW_BLOCK';
 
@@ -27,28 +92,14 @@ class TicketEmailPreview extends StatelessWidget {
     final scenario = (context['scenario'] as EmailPreviewScenario).withContext(
         EmailPreviewContext(
             occasionTitle: context['title'] as String?, ticketsEnabled: true));
-    var body = '${template['html'] ?? ''}';
-    final tickets = RegExp(r'\{\{\s*tickets\s*\}\}');
-    if (!tickets.hasMatch(body)) body += '{{tickets}}';
-    var seen = false;
-    body = body.replaceAllMapped(tickets, (_) {
-      if (seen) return '';
-      seen = true;
-      return mode == TicketDeliveryMode.pdfAttachment ? '' : _ticketMarker;
-    });
+    final body = ticketBody('${template['html'] ?? ''}', mode);
     final wrapper = (resolved['wrapper'] as Map?)?['html'] as String?;
     return {
       'subject': scenario.composeSubject('${template['subject'] ?? ''}'),
       'html': scenario.composeHtml(body, wrapperHtml: wrapper),
       'wrapper': wrapper,
-      'attachments': [
-        if (mode.includesPdf)
-          for (var i = 1; i <= count; i++)
-            {
-              'filename': 'ticket_UKAZKA-$i.pdf',
-              'contentType': 'application/pdf'
-            },
-      ],
+      'includesPdf': mode.includesPdf,
+      'attachments': sampleAttachments(mode, count),
     };
   }
 
@@ -95,22 +146,17 @@ class TicketEmailPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final tickets = HtmlEmbeddedBlock(
         cssClass: 'ticket-email-preview',
-        builder: (_) =>
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              for (var i = 1; i <= sampleCount; i++)
-                Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: QrImageView(
-                        data: 'festapp-preview:INVALID-$i',
-                        size: 240,
-                        backgroundColor: Colors.white)),
-            ]));
+        builder: (_) => inlineSample(
+            count: sampleCount,
+            includesPdf: includesPdf || preview['includesPdf'] == true));
     final body =
         '${preview['html'] ?? ''}'.replaceAll(_ticketMarker, tickets.html);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       EmailReceivedMessage(
           key: ValueKey(sampleCount),
           subject: '${preview['subject'] ?? ''}',
+          senderAddress: senderAddress,
+          imageBytesResolver: imageBytesResolver,
           html: body,
           embeddedBlock: tickets,
           allowedRemoteImageSources: EmailAuthoringContext(

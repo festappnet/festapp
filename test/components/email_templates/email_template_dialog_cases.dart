@@ -1,5 +1,8 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:convert';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_email_preview.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:festapp_core/email_templates.dart';
@@ -27,6 +30,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 
 Future<void> openTemplate(WidgetTester tester,
     {String? occasionTitle,
+    TicketFeature? ticketFeature,
     String? code,
     String html = '<p>Content</p>',
     Future<EmailAuthoringContext> Function()? authoringContextLoader,
@@ -62,6 +66,7 @@ Future<void> openTemplate(WidgetTester tester,
                 occasion: occasionTitle == null
                     ? null
                     : OccasionModel(
+                        features: [if (ticketFeature != null) ticketFeature],
                         id: 3,
                         title: occasionTitle,
                         isOpen: true,
@@ -81,6 +86,54 @@ Future<void> openTemplate(WidgetTester tester,
 }
 
 void main() {
+  for (final mode in TicketDeliveryMode.values) {
+    testWidgets('paid template previews delivery mode ${mode.value}',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await openTemplate(tester,
+          code: 'TICKET_ORDER_PAYMENT_DONE',
+          occasionTitle: 'Festival',
+          ticketFeature: TicketFeature(
+              code: 'ticket', isEnabled: true, deliveryMode: mode),
+          html: '<p>Payment received</p>{{tickets}}',
+          previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
+              jsonDecode(File('assets/email_templates/preview_examples.json')
+                  .readAsStringSync())),
+          authoringContextLoader: () async => const EmailAuthoringContext(
+              senderAddress: 'sender@test.invalid'));
+      final body = tester
+          .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .last
+          .controller;
+      final provider = body.authoring!;
+      expect(
+          provider.search('', const {}).any((entry) => entry.code == 'tickets'),
+          mode != TicketDeliveryMode.pdfAttachment);
+      await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
+      await tester.tap(find.byIcon(Icons.preview_outlined).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(TicketEmailPreview), findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byType(TicketEmailPreview),
+              matching: find.byType(QrImageView)),
+          mode == TicketDeliveryMode.pdfAttachment
+              ? findsNothing
+              : findsOneWidget);
+      expect(find.text('ticket_UKAZKA-1.pdf'),
+          mode.includesPdf ? findsOneWidget : findsNothing);
+      expect(
+          tester
+              .widget<EmailReceivedMessage>(find.byType(EmailReceivedMessage))
+              .senderAddress,
+          'sender@test.invalid');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
