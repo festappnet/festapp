@@ -4228,6 +4228,11 @@
     "duplicateBlock": "Blok {{tickets}} lze použít pouze jednou."
   },
   "NotificationCenter": {
+    "settingsEmpty": "Zatím nejsou k dispozici žádné akce.",
+    "groups": {"email_problem": "Doručování e-mailů", "bank_problem": "Bankovní spojení"},
+    "today": "Dnes",
+    "yesterday": "Včera",
+    "atTime": "{day} v {time}",
     "title": "Upozornění",
     "unread": "Upozornění - nové události",
     "settings": "Nastavení upozornění",

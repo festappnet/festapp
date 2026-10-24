@@ -2380,6 +2380,11 @@
     "duplicateBlock": "Блок {{tickets}} можна використовувати лише один раз."
   },
   "NotificationCenter": {
+    "settingsEmpty": "Подій поки немає.",
+    "groups": {"email_problem": "Доставка пошти", "bank_problem": "Банківське з’єднання"},
+    "today": "Сьогодні",
+    "yesterday": "Учора",
+    "atTime": "{day} о {time}",
     "title": "Сповіщення",
     "unread": "Сповіщення - нові події",
     "settings": "Налаштування сповіщень",
