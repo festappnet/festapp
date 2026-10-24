@@ -64,9 +64,11 @@ class _TicketsTabState extends State<TicketsTab> {
       EshopColumnIds.ORDER_SYMBOL,
       EshopColumnIds.ORDER_DATA,
       EshopColumnIds.TICKET_SYMBOL,
-      EshopColumnIds.TICKET_ORIGIN,
-      EshopColumnIds.TICKET_BATCH,
-      EshopColumnIds.TICKET_SALE_STATE,
+      if (FeatureService.isTicketPregenerationEnabled()) ...[
+        EshopColumnIds.TICKET_ORIGIN,
+        EshopColumnIds.TICKET_BATCH,
+        EshopColumnIds.TICKET_SALE_STATE,
+      ],
       EshopColumnIds.TICKET_CREATED_AT,
       EshopColumnIds.TICKET_STATE,
       if (PlatformHelper.isWeb &&

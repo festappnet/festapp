@@ -132,4 +132,50 @@ void main() {
     expect(controller.document, same(originalDocument));
     await tester.pumpWidget(const SizedBox.shrink());
   });
+  testWidgetsWithEnvironment(() => environment,
+      'mobile reservation pans from dark space outside the plan',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 650));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final document = VenueLayoutDocument.empty().copyWith(canvas: {
+      'x': 0,
+      'y': 0,
+      'width': 800,
+      'height': 1000,
+      'fill': '#FFFFFFFF'
+    });
+    final controller = VenueLayoutController(document);
+    addTearDown(controller.dispose);
+    var selectionChanges = 0;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintPlanEditor(
+                    controller: controller,
+                    interactionEnabled: false,
+                    showGallery: false,
+                    viewSelection: const {},
+                    onViewSelectionChanged: (_) => selectionChanges++))));
+    await tester.pumpAndSettle();
+    final viewport = tester.getRect(layoutCanvas());
+    final TransformationController camera = layoutPainter(tester).camera;
+    camera.value = Matrix4.diagonal3Values(1.5, 1.5, 1)
+      ..setTranslationRaw(180, -180, 0);
+    await tester.pump();
+    final start = viewport.topLeft + Offset(30, viewport.height / 2);
+    final scene = camera.toScene(start - viewport.topLeft);
+    final Offset offset = layoutPainter(tester).offset;
+    expect(scene.dx, lessThan(offset.dx),
+        reason:
+            'The drag begins outside the plan, in the dark viewport margin');
+    final before = camera.value.entry(0, 3);
+    await tester.dragFrom(start, const Offset(-70, 0));
+    await tester.pumpAndSettle();
+    expect(camera.value.entry(0, 3), lessThan(before - 20));
+    expect(camera.value.entry(0, 0), closeTo(1.5, 0.000001));
+    expect(controller.document, same(document));
+    expect(selectionChanges, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
