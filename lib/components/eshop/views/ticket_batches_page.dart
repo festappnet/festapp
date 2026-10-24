@@ -103,11 +103,6 @@ class _TicketBatchListState extends State<TicketBatchListPage> {
                     onPressed: _create,
                     icon: const Icon(Icons.add),
                     label: Text(TicketBatchStrings.create)),
-              const SizedBox(width: 8),
-              IconButton(
-                  onPressed: _reload,
-                  tooltip: _text('refresh'),
-                  icon: const Icon(Icons.refresh)),
             ])),
         Expanded(
             child: FutureBuilder<List<dynamic>>(
@@ -488,14 +483,6 @@ class _TicketBatchDetailState extends State<TicketBatchDetailPage> {
                               child: Text(b['title'],
                                   style:
                                       Theme.of(context).textTheme.titleLarge)),
-                          IconButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => setState(() {
-                                        _data = _load();
-                                      }),
-                              tooltip: _text('refresh'),
-                              icon: const Icon(Icons.refresh))
                         ]),
                         Text(
                             '${_text('available')}: ${counts['available']}   ${_text('sold')}: ${counts['soldActive']}   ${_text('voided')}: ${counts['voidedUnsold']}'),
