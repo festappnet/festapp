@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'model.dart';
 import 'node_outline.dart';
 
@@ -316,6 +317,10 @@ List<(List<double>, List<double>)> _pathSegments(LayoutNode n) {
   return segments;
 }
 
+/// Both active and blocking targets participate in resolution. The winner is
+/// returned to the mode handler, which owns availability feedback and actions.
+enum LayoutTapDisposition { activate, block, ignore }
+
 class LayoutSpatialIndex {
   final VenueLayoutDocument document;
   final Map<String, List<double>> matrices;
@@ -453,6 +458,126 @@ class LayoutSpatialIndex {
       }
     }
     return null;
+  }
+
+  /// Resolves a completed user tap. Exact geometry always wins over slop.
+  /// The caller owns mode rules; blocking targets never fall through to others.
+  String? resolveTap(
+    double x,
+    double y, {
+    required double tolerance,
+    LayoutTapDisposition Function(LayoutNode)? classify,
+    String Function(String)? selectionTarget,
+  }) {
+    if (!tolerance.isFinite || tolerance < 0) {
+      throw ArgumentError('Tap tolerance must be finite and nonnegative');
+    }
+    final candidates = tolerance > cellSize * 32
+        ? _nodes.values.where((n) => n.kind != 'group').toList()
+        : query({
+            'x': x - tolerance,
+            'y': y - tolerance,
+            'width': tolerance * 2,
+            'height': tolerance * 2,
+          }).map((id) => _nodes[id]!).toList();
+    candidates.sort((a, b) => _paintRanks[b.id]!.compareTo(_paintRanks[a.id]!));
+    LayoutNode? winner;
+    var best = double.infinity;
+    for (final n in candidates) {
+      final disposition = classify?.call(n) ?? LayoutTapDisposition.activate;
+      if (disposition == LayoutTapDisposition.ignore) continue;
+      final matrix = matrices[n.id]!;
+      double segmentDistance(List<double> a, List<double> b) {
+        final dx = b[0] - a[0], dy = b[1] - a[1];
+        final length = dx * dx + dy * dy;
+        final t = length == 0
+            ? 0.0
+            : (((x - a[0]) * dx + (y - a[1]) * dy) / length).clamp(0.0, 1.0);
+        return sqrt(pow(x - a[0] - t * dx, 2) + pow(y - a[1] - t * dy, 2));
+      }
+
+      double ringDistance(List<List<double>> ring) {
+        var distance = double.infinity;
+        for (var i = 0; i < ring.length; i++) {
+          distance = min(
+            distance,
+            segmentDistance(ring[i], ring[(i + 1) % ring.length]),
+          );
+        }
+        return distance;
+      }
+
+      var distance = double.infinity;
+      if (_openPath(n)) {
+        // The document transform is rigid (nested translation/rotation only).
+        // Measure from the rendered stroke, rather than its center line.
+        final halfStroke =
+            (effectiveNodeProperties(document, n)['strokeWidth'] as num? ?? 1) /
+            2;
+        for (final (a, b) in _pathSegments(n)) {
+          distance = min(
+            distance,
+            max(
+              0.0,
+              segmentDistance(
+                    transformPoint(matrix, a[0], a[1]),
+                    transformPoint(matrix, b[0], b[1]),
+                  ) -
+                  halfStroke,
+            ),
+          );
+        }
+      } else {
+        final contours = _hitContours.putIfAbsent(
+          n.id,
+          () => nodeOutlineContours(
+            n.copyWith(properties: effectiveNodeProperties(document, n)),
+            parent: _nodes[n.parentId],
+          ),
+        );
+        final worldContours = contours
+            .map(
+              (ring) =>
+                  ring.map((p) => transformPoint(matrix, p[0], p[1])).toList(),
+            )
+            .toList();
+        final holes =
+            (surfaceGeometryProperties(n)['holes'] as List? ?? const [])
+                .map(
+                  (h) => (h as List)
+                      .map(
+                        (p) => transformPoint(
+                          matrix,
+                          ((p as List)[0] as num).toDouble(),
+                          (p[1] as num).toDouble(),
+                        ),
+                      )
+                      .toList(),
+                )
+                .toList();
+        final inside =
+            worldContours.any((ring) => pointInPolygon(ring, x, y)) &&
+            !holes.any((ring) => pointInPolygon(ring, x, y));
+        distance = inside
+            ? 0
+            : [...worldContours, ...holes].fold<double>(
+                double.infinity,
+                (best, ring) => min(best, ringDistance(ring)),
+              );
+      }
+      if (distance <= tolerance + 1e-9 && distance < best - 1e-9) {
+        winner = n;
+        best = distance;
+        if (distance == 0) break; // candidates are already in paint order
+      }
+    }
+    if (winner == null) return null;
+    final id =
+        winner.properties['role'] == 'decoration' &&
+            _nodes[winner.parentId]?.assembly != null
+        ? winner.parentId!
+        : winner.id;
+    return selectionTarget?.call(id) ?? id;
   }
 
   List<String> query(Map<String, double> b) {

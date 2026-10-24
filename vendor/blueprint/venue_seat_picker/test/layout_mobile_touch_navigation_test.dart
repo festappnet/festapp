@@ -44,6 +44,41 @@ Future<void> fingerDrag(WidgetTester tester, Offset from) async {
 }
 
 void main() {
+  testWidgets('pinch and cancel never dispatch a selection tap', (
+    tester,
+  ) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LayoutSceneSurface(
+            document: VenueLayoutDocument.empty(),
+            onTap: (_) => taps++,
+          ),
+        ),
+      ),
+    );
+    final first = await tester.startGesture(
+      const Offset(300, 300),
+      pointer: 10,
+    );
+    final second = await tester.startGesture(
+      const Offset(400, 300),
+      pointer: 11,
+    );
+    await first.up();
+    await second.up();
+    await tester.pumpAndSettle();
+    expect(taps, 0);
+    final canceled = await tester.startGesture(const Offset(300, 300));
+    await canceled.cancel();
+    await tester.pumpAndSettle();
+    expect(taps, 0);
+    await tester.tapAt(const Offset(300, 300));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+  });
+
   testWidgets('mobile Select pans blank canvas and still drags objects', (
     tester,
   ) async {

@@ -11,6 +11,21 @@ reviewed legacy importer is an offline conversion boundary, not a runtime route
 or a reader side effect. SVG authoring originals remain private; renderers use
 prepared portable paths.
 
+## Touch selection and navigation
+
+Completed taps have an 8 logical pixel radial margin outside rendered outlines,
+independent of camera zoom. Exact targets take priority; unavailable or pending
+seats never fall through to a farther free seat. Existing handlers retain
+availability feedback, optimistic selection and rollback. Pointer down and drag
+ownership stay exact, including row footprints and handles. Empty Select-mode
+touch drags pan while mouse drags keep marquee selection; pinch and cancellation
+never create reservation taps.
+
+The host consumes verified archives built directly from canonical package source.
+`pub publish --dry-run` selects archive files without publishing to a registry;
+`tool/archive_check.sh` verifies the clean consumers and archived browser build.
+See [the integration receipt](../../../docs/operations/blueprint-touch-2026-10-24.md).
+
 ## Geometry and business state
 
 Geometry and commercial binding changes form one revisioned draft. Selection alone
