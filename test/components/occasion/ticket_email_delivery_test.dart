@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:fstapp/components/email_templates/email_preview_examples.dart';
+import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/email_templates.dart';
@@ -29,10 +32,22 @@ class _NoPdfService extends TicketLayoutService {
   }
 }
 
+Map<String, dynamic> _previewContext(String subject) => {
+      'title': 'Ukázková akce',
+      'resolved': {
+        'template': {'subject': subject, 'html': '<p>Sample</p>{{tickets}}'},
+        'wrapper': {'html': '<main>{{content}}</main>'},
+      },
+    };
+
 void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
+  late EmailPreviewExamples examples;
   setUpAll(() async {
+    examples = EmailPreviewExamples.fromJson(jsonDecode(
+        File('assets/email_templates/preview_examples.json')
+            .readAsStringSync()) as Map<String, dynamic>);
     if (const bool.fromEnvironment('CAPTURE_DELIVERY')) {
       await (FontLoader('Futura')
             ..addFont(rootBundle.load('fonts/Futura PT Book.ttf')))
@@ -191,6 +206,7 @@ void main() {
                           builder: (context, setState) =>
                               OccasionSetupCommunication(
                                   draftId: 'test',
+                                  previewExamples: examples,
                                   data: draft,
                                   loader: () async => {'defaults': {}},
                                   onChanged: (patch) =>
@@ -198,6 +214,7 @@ void main() {
                                   loadPreview: (snapshot) async {
                                     requests.add(snapshot);
                                     return {
+                                      ..._previewContext('Sample'),
                                       'subject': 'Sample',
                                       'html': '<p>Sample</p>',
                                       'emailTemplates': [],
@@ -250,13 +267,14 @@ void main() {
         home: Scaffold(body: StatefulBuilder(builder: (context, setState) {
       update = setState;
       return TicketDeliveryPreview(
+          examples: examples,
           revision: revision,
-          load: (_) {
+          mode: TicketDeliveryMode.inlineQr,
+          load: () {
             calls++;
             if (calls == 1) return first.future;
             if (calls == 2) return current.future;
-            return Future.value(
-                {'subject': 'Retry result', 'html': '<p>OK</p>'});
+            return Future.value(_previewContext('Retry result'));
           });
     }))));
     await tester.pumpAndSettle();
@@ -272,7 +290,7 @@ void main() {
     expect(calls, 2);
     current.completeError(StateError('Preview unavailable'));
     await tester.pumpAndSettle();
-    first.complete({'subject': 'Stale', 'html': '<p>Old</p>'});
+    first.complete(_previewContext('Stale'));
     await tester.pumpAndSettle();
     expect(find.text('Stale'), findsNothing);
     expect(find.text('Náhled se nepodařilo načíst.'), findsOneWidget);
@@ -308,20 +326,13 @@ void main() {
                                         onChanged: (value) =>
                                             update(() => mode = value)),
                                     TicketDeliveryPreview(
-                                        revision: mode,
-                                        load: (count) async {
+                                        examples: examples,
+                                        revision: 1,
+                                        mode: mode,
+                                        load: () async {
                                           calls++;
-                                          return {
-                                            'subject': 'Vaše vstupenky',
-                                            'html':
-                                                '<h2>Vaše vstupenka</h2><p>U vstupu ukažte tento QR kód.</p>',
-                                            'attachments': [
-                                              {
-                                                'filename':
-                                                    'vstupenka-ukazka-1.pdf'
-                                              }
-                                            ]
-                                          };
+                                          return _previewContext(
+                                              'Vaše vstupenky');
                                         }),
                                   ]))))));
       await tester.pumpAndSettle();
@@ -364,7 +375,25 @@ void main() {
       }
       await tester.tap(find.text('3 vstupenky'));
       await tester.pumpAndSettle();
-      expect(calls, 2);
+      expect(calls, 1);
+      expect(find.byType(EmailReceivedMessage), findsOneWidget);
+      expect(find.byType(QrImageView), findsNWidgets(3));
+      expect(find.byIcon(Icons.picture_as_pdf_outlined), findsNothing);
+      // An open preview follows delivery changes without reloading its template.
+      final current = tester
+          .widget<TicketDeliveryPreview>(find.byType(TicketDeliveryPreview));
+      expect(current.mode, TicketDeliveryMode.inlineQr);
+      final selector = tester
+          .widget<TicketDeliverySelector>(find.byType(TicketDeliverySelector));
+      selector.onChanged(TicketDeliveryMode.pdfAttachment);
+      await tester.pumpAndSettle();
+      expect(find.byType(QrImageView), findsNothing);
+      expect(find.byIcon(Icons.picture_as_pdf_outlined), findsNWidgets(3));
+      selector.onChanged(TicketDeliveryMode.both);
+      await tester.pumpAndSettle();
+      expect(find.byType(QrImageView), findsNWidgets(3));
+      expect(find.byIcon(Icons.picture_as_pdf_outlined), findsNWidgets(3));
+      expect(calls, 1);
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
       expect(find.byType(TicketEmailPreview), findsNothing);

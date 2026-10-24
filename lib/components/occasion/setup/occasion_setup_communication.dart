@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../email_templates/email_preview_examples.dart';
 import '../../features/ticket_feature.dart';
 import '../../ticket_layout/views/ticket_delivery_selector.dart';
 import '../../ticket_layout/views/ticket_delivery_preview.dart';
@@ -108,6 +109,7 @@ class OccasionSetupCommunication extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onChanged;
   final Future<Map<String, dynamic>> Function()? loader;
   final SetupEmailPreviewLoader? loadPreview;
+  final EmailPreviewExamples? previewExamples;
   const OccasionSetupCommunication({
     super.key,
     required this.draftId,
@@ -117,6 +119,7 @@ class OccasionSetupCommunication extends StatefulWidget {
     required this.onChanged,
     this.loader,
     this.loadPreview,
+    this.previewExamples,
   });
   @override
   State<OccasionSetupCommunication> createState() =>
@@ -303,12 +306,24 @@ class _OccasionSetupCommunicationState
               (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false) ...[
             const SizedBox(height: 4),
             TicketDeliveryPreview(
-                revision: jsonEncode(widget.data),
-                load: (count) => widget.loadPreview!({
+                examples: widget.previewExamples,
+                revision: jsonEncode({
+                  'draftId': widget.draftId,
+                  'sourceId': widget.data['sourceId'],
+                  'copyEmails': widget.data['copyEmails'],
+                  'emailTemplateOverrides':
+                      widget.data['emailTemplateOverrides'],
+                }),
+                title: widget.data['title'] as String?,
+                mode: TicketDeliveryMode.parse(
+                    (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
+                    present: (widget.data['ticketDraft'] as Map?)
+                            ?.containsKey('delivery_mode') ??
+                        false),
+                load: () => widget.loadPreview!({
                       ...jsonDecode(jsonEncode(widget.data))
                           as Map<String, dynamic>,
                       'previewMessageType': 'order_tickets',
-                      'previewTicketCount': count,
                     })),
           ],
         ],

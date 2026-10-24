@@ -305,16 +305,22 @@ class _TicketSettingsState extends State<TicketSettings> {
           const SizedBox(height: 4),
           if (widget.feature.isEnabled && widget.occasionId > 0)
             TicketDeliveryPreview(
-                revision: _contextKey,
-                load: (count) async {
-                  final response = await Supabase.instance.client.functions
-                      .invoke('occasion-setup-email-preview', body: {
-                    'occasionId': widget.occasionId,
-                    'messageType': 'order_tickets',
-                    'sampleTicketCount': count,
-                    'deliveryMode': widget.feature.deliveryMode.value,
+                revision: jsonEncode([
+                  TicketLayoutService.identityKey(),
+                  widget.occasionId,
+                  RightsService.currentOccasion()?.aggregateVersion
+                ]),
+                mode: widget.feature.deliveryMode,
+                load: () async {
+                  final data = await Supabase.instance.client
+                      .rpc('get_occasion_setup_email_preview', params: {
+                    'p_id': null,
+                    'p_expected_revision': null,
+                    'p_message_type': 'order_tickets',
+                    'p_occasion': widget.occasionId,
+                    'p_delivery_mode': null,
                   });
-                  return Map<String, dynamic>.from(response.data as Map);
+                  return Map<String, dynamic>.from(data as Map);
                 }),
           const SizedBox(height: 16),
         ],
