@@ -21,6 +21,21 @@ application can offer customer selection and staff editing without maintaining
 two layout implementations. The media above uses a small fictional theatre so
 individual seat states and interactions remain easy to follow.
 
+## Touch selection
+
+Grid and object surfaces resolve completed taps with an 8 logical pixel radial
+margin, independent of camera zoom. Exact targets win; otherwise the nearest
+real outline wins in paint order. Availability and pending targets stay in the
+resolution so an unavailable seat cannot select a farther free seat. Existing
+handlers own feedback, reservation and rollback; semantic seat activation uses
+the same handler as coordinate taps.
+
+In the object editor, Select touch drags beginning on empty space pan the
+viewport, while mouse drags keep marquee selection. Exact object/handle drags
+and drawing tools retain their editing behavior. Two fingers own navigation
+until the entire pointer sequence ends; cancel restores an unfinished edit.
+Tap tolerance does not acquire object or handle drag ownership.
+
 ## Features
 
 - Zoom, pan and automatic fit-to-viewport.

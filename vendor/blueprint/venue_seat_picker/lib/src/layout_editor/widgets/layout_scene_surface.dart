@@ -53,6 +53,7 @@ class LayoutSceneSurface extends StatefulWidget {
     this.onDragCancel,
     this.pan = true,
     this.touchPanOnEmpty = false,
+    this.panOnTouchDown,
     this.showControls = true,
     this.compactZoomControls = false,
     this.showGrid = false,
@@ -93,6 +94,7 @@ class LayoutSceneSurface extends StatefulWidget {
 
   /// In Select mode, a finger on empty canvas navigates instead of drawing a marquee.
   final bool touchPanOnEmpty;
+  final bool Function(Offset world)? panOnTouchDown;
   final bool retainPendingTextPreview;
   final bool compactZoomControls;
   final bool showGrid;
@@ -213,6 +215,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   Offset? _pointTapDown;
   Offset? _dragPointerDown;
   bool _touchPanning = false;
+  final _touchPointers = <int>{};
   late final _motion = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: layoutMotionTokens['reflowMs']!),
@@ -1017,7 +1020,11 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                             },
                       onScaleStart: (details) {
                         _gestureScale = 1;
+                        if (_touchPanning && !_twoFinger) {
+                          widget.onDragCancel?.call();
+                        }
                         if (!widget.pan &&
+                            !_twoFinger &&
                             !_touchPanning &&
                             details.pointerCount == 1 &&
                             widget.onDragStart != null) {
@@ -1051,8 +1058,8 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                         _stopAutopan();
                         if (_interactionDragging) widget.onDragEnd?.call();
                         _interactionDragging = false;
-                        _twoFinger = false;
-                        _touchPanning = false;
+                        // Navigation owns the full 1-2-1 pointer sequence.
+                        // Reset only when the next independent pointer arrives.
                       },
                       child: GestureDetector(
                         // A semantic tap synthesizes the center, losing the
@@ -1073,24 +1080,43 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               },
                         onTapUp: widget.onTap == null
                             ? null
-                            : (e) =>
-                                  widget.onTap!(globalWorld(e.globalPosition)),
+                            : (e) {
+                                if (!_twoFinger) {
+                                  widget.onTap!(globalWorld(e.globalPosition));
+                                }
+                              },
                         child: Listener(
                           behavior: HitTestBehavior.opaque,
                           onPointerDown: (event) {
                             _hideHoverTooltip();
                             if (event.buttons != kPrimaryButton) return;
+                            if (_touchPointers.isEmpty) {
+                              _twoFinger = false;
+                              _touchPanning = false;
+                            }
+                            _touchPointers.add(event.pointer);
+                            if (_touchPointers.length > 1) {
+                              _twoFinger = true;
+                              _pointTapDown = null;
+                              _dragPointerDown = null;
+                              _stopAutopan();
+                              widget.onDragCancel?.call();
+                              _interactionDragging = false;
+                              return;
+                            }
                             if (_dragPointerDown == null) {
                               final world = globalWorld(event.position);
                               _touchPanning =
                                   widget.touchPanOnEmpty &&
                                   event.kind == PointerDeviceKind.touch &&
-                                  hitTest(
-                                        widget.document,
-                                        world.dx,
-                                        world.dy,
-                                      ) ==
-                                      null;
+                                  (widget.panOnTouchDown?.call(world) ??
+                                      (hitTest(
+                                            widget.document,
+                                            world.dx,
+                                            world.dy,
+                                            tolerance: 0,
+                                          ) ==
+                                          null));
                               _dragPointerDown = event.position;
                             }
                             _pointTapDown = widget.onPointTap == null
@@ -1112,11 +1138,13 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               _pointTapDown = null;
                             }
                           },
-                          onPointerCancel: (_) {
+                          onPointerCancel: (event) {
+                            _touchPointers.remove(event.pointer);
                             _pointTapDown = null;
                             _dragPointerDown = null;
                           },
                           onPointerUp: (event) {
+                            _touchPointers.remove(event.pointer);
                             _dragPointerDown = null;
                             final down = _pointTapDown;
                             _pointTapDown = null;

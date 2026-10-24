@@ -122,6 +122,10 @@ Do not patch these copies or add another rendering implementation here.
 The host uses repository-relative paths and needs no workstation checkout,
 unpublished Git revision or dependency override file.
 
+Pub-selected means file selection by local `pub publish --dry-run`, not a prior
+publication to pub.dev. Import verified archives built directly from canonical
+source through `tool/archive_check.sh`; registry publication is a separate step.
+
 Only the npm archive selected by `web_client/package.json` and its lockfile is
 retained. Older host archives are recoverable from Git revision
 `a4296c57687294b34826e59c7b232eef582c9748`; they are not installation inputs.

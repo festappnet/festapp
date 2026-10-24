@@ -7,8 +7,10 @@ import '../model/venue_backdrop.dart';
 import 'venue_seat_marker.dart';
 import 'venue_seat_style.dart';
 
-typedef VenueSeatBuilder<T, Id extends Object> =
-    Widget Function(BuildContext context, SeatSlot<T, Id> slot);
+typedef VenueSeatBuilder<T, Id extends Object> = Widget Function(
+  BuildContext context,
+  SeatSlot<T, Id> slot,
+);
 
 /// Zoomable and pannable venue seat map.
 class VenueSeatViewer<T, Id extends Object> extends StatefulWidget {
@@ -39,6 +41,7 @@ class VenueSeatViewer<T, Id extends Object> extends StatefulWidget {
 class _VenueSeatViewerState<T, Id extends Object>
     extends State<VenueSeatViewer<T, Id>> {
   final GlobalKey _layoutKey = GlobalKey();
+  final _tapTooltipKey = GlobalKey<TooltipState>();
   Size _viewport = Size.zero;
   bool _constraintScheduled = false;
 
@@ -158,32 +161,41 @@ class _VenueSeatViewerState<T, Id extends Object>
           child: AnimatedOpacity(
             opacity: controller.isLayoutReady ? 1 : 0,
             duration: const Duration(milliseconds: 200),
-            child: InteractiveViewer(
-              minScale: controller.minScale.clamp(0.01, widget.config.maxScale),
-              maxScale: widget.config.maxScale,
-              // Constrain the scaled plan ourselves: native scene bounds cannot
-              // center a plan that is smaller than the viewport on one axis.
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              constrained: false,
-              transformationController: controller.transformationController,
-              child: RepaintBoundary(
-                child: SizedBox(
-                  width: width,
-                  height: height,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: _backdrop(width, height)),
-                      for (final slot in controller.slots)
-                        if (slot.seat != null || widget.editorMode)
-                          Positioned(
-                            left: slot.column * slot.size,
-                            top: slot.row * slot.size,
-                            child: _SeatTapTarget(
-                              onTap: () => _tap(slot),
-                              child: _seat(context, slot),
+            child: GestureDetector(
+              excludeFromSemantics: true,
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) => _tapAt(details.localPosition),
+              child: InteractiveViewer(
+                minScale: controller.minScale.clamp(
+                  0.01,
+                  widget.config.maxScale,
+                ),
+                maxScale: widget.config.maxScale,
+                // Constrain the scaled plan ourselves: native scene bounds cannot
+                // center a plan that is smaller than the viewport on one axis.
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                constrained: false,
+                transformationController: controller.transformationController,
+                child: RepaintBoundary(
+                  child: SizedBox(
+                    width: width,
+                    height: height,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(child: _backdrop(width, height)),
+                        for (final slot in controller.slots)
+                          if (slot.seat != null || widget.editorMode)
+                            Positioned(
+                              left: slot.column * slot.size,
+                              top: slot.row * slot.size,
+                              child: Semantics(
+                                button: true,
+                                onTap: () => _tap(slot),
+                                child: _seat(context, slot),
+                              ),
                             ),
-                          ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -226,13 +238,9 @@ class _VenueSeatViewerState<T, Id extends Object>
         fit: BoxFit.cover,
       );
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () => widget.controller.showTooltipFor(null),
-      child: ClipRRect(
-        borderRadius: widget.config.borderRadius,
-        child: ColoredBox(color: widget.config.backgroundColor, child: child),
-      ),
+    return ClipRRect(
+      borderRadius: widget.config.borderRadius,
+      child: ColoredBox(color: widget.config.backgroundColor, child: child),
     );
   }
 
@@ -253,37 +261,82 @@ class _VenueSeatViewerState<T, Id extends Object>
     return tooltip == null || tooltip.isEmpty
         ? seat
         : Tooltip(
+            key:
+                slot.isTooltipHighlighted &&
+                    widget.shouldShowTooltipOnTap?.call(slot) == true
+                ? _tapTooltipKey
+                : null,
             message: tooltip,
             triggerMode: widget.shouldShowTooltipOnTap?.call(slot) == true
-                ? TooltipTriggerMode.tap
+                ? TooltipTriggerMode.manual
                 : TooltipTriggerMode.longPress,
             child: seat,
           );
   }
 
+  void _tapAt(Offset local) {
+    final controller = widget.controller;
+    final point = controller.transformationController.toScene(local);
+    final tolerance =
+        8 / controller.transformationController.value.getColumn(0).length;
+    SeatSlot<T, Id>? winner;
+    var best = double.infinity;
+    // Include unavailable/pending slots: their handler owns availability and
+    // must never be skipped in favor of a farther free seat.
+    final size = controller.seatSize;
+    final left = ((point.dx - tolerance) / size).floor().clamp(
+      0,
+      controller.columns - 1,
+    );
+    final right = ((point.dx + tolerance) / size).floor().clamp(
+      0,
+      controller.columns - 1,
+    );
+    final top = ((point.dy - tolerance) / size).floor().clamp(
+      0,
+      controller.rows - 1,
+    );
+    final bottom = ((point.dy + tolerance) / size).floor().clamp(
+      0,
+      controller.rows - 1,
+    );
+    for (var row = top; row <= bottom; row++) {
+      for (var column = left; column <= right; column++) {
+        final slot = controller.slots[row * controller.columns + column];
+        if (slot.seat == null && !widget.editorMode) continue;
+        final rect = Rect.fromLTWH(column * size, row * size, size, size);
+        final closest = Offset(
+          point.dx.clamp(rect.left, rect.right),
+          point.dy.clamp(rect.top, rect.bottom),
+        );
+        final distance = (point - closest).distance;
+        if (rect.contains(point)) {
+          _tap(slot);
+          return;
+        }
+        if (distance <= tolerance && distance < best) {
+          winner = slot;
+          best = distance;
+        }
+      }
+    }
+    if (winner != null) {
+      _tap(winner);
+    } else {
+      controller.showTooltipFor(null);
+    }
+  }
+
   void _tap(SeatSlot<T, Id> slot) {
     if (widget.shouldShowTooltipOnTap?.call(slot) == true) {
       widget.controller.showTooltipFor(slot.isTooltipHighlighted ? null : slot);
+      if (slot.isTooltipHighlighted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _tapTooltipKey.currentState?.ensureTooltipVisible();
+        });
+      }
       return;
     }
     widget.onSeatPressed?.call(slot);
   }
-}
-
-class _SeatTapTarget extends StatelessWidget {
-  const _SeatTapTarget({required this.onTap, required this.child});
-  final VoidCallback onTap;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    type: MaterialType.transparency,
-    child: InkResponse(
-      onTap: onTap,
-      containedInkWell: true,
-      highlightShape: BoxShape.rectangle,
-      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-      child: child,
-    ),
-  );
 }

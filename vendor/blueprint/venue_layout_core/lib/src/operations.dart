@@ -472,7 +472,7 @@ VenueLayoutDocument reflowTable(
   }
   final preferred = _anchors(table, count);
   final selectedAnchors = <String, Map<String, dynamic>>{};
-  bool pack(List<Map<String, dynamic>> anchors) {
+  bool pack(List<Map<String, dynamic>> anchors, {bool compact = false}) {
     final occupied = [...fixedHulls];
     selectedAnchors.clear();
     for (var i = 0; i < next.length; i++) {
@@ -487,14 +487,31 @@ VenueLayoutDocument reflowTable(
       }
 
       Iterable<Map<String, dynamic>> ordered() sync* {
-        if (identical(anchors, preferred) || anchors.contains(target)) {
+        if (!compact &&
+            (identical(anchors, preferred) || anchors.contains(target))) {
           yield target;
         }
         // Rank fallback slots lazily: the regular, unconstrained path never
         // allocates or sorts a second list for each chair.
         final alternatives =
             anchors.where((anchor) => !identical(anchor, target)).toList()
-              ..sort((a, b) => deviation(a).compareTo(deviation(b)));
+              ..sort((a, b) {
+                if (compact) {
+                  const edges = ['top', 'right', 'bottom', 'left'];
+                  final edge = edges
+                      .indexOf('${a['edge']}')
+                      .compareTo(edges.indexOf('${b['edge']}'));
+                  if (edge != 0) return edge;
+                  final along = a['edge'] == 'left' || a['edge'] == 'right'
+                      ? 'y'
+                      : 'x';
+                  final coordinate = (a[along] as num).compareTo(
+                    b[along] as num,
+                  );
+                  if (coordinate != 0) return coordinate;
+                }
+                return deviation(a).compareTo(deviation(b));
+              });
         yield* alternatives;
       }
 
@@ -529,7 +546,17 @@ VenueLayoutDocument reflowTable(
     final fallbackCount = min(capacity, max(count + 8, count * 2));
     final full = _anchors(table, fallbackCount);
     if (!pack(full) && !pack([...preferred, ...full])) {
-      throw StateError('No collision-free chair position is available');
+      // Walls can clip centered seating cells even when a shifted row fits.
+      // Sample the usable side intervals and fill from one end when nearest
+      // placement leaves gaps that strand the remaining chairs.
+      final perimeter = [
+        ...full,
+        if (matrix != null)
+          ..._canvasChairPerimeterSlots(d, table, matrix, next),
+      ];
+      if (!pack(perimeter) && !pack(perimeter, compact: true)) {
+        throw StateError('No collision-free chair position is available');
+      }
     }
   }
   final placed = <LayoutNode>[
@@ -611,6 +638,104 @@ VenueLayoutDocument reflowTable(
           },
     ],
   );
+}
+
+List<Map<String, dynamic>> _canvasChairPerimeterSlots(
+  VenueLayoutDocument d,
+  LayoutNode table,
+  List<double> matrix,
+  List<LayoutNode> seats,
+) {
+  if (const [
+    'polygon',
+    'round',
+    'circle',
+    'ellipse',
+    'oval',
+  ].contains(table.properties['shape']))
+    return [];
+  final seating = TableSeating.fromTable(table),
+      pitch = seating.pitch,
+      offset = seating.offset;
+  final out = <Map<String, dynamic>>[],
+      left = (d.canvas['x'] as num).toDouble(),
+      top = (d.canvas['y'] as num).toDouble(),
+      right = left + (d.canvas['width'] as num),
+      bottom = top + (d.canvas['height'] as num),
+      sizes = <String>{};
+  for (final seat in seats) {
+    if (!sizes.add('${seat.width}:${seat.height}')) continue;
+    for (var edge = 0; edge < 4; edge++) {
+      if (isBarNode(table) &&
+          ['top', 'right', 'bottom', 'left'][edge] != _barSide(table))
+        continue;
+      final horizontal = edge.isEven,
+          length = horizontal ? table.width : table.height,
+          rotation = <double>[180, 270, 0, 90][edge],
+          perpendicular = horizontal
+              ? (edge == 0
+                    ? -table.height / 2 - offset
+                    : table.height / 2 + offset)
+              : (edge == 1
+                    ? table.width / 2 + offset
+                    : -table.width / 2 - offset),
+          base = transformPoint(
+            matrix,
+            horizontal ? 0 : perpendicular,
+            horizontal ? perpendicular : 0,
+          ),
+          direction = horizontal
+              ? [matrix[0], matrix[1]]
+              : [matrix[2], matrix[3]],
+          centered = seat.copyWith(x: 0, y: 0, rotation: rotation),
+          footprint = boundsOfPoints(
+            worldHull(centered, multiplyMatrix(matrix, localMatrix(centered))),
+          );
+      var low = -length / 2, high = length / 2, valid = true;
+      void clip(double origin, double slope, double lower, double upper) {
+        if (slope.abs() < 1e-12) {
+          if (origin < lower - 1e-7 || origin > upper + 1e-7) valid = false;
+          return;
+        }
+        final a = (lower - origin) / slope, b = (upper - origin) / slope;
+        low = max(low, min(a, b));
+        high = min(high, max(a, b));
+      }
+
+      clip(
+        base[0],
+        direction[0],
+        left - (footprint['x']! - matrix[4]),
+        right - (footprint['x']! + footprint['width']! - matrix[4]),
+      );
+      clip(
+        base[1],
+        direction[1],
+        top - (footprint['y']! - matrix[5]),
+        bottom - (footprint['y']! + footprint['height']! - matrix[5]),
+      );
+      if (!valid || high < low - 1e-7) continue;
+      final cells = min(
+            ((high - low + 1e-7) / pitch).floor() + 1,
+            max(8, seats.length + 2),
+          ),
+          span = (cells - 1) * pitch;
+      for (final start in [low, (low + high - span) / 2, high - span]) {
+        for (var i = 0; i < cells; i++) {
+          final coordinate = start + i * pitch;
+          out.add({
+            'x': horizontal ? coordinate : perpendicular,
+            'y': horizontal ? perpendicular : coordinate,
+            'rotation': rotation,
+            'kind': 'edge',
+            'edge': ['top', 'right', 'bottom', 'left'][edge],
+            't': ((coordinate + length / 2) / length).clamp(0, 1),
+          });
+        }
+      }
+    }
+  }
+  return out;
 }
 
 bool _chairObstacle(LayoutNode n) =>
@@ -734,7 +859,9 @@ VenueLayoutDocument snapAttachedChairPosition(
         ),
         hull = worldHull(next, localMatrix(next));
     if (polygonsOverlap(hull, localHull(table)) ||
-        others.any((n) => polygonsOverlap(hull, worldHull(n, localMatrix(n))))) {
+        others.any(
+          (n) => polygonsOverlap(hull, worldHull(n, localMatrix(n))),
+        )) {
       continue;
     }
     final world = multiplyMatrix(matrix, localMatrix(next));
@@ -1634,7 +1761,8 @@ Map<String, num> rowLayoutParameters(VenueLayoutDocument d, String rootId) {
       'rowSpacing',
       'arc',
     ];
-    if (spec?['kind'] != 'rows' || fields.any((field) => spec![field] is! num)) {
+    if (spec?['kind'] != 'rows' ||
+        fields.any((field) => spec![field] is! num)) {
       throw const FormatException('incomplete_row_assembly');
     }
     return {for (final field in fields) field: spec![field] as num};
@@ -1913,7 +2041,8 @@ VenueLayoutDocument reconcileAssembly(
     {}
     final root = d.nodes.firstWhere((node) => node.id == rootId),
         source = generated.nodes.firstWhere((node) => node.parentId == null);
-    if (root.assembly?['kind'] != 'rows' || source.assembly?['kind'] != 'rows') {
+    if (root.assembly?['kind'] != 'rows' ||
+        source.assembly?['kind'] != 'rows') {
       throw ArgumentError('Expected row assemblies');
     }
     _unlocked(d, {rootId});

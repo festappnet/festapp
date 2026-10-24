@@ -39,6 +39,7 @@ class _VenueLayoutPickerState extends State<VenueLayoutPicker> {
   final Map<String, int> _quantities = {};
   String? _message;
   int _generation = 0;
+  double _viewportScale = 1;
   Route<dynamic>? _quantityRoute, _listRoute;
 
   bool _current(int generation) => mounted && generation == _generation;
@@ -367,8 +368,32 @@ class _VenueLayoutPickerState extends State<VenueLayoutPicker> {
                   'pending': _pending.contains(id),
                 },
             },
+            onViewportScaleChanged: (scale) => _viewportScale = scale,
             onTap: (p) {
-              final id = hitTest(widget.document, p.dx, p.dy);
+              final id = spatialIndexFor(widget.document).resolveTap(
+                p.dx,
+                p.dy,
+                tolerance: 8 / _viewportScale,
+                classify: (node) {
+                  if (node.kind == 'seat') {
+                    return _pending.contains(node.id) ||
+                            _unavailable(_presentation(node.id))
+                        ? LayoutTapDisposition.block
+                        : LayoutTapDisposition.activate;
+                  }
+                  if (node.kind == 'capacityArea' &&
+                      widget.onQuantityRequested != null) {
+                    final presentation =
+                        widget.capacityPresentation[node.id] as Map? ??
+                        const {};
+                    return _pending.contains(node.id) ||
+                            _unavailable(presentation)
+                        ? LayoutTapDisposition.block
+                        : LayoutTapDisposition.activate;
+                  }
+                  return LayoutTapDisposition.ignore;
+                },
+              );
               if (id != null) _choose(id);
             },
           ),

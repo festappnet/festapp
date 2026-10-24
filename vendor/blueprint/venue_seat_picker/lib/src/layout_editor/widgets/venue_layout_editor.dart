@@ -308,17 +308,35 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     return node.parentId ?? id;
   }
 
+  LayoutTapDisposition _tapDisposition(LayoutNode node) {
+    if (!_canEdit) {
+      return _viewSelectable(node)
+          ? LayoutTapDisposition.activate
+          : LayoutTapDisposition.ignore;
+    }
+    return node.properties['role'] == 'decoration' &&
+            !c.document.nodes.any(
+              (parent) => parent.id == node.parentId && parent.assembly != null,
+            )
+        ? LayoutTapDisposition.ignore
+        : LayoutTapDisposition.activate;
+  }
+
+  String? _tapHitAt(Offset point) =>
+      _hitAt(point) ??
+      spatialIndexFor(c.document).resolveTap(
+        point.dx,
+        point.dy,
+        tolerance: 8 / _viewportScale,
+        classify: _tapDisposition,
+      );
+
   // Seats use the shared spatial index. Assembly gaps additionally hit the
   // real local footprint, cached until geometry changes.
   String? _hitAt(Offset point) {
-    final direct = hitTest(
+    final direct = spatialIndexFor(
       c.document,
-      point.dx,
-      point.dy,
-      tolerance: 8 / _viewportScale,
-      // Labels and decoration must not intercept reservation selection.
-      accept: _canEdit ? null : _viewSelectable,
-    );
+    ).resolveTap(point.dx, point.dy, tolerance: 0, classify: _tapDisposition);
     if (!identical(_hitBoundsDocument, c.document)) {
       _hitBoundsDocument = c.document;
       _rowHitBounds.clear();
@@ -461,7 +479,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   }
 
   void _tap(Offset point) {
-    var activated = _hitAt(point);
+    var activated = _tapHitAt(point);
     if (!_canEdit &&
         !c.document.nodes.any(
           (node) => node.id == activated && _viewSelectable(node),
@@ -494,14 +512,15 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     if (_canvasSelected) setState(() => _canvasSelected = false);
     _focus.requestFocus();
     if (_tool == 'Select' || _tool == 'Pan') {
-      var id = _hitAt(point);
+      final exact = _hitAt(point);
+      var id = activated;
       final selectionHandled = _selectionBeforeDown != null;
       final previouslySelected = _selectionBeforeDown ?? c.selection;
       final shift = selectionHandled
           ? _selectionShiftDown
           : HardwareKeyboard.instance.isShiftPressed;
       _selectionBeforeDown = null;
-      if (selectionHandled && shift) return;
+      if (selectionHandled && shift && exact != null) return;
       if (id != null) id = _selectionTarget(id);
       if (id != null &&
           _tool == 'Select' &&
@@ -528,9 +547,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         id == null
             ? {}
             : shift
-            ? (c.selection.contains(id)
-                  ? ({...c.selection}..remove(id))
-                  : {...c.selection, id})
+            ? (previouslySelected.contains(id)
+                  ? ({...previouslySelected}..remove(id))
+                  : {...previouslySelected, id})
             : {id},
       );
       return;
@@ -3536,6 +3555,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               : const {},
                                           pan: _tool == 'Pan' || !_canEdit,
                                           touchPanOnEmpty: _tool == 'Select',
+                                          panOnTouchDown: (point) =>
+                                              _hitAt(point) == null &&
+                                              !_hitsBackground(point),
                                           onSelectDown: _selectDown,
                                           onContextMenu:
                                               (!_canEdit || _tool != 'Select')
@@ -3580,9 +3602,15 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               ? _endGesture
                                               : null,
                                           onDragCancel: () {
+                                            final selection =
+                                                _selectionBeforeDown;
                                             if (_startDocument != null ||
                                                 _marquee != null) {
                                               _cancelGesture();
+                                            }
+                                            _selectionBeforeDown = null;
+                                            if (selection != null) {
+                                              c.select(selection);
                                             }
                                           },
                                           onHandleStart:
