@@ -26,6 +26,38 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('issue tooltip identifies each failed recipient, including after contact changes',
+      (tester) async {
+    final order = OrderModel(id: 4, state: 'ordered',
+        data: {'email': 'updated-contact@example.invalid'})
+      ..emailDelivery = {
+        'current_issues': [
+          {...issue('bounce'), 'recipient': 'failed@example.invalid'},
+          {...issue('suppressed'), 'kind': 'order_tickets',
+            'recipient': 'blocked@example.invalid'},
+        ],
+      };
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SizedBox(
+      width: 250, height: 50,
+      child: OrderStateCell(label: 'ORDERED', background: Colors.white,
+          occasionId: 7, order: order),
+    ))));
+    final tooltip = tester.widget<Tooltip>(find.byType(Tooltip)).message!;
+    expect(tooltip, contains('order_confirmation (failed@example.invalid)'));
+    expect(tooltip, contains('order_tickets (blocked@example.invalid)'));
+    expect(tooltip, isNot(contains('old@example.invalid')));
+    expect(tooltip, isNot(contains('updated-contact@example.invalid')));
+    expect(tooltip, contains('EmailDelivery.recovery.resolveHint'));
+  });
+  test('issue description uses original recipient only when current recipient is missing', () {
+    for (final recipient in [null, '', '   ']) {
+      final value = OrderEmailIssue({...issue('bounce'), 'recipient': recipient});
+      expect(value.tooltipDescription, contains('(old@example.invalid)'));
+    }
+    final missing = OrderEmailIssue({...issue('bounce'), 'original_recipient': null});
+    expect(missing.tooltipDescription, isNot(contains('()')));
+    expect(missing.tooltipDescription, isNot(contains('null')));
+  });
   test(
       'server issues own lifecycle, history does not determine current warning',
       () {

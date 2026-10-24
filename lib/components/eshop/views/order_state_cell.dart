@@ -54,7 +54,7 @@ class OrderStateCell extends StatelessWidget {
                       const BoxConstraints.tightFor(width: 20, height: 20),
                   padding: EdgeInsets.zero,
                   tooltip:
-                      '${issues.map((i) => i.description).join('\n')}\n${EmailDeliveryStrings.recovery('resolve')}',
+                      '${issues.map((i) => i.tooltipDescription).join('\n')}\n${EmailDeliveryStrings.recovery('resolveHint')}',
                   icon: EmailDeliveryIssueIcon(count: issues.length),
                   onPressed: () => showDialog<void>(
                       context: context,
