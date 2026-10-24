@@ -1,3 +1,4 @@
+import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:fstapp/components/notification_center/notification_center_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -155,6 +156,8 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
         TrinaColumn(
             title: CommonStrings.date,
             field: 'created_at',
+            formatter: (value) => LocaleDateTime.dateTimeCell(
+                value, Localizations.localeOf(context).toString()),
             readOnly: true,
             width: 160,
             type: TrinaColumnType.text()),
@@ -249,10 +252,10 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
                               EmailDeliveryStrings.state('post_action_failed')),
                         for (final entry in (result['attempts'] as List? ?? []))
                           Text(
-                              '${EmailDeliveryStrings.state(entry['state'].toString())} - ${entry['at']}${entry['error'] == null ? '' : ' - ${entry['error']}'}'),
+                              '${EmailDeliveryStrings.state(entry['state'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}${entry['error'] == null ? '' : ' - ${entry['error']}'}'),
                         for (final entry in (result['events'] as List? ?? []))
                           Text(
-                              '${EmailDeliveryStrings.state(entry['type'].toString())} - ${entry['at']}'),
+                              '${EmailDeliveryStrings.state(entry['type'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}'),
                       ]))),
             ));
   }

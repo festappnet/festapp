@@ -85,7 +85,7 @@ class OccasionSaleBadge extends StatelessWidget {
       if (status.deadline != null)
         wording(status.starts ? 'startAt' : 'endAt', {
           'date': DateFormat.yMd(context.locale.toLanguageTag())
-              .add_Hm()
+              .add_jm()
               .format(status.deadline!.toOccasionTime(timezone))
         }),
     ].join('\n');

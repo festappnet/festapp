@@ -1,3 +1,4 @@
+import 'package:fstapp/services/locale_date_time.dart';
 import 'admin_tab_activity.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
@@ -145,6 +146,18 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
       widget.controller.context,
       Localizations.localeOf(widget.controller.context).languageCode,
     );
+    for (final column in widget.controller.columns) {
+      if (column.formatter != null) continue;
+      String locale() => Localizations.localeOf(context).toString();
+      if (column.type is TrinaColumnTypeDate) {
+        column.formatter = (value) => LocaleDateTime.dateCell(value, locale());
+      } else if (column.type is TrinaColumnTypeDateTime) {
+        column.formatter =
+            (value) => LocaleDateTime.dateTimeCell(value, locale());
+      } else if (column.type is TrinaColumnTypeTime) {
+        column.formatter = (value) => LocaleDateTime.timeCell(value, locale());
+      }
+    }
     DataGridColumnHeader.install(
       widget.controller.columns,
       widget.controller.columnHelp,

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/email_delivery/email_delivery_issue_icon.dart';
 import 'order_email_repair_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -49,16 +50,7 @@ class OrderStateCell extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   tooltip:
                       '${issues.map((i) => i.description).join('\n')}\n${EmailDeliveryStrings.recovery('resolve')}',
-                  icon: Badge(
-                      isLabelVisible: true,
-                      label: Text('${issues.length}'),
-                      child: Icon(Icons.mark_email_unread_outlined,
-                          size: 20,
-                          color: issues.any((i) => i.isFailure)
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant)),
+                  icon: EmailDeliveryIssueIcon(count: issues.length),
                   onPressed: () => showDialog<void>(
                       context: context,
                       builder: (_) => OrderEmailRepairDialog(

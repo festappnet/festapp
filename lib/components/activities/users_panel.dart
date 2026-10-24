@@ -463,10 +463,7 @@ class _UserAssignmentsDialogState extends State<_UserAssignmentsDialog> {
                             padding:
                                 const EdgeInsets.only(top: 16.0, bottom: 8.0),
                             child: Text(
-                              DateFormat(
-                                      ActivitiesComponentStrings
-                                          .dateFormatDayMonth,
-                                      context.locale.languageCode)
+                              DateFormat.MMMMEEEEd(context.locale.toString())
                                   .format(item)
                                   .toUpperCase(),
                               style: TextStyle(
@@ -486,7 +483,7 @@ class _UserAssignmentsDialogState extends State<_UserAssignmentsDialog> {
                           final isSelected =
                               _selectedAssignments.contains(assignment);
                           final timeFormatter =
-                              DateFormat.Hm(context.locale.languageCode);
+                              DateFormat.jm(context.locale.languageCode);
 
                           return Card(
                             elevation: 1.5,

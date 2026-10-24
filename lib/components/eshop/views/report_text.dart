@@ -9,7 +9,8 @@ import '../ticket_batch_strings.dart';
 String formatReportText(OccasionReport report, {String? locale}) {
   final text = StringBuffer()
     ..writeln(report.title)
-    ..writeln(report.generatedAt.toUtc().toIso8601String());
+    ..writeln(
+        DateFormat.yMd(locale).add_jm().format(report.generatedAt.toLocal()));
   void counts(String title, ReportCounts counts) {
     text.writeln('$title: ${counts.total}');
     for (final entry in counts.states.entries) {
@@ -51,7 +52,7 @@ String formatReportText(OccasionReport report, {String? locale}) {
       ..writeln(ReportStrings.orderTimelineHelp);
     for (final day in report.ticketDays) {
       text.writeln(
-          '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${day.count}');
+          '${DateFormat.yMd(locale).format(day.day)} ${day.currency}: ${day.count}');
     }
     text
       ..writeln()
@@ -59,7 +60,7 @@ String formatReportText(OccasionReport report, {String? locale}) {
       ..writeln(ReportStrings.paymentTimelineHelp);
     for (final day in report.paymentDays) {
       text.writeln(
-          '${DateFormat('d. M. yyyy').format(day.day)} ${day.currency}: ${ReportStrings.received} ${formatReportNumber(day.received, locale: locale)}, ${ReportStrings.returned} ${formatReportNumber(day.returned, locale: locale)}');
+          '${DateFormat.yMd(locale).format(day.day)} ${day.currency}: ${ReportStrings.received} ${formatReportNumber(day.received, locale: locale)}, ${ReportStrings.returned} ${formatReportNumber(day.returned, locale: locale)}');
     }
   }
   text

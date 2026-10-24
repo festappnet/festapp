@@ -1,3 +1,4 @@
+import { LocalizationService } from './localization_service.js';
 import { publicPageSeo } from './public_page_seo.js';
 import { AppConfig } from '../app_config.js';
 
@@ -152,7 +153,7 @@ export class SeoService {
 
     static _formatDate(dateObj) {
         if (!dateObj) return '';
-        return dateObj.toLocaleDateString(AppConfig.supportedLanguages[0], {
+        return dateObj.toLocaleDateString(LocalizationService.currentLocale, {
             day: 'numeric', 
             month: 'numeric', 
             year: 'numeric'

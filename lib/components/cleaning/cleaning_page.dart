@@ -334,7 +334,7 @@ class _CleaningPageState extends State<CleaningPage> {
   /// One line per report: `date time · WC · type · "note" · reporter · state`,
   /// extra (duplicate) notes indented below. Header = occasion + export date.
   String _buildHistoryText(String occasionTitle, List<CleaningReport> history) {
-    final dateFmt = DateFormat('yyyy-MM-dd HH:mm');
+    final dateFmt = DateFormat.yMd().add_jm();
     final buf = StringBuffer();
     buf.writeln(occasionTitle);
     buf.writeln(
@@ -465,7 +465,7 @@ class _CleaningPageState extends State<CleaningPage> {
 
   /// "Last updated {time}" strip shown above cached (offline) statuses.
   Widget _buildCacheAgeBanner(BuildContext context) {
-    final time = DateFormat('d. M. HH:mm').format(_cacheFetchedAt!);
+    final time = DateFormat.Md().add_jm().format(_cacheFetchedAt!);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(

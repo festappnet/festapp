@@ -110,6 +110,7 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
   `PopScope` guards. `StandardDialog` is the compact content adapter. Native
   date/time pickers and public song/game views keep their specialized controls.
 - **Localization**: `*_strings.dart` files with static getters (`CommonStrings.save`) not `"key".tr()`
+- **Date/time display**: Use locale-aware Intl skeletons (`DateFormat.yMd`, `jm`, `jms`, etc.) with the interface locale. `main` keeps `Intl.defaultLocale` in sync for context-free presentation helpers. Grid values stay canonical for sorting and editor/RPC round trips; localize their display with `LocaleDateTime` formatters. Explicit patterns belong only to stored/wire formats or internal picker controller values, never user-facing labels or tooltips.
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI
 - **No `dart:io`** in shared UI code (breaks web). Exception: `map/` uses it for platform-specific offline maps

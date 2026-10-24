@@ -140,8 +140,7 @@ class _OrderHistoryDialogState extends State<OrderHistoryDialog> {
   Widget _buildHistoryEntry(OrderHistoryModel item) {
     final theme = Theme.of(context);
     final date = item.createdAt != null
-        ? DateFormat('yyyy-MM-dd HH:mm:ss')
-            .format(item.createdAt!.toOccasionTime())
+        ? DateFormat.yMd().add_jms().format(item.createdAt!.toOccasionTime())
         : OrdersStrings.currentState;
 
     final changedBy =

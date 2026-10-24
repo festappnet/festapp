@@ -11,11 +11,13 @@ class NotificationItem {
         kind = json['kind'] as String? ?? '',
         status = json['status'] as String? ?? '',
         occurredAt = DateTime.tryParse(json['occurredAt']?.toString() ?? ''),
+        occasionId = (json['occasionId'] as num?)?.toInt(),
         occasionLink = json['occasionLink'] as String?,
         data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
   final String id, kind, status;
   final DateTime? occurredAt;
   final String? occasionLink;
+  final int? occasionId;
   final Map<String, dynamic> data;
 }
 
@@ -60,6 +62,7 @@ class NotificationCenterController extends ChangeNotifier {
   List<NotificationGroup> groups = [];
   List<Map<String, dynamic>> occasions = [];
   dynamic nextCursor;
+  final _orderDetails = <int, Future<Map<String, dynamic>?>>{};
   Timer? _timer;
   bool _unsupported = false;
   Map<String, dynamic> get _scope =>
@@ -87,6 +90,7 @@ class NotificationCenterController extends ChangeNotifier {
     panelOpen = false;
     groups = [];
     occasions = [];
+    _orderDetails.clear();
     refreshFailed = false;
     _schedule();
     if ((identityChanged || invalidate) && user != null && organization != null)
@@ -169,6 +173,7 @@ class NotificationCenterController extends ChangeNotifier {
     failed = true;
     groups = [];
     occasions = [];
+    _orderDetails.clear();
     nextCursor = null;
     _timer?.cancel();
     notifyListeners();
@@ -215,6 +220,7 @@ class NotificationCenterController extends ChangeNotifier {
   Future<void> open() async {
     if (organization == null || user == null || loading) return;
     panelOpen = true;
+    _orderDetails.clear();
     _schedule();
     final generation = _generation, revision = ++_revision;
     loading = true;
@@ -319,6 +325,41 @@ class NotificationCenterController extends ChangeNotifier {
     }
   }
 
+  /// Reuse the existing authorized readers only for expanded order items.
+  /// Cached futures deduplicate email/order notifications for the same order.
+  Future<Map<String, dynamic>?> orderDetails(NotificationItem item) {
+    final orderId = item.data['orderId'];
+    if (orderId is! int) return Future.value(null);
+    return _orderDetails.putIfAbsent(orderId, () async {
+      final generation = _generation;
+      final result = await _read('get_order_history', {'order_id': orderId});
+      if (generation != _generation) return null;
+      if (result is! Map || result['code'] != 200) {
+        throw StateError('Order details unavailable');
+      }
+      final order = Map<String, dynamic>.from(result['data']['order']);
+      if (item.occasionId != null && order['occasion'] != item.occasionId) {
+        throw StateError('Order context changed');
+      }
+      final waiting = order['state'] == 'waitlisted';
+      final tickets = await _read(
+          waiting ? 'get_waitlist_order_detail' : 'get_tickets_with_details',
+          waiting ? {'p_order_id': orderId} : {'order_id': orderId});
+      if (generation != _generation) return null;
+      return {
+        'order': order,
+        'tickets': waiting
+            ? (tickets['tickets'] as List? ?? [])
+            : (tickets as List? ?? [])
+      };
+    });
+  }
+
+  void retryOrderDetails(NotificationItem item) {
+    _orderDetails.remove(item.data['orderId']);
+    notifyListeners();
+  }
+
   Future<bool> mute(Map<String, dynamic> occasion, bool muted) async {
     if (occasion['saving'] == true) return false;
     final generation = _generation;
@@ -349,6 +390,7 @@ class NotificationCenterController extends ChangeNotifier {
   @override
   void dispose() {
     _generation++;
+    _orderDetails.clear();
     _timer?.cancel();
     super.dispose();
   }

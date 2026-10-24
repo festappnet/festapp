@@ -2419,6 +2419,7 @@
     "duplicateBlock": "Блок {{tickets}} можна використовувати лише один раз."
   },
   "NotificationCenter": {
+    "detailUnavailable": "Не вдалося завантажити подробиці. Спробувати ще раз",
     "settingsEmpty": "Подій поки немає.",
     "groups": {
       "email_problem": "Доставка пошти",

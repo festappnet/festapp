@@ -354,7 +354,7 @@ class DbEvents {
             var datePart =
                 DateFormat.MMMMEEEEd(context.locale.languageCode).format(start);
             var timePart =
-                DateFormat.Hm(context.locale.languageCode).format(start);
+                DateFormat.jm(context.locale.languageCode).format(start);
             String startString = "$datePart $timePart";
             answerWhy = ScheduleStrings.signInFrom(time: startString);
           }

@@ -108,7 +108,7 @@ class InventoryContextModel {
     }
     if (blockDate != null) {
       final String locale = Localizations.localeOf(context).toString();
-      final String datePart = DateFormat('d.M.', locale).format(blockDate!);
+      final String datePart = DateFormat.Md(locale).format(blockDate!);
       final String dayOfWeekPart =
           DateFormat('E', locale).format(blockDate!).toUpperCase();
       return '$dayOfWeekPart $datePart';

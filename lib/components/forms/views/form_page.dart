@@ -1196,7 +1196,10 @@ class _FormPageState extends State<FormPage> {
             blueprintId);
         if (blueprint == null) throw StateError('Blueprint unavailable');
         refreshedSeats.addAll(refreshedReservedPaymentSeats(
-            blueprint, previousTickets.map((ticket) => ticket.seat?.seatId).whereType<int>()));
+            blueprint,
+            previousTickets
+                .map((ticket) => ticket.seat?.seatId)
+                .whereType<int>()));
       }
       if (!mounted || formHolder != previousHolder) return;
       final holder = FormHolder.fromDefinition(refreshed.definition);
@@ -1403,7 +1406,8 @@ class _FormPageState extends State<FormPage> {
     final expires = DateTime.tryParse(bundle['expiresAt'] ?? '');
     final expiryLabel = expires == null
         ? ''
-        : DateFormat('d. M. yyyy HH:mm')
+        : DateFormat.yMd()
+            .add_jm()
             .format(expires.toOccasionTime(bundle['timeZone'] as String?));
     final canDecline = _selectedTicketIds.every((id) =>
         (bundle['slots'] as List)

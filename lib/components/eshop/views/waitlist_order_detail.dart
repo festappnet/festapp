@@ -291,8 +291,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                   style: theme.textTheme.bodyMedium,
                 ),
                 Text(
-                  DateFormat('d. M. yyyy HH:mm')
-                      .format(expires.toOccasionTime()),
+                  DateFormat.yMd().add_jm().format(expires.toOccasionTime()),
                   maxLines: 1,
                   softWrap: false,
                   style: theme.textTheme.bodyMedium,

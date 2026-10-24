@@ -226,7 +226,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     final expiry = DateTime.tryParse(data?['expiresAt']?.toString() ?? '');
     if (expiry != null) {
       parts.add(
-          '${WaitlistStrings.expiresAt}: ${DateFormat('d. M. yyyy HH:mm').format(expiry.toOccasionTime())}');
+          '${WaitlistStrings.expiresAt}: ${DateFormat.yMd().add_jm().format(expiry.toOccasionTime())}');
     }
     return parts.join(' · ');
   }
@@ -243,8 +243,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
-      final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+      final priceString = Utilities.formatPrice(context, price,
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       return ' ($priceString)';
     }
 
@@ -307,8 +308,9 @@ class OrderHistoryModel extends ITrinaRowModel {
     // Helper to format an optional price into a display string.
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
-      final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+      final priceString = Utilities.formatPrice(context, price,
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       return ' ($priceString)';
     }
 
@@ -615,11 +617,14 @@ class OrderHistoryModel extends ITrinaRowModel {
           context, previousHistoryRecord!.price ?? 0,
           currencyCode: previousHistoryRecord!.currencyCode);
       final newPrice = Utilities.formatPrice(context, price ?? 0,
-          currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+          currencyCode: currencyCode,
+          decimalDigits: orderModel?.amountDecimalDigits ?? 0);
       priceText = "$oldPrice → $newPrice";
     } else {
       priceText = price != null
-          ? Utilities.formatPrice(context, price!, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0)
+          ? Utilities.formatPrice(context, price!,
+              currencyCode: currencyCode,
+              decimalDigits: orderModel?.amountDecimalDigits ?? 0)
           : "";
     }
 

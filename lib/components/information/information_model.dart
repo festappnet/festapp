@@ -158,7 +158,7 @@ class InformationModel extends ITrinaRowModel {
   @override
   String toBasicString() {
     if (data?[Tb.information.data_date] != null) {
-      return DateFormat.yMMMd('en')
+      return DateFormat.yMMMd()
           .format(DateTime.parse(data?[Tb.information.data_date]))
           .toString();
     }

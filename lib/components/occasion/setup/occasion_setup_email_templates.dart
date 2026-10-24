@@ -114,7 +114,7 @@ class _OccasionSetupEmailTemplatesState
                     occasionTitle: preview['title'],
                     ticketsEnabled: preview['ticketsEnabled'],
                     deadline: deadline != null
-                        ? DateFormat('d. M. y').format(deadline.toLocal())
+                        ? DateFormat.yMd().format(deadline.toLocal())
                         : null,
                     products: [
                       for (final p in (preview['products'] as List? ?? [])

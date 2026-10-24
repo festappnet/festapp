@@ -1,10 +1,9 @@
 # Notification center
 
-The shared administration chrome mounts the bell. The temporary UI preview is
-limited to the normalized `bujnmi@gmail.com` account while
-`NotificationCenterRollout.visibleToEveryone` remains false. This gate does not
-change server authorization or delivery. Its controller is personal to
-the authenticated user and organization; route context only selects the current
+The shared administration chrome mounts the bell for every authenticated user
+whose organization has server-side delivery enabled. Visibility does not grant
+access: each read and detail action retains its existing authorization. Its
+controller is personal to the authenticated user and organization; route context only selects the current
 occasion's priority. Unit routes do not inherit the previous occasion. Retained
 inactive route instances and background apps stop polling.
 
@@ -38,10 +37,7 @@ No generated router source is hand-edited. The focused scenarios are registered
 as `notification_center` in the existing shared default-locale Flutter root.
 
 
-Temporary UI preview is controlled by
-`NotificationCenterRollout.visibleToEveryone`. While false, only the signed-in
-`bujnmi@gmail.com` identity sees the bell; tenant-prefixed login addresses are
-normalized with the existing AppConfig helper. Hidden accounts do not start
-notification polling. Set the flag to true in the next build to show the bell
-to all otherwise eligible users. This flag changes neither RPC access nor
-server delivery and is not an authorization boundary.
+Event muting is configured only in the panel's top settings. Group menus do not
+repeat this occasion-scoped setting. Expanding an order notification reads
+its existing authorized order/ticket detail APIs for current notes and ticket
+symbols; the detail cache is cleared when reopening or changing identity/context.

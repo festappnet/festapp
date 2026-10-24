@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart' show Intl;
 import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show VenueLayoutLocalizations;
@@ -588,6 +589,7 @@ class _MyAppState extends State<MyApp> {
       });
     };
 
+    Intl.defaultLocale = context.locale.toString();
     var baseTheme = ThemeConfig.theme();
     return AdaptiveTheme(
       light: baseTheme,

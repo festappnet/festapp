@@ -265,7 +265,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(saved, DateTime(2090, 10, 15, 9).toUtc());
     expect(saved!.isUtc, isTrue);
-    expect(scheduledTime(saved!), '15. 10. 2090 09:00');
+    expect(scheduledTime(saved!, locale: 'cs'), '15. 10. 2090 9:00');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

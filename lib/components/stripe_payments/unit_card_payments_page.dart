@@ -308,7 +308,7 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
                                   DateTime.tryParse(connection['checkedAt']) !=
                                       null)
                                 line(
-                                    '${text('lastChecked')}: ${DateFormat.yMd(context.locale.toLanguageTag()).add_Hm().format(DateTime.parse(connection['checkedAt']).toLocal())}'),
+                                    '${text('lastChecked')}: ${DateFormat.yMd(context.locale.toLanguageTag()).add_jm().format(DateTime.parse(connection['checkedAt']).toLocal())}'),
                               if (connection['dashboardUrl'] is String)
                                 OutlinedButton(
                                     onPressed: _busy

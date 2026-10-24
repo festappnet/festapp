@@ -1,3 +1,4 @@
+import 'notification_order_details.dart';
 import 'package:fstapp/components/notification_center/notification_center_time.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:flutter/material.dart';
@@ -236,7 +237,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   }
 
   Widget _groupHeader(BuildContext context, NotificationGroup group,
-      Map<String, dynamic>? occasion, bool grouped, bool hasError) {
+      bool grouped, bool hasError) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final problem =
@@ -262,23 +263,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ?.copyWith(color: colors.onSurfaceVariant)),
       ],
     ]);
-    final menu = occasion == null
-        ? null
-        : PopupMenuButton<bool>(
-            tooltip: CommonStrings.moreOptions,
-            onSelected: (value) async {
-              if (!await widget.controller.mute(occasion, value) &&
-                  context.mounted) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(s('saveFailed'))));
-              }
-            },
-            itemBuilder: (_) => [
-                  CheckedPopupMenuItem(
-                      value: occasion['muted'] != true,
-                      checked: occasion['muted'] == true,
-                      child: Text(s('muted')))
-                ]);
     final count = grouped
         ? Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -319,7 +303,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           heading,
-                          if (grouped || problem || menu != null)
+                          if (grouped || problem)
                             Row(children: [
                               if (problem) ...[
                                 Icon(
@@ -334,7 +318,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ],
                               controls,
                               const Spacer(),
-                              if (menu != null) menu,
                             ]),
                         ]))));
       }
@@ -371,7 +354,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                     controls,
                                   ]),
                             ]))))),
-        if (menu != null) menu,
       ]);
     });
   }
@@ -398,8 +380,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           'waitlist_registered'
         }.contains(group.kind) ||
         (group.kind == 'email_problem' && group.count > 1);
-    final occasion =
-        c.occasions.where((item) => item['id'] == group.occasionId).firstOrNull;
     return Padding(
       padding:
           problem ? const EdgeInsets.symmetric(vertical: 8) : EdgeInsets.zero,
@@ -417,7 +397,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               : const EdgeInsets.symmetric(vertical: 8),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            _groupHeader(context, group, occasion, grouped, hasError),
+            _groupHeader(context, group, grouped, hasError),
             if (!grouped || group.expanded) ...[
               for (final item in group.items) ...[
                 const Divider(height: 16),
@@ -472,7 +452,15 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         recipient ??
         reference ??
         NotificationCenterStrings.kind(item.kind);
-    final secondary = recipient ?? (name != null ? reference : null);
+    final secondary = [
+      if (item.data['orderId'] != null)
+        '#${value('orderSymbol') ?? item.data['orderId']}',
+      if (recipient != null && recipient != title) recipient,
+      if (item.data['orderId'] == null &&
+          reference != null &&
+          reference != title)
+        reference,
+    ].join(' · ');
     final status = NotificationCenterStrings.status(
         (item.data['state'] ?? item.status).toString());
     final metadata = [
@@ -492,7 +480,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         Text(title,
             style: theme.textTheme.titleMedium?.copyWith(
                 color: colors.onSurface, fontWeight: FontWeight.w600)),
-        if (secondary != null && secondary != title) ...[
+        if (secondary.isNotEmpty && secondary != title) ...[
           const SizedBox(height: 4),
           Text(secondary,
               style: theme.textTheme.bodyMedium
@@ -504,6 +492,11 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: colors.onSurfaceVariant)),
         ],
+        if (item.data['orderId'] is int)
+          NotificationOrderDetails(
+            load: widget.controller.orderDetails(item),
+            onRetry: () => widget.controller.retryOrderDetails(item),
+          ),
         if (value('reason') != null) ...[
           const SizedBox(height: 8),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

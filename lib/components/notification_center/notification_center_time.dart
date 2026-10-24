@@ -3,10 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 /// Calendar labels use the interface locale, independently of the device locale.
 class NotificationCenterTime {
   static String _date(DateTime value, String locale) =>
-      (locale.split(RegExp('[-_]')).first == 'cs'
-              ? DateFormat('d. M. yyyy', locale)
-              : DateFormat.yMMMd(locale))
-          .format(value);
+      DateFormat.yMd(locale).format(value);
 
   /// Group days are calendar dates, not instants to shift into a time zone.
   static String day(DateTime value, String locale, {DateTime? now}) {
@@ -23,12 +20,12 @@ class NotificationCenterTime {
     final local = value.toLocal();
     return 'NotificationCenter.atTime'.tr(namedArgs: {
       'day': day(local, locale, now: now),
-      'time': DateFormat.Hm(locale).format(local),
+      'time': DateFormat.jm(locale).format(local),
     });
   }
 
   static String exact(DateTime value, String locale) {
     final local = value.toLocal();
-    return '${_date(local, locale)} ${DateFormat.Hm(locale).format(local)}';
+    return '${_date(local, locale)} ${DateFormat.jm(locale).format(local)}';
   }
 }

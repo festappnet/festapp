@@ -25,7 +25,7 @@ class CleaningCrewReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = CleaningStatusHelper.color(place.status);
-    final timeFmt = DateFormat.Hm();
+    final timeFmt = DateFormat.jm();
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -77,8 +77,7 @@ class CleaningCrewReportCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             CleaningStrings.problemLabel(r.problemType),
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         Text(
@@ -132,8 +131,8 @@ class CleaningCrewReportCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(left: 18, top: 2),
                         child: Text('„$note"',
-                            style: const TextStyle(
-                                fontStyle: FontStyle.italic)),
+                            style:
+                                const TextStyle(fontStyle: FontStyle.italic)),
                       ),
                   ],
                 ),

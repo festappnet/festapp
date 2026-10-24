@@ -29,8 +29,8 @@ String scheduledPrice(BuildContext context, double? price, String? currency) =>
             currencyCode: currency,
             decimalDigits: 2,
           );
-String scheduledTime(DateTime time) =>
-    DateFormat('dd. MM. yyyy HH:mm').format(time.toLocal());
+String scheduledTime(DateTime time, {String? locale}) =>
+    DateFormat.yMd(locale).add_jm().format(time.toLocal());
 
 DateTime? scheduleWallTime(String date, String time) {
   for (final format in ['yyyy-MM-dd HH:mm', 'dd.MM.yyyy HH:mm']) {

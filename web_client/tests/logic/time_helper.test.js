@@ -65,3 +65,20 @@ if (!diffYear.includes('2024') || !diffYear.includes('2025')) {
 
 console.log('ALL TESTS PASSED');
 process.exit(0);
+
+// An implicit locale must follow the interface rather than the host browser.
+const { LocalizationService } = await import('../../src/services/localization_service.js');
+const previousLocale = LocalizationService.currentLocale;
+try {
+    for (const uiLocale of ['cs', 'en', 'de', 'pl', 'sk', 'uk']) {
+        LocalizationService.currentLocale = uiLocale;
+        const expected = new Intl.DateTimeFormat(uiLocale, {
+            year: 'numeric', month: 'short', day: 'numeric',
+        }).format(d1);
+        if (TimeHelper.getMinimalisticDateRange(d1, d2) !== expected) {
+            throw new Error(`Date range ignored interface locale ${uiLocale}`);
+        }
+    }
+} finally {
+    LocalizationService.currentLocale = previousLocale;
+}

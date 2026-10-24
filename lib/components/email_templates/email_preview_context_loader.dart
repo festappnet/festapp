@@ -37,7 +37,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
           features.any((f) => f.code == FeatureConstants.ticket && f.isEnabled),
       blueprintEnabled: features
           .any((f) => f.code == FeatureConstants.blueprint && f.isEnabled),
-      deadline: DateFormat('d. M. y').format(deadline));
+      deadline: DateFormat.yMd().format(deadline));
   final link = occasion.link?.isNotEmpty == true
       ? occasion.link
       : current?.id == occasion.id

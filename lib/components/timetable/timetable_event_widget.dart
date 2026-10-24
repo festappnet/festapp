@@ -172,7 +172,7 @@ class _TimetableEventWidgetState extends State<TimetableEventWidget> {
                       right:
                           isUserSpecific ? (iconSize + iconTextSpacing) : 0.0),
                   child: Text(
-                    '${DateFormat.Hm().format(start)} - ${DateFormat.Hm().format(end)}',
+                    '${DateFormat.jm().format(start)} - ${DateFormat.jm().format(end)}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w300,

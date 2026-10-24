@@ -228,7 +228,7 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                   final date = widget.itemDateBuilder!(item);
                   if (date != null) {
                     subtitle = Text(
-                      DateFormat('d. M. yyyy').format(date),
+                      DateFormat.yMd().format(date),
                       style:
                           theme.textTheme.bodySmall?.copyWith(color: hintColor),
                     );

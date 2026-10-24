@@ -1,12 +1,7 @@
-import 'package:fstapp/app_config.dart';
-
-/// Temporary UI rollout. Server permissions and delivery stay unchanged.
+/// Available to every authenticated user whose server-side organization and
+/// permissions enable notification delivery.
 class NotificationCenterRollout {
-  // Flip this to true when the preview has been tested.
-  static const bool visibleToEveryone = false;
+  static const bool visibleToEveryone = true;
 
-  static bool isVisibleTo(String? email) =>
-      visibleToEveryone ||
-      AppConfig.removeUserPrefix(email?.trim().toLowerCase() ?? '') ==
-          'bujnmi@gmail.com';
+  static bool isVisibleTo(String? email) => visibleToEveryone;
 }

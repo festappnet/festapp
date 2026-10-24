@@ -104,7 +104,7 @@ class _CardPaymentStatusState extends State<CardPaymentStatus> {
             if (DateTime.tryParse(payment['reservationExpiresAt'])
                 case final DateTime date)
               paragraph(
-                  '${CardPaymentStrings.text('reservation')}: ${DateFormat.yMd(locale).add_Hm().format(date.toLocal())}'),
+                  '${CardPaymentStrings.text('reservation')}: ${DateFormat.yMd(locale).add_jm().format(date.toLocal())}'),
           if (payment['admissionState'] == 'hold' && state != 'disputed')
             paragraph(CardPaymentStrings.text('admissionHold')),
           if (state == 'paid')

@@ -67,7 +67,7 @@ List<_DateTick> _dateTicks(
     BuildContext context, DateTime start, DateTime end, double width) {
   final span = end.difference(start).inDays;
   final candidates = reportChartTicks(start, end).map((day) {
-    final label = DateFormat('d. M.').format(day);
+    final label = DateFormat.Md().format(day);
     final painter = TextPainter(
       text: TextSpan(text: label, style: Theme.of(context).textTheme.bodySmall),
       textDirection: Directionality.of(context),
@@ -176,7 +176,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                         ?.copyWith(color: colors.onSurfaceVariant)),
                 const SizedBox(height: 8),
                 Text(
-                    '${DateFormat('d. M. yyyy').format(widget.start)} - ${DateFormat('d. M. yyyy').format(widget.end)}',
+                    '${DateFormat.yMd().format(widget.start)} - ${DateFormat.yMd().format(widget.end)}',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
@@ -232,7 +232,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
       if (_legendSizes == null || _legendLayoutKey != layoutKey) {
         _legendLayoutKey = layoutKey;
         final alternatives = [
-          days.map((day) => DateFormat('d. M. yyyy').format(day)).toSet(),
+          days.map((day) => DateFormat.yMd().format(day)).toSet(),
           for (var i = 0; i < widget.series.length; i++)
             amounts[i]
                 .map((amount) =>
@@ -253,8 +253,8 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
             children: [
               SizedBox.fromSize(
                 size: _legendSizes![0],
-                child: Text(DateFormat('d. M. yyyy').format(days[selected]),
-                    style: style),
+                child:
+                    Text(DateFormat.yMd().format(days[selected]), style: style),
               ),
               for (var i = 0; i < widget.series.length; i++)
                 SizedBox.fromSize(

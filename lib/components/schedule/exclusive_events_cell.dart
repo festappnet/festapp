@@ -113,8 +113,8 @@ class ExclusiveEventsCell extends StatelessWidget {
 }
 
 String _timeLabel(BuildContext context, EventModel e) =>
-    "${DateFormat("E d. M. HH:mm", context.locale.languageCode).format(e.startTime)}"
-    "–${DateFormat.Hm().format(e.endTime)}";
+    "${DateFormat.MEd(context.locale.toString()).add_jm().format(e.startTime)}"
+    "–${DateFormat.jm().format(e.endTime)}";
 
 /// Opens the searchable multi-select event dialog and returns the chosen id
 /// list (chronological), or null if cancelled.

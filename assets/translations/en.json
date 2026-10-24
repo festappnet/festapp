@@ -4264,6 +4264,7 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "detailUnavailable": "Could not load details. Try again",
     "settingsEmpty": "No events are available yet.",
     "groups": {
       "email_problem": "Email delivery",

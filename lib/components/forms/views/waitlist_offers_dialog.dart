@@ -222,7 +222,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
             : 'míst';
     final expiry = _expiresAt == null
         ? ''
-        : DateFormat('d. M. yyyy HH:mm')
+        : DateFormat.yMd()
+            .add_jm()
             .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
             .replaceAll(RegExp(r'\s'), '\u00a0');
     final toneSubstitutions = _preview?['toneSubstitutions'];
@@ -480,7 +481,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                           }
                         },
                   child: Text(
-                    '${WaitlistStrings.expiresAt}: ${_expiresAt == null ? '' : DateFormat('d. M. yyyy HH:mm').format(_expiresAt!.toOccasionTime(_expiryTimeZone))}',
+                    '${WaitlistStrings.expiresAt}: ${_expiresAt == null ? '' : DateFormat.yMd().add_jm().format(_expiresAt!.toOccasionTime(_expiryTimeZone))}',
                   ),
                 ),
                 const Divider(),

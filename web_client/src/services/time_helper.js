@@ -1,3 +1,4 @@
+import { LocalizationService } from './localization_service.js';
 
 export class TimeHelper {
     /**
@@ -20,8 +21,8 @@ export class TimeHelper {
      * @returns {string} Formatted range string
      */
     static getMinimalisticDateRange(start, end, locale) {
-        // Default to browser locale if not provided
-        const loc = locale || navigator.language;
+        // Default to the selected interface locale if not provided
+        const loc = locale || LocalizationService.currentLocale;
 
         // Helper to formatting
         const fmt = (date, options) => new Intl.DateTimeFormat(loc, options).format(date);
