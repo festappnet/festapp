@@ -403,6 +403,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     Map<String, dynamic> snapshot,
   ) async {
     if (!await _flush()) throw StateError('Draft save failed');
+    if (snapshot['previewMessageType'] == 'order_tickets') {
+      final data = await Supabase.instance.client
+          .rpc('get_occasion_setup_email_preview', params: {
+        'p_id': _stored.id,
+        'p_expected_revision': _stored.revision,
+        'p_message_type': 'order_tickets',
+        'p_occasion': null,
+        'p_delivery_mode': null,
+      });
+      return Map<String, dynamic>.from(data as Map);
+    }
     final response = await Supabase.instance.client.functions.invoke(
       'occasion-setup-email-preview',
       body: {

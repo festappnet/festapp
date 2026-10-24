@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../html/html_embedded_block.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as parser;
@@ -23,9 +24,11 @@ class EmailPreviewHtml extends StatelessWidget {
   const EmailPreviewHtml(
       {required this.html,
       this.imageBytesResolver,
+      this.embeddedBlock,
       this.allowedRemoteImageSources = const {},
       super.key});
   final String html;
+  final HtmlEmbeddedBlock? embeddedBlock;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
   @override
@@ -92,6 +95,11 @@ class EmailPreviewHtml extends StatelessWidget {
                 ? {'color': css(colors.primary), 'text-decoration': 'underline'}
                 : null,
             customWidgetBuilder: (element) {
+              final block = embeddedBlock;
+              if (block != null &&
+                  element.classes.contains('html-editor-block') &&
+                  element.classes.contains(block.cssClass))
+                return block.builder(context);
               // The HTML renderer drops empty blocks before its sizing pass.
               // Production email renderers deliberately use these as spacers.
               if (element.localName == 'div' &&
@@ -146,6 +154,7 @@ class EmailReceivedMessage extends StatelessWidget {
     required this.subject,
     required this.html,
     this.imageBytesResolver,
+    this.embeddedBlock,
     this.senderAddress,
     this.recipientLabel,
     this.allowedRemoteImageSources = const {},
@@ -155,6 +164,7 @@ class EmailReceivedMessage extends StatelessWidget {
   final String? senderAddress;
   final String? recipientLabel;
   final String html;
+  final HtmlEmbeddedBlock? embeddedBlock;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
   @override
@@ -215,6 +225,7 @@ class EmailReceivedMessage extends StatelessWidget {
             Divider(height: 1, color: colors.outlineVariant),
             EmailPreviewHtml(
               html: html,
+              embeddedBlock: embeddedBlock,
               imageBytesResolver: imageBytesResolver,
               allowedRemoteImageSources: allowedRemoteImageSources,
             ),

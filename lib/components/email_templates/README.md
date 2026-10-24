@@ -181,3 +181,9 @@ A retry reuses that snapshot; changing the event affects only later preparations
 or an explicit new resend. No QR URL, additional ticket identity or send path is
 introduced. Real Gmail, Outlook, Seznam and Apple Mail delivery checks remain a
 separate release gate requiring approved test mailboxes.
+
+The ticket-delivery preview reads its permission-checked template context once
+through `get_occasion_setup_email_preview` and uses these same generated examples,
+composer and received-message component. Count and delivery-mode changes render
+invalid sample QR widgets and PDF attachment names locally, without calling an
+Edge Function or preparing PDFs. Draft template changes invalidate the context.

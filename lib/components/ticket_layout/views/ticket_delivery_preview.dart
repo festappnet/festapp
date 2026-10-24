@@ -1,14 +1,23 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../ticket_delivery_strings.dart';
+import '../../features/ticket_feature.dart';
+import '../../email_templates/email_preview_examples.dart';
 import '../../../widgets/app_dialog.dart';
 import 'ticket_email_preview.dart';
 
 class TicketDeliveryPreview extends StatefulWidget {
   const TicketDeliveryPreview(
-      {super.key, required this.revision, required this.load});
+      {super.key,
+      required this.revision,
+      required this.load,
+      required this.mode,
+      this.title,
+      this.examples});
   final Object revision;
-  final Future<Map<String, dynamic>> Function(int count) load;
+  final Future<Map<String, dynamic>> Function() load;
+  final TicketDeliveryMode mode;
+  final String? title;
+  final EmailPreviewExamples? examples;
   @override
   State<TicketDeliveryPreview> createState() => _TicketDeliveryPreviewState();
 }
@@ -53,14 +62,24 @@ class _TicketDeliveryPreviewState extends State<TicketDeliveryPreview> {
                               builder: (context, current, _) =>
                                   _TicketDeliveryPreviewContent(
                                       revision: current.revision,
-                                      load: current.load))))))));
+                                      load: current.load,
+                                      mode: current.mode,
+                                      title: current.title,
+                                      examples: current.examples))))))));
 }
 
 class _TicketDeliveryPreviewContent extends StatefulWidget {
   const _TicketDeliveryPreviewContent(
-      {required this.revision, required this.load});
+      {required this.revision,
+      required this.load,
+      required this.mode,
+      this.title,
+      this.examples});
   final Object revision;
-  final Future<Map<String, dynamic>> Function(int count) load;
+  final Future<Map<String, dynamic>> Function() load;
+  final TicketDeliveryMode mode;
+  final String? title;
+  final EmailPreviewExamples? examples;
 
   @override
   State<_TicketDeliveryPreviewContent> createState() =>
@@ -71,7 +90,6 @@ class _TicketDeliveryPreviewContentState
     extends State<_TicketDeliveryPreviewContent> {
   int _count = 1;
   int _generation = 0;
-  Timer? _timer;
   Map<String, dynamic>? _preview;
   bool _failed = false;
   @override
@@ -87,25 +105,32 @@ class _TicketDeliveryPreviewContentState
   }
 
   void _schedule() {
-    _timer?.cancel();
     final generation = ++_generation;
     _preview = null;
     _failed = false;
-    _timer = Timer(const Duration(milliseconds: 300), () async {
-      try {
-        final result = await widget.load(_count);
-        if (mounted && generation == _generation)
-          setState(() => _preview = result);
-      } catch (_) {
-        if (mounted && generation == _generation)
-          setState(() => _failed = true);
+    _load(generation);
+  }
+
+  Future<void> _load(int generation) async {
+    try {
+      final result = await widget.load();
+      final examples = widget.examples ?? await EmailPreviewExamples.load();
+      final scenario = examples
+          .scenariosFor('TICKET_ORDER_PAYMENT_DONE')
+          .firstWhere((s) =>
+              s.locale == 'cs' &&
+              s.scenario == 'paid' &&
+              s.tone == (result['tone'] ?? 'formal'));
+      if (mounted && generation == _generation) {
+        setState(() => _preview = {...result, 'scenario': scenario});
       }
-    });
+    } catch (_) {
+      if (mounted && generation == _generation) setState(() => _failed = true);
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _generation++;
     super.dispose();
   }
@@ -123,7 +148,6 @@ class _TicketDeliveryPreviewContentState
                 selected: count == _count,
                 onSelected: (_) => setState(() {
                       _count = count;
-                      _schedule();
                     }))
         ]),
         const SizedBox(height: 8),
@@ -134,6 +158,13 @@ class _TicketDeliveryPreviewContentState
               onPressed: () => setState(_schedule),
               child: Text(TicketDeliveryStrings.text('retry'))),
         ],
-        if (_preview != null) TicketEmailPreview(preview: _preview!),
+        if (_preview != null)
+          TicketEmailPreview(
+              preview: TicketEmailPreview.sample({
+                ..._preview!,
+                if (widget.title != null) 'title': widget.title
+              }, widget.mode, _count),
+              sampleCount:
+                  widget.mode == TicketDeliveryMode.pdfAttachment ? 0 : _count),
       ]);
 }
