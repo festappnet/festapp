@@ -21,20 +21,26 @@ class TicketBatchPrintDownloads extends StatelessWidget {
     if (singles.isEmpty || singles.any((p) => p.state != 'ready')) {
       return const SizedBox.shrink();
     }
-    return PopupMenuButton<String>(
-        enabled: enabled,
-        tooltip: label,
-        onSelected: onSelected,
-        itemBuilder: (_) => [
-              PopupMenuItem(value: 'a4', child: Text(a4Label)),
-              PopupMenuItem(value: 'zip', child: Text(zipLabel))
-            ],
-        child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.download_outlined, size: 20),
-              const SizedBox(width: 8),
-              Text(label)
-            ])));
+    return MenuAnchor(
+      menuChildren: [
+        MenuItemButton(
+            onPressed: enabled ? () => onSelected('a4') : null,
+            child: Text(a4Label)),
+        MenuItemButton(
+            onPressed: enabled ? () => onSelected('zip') : null,
+            child: Text(zipLabel)),
+      ],
+      builder: (context, controller, child) => OutlinedButton.icon(
+        onPressed: enabled
+            ? () => controller.isOpen ? controller.close() : controller.open()
+            : null,
+        icon: const Icon(Icons.download_outlined, size: 20),
+        label: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(label),
+          const SizedBox(width: 4),
+          const Icon(Icons.expand_more, size: 18),
+        ]),
+      ),
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:fstapp/components/features/feature_service.dart';
 import 'ticket_batch_table.dart';
+import 'ticket_batch_detail_header.dart';
 import 'ticket_batch_items_table.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'ticket_batch_print_downloads.dart';
@@ -472,150 +473,149 @@ class _TicketBatchDetailState extends State<TicketBatchDetailPage> {
         return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          BackButton(
-                              onPressed: () => context.router.maybePop()),
-                          Expanded(
-                              child: Text(b['title'],
-                                  style:
-                                      Theme.of(context).textTheme.titleLarge)),
-                        ]),
-                        Text(
-                            '${_text('available')}: ${counts['available']}   ${_text('sold')}: ${counts['soldActive']}   ${_text('voided')}: ${counts['voidedUnsold']}'),
-                        Text(
-                            '${_text('stockValue')}: ${b['stockValue'] ?? 0} ${b['currency']}   ${_text('receivedAmount')}: ${b['receivedAmount'] ?? 0} ${b['currency']}'),
-                        if ((b['sales'] as List? ?? const []).isNotEmpty)
-                          Wrap(spacing: 8, children: [
-                            for (final sale in b['sales'] as List)
-                              TextButton(
-                                  onPressed: () => showDialog(
-                                      context: context,
-                                      builder: (_) => OrderHistoryDialog(
-                                          orderId: sale['id'] as int)),
-                                  child: Text(
-                                      '#${sale['symbol']} - ${sale['amount']} ${b['currency']}')),
-                          ]),
-                        if (_receipt != null)
-                          SelectableText(
-                              '${_text('receipt')}: ${_receipt!['orderId']} - ${_receipt!['amount']} ${_receipt!['currency']}'),
-                        if ((counts['voidedUnsold'] as num) +
-                                (counts['cancelledAfterSale'] as num) >
-                            0)
-                          Text(_text('voidWarning')),
-                        Wrap(spacing: 8, runSpacing: 8, children: [
-                          if (actions.contains('prepare'))
-                            OutlinedButton.icon(
-                                onPressed: _busy
-                                    ? null
-                                    : () => _act(() async {
-                                          // Each request owns bounded work. A failed request retains the same batch.
-                                          for (var n = 0; n < 220; n++) {
-                                            final response = await _db.functions
-                                                .invoke(
-                                                    'prepare-ticket-batch-document',
-                                                    body: {
-                                                  'batchId': widget.batchId
-                                                });
-                                            final state =
-                                                response.data['state'];
-                                            if (state == 'ready' ||
-                                                state == 'pending') {
-                                              break;
-                                            }
-                                            if (state != 'progress') {
-                                              throw StateError(
-                                                  'Batch print failed');
-                                            }
-                                          }
-                                        }),
-                                icon: const Icon(Icons.print_outlined),
-                                label: Text(_text('prepare'))),
-                          if (actions.contains('sell'))
-                            FilledButton(
-                                onPressed: _busy ||
-                                        _selected.isEmpty ||
-                                        _selected.length > 20
-                                    ? null
-                                    : () => _act(() => _sell(b)),
-                                child: Text(_text('sell'))),
-                          if (actions.contains('void'))
-                            TextButton(
-                                onPressed: _busy || _selected.isEmpty
-                                    ? null
-                                    : () => _act(() async {
-                                          final confirmed = await showDialog<
-                                                  bool>(
-                                              context: context,
-                                              builder: (context) =>
-                                                  AppAlertDialog(
-                                                      title:
-                                                          Text(_text('void')),
-                                                      content: Text(
-                                                          _text('voidConfirm')),
-                                                      actions: [
-                                                        TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                    context,
-                                                                    true),
-                                                            child: Text(
-                                                                _text('void')))
-                                                      ]));
-                                          if (confirmed == true) {
-                                            await _commands.voidItems(
-                                                widget.batchId,
-                                                _selected.toList(),
-                                                _text('voidReason'));
-                                            _selected.clear();
-                                          }
-                                        }),
-                                child: Text(_text('void'))),
-                          TicketBatchPrintDownloads(
-                              parts: [
-                                for (final d in b['documents'] as List)
-                                  TicketBatchDocumentPart.fromJson(
-                                      Map<String, dynamic>.from(d))
-                              ],
-                              label: _text('download'),
-                              a4Label: _text('downloadA4'),
-                              zipLabel: _text('downloadZip'),
-                              enabled: !_busy,
-                              onSelected: _downloadExport),
-                        ]),
-                        TextField(
-                            controller: _lookup,
-                            enabled: !_busy,
-                            decoration: InputDecoration(
-                                labelText: _text('lookup'),
-                                suffixIcon: IconButton(
-                                    icon: const Icon(Icons.search),
-                                    onPressed: () {
-                                      final found = items.where((i) =>
-                                          i['ticket_symbol'] ==
-                                              _lookup.text.trim() &&
-                                          i['sale_order_id'] == null &&
-                                          i['state'] == 'ordered');
-                                      if (found.isNotEmpty) {
-                                        setState(() => _selected
-                                            .add(found.first['id'] as int));
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * .6),
+                child: SingleChildScrollView(
+                  child: TicketBatchDetailHeader(
+                    batch: b,
+                    selectedCount: _selected.length,
+                    onBack: () => context.router.maybePop(),
+                    printActions: [
+                      if (actions.contains('prepare'))
+                        OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => _act(() async {
+                                      // Each request owns bounded work. A failed request retains the same batch.
+                                      for (var n = 0; n < 220; n++) {
+                                        final response = await _db.functions
+                                            .invoke(
+                                                'prepare-ticket-batch-document',
+                                                body: {
+                                              'batchId': widget.batchId
+                                            });
+                                        final state = response.data['state'];
+                                        if (state == 'ready' ||
+                                            state == 'pending') {
+                                          break;
+                                        }
+                                        if (state != 'progress') {
+                                          throw StateError(
+                                              'Batch print failed');
+                                        }
                                       }
-                                    })),
-                            onSubmitted: (value) {
-                              final found = items.where((i) =>
-                                  i['ticket_symbol'] == value.trim() &&
-                                  i['sale_order_id'] == null &&
-                                  i['state'] == 'ordered');
-                              if (found.isNotEmpty) {
-                                setState(() =>
-                                    _selected.add(found.first['id'] as int));
-                              }
-                            }),
-                      ])),
+                                    }),
+                            icon: const Icon(Icons.print_outlined),
+                            label: Text(_text('prepare'))),
+                      TicketBatchPrintDownloads(
+                          parts: [
+                            for (final d in b['documents'] as List)
+                              TicketBatchDocumentPart.fromJson(
+                                  Map<String, dynamic>.from(d))
+                          ],
+                          label: _text('download'),
+                          a4Label: _text('downloadA4'),
+                          zipLabel: _text('downloadZip'),
+                          enabled: !_busy,
+                          onSelected: _downloadExport),
+                    ],
+                    selectionActions: [
+                      if (actions.contains('sell'))
+                        ElevatedButton(
+                            onPressed: _busy ||
+                                    _selected.isEmpty ||
+                                    _selected.length > 20
+                                ? null
+                                : () => _act(() => _sell(b)),
+                            child: Text(_text('sell'))),
+                      if (actions.contains('void'))
+                        TextButton(
+                            style: TextButton.styleFrom(
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.error),
+                            onPressed: _busy || _selected.isEmpty
+                                ? null
+                                : () => _act(() async {
+                                      final confirmed = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AppAlertDialog(
+                                                  title: Text(_text('void')),
+                                                  content: Text(
+                                                      _text('voidConfirm')),
+                                                  actions: [
+                                                    TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                                context, true),
+                                                        child:
+                                                            Text(_text('void')))
+                                                  ]));
+                                      if (confirmed == true) {
+                                        await _commands.voidItems(
+                                            widget.batchId,
+                                            _selected.toList(),
+                                            _text('voidReason'));
+                                        _selected.clear();
+                                      }
+                                    }),
+                            child: Text(_text('void'))),
+                    ],
+                    notices: [
+                      if ((b['sales'] as List? ?? const []).isNotEmpty)
+                        Wrap(spacing: 8, children: [
+                          for (final sale in b['sales'] as List)
+                            TextButton(
+                                onPressed: () => showDialog(
+                                    context: context,
+                                    builder: (_) => OrderHistoryDialog(
+                                        orderId: sale['id'] as int)),
+                                child: Text(
+                                    '#${sale['symbol']} - ${sale['amount']} ${b['currency']}')),
+                        ]),
+                      if (_receipt != null)
+                        SelectableText(
+                            '${_text('receipt')}: ${_receipt!['orderId']} - ${_receipt!['amount']} ${_receipt!['currency']}'),
+                      if ((counts['voidedUnsold'] as num) +
+                              (counts['cancelledAfterSale'] as num) >
+                          0)
+                        Text(_text('voidWarning')),
+                    ],
+                    lookup: TextField(
+                        controller: _lookup,
+                        enabled: !_busy,
+                        decoration: InputDecoration(
+                            labelText: _text('lookup'),
+                            isDense: true,
+                            border: const OutlineInputBorder(),
+                            prefixIcon:
+                                const Icon(Icons.qr_code_scanner, size: 20),
+                            suffixIcon: IconButton(
+                                icon: const Icon(Icons.search),
+                                onPressed: () {
+                                  final found = items.where((i) =>
+                                      i['ticket_symbol'] ==
+                                          _lookup.text.trim() &&
+                                      i['sale_order_id'] == null &&
+                                      i['state'] == 'ordered');
+                                  if (found.isNotEmpty) {
+                                    setState(() => _selected
+                                        .add(found.first['id'] as int));
+                                  }
+                                })),
+                        onSubmitted: (value) {
+                          final found = items.where((i) =>
+                              i['ticket_symbol'] == value.trim() &&
+                              i['sale_order_id'] == null &&
+                              i['state'] == 'ordered');
+                          if (found.isNotEmpty) {
+                            setState(
+                                () => _selected.add(found.first['id'] as int));
+                          }
+                        }),
+                  ),
+                ),
+              ),
               if (_busy) const LinearProgressIndicator(),
               Expanded(
                   child: TicketBatchItemsTable(

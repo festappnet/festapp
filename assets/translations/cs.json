@@ -150,6 +150,7 @@
     "organization_scope": "Celá organizace",
     "refreshed": "Načteno {time}",
     "recovery": {
+      "emailHint": "V e-mailu zákazníka může být překlep. Adresu zde můžete opravit.",
       "title": "Doručení objednávky",
       "resolve": "Vyřešit doručení",
       "current": "Současný kontakt",
@@ -4345,6 +4346,8 @@
     "detail": "Detail"
   },
   "TicketBatches": {
+    "selectedCount": "Vybráno: {count}",
+    "selectionHint": "Pro prodej nebo zneplatnění vyberte vstupenky v tabulce, případně zadejte jejich symbol nebo QR.",
     "detailAndPrint": "Detail a tisk",
     "title": "Předgenerované",
     "create": "Vytvořit dávku",

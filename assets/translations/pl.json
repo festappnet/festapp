@@ -230,6 +230,7 @@
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
     "recovery": {
+      "emailHint": "W adresie e-mail klienta może być literówka. Tutaj możesz poprawić adres.",
       "title": "Order delivery",
       "resolve": "Resolve delivery",
       "current": "Current contact",
@@ -2328,6 +2329,8 @@
     "detail": "Szczegóły"
   },
   "TicketBatches": {
+    "selectedCount": "Wybrano: {count}",
+    "selectionHint": "Aby zapisać sprzedaż lub unieważnić bilety, wybierz je w tabeli albo wpisz ich symbol lub kod QR.",
     "detailAndPrint": "Szczegóły i druk",
     "title": "Wstępnie wygenerowane",
     "create": "Utwórz partię",

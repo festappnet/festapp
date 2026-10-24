@@ -150,6 +150,7 @@
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
     "recovery": {
+      "emailHint": "The customer’s email may contain a typo. You can correct the address here.",
       "title": "Order delivery",
       "resolve": "Resolve delivery",
       "current": "Current contact",
@@ -4343,6 +4344,8 @@
     "detail": "Details"
   },
   "TicketBatches": {
+    "selectedCount": "Selected: {count}",
+    "selectionHint": "To record a sale or void tickets, select them in the table or enter their symbol or QR code.",
     "detailAndPrint": "Details and print",
     "title": "Pregenerated",
     "create": "Create batch",

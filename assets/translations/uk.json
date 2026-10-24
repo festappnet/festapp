@@ -183,6 +183,7 @@
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
     "recovery": {
+      "emailHint": "В електронній адресі клієнта може бути помилка. Тут можна виправити адресу.",
       "title": "Order delivery",
       "resolve": "Resolve delivery",
       "current": "Current contact",
@@ -2498,6 +2499,8 @@
     "detail": "Докладніше"
   },
   "TicketBatches": {
+    "selectedCount": "Вибрано: {count}",
+    "selectionHint": "Щоб записати продаж або анулювати квитки, виберіть їх у таблиці або введіть їхній символ чи QR-код.",
     "detailAndPrint": "Деталі та друк",
     "title": "Попередньо створені",
     "create": "Створити партію",
