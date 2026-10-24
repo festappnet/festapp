@@ -411,7 +411,7 @@ class _ReportTabState extends State<ReportTab> {
               const LinearProgressIndicator(),
             if (combined && canConvert) ...[
               Text(
-                '${ReportStrings.currencyComparisonHelp} ${DateFormat('d. M. yyyy').format(_rates!.date)}',
+                '${ReportStrings.currencyComparisonHelp} ${DateFormat.yMd().format(_rates!.date)}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
@@ -683,7 +683,7 @@ class _ReportTabState extends State<ReportTab> {
                                   ?.copyWith(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
                           Text(
-                            '${ReportStrings.snapshot}: ${DateFormat('d. M. yyyy HH:mm').format(r.generatedAt.toLocal())}',
+                            '${ReportStrings.snapshot}: ${DateFormat.yMd().add_jm().format(r.generatedAt.toLocal())}',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall

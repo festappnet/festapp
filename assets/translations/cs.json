@@ -4266,6 +4266,7 @@
     "duplicateBlock": "Blok {{tickets}} lze použít pouze jednou."
   },
   "NotificationCenter": {
+    "detailUnavailable": "Podrobnosti se nepodařilo načíst. Zkusit znovu",
     "settingsEmpty": "Zatím nejsou k dispozici žádné akce.",
     "groups": {
       "email_problem": "Doručování e-mailů",

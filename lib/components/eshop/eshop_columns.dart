@@ -1,3 +1,4 @@
+import 'package:fstapp/services/locale_date_time.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.dart';
 import '../navigation/root_route_navigation.dart';
@@ -542,6 +543,8 @@ class EshopColumns {
             enableEditingMode: false,
             title: OrdersStrings.gridCreated,
             field: EshopColumnIds.TICKET_CREATED_AT,
+            formatter: (value) =>
+                LocaleDateTime.dateCell(value, context.locale.toString()),
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
@@ -553,6 +556,8 @@ class EshopColumns {
             enableEditingMode: false,
             title: OrdersStrings.gridChangedAt,
             field: EshopColumnIds.TICKET_LAST_CHANGE,
+            formatter: (value) =>
+                LocaleDateTime.dateTimeCell(value, context.locale.toString()),
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 140,
@@ -739,6 +744,8 @@ class EshopColumns {
             enableEditingMode: false,
             title: OrdersStrings.gridCreated,
             field: EshopColumnIds.ORDER_CREATED_AT,
+            formatter: (value) =>
+                LocaleDateTime.dateCell(value, context.locale.toString()),
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
@@ -1261,6 +1268,8 @@ class EshopColumns {
                 ? OrdersStrings.gridDepositPaymentDeadline
                 : OrdersStrings.gridDeadline,
             field: EshopColumnIds.PAYMENT_INFO_DEADLINE,
+            formatter: (value) =>
+                LocaleDateTime.dateCell(value, context.locale.toString()),
             type: TrinaColumnType.text(),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
@@ -1273,6 +1282,8 @@ class EshopColumns {
               enableEditingMode: false,
               title: OrdersStrings.gridDepositDeadline,
               field: EshopColumnIds.PAYMENT_INFO_DEPOSIT_DEADLINE,
+              formatter: (value) =>
+                  LocaleDateTime.dateCell(value, context.locale.toString()),
               type: TrinaColumnType.text(),
               textAlign: TrinaColumnTextAlign.end,
               width: 110,
@@ -1377,6 +1388,8 @@ class EshopColumns {
           TrinaColumn(
             title: OrdersStrings.gridChangedAt,
             field: EshopColumnIds.HISTORY_CHANGED_AT,
+            formatter: (value) =>
+                LocaleDateTime.dateTimeCell(value, context.locale.toString()),
             type: TrinaColumnType.text(),
             readOnly: true,
             width: 140,

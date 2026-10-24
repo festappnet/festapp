@@ -296,6 +296,57 @@ void main() {
     expect(sent['p_source_message'], 'source');
     expect(sent['p_resend'], true);
   });
+  testWidgets('email and expiration indicators share size and label spacing', (
+    tester,
+  ) async {
+    final order = OrderModel(id: 4, state: 'ordered')
+      ..emailDelivery = {
+        'current_issues': [issue('bounce')],
+      };
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              SizedBox(
+                width: 250,
+                height: 50,
+                child: OrderStateCell(
+                  key: const ValueKey('mail'),
+                  label: 'ORDERED',
+                  background: Colors.white,
+                  occasionId: 7,
+                  order: order,
+                ),
+              ),
+              const SizedBox(
+                width: 250,
+                height: 50,
+                child: OrderStateCell(
+                  key: ValueKey('expired'),
+                  label: 'ORDERED',
+                  background: Colors.white,
+                  expired: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    Rect rect(String key, Finder child) => tester.getRect(
+          find.descendant(of: find.byKey(ValueKey(key)), matching: child),
+        );
+    final mail = rect('mail', find.byType(CircleAvatar));
+    final expired = rect('expired', find.byType(CircleAvatar));
+    expect(mail.size, expired.size);
+    expect(mail.width, 20);
+    expect(
+      mail.left - rect('mail', find.text('ORDERED')).right,
+      expired.left - rect('expired', find.text('ORDERED')).right,
+    );
+    expect(mail.left - rect('mail', find.text('ORDERED')).right, 4);
+  });
   testWidgets(
       'warning beside order state uses current issues, not historical attention',
       (tester) async {

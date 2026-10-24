@@ -220,7 +220,7 @@ class ActivityDataHelper {
           isActivity: true,
           data: {
             "leftText":
-                "${DateFormat.Hm().format(assignment.startTime!)} - ${DateFormat.Hm().format(assignment.endTime!)}",
+                "${DateFormat.jm().format(assignment.startTime!)} - ${DateFormat.jm().format(assignment.endTime!)}",
             "rightText": activity.title
           },
           timeBlockPlace: timeBlockPlace,

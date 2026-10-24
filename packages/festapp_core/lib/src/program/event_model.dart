@@ -36,11 +36,8 @@ class EventModel {
   final DateTime endTime;
 
   String durationCompactStringForLocale(String locale) {
-    final weekday = DateFormat('EEEE', locale).format(startTime);
-    final shortWeekday = weekday.length <= 2
-        ? weekday.toUpperCase()
-        : weekday.substring(0, 2).toUpperCase();
-    return "$shortWeekday ${DateFormat("d. M. HH:mm", locale).format(startTime)} - ${DateFormat.Hm(locale).format(endTime)}";
+    final weekday = DateFormat.E(locale).format(startTime).toUpperCase();
+    return "$weekday ${DateFormat.Md(locale).add_jm().format(startTime)} - ${DateFormat.jm(locale).format(endTime)}";
   }
 
   Duration duration() => startTime.isBefore(endTime)

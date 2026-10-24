@@ -178,7 +178,7 @@ class ScanResultDisplay extends StatelessWidget {
     if (scannedObject!.state == OrderModel.usedState &&
         scannedObject!.updatedAt != null) {
       String formattedDate =
-          DateFormat('dd.MM.yyyy HH:mm').format(scannedObject!.updatedAt!);
+          DateFormat.yMd().add_jm().format(scannedObject!.updatedAt!);
       stateString += " ($formattedDate)";
     }
 
@@ -282,7 +282,8 @@ class ScanResultDisplay extends StatelessWidget {
                 if (scannedObject!.depositInfo != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: _buildDepositInfoWidget(context, scannedObject!, foregroundColor),
+                    child: _buildDepositInfoWidget(
+                        context, scannedObject!, foregroundColor),
                   ),
 
                 // DISPLAY NOTES
@@ -406,8 +407,7 @@ class ScanResultDisplay extends StatelessWidget {
       BuildContext context, TicketModel ticket, Color foregroundColor) {
     final info = ticket.depositInfo!;
     final isFullyPaid = info['is_fully_paid'] == true;
-    final remainingAmount =
-        (info['remaining_amount'] as num?)?.toDouble() ?? 0;
+    final remainingAmount = (info['remaining_amount'] as num?)?.toDouble() ?? 0;
     final deadlineType = info['deadline_type'] as String?;
     final deadlineDate = info['deadline_date'] as String?;
     final currencyCode = ticket.relatedOrder?.currencyCode;
@@ -436,7 +436,7 @@ class ScanResultDisplay extends StatelessWidget {
     } else if (deadlineType == 'date' && deadlineDate != null) {
       try {
         final dt = DateTime.parse(deadlineDate);
-        deadlineText = DateFormat('dd.MM.yyyy').format(dt);
+        deadlineText = DateFormat.yMd().format(dt);
       } catch (_) {
         deadlineText = deadlineDate;
       }

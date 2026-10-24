@@ -340,7 +340,7 @@ class ClientActivityBarChart extends StatelessWidget {
     final barHeight = day.actionCount == 0
         ? 0.0
         : math.max(4.0, 150 * day.actionCount / maximum);
-    final dateLabel = DateFormat('E d.M.').format(day.day);
+    final dateLabel = DateFormat.MEd().format(day.day);
     final semantics = ClientChangesStrings.dayChanges(
       dateLabel,
       day.actionCount,

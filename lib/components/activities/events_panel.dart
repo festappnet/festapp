@@ -69,7 +69,7 @@ class EventsPanel extends StatelessWidget {
                 // Format the start time to show weekday and time, e.g., "Sat 14:30"
                 final locale = Localizations.localeOf(context).toString();
                 final formattedTime =
-                    DateFormat('E HH:mm', locale).format(e.startTime);
+                    DateFormat.E(locale).add_jm().format(e.startTime);
 
                 return Draggable<ActivityEventModel>(
                   data: e,

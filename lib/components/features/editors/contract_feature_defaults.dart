@@ -19,7 +19,7 @@ void populateContractFeatureDefaults(
     final end = endTime;
     if (start != null && end != null) {
       feature.tourDate =
-          '${DateFormat('d. M. yyyy').format(start)} - ${DateFormat('d. M. yyyy').format(end)}';
+          '${DateFormat.yMd().format(start)} - ${DateFormat.yMd().format(end)}';
     }
   }
 

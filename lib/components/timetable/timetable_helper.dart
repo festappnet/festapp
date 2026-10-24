@@ -24,7 +24,7 @@ class TimetableHelper {
             ],
           ),
           child: Text(
-            DateFormat("H:mm").format(now),
+            DateFormat.jm().format(now),
             style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold),

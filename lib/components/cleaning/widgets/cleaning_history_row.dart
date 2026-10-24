@@ -13,7 +13,7 @@ class CleaningHistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFmt = DateFormat('d.M. HH:mm');
+    final dateFmt = DateFormat.Md().add_jm();
     final resolved = report.resolvedAt != null;
     final typeColor = CleaningStatusHelper.colorForType(report.problemType);
     final notes = <String>[
@@ -33,8 +33,8 @@ class CleaningHistoryRow extends StatelessWidget {
                 child: Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(
-                      color: typeColor, shape: BoxShape.circle),
+                  decoration:
+                      BoxDecoration(color: typeColor, shape: BoxShape.circle),
                 ),
               ),
               Expanded(

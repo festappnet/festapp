@@ -109,7 +109,7 @@ class TimeBlockItem {
   bool canSaveToMySchedule() => (!isSupportingSignIn()) && (!haveChildren());
 
   String durationTimeString() =>
-      "${DateFormat.Hm().format(startTime)} - ${DateFormat.Hm().format(endTime)}";
+      "${DateFormat.jm().format(startTime)} - ${DateFormat.jm().format(endTime)}";
 
   @override
   String toString() {
@@ -441,8 +441,8 @@ class TimeBlockHelper {
       Iterable<TimeBlockItem> events, BuildContext context) {
     Map<String, List<TimeBlockItem>> map = {};
     for (var e in events) {
-      var day = DateFormat("EEEE d. MMMM ", context.locale.languageCode)
-          .format(e.startTime);
+      var day =
+          DateFormat.MMMMEEEEd(context.locale.toString()).format(e.startTime);
       day = day[0].toUpperCase() + day.substring(1);
       map.putIfAbsent(day, () => []).add(e);
     }
@@ -545,5 +545,4 @@ class TimeBlockHelper {
         createGroup(ScheduleStrings.evening, eveningEvents),
     ];
   }
-
 }

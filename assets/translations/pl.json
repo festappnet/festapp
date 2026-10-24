@@ -2249,6 +2249,7 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "detailUnavailable": "Nie udało się wczytać szczegółów. Spróbuj ponownie",
     "settingsEmpty": "Nie ma jeszcze dostępnych wydarzeń.",
     "groups": {
       "email_problem": "Dostarczanie e-maili",

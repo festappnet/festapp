@@ -551,7 +551,7 @@ class _FormEditorContentState extends State<FormEditorContent>
           children: [
             Text(
                 value != null
-                    ? DateFormat('dd.MM.yyyy HH:mm').format(value)
+                    ? DateFormat.yMd().add_jm().format(value)
                     : FormStrings.notSet,
                 style: const TextStyle(fontSize: 14)),
             /*
@@ -578,12 +578,12 @@ class _FormEditorContentState extends State<FormEditorContent>
     } else if (form.definition.startTime != null &&
         now.isBefore(form.definition.startTime!)) {
       text = FormStrings.scheduledWithTime(
-          DateFormat('dd.MM. HH:mm').format(form.definition.startTime!));
+          DateFormat.Md().add_jm().format(form.definition.startTime!));
       color = ThemeConfig.redColor(context);
     } else if (form.definition.endTime != null &&
         now.isAfter(form.definition.endTime!)) {
       text = FormStrings.endedWithTime(
-          DateFormat('dd.MM. HH:mm').format(form.definition.endTime!));
+          DateFormat.Md().add_jm().format(form.definition.endTime!));
       color = ThemeConfig.redColor(context);
     } else if (!_prototype && form.definition.isWaitlist) {
       text = WaitlistStrings.formOpenWaitlistMessage;

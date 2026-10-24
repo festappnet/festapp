@@ -512,7 +512,7 @@ class _CounselingPickerState extends State<CounselingPicker> {
       if (i > 0) children.add(_hairline(context));
       final c = rows[i].counselor;
       final s = rows[i].slot;
-      final hm = DateFormat.Hm(context.locale.languageCode);
+      final hm = DateFormat.jm(context.locale.languageCode);
       children.add(_CounselorSlotTile(
         counselor: c,
         slot: s,
@@ -713,7 +713,7 @@ class _CounselorSlotTile extends StatelessWidget {
     final st = slot.startTime?.toOccasionTime();
     final dialogTimeText = st == null
         ? null
-        : "${DateFormat("EEEE d. M.", context.locale.languageCode).format(st)}"
+        : "${DateFormat.MMMMEEEEd(context.locale.toString()).format(st)}"
             " $startTimeText${endTimeText.isNotEmpty ? " - $endTimeText" : ""}";
     // Time styles mirror the My-program timeline: start keeps the visual
     // weight, the end a step smaller and muted underneath.

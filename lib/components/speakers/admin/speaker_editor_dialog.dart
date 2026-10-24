@@ -408,7 +408,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
         .toList()
       ..sort((a, b) =>
           (a.startTime ?? DateTime(0)).compareTo(b.startTime ?? DateTime(0)));
-    final fmt = DateFormat.MMMd(context.locale.languageCode).add_Hm();
+    final fmt = DateFormat.MMMd(context.locale.languageCode).add_jm();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

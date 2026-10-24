@@ -1,3 +1,4 @@
+import 'package:fstapp/components/email_delivery/email_delivery_issue_icon.dart';
 import 'order_email_repair_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -42,29 +43,25 @@ class OrderStateCell extends StatelessWidget {
               OrderBankSyncWarning(order: order),
             ],
             if (issues.isNotEmpty && order?.id != null && scopeOccasion != null)
-              IconButton(
-                  visualDensity: VisualDensity.compact,
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: IconButton(
+                  visualDensity: VisualDensity.standard,
+                  style: IconButton.styleFrom(
+                      minimumSize: const Size(20, 20),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                   constraints:
-                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                      const BoxConstraints.tightFor(width: 20, height: 20),
                   padding: EdgeInsets.zero,
                   tooltip:
                       '${issues.map((i) => i.description).join('\n')}\n${EmailDeliveryStrings.recovery('resolve')}',
-                  icon: Badge(
-                      isLabelVisible: true,
-                      label: Text('${issues.length}'),
-                      child: Icon(Icons.mark_email_unread_outlined,
-                          size: 20,
-                          color: issues.any((i) => i.isFailure)
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant)),
+                  icon: EmailDeliveryIssueIcon(count: issues.length),
                   onPressed: () => showDialog<void>(
                       context: context,
                       builder: (_) => OrderEmailRepairDialog(
                           orderId: order!.id!,
                           occasionId: scopeOccasion,
-                          onChanged: onChanged))),
+                          onChanged: onChanged)))),
             if (expired)
               Padding(
                 padding: const EdgeInsets.only(left: 4.0),

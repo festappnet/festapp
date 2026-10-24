@@ -411,7 +411,7 @@ class _LightDayHeader extends StatelessWidget {
     if (weekday.isNotEmpty) {
       weekday = weekday[0].toUpperCase() + weekday.substring(1);
     }
-    final dateLabel = dt != null ? DateFormat('d. M.').format(dt) : '';
+    final dateLabel = dt != null ? DateFormat.Md().format(dt) : '';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 26, 20, 8),
@@ -675,14 +675,14 @@ class _EventRow extends StatelessWidget {
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(DateFormat.Hm().format(event.startTime),
+                                Text(DateFormat.jm().format(event.startTime),
                                     style: startStyle),
                                 const SizedBox(height: 2),
-                                Text(DateFormat.Hm().format(event.endTime),
+                                Text(DateFormat.jm().format(event.endTime),
                                     style: endStyle),
                               ],
                             )
-                          : Text(DateFormat.Hm().format(event.startTime),
+                          : Text(DateFormat.jm().format(event.startTime),
                               style: startStyle),
                     ),
                     Expanded(

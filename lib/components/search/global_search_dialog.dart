@@ -440,10 +440,10 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
     final cancelled = model?.isCancelled ?? false;
     final timeStr = model != null
         ? model.durationTimeString()
-        : (r.startTime != null ? DateFormat.Hm().format(r.startTime!) : '');
+        : (r.startTime != null ? DateFormat.jm().format(r.startTime!) : '');
     final start = model?.startTime ?? r.startTime;
     final dateStr = start != null
-        ? DateFormat("EEE d.M.", context.locale.languageCode).format(start)
+        ? DateFormat.MEd(context.locale.toString()).format(start)
         : '';
     final placeTitle =
         model?.place?.title ?? (r.extra['place_title'] as String?);

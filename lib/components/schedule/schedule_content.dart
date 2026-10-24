@@ -258,10 +258,8 @@ class ScheduleContentState extends State<ScheduleContent> {
     }).toList();
   }
 
-  String _formatDateTime(DateTime value) => DateFormat(
-        'd. M. yyyy HH:mm',
-        context.locale.languageCode,
-      ).format(value);
+  String _formatDateTime(DateTime value) =>
+      DateFormat.yMd(context.locale.toString()).add_jm().format(value);
 
   String _formatRange(DateTime start, DateTime end) =>
       '${_formatDateTime(start)} – ${_formatDateTime(end)}';

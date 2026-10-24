@@ -53,3 +53,17 @@ test('hydrated metadata equals the edge projection, including alias identity, en
     assert.equal(document.querySelector('link[rel="canonical"]').href, expected.canonical);
     dom.window.close();
 });
+
+test('event date follows the selected interface language', async () => {
+    const { LocalizationService } = await import('../../src/services/localization_service.js');
+    const previous = LocalizationService.currentLocale;
+    try {
+        const date = new Date(2026, 9, 23);
+        LocalizationService.currentLocale = 'cs';
+        assert.equal(SeoService._formatDate(date), '23. 10. 2026');
+        LocalizationService.currentLocale = 'en';
+        assert.equal(SeoService._formatDate(date), '10/23/2026');
+    } finally {
+        LocalizationService.currentLocale = previous;
+    }
+});

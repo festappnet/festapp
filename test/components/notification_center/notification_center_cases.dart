@@ -18,9 +18,9 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  test('preview rollout is limited to the normalized current-tenant account',
+  test('notification center is available to every otherwise eligible account',
       () {
-    expect(NotificationCenterRollout.visibleToEveryone, isFalse);
+    expect(NotificationCenterRollout.visibleToEveryone, isTrue);
     for (final email in [
       'bujnmi@gmail.com',
       ' BUJNMI@GMAIL.COM ',
@@ -35,8 +35,196 @@ void main() {
       'bujnmi+other@gmail.com',
       'foreign+bujnmi@gmail.com'
     ]) {
-      expect(NotificationCenterRollout.isVisibleTo(email), isFalse);
+      expect(NotificationCenterRollout.isVisibleTo(email), isTrue);
     }
+  });
+  test('order detail reads deduplicate and reject a late identity response',
+      () async {
+    final pending = Completer<dynamic>();
+    final calls = <String>[];
+    final c = NotificationCenterController(read: (name, params) async {
+      calls.add(name);
+      if (name == 'get_order_history') return pending.future;
+      if (name == 'get_tickets_with_details') return <dynamic>[];
+      return {};
+    });
+    addTearDown(c.dispose);
+    final item = NotificationItem.fromJson({
+      'id': 1,
+      'occasionId': 7,
+      'data': {'orderId': 4}
+    });
+    final first = c.orderDetails(item);
+    expect(identical(first, c.orderDetails(item)), isTrue);
+    c.configure(userId: null, organizationId: null, invalidate: true);
+    pending.complete({
+      'code': 200,
+      'data': {
+        'order': {
+          'id': 4,
+          'occasion': 7,
+          'data': {'note': 'Private note'}
+        }
+      }
+    });
+    expect(await first, isNull);
+    expect(calls, ['get_order_history']);
+  });
+
+  test(
+      'order detail rejects denied and wrong-occasion reads before loading tickets',
+      () async {
+    for (final response in [
+      {'code': 403},
+      {
+        'code': 200,
+        'data': {
+          'order': {'occasion': 8}
+        }
+      },
+    ]) {
+      final calls = <String>[];
+      final c = NotificationCenterController(read: (name, params) async {
+        calls.add(name);
+        return response;
+      });
+      final item = NotificationItem.fromJson({
+        'id': 1,
+        'occasionId': 7,
+        'data': {'orderId': 4}
+      });
+      await expectLater(c.orderDetails(item), throwsStateError);
+      expect(calls, ['get_order_history']);
+      c.dispose();
+    }
+  });
+
+  testWidgets(
+      'expanded order shows its reference, notes and expandable ticket symbols',
+      (tester) async {
+    final calls = <String>[];
+    final c = NotificationCenterController(read: (name, params) async {
+      calls.add(name);
+      if (name == 'get_order_history')
+        return {
+          'code': 200,
+          'data': {
+            'order': {
+              'id': 4,
+              'occasion': 7,
+              'state': 'ordered',
+              'order_symbol': 'ORDER4',
+              'note_hidden': 'Internal order note',
+              'data': {'note': 'Customer order note'}
+            }
+          }
+        };
+      if (name == 'get_tickets_with_details')
+        return [
+          {'id': 11, 'ticket_symbol': 'TICKET11', 'note': 'Ticket note'},
+          {'id': 12, 'ticket_symbol': 'TICKET12'},
+        ];
+      return {};
+    });
+    addTearDown(c.dispose);
+    final group = NotificationGroup.fromJson({
+      'key': 'orders',
+      'kind': 'order_created',
+      'count': 1,
+      'items': [
+        {
+          'id': 1,
+          'kind': 'order_created',
+          'occasionId': 7,
+          'data': {
+            'orderId': 4,
+            'orderSymbol': 'ORDER4',
+            'customerName': 'Customer'
+          }
+        }
+      ]
+    });
+    group.loaded = true;
+    c.groups = [group];
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
+    await tester.pumpAndSettle();
+    expect(calls, isEmpty);
+    expect(find.byType(PopupMenuButton<bool>), findsNothing);
+    await tester.tap(find.text('NotificationCenter.kinds.order_created'));
+    await tester.pumpAndSettle();
+    expect(find.text('#ORDER4'), findsOneWidget);
+    expect(find.textContaining('Customer order note'), findsOneWidget);
+    expect(find.textContaining('Internal order note'), findsOneWidget);
+    expect(find.textContaining('#TICKET11 · #TICKET12'), findsOneWidget);
+    await tester.tap(find.byType(ExpansionTile));
+    await tester.pumpAndSettle();
+    expect(find.text('#TICKET11'), findsOneWidget);
+    expect(find.textContaining('Ticket note'), findsOneWidget);
+    expect(calls, ['get_order_history', 'get_tickets_with_details']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('notification recipient can be selected and copied', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData')
+          copied = call.arguments['text'] as String;
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final c = NotificationCenterController(read: (_, params) async => {});
+    addTearDown(c.dispose);
+    c.groups = [
+      NotificationGroup.fromJson({
+        'key': 'mail',
+        'kind': 'email_problem',
+        'count': 1,
+        'items': [
+          {
+            'id': 1,
+            'kind': 'email_problem',
+            'data': {
+              'customerName': 'Customer',
+              'recipient': 'copy@example.invalid',
+            },
+          },
+        ],
+      }),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NotificationCenterPanel(controller: c, onDetail: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectableRegion), findsOneWidget);
+    final text = tester.getRect(find.text('copy@example.invalid'));
+    final gesture = await tester.startGesture(
+      Offset(text.left + 1, text.center.dy),
+      kind: ui.PointerDeviceKind.mouse,
+    );
+    await gesture.moveTo(Offset(text.right, text.center.dy));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await tester.pump();
+    expect(copied, 'copy@example.invalid');
   });
   test('open acknowledges once and late badge cannot restore unread', () async {
     final badge = Completer<dynamic>();
@@ -690,7 +878,8 @@ void main() {
       final background = tester.widget<Material>(surface).color!;
       final arrow = find.byIcon(Icons.expand_more);
       final menu = find.byType(PopupMenuButton<bool>);
-      for (final control in [arrow, menu]) {
+      expect(menu, findsNothing);
+      for (final control in [arrow, find.byIcon(Icons.tune)]) {
         final glyph =
             find.descendant(of: control, matching: find.byType(RichText)).first;
         final color = tester.widget<RichText>(glyph).text.style!.color!;

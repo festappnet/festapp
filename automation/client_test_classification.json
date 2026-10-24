@@ -1,5 +1,10 @@
 {
   "flutter_roots": {
+    "test/services/locale_date_time_test.dart": {
+      "kind": "environment",
+      "reason": "Locale mismatch regression exercises the delivery tooltip and dialog with Flutter localization delegates; shared date adapters cover all interface languages and canonical grid values.",
+      "sources": ["test/services/locale_date_time_test.dart"]
+    },
     "test/components/forms/email_domain_suffix_test.dart": {
       "kind": "environment",
       "reason": "Localized public email field widgets in both designs and real main/ticket FormBuilder submission gate.",

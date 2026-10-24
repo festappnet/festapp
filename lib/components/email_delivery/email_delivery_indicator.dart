@@ -1,3 +1,4 @@
+import 'email_delivery_issue_icon.dart';
 import 'order_email_issue.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
@@ -27,12 +28,12 @@ class EmailDeliveryIndicator extends StatelessWidget {
   const EmailDeliveryIndicator(
       {super.key, this.summary, this.orderId, this.occasionId, this.onHistory});
 
-  String _description(Map<String, dynamic> entry) {
+  String _description(BuildContext context, Map<String, dynamic> entry) {
     final kind = entry['kind']?.toString();
     final state =
         EmailDeliveryStrings.state(entry['state']?.toString() ?? 'unavailable');
     final at = DateTime.tryParse(entry['at']?.toString() ?? '');
-    return '${kind == null ? '' : '${EmailDeliveryStrings.kind(kind)}: '}$state${at == null ? '' : ' (${DateFormat.yMd().add_Hm().format(at.toLocal())})'}';
+    return '${kind == null ? '' : '${EmailDeliveryStrings.kind(kind)}: '}$state${at == null ? '' : ' (${DateFormat.yMd(Localizations.localeOf(context).toString()).add_jm().format(at.toLocal())})'}';
   }
 
   @override
@@ -56,15 +57,16 @@ class EmailDeliveryIndicator extends StatelessWidget {
     final entries = (summary?['messages'] as List?) ?? [];
     final loadedAt = DateTime.tryParse(summary?['loaded_at']?.toString() ?? '');
     final entriesDescription = entries.isEmpty
-        ? _description(summary ?? {'state': 'unavailable'})
+        ? _description(context, summary ?? {'state': 'unavailable'})
         : entries
             .take(5)
-            .map((e) => _description(Map<String, dynamic>.from(e as Map)))
+            .map((e) =>
+                _description(context, Map<String, dynamic>.from(e as Map)))
             .join('\n');
     final description = entriesDescription +
         (loadedAt == null
             ? ''
-            : '\n${EmailDeliveryStrings.refreshed(DateFormat.yMd().add_Hms().format(loadedAt.toLocal()))}');
+            : '\n${EmailDeliveryStrings.refreshed(DateFormat.yMd(Localizations.localeOf(context).toString()).add_jms().format(loadedAt.toLocal()))}');
     final attention = summary?['current_issues'] != null
         ? issues.length
         : (summary?['attention_count'] as num?)?.toInt() ?? 0;
@@ -79,26 +81,28 @@ class EmailDeliveryIndicator extends StatelessWidget {
             onPressed: () => _showExplanation(context),
             icon: Semantics(
                 label: description,
-                child: Badge(
-                    isLabelVisible: attention > 0,
-                    label: Text('$attention'),
-                    child: opened || delivered
-                        ? SvgPicture.string(
-                            opened ? _doubleCheck : _singleCheck,
-                            key: ValueKey(opened
-                                ? 'email-opened-checks'
-                                : 'email-delivered-check'),
-                            width: 24,
-                            height: 24,
-                            colorFilter: ColorFilter.mode(
-                                IconTheme.of(context).color ??
-                                    Theme.of(context).colorScheme.onSurface,
-                                BlendMode.srcIn),
-                          )
-                        : Icon(icon,
-                            color: warning
-                                ? Theme.of(context).colorScheme.error
-                                : null))),
+                child: warning
+                    ? EmailDeliveryIssueIcon(count: attention)
+                    : Badge(
+                        isLabelVisible: attention > 0,
+                        label: Text('$attention'),
+                        child: opened || delivered
+                            ? SvgPicture.string(
+                                opened ? _doubleCheck : _singleCheck,
+                                key: ValueKey(opened
+                                    ? 'email-opened-checks'
+                                    : 'email-delivered-check'),
+                                width: 24,
+                                height: 24,
+                                colorFilter: ColorFilter.mode(
+                                    IconTheme.of(context).color ??
+                                        Theme.of(context).colorScheme.onSurface,
+                                    BlendMode.srcIn),
+                              )
+                            : Icon(icon,
+                                color: warning
+                                    ? Theme.of(context).colorScheme.error
+                                    : null))),
           )),
     );
   }
@@ -120,8 +124,8 @@ class EmailDeliveryIndicator extends StatelessWidget {
             for (final entry in messages)
               Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                      _description(Map<String, dynamic>.from(entry as Map)))),
+                  child: Text(_description(
+                      context, Map<String, dynamic>.from(entry as Map)))),
             if (onHistory != null || (orderId != null && occasionId != null))
               TextButton(
                 onPressed: () {
