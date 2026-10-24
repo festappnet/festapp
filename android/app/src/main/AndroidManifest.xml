@@ -4,7 +4,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <application
-        android:label="vstupenky.online"
+        android:label="Festapp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
@@ -43,11 +43,11 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/app/google-auth" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/stripe/pay" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/stripe/return" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/app/stripe/pay" />
-                <data android:scheme="https" android:host="vstupenky.online" android:path="/app/stripe/return" />
+                <data android:scheme="https" android:host="live.festapp.net" android:path="/app/google-auth" />
+                <data android:scheme="https" android:host="live.festapp.net" android:path="/stripe/pay" />
+                <data android:scheme="https" android:host="live.festapp.net" android:path="/stripe/return" />
+                <data android:scheme="https" android:host="live.festapp.net" android:path="/app/stripe/pay" />
+                <data android:scheme="https" android:host="live.festapp.net" android:path="/app/stripe/return" />
             </intent-filter>
             <!-- FESTAPP_GOOGLE_AUTH_LINK_END -->
         </activity>
