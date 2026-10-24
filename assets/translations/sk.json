@@ -858,6 +858,7 @@
     "noResults": "Žiadne výsledky."
   },
   "HtmlEditor": {
+    "removeLink": "Odstrániť odkaz",
     "moveUp": "Posunúť hore",
     "moveDown": "Posunúť dole",
     "bold": "Tučné",

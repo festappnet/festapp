@@ -72,8 +72,11 @@ class HtmlWithAppLinksWidget extends HtmlWidget {
           RouterService.navigate(context, url);
           return true;
         }
-        super.onTapUrl?.call(url);
-        return false;
+        // Let the HTML factory resolve in-document anchors. External links
+        // must reach window.open within the browser's user activation, without
+        // the factory's asynchronous canLaunchUrl probe.
+        if (url.startsWith('#')) return false;
+        return LaunchUrlService.openExternalUrl(url);
       };
 
   @override

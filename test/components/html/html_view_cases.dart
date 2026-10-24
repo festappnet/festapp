@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,34 @@ import 'package:fstapp/components/html/html_view.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 void main() {
+  testWidgets(
+      'HTML links launch directly without an asynchronous capability probe',
+      (tester) async {
+    const url = 'https://docs.google.com/spreadsheets/d/carpool/edit';
+    final calls = <MethodCall>[];
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (call) async {
+      calls.add(call);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+          body: HtmlView(
+        html: '<a href="$url">Tabulka spolujízdy</a>',
+        offlineOverride: false,
+      )),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tabulka spolujízdy', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(calls.map((call) => call.method), ['launch']);
+    expect(calls.single.arguments['url'], url);
+    expect(calls.single.arguments['useWebView'], isFalse);
+  });
+
   testWidgets('plain contacts are clickable in existing displayed HTML',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(

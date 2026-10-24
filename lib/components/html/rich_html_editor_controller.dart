@@ -412,6 +412,86 @@ class RichHtmlEditorController extends ChangeNotifier {
     return media.prepareHtml(html, originalHtml, owner);
   }
 
+  /// Editing any part of a link updates its full span, including mixed styles.
+  ({DocumentSelection selection, String? url})? get linkEditingTarget {
+    final selection = editor.composer.selection;
+    if (selection == null) return null;
+    final fallback = (selection: selection, url: null as String?);
+    if (selection.base.nodeId != selection.extent.nodeId) return fallback;
+    final node = editor.document.getNodeById(selection.base.nodeId);
+    final base = selection.base.nodePosition;
+    final extent = selection.extent.nodePosition;
+    if (node is! TextNode ||
+        base is! TextNodePosition ||
+        extent is! TextNodePosition ||
+        node.text.isEmpty) return fallback;
+    final start = base.offset < extent.offset ? base.offset : extent.offset;
+    final end = base.offset > extent.offset ? base.offset : extent.offset;
+    var offset = start;
+    LinkAttribution? link;
+    if (selection.isCollapsed) {
+      if (offset < node.text.length) {
+        link = node.text
+            .getAllAttributionsAt(offset)
+            .whereType<LinkAttribution>()
+            .firstOrNull;
+      }
+      if (link == null && offset > 0) {
+        offset--;
+        link = node.text
+            .getAllAttributionsAt(offset)
+            .whereType<LinkAttribution>()
+            .firstOrNull;
+      }
+    } else {
+      link = node.text
+          .getAllAttributionsThroughout(SpanRange(start, end - 1))
+          .whereType<LinkAttribution>()
+          .firstOrNull;
+    }
+    if (link == null) return fallback;
+    final span = node.text.getAttributedRange({link}, offset);
+    return (
+      selection: DocumentSelection(
+          base: DocumentPosition(
+              nodeId: node.id,
+              nodePosition: TextNodePosition(offset: span.start)),
+          extent: DocumentPosition(
+              nodeId: node.id,
+              nodePosition: TextNodePosition(offset: span.end + 1))),
+      url: link.plainTextUri,
+    );
+  }
+
+  /// Replace link attributes in one undo step; other formatting stays intact.
+  void setLink(DocumentSelection selection, String? url) {
+    final range = DocumentRange(start: selection.base, end: selection.extent);
+    final links = <Attribution>{
+      for (final node in editor.document.getNodesInside(range.start, range.end))
+        if (node is TextNode)
+          for (final span in node.text.getAttributionSpansByFilter(
+              (attribution) => attribution is LinkAttribution))
+            span.attribution,
+    };
+    editor.execute([
+      ChangeSelectionRequest(selection, SelectionChangeType.placeCaret,
+          SelectionReason.userInteraction),
+      if (selection.isCollapsed && url != null)
+        InsertTextRequest(
+            documentPosition: selection.extent,
+            textToInsert: url,
+            attributions: {LinkAttribution(url)})
+      else ...[
+        if (links.isNotEmpty)
+          RemoveTextAttributionsRequest(
+              documentRange: range, attributions: links),
+        if (url != null)
+          AddTextAttributionsRequest(
+              documentRange: range, attributions: {LinkAttribution(url)}),
+      ],
+    ]);
+  }
+
   void toggle(Attribution attribution) =>
       operations.toggleAttributionsOnSelection({attribution});
   bool canMoveBlock(String nodeId, int offset) => _codec.canMoveNode(

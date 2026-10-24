@@ -12,6 +12,36 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  test('standalone HTML links retain editor attribution, style and target', () {
+    const url = 'https://docs.google.com/spreadsheets/d/carpool/edit';
+    const html = '<p>Spolujízda:</p>'
+        '<a href="$url">Tabulka spolujízdy</a>.';
+    final codec = HtmlEditorDocument(html);
+    final node = codec.document.whereType<TextNode>().singleWhere(
+        (node) => node.text.toPlainText().contains('Tabulka spolujízdy'));
+    final attributes = node.text.getAllAttributionsAt(0);
+    expect(attributes.whereType<LinkAttribution>().single.plainTextUri, url);
+    final style =
+        htmlInlineTextStyler(attributes, const TextStyle(color: Colors.black));
+    expect(style.decoration, TextDecoration.underline);
+    expect(style.color, isNot(Colors.black));
+    expect(codec.encode(), html);
+    final editor = createDefaultDocumentEditor(document: codec.document);
+    addTearDown(editor.dispose);
+    editor.execute([
+      InsertTextRequest(
+        documentPosition: DocumentPosition(
+            nodeId: node.id, nodePosition: const TextNodePosition(offset: 8)),
+        textToInsert: 'nové ',
+        attributions: attributes,
+      )
+    ]);
+    final saved = parser.parseFragment(codec.encode());
+    expect(saved.querySelectorAll('a'), hasLength(1));
+    expect(saved.querySelector('a')!.attributes['href'], url);
+    expect(saved.querySelector('a')!.text, 'Tabulka nové spolujízdy');
+  });
+
   test('rich-only source formatting is projected without changing stored HTML', () {
     for (final source in ['{{fullOrder}}', '\n  {{fullOrder}}\n',
       '\n{{balanceReasoning}}\n{{fullOrder}}\n']) {

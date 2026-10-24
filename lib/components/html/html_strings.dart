@@ -8,6 +8,7 @@ class HtmlStrings {
   static String get italic => 'HtmlEditor.italic'.tr();
   static String get underline => 'HtmlEditor.underline'.tr();
   static String get strike => 'HtmlEditor.strike'.tr();
+  static String get removeLink => 'HtmlEditor.removeLink'.tr();
   static String get link => 'HtmlEditor.link'.tr();
   static String get image => 'HtmlEditor.image'.tr();
   static String get paste => 'HtmlEditor.paste'.tr();
