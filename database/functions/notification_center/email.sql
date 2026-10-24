@@ -1,14 +1,14 @@
 CREATE OR REPLACE FUNCTION public.notification_center_email_internal(p_message uuid,p_at timestamptz DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE m public.email_messages; a public.notification_center_activation; old public.notification_center_source_state;
+DECLARE m public.email_messages; a public.notification_center_organizations; old public.notification_center_source_state;
  reason text; fact_at timestamptz; ev uuid; seen jsonb; key text:='email:'||p_message; due_at timestamptz;
 BEGIN
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
  IF NOT FOUND THEN RETURN; END IF;
- PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-activation:'||m.organization,0));
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||m.organization,0));
  p_at:=coalesce(p_at,clock_timestamp());
- SELECT * INTO a FROM public.notification_center_activation WHERE organization=m.organization FOR SHARE;
- IF NOT FOUND OR NOT a.enabled THEN RETURN; END IF;
+ SELECT * INTO a FROM public.notification_center_organizations WHERE organization=m.organization FOR SHARE;
+ IF NOT FOUND THEN RETURN; END IF;
  -- Cancellation retires recovery of the original order messages. Provider
  -- callbacks can arrive later; preserve their audit facts without re-alerting.
  -- A failed cancellation notice is a separate, still relevant incident.
@@ -33,7 +33,7 @@ BEGIN
  WHEN 'rendering_failure' THEN (SELECT min(provider_time) FROM public.email_delivery_events WHERE message_id=m.message_id AND event_type='rendering_failure')
  WHEN 'delayed' THEN least(p_at,due_at+interval '30 minutes') ELSE p_at END;
  seen:=coalesce(old.state->'seen','[]');
- IF reason IS NOT NULL AND coalesce(fact_at,p_at)>=a.activated_at AND NOT seen ? reason THEN
+ IF reason IS NOT NULL AND coalesce(fact_at,p_at)>=a.initialized_at AND NOT seen ? reason THEN
   ev:=public.notification_center_publish_internal(m.organization,m.occasion,'email_problem',key,
     jsonb_build_object('messageId',m.message_id,'messageKind',m.message_kind,'reason',reason),NULL,coalesce(fact_at,p_at));
   IF ev IS NOT NULL AND old.state->>'eventId'=ev::text THEN

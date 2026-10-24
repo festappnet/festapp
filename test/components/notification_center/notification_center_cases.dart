@@ -1,8 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/notification_center/notification_center_bell.dart';
-import 'package:fstapp/app_config.dart';
-import 'package:fstapp/components/notification_center/notification_center_rollout.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -64,26 +62,6 @@ void main() {
         find.text('NotificationCenter.states.membership_left'), findsOneWidget);
     expect(find.text('NotificationCenter.more'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
-  test('notification center is available to every otherwise eligible account',
-      () {
-    expect(NotificationCenterRollout.visibleToEveryone, isTrue);
-    for (final email in [
-      'bujnmi@gmail.com',
-      ' BUJNMI@GMAIL.COM ',
-      AppConfig.getUserPrefix('bujnmi@gmail.com')
-    ]) {
-      expect(NotificationCenterRollout.isVisibleTo(email), isTrue);
-    }
-    for (final email in [
-      null,
-      '',
-      'other@gmail.com',
-      'bujnmi+other@gmail.com',
-      'foreign+bujnmi@gmail.com'
-    ]) {
-      expect(NotificationCenterRollout.isVisibleTo(email), isTrue);
-    }
   });
   test('order detail reads deduplicate and reject a late identity response',
       () async {

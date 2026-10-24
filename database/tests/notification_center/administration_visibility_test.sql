@@ -1,0 +1,48 @@
+BEGIN;
+DO $$
+DECLARE org bigint; foreign_org bigint; un bigint; oc bigint; actor uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); badge jsonb;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Automatic notification availability') RETURNING id INTO org;
+ INSERT INTO public.organizations(title) VALUES('Foreign notification scope') RETURNING id INTO foreign_org;
+ INSERT INTO auth.users(id) VALUES(actor),(outsider);
+ INSERT INTO public.user_info(id,organization) VALUES(actor,org),(outsider,foreign_org);
+ INSERT INTO public.units(organization,title) VALUES(org,'Workspace') RETURNING id INTO un;
+ INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time) VALUES(org,un,'Administration',gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,actor,true);
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'organization admin needs no rollout row');
+ DELETE FROM public.organization_users WHERE organization=org;
+ INSERT INTO public.unit_users(unit,"user",is_editor_view) VALUES(un,actor,true);
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'unit viewer sees administration bell');
+ PERFORM public.open_notification_center(org,oc);
+ UPDATE public.unit_users SET is_editor_view=false,is_manager=true WHERE unit=un;
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'unit manager sees administration bell');
+ UPDATE public.unit_users SET is_manager=false,is_editor=true WHERE unit=un;
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'unit editor sees administration bell');
+ DELETE FROM public.unit_users WHERE unit=un;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_view) VALUES(oc,actor,true);
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'occasion viewer sees administration bell');
+ PERFORM public.open_notification_center(org,oc);
+ UPDATE public.occasion_users SET is_editor_view=false,is_editor=true WHERE occasion=oc;
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'occasion editor sees administration bell');
+ UPDATE public.occasion_users SET is_editor=false,is_manager=true WHERE occasion=oc;
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'occasion manager sees administration bell');
+ PERFORM public.initialize_notification_center_internal(org);
+ PERFORM public.initialize_notification_center_internal(org);
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_organizations WHERE organization=org),1::bigint,'initialization is idempotent');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),0::bigint,'initialization does not backfill alerts');
+ PERFORM set_config('request.jwt.claim.sub',outsider::text,true);
+ BEGIN PERFORM public.get_notification_center_badge(org); RAISE EXCEPTION 'foreign account accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ BEGIN PERFORM public.get_notification_center_badge(org); RAISE EXCEPTION 'anonymous account accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_false(has_function_privilege('authenticated','public.initialize_notification_center_internal(bigint,text)','execute'),'client cannot initialize sources');
+ PERFORM assert_false(has_function_privilege('anon','public.initialize_notification_center_internal(bigint,text)','execute'),'anonymous cannot initialize sources');
+END $$;
+DO $$DECLARE created bigint; BEGIN
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM set_config('festapp.email_wake','scheduled',true);
+ PERFORM public.seed_org_with_admin('notification-'||gen_random_uuid()||'@example.invalid','Notification-fixture-9!');
+ created:=currval(pg_get_serial_sequence('public.organizations','id'));
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=created),'organization creation initializes collection automatically');
+END $$;
+ROLLBACK;

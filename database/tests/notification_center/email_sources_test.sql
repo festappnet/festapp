@@ -13,7 +13,7 @@ BEGIN
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,admin,true);
  msg:=public.enqueue_email('custom',jsonb_build_object('organization',org,'occasion',oc),'old@example.invalid','{}','preactivation');old_id:=(msg->>'message_id')::uuid;
  UPDATE public.email_messages SET bounced_at=clock_timestamp()-interval '1 hour' WHERE message_id=old_id;
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  PERFORM public.notification_center_email_internal(old_id);
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),0::bigint,'existing bounce baseline is silent');
  FOREACH kind IN ARRAY ARRAY['order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer'] LOOP
@@ -84,14 +84,6 @@ BEGIN
  UPDATE public.email_messages SET workflow_state='retry_wait',target_time=clock_timestamp()+interval '2 hours' WHERE message_id=message_uuid;
  PERFORM public.notification_center_email_internal(message_uuid,clock_timestamp()+interval '31 minutes');
  PERFORM assert_eq((SELECT data->>'reason' FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid),'delayed'::text,'retry scheduling preserves original due attention');
- msg:=public.enqueue_email('custom',jsonb_build_object('organization',org,'occasion',oc),'paused@example.invalid','{}','paused-fact');message_uuid:=(msg->>'message_id')::uuid;
- PERFORM public.set_notification_center_activation(org,false);
- paused_fact:=clock_timestamp();
- -- Model a delayed provider fact unavailable to the resume baseline.
- PERFORM public.set_notification_center_activation(org,true);
- UPDATE public.email_messages SET bounced_at=paused_fact WHERE message_id=message_uuid;
- PERFORM public.notification_center_email_internal(message_uuid);
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid),0::bigint,'paused interval is not replayed after resume');
  msg:=public.enqueue_email('custom',jsonb_build_object('organization',org,'occasion',oc),'unexpected@example.invalid','{}','unexpected-suppression');message_uuid:=(msg->>'message_id')::uuid;
  UPDATE public.email_messages SET workflow_state='suppressed' WHERE message_id=message_uuid;
  PERFORM public.notification_center_email_internal(message_uuid);

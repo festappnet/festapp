@@ -1051,11 +1051,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.set_notification_center_activation(bigint,boolean,text)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
-    },
     "public.maintain_notification_center(integer)": {
       "anon": false,
       "authenticated": false,

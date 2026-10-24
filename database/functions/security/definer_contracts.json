@@ -1329,10 +1329,6 @@
       "signature": "public.get_notification_center_updates(bigint,bigint,uuid[])",
       "source": "database/functions/notification_center/core.sql"
     },
-    "2922a083cfef8174db896b0e980b54d44a5b497be2f22c88131773474bf3f104": {
-      "signature": "public.set_notification_center_activation(bigint,boolean,text)",
-      "source": "database/functions/notification_center/maintenance.sql"
-    },
     "31e37ee6c9013ca94cebab1d0b003360b3084b96d80f559acb9c53fca6c14538": {
       "signature": "public.maintain_notification_center(integer)",
       "source": "database/functions/notification_center/maintenance.sql"
