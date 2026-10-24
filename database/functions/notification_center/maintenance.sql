@@ -8,18 +8,15 @@ CREATE TABLE public.notification_center_bank_health (
 ALTER TABLE public.notification_center_maintenance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.set_notification_center_activation(p_organization bigint,p_enabled boolean,p_timezone text DEFAULT 'Europe/Prague')
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+CREATE OR REPLACE FUNCTION public.initialize_notification_center_internal(p_organization bigint,p_timezone text DEFAULT 'Europe/Prague')
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 
 BEGIN
- PERFORM public.notification_center_require_service();
- PERFORM pg_advisory_xact_lock(hashtextextended('notification-center-activation:'||p_organization,0));
+ PERFORM pg_advisory_xact_lock(hashtextextended('notification-center-organization:'||p_organization,0));
  IF NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=p_timezone) THEN RAISE EXCEPTION 'notification_timezone_invalid'; END IF;
- INSERT INTO public.notification_center_activation(organization,enabled,timezone) VALUES(p_organization,false,p_timezone)
- ON CONFLICT DO NOTHING;
- PERFORM 1 FROM public.notification_center_activation WHERE organization=p_organization FOR UPDATE;
- IF p_enabled AND NOT (SELECT enabled FROM public.notification_center_activation WHERE organization=p_organization) THEN
-  -- Pauses collect no history. Rebaseline on resume, preserving the first activation timestamp.
+ IF EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=p_organization) THEN RETURN; END IF;
+ INSERT INTO public.notification_center_organizations(organization,timezone) VALUES(p_organization,p_timezone);
+ -- Baseline once: existing incidents and capacity are not historical alerts.
   INSERT INTO public.notification_center_source_state(organization,source_key,state)
    SELECT p_organization,'email:'||message_id,jsonb_build_object('reason',public.email_reporting_state(m),'dueAt',m.target_time,'seen',
     CASE WHEN m.workflow_state IN ('pending','preparing','sending','retry_wait','unknown') AND m.target_time<=clock_timestamp()-interval '30 minutes' THEN '["delayed"]'::jsonb WHEN public.email_reporting_state(m) IN ('complaint','bounce','reject','rendering_failure','dead','suppressed')
@@ -69,8 +66,7 @@ BEGIN
    LEFT JOIN eshop.spots s ON s.id=sb.spot AND s.blueprint=bp.id AND s.occasion=bp.occasion
    WHERE bp.organization=p_organization GROUP BY bp.id
    ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
- END IF;
- UPDATE public.notification_center_activation SET enabled=p_enabled,collection_started_at=CASE WHEN p_enabled AND NOT enabled THEN clock_timestamp() ELSE collection_started_at END WHERE organization=p_organization;
+ UPDATE public.notification_center_organizations SET collection_started_at=clock_timestamp() WHERE organization=p_organization;
 END $$;
 CREATE OR REPLACE FUNCTION public.maintain_notification_center(p_limit integer DEFAULT 100) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -80,7 +76,7 @@ BEGIN
  INSERT INTO public.notification_center_maintenance(name) VALUES('email') ON CONFLICT DO NOTHING;
  SELECT cursor INTO after_id FROM public.notification_center_maintenance WHERE name='email' FOR UPDATE SKIP LOCKED;
  IF FOUND THEN
-  FOR m IN SELECT em.id,em.message_id FROM public.email_messages em JOIN public.notification_center_activation a ON a.organization=em.organization AND a.enabled
+  FOR m IN SELECT em.id,em.message_id FROM public.email_messages em JOIN public.notification_center_organizations a ON a.organization=em.organization
    LEFT JOIN public.notification_center_source_state ns ON ns.organization=em.organization AND ns.source_key='email:'||em.message_id
    WHERE em.id>after_id AND em.workflow_state IN ('pending','preparing','sending','retry_wait','unknown')
    AND (coalesce((ns.state->>'dueAt')::timestamptz,em.target_time)<=clock_timestamp()-interval '30 minutes' OR (em.message_kind='waitlist_offer' AND em.expires_at<=clock_timestamp()+interval '5 minutes'))
@@ -99,5 +95,7 @@ BEGIN
   AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision LIMIT greatest(1,least(p_limit,500)));
  RETURN jsonb_build_object('evaluated',processed,'projected',projected);
 END $$;
-REVOKE ALL ON FUNCTION public.set_notification_center_activation(bigint,boolean,text),public.maintain_notification_center(integer) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.set_notification_center_activation(bigint,boolean,text),public.maintain_notification_center(integer) TO service_role;
+REVOKE ALL ON FUNCTION public.maintain_notification_center(integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.maintain_notification_center(integer) TO service_role;
+
+REVOKE ALL ON FUNCTION public.initialize_notification_center_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;

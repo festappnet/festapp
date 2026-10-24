@@ -6,20 +6,20 @@ BEGIN
  INSERT INTO public.notification_center_bank_health(connection_id)
  SELECT DISTINCT c.id FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
  (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
- JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_activation a ON a.organization=u.organization AND a.enabled
+ JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_organizations a ON a.organization=u.organization
  WHERE c.mode='api' AND c.state IN ('connected','degraded') ON CONFLICT DO NOTHING;
  -- A newly connected source starts against the activation boundary, not its first failed refresh.
  INSERT INTO public.notification_center_source_state(organization,source_key,state)
- SELECT DISTINCT a.organization,'bank:'||c.id,jsonb_build_object('problem',c.created_at<a.activated_at AND
-  (c.last_error IS NOT NULL OR coalesce(c.bank_pull_at,c.created_at)<a.activated_at-interval '30 minutes'))
+ SELECT DISTINCT a.organization,'bank:'||c.id,jsonb_build_object('problem',c.created_at<a.initialized_at AND
+  (c.last_error IS NOT NULL OR coalesce(c.bank_pull_at,c.created_at)<a.initialized_at-interval '30 minutes'))
  FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
   (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
- JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_activation a ON a.organization=u.organization AND a.enabled
+ JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_organizations a ON a.organization=u.organization
  WHERE c.mode='api' AND c.state IN ('connected','degraded') ON CONFLICT DO NOTHING;
  WITH selected AS (SELECT h.connection_id FROM public.notification_center_bank_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
  WHERE h.next_at<=clock_timestamp() AND (h.lease_until IS NULL OR h.lease_until<clock_timestamp()) AND c.mode='api' AND c.state IN ('connected','degraded')
  AND EXISTS(SELECT 1 FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit
- JOIN public.notification_center_activation a ON a.organization=u.organization AND a.enabled WHERE uba.bank_account=c.bank_account_id
+ JOIN public.notification_center_organizations a ON a.organization=u.organization WHERE uba.bank_account=c.bank_account_id
  OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))
  ORDER BY h.next_at,h.connection_id LIMIT greatest(1,least(p_limit,20)) FOR UPDATE OF h SKIP LOCKED), claimed AS (
  UPDATE public.notification_center_bank_health h SET lease_token=gen_random_uuid(),lease_until=clock_timestamp()+interval '2 minutes'
@@ -46,9 +46,9 @@ BEGIN
  UPDATE public.notification_center_bank_health SET failures=h.failures,failure_since=h.failure_since,reason=nc_reason,last_success=greatest(last_success,p_success_at),
  lease_token=NULL,lease_until=NULL,next_at=p_at+CASE WHEN p_reason='transport_unavailable' THEN interval '10 minutes' ELSE interval '5 minutes' END WHERE connection_id=p_connection;
  FOR scope IN SELECT DISTINCT u.organization FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit
- JOIN public.notification_center_activation a ON a.organization=u.organization AND a.enabled
+ JOIN public.notification_center_organizations a ON a.organization=u.organization
  WHERE uba.bank_account=c.bank_account_id OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id) LOOP
-  PERFORM 1 FROM public.notification_center_activation WHERE organization=scope.organization FOR SHARE;
+  PERFORM 1 FROM public.notification_center_organizations WHERE organization=scope.organization FOR SHARE;
   SELECT array_agg(DISTINCT f.occasion) INTO affected FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion
   WHERE oc.organization=scope.organization AND (f.bank_account=c.bank_account_id OR f.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
    OR EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.form=f.id AND (pi.bank_account=c.bank_account_id OR pi.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))));

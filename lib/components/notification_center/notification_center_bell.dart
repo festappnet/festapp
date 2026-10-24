@@ -13,7 +13,6 @@ import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
 import 'notification_center_controller.dart';
 import 'notification_center_panel.dart';
 import 'notification_center_strings.dart';
-import 'notification_center_rollout.dart';
 
 /// A dedicated asset avoids stale cached MaterialIcons subsets after a release.
 class NotificationBellIcon extends StatelessWidget {
@@ -45,7 +44,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   StreamSubscription<AuthState>? auth;
   StackRouter? _root;
   bool _resumed = true;
-  bool _rolloutVisible = false;
+  bool _authenticated = false;
   @override
   void initState() {
     super.initState();
@@ -88,13 +87,8 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     if (!mounted) return;
     final account = Supabase.instance.client.auth.currentUser;
     final userId = account?.id;
-    final profile = RightsService.currentUser();
-    final email = profile?.id == userId
-        ? profile?.email ?? account?.email
-        : account?.email;
-    _rolloutVisible =
-        userId != null && NotificationCenterRollout.isVisibleTo(email);
-    if (!_rolloutVisible) {
+    _authenticated = userId != null;
+    if (!_authenticated) {
       controller.configure(userId: null, organizationId: null);
       return;
     }
@@ -122,7 +116,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
 
   Future<void> _open() async {
     _contextChanged();
-    if (!_rolloutVisible) return;
+    if (!_authenticated) return;
     unawaited(controller.open());
     final desktop = MediaQuery.sizeOf(context).width >= 720;
     final bell = _bellKey.currentContext?.findRenderObject() as RenderBox?;
@@ -216,7 +210,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   @override
   Widget build(BuildContext context) => ListenableBuilder(
       listenable: controller,
-      builder: (context, _) => !_rolloutVisible || !controller.enabled
+      builder: (context, _) => !_authenticated || !controller.enabled
           ? const SizedBox.shrink()
           : IconButton(
               key: _bellKey,

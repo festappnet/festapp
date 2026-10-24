@@ -26,6 +26,8 @@ BEGIN
     )
     RETURNING id INTO org_id;
 
+    PERFORM public.initialize_notification_center_internal(org_id);
+
     ----------------------------------------------------------------
     -- 2. Create a Unit in the Organization
     ----------------------------------------------------------------

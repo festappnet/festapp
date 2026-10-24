@@ -10,9 +10,9 @@ BEGIN
  INSERT INTO auth.users(id) VALUES(editor),(author),(outsider);
  INSERT INTO public.user_info(id,organization) VALUES(editor,org),(author,org),(outsider,other_org);
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view,is_editor_order) VALUES(oc,editor,true,true),(oc,author,true,true);
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','disabled');
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),0::bigint,'disabled activation emits nothing');
- INSERT INTO public.notification_center_activation(organization,enabled) VALUES(org,true);
+ PERFORM set_config('request.jwt.claim.sub',editor::text,true);
+ PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'administration bell needs no organization rollout');
+ INSERT INTO public.notification_center_organizations(organization) VALUES(org);
  e:=public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author);
  PERFORM assert_eq(public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author),e,'dedupe identity');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_recipients WHERE event_id=e),1::bigint,'verified author excluded');

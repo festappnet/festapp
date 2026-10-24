@@ -11,7 +11,7 @@ BEGIN
  INSERT INTO auth.users(id) VALUES(actor),(late_user);
  INSERT INTO public.user_info(id,organization) VALUES(actor,org),(late_user,org);
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(oc,actor,true),(oc2,actor,true);
- INSERT INTO public.notification_center_activation(organization,enabled,activated_at) VALUES(org,true,clock_timestamp()-interval '3 days');
+ INSERT INTO public.notification_center_organizations(organization,initialized_at) VALUES(org,clock_timestamp()-interval '3 days');
  first_event:=public.notification_center_publish_internal(org,oc,'order_created','first','{}',NULL,clock_timestamp()-interval '1 day');
  old_event:=public.notification_center_publish_internal(org,oc,'order_created','second');
  PERFORM public.notification_center_publish_internal(org,oc2,'order_created','other');

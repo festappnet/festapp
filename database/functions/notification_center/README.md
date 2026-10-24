@@ -29,10 +29,10 @@ run in checkout transactions.
   status transport only, never a bank API or a new import path. Scope comes from
   explicit form accounts and actual order payment accounts, including aliases.
 
-An organization advisory transaction lock serializes first activation, pause
-and resume with producers, including the interval before an activation row
-exists. Producers take the shared gate before source state/event writes;
-activation takes it exclusively. Existing form/order/product/pool lock order
+An organization advisory transaction lock serializes source initialization
+with producers, including the interval before a collection row exists. Producers
+take the shared lock before source state/event writes; initialization takes it
+exclusively. Existing form/order/product/pool lock order
 remains intact. No producer takes a personal delivery-state lock.
 
 Publication snapshots currently eligible recipients. A genuinely new attention
@@ -52,7 +52,7 @@ Pagination, group expansion, updates and badge reads never acknowledge.
 ## Access and private data
 
 All projection tables have RLS and no client grants. Helpers are revoked from
-public client roles. Only service-only entrypoints may activate, project,
+public client roles. Only trusted internal owners initialize sources; service-only entrypoints project,
 observe or clean projections; user RPCs derive their recipient from `auth.uid()`.
 Every read rechecks current tenant and domain rights, including grouped counts,
 old pages and update hydration. Current occasion changes priority only.
@@ -89,13 +89,12 @@ existing authorization. No push or email is sent by these producers.
 
 ## Baseline, monitoring and retention
 
-Activation starts disabled. `set_notification_center_activation` seeds existing
-source states silently; resume preserves the first activation time and does not
-replay the paused interval. The separate current collection-window timestamp
-excludes late provider facts from a paused interval without changing the first
-activation timestamp. Organization day grouping defaults to Europe/Prague,
-matching `TimeHelper.setTimeZoneLocation`; the service activation boundary can
-specify a valid IANA timezone.
+Notification availability follows administration access without tenant or email
+rollout flags. `initialize_notification_center_internal` silently baselines sources
+once for each organization. The cutover initializes every existing organization;
+`seed_org_with_admin` initializes new organizations in their creation transaction.
+Repeated initialization is a no-op. Organization day grouping defaults to
+Europe/Prague; the internal initialization boundary accepts a valid IANA timezone.
 
 Capacity uses 90% attention with an 85% reset and one full/reopen episode.
 A full transition supersedes a warning from the same transaction; a later full

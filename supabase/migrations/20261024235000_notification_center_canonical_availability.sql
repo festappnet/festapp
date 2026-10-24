@@ -1,0 +1,1412 @@
+-- Notification availability follows administration permissions, never tenant rollout.
+-- Preserve personal history and active source snapshots. Inactive organizations
+-- baseline once at this cutover; future creation initializes through its owner.
+LOCK TABLE public.notification_center_activation IN ACCESS EXCLUSIVE MODE;
+CREATE TEMP TABLE notification_center_initialization_timezones ON COMMIT DROP AS
+ SELECT o.id organization,coalesce(a.timezone,'Europe/Prague') timezone
+ FROM public.organizations o LEFT JOIN public.notification_center_activation a ON a.organization=o.id
+ WHERE a.organization IS NULL OR NOT a.enabled;
+DELETE FROM public.notification_center_activation WHERE NOT enabled;
+ALTER TABLE public.notification_center_activation RENAME TO notification_center_organizations;
+ALTER TABLE public.notification_center_organizations RENAME COLUMN activated_at TO initialized_at;
+ALTER TABLE public.notification_center_organizations DROP COLUMN enabled;
+DROP FUNCTION public.set_notification_center_activation(bigint,boolean,text);
+-- Canonical source: database/functions/notification_center/capacity.sql
+CREATE OR REPLACE FUNCTION public.notification_center_initialized_internal(p_org bigint) RETURNS boolean
+LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
+ RETURN EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=p_org);
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_initialized_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+-- Runs under the existing form/product/inventory locks, never takes a recipient lock.
+CREATE OR REPLACE FUNCTION public.notification_center_capacity_transition_internal(p_org bigint,p_occ bigint,p_key text,p_snapshot jsonb,p_actor uuid DEFAULT auth.uid(),p_cause uuid DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE old public.notification_center_source_state; nc_episode bigint; next_state jsonb; crossing text; high boolean; remaining bigint; lim bigint; used bigint; event uuid;
+BEGIN
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
+ PERFORM 1 FROM public.notification_center_organizations WHERE organization=p_org FOR SHARE;
+ IF NOT FOUND THEN RETURN; END IF;
+ lim:=(p_snapshot->>'limit')::bigint; remaining:=(p_snapshot->>'remainingPublic')::bigint;
+ IF lim IS NULL OR lim<=0 THEN
+  SELECT * INTO old FROM public.notification_center_source_state WHERE organization=p_org AND source_key=p_key FOR UPDATE;
+  IF FOUND THEN UPDATE public.notification_center_events SET status='recovered',data=data||p_snapshot WHERE organization=p_org AND source_key=p_key||':episode:'||old.episode; END IF;
+  INSERT INTO public.notification_center_source_state(organization,source_key,state) VALUES(p_org,p_key,p_snapshot||jsonb_build_object('high',false))
+  ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+  RETURN;
+ END IF;
+ used:=lim-coalesce(remaining,0);
+ SELECT * INTO old FROM public.notification_center_source_state WHERE organization=p_org AND source_key=p_key FOR UPDATE;
+ high:=CASE WHEN used::numeric/lim<0.85 THEN false WHEN used::numeric/lim>=0.9 THEN true ELSE coalesce((old.state->>'high')::boolean,false) END;
+ next_state:=p_snapshot||jsonb_build_object('high',high);
+ IF NOT FOUND THEN
+  INSERT INTO public.notification_center_source_state VALUES(p_org,p_key,next_state,0,clock_timestamp()) ON CONFLICT DO NOTHING;
+  RETURN;
+ END IF;
+ crossing:=CASE WHEN remaining=0 AND (coalesce((old.state->>'limit')::bigint,0)<=0 OR coalesce((old.state->>'remainingPublic')::bigint,1)>0) THEN 'capacity_full'
+ WHEN remaining>0 AND (old.state->>'remainingPublic')::bigint=0 THEN 'capacity_reopened'
+ WHEN high AND NOT coalesce((old.state->>'high')::boolean,false) THEN 'capacity_warning' END;
+ IF NOT high AND coalesce((old.state->>'high')::boolean,false) THEN
+  UPDATE public.notification_center_events SET status='recovered',data=data||next_state WHERE organization=p_org AND source_key=p_key||':episode:'||old.episode;
+ END IF;
+ nc_episode:=old.episode;
+ IF crossing IS NOT NULL THEN
+  -- Full/reopen is one episode. Reopen updates it without another unread event.
+  IF crossing='capacity_reopened' THEN
+   UPDATE public.notification_center_events SET status='recovered',data=data||next_state WHERE organization=p_org AND source_key=p_key||':episode:'||nc_episode;
+  ELSIF crossing='capacity_full' AND old.state->>'episodeEvent' IS NOT NULL THEN
+   UPDATE public.notification_center_events SET kind='capacity_full',data=data||next_state,status='active',attention_revision=attention_revision+CASE WHEN created_xid=pg_current_xact_id() THEN 0 ELSE 1 END
+    WHERE id=(old.state->>'episodeEvent')::uuid RETURNING id INTO event;
+   IF event IS NOT NULL THEN PERFORM public.notification_center_capture_recipients_internal(event,p_actor);
+   ELSE
+    nc_episode:=nc_episode+1;
+    event:=public.notification_center_publish_internal(p_org,p_occ,crossing,p_key||':episode:'||nc_episode,next_state,p_actor);
+   END IF;
+  ELSE
+   nc_episode:=nc_episode+1;
+   IF p_cause IS NULL THEN
+    event:=public.notification_center_publish_internal(p_org,p_occ,crossing,p_key||':episode:'||nc_episode,next_state,p_actor);
+   ELSE
+    UPDATE public.notification_center_events SET data=data||jsonb_build_object('capacity',next_state) WHERE id=p_cause;
+   END IF;
+  END IF;
+ END IF;
+ IF p_cause IS NOT NULL AND crossing IS NOT NULL THEN UPDATE public.notification_center_events SET data=data||jsonb_build_object('capacity',next_state) WHERE id=p_cause; END IF;
+ next_state:=next_state||jsonb_build_object('episodeEvent',coalesce(event::text,CASE WHEN remaining=0 OR high THEN old.state->>'episodeEvent' END));
+ UPDATE public.notification_center_source_state SET state=next_state,episode=nc_episode,observed_at=clock_timestamp() WHERE organization=p_org AND source_key=p_key;
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_form_capacity_internal(p_form bigint,p_actor uuid DEFAULT auth.uid(),p_cause uuid DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE f public.forms; org bigint;
+BEGIN
+ SELECT * INTO f FROM public.forms WHERE id=p_form;
+ SELECT organization INTO org FROM public.occasions WHERE id=f.occasion;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
+ PERFORM public.notification_center_capacity_transition_internal(org,f.occasion,'form:'||f.id,
+ public.get_form_capacity_snapshot_internal(f.id)||jsonb_build_object('formId',f.id,'title',f.title),p_actor,p_cause);
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_product_capacity_internal(p_product bigint,p_actor uuid DEFAULT auth.uid())
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE p eshop.products; org bigint; used bigint;
+BEGIN
+ SELECT * INTO p FROM eshop.products WHERE id=p_product;
+ SELECT organization INTO org FROM public.occasions WHERE id=p.occasion;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
+ -- The product materializer's canonical maximum counts the committed product links.
+ SELECT count(*) INTO used FROM eshop.order_product_ticket WHERE product=p.id;
+ PERFORM public.notification_center_capacity_transition_internal(org,p.occasion,'product:'||p.id,
+ jsonb_build_object('productId',p.id,'title',p.title,'limit',p.maximum,'remainingPublic',greatest(p.maximum-used,0)),p_actor);
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_capacity_transition_internal(bigint,bigint,text,jsonb,uuid,uuid),
+ public.notification_center_form_capacity_internal(bigint,uuid,uuid),public.notification_center_product_capacity_internal(bigint,uuid)
+ FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.notification_center_inventory_capacity_internal(p_context bigint,p_actor uuid DEFAULT auth.uid())
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE ctx public.inventory_contexts; pool public.inventory_pools; org bigint; lim bigint; occupied bigint;
+BEGIN
+ SELECT * INTO ctx FROM public.inventory_contexts WHERE id=p_context;
+ SELECT * INTO pool FROM public.inventory_pools WHERE id=ctx.inventory_pool;
+ SELECT organization INTO org FROM public.occasions WHERE id=pool.occasion;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
+ SELECT least(count(*),coalesce(pool.sellable_capacity,count(*))),count(*) FILTER(WHERE order_product_ticket IS NOT NULL)
+ INTO lim,occupied FROM eshop.spots WHERE inventory_context=ctx.id;
+ -- Same physical/commercial limits as apply_allocations. Temporary buyer holds are deliberately excluded.
+ PERFORM public.notification_center_capacity_transition_internal(org,pool.occasion,'inventory:'||ctx.id,
+ jsonb_build_object('inventoryContextId',ctx.id,'title',pool.title,'limit',lim,'remainingPublic',greatest(lim-occupied,0)),p_actor);
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_blueprint_capacity_internal(p_blueprint bigint,p_actor uuid DEFAULT auth.uid())
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE bp eshop.blueprints; lim bigint; occupied bigint;
+BEGIN
+ SELECT * INTO bp FROM eshop.blueprints WHERE id=p_blueprint;
+ IF NOT public.notification_center_initialized_internal(bp.organization) THEN RETURN; END IF;
+ SELECT count(*),count(*) FILTER(WHERE s.order_product_ticket IS NOT NULL) INTO lim,occupied
+ FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
+ WHERE sb.blueprint=bp.id AND s.blueprint=bp.id AND s.occasion=bp.occasion AND NOT sb.blocked;
+ PERFORM public.notification_center_capacity_transition_internal(bp.organization,bp.occasion,'blueprint:'||bp.id,
+ jsonb_build_object('blueprintId',bp.id,'title',bp.title,'limit',lim,'remainingPublic',greatest(lim-occupied,0)),p_actor);
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_order_capacity_internal(p_order bigint)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE item record; bp bigint; org bigint;
+BEGIN
+ SELECT oc.organization INTO org FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
+ IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
+ PERFORM public.notification_center_form_capacity_internal((SELECT form FROM eshop.orders WHERE id=p_order));
+ FOR item IN SELECT DISTINCT product FROM eshop.order_product_ticket WHERE "order"=p_order AND product IS NOT NULL LOOP
+  PERFORM public.notification_center_product_capacity_internal(item.product);
+ END LOOP;
+ FOR item IN SELECT DISTINCT s.inventory_context FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
+ WHERE x."order"=p_order AND s.inventory_context IS NOT NULL LOOP
+  PERFORM public.notification_center_inventory_capacity_internal(item.inventory_context);
+ END LOOP;
+ SELECT f.blueprint INTO bp FROM public.forms f JOIN eshop.orders o ON o.form=f.id WHERE o.id=p_order;
+ IF bp IS NOT NULL THEN PERFORM public.notification_center_blueprint_capacity_internal(bp); END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_inventory_capacity_internal(bigint,uuid),public.notification_center_blueprint_capacity_internal(bigint,uuid),
+ public.notification_center_order_capacity_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Canonical source: database/functions/notification_center/app_activity.sql
+-- Trusted producers and recipient authorization for program/occasion activity.
+CREATE OR REPLACE FUNCTION public.notification_center_app_admin_internal(p_org bigint,p_occ bigint,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT p_user IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasions o
+ WHERE o.id=p_occ AND o.organization=p_org AND NOT public.is_demo_occasion(o.id)
+ AND (EXISTS(SELECT 1 FROM public.organization_users m WHERE m.organization=p_org AND m."user"=p_user AND m.is_admin)
+ OR EXISTS(SELECT 1 FROM public.occasion_users m WHERE m.occasion=o.id AND m."user"=p_user
+ AND public.participant_contacts_read_rule(m.is_editor,m.is_manager,false))));
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_app_admin_internal(bigint,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Called under the event row lock, before and after successful attendance changes.
+-- A silent first observation also supports events created after activation.
+CREATE OR REPLACE FUNCTION public.notification_center_event_capacity_internal(p_event bigint,p_actor uuid DEFAULT auth.uid())
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE ev public.events; org bigint; occupied bigint; males bigint; females bigint; capacity bigint; remaining bigint; full_now boolean; prior public.notification_center_source_state;
+ key text:='schedule-event:'||p_event; nc_episode bigint; notification uuid; snapshot jsonb; day_key text;
+BEGIN
+ SELECT * INTO ev FROM public.events WHERE id=p_event;
+ IF NOT FOUND THEN RETURN; END IF;
+ SELECT organization INTO org FROM public.occasions WHERE id=ev.occasion;
+ IF NOT public.notification_center_initialized_internal(org) OR public.is_demo_occasion(ev.occasion) THEN RETURN; END IF;
+ SELECT count(*),count(*) FILTER(WHERE u.sex='male'),count(*) FILTER(WHERE u.sex<>'male')
+ INTO occupied,males,females FROM public.event_users m LEFT JOIN public.user_info u ON u.id=m."user" WHERE m.event=ev.id;
+ capacity:=CASE WHEN ev.split_for_men_women THEN 2*(ev.max_participants/2) ELSE ev.max_participants END;
+ remaining:=CASE WHEN ev.split_for_men_women THEN greatest(ev.max_participants/2-males,0)+greatest(ev.max_participants/2-females,0)
+ ELSE greatest(ev.max_participants-occupied,0) END;
+ full_now:=coalesce(ev.max_participants>0 AND remaining=0,false);
+ snapshot:=jsonb_build_object('eventId',ev.id,'title',ev.title,'limit',capacity,
+   'remainingPublic',CASE WHEN ev.max_participants>0 THEN remaining END,'full',full_now);
+ SELECT * INTO prior FROM public.notification_center_source_state WHERE organization=org AND source_key=key FOR UPDATE;
+ IF NOT FOUND THEN
+   INSERT INTO public.notification_center_source_state(organization,source_key,state) VALUES(org,key,snapshot);
+   RETURN;
+ END IF;
+ nc_episode:=prior.episode;
+ day_key:=key||':day:'||(clock_timestamp() AT TIME ZONE (SELECT timezone FROM public.notification_center_organizations WHERE organization=org))::date;
+ IF full_now AND NOT coalesce((prior.state->>'full')::boolean,false) THEN
+   nc_episode:=nc_episode+1;
+   notification:=public.notification_center_publish_internal(org,ev.occasion,'event_capacity_full',
+     day_key,snapshot,p_actor);
+   UPDATE public.notification_center_events SET status='active',data=data||snapshot WHERE id=notification;
+ ELSIF NOT full_now AND coalesce((prior.state->>'full')::boolean,false) THEN
+   UPDATE public.notification_center_events SET status='recovered',data=data||snapshot
+   WHERE id=(prior.state->>'notificationId')::uuid;
+ END IF;
+ UPDATE public.notification_center_source_state SET state=snapshot||jsonb_build_object('notificationId',coalesce(notification::text,prior.state->>'notificationId')),episode=nc_episode,observed_at=clock_timestamp()
+ WHERE organization=org AND source_key=key;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_event_capacity_internal(bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Canonical source: database/functions/notification_center/core.sql
+-- Called by trusted domain owners only. Never accept an actor in a public RPC.
+CREATE OR REPLACE FUNCTION public.notification_center_require_service() RETURNS void
+LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF session_user<>'postgres' AND coalesce(auth.role(),'')<>'service_role' THEN
+  RAISE insufficient_privilege USING MESSAGE='notification_service_required'; END IF;
+END $$;
+-- Match the canonical account write policy: account admin AND linked-unit manager.
+CREATE OR REPLACE FUNCTION public.notification_center_bank_admin(p_bank bigint,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.bank_account_write_rule(
+  EXISTS(SELECT 1 FROM eshop.bank_account_users m WHERE m.bank_account=p_bank AND m."user"=p_user AND m.is_admin),
+  EXISTS(SELECT 1 FROM eshop.unit_bank_accounts l JOIN public.unit_users m ON m.unit=l.unit AND m."user"=p_user AND m.is_manager
+   WHERE l.bank_account=p_bank AND NOT EXISTS(SELECT 1 FROM public.demo_unit_ids_internal() d WHERE d.unit_id=m.unit)),
+  public.is_demo_bank_account(p_bank));
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_bank_admin(bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.notification_center_allowed(p_event public.notification_center_events,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT p_user IS NOT NULL AND (
+ CASE WHEN p_event.kind IN ('event_capacity_full','occasion_joined') THEN
+ public.notification_center_app_admin_internal(p_event.organization,p_event.occasion,p_user)
+ WHEN p_event.kind='email_problem' THEN
+ EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_event.organization AND "user"=p_user AND is_admin) OR (p_event.occasion IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=p_event.organization AND oc.id=p_event.occasion AND ou."user"=p_user AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)))
+ WHEN p_event.kind='bank_problem' THEN (EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu ON bu.bank_account=c.bank_account_id OR bu.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+ WHERE c.id=(p_event.data->>'bankConnectionId')::bigint AND bu."user"=p_user AND public.notification_center_bank_admin(bu.bank_account,p_user)
+ AND EXISTS(SELECT 1 FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit WHERE u.organization=p_event.organization AND uba.bank_account=bu.bank_account))
+ OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id WHERE oc.organization=p_event.organization AND oc.id=ANY(p_event.affected_occasions) AND ou."user"=p_user AND ou.is_editor_order_view))
+ ELSE EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ WHERE oc.organization=p_event.organization AND ou."user"=p_user AND ou.is_editor_order_view
+ AND NOT public.is_demo_occasion(oc.id)
+ AND (oc.id=p_event.occasion OR oc.id=ANY(p_event.affected_occasions))) END
+ );
+$$;
+-- Shared administration capability controls availability, never item access.
+CREATE OR REPLACE FUNCTION public.notification_center_administration_internal(p_org bigint,p_occ bigint,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT p_user IS NOT NULL AND (p_occ IS NULL OR EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND organization=p_org)) AND (
+ EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_org AND "user"=p_user AND is_admin)
+ OR EXISTS(SELECT 1 FROM public.units un JOIN public.unit_users um ON um.unit=un.id
+ WHERE un.organization=p_org AND um."user"=p_user AND (um.is_manager OR um.is_editor OR um.is_editor_view)
+ AND (p_occ IS NULL OR EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND unit=un.id)))
+ OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ WHERE oc.organization=p_org AND ou."user"=p_user AND NOT public.is_demo_occasion(oc.id)
+ AND (p_occ IS NULL OR oc.id=p_occ)
+ AND (public.administration_navigation_rule(false,ou.is_editor,ou.is_manager,false,false) OR ou.is_editor_view)));
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_administration_internal(bigint,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.notification_center_check_context(p_org bigint,p_occ bigint DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT (
+ public.notification_center_administration_internal(p_org,NULL,auth.uid()) OR
+ EXISTS(SELECT 1 FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
+ JOIN public.units u ON u.id=uba.unit WHERE bu."user"=auth.uid() AND public.notification_center_bank_admin(bu.bank_account,auth.uid()) AND u.organization=p_org)
+ OR EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ WHERE oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id))) THEN
+ RAISE insufficient_privilege USING MESSAGE='notification_read_denied'; END IF;
+ IF p_occ IS NOT NULL AND NOT public.notification_center_administration_internal(p_org,p_occ,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id
+ WHERE oc.id=p_occ AND oc.organization=p_org AND ou."user"=auth.uid() AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)) THEN
+ RAISE insufficient_privilege USING MESSAGE='notification_context_denied'; END IF;
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_capture_recipients_internal(p_event uuid,p_actor uuid)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE e public.notification_center_events; u uuid;
+BEGIN
+ SELECT * INTO e FROM public.notification_center_events WHERE id=p_event;
+ IF NOT FOUND THEN RETURN; END IF;
+ FOR u IN SELECT "user" FROM public.organization_users WHERE organization=e.organization AND is_admin
+ UNION SELECT ou."user" FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=e.organization AND (ou.is_editor_order_view OR public.participant_contacts_read_rule(ou.is_editor,ou.is_manager,false))
+ UNION SELECT bu."user" FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
+ JOIN public.units un ON un.id=uba.unit WHERE un.organization=e.organization AND bu.is_admin LOOP
+  IF public.notification_center_allowed(e,u) AND (u IS DISTINCT FROM p_actor OR
+   CASE WHEN e.kind IN ('event_capacity_full','occasion_joined') THEN
+     NOT public.notification_center_app_admin_internal(e.organization,e.occasion,p_actor)
+   ELSE NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=e.occasion AND "user"=p_actor AND is_editor_order)
+     AND NOT EXISTS(SELECT 1 FROM public.organization_users WHERE organization=e.organization AND "user"=p_actor AND is_admin) END) THEN
+   INSERT INTO public.notification_center_recipients(event_id,recipient,eligible_revision) VALUES(e.id,u,e.attention_revision)
+   ON CONFLICT(event_id,recipient) DO UPDATE SET eligible_revision=excluded.eligible_revision;
+  END IF;
+ END LOOP;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_capture_recipients_internal(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.notification_center_publish_internal(p_org bigint,p_occ bigint,p_kind text,p_key text,
+ p_data jsonb DEFAULT '{}',p_actor uuid DEFAULT NULL,p_at timestamptz DEFAULT NULL,p_affected bigint[] DEFAULT '{}')
+RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE a public.notification_center_organizations; e public.notification_center_events; u uuid;
+BEGIN
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||p_org,0));
+ p_at:=coalesce(p_at,clock_timestamp());
+ -- Source initialization and domain commits share one organization boundary.
+ SELECT * INTO a FROM public.notification_center_organizations WHERE organization=p_org FOR SHARE;
+ IF NOT FOUND OR p_at<coalesce(a.collection_started_at,a.initialized_at) THEN RETURN NULL; END IF;
+ IF p_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND organization=p_org) THEN
+ RAISE EXCEPTION 'notification_scope_mismatch'; END IF;
+ IF EXISTS(SELECT 1 FROM unnest(p_affected) x WHERE NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=x AND organization=p_org)) THEN
+ RAISE EXCEPTION 'notification_scope_mismatch'; END IF;
+ INSERT INTO public.notification_center_events(organization,occasion,kind,source_key,actor,occurred_at,data,affected_occasions)
+ VALUES(p_org,p_occ,p_kind,p_key,p_actor,p_at,p_data,p_affected) ON CONFLICT DO NOTHING RETURNING * INTO e;
+ IF NOT FOUND THEN RETURN (SELECT id FROM public.notification_center_events WHERE organization=p_org AND source_key=p_key); END IF;
+ PERFORM public.notification_center_capture_recipients_internal(e.id,p_actor);
+ RETURN e.id;
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_unmuted(p_event public.notification_center_events,p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT CASE WHEN p_event.occasion IS NOT NULL THEN NOT EXISTS(SELECT 1 FROM public.notification_center_preferences
+ WHERE organization=p_event.organization AND recipient=p_user AND occasion=p_event.occasion AND muted)
+ WHEN cardinality(p_event.affected_occasions)=0 THEN true
+ ELSE EXISTS(SELECT 1 FROM unnest(p_event.affected_occasions) oc JOIN public.occasion_users ou ON ou.occasion=oc AND ou."user"=p_user AND ou.is_editor_order_view
+ WHERE NOT EXISTS(SELECT 1 FROM public.notification_center_preferences p WHERE p.organization=p_event.organization AND p.recipient=p_user AND p.occasion=oc AND p.muted))
+ OR (p_event.kind='bank_problem' AND EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu ON
+ bu.bank_account=c.bank_account_id OR bu.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+ WHERE c.id=(p_event.data->>'bankConnectionId')::bigint AND bu."user"=p_user AND public.notification_center_bank_admin(bu.bank_account,p_user))) END;
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_unmuted(public.notification_center_events,uuid) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.project_notification_center(p_limit integer DEFAULT 100) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE e public.notification_center_events; u uuid; n integer:=0; seq bigint; budget integer:=greatest(1,least(p_limit,500)); tz text;
+BEGIN
+ PERFORM public.notification_center_require_service();
+ IF NOT pg_try_advisory_xact_lock(5831290471283) THEN RETURN 0; END IF;
+ -- Row locks are the transaction lease. Rollback releases claims, including sequence allocation.
+ FOR e IN SELECT ev.* FROM public.notification_center_events ev JOIN public.notification_center_organizations a ON a.organization=ev.organization
+ WHERE ev.projected_revision<ev.attention_revision ORDER BY ev.organization,ev.occurred_at,ev.id
+ LIMIT greatest(1,least(p_limit,500)) FOR UPDATE OF ev SKIP LOCKED LOOP
+  SELECT timezone INTO tz FROM public.notification_center_organizations WHERE organization=e.organization;
+  FOR u IN SELECT recipient FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision ORDER BY recipient LIMIT budget-n LOOP
+   UPDATE public.notification_center_recipients SET processed_revision=e.attention_revision WHERE event_id=e.id AND recipient=u;
+   n:=n+1;
+   IF NOT public.notification_center_allowed(e,u) OR EXISTS(SELECT 1 FROM public.notification_center_deliveries
+    WHERE event_id=e.id AND recipient=u AND attention_revision=e.attention_revision) THEN CONTINUE; END IF;
+   IF NOT public.notification_center_unmuted(e,u) THEN CONTINUE; END IF;
+   INSERT INTO public.notification_center_user_state(organization,recipient) VALUES(e.organization,u) ON CONFLICT DO NOTHING;
+   UPDATE public.notification_center_user_state SET last_delivery_sequence=last_delivery_sequence+1
+    WHERE organization=e.organization AND recipient=u RETURNING last_delivery_sequence INTO seq;
+   INSERT INTO public.notification_center_deliveries(event_id,recipient,organization,attention_revision,sequence,group_key)
+    VALUES(e.id,u,e.organization,e.attention_revision,seq,
+     CASE WHEN e.kind='email_problem' THEN coalesce(e.occasion::text,'shared')||':email_problem:'||coalesce(e.data->>'reason','problem')||':'||(e.occurred_at AT TIME ZONE tz)::date::text
+     WHEN e.kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined') THEN
+      coalesce(e.occasion::text,'shared')||':'||e.kind||':'||(e.occurred_at AT TIME ZONE tz)::date::text ELSE e.id::text END);
+  END LOOP;
+  IF NOT EXISTS(SELECT 1 FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision) THEN
+   UPDATE public.notification_center_events SET projected_revision=e.attention_revision WHERE id=e.id;
+  END IF;
+  EXIT WHEN n>=budget;
+ END LOOP;
+ RETURN n;
+END $$;
+CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_center_events,d public.notification_center_deliveries)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text;
+BEGIN
+ IF e.kind='email_problem' AND public.notification_center_allowed(e,auth.uid()) THEN
+  SELECT payload||jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'recipient',m.recipient,'customerName',coalesce(
+    nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),
+    nullif(trim(concat_ws(' ',u.name,u.surname)),''))) INTO payload
+  FROM public.email_messages m
+  LEFT JOIN eshop.orders o ON o.id=m.order_id AND o.occasion=m.occasion
+    AND coalesce(public.can_read_orders(o.occasion),false)
+    AND EXISTS(SELECT 1 FROM public.occasions oc WHERE oc.id=o.occasion AND oc.organization=m.organization)
+  LEFT JOIN public.user_info u ON u.id=m.recipient_user AND u.organization=m.organization
+  WHERE m.message_id=(e.data->>'messageId')::uuid AND m.organization=e.organization
+    AND m.occasion IS NOT DISTINCT FROM e.occasion;
+  payload:=coalesce(payload,e.data-'bankConnectionId');
+ END IF;
+ IF e.kind='occasion_joined' AND public.notification_center_allowed(e,auth.uid()) THEN
+  SELECT nullif(trim(concat_ws(' ',u.name,u.surname)),'') INTO customer
+  FROM public.user_info u JOIN public.occasion_users m ON m."user"=u.id
+  WHERE m.occasion=e.occasion AND u.organization=e.organization AND u.id=(e.data->>'userId')::uuid;
+  payload:=payload||jsonb_build_object('customerName',customer,'state',CASE WHEN EXISTS(
+   SELECT 1 FROM public.occasion_users m WHERE m.occasion=e.occasion AND m."user"=(e.data->>'userId')::uuid) THEN 'membership_active' ELSE 'membership_left' END);
+ END IF;
+ IF e.data ? 'orderId' AND e.occasion IS NOT NULL THEN
+  SELECT nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),o.state INTO customer,actual_state
+   FROM eshop.orders o WHERE o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion;
+  payload:=payload||jsonb_build_object('customerName',customer,'state',coalesce(actual_state,e.data->>'state'));
+ END IF;
+ IF e.kind='bank_problem' THEN
+  SELECT bu.bank_account,u.id INTO account,un FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu
+   ON bu.bank_account=c.bank_account_id OR bu.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+   JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account JOIN public.units u ON u.id=uba.unit
+   WHERE c.id=(e.data->>'bankConnectionId')::bigint AND bu."user"=auth.uid() AND public.notification_center_bank_admin(bu.bank_account,auth.uid()) AND u.organization=e.organization AND EXISTS(SELECT 1 FROM public.unit_users um WHERE um.unit=u.id AND um."user"=auth.uid() AND um.is_manager) ORDER BY u.id LIMIT 1;
+  IF account IS NOT NULL THEN payload:=payload||jsonb_build_object('bankAccountId',account,'unitId',un); END IF;
+  SELECT coalesce(jsonb_agg(jsonb_build_object('id',oc.id,'title',oc.title,'link',oc.link)),'[]') INTO impacts
+   FROM public.occasions oc JOIN public.occasion_users ou ON ou.occasion=oc.id AND ou."user"=auth.uid() AND ou.is_editor_order_view
+   WHERE oc.organization=e.organization AND oc.id=ANY(e.affected_occasions);
+  payload:=payload||jsonb_build_object('affectedOccasions',impacts);
+ END IF;
+ RETURN (SELECT jsonb_build_object('id',e.id,'sequence',d.sequence,'kind',e.kind,'occurredAt',e.occurred_at,
+ 'status',e.status,'data',payload,'occasionId',e.occasion,'occasionLink',oc.link,'occasionTitle',oc.title)
+ FROM (SELECT 1) seed LEFT JOIN public.occasions oc ON oc.id=e.occasion AND oc.organization=e.organization);
+END $$;
+CREATE OR REPLACE FUNCTION public.get_notification_center_badge(p_organization bigint) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE s public.notification_center_user_state;
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization);
+ SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
+ RETURN jsonb_build_object('enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
+ 'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+ WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
+ AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
+END $$;
+CREATE OR REPLACE FUNCTION public.get_notification_center_group(p_organization bigint,p_group_key text,p_snapshot bigint,
+ p_cursor bigint DEFAULT NULL,p_limit integer DEFAULT 5) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE items jsonb; next_cursor bigint;
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization);
+ WITH rows AS (SELECT public.notification_center_dto(e,d) item,d.sequence FROM public.notification_center_deliveries d
+ JOIN public.notification_center_events e ON e.id=d.event_id WHERE d.organization=p_organization AND d.recipient=auth.uid()
+ AND d.group_key=p_group_key AND d.sequence<=p_snapshot AND (p_cursor IS NULL OR d.sequence<p_cursor)
+ AND public.notification_center_allowed(e,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer
+ WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient AND newer.sequence<=p_snapshot AND newer.sequence>d.sequence)
+ ORDER BY d.sequence DESC LIMIT greatest(1,least(p_limit,50)))
+ SELECT coalesce(jsonb_agg(item ORDER BY sequence DESC),'[]'),CASE WHEN count(*)=greatest(1,least(p_limit,50)) THEN min(sequence) END INTO items,next_cursor FROM rows;
+ RETURN jsonb_build_object('items',items,'nextCursor',next_cursor);
+END $$;
+CREATE OR REPLACE FUNCTION public.get_notification_center_page(p_organization bigint,p_current_occasion bigint DEFAULT NULL,
+ p_limit integer DEFAULT 30,p_snapshot bigint DEFAULT NULL,p_cursor jsonb DEFAULT NULL) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE groups jsonb; choices jsonb; snap bigint; tail jsonb;
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization,p_current_occasion);
+ SELECT least(coalesce(p_snapshot,last_delivery_sequence),last_delivery_sequence) INTO snap FROM public.notification_center_user_state
+ WHERE organization=p_organization AND recipient=auth.uid(); snap:=coalesce(snap,0);
+ WITH available AS (SELECT d.*,e.kind,e.occasion,oc.title,
+ CASE WHEN e.occasion IS NULL AND (p_current_occasion IS NULL OR cardinality(e.affected_occasions)=0 OR p_current_occasion=ANY(e.affected_occasions)) THEN 0 WHEN e.occasion=p_current_occasion THEN 1 ELSE 2 END section
+ FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+ LEFT JOIN public.occasions oc ON oc.id=e.occasion AND oc.organization=p_organization
+ WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence<=snap AND public.notification_center_allowed(e,auth.uid())
+ AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient
+ AND newer.sequence<=snap AND newer.sequence>d.sequence)), grouped AS (
+ SELECT group_key,kind,occasion,title,section,count(*) n,max(sequence) latest FROM available GROUP BY group_key,kind,occasion,title,section
+ ), page AS (SELECT * FROM grouped WHERE p_cursor IS NULL OR section>(p_cursor->>'section')::int OR
+ (section=(p_cursor->>'section')::int AND (latest,group_key)<((p_cursor->>'sequence')::bigint,p_cursor->>'key'))
+ ORDER BY section,latest DESC,group_key DESC LIMIT greatest(1,least(p_limit,100)))
+ SELECT coalesce(jsonb_agg(jsonb_build_object('key',group_key,'section',section,'occasionId',occasion,'occasionTitle',title,'kind',kind,'day',CASE WHEN kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined','email_problem') THEN right(group_key,10) END,'count',n,
+ 'lastSequence',latest,'items',public.get_notification_center_group(p_organization,group_key,snap,NULL,5)->'items') ORDER BY section,latest DESC,group_key DESC),'[]'),
+ (jsonb_agg(jsonb_build_object('section',section,'sequence',latest,'key',group_key) ORDER BY section DESC,latest,group_key)->0) INTO groups,tail FROM page;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',oc.id,'title',oc.title,'muted',coalesce(p.muted,false)) ORDER BY oc.title),'[]') INTO choices
+ FROM public.occasions oc LEFT JOIN public.occasion_users ou ON ou.occasion=oc.id AND ou."user"=auth.uid()
+ LEFT JOIN public.notification_center_preferences p ON p.organization=p_organization AND p.recipient=auth.uid() AND p.occasion=oc.id
+ WHERE oc.organization=p_organization AND NOT public.is_demo_occasion(oc.id)
+ AND (coalesce(ou.is_editor_order_view,false) OR public.notification_center_app_admin_internal(p_organization,oc.id,auth.uid()));
+ RETURN jsonb_build_object('snapshot',snap,'groups',groups,'nextCursor',CASE WHEN jsonb_array_length(groups)=greatest(1,least(p_limit,100)) THEN tail END,'occasions',choices);
+END $$;
+CREATE OR REPLACE FUNCTION public.open_notification_center(p_organization bigint,p_current_occasion bigint DEFAULT NULL,p_limit integer DEFAULT 30)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE s public.notification_center_user_state; result jsonb;
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization,p_current_occasion);
+ INSERT INTO public.notification_center_user_state(organization,recipient) VALUES(p_organization,auth.uid()) ON CONFLICT DO NOTHING;
+ SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid() FOR UPDATE;
+ UPDATE public.notification_center_user_state SET read_through_sequence=greatest(read_through_sequence,s.last_delivery_sequence)
+ WHERE organization=p_organization AND recipient=auth.uid();
+ result:=public.get_notification_center_page(p_organization,p_current_occasion,p_limit,s.last_delivery_sequence,NULL);
+ RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence);
+END $$;
+CREATE OR REPLACE FUNCTION public.set_notification_center_muted(p_organization bigint,p_occasion bigint,p_muted boolean)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization,p_occasion);
+ IF p_occasion IS NULL OR p_muted IS NULL THEN RAISE EXCEPTION 'notification_invalid_preference'; END IF;
+ INSERT INTO public.notification_center_preferences VALUES(p_organization,auth.uid(),p_occasion,p_muted)
+ ON CONFLICT(organization,recipient,occasion) DO UPDATE SET muted=excluded.muted;
+END $$;
+-- Explicitly close every helper; PostgREST cannot publish or project as a user.
+REVOKE ALL ON FUNCTION public.notification_center_require_service(),public.notification_center_allowed(public.notification_center_events,uuid),
+ public.notification_center_check_context(bigint,bigint),public.notification_center_publish_internal(bigint,bigint,text,text,jsonb,uuid,timestamptz,bigint[]),
+ public.notification_center_dto(public.notification_center_events,public.notification_center_deliveries),public.project_notification_center(integer)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.project_notification_center(integer) TO service_role;
+REVOKE ALL ON FUNCTION public.get_notification_center_badge(bigint),public.open_notification_center(bigint,bigint,integer),
+ public.get_notification_center_page(bigint,bigint,integer,bigint,jsonb),public.get_notification_center_group(bigint,text,bigint,bigint,integer),
+ public.set_notification_center_muted(bigint,bigint,boolean) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_notification_center_badge(bigint),public.open_notification_center(bigint,bigint,integer),
+ public.get_notification_center_page(bigint,bigint,integer,bigint,jsonb),public.get_notification_center_group(bigint,text,bigint,bigint,integer),
+ public.set_notification_center_muted(bigint,bigint,boolean) TO authenticated;
+CREATE OR REPLACE FUNCTION public.get_notification_center_updates(p_organization bigint,p_snapshot bigint,p_ids uuid[]) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization);
+ IF coalesce(cardinality(p_ids),0)>200 THEN RAISE EXCEPTION 'notification_update_limit'; END IF;
+ SELECT coalesce(jsonb_agg(public.notification_center_dto(e,d) ORDER BY d.sequence DESC),'[]') INTO result
+ FROM public.notification_center_events e JOIN public.notification_center_deliveries d ON d.event_id=e.id
+ WHERE d.organization=p_organization AND d.recipient=auth.uid() AND e.id=ANY(p_ids) AND d.sequence<=p_snapshot
+ AND public.notification_center_allowed(e,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer
+ WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient AND newer.sequence>d.sequence AND newer.sequence<=p_snapshot);
+ RETURN jsonb_build_object('items',result);
+END $$;
+REVOKE ALL ON FUNCTION public.get_notification_center_updates(bigint,bigint,uuid[]) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_notification_center_updates(bigint,bigint,uuid[]) TO authenticated;
+
+-- Canonical source: database/functions/notification_center/email.sql
+CREATE OR REPLACE FUNCTION public.notification_center_email_internal(p_message uuid,p_at timestamptz DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE m public.email_messages; a public.notification_center_organizations; old public.notification_center_source_state;
+ reason text; fact_at timestamptz; ev uuid; seen jsonb; key text:='email:'||p_message; due_at timestamptz;
+BEGIN
+ SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
+ IF NOT FOUND THEN RETURN; END IF;
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||m.organization,0));
+ p_at:=coalesce(p_at,clock_timestamp());
+ SELECT * INTO a FROM public.notification_center_organizations WHERE organization=m.organization FOR SHARE;
+ IF NOT FOUND THEN RETURN; END IF;
+ -- Cancellation retires recovery of the original order messages. Provider
+ -- callbacks can arrive later; preserve their audit facts without re-alerting.
+ -- A failed cancellation notice is a separate, still relevant incident.
+ IF m.order_id IS NOT NULL AND m.message_kind<>'order_storno' AND EXISTS(
+  SELECT 1 FROM eshop.orders o WHERE o.id=m.order_id AND o.occasion=m.occasion AND o.state='storno') THEN
+  UPDATE public.notification_center_events SET status='recovered'
+   WHERE organization=m.organization AND source_key=key AND kind='email_problem';
+  RETURN;
+ END IF;
+ reason:=public.email_reporting_state(m);
+ SELECT * INTO old FROM public.notification_center_source_state WHERE organization=m.organization AND source_key=key FOR UPDATE;
+ due_at:=coalesce((old.state->>'dueAt')::timestamptz,m.target_time);
+ IF reason IN ('unknown','retry_wait','pending','preparing','delay') THEN
+  IF m.expires_at<=p_at OR m.workflow_state IN ('cancelled','expired') THEN reason:=NULL;
+  ELSIF p_at<due_at+interval '30 minutes' AND NOT coalesce((m.message_kind='waitlist_offer' AND m.expires_at<=p_at+interval '5 minutes'),false) THEN reason:=NULL;
+  ELSE reason:='delayed'; END IF;
+ END IF;
+ IF reason='suppressed' AND EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(m.recipient) AND created_at<m.created_at) THEN reason:=NULL; END IF;
+ IF reason NOT IN ('complaint','bounce','reject','rendering_failure','dead','suppressed','delayed','post_action_failed') THEN reason:=NULL; END IF;
+ fact_at:=CASE reason WHEN 'complaint' THEN m.complained_at WHEN 'bounce' THEN m.bounced_at
+ WHEN 'reject' THEN (SELECT min(provider_time) FROM public.email_delivery_events WHERE message_id=m.message_id AND event_type='reject')
+ WHEN 'rendering_failure' THEN (SELECT min(provider_time) FROM public.email_delivery_events WHERE message_id=m.message_id AND event_type='rendering_failure')
+ WHEN 'delayed' THEN least(p_at,due_at+interval '30 minutes') ELSE p_at END;
+ seen:=coalesce(old.state->'seen','[]');
+ IF reason IS NOT NULL AND coalesce(fact_at,p_at)>=a.initialized_at AND NOT seen ? reason THEN
+  ev:=public.notification_center_publish_internal(m.organization,m.occasion,'email_problem',key,
+    jsonb_build_object('messageId',m.message_id,'messageKind',m.message_kind,'reason',reason),NULL,coalesce(fact_at,p_at));
+  IF ev IS NOT NULL AND old.state->>'eventId'=ev::text THEN
+   UPDATE public.notification_center_events SET attention_revision=attention_revision+1,status='active',
+    data=data||jsonb_build_object('reason',reason) WHERE id=(old.state->>'eventId')::uuid;
+   PERFORM public.notification_center_capture_recipients_internal((old.state->>'eventId')::uuid,NULL);
+  END IF;
+  seen:=seen||jsonb_build_array(reason);
+ ELSIF reason IS NULL AND old.state->>'eventId' IS NOT NULL AND public.email_reporting_state(m) IN ('delivery','open','click','accepted') THEN
+  UPDATE public.notification_center_events SET status='recovered' WHERE id=(old.state->>'eventId')::uuid;
+ END IF;
+ INSERT INTO public.notification_center_source_state(organization,source_key,state)
+ VALUES(m.organization,key,jsonb_build_object('reason',reason,'seen',seen,'dueAt',due_at,'eventId',coalesce(ev::text,old.state->>'eventId')))
+ ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=p_at;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_email_internal(uuid,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Canonical source: database/functions/notification_center/bank.sql
+CREATE OR REPLACE FUNCTION public.claim_notification_center_bank_health(p_limit integer DEFAULT 20) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ PERFORM public.notification_center_require_service();
+ INSERT INTO public.notification_center_bank_health(connection_id)
+ SELECT DISTINCT c.id FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
+ (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+ JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_organizations a ON a.organization=u.organization
+ WHERE c.mode='api' AND c.state IN ('connected','degraded') ON CONFLICT DO NOTHING;
+ -- A newly connected source starts against the activation boundary, not its first failed refresh.
+ INSERT INTO public.notification_center_source_state(organization,source_key,state)
+ SELECT DISTINCT a.organization,'bank:'||c.id,jsonb_build_object('problem',c.created_at<a.initialized_at AND
+  (c.last_error IS NOT NULL OR coalesce(c.bank_pull_at,c.created_at)<a.initialized_at-interval '30 minutes'))
+ FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
+  (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+ JOIN public.units u ON u.id=uba.unit JOIN public.notification_center_organizations a ON a.organization=u.organization
+ WHERE c.mode='api' AND c.state IN ('connected','degraded') ON CONFLICT DO NOTHING;
+ WITH selected AS (SELECT h.connection_id FROM public.notification_center_bank_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
+ WHERE h.next_at<=clock_timestamp() AND (h.lease_until IS NULL OR h.lease_until<clock_timestamp()) AND c.mode='api' AND c.state IN ('connected','degraded')
+ AND EXISTS(SELECT 1 FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit
+ JOIN public.notification_center_organizations a ON a.organization=u.organization WHERE uba.bank_account=c.bank_account_id
+ OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))
+ ORDER BY h.next_at,h.connection_id LIMIT greatest(1,least(p_limit,20)) FOR UPDATE OF h SKIP LOCKED), claimed AS (
+ UPDATE public.notification_center_bank_health h SET lease_token=gen_random_uuid(),lease_until=clock_timestamp()+interval '2 minutes'
+ FROM selected s WHERE s.connection_id=h.connection_id RETURNING h.*)
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',h.connection_id,'token',h.lease_token,'remoteId',c.remote_bank_account_id)),'[]') INTO result
+ FROM claimed h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id;
+ RETURN result;
+END $$;
+CREATE OR REPLACE FUNCTION public.complete_notification_center_bank_health(p_connection bigint,p_token uuid,p_success_at timestamptz,p_reason text,p_at timestamptz DEFAULT clock_timestamp())
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE h public.notification_center_bank_health; c eshop.bank_sync_connections; scope record; old public.notification_center_source_state;
+ nc_reason text; key text:='bank:'||p_connection; ev uuid; ep bigint; affected bigint[];
+BEGIN
+ PERFORM public.notification_center_require_service();
+ SELECT * INTO h FROM public.notification_center_bank_health WHERE connection_id=p_connection AND lease_token=p_token AND lease_until>clock_timestamp() FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'notification_health_lease_lost'; END IF;
+ SELECT * INTO STRICT c FROM eshop.bank_sync_connections WHERE id=p_connection;
+ IF p_reason NOT IN ('fio_token_invalid_or_inactive','fio_receiving_account_mismatch','bank_sync_retry_required','transport_unavailable') AND p_reason IS NOT NULL THEN RAISE EXCEPTION 'notification_health_reason_invalid'; END IF;
+ nc_reason:=p_reason;
+ IF c.state='suspended' THEN nc_reason:=NULL;
+ ELSIF nc_reason IS NULL AND coalesce(p_success_at,h.last_success,c.bank_pull_at,c.created_at)<p_at-interval '30 minutes' THEN nc_reason:='stale_health'; END IF;
+ h.failures:=CASE WHEN nc_reason IS NULL THEN 0 ELSE h.failures+1 END;
+ h.failure_since:=CASE WHEN nc_reason IS NULL THEN NULL ELSE coalesce(h.failure_since,p_at) END;
+ UPDATE public.notification_center_bank_health SET failures=h.failures,failure_since=h.failure_since,reason=nc_reason,last_success=greatest(last_success,p_success_at),
+ lease_token=NULL,lease_until=NULL,next_at=p_at+CASE WHEN p_reason='transport_unavailable' THEN interval '10 minutes' ELSE interval '5 minutes' END WHERE connection_id=p_connection;
+ FOR scope IN SELECT DISTINCT u.organization FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit
+ JOIN public.notification_center_organizations a ON a.organization=u.organization
+ WHERE uba.bank_account=c.bank_account_id OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id) LOOP
+  PERFORM 1 FROM public.notification_center_organizations WHERE organization=scope.organization FOR SHARE;
+  SELECT array_agg(DISTINCT f.occasion) INTO affected FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion
+  WHERE oc.organization=scope.organization AND (f.bank_account=c.bank_account_id OR f.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+   OR EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.form=f.id AND (pi.bank_account=c.bank_account_id OR pi.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))));
+  SELECT * INTO old FROM public.notification_center_source_state WHERE organization=scope.organization AND source_key=key FOR UPDATE;
+  IF NOT FOUND THEN
+   INSERT INTO public.notification_center_source_state(organization,source_key,state) VALUES(scope.organization,key,jsonb_build_object('problem',nc_reason IS NOT NULL,'reason',nc_reason));
+   CONTINUE;
+  END IF;
+  ep:=old.episode;
+  IF nc_reason IS NOT NULL AND (nc_reason='fio_token_invalid_or_inactive' OR (h.failures>=2 AND h.failure_since<=p_at-interval '15 minutes')) THEN
+   IF NOT coalesce((old.state->>'problem')::boolean,false) THEN
+    ep:=ep+1;
+    ev:=public.notification_center_publish_internal(scope.organization,NULL,'bank_problem',key||':episode:'||ep,
+     jsonb_build_object('reason',nc_reason,'bankConnectionId',c.id),NULL,p_at,coalesce(affected,'{}'));
+    old.state:=jsonb_build_object('problem',true,'reason',nc_reason,'eventId',ev);
+   ELSE
+    -- New confirmed evidence refines the same episode. A transport timeout does
+    -- not erase a previously confirmed token/account failure before recovery.
+    IF old.state->>'reason' IN ('fio_token_invalid_or_inactive','fio_receiving_account_mismatch')
+     AND nc_reason IN ('transport_unavailable','bank_sync_retry_required','stale_health') THEN nc_reason:=old.state->>'reason'; END IF;
+    UPDATE public.notification_center_events SET data=data||jsonb_build_object('reason',nc_reason) WHERE id=(old.state->>'eventId')::uuid;
+    old.state:=old.state||jsonb_build_object('reason',nc_reason);
+   END IF;
+  ELSIF nc_reason IS NULL AND p_success_at IS NOT NULL AND (old.observed_at<p_success_at OR NOT coalesce((old.state->>'problem')::boolean,false)) THEN
+   UPDATE public.notification_center_events SET status='recovered' WHERE id=(old.state->>'eventId')::uuid;
+   old.state:=old.state||jsonb_build_object('problem',false,'reason',NULL);
+  END IF;
+  UPDATE public.notification_center_source_state SET state=old.state,episode=ep,observed_at=p_at WHERE organization=scope.organization AND source_key=key;
+ END LOOP;
+END $$;
+REVOKE ALL ON FUNCTION public.claim_notification_center_bank_health(integer),public.complete_notification_center_bank_health(bigint,uuid,timestamptz,text,timestamptz)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_notification_center_bank_health(integer),public.complete_notification_center_bank_health(bigint,uuid,timestamptz,text,timestamptz) TO service_role;
+
+-- Canonical source: database/functions/notification_center/maintenance.sql
+CREATE OR REPLACE FUNCTION public.initialize_notification_center_internal(p_organization bigint,p_timezone text DEFAULT 'Europe/Prague')
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+
+BEGIN
+ PERFORM pg_advisory_xact_lock(hashtextextended('notification-center-organization:'||p_organization,0));
+ IF NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=p_timezone) THEN RAISE EXCEPTION 'notification_timezone_invalid'; END IF;
+ IF EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=p_organization) THEN RETURN; END IF;
+ INSERT INTO public.notification_center_organizations(organization,timezone) VALUES(p_organization,p_timezone);
+ -- Baseline once: existing incidents and capacity are not historical alerts.
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'email:'||message_id,jsonb_build_object('reason',public.email_reporting_state(m),'dueAt',m.target_time,'seen',
+    CASE WHEN m.workflow_state IN ('pending','preparing','sending','retry_wait','unknown') AND m.target_time<=clock_timestamp()-interval '30 minutes' THEN '["delayed"]'::jsonb WHEN public.email_reporting_state(m) IN ('complaint','bounce','reject','rendering_failure','dead','suppressed')
+    THEN jsonb_build_array(CASE WHEN public.email_reporting_state(m) IN ('unknown','retry_wait','delay') THEN 'delayed' ELSE public.email_reporting_state(m) END) ELSE '[]'::jsonb END)
+   FROM public.email_messages m WHERE organization=p_organization
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state||jsonb_build_object('seen',coalesce(notification_center_source_state.state->'seen','[]')||(excluded.state->'seen'),'eventId',notification_center_source_state.state->>'eventId','dueAt',coalesce(notification_center_source_state.state->'dueAt',excluded.state->'dueAt')),observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT DISTINCT p_organization,'bank:'||c.id,jsonb_build_object('problem',c.last_error IS NOT NULL OR
+    coalesce(c.bank_pull_at,c.created_at)<clock_timestamp()-interval '30 minutes','reason',CASE WHEN c.last_error IS NOT NULL THEN 'existing_problem' END)
+   FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
+    (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
+   JOIN public.units u ON u.id=uba.unit WHERE u.organization=p_organization
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state||jsonb_build_object('eventId',notification_center_source_state.state->>'eventId'),observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'schedule-event:'||e.id,jsonb_build_object('eventId',e.id,'title',e.title,
+    'limit',CASE WHEN e.split_for_men_women THEN 2*(e.max_participants/2) ELSE e.max_participants END,
+    'full',coalesce(e.max_participants>0 AND CASE WHEN e.split_for_men_women THEN
+      count(eu."user") FILTER(WHERE ui.sex='male')>=e.max_participants/2 AND count(eu."user") FILTER(WHERE ui.sex<>'male')>=e.max_participants/2
+      ELSE count(eu."user")>=e.max_participants END,false))
+   FROM public.events e JOIN public.occasions o ON o.id=e.occasion
+   LEFT JOIN public.event_users eu ON eu.event=e.id LEFT JOIN public.user_info ui ON ui.id=eu."user"
+   WHERE o.organization=p_organization GROUP BY e.id
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+  -- Seed exact authoritative capacities before enabling publication.
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'form:'||f.id,public.get_form_capacity_snapshot_internal(f.id)||jsonb_build_object('high',
+    coalesce((f.participant_capacity-(public.get_form_capacity_snapshot_internal(f.id)->>'remainingPublic')::numeric)/nullif(f.participant_capacity,0)>=0.9,false))
+   FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE oc.organization=p_organization
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'product:'||p.id,jsonb_build_object('limit',p.maximum,'remainingPublic',greatest(p.maximum-count(x.id),0),
+     'high',coalesce(count(x.id)::numeric/nullif(p.maximum,0)>=0.9,false)) FROM eshop.products p JOIN public.occasions oc ON oc.id=p.occasion
+   LEFT JOIN eshop.order_product_ticket x ON x.product=p.id WHERE oc.organization=p_organization GROUP BY p.id
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'inventory:'||ctx.id,jsonb_build_object('limit',least(count(s.id),coalesce(ip.sellable_capacity,count(s.id))),
+    'remainingPublic',greatest(least(count(s.id),coalesce(ip.sellable_capacity,count(s.id)))-count(s.id) FILTER(WHERE s.order_product_ticket IS NOT NULL),0),
+    'high',coalesce(count(s.id) FILTER(WHERE s.order_product_ticket IS NOT NULL)::numeric/nullif(least(count(s.id),coalesce(ip.sellable_capacity,count(s.id))),0)>=0.9,false))
+   FROM public.inventory_contexts ctx JOIN public.inventory_pools ip ON ip.id=ctx.inventory_pool JOIN public.occasions oc ON oc.id=ip.occasion
+   LEFT JOIN eshop.spots s ON s.inventory_context=ctx.id WHERE oc.organization=p_organization GROUP BY ctx.id,ip.id
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+  INSERT INTO public.notification_center_source_state(organization,source_key,state)
+   SELECT p_organization,'blueprint:'||bp.id,jsonb_build_object('limit',count(s.id),
+    'remainingPublic',count(s.id) FILTER(WHERE s.order_product_ticket IS NULL),'high',
+    coalesce(count(s.id) FILTER(WHERE s.order_product_ticket IS NOT NULL)::numeric/nullif(count(s.id),0)>=0.9,false))
+   FROM eshop.blueprints bp LEFT JOIN eshop.blueprint_seat_bindings sb ON sb.blueprint=bp.id AND NOT sb.blocked
+   LEFT JOIN eshop.spots s ON s.id=sb.spot AND s.blueprint=bp.id AND s.occasion=bp.occasion
+   WHERE bp.organization=p_organization GROUP BY bp.id
+   ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
+ UPDATE public.notification_center_organizations SET collection_started_at=clock_timestamp() WHERE organization=p_organization;
+END $$;
+CREATE OR REPLACE FUNCTION public.maintain_notification_center(p_limit integer DEFAULT 100) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE m record; maximum bigint; after_id bigint; processed integer:=0; projected integer;
+BEGIN
+ PERFORM public.notification_center_require_service();
+ INSERT INTO public.notification_center_maintenance(name) VALUES('email') ON CONFLICT DO NOTHING;
+ SELECT cursor INTO after_id FROM public.notification_center_maintenance WHERE name='email' FOR UPDATE SKIP LOCKED;
+ IF FOUND THEN
+  FOR m IN SELECT em.id,em.message_id FROM public.email_messages em JOIN public.notification_center_organizations a ON a.organization=em.organization
+   LEFT JOIN public.notification_center_source_state ns ON ns.organization=em.organization AND ns.source_key='email:'||em.message_id
+   WHERE em.id>after_id AND em.workflow_state IN ('pending','preparing','sending','retry_wait','unknown')
+   AND (coalesce((ns.state->>'dueAt')::timestamptz,em.target_time)<=clock_timestamp()-interval '30 minutes' OR (em.message_kind='waitlist_offer' AND em.expires_at<=clock_timestamp()+interval '5 minutes'))
+   ORDER BY em.id LIMIT greatest(1,least(p_limit,500)) LOOP
+   PERFORM public.notification_center_email_internal(m.message_id); maximum:=m.id; processed:=processed+1;
+  END LOOP;
+  UPDATE public.notification_center_maintenance SET cursor=coalesce(maximum,0) WHERE name='email';
+ END IF;
+ projected:=public.project_notification_center(p_limit);
+ -- Retain active incidents; cleanup is projection-only, never business/email history.
+ DELETE FROM public.notification_center_deliveries WHERE (event_id,recipient,attention_revision) IN (
+  SELECT d.event_id,d.recipient,d.attention_revision FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+  WHERE d.delivered_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning')) LIMIT greatest(1,least(p_limit,500)));
+ DELETE FROM public.notification_center_events WHERE id IN(SELECT e.id FROM public.notification_center_events e
+  WHERE e.occurred_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning'))
+  AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision LIMIT greatest(1,least(p_limit,500)));
+ RETURN jsonb_build_object('evaluated',processed,'projected',projected);
+END $$;
+REVOKE ALL ON FUNCTION public.maintain_notification_center(integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.maintain_notification_center(integer) TO service_role;
+
+REVOKE ALL ON FUNCTION public.initialize_notification_center_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Canonical source: database/functions/users/occasion_enrolment_internal.sql
+CREATE OR REPLACE FUNCTION public.add_user_to_occasion_internal_v1(oc bigint, usr uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+    joined_at             timestamptz;
+    occasion_open         BOOLEAN;
+    user_data             JSONB;
+    user_exists           BOOLEAN;
+    user_org              BIGINT;
+    occasion_org          BIGINT;
+    unit_id               BIGINT;
+
+    -- Initialize flags (though SELECT INTO will overwrite these with NULL if no row found)
+    unit_is_manager       BOOLEAN := false;
+    unit_is_editor        BOOLEAN := false;
+    unit_is_editor_view   BOOLEAN := false;
+
+    is_privileged         BOOLEAN := false;
+BEGIN
+    -- 1. Retrieve the organization, the unit, and the open status of the occasion.
+    SELECT organization, unit, is_open
+      INTO occasion_org, unit_id, occasion_open
+      FROM occasions
+     WHERE id = oc;
+
+    -- 2. Get the organization of the user.
+    SELECT organization
+      INTO user_org
+      FROM user_info
+     WHERE id = usr;
+
+    -- 3. Ensure the user and the occasion belong to the same organization.
+    IF user_org IS DISTINCT FROM occasion_org THEN
+        RETURN jsonb_build_object(
+                  'code', 403,
+                  'message', 'User does not belong to the same organization as the occasion'
+              );
+    END IF;
+
+    PERFORM public.notification_center_initialized_internal(occasion_org);
+
+    -- 4. Retrieve the unit-level role information from unit_users.
+    SELECT is_manager, is_editor, is_editor_view
+      INTO unit_is_manager, unit_is_editor, unit_is_editor_view
+      FROM unit_users
+     WHERE unit = unit_id AND "user" = usr;
+
+    -- CRITICAL FIX: SELECT INTO sets variables to NULL if no row is found.
+    -- We must ensure they are boolean FALSE to satisfy NOT NULL constraints later.
+    unit_is_manager     := COALESCE(unit_is_manager, false);
+    unit_is_editor      := COALESCE(unit_is_editor, false);
+    unit_is_editor_view := COALESCE(unit_is_editor_view, false);
+
+    -- 5. Define is_privileged.
+    --    User is privileged if they have specific unit roles OR are an admin on the occasion.
+    is_privileged := public.closed_occasion_enrolment_rule(unit_is_manager,unit_is_editor,unit_is_editor_view,
+                     public.get_is_admin_on_occasion(oc));
+
+    -- 6. Permission Check: Closed Occasions.
+    --    If the occasion is not open, only privileged users can be added/modified.
+    IF NOT occasion_open AND NOT is_privileged THEN
+        RETURN jsonb_build_object('code', 403);
+    END IF;
+
+    -- 7. Retrieve the user info and build a JSON object merging any existing data.
+    SELECT COALESCE(ui.data, '{}'::jsonb) || jsonb_build_object(
+                'name', ui.name,
+                'surname', ui.surname,
+                'sex', ui.sex,
+                'email', ui.email_readonly
+           )
+      INTO user_data
+      FROM user_info ui
+     WHERE ui.id = usr;
+
+    -- 8. Check if the user already exists in the occasion_users table.
+    SELECT EXISTS (
+             SELECT 1
+               FROM occasion_users
+              WHERE occasion = oc AND "user" = usr
+           ) INTO user_exists;
+
+    IF user_exists THEN
+        -- Update the existing row with the new data and the unit role flags.
+        UPDATE occasion_users
+           SET data           = user_data,
+               is_manager     = unit_is_manager,
+               is_editor      = unit_is_editor,
+               is_editor_view = unit_is_editor_view,
+               is_editor_order = unit_is_editor,
+               is_editor_order_view = unit_is_editor_view
+         WHERE occasion = oc AND "user" = usr;
+    ELSE
+        -- Insert a new row into occasion_users, using the unit-level role flags.
+        INSERT INTO occasion_users (
+            occasion,
+            "user",
+            created_at,
+            is_editor,
+            is_manager,
+            is_editor_view,
+            is_editor_order,
+            is_editor_order_view,
+            is_approved,
+            is_approver,
+            data,
+            role
+        )
+        VALUES (
+            oc,
+            usr,
+            now(),
+            unit_is_editor,
+            unit_is_manager,
+            unit_is_editor_view,
+            unit_is_editor,
+            unit_is_editor_view,
+            FALSE,
+            FALSE,
+            user_data,
+            NULL
+        ) RETURNING created_at INTO joined_at;
+        PERFORM public.notification_center_publish_internal(occasion_org,oc,'occasion_joined',
+            'occasion-member:'||oc||':'||usr||':'||(joined_at AT TIME ZONE (SELECT timezone FROM public.notification_center_organizations WHERE organization=occasion_org))::date,
+            jsonb_build_object('userId',usr),auth.uid());
+    END IF;
+
+    RETURN jsonb_build_object('code', 200);
+END;
+$function$
+;
+REVOKE ALL ON FUNCTION public.add_user_to_occasion_internal_v1(bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.add_user_to_occasion_internal_v1(bigint,uuid) TO service_role;
+
+-- Canonical source: database/functions/events/save_event_domain_command_internal_v1.sql
+CREATE OR REPLACE FUNCTION public.save_event_domain_command_internal_v1(p_occasion bigint, p_command_id uuid, p_expected_version bigint, p_event jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
+DECLARE
+  v_actor uuid := auth.uid();
+  v_event_id bigint := (p_event->>'id')::bigint;
+  v_version bigint;
+  v_begin jsonb;
+  v_commit jsonb;
+  v_data jsonb;
+  v_current jsonb;
+  v_requested jsonb;
+  v_response jsonb;
+  v_program jsonb;
+  v_hash text;
+  v_changed boolean := true;
+  v_is_publishable boolean;
+  v_parent_ids bigint[];
+  v_role_ids bigint[];
+BEGIN
+  IF v_actor IS NULL OR NOT public.can_write_schedule(p_occasion) THEN
+    RAISE insufficient_privilege USING MESSAGE='occasion editor required';
+  END IF;
+  SELECT NOT o.is_hidden INTO v_is_publishable
+  FROM public.occasions o WHERE o.id=p_occasion;
+  IF v_is_publishable IS NULL THEN
+    RAISE invalid_parameter_value USING MESSAGE='occasion not found';
+  END IF;
+  IF p_event IS NULL OR jsonb_typeof(p_event)<>'object'
+     OR octet_length(p_event::text)>131072
+     OR EXISTS (SELECT 1 FROM jsonb_object_keys(p_event) key WHERE key NOT IN
+       ('id','title','startTime','endTime','maxParticipants','description',
+        'placeId','splitForMenWomen','isGroupEvent','isHidden','type','data',
+        'order','parentEventIds','eventRoleIds'))
+     OR NOT (p_event ?& ARRAY['title','startTime','endTime','splitForMenWomen',
+       'isGroupEvent','isHidden','order','parentEventIds','eventRoleIds'])
+     OR jsonb_typeof(p_event->'parentEventIds')<>'array'
+     OR jsonb_typeof(p_event->'eventRoleIds')<>'array'
+     OR jsonb_array_length(p_event->'parentEventIds')>1000
+     OR jsonb_array_length(p_event->'eventRoleIds')>1000
+     OR length(p_event->>'title') NOT BETWEEN 1 AND 500
+     OR (p_event->>'startTime')::timestamptz >= (p_event->>'endTime')::timestamptz
+     OR COALESCE((p_event->>'maxParticipants')::bigint,0)<0 THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid event aggregate';
+  END IF;
+
+  SELECT COALESCE(array_agg(value::bigint ORDER BY value::bigint),'{}')
+    INTO v_parent_ids FROM jsonb_array_elements_text(p_event->'parentEventIds');
+  SELECT COALESCE(array_agg(value::bigint ORDER BY value::bigint),'{}')
+    INTO v_role_ids FROM jsonb_array_elements_text(p_event->'eventRoleIds');
+  v_requested:=jsonb_build_object(
+    'id',v_event_id,'title',p_event->>'title',
+    'startTime',(p_event->>'startTime')::timestamptz,
+    'endTime',(p_event->>'endTime')::timestamptz,
+    'maxParticipants',(p_event->>'maxParticipants')::bigint,
+    'description',p_event->>'description',
+    'placeId',(p_event->>'placeId')::bigint,
+    'splitForMenWomen',(p_event->>'splitForMenWomen')::boolean,
+    'isGroupEvent',(p_event->>'isGroupEvent')::boolean,
+    'isHidden',(p_event->>'isHidden')::boolean,'type',p_event->>'type',
+    'data',p_event->'data','order',(p_event->>'order')::bigint,
+    'parentEventIds',to_jsonb(v_parent_ids),'eventRoleIds',to_jsonb(v_role_ids));
+
+  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
+    'occasion',p_occasion,'expectedVersion',p_expected_version,'event',p_event)::text,
+    'UTF8'),'sha256'),'hex');
+  v_begin:=public.begin_client_mutation_v1(p_command_id,'event.save',
+    p_occasion,v_actor,v_hash);
+  IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  PERFORM 1 FROM public.places WHERE id=(p_event->>'placeId')::bigint AND occasion=p_occasion FOR KEY SHARE;
+  PERFORM 1 FROM public.role_info WHERE id=ANY(v_role_ids) AND occasion=p_occasion ORDER BY id FOR KEY SHARE;
+  PERFORM 1 FROM public.events WHERE id=ANY(v_parent_ids||ARRAY[v_event_id]) AND occasion=p_occasion ORDER BY id FOR UPDATE;
+
+  IF v_event_id IS NOT NULL THEN
+    PERFORM 1 FROM public.events e WHERE e.id=v_event_id AND e.occasion=p_occasion
+      FOR UPDATE;
+    IF NOT FOUND THEN
+      v_response:=jsonb_build_object('status','rejected','code',404,
+        'data',jsonb_build_object('eventId',v_event_id),
+        'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,
+          'commitId',NULL,'replayed',false,'occurredAt',clock_timestamp()),
+        'sync',jsonb_build_object('replacements','[]'::jsonb));
+      RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
+    END IF;
+    INSERT INTO public.client_aggregate_versions
+      (aggregate_type,scope_type,scope_id,aggregate_id,version)
+    VALUES ('event','occasion',p_occasion,v_event_id::text,0)
+    ON CONFLICT DO NOTHING;
+    SELECT version INTO v_version FROM public.client_aggregate_versions
+      WHERE aggregate_type='event' AND scope_type='occasion'
+        AND scope_id=p_occasion AND aggregate_id=v_event_id::text FOR UPDATE;
+    v_current:=public.get_event_command_data_v1(v_event_id);
+    IF p_expected_version IS DISTINCT FROM v_version THEN
+      v_response:=jsonb_build_object('status','conflict','code',409,
+        'data',jsonb_build_object('version',v_version,'event',v_current),
+        'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,
+          'commitId',NULL,'replayed',false,'occurredAt',clock_timestamp()),
+        'sync',jsonb_build_object('replacements','[]'::jsonb));
+      RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
+    END IF;
+    v_changed:=v_current IS DISTINCT FROM v_requested;
+  ELSIF p_expected_version IS NOT NULL THEN
+    RAISE invalid_parameter_value USING MESSAGE='new event must not have an expected version';
+  END IF;
+
+  IF cardinality(v_parent_ids)<>cardinality(ARRAY(SELECT DISTINCT unnest(v_parent_ids)))
+     OR cardinality(v_role_ids)<>cardinality(ARRAY(SELECT DISTINCT unnest(v_role_ids)))
+     OR (v_event_id IS NOT NULL AND v_event_id=ANY(v_parent_ids))
+     OR EXISTS (
+       SELECT 1
+       FROM unnest(v_parent_ids) AS parent(parent_id)
+       LEFT JOIN public.events e
+         ON e.id=parent.parent_id AND e.occasion=p_occasion
+       WHERE e.id IS NULL
+     )
+     OR EXISTS (
+       SELECT 1
+       FROM unnest(v_role_ids) AS requested_role(role_id)
+       LEFT JOIN public.role_info r
+         ON r.id=requested_role.role_id AND r.occasion=p_occasion
+       WHERE r.id IS NULL
+     )
+     OR ((p_event->>'placeId') IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM public.places p WHERE p.id=(p_event->>'placeId')::bigint
+         AND p.occasion=p_occasion)) THEN
+    RAISE invalid_parameter_value USING MESSAGE='event aggregate contains cross-scope references';
+  END IF;
+
+
+  IF NOT v_changed THEN
+    v_response:=jsonb_build_object('status','unchanged','code',200,
+      'data',jsonb_build_object('version',v_version,'event',v_current),
+      'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,
+        'commitId',NULL,'replayed',false,'occurredAt',clock_timestamp()),
+      'sync',jsonb_build_object('replacements','[]'::jsonb));
+    RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
+  END IF;
+
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
+  IF v_event_id IS NOT NULL THEN
+    PERFORM public.notification_center_event_capacity_internal(v_event_id,v_actor);
+  END IF;
+  IF v_event_id IS NULL THEN
+    INSERT INTO public.events(title,start_time,end_time,max_participants,description,
+      place,split_for_men_women,is_group_event,is_hidden,occasion,type,data,"order")
+    VALUES (p_event->>'title',(p_event->>'startTime')::timestamptz,
+      (p_event->>'endTime')::timestamptz,(p_event->>'maxParticipants')::bigint,
+      p_event->>'description',(p_event->>'placeId')::bigint,
+      (p_event->>'splitForMenWomen')::boolean,(p_event->>'isGroupEvent')::boolean,
+      (p_event->>'isHidden')::boolean,p_occasion,p_event->>'type',p_event->'data',
+      (p_event->>'order')::bigint) RETURNING id INTO v_event_id;
+    v_version:=1;
+    INSERT INTO public.client_aggregate_versions
+      (aggregate_type,scope_type,scope_id,aggregate_id,version)
+    VALUES ('event','occasion',p_occasion,v_event_id::text,v_version);
+  ELSE
+    UPDATE public.events SET title=p_event->>'title',
+      start_time=(p_event->>'startTime')::timestamptz,
+      end_time=(p_event->>'endTime')::timestamptz,
+      max_participants=(p_event->>'maxParticipants')::bigint,
+      description=p_event->>'description',place=(p_event->>'placeId')::bigint,
+      split_for_men_women=(p_event->>'splitForMenWomen')::boolean,
+      is_group_event=(p_event->>'isGroupEvent')::boolean,
+      is_hidden=(p_event->>'isHidden')::boolean,type=p_event->>'type',
+      data=p_event->'data',"order"=(p_event->>'order')::bigint,updated_at=now()
+    WHERE id=v_event_id;
+    UPDATE public.client_aggregate_versions SET version=version+1,updated_at=clock_timestamp()
+      WHERE aggregate_type='event' AND scope_type='occasion'
+        AND scope_id=p_occasion AND aggregate_id=v_event_id::text
+      RETURNING version INTO v_version;
+  END IF;
+  PERFORM public.notification_center_event_capacity_internal(v_event_id,v_actor);
+  DELETE FROM public.event_groups WHERE event_child=v_event_id;
+  INSERT INTO public.event_groups(event_parent,event_child)
+    SELECT parent.parent_id,v_event_id
+    FROM unnest(v_parent_ids) AS parent(parent_id);
+  DELETE FROM public.event_roles WHERE event=v_event_id;
+  INSERT INTO public.event_roles(event,role)
+    SELECT v_event_id,requested_role.role_id
+    FROM unnest(v_role_ids) AS requested_role(role_id);
+
+  v_data:=jsonb_build_object('version',v_version,
+    'event',public.get_event_command_data_v1(v_event_id));
+  RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,
+    'event.save','program',jsonb_build_array(jsonb_build_object(
+      'entityType','event','entityId',v_event_id,
+      'operation',CASE WHEN v_current IS NULL THEN 'insert' ELSE 'update' END,
+      'safeLabel',left(p_event->>'title',240),
+      'changedFields',jsonb_build_array('aggregate'))),
+    CASE WHEN v_is_publishable THEN ARRAY['program_catalog'] ELSE '{}'::text[] END,
+    '[]','[]',v_data);
+END;
+$function$
+;
+REVOKE ALL ON FUNCTION public.save_event_domain_command_internal_v1(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Canonical source: database/functions/events/set_event_attendance_client_sync_v1.sql
+CREATE OR REPLACE FUNCTION public.set_event_attendance_client_sync_v1(p_event_id bigint, p_participant_id uuid, p_action text, p_command_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_actor uuid:=auth.uid(); v_occasion bigint; v_event public.events%ROWTYPE;
+  v_begin jsonb; v_hash text; v_response jsonb; v_commit jsonb;
+  v_private_revision bigint; v_live_revision bigint; v_private_payload jsonb;
+  v_live_payload jsonb; v_code integer; v_registration_start timestamptz;
+  v_feature jsonb; v_limit integer; v_count bigint; v_group bigint;
+  v_is_male boolean; v_changed boolean:=false; v_status text;
+  v_needs_occasion_join boolean:=false; v_profile_revision bigint;
+  v_profile_payload jsonb; v_private_impacts jsonb; v_items jsonb;
+  v_is_publishable boolean; v_companion_owner uuid;
+BEGIN
+  IF p_action NOT IN ('sign_in','sign_out') OR p_participant_id IS NULL THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid attendance command';
+  END IF;
+  SELECT r.occasion INTO v_occasion FROM public.client_mutation_receipts r WHERE r.command_id=p_command_id
+    AND r.actor_id=v_actor AND r.command_name='event.attendance.'||p_action;
+  IF NOT FOUND THEN
+  SELECT e.occasion,NOT o.is_hidden INTO v_occasion,v_is_publishable
+  FROM public.events e JOIN public.occasions o ON o.id=e.occasion
+  WHERE e.id=p_event_id;
+  ELSE
+    SELECT NOT is_hidden INTO v_is_publishable FROM public.occasions WHERE id=v_occasion;
+  END IF;
+  IF v_actor IS NULL OR v_occasion IS NULL OR NOT (
+    v_actor=p_participant_id OR EXISTS (SELECT 1 FROM public.user_companions c
+      WHERE c.occasion=v_occasion AND c."user"=v_actor AND c.companion=p_participant_id AND COALESCE((public.get_companion_feature_policy_v1(v_occasion)->>'is_enabled')::boolean,false))
+    OR public.can_write_schedule(v_occasion)) THEN
+    RAISE insufficient_privilege USING MESSAGE='participant attendance permission required';
+  END IF;
+  SELECT c."user" INTO v_companion_owner FROM public.user_companions c
+    JOIN public.occasion_users ou ON ou."user"=c."user" AND ou.occasion=v_occasion
+    WHERE c.occasion=v_occasion AND c.companion=p_participant_id ORDER BY c."user" LIMIT 1;
+  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('eventId',p_event_id,
+    'participantId',p_participant_id,'action',p_action)::text,'UTF8'),'sha256'),'hex');
+  v_begin:=public.begin_client_mutation_v1(p_command_id,'event.attendance.'||p_action,
+    v_occasion,v_actor,v_hash);
+  IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=v_occasion));
+  PERFORM pg_advisory_xact_lock(hashtextextended(
+    'attendance-user:'||p_participant_id::text||':'||v_occasion::text,0));
+  FOR v_group IN SELECT ee."group" FROM public.exclusive_events ee
+      WHERE ee.event=p_event_id ORDER BY ee."group" LOOP
+    PERFORM pg_advisory_xact_lock(hashtextextended(
+      'attendance-group:'||v_group::text,0));
+  END LOOP;
+  SELECT * INTO STRICT v_event FROM public.events e WHERE e.id=p_event_id
+    AND e.occasion=v_occasion FOR UPDATE;
+
+  PERFORM public.notification_center_event_capacity_internal(p_event_id,v_actor);
+  IF p_action='sign_out' THEN
+    IF NOT EXISTS (SELECT 1 FROM public.event_users eu
+      WHERE eu.event=p_event_id AND eu."user"=p_participant_id) THEN
+      v_status:='unchanged'; v_code:=404;
+    ELSIF clock_timestamp() > v_event.end_time THEN
+      v_status:='rejected'; v_code:=201;
+    ELSE
+      DELETE FROM public.event_users WHERE event=p_event_id AND "user"=p_participant_id;
+      v_changed:=true; v_code:=200;
+    END IF;
+  ELSE
+    IF NOT EXISTS (SELECT 1 FROM public.occasion_users ou
+      WHERE ou.occasion=v_occasion AND ou."user"=p_participant_id) THEN
+      IF v_actor=p_participant_id AND EXISTS (SELECT 1 FROM public.occasions o
+        WHERE o.id=v_occasion AND o.is_open) THEN
+        v_needs_occasion_join:=true;
+      END IF;
+      IF NOT v_needs_occasion_join THEN
+        v_status:='rejected'; v_code:=403;
+      END IF;
+    END IF;
+    IF v_code IS NULL AND EXISTS (SELECT 1 FROM public.event_users eu
+      WHERE eu.event=p_event_id AND eu."user"=p_participant_id) THEN
+      v_status:='unchanged'; v_code:=103;
+    END IF;
+    IF v_code IS NULL AND clock_timestamp() > v_event.end_time THEN
+      v_status:='rejected'; v_code:=100;
+    END IF;
+
+    IF v_code IS NULL AND COALESCE((v_event.data->>'is_counseling_slot')::boolean,false) THEN
+      SELECT f INTO v_feature FROM public.occasions o,
+        LATERAL jsonb_array_elements(o.features) f
+      WHERE o.id=v_occasion AND f->>'code'='counseling' LIMIT 1;
+      IF v_feature IS NULL OR COALESCE((v_feature->>'is_enabled')::boolean,false)=false THEN
+        v_status:='rejected'; v_code:=108;
+      ELSE
+        v_registration_start:=(v_feature->>'registration_start_time')::timestamptz;
+        IF v_registration_start IS NOT NULL AND clock_timestamp()<v_registration_start THEN
+          v_status:='rejected'; v_code:=104;
+        END IF;
+        v_limit:=COALESCE((v_feature->>'max_active_bookings')::integer,1);
+        IF v_code IS NULL AND v_limit>0 THEN
+          SELECT count(*) INTO v_count FROM public.event_users eu
+          JOIN public.events e ON e.id=eu.event
+          WHERE eu."user"=p_participant_id AND e.occasion=v_occasion
+            AND COALESCE((e.data->>'is_counseling_slot')::boolean,false)
+            AND e.end_time>clock_timestamp();
+          IF v_count>=v_limit THEN v_status:='rejected'; v_code:=109; END IF;
+        END IF;
+      END IF;
+    ELSIF v_code IS NULL THEN
+      SELECT f INTO v_feature FROM public.occasions o,
+        LATERAL jsonb_array_elements(o.features) f
+      WHERE o.id=v_occasion AND f->>'code'='workshops' LIMIT 1;
+      IF v_feature IS NOT NULL THEN
+        IF COALESCE((v_feature->>'is_enabled')::boolean,false)=false THEN
+          v_status:='rejected'; v_code:=108;
+        ELSE
+          v_registration_start:=(v_feature->>'start_time')::timestamptz;
+          IF v_registration_start IS NOT NULL AND clock_timestamp()<v_registration_start THEN
+            v_status:='rejected'; v_code:=104;
+          END IF;
+        END IF;
+      END IF;
+    END IF;
+
+    IF v_code IS NULL AND EXISTS (
+      SELECT 1 FROM public.exclusive_events target
+      JOIN public.exclusive_events occupied ON occupied."group"=target."group"
+      JOIN public.event_users eu ON eu.event=occupied.event
+      WHERE target.event=p_event_id AND eu."user"=p_participant_id) THEN
+      v_status:='rejected'; v_code:=102;
+    END IF;
+    IF v_code IS NULL AND EXISTS (
+      SELECT 1 FROM public.event_users eu JOIN public.events e ON e.id=eu.event
+      WHERE eu."user"=p_participant_id AND e.id<>p_event_id
+        AND e.start_time<v_event.end_time AND e.end_time>v_event.start_time) THEN
+      v_status:='rejected'; v_code:=107;
+    END IF;
+    IF v_code IS NULL AND COALESCE(v_event.max_participants,0)>0 THEN
+      SELECT count(*) INTO v_count FROM public.event_users eu WHERE eu.event=p_event_id;
+      IF v_event.split_for_men_women THEN
+        SELECT COALESCE(u.sex='male',false) INTO v_is_male
+          FROM public.user_info u WHERE u.id=p_participant_id;
+        SELECT count(*) INTO v_count FROM public.event_users eu
+          JOIN public.user_info u ON u.id=eu."user" WHERE eu.event=p_event_id
+            AND (u.sex='male')=v_is_male;
+        IF v_count>=v_event.max_participants/2 THEN
+          v_status:='rejected'; v_code:=CASE WHEN v_is_male THEN 105 ELSE 106 END;
+        END IF;
+      ELSIF v_count>=v_event.max_participants THEN
+        v_status:='rejected'; v_code:=101;
+      END IF;
+    END IF;
+    IF v_code IS NULL THEN
+      IF v_needs_occasion_join THEN
+        PERFORM public.add_user_to_occasion_internal_v1(v_occasion,p_participant_id);
+        IF NOT EXISTS (SELECT 1 FROM public.occasion_users ou
+          WHERE ou.occasion=v_occasion AND ou."user"=p_participant_id) THEN
+          RAISE EXCEPTION 'occasion membership handler did not create membership';
+        END IF;
+      END IF;
+      INSERT INTO public.event_users(event,"user") VALUES(p_event_id,p_participant_id);
+      v_changed:=true; v_code:=200;
+    END IF;
+  END IF;
+
+  IF NOT v_changed THEN
+    v_response:=jsonb_build_object('status',v_status,'code',v_code,
+      'data',jsonb_build_object('eventId',p_event_id,'participantId',p_participant_id,
+        'isSignedIn',EXISTS(SELECT 1 FROM public.event_users eu
+          WHERE eu.event=p_event_id AND eu."user"=p_participant_id),
+        'eventsRegistrationStart',v_registration_start),
+      'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,
+        'commitId',NULL,'replayed',false,'occurredAt',clock_timestamp()),
+      'sync',jsonb_build_object('replacements','[]'::jsonb));
+    RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
+  END IF;
+
+  PERFORM public.notification_center_event_capacity_internal(p_event_id,v_actor);
+  v_items:=jsonb_build_array(jsonb_build_object(
+      'entityType','event_attendance','entityId',p_event_id||':'||p_participant_id::text,
+      'operation','update','safeLabel','Event attendance',
+      'changedFields',jsonb_build_array('is_signed_in')));
+  v_private_impacts:=jsonb_build_array(jsonb_build_object(
+    'component','private_program','userId',p_participant_id));
+  IF v_companion_owner IS NOT NULL THEN
+    v_private_impacts:=v_private_impacts||jsonb_build_array(jsonb_build_object(
+      'component','private_profile','userId',v_companion_owner));
+  END IF;
+  IF v_needs_occasion_join THEN
+    v_items:=v_items||jsonb_build_array(jsonb_build_object(
+      'entityType','occasion_membership','entityId',p_participant_id,
+      'operation','insert','safeLabel','Occasion membership',
+      'changedFields',jsonb_build_array('occasion')));
+    v_private_impacts:=v_private_impacts||jsonb_build_array(jsonb_build_object(
+      'component','private_profile','userId',p_participant_id));
+  END IF;
+  v_commit:=public.record_client_sync_commit_v1(v_occasion,
+    'event.attendance.'||p_action,'attendance',v_items,
+    CASE WHEN v_is_publishable THEN ARRAY['live_public'] ELSE '{}'::text[] END,
+    v_private_impacts,CASE WHEN v_is_publishable THEN jsonb_build_array(
+      jsonb_build_object('component','live_public','entityId',p_event_id))
+      ELSE '[]'::jsonb END,'user',NULL);
+  SELECT source_revision INTO v_private_revision FROM public.client_sync_private_scopes
+    WHERE component='private_program' AND occasion=v_occasion AND user_id=p_participant_id;
+  IF v_needs_occasion_join OR v_companion_owner IS NOT NULL THEN
+    SELECT source_revision INTO STRICT v_profile_revision
+    FROM public.client_sync_private_scopes
+    WHERE component='private_profile' AND occasion=v_occasion
+      AND user_id=COALESCE(v_companion_owner,p_participant_id);
+    v_profile_payload:=public.get_private_profile_payload_v1(
+      v_occasion,COALESCE(v_companion_owner,p_participant_id));
+  END IF;
+  SELECT jsonb_build_object(
+    'signedIn',COALESCE(jsonb_agg(eu.event ORDER BY eu.event),'[]'::jsonb),
+    'saved',(SELECT COALESCE(jsonb_agg(es.event ORDER BY es.event),'[]'::jsonb)
+      FROM public.event_users_saved es JOIN public.events e ON e.id=es.event
+      WHERE es."user"=p_participant_id AND e.occasion=v_occasion))
+    INTO v_private_payload FROM public.event_users eu JOIN public.events e ON e.id=eu.event
+    WHERE eu."user"=p_participant_id AND e.occasion=v_occasion;
+  IF v_is_publishable THEN
+    SELECT source_revision INTO v_live_revision FROM public.client_sync_scopes
+      WHERE component='live_public' AND scope_type='occasion' AND scope_id=v_occasion;
+    INSERT INTO public.event_public_state
+      (occasion,event,participant_count,saved_count,remaining_capacity,revision,projected_at)
+    SELECT v_occasion,v_event.id,count(DISTINCT eu."user"),count(DISTINCT es."user"),
+      CASE WHEN v_event.max_participants IS NULL THEN NULL
+        ELSE GREATEST(v_event.max_participants-count(DISTINCT eu."user"),0) END,
+      v_live_revision,clock_timestamp()
+    FROM (SELECT 1) seed LEFT JOIN public.event_users eu ON eu.event=v_event.id
+    LEFT JOIN public.event_users_saved es ON es.event=v_event.id
+    ON CONFLICT (occasion,event) DO UPDATE SET
+      participant_count=EXCLUDED.participant_count,saved_count=EXCLUDED.saved_count,
+      remaining_capacity=EXCLUDED.remaining_capacity,revision=EXCLUDED.revision,
+      projected_at=EXCLUDED.projected_at;
+    SELECT jsonb_build_object(
+      'events',COALESCE(jsonb_agg(jsonb_build_object('eventId',s.event,
+        'participantCount',s.participant_count,'savedCount',s.saved_count,
+        'remainingCapacity',s.remaining_capacity) ORDER BY s.event),'[]'::jsonb),
+      'cleaning',(SELECT COALESCE(jsonb_agg(jsonb_build_object('placeId',c.place,
+        'status',c.status,'openReportCount',c.open_report_count) ORDER BY c.place),'[]'::jsonb)
+        FROM public.cleaning_public_state c WHERE c.occasion=v_occasion))
+      INTO v_live_payload FROM public.event_public_state s JOIN public.events e ON e.id=s.event
+      WHERE s.occasion=v_occasion AND NOT e.is_hidden;
+  END IF;
+  v_response:=jsonb_build_object('status','applied','code',200,
+    'data',jsonb_build_object('eventId',p_event_id,'participantId',p_participant_id,
+      'isSignedIn',p_action='sign_in'),
+    'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,
+      'commitId',v_commit->>'commitId','replayed',false,'occurredAt',v_commit->>'occurredAt'),
+    'sync',jsonb_build_object('replacements',
+      CASE WHEN v_is_publishable THEN jsonb_build_array(jsonb_build_object(
+        'component','live_public','revision',v_live_revision,
+        'payload',v_live_payload)) ELSE '[]'::jsonb END ||
+      CASE WHEN v_actor=p_participant_id THEN jsonb_build_array(jsonb_build_object(
+        'component','private_program','revision',v_private_revision,
+        'payload',v_private_payload)) ELSE '[]'::jsonb END ||
+        CASE WHEN v_needs_occasion_join OR v_companion_owner=v_actor
+          THEN jsonb_build_array(jsonb_build_object(
+          'component','private_profile','revision',v_profile_revision,
+          'payload',v_profile_payload)) ELSE '[]'::jsonb END));
+  RETURN public.finish_client_mutation_v1(p_command_id,v_response,
+    (v_commit->>'commitId')::uuid);
+END; $function$
+;
+
+REVOKE ALL ON FUNCTION public.set_event_attendance_client_sync_v1(p_event_id bigint, p_participant_id uuid, p_action text, p_command_id uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.set_event_attendance_client_sync_v1(p_event_id bigint, p_participant_id uuid, p_action text, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.set_event_attendance_client_sync_v1(bigint,uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_event_attendance_client_sync_v1(bigint,uuid,text,uuid) TO authenticated,service_role;
+
+-- Canonical source: database/functions/seed/seed_org_with_admin.sql
+CREATE OR REPLACE FUNCTION seed_org_with_admin(
+    admin_email text,
+    admin_password text
+)
+RETURNS TABLE (
+    org_id bigint,
+    unit_id bigint,
+    admin_uid uuid
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+BEGIN
+    -- Security Check
+    PERFORM public.require_service_role();
+    PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('organization.creation',NULL,NULL),jsonb_build_object('global','all'));
+
+    ----------------------------------------------------------------
+    -- 1. Create Organization with registration enabled
+    ----------------------------------------------------------------
+    INSERT INTO public.organizations (title, data)
+    VALUES (
+        'Seed Organization',
+        '{"IS_REGISTRATION_ENABLED": "true"}'::jsonb
+    )
+    RETURNING id INTO org_id;
+
+    PERFORM public.initialize_notification_center_internal(org_id);
+
+    ----------------------------------------------------------------
+    -- 2. Create a Unit in the Organization
+    ----------------------------------------------------------------
+    INSERT INTO public.units (title, organization, data)
+    VALUES (
+        'Seed Unit',
+        org_id,
+        '{}'::jsonb
+    )
+    RETURNING id INTO unit_id;
+
+    ----------------------------------------------------------------
+    -- 3. Create the Admin User using your provided function
+    ----------------------------------------------------------------
+    admin_uid := create_user_in_organization_with_data_pure(
+        org_id,
+        admin_email,
+        admin_password,
+        '{"name": "Admin", "surname": "User", "sex": "male"}'::jsonb
+    );
+
+    ----------------------------------------------------------------
+    -- 4. Grant Admin Rights on Organization and Unit levels
+    ----------------------------------------------------------------
+    PERFORM public.admit_unit_creation_v1(admin_uid,org_id);
+    INSERT INTO public.organization_users ("user", organization, is_admin)
+    VALUES (admin_uid, org_id, true);
+
+    INSERT INTO public.unit_users (unit, "user", is_manager, is_editor, is_editor_view)
+    VALUES (unit_id, admin_uid, true, true, true);
+
+    RETURN;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.seed_org_with_admin(text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.seed_org_with_admin(text,text) TO service_role;
+
+DROP FUNCTION public.notification_center_active_internal(bigint);
+DO $$DECLARE item record; BEGIN
+ FOR item IN SELECT * FROM notification_center_initialization_timezones ORDER BY organization LOOP
+  PERFORM public.initialize_notification_center_internal(item.organization,item.timezone);
+ END LOOP;
+END $$;
+NOTIFY pgrst, 'reload schema';

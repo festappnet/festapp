@@ -139,7 +139,7 @@ BEGIN
     RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
   END IF;
 
-  PERFORM public.notification_center_active_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
   IF v_event_id IS NOT NULL THEN
     PERFORM public.notification_center_event_capacity_internal(v_event_id,v_actor);
   END IF;

@@ -19,7 +19,7 @@ BEGIN
  SELECT * INTO ev FROM public.events WHERE id=p_event;
  IF NOT FOUND THEN RETURN; END IF;
  SELECT organization INTO org FROM public.occasions WHERE id=ev.occasion;
- IF NOT public.notification_center_active_internal(org) OR public.is_demo_occasion(ev.occasion) THEN RETURN; END IF;
+ IF NOT public.notification_center_initialized_internal(org) OR public.is_demo_occasion(ev.occasion) THEN RETURN; END IF;
  SELECT count(*),count(*) FILTER(WHERE u.sex='male'),count(*) FILTER(WHERE u.sex<>'male')
  INTO occupied,males,females FROM public.event_users m LEFT JOIN public.user_info u ON u.id=m."user" WHERE m.event=ev.id;
  capacity:=CASE WHEN ev.split_for_men_women THEN 2*(ev.max_participants/2) ELSE ev.max_participants END;
@@ -34,7 +34,7 @@ BEGIN
    RETURN;
  END IF;
  nc_episode:=prior.episode;
- day_key:=key||':day:'||(clock_timestamp() AT TIME ZONE (SELECT timezone FROM public.notification_center_activation WHERE organization=org))::date;
+ day_key:=key||':day:'||(clock_timestamp() AT TIME ZONE (SELECT timezone FROM public.notification_center_organizations WHERE organization=org))::date;
  IF full_now AND NOT coalesce((prior.state->>'full')::boolean,false) THEN
    nc_episode:=nc_episode+1;
    notification:=public.notification_center_publish_internal(org,ev.occasion,'event_capacity_full',

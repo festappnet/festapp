@@ -42,7 +42,7 @@ BEGIN
     v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
 
-  PERFORM public.notification_center_active_internal((SELECT organization FROM public.occasions WHERE id=v_occasion));
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=v_occasion));
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'attendance-user:'||p_participant_id::text||':'||v_occasion::text,0));
   FOR v_group IN SELECT ee."group" FROM public.exclusive_events ee

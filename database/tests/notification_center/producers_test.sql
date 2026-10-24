@@ -64,7 +64,7 @@ DO $$
 DECLARE x jsonb:=pg_temp.fixture(10); org bigint:=(x->>'organization')::bigint; f bigint:=(x->>'form')::bigint;
  r jsonb; oid bigint; ev uuid; id1 bigint; w jsonb; ids bigint[]; cmd uuid:=gen_random_uuid(); n bigint;
 BEGIN
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  -- Anonymous customer, not the synthetic admin author.
  PERFORM set_config('request.jwt.claim.sub','',true);
  FOR i IN 1..10 LOOP
@@ -94,17 +94,15 @@ BEGIN
  UPDATE eshop.orders SET state='stock',price=NULL,payment_info=NULL WHERE id=id1;
  PERFORM public.notification_center_order_internal(id1,'order_cancelled','stock-void');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='order_cancelled'),1::bigint,'stock inventory does not emit a customer-order cancellation');
- -- No replay when activation is paused/resumed.
- PERFORM public.set_notification_center_activation(org,false);
- r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
- PERFORM public.set_notification_center_activation(org,true);
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='order_created'),10::bigint,'pause does not backfill');
+ -- Repeated initialization preserves the original collection boundary and events.
+ PERFORM public.initialize_notification_center_internal(org);
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='order_created'),10::bigint,'initialization does not replay');
 END $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); org bigint:=(x->>'organization')::bigint; f bigint:=(x->>'form')::bigint;
  r jsonb; source bigint; regular bigint; w jsonb; ids bigint[]; command uuid:=gen_random_uuid();
 BEGIN
- PERFORM public.set_notification_center_activation(org,true);
+ PERFORM public.initialize_notification_center_internal(org);
  FOR i IN 1..2 LOOP r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));PERFORM assert_eq(r->>'code','200'::text,'waitlist setup checkout');END LOOP;
  source:=(pg_temp.register(x,3)->>'order')::bigint;
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='waitlist_registered'),1::bigint,'waitlist registration emits once');

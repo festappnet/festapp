@@ -200,10 +200,10 @@ test('current main notification producers roll back with the seat-order quote an
   'eshop_orders/recalculate_order_payment_status.sql','inventory/apply_allocations.sql',
   'inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql'];
  const declared=new Set();
- for(const file of sources){if(file==='notification_center/schema.sql'&&(await s.db.query("select to_regclass('public.notification_center_activation') present")).rows[0].present)continue;const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await s.db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ for(const file of sources){if(file==='notification_center/schema.sql'&&(await s.db.query("select to_regclass('public.notification_center_organizations') present")).rows[0].present)continue;const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await s.db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  for(const row of (await s.db.query("select format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure) statement from pg_proc p where p.pronamespace='public'::regnamespace and p.proname=any($1)",[[...declared]])).rows)await s.db.query(row.statement);
  for(const row of (await s.db.query("select format('ALTER TABLE public.%I OWNER TO postgres',tablename) statement from pg_tables where schemaname='public' and tablename like 'notification_center_%'")).rows)await s.db.query(row.statement);
- await s.db.query('insert into notification_center_activation(organization,enabled,collection_started_at) values($1,true,clock_timestamp())',[s.f.org]);
+ await s.db.query('insert into notification_center_organizations(organization,collection_started_at) values($1,clock_timestamp())',[s.f.org]);
  const snapshot=async()=>(await s.db.query("select coalesce(jsonb_agg(to_jsonb(e) order by e.id),'[]') value from notification_center_events e where organization=$1",[s.f.org])).rows[0].value;
  const input={email:'notification-order@example.invalid',form_key:s.fx.formKey};
  await s.db.query('SET LOCAL ROLE authenticated');const before=await state(s);await s.db.query('RESET ROLE');const events=await snapshot();await s.db.query('SET LOCAL ROLE authenticated');

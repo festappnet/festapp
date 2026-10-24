@@ -40,7 +40,7 @@ BEGIN
               );
     END IF;
 
-    PERFORM public.notification_center_active_internal(occasion_org);
+    PERFORM public.notification_center_initialized_internal(occasion_org);
 
     -- 4. Retrieve the unit-level role information from unit_users.
     SELECT is_manager, is_editor, is_editor_view
@@ -124,7 +124,7 @@ BEGIN
             NULL
         ) RETURNING created_at INTO joined_at;
         PERFORM public.notification_center_publish_internal(occasion_org,oc,'occasion_joined',
-            'occasion-member:'||oc||':'||usr||':'||(joined_at AT TIME ZONE (SELECT timezone FROM public.notification_center_activation WHERE organization=occasion_org))::date,
+            'occasion-member:'||oc||':'||usr||':'||(joined_at AT TIME ZONE (SELECT timezone FROM public.notification_center_organizations WHERE organization=occasion_org))::date,
             jsonb_build_object('userId',usr),auth.uid());
     END IF;
 
