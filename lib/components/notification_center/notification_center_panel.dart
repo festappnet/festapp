@@ -126,15 +126,18 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                   child: Text(s('more'))),
                           ])),
           ]);
-          return AppDialog(
-              alignment: MediaQuery.sizeOf(context).width < 720
-                  ? Alignment.center
-                  : Alignment.centerRight,
-              insetPadding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(context).height * .85),
-                  child: SizedBox(width: 440, child: body)));
+          return IconTheme.merge(
+              data: IconThemeData(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              child: AppDialog(
+                  alignment: MediaQuery.sizeOf(context).width < 720
+                      ? Alignment.center
+                      : Alignment.centerRight,
+                  insetPadding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxHeight: MediaQuery.sizeOf(context).height * .85),
+                      child: SizedBox(width: 440, child: body))));
         },
       );
   Widget _header(BuildContext context) {
@@ -244,7 +247,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     final metadata = [
       group.occasionTitle,
       if (group.day != null)
-        NotificationCenterTime.day(DateTime.parse(group.day!), context.locale.toLanguageTag())
+        NotificationCenterTime.day(
+            DateTime.parse(group.day!), context.locale.toLanguageTag())
     ].whereType<String>().join(' · ');
     final heading =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -537,9 +541,13 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                 : colors.onSurfaceVariant))),
               if (item.occurredAt != null)
                 Tooltip(
-                  message: NotificationCenterTime.exact(item.occurredAt!, context.locale.toLanguageTag()),
-                  child: Text(NotificationCenterTime.timestamp(item.occurredAt!, context.locale.toLanguageTag()),
-                    style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant))),
+                    message: NotificationCenterTime.exact(
+                        item.occurredAt!, context.locale.toLanguageTag()),
+                    child: Text(
+                        NotificationCenterTime.timestamp(
+                            item.occurredAt!, context.locale.toLanguageTag()),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: colors.onSurfaceVariant))),
               if (_hasDetail(item))
                 TextButton.icon(
                     onPressed: () => widget.onDetail(item),
