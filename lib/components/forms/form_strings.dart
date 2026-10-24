@@ -2,6 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String emailSuffixWarning(String suffix, {bool informal = false}) =>
+      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'
+          .tr(namedArgs: {'suffix': suffix});
+  static String get emailSuffixConfirm => 'EmailDomainSuffix.confirm'.tr();
+
   static String get productsAndPrices =>
       'FeatureFormSettings.productsAndPrices'.tr();
   static String get embedAction => 'FeatureFormSettings.embedAction'.tr();

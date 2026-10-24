@@ -1,3 +1,4 @@
+import { EmailSuffixConfirmation } from '../forms/email_suffix_confirmation.js';
 
 import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { GOOGLE_AUTH_STYLES, GOOGLE_G } from './google_auth_styles.js';
@@ -12,12 +13,16 @@ import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 import { RouterService } from '../../services/router_service.js';
 // import './login_modal.css'; // Removed in favor of inline styles for test compatibility
 
+// Matches the existing registration syntax validator, including accepted Unicode input.
+const registrationEmailSyntax = input => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+
 const LOGIN_MODAL_STYLES = SHARED_MODAL_STYLES + GOOGLE_AUTH_STYLES;
 
 export class LoginModal extends HTMLElement {
     constructor() {
         super();
         this.currentView = 'login'; // login, register, forgot
+        this.emailSuffixConfirmations = new Map();
         this.isLoading = false;
         this.googleEnabled = false;
         this.googleResult = null;
@@ -62,6 +67,8 @@ export class LoginModal extends HTMLElement {
     }
     
     disconnectedCallback() {
+        this._disposeEmailSuffix?.();
+        this.emailSuffixConfirmations.clear();
         window.removeEventListener('keydown', this._handleKeyDown);
     }
     
@@ -121,6 +128,7 @@ export class LoginModal extends HTMLElement {
         const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
 
         if (!this.authContainer) return;
+        this._disposeEmailSuffix?.();
         
         try {
             this.authContainer.innerHTML = this._getContent();
@@ -149,6 +157,7 @@ export class LoginModal extends HTMLElement {
                 const input = this.authContainer.querySelector(`#${previous.id}`);
                 if (input) { input.value = previous.value; input.checked = previous.checked; if(previous.focused) input.focus(); }
             }
+            if (this.currentView === 'register') this._disposeEmailSuffix = EmailSuffixConfirmation.install(this.authContainer.querySelector('#register-form'), this.emailSuffixConfirmations, undefined, registrationEmailSyntax);
         } catch (e) {
             console.error("LoginModal render error:", e);
             this.authContainer.innerHTML = `<p class="error">Error rendering form. Please try again.</p>`;
@@ -359,6 +368,7 @@ export class LoginModal extends HTMLElement {
     }
 
     _setView(view) {
+        if (view !== this.currentView) this.emailSuffixConfirmations.clear();
         this.currentView = view;
         this._updateContent();
     }
@@ -553,7 +563,8 @@ export class LoginModal extends HTMLElement {
     async _handleRegister(e) {
         e.preventDefault();
         
-        if (!this._validateForm('register-form')) return;
+        if (this.isLoading || !this._validateForm('register-form')) return;
+        if (!EmailSuffixConfirmation.validate(this.authContainer.querySelector('#register-form'), this.emailSuffixConfirmations, undefined, registrationEmailSyntax)) return;
         
         const firstNameInput = this.authContainer.querySelector('#firstName');
         const lastNameInput = this.authContainer.querySelector('#lastName');

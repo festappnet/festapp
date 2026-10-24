@@ -1,3 +1,4 @@
+import { EmailSuffixConfirmation } from './email_suffix_confirmation.js';
 import { FormStrings } from './form_strings.js';
 import { FormHelper } from './form_helper.js';
 
@@ -324,7 +325,7 @@ export class FormValidator {
                  return false;
             }
 
-            return true;
+            return EmailSuffixConfirmation.validate(form, session.emailSuffixConfirmations ??= new Map(), session);
     }
 
     static renderErrors(container, errors) {

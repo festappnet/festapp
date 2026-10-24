@@ -210,5 +210,61 @@ describe('LoginModal Conditional Registration', () => {
 
         const html = modal.authContainer.innerHTML;
         assert.match(html, /id="link-register"/, 'Registration link should be visible by default');
+    });    it('registration confirms only this address, survives rerender, revokes on edits and never auto-submits', async (t) => {
+        const { AuthService } = await import('../../src/services/auth_service.js');
+        const { ToastHelper } = await import('../../src/components/ui/toast.js');
+        let requests = 0;
+        t.mock.method(AuthService, 'register', async () => { requests++; });
+        t.mock.method(ToastHelper, 'showSuccess', () => null);
+        const modal = new LoginModal(); modal._render(); modal._setView('register');
+        document.body.appendChild(modal.authContainer);
+        const value = (id, text) => { const input = modal.authContainer.querySelector('#' + id); input.value = text; input.dispatchEvent(new Event('input', { bubbles: true })); };
+        value('email', 'a@example.czz'); value('firstName', 'A'); value('lastName', 'B');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 0);
+        let warning = modal.authContainer.querySelector('[data-email-suffix-warning]');
+        assert.equal(warning.hidden, false);
+        warning.querySelector('button').click();
+        assert.equal(requests, 0);
+        modal._updateContent(true);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, true);
+        value('email', 'b@example.czz');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 0);
+        modal.authContainer.querySelector('[data-email-suffix-warning] button').click();
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1);
+        modal._setView('register');
+        value('email', 'b@example.czz'); value('firstName', 'A'); value('lastName', 'B');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1, 'new registration session needs confirmation again');
+        value('email', 'a@example.рф');
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 1);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, false);
+        modal.authContainer.querySelector('[data-email-suffix-warning] button').click();
+        await modal._handleRegister({ preventDefault() {} });
+        assert.equal(requests, 2, 'accepted Unicode input has an overridable warning');
     });
+
+    it('login, reset and Google proof accept unknown suffixes without confirmation', async (t) => {
+        const { AuthService } = await import('../../src/services/auth_service.js');
+        const { GoogleAuthService } = await import('../../src/services/google_auth_service.js');
+        const { ToastHelper } = await import('../../src/components/ui/toast.js');
+        let login = 0, reset = 0, proof = 0;
+        t.mock.method(AuthService, 'login', async () => { login++; });
+        t.mock.method(AuthService, 'resetPasswordForEmail', async () => { reset++; });
+        t.mock.method(GoogleAuthService, 'advance', async () => { proof++; return { status: 'needs_account_proof' }; });
+        t.mock.method(ToastHelper, 'showSuccess', () => null);
+        const modal = new LoginModal(); modal._render();
+        modal.modal.close = () => {};
+        const fill = () => { modal.authContainer.querySelector('#email').value = 'a@example.czz'; const password = modal.authContainer.querySelector('#password'); if (password) password.value = 'password123'; };
+        fill(); await modal._handleLogin({ preventDefault() {} });
+        modal._setView('forgot'); fill(); await modal._handleReset({ preventDefault() {} });
+        modal.showGoogleResult({ status: 'needs_account_proof' }); fill();
+        await modal._advanceGoogle({ preventDefault() {} }, 'prove_existing');
+        assert.equal(login, 1); assert.equal(reset, 1); assert.equal(proof, 1);
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]'), null);
+    });
+
 });

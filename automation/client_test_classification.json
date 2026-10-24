@@ -1,5 +1,12 @@
 {
   "flutter_roots": {
+    "test/components/forms/email_domain_suffix_test.dart": {
+      "kind": "environment",
+      "reason": "Localized public email field widgets in both designs and real main/ticket FormBuilder submission gate.",
+      "sources": [
+        "test/components/forms/email_domain_suffix_test.dart"
+      ]
+    },
     "test/components/blueprint/blueprint_mobile_pan_test.dart": {
       "kind": "environment",
       "reason": "Mobile reservation canvas pinch and one-finger pan through the real venue editor require Flutter gesture arbitration and rendering.",

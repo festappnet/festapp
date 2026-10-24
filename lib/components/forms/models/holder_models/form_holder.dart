@@ -1,3 +1,4 @@
+import '../../widgets_view/email_suffix_confirmation.dart';
 import 'package:fstapp/components/forms/reservation_capability_store.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -61,6 +62,7 @@ class FormHolder {
   static const String metaFields = "fields";
 
   FormHolderController? controller;
+  final emailSuffixConfirmations = EmailSuffixSession();
   final List<FieldHolder> fields;
   final bool isCardDesign;
   final List<String> phonePrefixes;
@@ -251,6 +253,7 @@ class FormHolder {
       );
     } else {
       return FieldHolder(
+        isHidden: ffm.isHidden == true,
         id: ffm.id!,
         fieldType: ffm.type!,
         isRequired: ffm.isRequired ?? false,

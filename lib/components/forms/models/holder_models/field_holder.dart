@@ -9,6 +9,7 @@ class FieldHolder {
   static const String metaValue = "value";
 
   final int id;
+  final bool isHidden;
   final bool isRequired;
   final String fieldType;
   dynamic defaultValue;
@@ -17,6 +18,7 @@ class FieldHolder {
   String? description;
 
   FieldHolder({
+    this.isHidden = false,
     required this.fieldType,
     required this.isRequired,
     required this.id,

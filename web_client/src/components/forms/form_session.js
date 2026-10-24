@@ -68,6 +68,7 @@ export class FormSession extends EventTarget {
         if (formModel.offerBundle) this.maxTickets = Math.min(this.maxTickets, formModel.offerBundle.pendingCount);
         // UI State for persistence across re-renders (not part of payload)
         this.uiState = new Map();
+        this.emailSuffixConfirmations = new Map();
         
         // --- Fix: Request Serialization Queue ---
         this._spotQueue = Promise.resolve();

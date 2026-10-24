@@ -757,7 +757,7 @@ export class FormPage extends Component {
         }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
 
-        if (!isValid) revealEmbedStep(form.querySelector('.invalid, [aria-invalid="true"]') || form);
+        if (!isValid) revealEmbedStep(form.querySelector('.invalid, [aria-invalid="true"], [data-email-suffix-warning]:not([hidden])') || form);
         if (isValid) {
             this.handlePreview(form, formModel);
         }

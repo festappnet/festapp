@@ -19,6 +19,16 @@ If a product isn't showing, check `is_product_dynamically_available` in SQL, not
 
 `FormPage` calls `DbForms.getFormFromLink`, iterates `form.fields`, selects widget by `field.type`, collects data into `FormHolder`.
 
+## Email suffix confirmation
+
+Public email fields in both clients use the same offline
+[IANA snapshot and update procedure](../../../shared/email/README.md).
+After syntax/required checks pass, an unknown suffix requires explicit confirmation
+of that field's current value before the ordinary submit action. Confirmation
+never submits, is revoked by edits, and remains only in the current form session.
+Visible ticket email fields follow the same rule. Login, reset and Google proof
+remain outside this confirmation gate; manual web registration uses it.
+
 ## Before registration opens
 
 The countdown message can contain an atomic `div.html-editor-block.form-countdown`

@@ -3,6 +3,7 @@
 # Uses mocked backend data only; never creates production orders.
 set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+node "$PROJECT_ROOT/automation/generate_email_tlds.mjs" --check
 cd "$PROJECT_ROOT/web_client"
 node --test \
   ../automation/tests/web_profile_contract.test.mjs \
