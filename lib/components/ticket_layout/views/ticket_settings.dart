@@ -20,7 +20,10 @@ import '../ticket_layout_service.dart';
 import '../ticket_layout_strings.dart';
 import 'ticket_layout_editor.dart';
 import 'ticket_layout_canvas.dart';
-import 'ticket_scanning_settings.dart';
+import 'package:url_launcher/link.dart';
+import 'package:fstapp/components/eshop/ticket_code_helper.dart';
+import 'package:fstapp/components/scan/scan_strings.dart';
+import 'package:fstapp/router_service.dart';
 
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
@@ -29,7 +32,7 @@ class TicketSettings extends StatefulWidget {
   final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
   final TicketPreviewOccasion? previewOccasion;
-  final bool showScanningSettings;
+  final bool showScannerSettingsLink;
   final bool showPreview;
   final bool showDeliverySelector;
   TicketSettings(
@@ -41,7 +44,7 @@ class TicketSettings extends StatefulWidget {
       this.readOnly = false,
       this.borrowResourcesOnly = false,
       this.previewOccasion,
-      this.showScanningSettings = true,
+      this.showScannerSettingsLink = true,
       this.showPreview = true,
       this.showDeliverySelector = true,
       TicketLayoutService? service})
@@ -332,9 +335,18 @@ class _TicketSettingsState extends State<TicketSettings> {
                 ? null
                 : (v) => _refresh(
                     () => widget.feature.pregeneratedTickets = v ?? false)),
-        if (widget.showScanningSettings) ...[
-          TicketScanningSettings(
-              feature: widget.feature, readOnly: widget.readOnly),
+        if (widget.showScannerSettingsLink && widget.occasionId > 0 &&
+            RightsService.hasCapability(AuthorizationCapabilities.scannerSettingsWrite)) ...[
+          const SizedBox(height: 12),
+          Link(
+              uri: TicketCodeHelper.scannerSettingsUri(
+                  occasionId: widget.occasionId,
+                  returnUri: RouterService.getCurrentBrowserUri()),
+              target: LinkTarget.blank,
+              builder: (context, followLink) => OutlinedButton.icon(
+                  onPressed: followLink,
+                  icon: const Icon(Icons.tune),
+                  label: Text(ScanStrings.displaySettings))),
           const SizedBox(height: 12),
         ],
         if (widget.feature.deliveryMode.includesPdf && unsupported)

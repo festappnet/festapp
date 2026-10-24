@@ -1,3 +1,4 @@
+import 'dart:ui' show PointerDeviceKind;
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -172,6 +173,13 @@ void main() {
     expect(grid.columns.firstWhere((c) => c.field == 'available').type.isNumber,
         isTrue);
     expect(find.text('2\u00a0500,50'), findsOneWidget);
+    final manager = tester.state<TrinaGridState>(find.byType(TrinaGrid)).stateManager;
+    manager.setCurrentCell(grid.rows.single.cells['available'], 0);
+    manager.setKeepFocus(false);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('10'), kind: PointerDeviceKind.mouse);
+    expect(opened, 'batch-1');
+    opened = null;
     await tester.tap(find.widgetWithText(TextButton, 'Detail a tisk'));
     expect(opened, 'batch-1');
     opened = null;
@@ -179,6 +187,13 @@ void main() {
     expect(opened, 'batch-1');
     opened = null;
     await tester.tap(find.text('10'));
+    expect(opened, 'batch-1');
+    opened = null;
+    manager.setKeepFocus(false);
+    await tester.pumpAndSettle();
+    final cell = find.ancestor(of: find.text('10'), matching: find.byType(InkWell)).first;
+    final area = tester.getRect(cell);
+    await tester.tapAt(Offset(area.left + 2, area.center.dy), kind: PointerDeviceKind.mouse);
     expect(opened, 'batch-1');
     expect(tester.takeException(), isNull);
   });

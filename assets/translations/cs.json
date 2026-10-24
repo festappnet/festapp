@@ -1752,13 +1752,10 @@
   "FeatureTicket": {
     "enablePregeneratedTickets": "Předgenerované vstupenky",
     "pregeneratedTicketsDescription": "Umožní vytvářet dávky vstupenek pro tisk a ruční prodej.",
-    "enableManualTicketScan": "Povolit ruční skenování vstupenek",
-    "enableManualTicketScanDescription": "Umožňuje ruční vyhledání a výběr vstupenek, pokud účastník zapomněl vstupenku.",
     "selectTicket": "Vybrat vstupenku",
     "unknown": "Neznámý",
     "noData": "Žádná data",
     "labelShowHiddenNote": "Skrytá poznámka",
-    "descriptionShowHiddenNote": "Zobrazí skrytou poznámku ve výsledku skenování.",
     "description": "Uživateli se po zaplacení rezervace pošle vstupenka. Vstupence je možné určit vlastní pozadí a barvu písma.",
     "deleteImageConfirm": "Opravdu chcete smazat tento obrázek?",
     "backgroundColor": "Barva pozadí",

@@ -16,6 +16,14 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 
 class TicketCodeHelper {
+  /// Both administration entry points use the web scanner's shared settings.
+  static Uri scannerSettingsUri({required int occasionId, required Uri returnUri}) {
+    return Uri.parse('${AppConfig.webLink}/scan/settings').replace(queryParameters: {
+      'occasion': '$occasionId',
+      'returnTo': '${returnUri.path}${returnUri.hasQuery ? '?${returnUri.query}' : ''}${returnUri.hasFragment ? '#${returnUri.fragment}' : ''}',
+    });
+  }
+
   static String generateRandomCode(int length) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     Random rnd = Random();
@@ -46,11 +54,10 @@ class TicketCodeHelper {
     final source = RouterService.getCurrentBrowserUri();
     final returnPath =
         '${source.path}${source.hasQuery ? '?${source.query}' : ''}${source.hasFragment ? '#${source.fragment}' : ''}';
-    Future<bool> openScanner(String path, {bool settings = false}) {
+    Future<bool> openScanner(String path) {
       final target = Uri.parse('${AppConfig.webLink}$path').replace(
         queryParameters: {
           'returnTo': returnPath,
-          if (settings && occasionId != null) 'occasion': '$occasionId',
         },
       );
       return LaunchUrlService.openExternalUrl(
@@ -120,7 +127,9 @@ class TicketCodeHelper {
                           icon: const Icon(Icons.tune),
                           label: Text(ScanStrings.displaySettings),
                           onPressed: () =>
-                              openScanner('/scan/settings', settings: true),
+                              LaunchUrlService.openExternalUrl(
+                                  scannerSettingsUri(occasionId: occasionId, returnUri: source).toString(),
+                                  inCurrentWindow: true),
                         ),
                       ],
                       const SizedBox(height: 10),

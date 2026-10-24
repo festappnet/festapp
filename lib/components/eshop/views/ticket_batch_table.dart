@@ -30,15 +30,25 @@ class TicketBatchTable extends StatelessWidget {
             textAlign: numeric
                 ? TrinaColumnTextAlign.right
                 : TrinaColumnTextAlign.left,
-            renderer: field == 'title'
-                ? (cell) => Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                        onPressed: () =>
-                            onOpen(cell.row.cells['id']!.value as String),
-                        child: Text(cell.cell.value.toString(),
-                            maxLines: 1, overflow: TextOverflow.ellipsis)))
-                : null);
+            cellPadding: EdgeInsets.zero,
+            renderer: (cell) => Semantics(
+                button: true,
+                child: InkWell(
+                    onTap: () => onOpen(cell.row.cells['id']!.value as String),
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Align(
+                            alignment: numeric
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Text(
+                                cell.column.formattedValueForDisplay(cell.cell.value),
+                                style: cell.stateManager.style.cellTextStyle.copyWith(
+                                    color: field == 'title'
+                                        ? Theme.of(context).colorScheme.primary
+                                        : null),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis))))));
     return Container(
         padding: const EdgeInsets.all(3),
         color: ThemeConfig.whiteColor(context),

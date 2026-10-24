@@ -10,7 +10,7 @@ class _Service extends TicketLayoutService {
 void main() {
  testWidgets('editor-only ticket action performs no eager preview request', (tester) async {
   final service = _Service();
-  await tester.pumpWidget(MaterialApp(home:Scaffold(body:TicketSettings(feature:TicketFeature.fromJson({'code':'ticket','is_enabled':true}),occasionId:0,service:service,readOnly:true,showScanningSettings:false,showPreview:false))));
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:TicketSettings(feature:TicketFeature.fromJson({'code':'ticket','is_enabled':true}),occasionId:0,service:service,readOnly:true,showScannerSettingsLink:false,showPreview:false))));
   await tester.pump();
   expect(service.calls,0);
   expect(tester.takeException(),isNull);
