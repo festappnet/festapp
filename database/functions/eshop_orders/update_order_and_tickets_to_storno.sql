@@ -49,6 +49,15 @@ BEGIN
     WHERE id = order_id
     RETURNING data INTO updated_order_data;
 
+    -- Finish the original email recovery task in the same cancellation transaction.
+    -- Keep provider messages and delivery history intact.
+    UPDATE public.notification_center_events e SET status='recovered'
+    FROM public.email_messages m
+    WHERE m.order_id=v_order.id AND m.occasion=v_order.occasion
+      AND m.message_kind<>'order_storno' AND e.organization=m.organization
+      AND e.kind='email_problem' AND e.source_key='email:'||m.message_id;
+
+
     -- Save the change to orders_history by inserting the updated order row
     INSERT INTO eshop.orders_history (
         "order",
