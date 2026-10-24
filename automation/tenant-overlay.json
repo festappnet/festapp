@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "db6db44d52cae944086d4acd2b90e41c35778127",
+  "release": {
+    "version": "0.20.389+889",
+    "note": "WordPress live checkout wrapper, coordinated scroll and scanner identity fixes"
+  }
+}
