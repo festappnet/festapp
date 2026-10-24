@@ -4254,7 +4254,7 @@
     "revoked": "Přístup aplikace byl odebrán."
   },
   "TicketDelivery": {
-    "blockDescription": "Systémový blok jednoduchých QR; u PDF je prázdný.",
+    "blockDescription": "Zjednodušené QR vstupenky",
     "settingsReference": "Způsob doručení vyberete v nastavení vstupenek akce.",
     "title": "Doručení vstupenek",
     "scopeHelp": "Platí pro všechny vstupenky akce. Změna neupraví již odeslané ani připravené e-maily.",
