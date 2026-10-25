@@ -93,10 +93,11 @@ is used. Ranking combines article titles, authored aliases, headings and body te
 normalization handles diacritics, related word forms and one-character misspellings.
 Results link to the relevant section. The same UI works in static file previews.
 
-Guide CTAs use `/login?redirect=/help-action/<intent>` rather than a hard-coded
-occasion ID or link. The native login flow retains this return target, asks for
-an event from permission-filtered organizer data, then enters the normal protected
-administration route. Recent context is only a preference. The intent allowlist
+Guide CTAs use `/events?help=<intent>` rather than a hard-coded occasion ID or
+link. The web entry point retains the intent through sign-in and the Flutter
+handoff to `/help-action/<intent>`, asks for an event from permission-filtered
+organizer data, then enters the normal protected administration route. Recent
+context is only a preference. The intent allowlist
 contains fixed section paths, and the application boundary reloads permissions.
 This mechanism uses the active tenant and locale and is shared with future global
 help. English production publication remains explicitly gated.
