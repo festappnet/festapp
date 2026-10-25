@@ -7,12 +7,13 @@ import { initializeCoreServices } from '../startup/initialize_core_services.js';
 import '../components/users/user_header.js';
 
 export async function initAccountHeader() {
+    const marketingLocale = document.documentElement.lang;
     ThemeService.init();
     document.body.dataset.publicTheme = "initialized";
     const fallback = document.querySelector('.site-header');
     try {
         await initializeCoreServices({
-            localizationService: LocalizationService,
+            localizationService: {init: () => LocalizationService.init({locale: marketingLocale, persist: false})},
             supabaseService: SupabaseService,
             rightsService: RightsService,
             isAppSupported: AppConfig.isAppSupported,
