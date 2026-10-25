@@ -1,0 +1,91 @@
+{
+  "verifiedAt": "2026-10-26",
+  "scope": "Wix wrapper and settings only; no shared checkout/backend or native app configuration changes",
+  "bugsFixed": [
+    {
+      "trigger": "Edit settings while async initialization/save is still running",
+      "before": "Visible fields could differ from the values covered by a successful saved status",
+      "after": "Inputs and submit locked while busy; unlocked on success/save failure; initialization failure remains disabled with aria-busy false"
+    },
+    {
+      "trigger": "Canonical helper script fails to load, then a later widget is added or rerendered",
+      "before": "Document WeakSet permanently suppressed retry",
+      "after": "Only owned failed script removed; next render may retry; existing script/global guard prevents duplicates; checkout iframe and direct link preserved"
+    }
+  ],
+  "regressionProof": {
+    "preFix": {
+      "tests": 2,
+      "passed": 0,
+      "failed": 2
+    },
+    "final": {
+      "tests": 14,
+      "passed": 14,
+      "failed": 0
+    },
+    "build": "PASS",
+    "package": "PASS",
+    "archiveSha256": "3d212a1c2b4cfbe501b2ff6e833368f499d18b89da83171a0559e567cddd501c",
+    "assetManifest": {
+      "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
+      "help.html": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
+      "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
+      "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
+      "settings.js": "d23136096f3d1e668aa5bb5fff987f40a898a58128ada7397254baa5a357cfec",
+      "widget.js": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
+    }
+  },
+  "independentCritic": {
+    "verdict": "PASS after initialization error aria-busy correction",
+    "correctionApplied": true
+  },
+  "portalRecheck": {
+    "contactInfo": "Native We could not load this page; CDN403",
+    "securityPrivacyCdnStatus": 403,
+    "newSupportCaseCreated": false
+  },
+  "liveDeployment": {
+    "status": "DEPLOYED_HASH_VERIFIED",
+    "receipt": "hosting-20261026.json",
+    "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589"
+  },
+  "limits": [
+    "Regression dependency/transport uses deterministic tests, not a new complete native Wix checkout qualification.",
+    "Native Safari, clean native install, portal repair and commercial approval remain gated."
+  ],
+  "publishedEditorRecovery": {
+    "host": "https://dev-sitex-1268240078.wix-dev-sites.org/",
+    "browser": "Task-owned isolated headless Chromium; production backend DNS blocked",
+    "nativePublishedWidget": true,
+    "initialHelperRequestDeliberatelyAborted": true,
+    "before": {
+      "directLink": "https://vstupenky.online/form/wix-qa-20261025",
+      "framePresent": true,
+      "helperLoaded": false,
+      "helperScripts": 0,
+      "liveWidgetRequest": [
+        "https://festapp-wix.pages.dev/widget.js"
+      ],
+      "widgets": 1
+    },
+    "after": {
+      "directLink": "https://vstupenky.online/form/wix-qa-20261025",
+      "frameTitle": "Wix Editor QA - recovery smoke",
+      "helperLoaded": true,
+      "helperScripts": 1,
+      "sameFrame": true
+    },
+    "trigger": "Removed request abort route, then changed form-title runtime attribute once",
+    "checkoutFrameIdentityPreserved": true,
+    "duplicateHelperScripts": false,
+    "nativeSavedSettingsChanged": false,
+    "afterColdReload": {
+      "frameTitle": "Wix Editor QA - prodej vstupenek",
+      "title": "Wix Editor QA - prodej vstupenek",
+      "widgets": 1
+    },
+    "browserClosed": true,
+    "checkoutOrderSubmitted": false
+  }
+}

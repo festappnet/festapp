@@ -96,6 +96,22 @@ a claim of global incompatibility. An ordinary free Harmony site now passed
 installation, saved settings, Editor/Preview isolation and published 320 px summary
 with QA transport, using the unlisted 1.0 owner-site install flow. See
 [Harmony qualification](evidence/harmony-qualification-20261025.json).
-A [technical follow-up](SUPPORT-FOLLOWUP.md) covering that mismatch and the two
-CDN403 pages is prepared for owner review, not sent. Use the existing support
-conversation after authorization; do not open a duplicate billing request.
+The owner authorized a [technical follow-up](SUPPORT-FOLLOWUP.md) about only
+the two CDN403 pages. One reply attempt in the existing case thread was SMTP
+rejected, so it was not delivered. Wait for the actual Expert reply channel;
+the native case detail is read-only. Do not open a duplicate request.
+
+## Additional qualification, 25 October
+
+[Harmony checkout evidence](evidence/final-checkout-qualification-20261025.json) now
+covers real seat selection/release, zoom/fit, Escape/back/focus, native blocked
+storage, lost-response retry without duplicate orders, and bank QR decoding
+against SQL payment details. These use an adapted disposable transport; no real
+payment or external email was sent. Native Safari and production CORS remain
+unqualified. Provider redirects apply only if such a provider is offered.
+
+[Editor installation A/B](evidence/editor-install-ab-20261025.json) retained the
+native warning with both released manual setup and draft homepage insertion.
+Manual configuration remains usable; the draft was restored and no version 1.1 released.
+The technical follow-up email was SMTP rejected. The existing Wix case is Open
+but its portal detail is read-only; no duplicate intake was submitted.

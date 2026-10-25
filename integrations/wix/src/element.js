@@ -1,13 +1,13 @@
 import {DEFAULT_TITLE, HELP_URL, SERVICE_ORIGIN, TAG_NAME, formUrl} from './config.js';
 
-const helperDocuments = new WeakSet();
 function ensureHelper(document) {
-  if (helperDocuments.has(document)) return;
-  helperDocuments.add(document);
   if (document.defaultView.__festappEmbedV1 || [...document.scripts].some(script => script.src === `${SERVICE_ORIGIN}/embed.js`)) return;
   const script = document.createElement('script');
   script.src = `${SERVICE_ORIGIN}/embed.js`;
   script.async = true;
+  // Keep the failed request from blocking a later widget/render retry. The
+  // checkout iframe and direct link remain usable; do not reload either here.
+  script.addEventListener('error', () => script.remove(), {once: true});
   document.head.append(script);
 }
 

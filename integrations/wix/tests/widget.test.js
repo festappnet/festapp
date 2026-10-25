@@ -114,6 +114,8 @@ test('settings page fails closed outside editor and surfaces save success', asyn
   const document = dom.window.document;
   await initSettings(document, {async getProp() {throw Error('no editor');}});
   assert.equal(document.querySelector('button').disabled, true);
+  assert.ok([...document.querySelectorAll('form input')].every(input => input.disabled));
+  assert.equal(document.querySelector('form').getAttribute('aria-busy'), 'false');
   assert.match(document.getElementById('status').textContent,/editoru Wix/);
   dom.window.close();
   const success = new JSDOM(html);
@@ -124,4 +126,72 @@ test('settings page fails closed outside editor and surfaces save success', asyn
   assert.match(success.window.document.getElementById('status').textContent,/Uloženo/);
   assert.equal(success.window.document.querySelector('button').disabled,false);
   success.window.close();
+});
+
+
+test('a failed helper can recover on a later widget without reloading checkout or duplicating requests', async () => {
+  const {dom, element, document} = host(async () => 'Site');
+  await tick();
+  const frame = element.querySelector('iframe');
+  const failed = document.scripts[0];
+  failed.dispatchEvent(new dom.window.Event('error'));
+  assert.equal(document.scripts.length, 0);
+  assert.equal(element.querySelector('iframe'), frame);
+  assert.equal(element.querySelector('p a').href, `${SERVICE_ORIGIN}/form/ukazka`);
+  const second = document.createElement(TAG_NAME);
+  second.setAttribute('form-url', `${SERVICE_ORIGIN}/form/another`);
+  document.body.append(second);
+  await tick();
+  assert.equal(document.scripts.length, 1);
+  assert.notEqual(document.scripts[0], failed);
+  element.setAttribute('form-title', 'Updated');
+  assert.equal(element.querySelector('iframe'), frame);
+  assert.equal(document.scripts.length, 1);
+  // A loaded canonical helper does not need reinserting even without its script tag.
+  document.defaultView.__festappEmbedV1 = true;
+  document.scripts[0].remove();
+  element.setAttribute('form-title', 'Another update');
+  assert.equal(document.scripts.length, 0);
+  dom.window.close();
+});
+
+test('settings lock values during loading and saving, then unlock for correction after a failed write', async () => {
+  const html = readFileSync(new URL('../src/settings.html',import.meta.url),'utf8');
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+  const form = document.querySelector('form');
+  const controls = [...form.querySelectorAll('input, button')];
+  let finishRead, finishWrite, failWrite = false;
+  const values = {'form-url':`${SERVICE_ORIGIN}/form/ukazka`};
+  const api = {
+    async getProp(name) {
+      if (name === 'form-url' && !finishRead) await new Promise(resolve => {finishRead = resolve;});
+      return values[name];
+    },
+    async setProp(name, value) {
+      if (failWrite) throw Error('Write failed');
+      if (name === 'form-url') await new Promise(resolve => {finishWrite = resolve;});
+      values[name] = value;
+    },
+  };
+  const initializing = initSettings(document, api);
+  assert.ok(controls.every(control => control.matches(':disabled')));
+  assert.equal(form.getAttribute('aria-busy'), 'true');
+  finishRead(); await initializing;
+  assert.ok(controls.every(control => !control.matches(':disabled')));
+  form.dispatchEvent(new dom.window.Event('submit', {cancelable:true}));
+  await tick();
+  assert.ok(controls.every(control => control.matches(':disabled')));
+  assert.equal(form.getAttribute('aria-busy'), 'true');
+  finishWrite(); await tick();
+  assert.match(document.getElementById('status').textContent, /Uloženo/);
+  assert.equal(form.getAttribute('aria-busy'), 'false');
+  assert.ok(controls.every(control => !control.matches(':disabled')));
+  failWrite = true;
+  form.dispatchEvent(new dom.window.Event('submit', {cancelable:true}));
+  await tick();
+  assert.match(document.getElementById('status').textContent, /Write failed/);
+  assert.ok(controls.every(control => !control.matches(':disabled')));
+  assert.equal(form.getAttribute('aria-busy'), 'false');
+  dom.window.close();
 });

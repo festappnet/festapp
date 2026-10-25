@@ -20,7 +20,12 @@ export async function initSettings(document, api) {
   const submit = document.querySelector('button[type="submit"]');
   document.getElementById('help').href = HELP_URL;
   let ready = false;
-  submit.disabled = true;
+  const controls = [...form.querySelectorAll('input, button')];
+  const setBusy = busy => {
+    form.setAttribute('aria-busy', String(busy));
+    for (const control of controls) control.disabled = busy;
+  };
+  setBusy(true);
   try {
     for (const name of PROPERTIES) {
       const value = await api.getProp(name);
@@ -30,14 +35,15 @@ export async function initSettings(document, api) {
     }
     ready = true;
     status.textContent = '';
-    submit.disabled = false;
+    setBusy(false);
   } catch {
+    form.setAttribute('aria-busy', 'false');
     status.textContent = 'Nastavení nelze načíst. Otevřete tento panel přímo v editoru Wix a zkuste to znovu.';
   }
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!ready || submit.disabled) return;
-    submit.disabled = true; status.textContent = 'Ukládání…';
+    setBusy(true); status.textContent = 'Ukládání…';
     // Keep progress and the result visible in Wix's small settings viewport.
     const panel = form.closest('main');
     if (panel) panel.scrollTop = 0;
@@ -49,6 +55,6 @@ export async function initSettings(document, api) {
       });
       status.textContent = 'Uloženo. Formulář ověřte na zveřejněném webu.';
     } catch (error) { status.textContent = error.message || 'Nastavení nelze uložit. Zkuste to znovu.'; }
-    finally { submit.disabled = false; }
+    finally { setBusy(false); }
   });
 }

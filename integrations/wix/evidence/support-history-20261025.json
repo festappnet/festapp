@@ -29,5 +29,29 @@
     "acknowledgedAt": "2026-10-25T16:09:49Z",
     "approvalObtained": false
   },
-  "additionalMessagesSent": false
+  "additionalMessagesSent": true,
+  "technicalFollowup": {
+    "authorizedByOwner": true,
+    "caseId": "3000345850",
+    "sentOnce": true,
+    "replyToOriginalAcknowledgement": true,
+    "sameThreadReadbackVerified": true,
+    "sentLabelReadbackVerified": true,
+    "scope": [
+      "Contact Info module HTTP403",
+      "Security & Privacy module HTTP403"
+    ],
+    "newCaseRequested": false,
+    "billingTermsAccepted": false,
+    "wixTechnicalReplyObserved": false,
+    "delivered": false,
+    "smtpFailure": "550 5.7.1: new support requests cannot be submitted through emails to this address",
+    "deliveryFailureObserved": true,
+    "nativeCaseCount": 1,
+    "nativeCaseStatus": "Open",
+    "nativeCaseReadbackVerified": true,
+    "nativeTicketViewerReplyAllowed": false,
+    "newChatIntakeSubmitted": false,
+    "nextAction": "Use the actual Expert reply channel when Wix responds; do not create a duplicate case"
+  }
 }

@@ -3,17 +3,29 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 
-const [cdpFile, statusFile, templateFile, receiptFile, helperFlag] = process.argv.slice(2);
+const [cdpFile, statusFile, templateFile, receiptFile, ...flags] = process.argv.slice(2);
 if (![cdpFile, statusFile, templateFile, receiptFile].every(Boolean)) {
   throw Error('Usage: node tests/checkout-proxy.mjs <cdp-url-file> <local-backend-status> <production-html-template> <private-receipt> [--local-helper]');
 }
-if (helperFlag && helperFlag !== '--local-helper') throw Error('Unknown helper option');
-const localHelper = helperFlag ? fs.readFileSync(new URL('../../../web_client/public/embed.js', import.meta.url)) : null;
+if (flags.some(flag => !['--local-helper', '--canonical-seats', '--canonical-bank', '--lose-first-order-response'].includes(flag))) throw Error('Unknown helper option');
+const canonicalSeats = flags.includes('--canonical-seats');
+const canonicalBank = flags.includes('--canonical-bank');
+if (canonicalSeats && canonicalBank) throw Error('Choose one exact canonical fixture');
+const canonicalBackend = canonicalSeats || canonicalBank;
+const loseFirstOrderResponse = flags.includes('--lose-first-order-response');
+if (loseFirstOrderResponse && !canonicalSeats) throw Error('Response-loss test requires dedicated canonical fixture');
+let orderResponseLost = false;
+const localHelper = flags.includes('--local-helper') ? fs.readFileSync(new URL('../../../web_client/public/embed.js', import.meta.url)) : null;
 const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
-if (status.API_URL !== 'http://127.0.0.1:59821' || !status.ANON_KEY) throw Error('Disposable backend required');
+const api = canonicalBackend ? 'http://127.0.0.1:59921' : 'http://127.0.0.1:59821';
+const container = canonicalBackend ? 'supabase_db_festapp-wix-qa-20261025' : 'supabase_db_festapp-vo-wordpress-20261023';
+const formSlug = canonicalBank ? 'wix-qa-bank-20261025' : canonicalSeats ? 'wix-qa-seats-20261025' : 'wix-qa-20261025';
+if (status.API_URL !== api || !status.ANON_KEY) throw Error('Disposable backend required');
+const guardSql = canonicalBackend
+  ? `select exists(select 1 from festapp_test_support.disposable_environment where singleton and project='festapp-wix-qa-20261025') and (select title='Test Organization' from public.organizations where id=1); select count(*)=1 from public.forms where link='${formSlug}';`
+  : "select count(*)=1 and min(title)='Test Organization' from public.organizations; select count(*)=1 from public.forms where link='wix-qa-20261025';";
 const databaseGuard = execFileSync('docker', [
-  'exec', 'supabase_db_festapp-vo-wordpress-20261023', 'psql', '-X', '-U', 'postgres', '-d', 'postgres', '-Atqc',
-  "select count(*)=1 and min(title)='Test Organization' from public.organizations; select count(*)=1 from public.forms where link='wix-qa-20261025';",
+  'exec', container, 'psql', '-X', '-U', 'postgres', '-d', 'postgres', '-Atqc', guardSql,
 ], {encoding:'utf8'}).trim();
 if (databaseGuard !== 't\nt') throw Error('Synthetic database guard failed');
 const endpoint = fs.readFileSync(cdpFile, 'utf8').trim();
@@ -21,6 +33,7 @@ if (!/^ws:\/\/127\.0\.0\.1:\d+\/devtools\/browser\/[a-zA-Z0-9-]+$/.test(endpoint
 const template = fs.readFileSync(templateFile);
 const receipt = {
   backend: status.API_URL, syntheticBackendGuard: true,
+  formSlug,
   templateSha256: createHash('sha256').update(template).digest('hex'),
   clientVersion: /__FESTAPP_BUILD_VERSION__\s*=\s*"([^"]+)"/.exec(template.toString())?.[1],
   helperSource: localHelper ? 'repository candidate, not deployed' : 'live service',
@@ -69,7 +82,7 @@ async function configure(sessionId) {
   await call('Fetch.enable', {patterns:[
     {urlPattern:'https://api.festapp.net/*', requestStage:'Request'},
     {urlPattern:'https://*.supabase.co/*', requestStage:'Request'},
-    {urlPattern:'https://vstupenky.online/form/wix-qa-20261025*', requestStage:'Request'},
+    {urlPattern:`https://vstupenky.online/form/${formSlug}*`, requestStage:'Request'},
     ...(localHelper ? [{urlPattern:'https://vstupenky.online/embed.js', requestStage:'Request'}] : []),
   ]}, sessionId);
   await call('Target.setAutoAttach', {autoAttach:true, waitForDebuggerOnStart:true, flatten:true,
@@ -88,7 +101,7 @@ async function intercept({requestId, request}, sessionId) {
       receipt.requests.push({method:request.method, path:url.pathname, status:200, helperAdapted:true});
       persist(); return;
     }
-    if (url.origin === 'https://vstupenky.online' && url.pathname === '/form/wix-qa-20261025') {
+    if (url.origin === 'https://vstupenky.online' && url.pathname === `/form/${formSlug}`) {
       await call('Fetch.fulfillRequest', {requestId, responseCode:200, responseHeaders:[
         {name:'Content-Type', value:'text/html; charset=utf-8'}, {name:'Cache-Control', value:'no-store'},
         {name:'X-Festapp-QA-Document', value:'production-template-disposable-backend'},
@@ -117,10 +130,24 @@ async function intercept({requestId, request}, sessionId) {
       {name:'Access-Control-Allow-Headers', value:headers.get('access-control-request-headers') ||
         'authorization,apikey,content-type,x-client-info,x-supabase-api-version,content-profile,accept-profile,prefer'},
       {name:'Access-Control-Allow-Methods', value:'GET,POST,PATCH,DELETE,OPTIONS'},
-      {name:'X-Festapp-QA-Backend', value:'disposable-59821'},
+      {name:'X-Festapp-QA-Backend', value:canonicalBackend ? 'disposable-59921' : 'disposable-59821'},
     );
-    await call('Fetch.fulfillRequest', {requestId, responseCode:response.status, responseHeaders, body}, sessionId);
     receipt.requests.push({method:request.method, path:url.pathname, status:response.status});
+    let applicationCode;
+    if (url.pathname === '/functions/v1/send-ticket-order' && request.method === 'POST') {
+      try { applicationCode = JSON.parse(Buffer.from(body, 'base64').toString()).code; } catch { /* Non-JSON failures remain visible. */ }
+      receipt.requests.at(-1).applicationCode = applicationCode;
+      receipt.requests.at(-1).payloadSha256 = createHash('sha256').update(request.postData || '').digest('hex');
+    }
+    if (loseFirstOrderResponse && !orderResponseLost && request.method === 'POST' &&
+        url.pathname === '/functions/v1/send-ticket-order' && response.ok && applicationCode === 200) {
+      orderResponseLost = true;
+      receipt.requests.at(-1).responseDeliberatelyLost = true;
+      persist();
+      await call('Fetch.failRequest', {requestId, errorReason:'ConnectionClosed'}, sessionId);
+      return;
+    }
+    await call('Fetch.fulfillRequest', {requestId, responseCode:response.status, responseHeaders, body}, sessionId);
   } catch (error) {
     await call('Fetch.failRequest', {requestId, errorReason:'BlockedByClient'}, sessionId).catch(() => {});
     receipt.requests.push({method:request.method, path:url.pathname, blocked:true, error:error.message});

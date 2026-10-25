@@ -5,6 +5,7 @@ Pass this executable to agent-browser. Constructing argv here preserves the comm
 inside Chromium's resolver rule on CLI versions that split every --args comma.
 """
 import os
+import json
 from pathlib import Path
 import sys
 
@@ -17,6 +18,13 @@ if not any(arg.startswith("--headless") for arg in args) or not Path(profile).na
     raise SystemExit("A temporary agent-browser headless profile is required")
 if any(arg.startswith(("--proxy-server", "--host-resolver-rules")) for arg in args):
     raise SystemExit("Conflicting network configuration refused")
+if "--festapp-wix-block-storage=1" in args:
+    # Native Chrome cookie/storage policy in the disposable profile only.
+    preferences = Path(profile) / "Default" / "Preferences"
+    preferences.parent.mkdir(parents=True, exist_ok=True)
+    value = json.loads(preferences.read_text()) if preferences.exists() else {}
+    value.setdefault("profile", {}).setdefault("default_content_setting_values", {})["cookies"] = 2
+    preferences.write_text(json.dumps(value))
 args.extend([
     "--festapp-wix-qa=20261025",
     "--enable-automation",
