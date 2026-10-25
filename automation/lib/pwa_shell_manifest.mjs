@@ -11,6 +11,7 @@ const excludedNames = new Set([
   'flutter_service_worker.js',
   'festapp_service_worker.js',
   'organizers-page',
+  'organizer-pages.json',
 ]);
 
 export function shouldPrecache(relativePath) {
@@ -20,7 +21,7 @@ export function shouldPrecache(relativePath) {
   if (relativePath === 'assets/packages/venue_seat_picker/assets/layout_fonts/fixtures.json') return false;
   // Marketing demonstrations are streamed, not part of the offline app.
   if (relativePath.startsWith('napoveda/')) return false;
-  if (relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
+  if (relativePath.startsWith('organizers/') || relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
   const name = path.posix.basename(relativePath);
   if (excludedNames.has(name)) return false;
   if (name === 'NOTICES' || name.endsWith('.map') || name.endsWith('.symbols')) {
@@ -80,8 +81,12 @@ export async function collectPwaShellManifest(buildDir) {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
-  let organizerHomepage = false;
-  try { await access(path.join(buildDir, 'organizers-page')); organizerHomepage = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  let marketing = {enabled:false,pages:[]};
+  try { marketing = JSON.parse(await readFile(path.join(buildDir,'organizer-pages.json'),'utf8')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  const marketingRoutes = Object.fromEntries(marketing.pages.map(page=>[page.path,page.asset]));
+  for (const asset of Object.values(marketingRoutes)) await access(path.join(buildDir,asset));
+  const organizerHomepage = marketing.enabled && Boolean(marketingRoutes['/']);
   const collected = await collectFiles(buildDir);
   let canvasKitOnly = false;
   try {
@@ -146,6 +151,7 @@ export async function collectPwaShellManifest(buildDir) {
   return {
     flutterEntry,
     organizerHomepage,
+    marketingRoutes,
     flutterMain,
     webClientEntry,
     standaloneDocuments,

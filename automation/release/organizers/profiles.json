@@ -1,0 +1,12 @@
+{
+  "vstupenky-cs": {
+    "locale": "cs",
+    "content": "content.json",
+    "clips": "clips.json"
+  },
+  "festapp-en": {
+    "locale": "en",
+    "content": "content.en.json",
+    "clips": "clips.en.json"
+  }
+}

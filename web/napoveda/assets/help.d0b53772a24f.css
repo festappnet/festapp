@@ -181,7 +181,7 @@
 @media(max-width:760px){.hero-outlines .architectural-plan{opacity:.25}}
 
 /* Share account settings and theme preference with the public application. */
-.auth-pending .header-signin{visibility:hidden}
+.auth-pending :is(.header-signin,.header-cta){visibility:hidden;pointer-events:none}
 body.dark-mode{--paper:var(--background-color,#232529);--surface:var(--surface-color,#2b2d31);--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;color-scheme:dark}
 body.dark-mode .hero-air .ink{color:#80bdf2}
 body.dark-mode .hero-air .hero-copy{background:radial-gradient(ellipse at center,#232529f0 10%,#232529b8 52%,transparent 78%)}
@@ -207,6 +207,8 @@ body.dark-mode .output-card{background:var(--surface)}
 @media(max-width:760px){body.dark-mode .hero-outlines .architectural-plan{opacity:.23}}
 
 @media(max-width:820px){.site-header .header-help,user-header[data-marketing] .header-help{display:none}}
+
+.topic-hero{min-height:auto;padding-block:80px}.topic-hero .hero-copy{max-width:900px}.topic-hero h1{font-size:clamp(2rem,5vw,4.5rem);overflow-wrap:break-word}.topic-links{display:flex;flex-wrap:wrap;gap:24px;padding-block:32px}.topic-links a{text-underline-offset:4px}
 
 /* The public site shell and buttons use organizers/page.css. Scope reader rules. */
 body[data-page=help]{--help-error:#a62a2a;--help-control-line:#708197;background:var(--surface);font-size:20px;line-height:1.65}
@@ -285,7 +287,7 @@ body[data-page=help] [hidden]{display:none!important}
 }
 @media(max-width:380px){.help-layout{padding-inline:18px}.help-main h1{font-size:34px}.embed-generator{padding:18px}body[data-page=help]{font-size:19px}}
 @media(prefers-color-scheme:dark){
- body[data-page=help]:not([data-public-theme]){--paper:var(--background-color,#232529);--surface:var(--surface-color,#2b2d31);--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;--help-error:#ffb4ab;--help-control-line:#71839c;color-scheme:dark}
+ body[data-page=help]:not([data-public-theme]){--paper:#232529;--surface:#2b2d31;--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;--help-error:#ffb4ab;--help-control-line:#71839c;color-scheme:dark}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 

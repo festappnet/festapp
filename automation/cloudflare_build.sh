@@ -111,7 +111,8 @@ const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
 const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^napoveda\/(?:[a-z-]+\/)?index\.html$/.test(file));
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
-const ORGANIZERS_ENABLED = false; // stamped from explicit tenant capability
+const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]}; // stamped from shared context
+const ORGANIZERS_ENABLED = MARKETING.enabled;
 const DEFAULT_LANGUAGE = "cs";
 function localized(cs, en) { return DEFAULT_LANGUAGE === "en" ? en : cs; }
 const SITE_NAME = "Festapp"; // replaced from project.conf after generation
@@ -131,7 +132,7 @@ const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
 // Internal asset names (extension-less HTML entry points). Cloudflare serves
 // these as application/octet-stream to direct hits, which triggers a browser
 // download. They must never be reachable as a user-facing URL — redirect to /.
-const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-page"]);
+const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-page", ...MARKETING.pages.map(page=>page.asset)]);
 
 // Flutter's entry/runtime files use stable, unversioned names that change on
 // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
@@ -285,7 +286,7 @@ async function handleSitemap(request, env) {
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "no-store, max-age=0" };
 
   const helpEntries = HELP_PAGES.map(file => `<url><loc>${escapeHtml(baseUrl)}/${file.replace(/index\.html$/, "")}</loc></url>`).join("");
-  const organizerEntry = (ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "") + helpEntries;
+  const organizerEntry = MARKETING.sitemapPaths.filter(path=>path !== "/").map(path=>`<url><loc>${escapeHtml(baseUrl + path)}</loc></url>`).join("") + helpEntries;
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -429,9 +430,11 @@ async function routeRequest(request, env) {
       if (path === "/events/" || (path === "/" && url.searchParams.has("q"))) {
         return Response.redirect(new URL("/events" + url.search, url).href, 308);
       }
-      if (path === "/") {
-        const res = await serveAsset(env, request, "/organizers-page");
-        const response = res.ok ? htmlResponse(publicAnalyticsHtml(await res.text(), request), res.headers, 200, "organizers") : notFound();
+      const marketingPage = MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path));
+      if (marketingPage && path !== marketingPage.path) return Response.redirect(new URL(marketingPage.path + url.search,url).href,308);
+      if (marketingPage) {
+        const res = await serveAsset(env, request, marketingPage.asset);
+        const response = res.ok ? htmlResponse(publicAnalyticsHtml(await res.text(), request), res.headers, 200, CSP_MANIFEST.documents[marketingPage.asset.slice(1)]?.profile || "organizers") : notFound();
         response.headers.set("referrer-policy", "origin");
         return response;
       }
@@ -464,7 +467,7 @@ async function routeRequest(request, env) {
     if (INTERNAL_ASSET_PATHS.has(path)) {
       if (url.searchParams.get("pwa-cache") === "1") {
         const res = await serveAsset(env, request, path);
-        return htmlResponse(res.body, res.headers, 200, path === "/flutter" ? "flutter" : path === "/organizers-page" ? "organizers" : "webclient");
+        return htmlResponse(res.body, res.headers, 200, path === "/flutter" ? "flutter" : CSP_MANIFEST.documents[path.slice(1)]?.profile || (path === "/organizers-page" ? "organizers" : "webclient"));
       }
       return Response.redirect(new URL("/", url).toString(), 301);
     }
@@ -664,11 +667,12 @@ if analytics_site and not all(re.fullmatch('[a-f0-9]{32}', analytics_site.get(ke
 if analytics_site and analytics_site.get('collector') not in (None, '/cdn-cgi/rum'):
     raise SystemExit('Invalid public Web Analytics collector')
 source = source.replace('const PUBLIC_WEB_ANALYTICS = null;', 'const PUBLIC_WEB_ANALYTICS = ' + json.dumps(analytics_site) + ';', 1)
-landing_match = re.search(r'^WEB_ORGANIZER_LANDING_ENABLED=(.*)$', config, re.MULTILINE)
-landing_enabled = landing_match.group(1).strip() if landing_match else 'false'
-if landing_enabled not in ('true', 'false'):
-    raise SystemExit('WEB_ORGANIZER_LANDING_ENABLED must be true or false')
-source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + landing_enabled + ';', 1)
+import subprocess
+marketing = json.loads(subprocess.check_output(['node','automation/release/organizers/context.mjs','--config',config_path],text=True))
+for page in marketing['pages']:
+    if not pathlib.Path(worker_path).parent.joinpath(page['asset'].lstrip('/')).is_file():
+        raise SystemExit('Missing registered marketing asset: ' + page['asset'])
+source = source.replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', 'const MARKETING = ' + json.dumps(marketing) + ';', 1)
 language_match = re.search(r'^WEB_SUPPORTED_LANGUAGES=(.*)$', config, re.MULTILINE)
 language = language_match.group(1).strip().strip('"').strip("'").split(',')[0] if language_match else 'cs'
 if not re.fullmatch('[a-z]{2}', language): raise SystemExit('Invalid default language')

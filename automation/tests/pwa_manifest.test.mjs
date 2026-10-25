@@ -239,6 +239,7 @@ test('marketing streams stay online and do not consume the application offline b
  t.after(()=>rm(dir,{recursive:true,force:true}));
  await mkdir(path.join(dir,'organizers-media'),{recursive:true});await mkdir(path.join(dir,'web-assets'),{recursive:true});
  for(const file of ['flutter','webclient','main.dart.js']) await writeFile(path.join(dir,file),'app');
+ await writeFile(path.join(dir,'organizer-pages.json'),JSON.stringify({enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'}]}));
  for(const file of ['organizers-page','organizers-media/demo.mp4','organizers-media/poster.jpg','web-assets/landing-proof.js']) await writeFile(path.join(dir,file),'marketing');
  const manifest=await collectPwaShellManifest(dir);
  assert.equal(manifest.organizerHomepage,true);

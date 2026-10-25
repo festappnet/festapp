@@ -11,7 +11,7 @@ export function expandSiteShell(template) {
 
 export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false}) {
   const content = JSON.parse(read(locale === 'cs' ? 'content.json' : `content.${locale}.json`)).publicProjection;
-  const tokens = {APP_NAME: brand, CONTACT_EMAIL: contact, PROVIDER_NAME: 'Michael Bujnovský',
+  const tokens = {APP_NAME: brand, CONTACT_EMAIL: contact, PROVIDER_NAME: content.provider?.name ?? 'Michael Bujnovský',
     CTA_HREF: '/login', EVENT_DIRECTORY_HREF: locale === 'cs' ? 'https://plesy.vstupenky.online' : '/events'};
   const render = template => template.replace(/{{([A-Z0-9_]+)}}/g, (_, key) => {
     if (key === 'HELP_LINK') return `<a class="header-help" href="${escape(helpPath)}">${escape(helpLabel)}</a>`;

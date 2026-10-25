@@ -5,7 +5,7 @@ export const BASE_POLICY = "base-uri 'self'; object-src 'none'";
 export function scriptPolicy(profile, hashes, cloudflareAnalytics = false) {
   // Flutter CanvasKit compiles WASM. OneSignal is loaded by web/index.html.
   // Kept in Report-Only until the full compatibility gate supplies runtime proof.
-  const extra = (profile === 'flutter' ? " 'wasm-unsafe-eval' https://cdn.onesignal.com" : '') + (cloudflareAnalytics || ['webclient', 'organizers'].includes(profile) ? ' https://static.cloudflareinsights.com' : '');
+  const extra = (profile === 'flutter' ? " 'wasm-unsafe-eval' https://cdn.onesignal.com" : '') + (cloudflareAnalytics || profile.startsWith('organizer-') || ['webclient', 'organizers'].includes(profile) ? ' https://static.cloudflareinsights.com' : '');
   return `${BASE_POLICY}; script-src 'self'${extra}${hashes.length ? ' ' + hashes.join(' ') : ''}; script-src-attr 'none'; report-uri /_security/csp-report?profile=${profile}; report-to csp-${profile}`;
 }
 export function headerBlock(policy, profile) {

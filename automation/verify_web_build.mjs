@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { verifyMarketingBundle } from './release/organizers/verify.mjs';
 
 import assert from 'node:assert/strict';
 import { webProfileContract } from './lib/web_profile_contract.mjs';
@@ -82,6 +83,8 @@ for (const [chunk] of main.toString().matchAll(/main\.dart\.[^"'\s]+\.part\.js/g
   assert.ok(content.includes('$__dart_deferred_initializers__'), `Invalid deferred library: ${chunk}`);
 }
 
+
+await verifyMarketingBundle(buildDir, configPath);
 
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]

@@ -100,7 +100,7 @@ rm -rf build/web/napoveda
 if [ -d web_client/public/napoveda ]; then cp -R web_client/public/napoveda build/web/; fi
 
 # Ship marketing media only when the shared organizer page is enabled.
-LANDING_ENABLED="$(sed -n 's/^WEB_ORGANIZER_LANDING_ENABLED=//p' automation/project.conf | tr -d '\"' | tr -d "'" | tr -d '\r')"
+LANDING_ENABLED="$(node automation/release/organizers/context.mjs --config automation/project.conf | node -e 'let input="";process.stdin.on("data",part=>input+=part);process.stdin.on("end",()=>process.stdout.write(String(JSON.parse(input).enabled)))')"
 if [ "$LANDING_ENABLED" != true ]; then
     rm -rf "$BUILD_WEB_DIR/organizers-media"
 fi

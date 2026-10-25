@@ -1,6 +1,9 @@
 (() => {
+ const initialized = new WeakSet();
+ function init() {
   const form = document.querySelector('[data-embed-generator]');
-  if (!form) return;
+  if (!form || initialized.has(form)) return;
+  initialized.add(form);
   const origin = form.dataset.formOrigin || 'https://vstupenky.online';
   const english = document.documentElement.lang === 'en';
   const text = english ? {
@@ -55,4 +58,7 @@
       code.focus({preventScroll: true}); code.select(); status.textContent = text.manual;
     }
   });
+ }
+ document.addEventListener('help:navigated', init);
+ init();
 })();

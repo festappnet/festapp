@@ -64,6 +64,7 @@ if [ ! -f "$LEGAL_RENDERER" ]; then
     exit 1
 fi
 node "$LEGAL_RENDERER" --config "$CONFIG_FILE" --validate
+node "$PROJECT_ROOT/automation/release/organizers/context.mjs" --config "$CONFIG_FILE" >/dev/null
 
 case "${DEPLOY_TARGET:-skip}" in cloudflare|skip|'') ;; *)
     echo "Error: DEPLOY_TARGET must be cloudflare or skip"; exit 1 ;;
@@ -379,16 +380,18 @@ fi
 # Static host fallback; the Cloudflare router supplies the live public catalog.
 if [ -d "$PROJECT_ROOT/web_client/public" ]; then
     printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" > "$PROJECT_ROOT/web_client/public/robots.txt"
-    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$DOMAIN" "$WEB_ORGANIZER_LANDING_ENABLED" <<'SITEMAP'
+    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$CONFIG_FILE" "$PROJECT_ROOT" <<'SITEMAP'
 import html
+import json
 import pathlib
+import subprocess
 import sys
-path, domain, organizers = sys.argv[1:]
+path, config, root = sys.argv[1:]
+manifest = json.loads(subprocess.check_output(['node', str(pathlib.Path(root) / 'automation/release/organizers/context.mjs'), '--config', config], text=True))
 pathlib.Path(path).write_text(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    f'  <url><loc>https://{html.escape(domain)}/</loc></url>\n'
-    + (f'  <url><loc>https://{html.escape(domain)}/events</loc></url>\n' if organizers == 'true' else '')
+    + ''.join(f'  <url><loc>{html.escape(manifest["origin"] + route)}</loc></url>\n' for route in manifest['sitemapPaths'])
     + '</urlset>\n', encoding='utf-8')
 SITEMAP
 fi

@@ -1,3 +1,4 @@
+import { marketingUI } from './ui.js';
 // One page owns playback, including the hero. User intent survives scroll changes.
 export function chooseVisiblePlayer(players) {
   return players.filter(player => player.ratio >= .5 && !player.manualPause && !player.ended && !player.error)
@@ -27,9 +28,9 @@ export function initDemoPlayers(root = document) {
   const automatic = () => !motion.matches && !connection?.saveData;
   const pauseOthers = current => players.forEach(player => { if (player !== current) player.video.pause(); });
   function updateButton(player) {
-    const en = document.documentElement.lang === 'en';
-    const t = (cs, english) => en ? english : cs;
-    const text = player.error ? t('Zkusit znovu', 'Retry') : player.ended ? t('Znovu přehrát', 'Replay') : !player.video.paused ? t('Pozastavit', 'Pause') : t('Přehrát', 'Play');
+    const ui = marketingUI(root);
+    if (!ui) return;
+    const text = player.error ? ui.retry : player.ended ? ui.replay : !player.video.paused ? ui.pause : ui.play;
     player.button.setAttribute('aria-pressed', String(!player.video.paused));
     player.button.setAttribute('aria-label', `${text}: ${player.variant.description}`);
   }
