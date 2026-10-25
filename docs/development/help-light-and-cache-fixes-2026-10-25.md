@@ -30,3 +30,27 @@ the canonical release.
 Validation: full webclient suite collected 753 tests: 723 passed, 30 skipped,
 zero failures. Targeted help/cache/routing tests: 12 passed. No backend or Flutter
 application logic changed in this follow-up.
+
+## Final live checks and screenshot repair
+
+Version 0.20.395+896 passed repeated real Chrome navigations from the help index
+through Orders and Bank accounts and back to the same unmodified index URL;
+all returned HTTP 200 with the correct title. In production with OS Dark and
+saved app Light, native controls reported `color-scheme: light`, validation was
+rgb(166,42,42), and the reproduced validation contrast scan had no failures.
+Desktop and mobile evidence is retained under the private release artifacts.
+
+Visual inspection also found that the CS and EN generator images were clipped
+captures, not useful generated-code examples. Both were replaced with fresh
+740x887 captures of the actual widget and its actual generated HTML. The CS
+widget ran on production; EN ran in the self-contained static preview. Synthetic
+example form URLs were entered and the real submit handler produced the iframe
+and embed.js code; no checkout was opened. The actual widget node was placed at
+origin coordinates in the isolated capture document to avoid the browser CLI's
+scrolling/element-capture clipping. No screenshot text or UI was invented.
+Media dimensions, source notes and reviewed SHA-256 values were updated.
+
+The static preview inlined deferred scripts into the head without preserving
+execution order, so the generator exited before its form existed. Inlined
+preview scripts now wait for DOMContentLoaded. CS and EN JSDOM integration tests
+execute the generated self-contained document and submit its actual generator.
