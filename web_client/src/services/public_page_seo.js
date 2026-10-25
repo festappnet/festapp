@@ -15,7 +15,14 @@ export function publicPageSeo(data, { origin, siteName, path, kind = 'form' }) {
     const link = kind === 'form' ? data.form_link : data.occasion_link;
     const canonicalPath = link ? (kind === 'form' ? '/form/' + encodeURIComponent(link) : '/' + encodeURIComponent(link) + '/event') : path.replace(/\/$/, '');
     const canonical = new URL(canonicalPath, origin).href;
-    const title = (kind === 'form' ? data.form_title : null) || data.title || siteName;
+    const formTitle = kind === 'form' ? data.form_title : null;
+    const occasionTitle = data.title;
+    // Form labels such as "Registration" are shared across unrelated events.
+    // Keep the event identity in both the server HTML and hydrated metadata,
+    // while retaining specific form names (for example dinner or VIP tickets).
+    const title = occasionTitle && formTitle && !formTitle.toLowerCase().includes(occasionTitle.toLowerCase())
+        ? `${occasionTitle} - ${formTitle}`
+        : formTitle || occasionTitle || siteName;
     const description = publicSeoText((kind === 'form' ? data.form_description : null) || data.description)
         || 'Informace o akci a vstupenkách.';
     let image = new URL('/android-chrome-512x512.png', origin).href;

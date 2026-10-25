@@ -77,6 +77,20 @@ test('form SEO escapes names and strips tracking parameters from canonical URLs'
   }
 });
 
+test('form HTML identifies the event when forms share a generic registration title', async t => {
+  for (const title of ['Postní duchovní obnova s AKH', 'Ples AKH 2026']) {
+    t.mock.method(globalThis, 'fetch', async () => Response.json({
+      title, form_title: 'Registration', form_link: 'registration', description: 'Event details',
+    }));
+    const response = await worker.fetch(request('/form/registration'), env);
+    const html = await response.text();
+    assert.ok(html.includes(`<title>${title} - Registration - vstupenky.online</title>`));
+    assert.ok(html.includes(`<h1>${title} - Registration</h1>`));
+    assert.ok(html.includes(`property="og:title" content="${title} - Registration - vstupenky.online"`));
+    t.mock.restoreAll();
+  }
+});
+
 test('public page social images use a published fallback and preserve event images', async t => {
   const pageEnv = { ...env, ASSETS: { fetch: async () => new Response(shell) } };
   for (const image of [undefined, '', 'javascript:alert(1)', 'https://img.festapp.net/event.jpg']) {
