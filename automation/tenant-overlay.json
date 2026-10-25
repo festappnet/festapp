@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "47e9deb7d87b954c674fb4776e334b03a0f67297",
+  "baseMainSha": "174d7c7d922c21ba1727d8793bf2961b8f78da3e",
   "release": {
     "version": "0.20.400+901",
     "note": "Add organizer search pages"
