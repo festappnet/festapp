@@ -86,7 +86,7 @@ existing integration tests; never place real orders or reserve production seats.
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
 | Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
-| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | not run | helper outage fallback pass; other cases pending |
+| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall observed with native setup warning/workaround; remaining cases pending | helper outage fallback pass; other cases pending |
 
 Payment-return qualification must cover supported browsers and mobile Safari;
 third-party iframe storage and payment-provider redirects cannot be established
@@ -173,3 +173,8 @@ two natively published Studio sections, distinct helper instances, independent
 form values and first-summary/sibling isolation. Temporary runtime attribute
 changes reload only the changed URL; they do not claim native settings persistence
 on the public site. The live contrast defect and payment/browser gates remain.
+
+[Editor uninstall/reinstall evidence](evidence/uninstall-reinstall-20261025.json)
+records native app counts 1 -> 0 -> 1 and public widget removal/restoration.
+The native Add to Site action still shows a recoverable technical warning;
+manual Save/Add Widgets recovered it. Clean native setup remains unqualified.

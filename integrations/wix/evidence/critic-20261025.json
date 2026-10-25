@@ -97,5 +97,10 @@
     "receipt": "published-pair-20261025.json",
     "verdict": "PASS: actual native published pair, independent values/helper instances and temporary runtime attribute isolation correctly scoped; no native saved-public-settings, alternate URL success or complete lifecycle claim",
     "knownLimits": "First load near summary close disclosed; live contrast defect and complete checkout/payment/browser gates remain pending"
+  },
+  "editorUninstallReinstallReview": {
+    "date": "2026-10-25",
+    "receipt": "uninstall-reinstall-20261025.json",
+    "verdict": "PASS: native removal/restoration/fresh settings correctly separated from checkout; persistent native setup warning and workaround disclosed; clean install remains unqualified"
   }
 }

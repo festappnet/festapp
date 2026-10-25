@@ -27,7 +27,9 @@
     "note": "Earlier Setup required snapshot was superseded by completed Editor placement. Published runtime and other editor qualification remain pending.",
     "publicUrl": "https://dev-sitex-1268240078.wix-dev-sites.org/",
     "publishedCheckoutEvidence": "published-checkout-20261025.json",
-    "syntheticFormAvailability": "Only in disposable backend through QA transport; not a production sales/demo form"
+    "syntheticFormAvailability": "Only in disposable backend through QA transport; not a production sales/demo form",
+    "currentComponentId": "comp-mvo8fey9",
+    "uninstallReinstallReceipt": "uninstall-reinstall-20261025.json"
   },
   "paidActionTaken": false,
   "marketplaceSubmission": false,

@@ -95,5 +95,8 @@
   "publishedHelperOutageReceipt": "evidence/helper-outage-20261025.json",
   "publishedHelperOutageFallbackVerified": true,
   "studioPublishedMultipleWidgetsScope": "Actual native published pair with adapted disposable backend; form values, helper instances and runtime attribute isolation only",
-  "publishedPairReceipt": "evidence/published-pair-20261025.json"
+  "publishedPairReceipt": "evidence/published-pair-20261025.json",
+  "editorUninstallReinstallReceipt": "evidence/uninstall-reinstall-20261025.json",
+  "editorUninstallReinstallObserved": true,
+  "nativeCleanSetupQualified": false
 }
