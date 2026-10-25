@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.6-04bd526ca6cd.tgz",
-    "@supabase/supabase-js": "^2.117.3",
+    "@supabase/supabase-js": "^2.118.0",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",
     "dotenv": "^17.4.2",
@@ -32,7 +32,7 @@
     "jsdom": "^27.4.0",
     "parse5": "^8.0.1",
     "vite": "^7.3.7",
-    "esbuild": "0.27.1"
+    "esbuild": "0.28.2"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {
