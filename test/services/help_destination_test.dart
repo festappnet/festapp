@@ -2,6 +2,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/services/help_destination.dart';
 
 void main() {
+  test('account creation and sign-in retain only validated help intents', () {
+    for (final intent in [
+      ...HelpDestination.sections.keys,
+      HelpDestination.scannerSettings
+    ]) {
+      final signup = Uri.parse(
+          HelpDestination.authenticationPath('signup', '/help-action/$intent'));
+      expect(signup.path, '/signup');
+      final login = Uri.parse(HelpDestination.authenticationPath(
+          'login', signup.queryParameters['redirect']));
+      expect(login.path, '/login');
+      expect(HelpDestination.parse(login.queryParameters['redirect']), intent);
+    }
+    for (final unsafe in [
+      'https://other.test',
+      '//other.test',
+      '/help-action/forms?next=x'
+    ]) {
+      expect(
+          Uri.parse(HelpDestination.authenticationPath('signup', unsafe))
+              .hasQuery,
+          false);
+    }
+  });
   test('help intents resolve only to fixed administration sections', () {
     expect(HelpDestination.parse('/help-action/seating'), 'seating');
     expect(HelpDestination.path('seating', 'ples-2027'),

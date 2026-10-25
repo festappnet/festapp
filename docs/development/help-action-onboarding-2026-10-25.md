@@ -1,0 +1,54 @@
+# Help action onboarding, 2026-10-25
+
+Help links carry an allowlisted section intent, never an occasion ID or arbitrary
+return URL. `HelpDestination` owns that contract for both documentation locales.
+Registration and Google continuation retain it through the existing login routes.
+Password registration still requires the ordinary credentials/code exchange.
+
+After login, the existing permission-filtered event chooser offers creation.
+It reuses the registered user's organizer, or the normal organizer-creation dialog
+when none exists and the tenant permits creation. Multiple organizers require an
+explicit choice. The selected unit is reloaded and `occasions.create` comes from
+the canonical backend capability projection. Drafts and event creation use the
+existing unit dashboard and setup wizard. Saved drafts can be resumed after
+cancellation or physical reload. Help continuation suppresses only the wizard's
+generic completion navigation, then enters the originally requested section
+through the normal administration boundary. Scanner settings use the actual
+webclient and its independently authorized scanner session.
+
+A real walkthrough exposed an existing autosave lifecycle bug: the communication
+preview requested a flush while its parent was building. Notifying the widget
+tree before installing cleanup could strand `_pending` and prevent subsequent
+changes from being saved. Flush now skips clean drafts, starts outside the build
+stack, and clears pending state in `finally`. Event finalization succeeded after
+this correction; the SQL review requirement was preserved.
+
+## Evidence and limits
+
+Owned isolated backend: `festapp-wizard-help-20261025`, API 56821, DB 56822.
+Owned same-origin HTTP preview: 57982. The former preview redirected login to the
+old production build; it now serves the current local Flutter and webclient app.
+Interactive evidence is in ignored `.private/help-onboarding-20261025/`.
+
+- Real UI signup from `/login?redirect=/help-action/forms`; signup and subsequent
+  login URLs retained exactly the same intent.
+- Canonical register Edge function created a real synthetic Auth user and its
+  `My events` organizer with zero occasions. Only email delivery was simulated:
+  a narrowly scoped local fixture accepted that synthetic queued message and
+  read its encrypted prepared message into a private local mailbox. No actual
+  email, OAuth provider, bank API or payment was invoked.
+- Signed in through the actual credential exchange and Auth token endpoint.
+- Created a wizard draft, left it, physically reloaded the login help URL, chose
+  the saved draft and resumed its actual saved question.
+- Configured a synthetic local bank account without any API token, returned to
+  the wizard, confirmed review, finalized the event through the canonical RPC.
+- Result: `/x3rvvkym/reservations/forms/help_onboarding_prvni_akce_2026/editor`,
+  the expected event title and Forms tab selected. Screenshot
+  `new-account-final-forms.png` and interaction steps 001-138 record this.
+- Targeted Flutter checks: 12 tests passed (destination contract, post-login
+  routing, existing communication/email template widgets). Hosting login-return
+  checks: 2 passed. Debug Flutter web build succeeded.
+
+These are local integration results, not evidence of a production deployment or
+real email/OAuth delivery. Production publication still requires the repository's
+independent review and normal single-tenant release gates.

@@ -32,6 +32,19 @@ abstract final class HelpDestination {
     return sections.containsKey(intent) || isWebClient(intent) ? intent : null;
   }
 
+  /// Carry only an allowlisted intent through account creation and sign-in.
+  static String authenticationPath(String route, String? returnPath) {
+    final intent = parse(returnPath);
+    return Uri(
+            path: '/$route',
+            queryParameters: intent == null
+                ? null
+                : {
+                    'redirect': '$prefix$intent',
+                  })
+        .toString();
+  }
+
   static String? path(String intent, String? link, {int? occasionId}) {
     final section = sections[intent];
     if ((section == null && !isWebClient(intent)) ||
