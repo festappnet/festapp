@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-25",
+  "verifiedAt": "2026-10-26",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
   "state": "LIVE_HELPER_FIXED_CURRENT_CHECKOUT_VERIFIED_SUBMISSION_GATED",
   "localTests": {
-    "count": 12,
-    "passed": 12,
+    "count": 14,
+    "passed": 14,
     "failed": 0
   },
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
   "package": {
     "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "f7790aa0b631e32c0c07fa4e77ee13e02674a42c1caceb887c7ed374efbaeb67",
+    "sha256": "3d212a1c2b4cfbe501b2ff6e833368f499d18b89da83171a0559e567cddd501c",
     "type": "public-asset deployment archive, not a Wix App Store installer"
   },
   "releaseCheck": "EXPECTED_BLOCKED: individual billing approval, zero-fixed-fee terms, reporting implementation, two portal pages and remaining qualification matrix",
@@ -36,13 +36,13 @@
     "help.html": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
     "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
-    "settings.js": "55faea259c5a8484e8b943fe86f59f835c7089674a4cdcb4ae6856c86ed7f3dc",
-    "widget.js": "909666e08e16a89d40e425896c6885a5c04a42cc1df76570dd538e167df81d04"
+    "settings.js": "d23136096f3d1e668aa5bb5fff987f40a898a58128ada7397254baa5a357cfec",
+    "widget.js": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
   },
-  "sourceHead": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+  "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589",
   "realWixWidgetOnCanvasVerified": true,
   "registrationReceipt": "evidence/registration-20261025.json",
-  "hostingReceipt": "evidence/hosting-20261025.json",
+  "hostingReceipt": "evidence/hosting-20261026.json",
   "criticReceipt": "evidence/critic-20261025.json",
   "siteAppRecordObserved": true,
   "supportConversationStarted": true,
@@ -135,5 +135,6 @@
     "0.20.405+906",
     "0.20.406+907"
   ],
-  "technicalFollowupDelivered": false
+  "technicalFollowupDelivered": false,
+  "recoveryFixesReceipt": "evidence/recovery-fixes-20261026.json"
 }

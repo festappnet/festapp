@@ -165,5 +165,19 @@
       "editor-install-ab-20261025.json"
     ],
     "marketplaceReady": false
+  },
+  "recoveryFixesReview": {
+    "reviewedAt": "2026-10-26",
+    "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589",
+    "verdict": "PASS after initialization aria-busy correction and two documentation metadata corrections",
+    "unitTests": {
+      "passed": 14,
+      "failed": 0
+    },
+    "preFixRegressionTestsFailed": 2,
+    "liveDeploymentHashesMatched": true,
+    "nativePublishedEditorRetryPreservedFrame": true,
+    "receipt": "recovery-fixes-20261026.json",
+    "marketplaceReady": false
   }
 }

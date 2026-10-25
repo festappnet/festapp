@@ -45,9 +45,47 @@
     "securityPrivacyCdnStatus": 403,
     "newSupportCaseCreated": false
   },
-  "liveDeployment": "PENDING exact-source asset upload/readback",
+  "liveDeployment": {
+    "status": "DEPLOYED_HASH_VERIFIED",
+    "receipt": "hosting-20261026.json",
+    "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589"
+  },
   "limits": [
     "Regression dependency/transport uses deterministic tests, not a new complete native Wix checkout qualification.",
     "Native Safari, clean native install, portal repair and commercial approval remain gated."
-  ]
+  ],
+  "publishedEditorRecovery": {
+    "host": "https://dev-sitex-1268240078.wix-dev-sites.org/",
+    "browser": "Task-owned isolated headless Chromium; production backend DNS blocked",
+    "nativePublishedWidget": true,
+    "initialHelperRequestDeliberatelyAborted": true,
+    "before": {
+      "directLink": "https://vstupenky.online/form/wix-qa-20261025",
+      "framePresent": true,
+      "helperLoaded": false,
+      "helperScripts": 0,
+      "liveWidgetRequest": [
+        "https://festapp-wix.pages.dev/widget.js"
+      ],
+      "widgets": 1
+    },
+    "after": {
+      "directLink": "https://vstupenky.online/form/wix-qa-20261025",
+      "frameTitle": "Wix Editor QA - recovery smoke",
+      "helperLoaded": true,
+      "helperScripts": 1,
+      "sameFrame": true
+    },
+    "trigger": "Removed request abort route, then changed form-title runtime attribute once",
+    "checkoutFrameIdentityPreserved": true,
+    "duplicateHelperScripts": false,
+    "nativeSavedSettingsChanged": false,
+    "afterColdReload": {
+      "frameTitle": "Wix Editor QA - prodej vstupenek",
+      "title": "Wix Editor QA - prodej vstupenek",
+      "widgets": 1
+    },
+    "browserClosed": true,
+    "checkoutOrderSubmitted": false
+  }
 }

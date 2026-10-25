@@ -86,7 +86,7 @@ existing integration tests; never place real orders or reserve production seats.
 | Validation, seat map, Escape/back, close restores scroll | seat map, zoom/fit, Escape/back, focus and scroll pass with QA transport | partial: email and summary close; map pending | not run |
 | Summary reveals submit; submission shows receipt top | mobile seat retry and bank receipt pass with QA transport | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
 | Bank instructions/QR and native blocked storage with lost-response retry | pass with QA transport; QR decoded, orders 0 -> 1 -> 1 | not run | not run |
-| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall observed with native setup warning/workaround; remaining cases pending | helper outage fallback pass; other cases pending |
+| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall warning/workaround; published helper retry after blocked request pass; other cases pending | helper outage fallback pass; other cases pending |
 
 [Final checkout evidence](evidence/final-checkout-qualification-20261025.json) records the
 Harmony seat-map, blocked-storage/idempotency and bank QR checks. The dedicated
@@ -199,3 +199,9 @@ on the public site. The live contrast defect was fixed in the service release; p
 records native app counts 1 -> 0 -> 1 and public widget removal/restoration.
 The native Add to Site action still shows a recoverable technical warning;
 manual Save/Add Widgets recovered it. Clean native setup remains unqualified.
+
+[Recovery verification, 26 October](evidence/recovery-fixes-20261026.json)
+records a deliberately blocked helper request on the published Editor QA site.
+After network recovery, a presentation attribute update loaded exactly one
+helper while preserving the iframe. The change was temporary and original
+settings were verified after reload; no checkout was submitted.
