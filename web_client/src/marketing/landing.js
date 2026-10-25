@@ -1,3 +1,4 @@
+import { initTopicTools } from './topic_tools.js';
 import { initDemoPlayers } from './demo_player.js';
 import { initMotion } from './motion.js';
 import { initReferenceCarousels } from './reference_carousel.js';
@@ -14,4 +15,5 @@ if (target) {
     initDemoPlayers();
     initMotion();
     initReferenceCarousels();
+    initTopicTools();
 }

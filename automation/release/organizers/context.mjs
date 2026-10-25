@@ -33,6 +33,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   projection.seo.siteName = config.APP_NAME;
   const clips = JSON.parse(fs.readFileSync(path.join(profilesDir,profile.clips),'utf8'));
   const pages = resolvePages(projection.pages.map(page=>page.id === 'home' ? {...page,title:projection.seo.title,description:projection.seo.description} : page), context.origin);
+  for (const page of pages) for (const href of [page.feature?.guideLinkHref,page.guide?.bridge?.secondaryHref].filter(Boolean)) if (!pages.some(other=>other.path === href)) throw new Error('Topic link requires a published page');
   const safeLink = value => {
     const destination = new URL(value, context.origin);
     if (!['https:','mailto:'].includes(destination.protocol) || destination.username || destination.password) throw new Error('Unsafe marketing link');
@@ -44,7 +45,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
     if (!ref.name || !ref.dateLabel || !/^\d{4}-\d{2}-\d{2}$/.test(ref.date ?? '')) throw new Error('Reference requires date');
     safeLink(ref.publicUrl);
   }
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>section.clips ?? [])].filter(Boolean));
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>section.clips ?? []), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
   const clipIds = new Set();
   for (const clip of clips.clips ?? []) {
     if (clip.captureStatus === "pending" && usedClips.has(clip.id) && !preview) throw new Error("English product recordings are incomplete");
@@ -53,13 +54,14 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   }
   for (const section of clips.sections ?? []) for (const id of section.clips ?? []) if (!clipIds.has(id)) throw new Error(`Missing required clip ${id}`);
   for (const page of pages) for (const id of page.sections ?? []) if (!(clips.sections ?? []).some(section => section.id === id)) throw new Error(`Missing required section ${id}`);
+  for (const page of pages) for (const id of [...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
   return { ...context, locale, profileId: config.WEB_ORGANIZER_CONTENT_PROFILE, pages, projection, clips };
 }
 export function marketingMedia(context) {
   if (!context.enabled) return [];
-  const {projection, clips} = context;
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>section.clips ?? [])].filter(Boolean));
-  return [...new Set([projection.seo.image, ...(projection.references ?? []).map(ref=>ref.image),
+  const {projection, clips, pages} = context;
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>section.clips ?? []), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
+  return [...new Set([projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
     ...(clips.sections ?? []).flatMap(section=>(section.showcase?.items ?? []).map(item=>item.image))].filter(Boolean))];
 }
