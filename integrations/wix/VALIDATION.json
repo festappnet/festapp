@@ -101,9 +101,10 @@
   },
   "editorQualification": {
     "receipt": "evidence/uninstall-reinstall-20261025.json",
-    "componentId": "comp-mvo8fey9",
+    "componentId": "comp-mvof3ay7",
     "syntheticFormUrl": "https://vstupenky.online/form/wix-qa-20261025",
-    "nativeCleanSetupQualified": false
+    "nativeCleanSetupQualified": false,
+    "latestReceipt": "evidence/editor-install-ab-20261025.json"
   },
   "checkoutHtmlTemplateVersion": "0.20.401+902",
   "galleryAssetsVerified": true,
@@ -116,12 +117,23 @@
     "publishedSyntheticForm": true,
     "mobile320Summary": true,
     "paymentReturn": false,
-    "fullyQualified": false
+    "fullyQualified": false,
+    "seatMapKeyboardFocusAndBack": true,
+    "nativeStorageDeniedRetryIdempotency": true,
+    "bankQrDecodedAndMatchedSql": true,
+    "receiptTopVisibleAfterSubmit": true
   },
   "unlistedVersion": {
     "version": "1.0",
     "usedOnlyForOwnedQa": true,
     "accessPrivate": false,
     "marketplaceSubmitted": false
-  }
+  },
+  "finalCheckoutReceipt": "evidence/final-checkout-qualification-20261025.json",
+  "editorInstallAbReceipt": "evidence/editor-install-ab-20261025.json",
+  "additionalCheckoutClientVersionsTested": [
+    "0.20.405+906",
+    "0.20.406+907"
+  ],
+  "technicalFollowupDelivered": false
 }

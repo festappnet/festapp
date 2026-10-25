@@ -1,0 +1,48 @@
+{
+  "verifiedAt": "2026-10-25",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "siteId": "14641e99-51d9-40f8-b768-4ffc1f5d3929",
+  "scope": "Owned Editor QA only, isolated headless browser; no production data",
+  "attempts": [
+    {
+      "configuration": "Released unlisted1.0, manual widget placement",
+      "nativeAppCountBefore": 0,
+      "addToSiteClicks": 1,
+      "result": "There was a technical issue"
+    },
+    {
+      "configuration": "Draft homepage auto-add, nonessential, Add Elements enabled",
+      "nativeAppCountBefore": 0,
+      "addToSiteClicks": 1,
+      "result": "5/5 good-to-go followed by There was a technical issue",
+      "widgetNeverthelessPersisted": true
+    }
+  ],
+  "nativeConsole": [
+    "TypeError: Cannot read properties of undefined (reading id)",
+    "save failed on add complete with no uninstall"
+  ],
+  "rootCauseProven": false,
+  "restoredDraft": {
+    "autoAddHomepage": false,
+    "addElementsPanel": true,
+    "savedAndReopenedReadback": true
+  },
+  "newVersionReleased": false,
+  "versionRemains": "1.0",
+  "restoredEditor": {
+    "componentId": "comp-mvof3ay7",
+    "nativeSettingsSaved": true,
+    "coldReloadAttributesRetained": true,
+    "editorCheckoutFrames": 0,
+    "publicWidgets": 1,
+    "publicCheckoutFrames": 1,
+    "formUrl": "https://vstupenky.online/form/wix-qa-20261025",
+    "formTitle": "Wix Editor QA - prodej vstupenek",
+    "inheritStyle": false,
+    "publicHelper": "https://vstupenky.online/embed.js"
+  },
+  "nativeCleanSetupQualified": false,
+  "fallback": "Dismiss warning; existing widget can be configured. Manual Add Elements > App Widgets remains the documented fallback.",
+  "newSupportCaseCreated": false
+}
