@@ -1,4 +1,4 @@
-import { buildWebhookEnvelope, signWebhook, type WebhookEnvelope, type Transaction } from "npm:@festapp/banksync@0.2.2";
+import { buildWebhookEnvelope, signWebhook, type WebhookEnvelope, type Transaction } from "npm:@festapp/banksync@0.5.2";
 import { bankSyncWebhook } from "./handler.ts";
 const secret = "synthetic-test-secret";
 const transaction: Transaction = {

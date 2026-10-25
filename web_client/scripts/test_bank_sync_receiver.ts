@@ -1,5 +1,5 @@
 // Optional real PostgreSQL integration check. Run only against the disposable local DB.
-import {buildWebhookEnvelope,signWebhook,type Transaction} from 'npm:@festapp/banksync@0.2.2';
+import {buildWebhookEnvelope,signWebhook,type Transaction} from 'npm:@festapp/banksync@0.5.2';
 import {bankSyncWebhook} from '../../supabase/functions/bank-sync-webhook/handler.ts';
 const target = new URL(Deno.env.get('DATABASE_URL') ?? '');
 if (!['127.0.0.1','localhost'].includes(target.hostname) || !target.pathname.startsWith('/festapp_banksync_')) {
