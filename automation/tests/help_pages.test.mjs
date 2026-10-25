@@ -66,6 +66,9 @@ test('phone scanner guides use only mobile webclient captures in both locales',(
   const html=fs.readFileSync(path.join(directory,file),'utf8');
   const figures=[...html.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
   assert.ok(figures.length>=2,'include verified mobile webclient controls and result');
+  for(const state of ['invalid-access','not-found','settings','field-options','advanced','preview']) {
+   assert.ok(figures.some(([,id])=>id===`${locale}/scanner-advanced/${state}`),`Missing actual ${locale} scanner walkthrough: ${state}`);
+  }
   for(const [,id] of figures){
    const item=media.get(id);assert.ok(item,`Missing capture ${id}`);
    assert.equal(item.locale,locale);assert.equal(item.device,'mobile');

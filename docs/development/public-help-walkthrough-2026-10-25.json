@@ -433,6 +433,114 @@
         "height": 844
       },
       "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/invalid-access",
+      "file": "cs/scanner-advanced/invalid-access.png",
+      "sha256": "f1af0c70ab73a27ecbf41ebf474cabd9aa23740b7ff03f2af454168b485593b2",
+      "capturedAt": "2026-10-25T08:38:55.884878+00:00",
+      "alt": "Chybný přístupový kód skeneru s hlášením Kód skeneru není platný.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/not-found",
+      "file": "cs/scanner-advanced/not-found.png",
+      "sha256": "c2e7662c0fc312b119e12fd07500f68743feba5e169183c042d6f8030ecd3a78",
+      "capturedAt": "2026-10-25T08:39:09.381497+00:00",
+      "alt": "Mobilní webový skener hlásí Vstupenka nenalezena.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/settings",
+      "file": "cs/scanner-advanced/settings.png",
+      "sha256": "b05f6454c0dc9ad98fb4b6dd691d55a7219bcfb9b5574fc0dcfb2df1b07b3799",
+      "capturedAt": "2026-10-25T08:39:40.068168+00:00",
+      "alt": "Nastavení mobilního webového skeneru se základními údaji a výběrem produktů.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/field-options",
+      "file": "cs/scanner-advanced/field-options.png",
+      "sha256": "95ddceef5a05f6ede9bc5bd316329b9d5f9990d6fef9c69bde385a4d61d56f57",
+      "capturedAt": "2026-10-25T08:39:48.980160+00:00",
+      "alt": "Nastavení e-mailu z formuláře: popisek, skrytí prázdných hodnot a pořadí.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/advanced",
+      "file": "cs/scanner-advanced/advanced.png",
+      "sha256": "b3abd4487b69e1089907ba77561f21f5b6a240fd945e4dcdd52eb64595e40202",
+      "capturedAt": "2026-10-25T08:40:03.579930+00:00",
+      "alt": "Chování skeneru s volbami hledání, cen, interní poznámky a offline přípravy.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/scanner-advanced/preview",
+      "file": "cs/scanner-advanced/preview.png",
+      "sha256": "1414753b6b15aa7d63f31e76f8f97211adb9b6144e965709469a8f695e1c878f",
+      "capturedAt": "2026-10-25T08:40:14.614825+00:00",
+      "alt": "Náhled ukázkové použité vstupenky v nastavení webového skeneru.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/invalid-access",
+      "file": "en/scanner-advanced/invalid-access.png",
+      "sha256": "1531816da154d6465be84ed19a4a600cb08a271d0277f37c95bc107cfb5d3560",
+      "capturedAt": "2026-10-25T08:38:43.518623+00:00",
+      "alt": "Invalid scanner code message in the mobile web scanner.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/not-found",
+      "file": "en/scanner-advanced/not-found.png",
+      "sha256": "d39b09412c40cbb3534531e39ab02a8a25f3899510c4234cd0545dfcd8529f8d",
+      "capturedAt": "2026-10-25T08:38:27.752465+00:00",
+      "alt": "Mobile web scanner showing Ticket not found.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/settings",
+      "file": "en/scanner-advanced/settings.png",
+      "sha256": "ef5e0cf82b834a4122c0a43efefd6c87e962f34b53b81cd75acbc2c0a56facb8",
+      "capturedAt": "2026-10-25T08:40:42.982908+00:00",
+      "alt": "Mobile web scanner display settings with fixed core details and product selection.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/field-options",
+      "file": "en/scanner-advanced/field-options.png",
+      "sha256": "a638eaa75cae22584f01cbb1ff410ebb2b0e5694ecebbb7684525e55396cfc64",
+      "capturedAt": "2026-10-25T08:40:43.794585+00:00",
+      "alt": "Form email display options including label, empty values and ordering.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/advanced",
+      "file": "en/scanner-advanced/advanced.png",
+      "sha256": "d3e76fb222147debdced24f73c3a37afa379c520485d67ae99d606564bd6446c",
+      "capturedAt": "2026-10-25T08:40:44.613208+00:00",
+      "alt": "Scanner behavior options for search, prices, internal notes and offline preparation.",
+      "platform": "web-client",
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/scanner-advanced/preview",
+      "file": "en/scanner-advanced/preview.png",
+      "sha256": "9dae92e720fdba07eba36b84e61ae356afeade19786c36622db1bda233e88182",
+      "capturedAt": "2026-10-25T08:40:52.529090+00:00",
+      "alt": "A previously used sample ticket in the web scanner settings preview.",
+      "platform": "web-client",
+      "physicalDevice": false
     }
   ],
   "chapters": [
@@ -681,6 +789,44 @@
         "en/check-in/used-mobile"
       ],
       "videoNote": "Mobilní viewport Chromium 390 × 844, bez makety iOS stavového řádku; nesmí být vydáván za fyzický test Safari nebo kamery iPhonu. Pro video lze nahradit fyzickým telefonem při stejných krocích."
+    },
+    {
+      "id": "web-scanner-errors-and-display-settings",
+      "guide": "check-in",
+      "steps": [
+        {
+          "action": "Open scanner with invalid access code; open valid event and look up nonexistent ticket symbol, in both locales",
+          "outcome": "Actual server responses distinguish Invalid scanner code and Ticket not found. Neither operation confirms admission."
+        },
+        {
+          "action": "Authenticate seeded local administrator through actual AuthService, open editor-scoped scanner and Menu → display settings",
+          "outcome": "Real local Auth/REST; settings link requires editor capability. Auth bootstrap is a fixture prerequisite, not a recorded login UI journey."
+        },
+        {
+          "action": "Select products, add order email, expand field display options and scanner behavior; preview an already-used ticket",
+          "outcome": "Actual draft UI, per-field ordering/hide-empty controls, search/internal/offline settings. Preview correctly shows previous use and does not admit."
+        },
+        {
+          "action": "Save settings, wait for saved message, reopen event and open settings via menu",
+          "outcome": "Actual save RPC succeeded; reloaded selected-products mode and email remained enabled; 390px page had no horizontal overflow. Manual-search checkbox was also enabled through actual UI."
+        }
+      ],
+      "stills": [
+        "cs/scanner-advanced/invalid-access",
+        "cs/scanner-advanced/not-found",
+        "cs/scanner-advanced/settings",
+        "cs/scanner-advanced/field-options",
+        "cs/scanner-advanced/advanced",
+        "cs/scanner-advanced/preview",
+        "en/scanner-advanced/invalid-access",
+        "en/scanner-advanced/not-found",
+        "en/scanner-advanced/settings",
+        "en/scanner-advanced/field-options",
+        "en/scanner-advanced/advanced",
+        "en/scanner-advanced/preview"
+      ],
+      "videoNote": "Record phone-browser webclient, no native Flutter footage. Show error distinction, editor-only shared settings, draft preview, save and reopening authorization. Physical QR camera and offline synchronization were not tested in this chapter.",
+      "privateEvidence": ".private/help-advanced-20261025/interaction-log.jsonl"
     }
   ],
   "notVerified": [
@@ -715,6 +861,18 @@
     {
       "path": "lib/components/forms/views/form_editor_content.dart",
       "sha256": "a2c30f859a9c3f0a39d0777f1118bf4b698f74feccd0bd196bab4761a7b39234"
+    },
+    {
+      "path": "web_client/src/components/scan/scanner_settings_page.js",
+      "sha256": "3d9dee106f69cff9fe0650ba459ced3a9500851d42c3bc07bfd0ab11d18e14a2"
+    },
+    {
+      "path": "web_client/src/components/scan/scan_page.js",
+      "sha256": "1f5a7c4ffbc22e62becd769585be0f32cb67d62c192b0a9f19747962a6eb66b6"
+    },
+    {
+      "path": "web_client/src/services/scanner_api.js",
+      "sha256": "ff17a6c85b3caf04e2f4a391da2786a533e4930f7d0e39b63f83c253b08572b6"
     }
   ],
   "scannerGuideAuthority": {

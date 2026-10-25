@@ -127,3 +127,27 @@ no desktop scanner or Flutter images remain in those articles. Text follows the
 webclient manual-code entry, separate confirmation and conditional offline tools.
 These captures do not certify physical camera input or mobile Safari. A targeted
 media contract enforces mobile webclient evidence for both locales.
+
+## Scanner errors and shared display settings
+
+Twelve fresh 390 x 844 responsive webclient captures cover CS and EN invalid
+scanner access, missing ticket, fixed/core display settings, form-field options,
+advanced behavior and draft ticket preview. All use the existing owned local
+Supabase fixture and actual RPC responses. No result injection or camera mocks.
+A nonexistent access code and ticket symbol produced distinct real errors.
+
+The seeded administrator was authenticated through the real AuthService as a
+fixture prerequisite (not a claimed UI login recording). Its actual scanner menu
+exposed the editor-only display settings. Product selection and adding the form's
+email answer were performed through the UI. Field options and advanced controls
+were inspected, then an already-used ticket was previewed without admission.
+The actual settings save succeeded; reopening the event and its menu settings
+retained email visibility and selected-products mode. The manual-search option
+was also enabled through UI. No horizontal overflow was observed at 390 px.
+
+Both localized articles now explain that settings apply across the event, which
+core fields cannot be hidden, selected products, order versus ticket answers,
+labels, hiding empty fields, ordering, optional search/prices/internal notes,
+offline authorization up to 12 hours, draft preview, save and renewal of access.
+No physical QR camera or offline sync claim is added. The timestamped private
+interaction log and tenth video chapter preserve the actions and outcomes.
