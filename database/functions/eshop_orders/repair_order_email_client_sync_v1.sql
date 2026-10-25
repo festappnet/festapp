@@ -28,7 +28,7 @@ CREATE OR REPLACE FUNCTION public.repair_order_email_client_sync_v1(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; oc public.occasions; src public.email_messages; active public.email_messages;
  v_begin jsonb; v_hash text; v_email text; v_form bigint; v_field bigint; v_fields jsonb;
- v_kind text; v_intent jsonb; v_users uuid[]; v_payload jsonb; v_details jsonb; v_origin text;
+ v_kind text; v_intent jsonb; v_users uuid[]; v_payload jsonb; v_details jsonb;
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  SELECT * INTO oc FROM public.occasions WHERE id=o.occasion;
@@ -106,10 +106,9 @@ BEGIN
    -- The existing confirmation renderer consumes the canonical checkout shape,
    -- not an order ID. Rebuild it from current facts without a checkout mutation.
    v_details:=public.get_order_details_for_email(o.id)->'data';
-   SELECT data->>'command_id' INTO v_origin FROM public.email_messages
-    WHERE order_id=o.id AND message_kind='order_confirmation' AND data->>'command_id' IS NOT NULL
-    ORDER BY id LIMIT 1;
-   v_payload:=v_payload||jsonb_build_object('command_id',v_origin,
+   -- Each explicit resend owns its command identity. Reusing the checkout
+   -- command collides with the unique confirmation-command index.
+   v_payload:=v_payload||jsonb_build_object('command_id',p_command_id,
     'ticket_order',jsonb_build_object('order',v_details->'order'||jsonb_build_object(
      'occasion',v_details->'occasion','reply_to',v_details->'reply_to',
      'form',jsonb_build_object('id',o.form,'data',v_details->'form_data'),
