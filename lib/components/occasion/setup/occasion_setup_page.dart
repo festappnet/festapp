@@ -41,7 +41,6 @@ import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
@@ -1659,9 +1658,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[850]
-            : Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         border: Border.all(
           color: hasIssue
               ? Theme.of(context).colorScheme.error
@@ -1738,7 +1735,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xfffff5df),
+              color: Theme.of(context).colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -1746,15 +1743,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               children: [
                 Text(
                   OccasionSetupStrings.ui('what_still_needs_attention'),
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
                 ),
                 for (final issue in issues)
                   ListTile(
                     dense: true,
-                    leading: const Icon(
-                      Icons.error_outline,
-                      color: Color(0xffad721b),
-                    ),
+                    textColor: Theme.of(context).colorScheme.onErrorContainer,
+                    iconColor: Theme.of(context).colorScheme.onErrorContainer,
+                    leading: const Icon(Icons.error_outline),
                     title: Text(issue.value),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _change((x) => x['step'] = issue.key),
@@ -2093,7 +2091,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _switch(Map<String, dynamic> data, String key, String label) =>
-      SwitchListTile.adaptive(
+      SwitchListTile(
         title: Text(label),
         value: data[key] == true,
         onChanged: (value) =>
@@ -2119,7 +2117,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
     }
     if (_questions[_questionIndex(d)].key == 'promotion') {
-      return SwitchListTile.adaptive(
+      return SwitchListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(OccasionSetupStrings.story('listingTitle')),
         subtitle: Text(OccasionSetupStrings.story('listingHint')),
@@ -2374,7 +2372,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   Widget _ticketChoices(Map<String, dynamic> d) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SwitchListTile.adaptive(
+          SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(OccasionSetupStrings.ui('use_tickets')),
             subtitle: Text(OccasionSetupStrings.ui(
@@ -2767,14 +2765,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _wizard(Map<String, dynamic> d) {
-    final step = d['step'] as int;
     final index = _questionIndex(d);
     final question = _questions[index];
     final isReview = question.key == 'review';
     final reviewReady = isReview && _reviewIssues(d).isEmpty;
-    final isEditor = question.key == 'form' ||
-        question.key == 'appearance' ||
-        question.key == 'ticket';
     final numbered = _questions.where((q) => !q.optional).toList();
     return OccasionSetupStoryShell(
       questionKeys: [for (final q in _questions) q.key],
@@ -2866,19 +2860,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           isReview || _presentationUploading || _finalizing ? null : _advance,
       nextLabel: CommonStrings.continueAction,
       onQuestionSelected: _presentationUploading ? null : _jump,
-      maxContentWidth: question.key == 'appearance' ||
-              question.key == 'ticket' ||
-              question.key == 'communication'
-          ? 1120
-          : step == 3
-              ? StylesConfig.formMaxWidth
-              : isReview || question.optional
-                  ? 960
-                  : 680,
-      centerQuestion: !isEditor &&
-          !isReview &&
-          !question.optional &&
-          question.key != 'communication',
       error: _error == null
           ? null
           : Row(

@@ -1,6 +1,8 @@
 import 'occasion_setup_strings.dart';
+
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/styles/styles_config.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 import '../../fonts/form_font_catalog.dart';
@@ -45,26 +47,32 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
   late Future<FormFontCatalog> _fonts = _loadFonts();
   @override
   Widget build(BuildContext context) => FutureBuilder<FormFontCatalog>(
-        future: _fonts,
-        builder: (context, snapshot) {
-          if (snapshot.hasError)
-            return TextButton(
-              onPressed: () => setState(() {
-                _fonts = _loadFonts();
-              }),
-              child: Text(OccasionSetupStrings.ui(
-                  'the_font_could_not_be_loaded_retry')),
-            );
-          if (!snapshot.hasData)
-            return const Center(child: CircularProgressIndicator());
-          final definition = occasionSetupPreviewDefinition(widget.draft);
-          final holder = FormHolder.fromDefinition(definition);
-          holder.controller = FormHolderController(globalKey: _key);
-          final appearance = OccasionSetupAppearance.read(widget.draft);
-          Color color(String key) =>
-              Color(int.parse('ff${appearance[key]}', radix: 16));
-          final theme = Theme.of(context);
-          return Theme(
+    future: _fonts,
+    builder: (context, snapshot) {
+      if (snapshot.hasError)
+        return TextButton(
+          onPressed: () => setState(() {
+            _fonts = _loadFonts();
+          }),
+          child: Text(
+            OccasionSetupStrings.ui('the_font_could_not_be_loaded_retry'),
+          ),
+        );
+      if (!snapshot.hasData)
+        return const Center(child: CircularProgressIndicator());
+      final definition = occasionSetupPreviewDefinition(widget.draft);
+      final holder = FormHolder.fromDefinition(definition);
+      holder.controller = FormHolderController(globalKey: _key);
+      final appearance = OccasionSetupAppearance.read(widget.draft);
+      Color color(String key) =>
+          Color(int.parse('ff${appearance[key]}', radix: 16));
+      final theme = Theme.of(context);
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: StylesConfig.formMaxWidth,
+          ),
+          child: Theme(
             data: theme.copyWith(
               textTheme: snapshot.data!.getTextTheme(
                 appearance['fontFamily'] as String,
@@ -118,7 +126,9 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 }

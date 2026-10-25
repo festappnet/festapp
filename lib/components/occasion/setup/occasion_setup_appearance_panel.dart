@@ -228,7 +228,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           title:
               Text(customLabel ?? OccasionSetupStrings.ui('custom_appearance')),
           children: [
-            SwitchListTile.adaptive(
+            SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(OccasionSetupStrings.ui('two_color_gradient')),
               value: gradient,
