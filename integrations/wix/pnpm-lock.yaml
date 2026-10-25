@@ -14,6 +14,9 @@ importers:
       '@wix/sdk':
         specifier: 1.21.18
         version: 1.21.18
+      '@wix/site':
+        specifier: 1.71.0
+        version: 1.71.0
       '@wix/site-window':
         specifier: 1.59.0
         version: 1.59.0
@@ -244,8 +247,17 @@ packages:
       '@noble/hashes':
         optional: true
 
+  '@wix/analytics@1.22.0':
+    resolution: {integrity: sha512-hFO9lMWvzKlVKBc5aAruuobq0cPEOMeJF2UmhFVMM3CK6FXSuEzTLl3c4WXJUYYYVPoeKXEInJ77O+XHwANrtg==}
+
   '@wix/app-extensions@1.0.198':
     resolution: {integrity: sha512-mjyShwOjDGrrQPwdzYgsKcvChHSF/9Mua20C9Y2rdhsrdpUCcBnloz2WPROS14wEV+fd+NXbDIGnirZP/hCwVw==}
+
+  '@wix/authentication@1.19.0':
+    resolution: {integrity: sha512-rKD28LCw00TQ+hrn44ODHZipg/2PcBXFUil4p45mZH/ePDWxxaSAl5NaEbyTjAOexkziUVzb+IvvmsC8tq/LpQ==}
+
+  '@wix/auto_sdk_headless-site-assets_scripts@1.0.15':
+    resolution: {integrity: sha512-8mPxqiTXJZEX2lnh4MlWMns40oXYrCeATqdMo7dr3A/pfJ8vZz91w0b+j6IJHRmPBQaEzXQI1HOg5oBPkVLmjw==}
 
   '@wix/auto_sdk_identity_authentication@1.0.73':
     resolution: {integrity: sha512-4R6nOBKuiQ0Tmxmma9oa5N4nwBze4DnVBZwaFtq/Nr2BX7s6dt5YhuN7RLK/ybd/PNImfi8BuDTbKWfg9HDGjQ==}
@@ -268,6 +280,9 @@ packages:
   '@wix/auto_sdk_redirects_redirects@1.0.59':
     resolution: {integrity: sha512-iiHOpa3DioII1MRWpVen2IXUQkC/fatJC4FdFNyyQM6ohtmi5E7WV9KUWEpiX6FmcXe+xzYX6DlpWx5KmdNZLQ==}
 
+  '@wix/consent-policy-manager@1.15.0':
+    resolution: {integrity: sha512-XIQeVkNYEdCmAA/jLVTFxzZ7E6lwHbd17HecHZaeCcWjZwVoGuFPlH4mAs4sdrUisMGxe3MJhIHWsoGZ3nBwmA==}
+
   '@wix/credits-types@1.0.3':
     resolution: {integrity: sha512-NalwotJuEso6zHvozUnmSh3KiiIecstL3zahgODvDmIPCnEZcCjnYK2l3QwD2hQPu/zga/QXwhLosxjkIdOR1w==}
 
@@ -288,6 +303,15 @@ packages:
 
   '@wix/error-handler-types@1.20.0':
     resolution: {integrity: sha512-tMi5BucbWs6CnwIoMaPteWu4J6TeI6O2TsYx5hznKERz509We3ZKi+liJLp+oe2Kd/IUxZr3BAh1Zr+bcbKMVA==}
+
+  '@wix/headless-localization-utils@1.0.15':
+    resolution: {integrity: sha512-ZM1aw52LH4nTcWRIYuFcONQbrl6zdevtXCry3PwaA9J4ty7m+G7o/L4Xv3RzKsYq7djsTeVLggFgdW6/6q2jbQ==}
+
+  '@wix/headless-node@1.45.0':
+    resolution: {integrity: sha512-kXg19nsPJpwSTy+iZw1aiIoxWnTRIw07CJKOqnrq1WB7sphrer930a0mIg1sji0Mm7uyM9Q4En8sTFjYq+IViA==}
+
+  '@wix/headless-site-assets@1.0.15':
+    resolution: {integrity: sha512-FT42DdCKtISz4UutVKPNI15dAYwNMmLyQQ8hqO0OcWIQHnrSgI1vjCQz0gIvB0TX5m/hJGPGh2qRmfMSr11/dg==}
 
   '@wix/identity@1.0.254':
     resolution: {integrity: sha512-L4DS7JyQT4vLlFeUwYcLaGCNdVV4EP8vcqeZVvu5MzlK4BQPHE0kfA6jHa84yY1IlVMLIsQqmSKAIBpI0VMcAg==}
@@ -310,6 +334,9 @@ packages:
   '@wix/monitoring-common@1.13.0':
     resolution: {integrity: sha512-gT7sMyoJ50O+jGFKxxlsvg6vZm2K7Bvmwzf5KI1reu2Owz6eC7Rf2pDKnlMrHLTn2uJA7Zxynrj2nS8j0OURdQ==}
 
+  '@wix/monitoring-common@1.16.0':
+    resolution: {integrity: sha512-mK+MuOXcQrlICVplbo26HmTxds/Ab4whSWWGOGWFrUIdvh3nCiWaL3gA4xkUVDV/KGdHBC16lP+AkfWSrdh/bw==}
+
   '@wix/monitoring-types@0.12.0':
     resolution: {integrity: sha512-nlv4jwQMewjzPIWFF9rnKf9WhVojj67oLtvilYXfi+lnhXyVlYOfqCnL3qLJuKtJ6wT5XIJdt0Fj0su2NM5taQ==}
 
@@ -322,8 +349,17 @@ packages:
   '@wix/monitoring-velo@1.30.0':
     resolution: {integrity: sha512-FS8absO1xrTT5754SisppAsZNGZpc2HaTgQWtxYjFB3GbERAADp2LR+7aFCBdrskkjeM6eVSMa5t9jF+OLRohQ==}
 
+  '@wix/monitoring-velo@1.35.0':
+    resolution: {integrity: sha512-NisG8ps8GdPdUD+JiH+Jut98tq+RCEtgkYzQgiggkDqw0URxgh47WSLeoQbe2h6AI/LnCpPSztq9cAsSEQ6biw==}
+
   '@wix/monitoring@1.0.0':
     resolution: {integrity: sha512-l/0UaT0n4AFVU/7cbe5PLu09WX8s3Zs+dkHf0duacTYwjgnCA+oXuXJ+S2zIKo/85EBZvDEEUx2eD3FUFEztsA==}
+
+  '@wix/monitoring@1.2.0':
+    resolution: {integrity: sha512-ep1Ul32F9hGI+RqUMZbN5LaCkiFNwtpy2zcqbUhgi+6HDD/cJ6d+CQO7kbnXNVq5hIZBNKgffVS1WLBGJjuPSQ==}
+
+  '@wix/multilingual-manager@1.14.0':
+    resolution: {integrity: sha512-sFuxY3JtPGpRIaZgv76vcgeIqg/dzNyiqBw+JxxgtWXj5q9kW0ChkAZCtMDez1GEcaubavO5oCzDAMD1nFpU+w==}
 
   '@wix/public-editor-platform-errors@1.9.0':
     resolution: {integrity: sha512-nHiypFes1kQ0eUlwulwM6fmi5HTTJ0wFISPb6FUgcq3HpvDHbAO3DP8cLOIVYppyTfNv7Ew7yv/oubnuLcX/YA==}
@@ -363,6 +399,9 @@ packages:
 
   '@wix/site-window@1.59.0':
     resolution: {integrity: sha512-z1RwSWFEzzhPZ8/pl27xRY5sJ2oownzzQUO42U14nfCA/xg4oqCj46TZwOlTuLNqvvD6MXeNDhZuVeN+3TQ1Pw==}
+
+  '@wix/site@1.71.0':
+    resolution: {integrity: sha512-oeFLdX19RE5+byg5UXjQvRj4sacnda8iy84GdShHErBnkgKExojv0/vzDeVSxHCUqtgJqQp0S5RL3SyJTgiJxQ==}
 
   '@wix/workspace@1.3.21':
     resolution: {integrity: sha512-nNiSAxWc011uCBjzflwrU6vBsNgS5/igWbrxCFCzgMGK7as+i8v6kJVrUZEqKb1oy3BllQPMkne7+dSdvxtMqw==}
@@ -439,6 +478,9 @@ packages:
     peerDependenciesMeta:
       canvas:
         optional: true
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   lru-cache@11.5.3:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
@@ -661,7 +703,19 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
+  '@wix/analytics@1.22.0': {}
+
   '@wix/app-extensions@1.0.198': {}
+
+  '@wix/authentication@1.19.0':
+    dependencies:
+      '@wix/sdk-runtime': 1.0.28
+      '@wix/sdk-types': 1.17.12
+
+  '@wix/auto_sdk_headless-site-assets_scripts@1.0.15':
+    dependencies:
+      '@wix/sdk-runtime': 1.0.28
+      '@wix/sdk-types': 1.17.12
 
   '@wix/auto_sdk_identity_authentication@1.0.73':
     dependencies:
@@ -697,6 +751,8 @@ snapshots:
     dependencies:
       '@wix/sdk-runtime': 1.0.26
       '@wix/sdk-types': 1.17.12
+
+  '@wix/consent-policy-manager@1.15.0': {}
 
   '@wix/credits-types@1.0.3':
     dependencies:
@@ -744,6 +800,21 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.29.10
 
+  '@wix/headless-localization-utils@1.0.15':
+    dependencies:
+      '@wix/headless-node': 1.45.0
+      '@wix/headless-site-assets': 1.0.15
+
+  '@wix/headless-node@1.45.0':
+    dependencies:
+      '@babel/runtime': 7.29.10
+      '@wix/monitoring-velo': 1.35.0
+      '@wix/sdk-runtime': 1.0.28
+
+  '@wix/headless-site-assets@1.0.15':
+    dependencies:
+      '@wix/auto_sdk_headless-site-assets_scripts': 1.0.15
+
   '@wix/identity@1.0.254':
     dependencies:
       '@wix/auto_sdk_identity_authentication': 1.0.73
@@ -781,6 +852,8 @@ snapshots:
 
   '@wix/monitoring-common@1.13.0': {}
 
+  '@wix/monitoring-common@1.16.0': {}
+
   '@wix/monitoring-types@0.12.0': {}
 
   '@wix/monitoring-types@0.17.0': {}
@@ -793,9 +866,24 @@ snapshots:
       '@wix/monitoring-common': 1.13.0
       '@wix/monitoring-types': 0.17.0
 
+  '@wix/monitoring-velo@1.35.0':
+    dependencies:
+      '@wix/monitoring': 1.2.0
+      '@wix/monitoring-common': 1.16.0
+      '@wix/monitoring-types': 1.1.0
+
   '@wix/monitoring@1.0.0':
     dependencies:
       '@wix/monitoring-types': 0.17.0
+
+  '@wix/monitoring@1.2.0':
+    dependencies:
+      '@wix/monitoring-types': 1.1.0
+
+  '@wix/multilingual-manager@1.14.0':
+    dependencies:
+      '@wix/headless-localization-utils': 1.0.15
+      lodash: 4.18.1
 
   '@wix/public-editor-platform-errors@1.9.0': {}
 
@@ -863,6 +951,15 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.29.10
       '@wix/sdk-runtime': 0.3.62
+      '@wix/sdk-types': 1.17.12
+
+  '@wix/site@1.71.0':
+    dependencies:
+      '@babel/runtime': 7.29.10
+      '@wix/analytics': 1.22.0
+      '@wix/authentication': 1.19.0
+      '@wix/consent-policy-manager': 1.15.0
+      '@wix/multilingual-manager': 1.14.0
       '@wix/sdk-types': 1.17.12
 
   '@wix/workspace@1.3.21(@wix/sdk@1.21.18)':
@@ -987,6 +1084,8 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  lodash@4.18.1: {}
 
   lru-cache@11.5.3: {}
 
