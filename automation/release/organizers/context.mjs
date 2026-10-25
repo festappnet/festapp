@@ -61,7 +61,7 @@ export function marketingMedia(context) {
   if (!context.enabled) return [];
   const {projection, clips, pages} = context;
   const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>section.clips ?? []), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
-  return [...new Set([projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
+  return [...new Set([projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.guide?.chapters ?? []).map(chapter=>chapter.image.src),...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
     ...(clips.sections ?? []).flatMap(section=>(section.showcase?.items ?? []).map(item=>item.image))].filter(Boolean))];
 }
