@@ -758,6 +758,8 @@
   },
   "Administration": {
     "webAnalytics": "Analityka internetowa",
+    "analyticsVisits": "Wizyty i źródła ruchu",
+    "analyticsPages": "Wyświetlenia stron",
     "openCloudflareAnalytics": "Otwórz statystyki w Cloudflare",
     "organizationSettings": "Ustawienia organizacji",
     "copyLink": "Kopiuj link",

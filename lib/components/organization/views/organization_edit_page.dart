@@ -146,6 +146,73 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
     }
   }
 
+  Widget _analyticsReport({
+    required String label,
+    required String siteTags,
+    String? host,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 4, right: 16),
+            child: Icon(Icons.bar_chart_outlined),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${AdministrationStrings.webAnalytics} - $label',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final report in [
+                      (
+                        slug: 'visits',
+                        label: AdministrationStrings.analyticsVisits
+                      ),
+                      (
+                        slug: 'page-views',
+                        label: AdministrationStrings.analyticsPages
+                      ),
+                    ])
+                      TextButton.icon(
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: Text(
+                          report.label,
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
+                        ),
+                        onPressed: () => LaunchUrlService.openExternalUrl(
+                          Uri.https(
+                            'dash.cloudflare.com',
+                            '/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/${report.slug}',
+                            {
+                              'siteTag~in': siteTags,
+                              if (host != null) 'host': host,
+                              'excludeBots': 'Yes',
+                            },
+                          ).toString(),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return OrganizationAdminGuard(
@@ -171,32 +238,23 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (orgId == 3)
-                              for (final site in const {
-                                'vstupenky.online':
-                                    '4b64cee2415d4110b11abc4d56013278',
-                                'plesy.vstupenky.online':
-                                    '697415ebf6954b9a9998f57b4ea59bb3',
-                              }.entries)
-                                ListTile(
-                                  leading: const Icon(Icons.bar_chart_outlined),
-                                  title: Text(
-                                      '${AdministrationStrings.webAnalytics} - ${site.key}'),
-                                  subtitle: Text(AdministrationStrings
-                                      .openCloudflareAnalytics),
-                                  trailing: const Icon(Icons.open_in_new),
-                                  onTap: () => LaunchUrlService.openExternalUrl(
-                                    Uri.https(
-                                      'dash.cloudflare.com',
-                                      '/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits',
-                                      {
-                                        'siteTag~in': site.value,
-                                        'host': site.key,
-                                        'excludeBots': 'Yes',
-                                      },
-                                    ).toString(),
-                                  ),
-                                ),
+                            if (orgId == 3) ...[
+                              _analyticsReport(
+                                label: 'plesy.vstupenky.online',
+                                siteTags: '697415ebf6954b9a9998f57b4ea59bb3',
+                                host: 'plesy.vstupenky.online',
+                              ),
+                              _analyticsReport(
+                                label: 'vstupenky.online',
+                                siteTags: '4b64cee2415d4110b11abc4d56013278',
+                                host: 'vstupenky.online',
+                              ),
+                              _analyticsReport(
+                                label: 'Festapp + Absolventský Velehrad',
+                                siteTags:
+                                    '3335204bc4014e9c9e8d7568920650f8,cddce39c98cd4949b882c865471ab50d',
+                              ),
+                            ],
                             ListTile(
                                 leading: const Icon(Icons.verified_outlined),
                                 title: Text(VerificationStrings.text('queue')),

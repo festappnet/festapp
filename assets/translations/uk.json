@@ -924,6 +924,8 @@
   },
   "Administration": {
     "webAnalytics": "Вебаналітика",
+    "analyticsVisits": "Відвідування та джерела трафіку",
+    "analyticsPages": "Перегляди сторінок",
     "openCloudflareAnalytics": "Відкрити статистику в Cloudflare",
     "organizationSettings": "Налаштування організації",
     "copyLink": "Скопіювати посилання",

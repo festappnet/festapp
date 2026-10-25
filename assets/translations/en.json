@@ -1248,6 +1248,8 @@
   },
   "Administration": {
     "webAnalytics": "Web analytics",
+    "analyticsVisits": "Visits and traffic sources",
+    "analyticsPages": "Page views",
     "openCloudflareAnalytics": "Open analytics in Cloudflare",
     "organizationSettings": "Organization settings",
     "findUnitHint": "Find organization...",
