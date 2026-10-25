@@ -1,5 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/components/images/image_area.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -47,6 +52,12 @@ void main() {
   WidgetEnvironmentFixture.register();
   late RootSupabaseFixture backend;
   setUpAll(() async {
+    await (FontLoader('Futura')
+          ..addFont(rootBundle.load('fonts/Futura PT Book.ttf')))
+        .load();
+    await (FontLoader('MaterialIcons')
+          ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
+        .load();
     backend = await RootSupabaseFixture.open(
         (request) => http.Response('{}', 200, request: request));
   });
@@ -66,6 +77,7 @@ void main() {
             .pumpWidget(
                 tester,
                 MaterialApp(
+                    theme: ThemeConfig.theme(brightness: Brightness.dark),
                     home: MediaQuery(
                         data: MediaQueryData(
                             size: size, textScaler: TextScaler.linear(scale)),
@@ -74,6 +86,7 @@ void main() {
                                 child: Padding(
                                     padding: const EdgeInsets.all(24),
                                     child: OccasionSetupEmailTemplates(
+                                        unitId: 1,
                                         draft: {},
                                         loadPreview: (draft) async =>
                                             catalog(draft),
@@ -81,6 +94,25 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(EmailTemplateCard), findsNWidgets(5));
         expect(tester.takeException(), isNull);
+        expect(
+            find.byKey(const ValueKey('setup-email-banner')), findsOneWidget);
+        if (size.width == 1200 && scale == 1) {
+          expect(tester.getSize(find.byType(EmailTemplateCard).first).height,
+              lessThan(200));
+        }
+        const screenshots =
+            String.fromEnvironment('SETUP_EMAIL_SCREENSHOT_DIR');
+        if (screenshots.isNotEmpty && scale == 1) {
+          final boundary = tester.renderObject<RenderRepaintBoundary>(
+              find.byType(RepaintBoundary).first);
+          final image = (await tester.runAsync(() => boundary.toImage()))!;
+          final bytes = (await tester.runAsync(
+              () => image.toByteData(format: ui.ImageByteFormat.png)))!;
+          Directory(screenshots).createSync(recursive: true);
+          File('$screenshots/emails-${size.width.toInt()}.png')
+              .writeAsBytesSync(bytes.buffer.asUint8List());
+          image.dispose();
+        }
         for (final element in find.byType(EmailTemplateCard).evaluate()) {
           final box = element.renderObject! as RenderBox;
           final point = box.localToGlobal(Offset.zero);
@@ -89,6 +121,39 @@ void main() {
       });
     }
   }
+  testWidgets('banner changes stay in the draft beneath compact email cards',
+      (tester) async {
+    final patches = <Map<String, dynamic>>[];
+    await WidgetEnvironmentFixture(
+            locale: const Locale('cs'),
+            translations: jsonDecode(
+                    File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>)
+        .pumpWidget(
+            tester,
+            MaterialApp(
+                home: Scaffold(
+                    body: SingleChildScrollView(
+                        child: OccasionSetupEmailTemplates(
+                            unitId: 1,
+                            draft: const {},
+                            loadPreview: (draft) async => catalog(draft),
+                            onChanged: patches.add)))));
+    await tester.pumpAndSettle();
+    final banner = find.byKey(const ValueKey('setup-email-banner'));
+    expect(
+        tester.getTopLeft(banner).dy,
+        greaterThan(
+            tester.getBottomLeft(find.byType(EmailTemplateCard).last).dy));
+    tester.widget<ImageArea>(banner).onRemove();
+    await tester.pumpAndSettle();
+    expect(patches.single, {'emailBanner': null});
+    expect(
+        backend.requests
+            .where((r) => r.url.path.contains('update_entity_email_banner')),
+        isEmpty);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
       'editing saves only a draft override and never updates the unit template',
       (tester) async {

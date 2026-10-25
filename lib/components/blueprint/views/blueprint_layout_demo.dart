@@ -160,6 +160,7 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
                               child: BlueprintPlanEditor(
                                   controller: controller,
                                   loadTextResources: widget.loadTextResources,
+                                  nativeTextPreview: true,
                                   unitId: widget.unitId,
                                   busy: _pending,
                                   onBusyChanged: (busy) {

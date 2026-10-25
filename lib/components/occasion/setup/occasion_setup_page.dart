@@ -1124,10 +1124,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return assets.resolve(prepared);
       }
 
-      final resources = await prepare(
-        draft.document,
-        await _store.blueprintResources(_stored),
-      );
+      // Opening a template is local authoring. Canonical text is prepared only
+      // when Save captures the document, through prepareResources below.
+      final resources =
+          await assets.resolve(await _store.blueprintResources(_stored));
       if (!mounted) return;
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
@@ -2154,6 +2154,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (_questions[_questionIndex(d)].key == 'communication') {
       return OccasionSetupCommunication(
         key: const ValueKey('communication'),
+        onBusyChanged: (busy) => setState(() => _presentationUploading = busy),
         loadPreview: _loadEmailPreview,
         draftId: _stored.id,
         unitId: _stored.unit,

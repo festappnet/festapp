@@ -1,5 +1,6 @@
 import policy from './layout-text-policy.json' with {type:'json'};
-import * as hb from 'npm:harfbuzzjs@1.6.3';
+// @ts-types="./vendor/harfbuzzjs/index.d.mts"
+import * as hb from './vendor/harfbuzzjs/index.mjs';
 import {digest,TicketFontError,type TicketFont} from './ticketFonts.ts';
 
 /** Immutable preparation identity. Never choose an engine from request data. */
