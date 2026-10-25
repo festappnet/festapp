@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "b1160f337782695a043721ee7e6365ed401c1562",
+  "release": {
+    "version": "0.20.398+899",
+    "note": "Keep help runtime within help asset boundary"
+  }
+}
