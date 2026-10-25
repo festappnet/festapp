@@ -1,0 +1,66 @@
+{
+  "checkedAt": "2026-10-25",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "widgetExtensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "widgetName": "vstupenky.online",
+  "widgetTag": "vstupenky-online-form",
+  "frontendSdkEnabled": true,
+  "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+  "settingsUrl": "https://festapp-wix.pages.dev/settings",
+  "registrationReadback": "Authenticated Wix component listing returned CUSTOM_ELEMENT_WIDGET with the assigned ID, public URLs, tag and @wix/site-site dependency",
+  "initialQaPlacement": {
+    "autoAdd": "homepage",
+    "essential": false,
+    "addElementsPanel": false,
+    "note": "Development bootstrap; final install/add-panel experience remains to qualify."
+  },
+  "devSite": {
+    "metaSiteId": "14641e99-51d9-40f8-b768-4ffc1f5d3929",
+    "documentId": "ee35a3e8-7faa-4065-a84b-d9c6a837e2de",
+    "editor": "Wix Editor",
+    "name": "Festapp Tickets - Wix Editor QA",
+    "published": true,
+    "installationVerified": true,
+    "installationEvidence": "evidence/editor-20261025.json: widget inserted from native App Widgets, settings saved and retained after cold browser reopen",
+    "widgetOnCanvasVerified": true,
+    "siteAppRecordObserved": true,
+    "note": "Earlier Setup required snapshot was superseded by completed Editor placement. Published runtime and other editor qualification remain pending.",
+    "publicUrl": "https://dev-sitex-1268240078.wix-dev-sites.org/",
+    "publishedCheckoutEvidence": "published-checkout-20261025.json",
+    "syntheticFormAvailability": "Only in disposable backend through QA transport; not a production sales/demo form"
+  },
+  "paidActionTaken": false,
+  "marketplaceSubmission": false,
+  "currentWidgetConfiguration": {
+    "revision": "2",
+    "autoAdd": false,
+    "essential": false,
+    "addElementsPanel": true,
+    "description": "Vložte prodejní formulář ze vstupenky.online. Akce, vstupenky i objednávky spravujete ve službě.",
+    "previewImage": "Existing canonical brand icon uploaded for development; replace with a real widget screenshot before marketplace submission",
+    "previewImageUrl": "https://static.wixstatic.com/media/397be0_af584b79dd0a4dd2a5f5b59e91d18d13~mv2.png",
+    "verification": "Authenticated Wix component readback returned default-preset thumbnail URL and autoAdd=false"
+  },
+  "appInfoDraft": {
+    "name": "vstupenky.online",
+    "teaser": "Embed your vstupenky.online ticket form",
+    "saved": true,
+    "termsUrl": "https://vstupenky.online/terms/",
+    "storeIcon": "Saved 1000x1000 existing ticket vector; see portal receipt",
+    "marketplaceSubmission": false
+  },
+  "studioDevSite": {
+    "metaSiteId": "233dc4be-35f1-4187-93dd-5a3313c00ef6",
+    "documentId": "044eeafb-18f5-48bf-9c71-6cbe44ceb328",
+    "editor": "Wix Studio",
+    "name": "Festapp Tickets - Wix Studio QA",
+    "published": true,
+    "url": "https://dev-sitex1642529107.wix-development-sites.org/",
+    "installationVerified": true,
+    "settingsPersistenceVerified": true,
+    "receipt": "studio-20261025.json",
+    "qualificationComplete": false,
+    "currentWidgetCount": 2,
+    "publishedPairReceipt": "published-pair-20261025.json"
+  }
+}

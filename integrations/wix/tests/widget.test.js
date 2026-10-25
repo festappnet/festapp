@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
-import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN} from '../src/config.js';
+import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN, HELP_URL} from '../src/config.js';
 import {registerTicketElement} from '../src/element.js';
 import {initSettings, saveSettings} from '../src/settings_controller.js';
 
@@ -29,7 +29,7 @@ test('Editor, Preview and unavailable Wix context never load a live form or serv
     await tick();
     assert.equal(element.querySelector('iframe'), null);
     assert.equal(document.scripts.length, 0);
-    assert.equal(element.querySelector('a').href, `${SERVICE_ORIGIN}/napoveda/vlozeni-na-web/`);
+    assert.equal(element.querySelector('a').href, HELP_URL);
     dom.window.close();
   }
   const {dom, element, document} = host(async () => {throw Error('no Wix context');});
@@ -85,6 +85,27 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   await assert.rejects(saveSettings({async setProp(name) {writes.push(name);},async getProp() {return 'unexpected';}}, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`}));
   assert.deepEqual(writes,['form-url']);
   assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],'true');
+});
+
+test('settings wait for propagated readback before writing sibling properties', async () => {
+  let pending, reads = 0;
+  const confirmed = [];
+  await saveSettings({
+    async setProp(name, value) {
+      assert.equal(pending, undefined, 'previous property must be confirmed first');
+      pending = {name, value};
+      reads = 0;
+    },
+    async getProp(name) {
+      assert.equal(name, pending.name);
+      if (++reads < 3) return undefined;
+      const value = pending.value;
+      confirmed.push(name);
+      pending = undefined;
+      return value;
+    },
+  }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
+  assert.deepEqual(confirmed, ['form-url', 'form-title', 'inherit-style']);
 });
 
 test('settings page fails closed outside editor and surfaces save success', async () => {

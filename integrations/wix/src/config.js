@@ -1,5 +1,5 @@
 export const SERVICE_ORIGIN = 'https://vstupenky.online';
-export const HELP_URL = `${SERVICE_ORIGIN}/napoveda/vlozeni-na-web/`;
+export const HELP_URL = 'https://festapp-wix.pages.dev/help';
 export const TAG_NAME = 'vstupenky-online-form';
 export const DEFAULT_TITLE = 'Prodej vstupenek - vstupenky.online';
 export const PROPERTIES = ['form-url', 'form-title', 'inherit-style'];

@@ -1,0 +1,10 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cache-Control: public, max-age=300, must-revalidate
+
+/widget.js
+  Access-Control-Allow-Origin: *
+
+/settings.js
+  Access-Control-Allow-Origin: *

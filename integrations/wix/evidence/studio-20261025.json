@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-25T18:28:25.310395+00:00",
+  "editor": "Wix Studio",
+  "metaSiteId": "233dc4be-35f1-4187-93dd-5a3313c00ef6",
+  "documentId": "044eeafb-18f5-48bf-9c71-6cbe44ceb328",
+  "publishedUrl": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "developmentSiteCost": "Native free Premium development-site flow; no upgrade or payment selected",
+  "insertion": "Add Elements > App Widgets > vstupenky.online",
+  "editorMode": "Editor",
+  "previewMode": "Preview",
+  "editorAndPreviewCheckoutFrames": 0,
+  "editorAndPreviewHelperLoaded": false,
+  "propsRetainedAfterColdBrowserReopen": {
+    "form-url": "https://vstupenky.online/form/wix-qa-20261025",
+    "form-title": "Wix Studio QA - vstupenky",
+    "inherit-style": "true"
+  },
+  "publishedSdkMode": "Site",
+  "originalTransport": {
+    "backend": "http://127.0.0.1:59821",
+    "syntheticBackendGuard": true,
+    "templateSha256": "23af33794ba6b30ac875c3c8a59a59c535c86d998394a86f8587c697ab2f4108",
+    "clientVersion": "0.20.394+895",
+    "transportAdapted": true,
+    "productionCorsQualified": false,
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/form/wix-qa-20261025",
+        "status": 200,
+        "documentAdapted": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      }
+    ],
+    "networkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "initialTargetsConfigured": 1,
+    "ready": true
+  },
+  "mobileObservation": {
+    "height": 800,
+    "helperLoaded": true,
+    "iframeHeight": 831,
+    "messages": [
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 300,
+        "sourceMatches": true,
+        "type": "scroll-save"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 300,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 257,
+        "sourceMatches": true,
+        "type": "resize"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 257,
+        "sourceMatches": true,
+        "type": "scroll-request"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 257,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 257,
+        "sourceMatches": true,
+        "type": "resize"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 257,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "resize"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 13,
+        "sourceMatches": true,
+        "type": "resize"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 299,
+        "sourceMatches": true,
+        "type": "scroll-restore"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 299,
+        "sourceMatches": true,
+        "type": "price"
+      },
+      {
+        "origin": "https://vstupenky.online",
+        "protocol": 1,
+        "scrollY": 299,
+        "sourceMatches": true,
+        "type": "price"
+      }
+    ],
+    "mode": "Site",
+    "pageWidth": 320,
+    "scrollY": 299,
+    "widgetHeight": 842,
+    "width": 320
+  },
+  "summary": {
+    "submitButtonBottomInHost": 784.25,
+    "viewportHeight": 800,
+    "scrollSaved": 300,
+    "scrollInSummary": 13,
+    "scrollAfterClose": 299,
+    "scrollTolerancePx": 1,
+    "focusAfterClose": "Continue",
+    "submittedOrder": false
+  },
+  "originalLiveHelperFailure": {
+    "sha256": "f7051b56a8f14856fdad7bad02fb86cfb1df62ccd4529ca97d633252afa342d1",
+    "ancestorBackground": "rgba(255, 255, 255, 0)",
+    "continueText": "rgba(255, 255, 255, 0)",
+    "beforeImage": "screenshots/studio-contrast-before.png"
+  },
+  "candidateHelperVerification": {
+    "sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+    "transport": {
+      "backend": "http://127.0.0.1:59821",
+      "syntheticBackendGuard": true,
+      "templateSha256": "23af33794ba6b30ac875c3c8a59a59c535c86d998394a86f8587c697ab2f4108",
+      "clientVersion": "0.20.394+895",
+      "helperSource": "repository candidate, not deployed",
+      "helperOverrideSha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+      "transportAdapted": true,
+      "productionCorsQualified": false,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/embed.js",
+          "status": 200,
+          "helperAdapted": true
+        },
+        {
+          "method": "GET",
+          "path": "/form/wix-qa-20261025",
+          "status": 200,
+          "documentAdapted": true
+        },
+        {
+          "method": "OPTIONS",
+          "path": "/rest/v1/rpc/get_form_by_link",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/rest/v1/rpc/get_form_by_link",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/embed.js",
+          "status": 200,
+          "helperAdapted": true
+        },
+        {
+          "method": "OPTIONS",
+          "path": "/rest/v1/rpc/get_form_by_link",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/rest/v1/rpc/get_form_by_link",
+          "status": 200
+        }
+      ],
+      "networkFenceProbes": [
+        {
+          "host": "api.festapp.net",
+          "errorText": "net::ERR_NAME_NOT_RESOLVED"
+        },
+        {
+          "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+          "errorText": "net::ERR_NAME_NOT_RESOLVED"
+        }
+      ],
+      "initialTargetsConfigured": 1,
+      "ready": true
+    },
+    "continueTextDisabledAndEnabled": "rgb(255, 255, 255)",
+    "continueBackground": "rgb(0, 0, 0)",
+    "mobileHostAndIframeWidth": 320,
+    "mobileHorizontalOverflow": false,
+    "darkHostSimulation": {
+      "method": "Temporary styles only in owned test DOM; not a saved Wix theme",
+      "hostAndChildBackground": "rgb(18, 18, 18)",
+      "childEmbedTextVariable": "rgb(244, 244, 244)",
+      "buttonText": "rgb(255, 255, 255)",
+      "buttonBackground": "rgb(0, 0, 0)"
+    },
+    "candidateImage": "screenshots/studio-contrast-candidate.png",
+    "sharedHelperTestsPassed": 21,
+    "liveDeploymentVerified": false
+  },
+  "settingsScroll": {
+    "sourceHead": "ce50d3832",
+    "nativePanelWidth": 300,
+    "nativePanelHeight": 400,
+    "mainOverflow": "auto",
+    "helpReachedByTab": true,
+    "helpBottom": 376,
+    "scrollBeforeSave": 169,
+    "scrollAfterSave": 0,
+    "visibleStatusTop": 120,
+    "visibleStatusBottom": 162,
+    "status": "Uloženo. Formulář ověřte na zveřejněném webu.",
+    "hostScrollAfterSave": 0
+  },
+  "additionalOrdersCreated": 0,
+  "fixtureTotalOrders": 1,
+  "fullyQualified": false,
+  "remaining": [
+    "Deploy candidate shared helper through canonical main and prod/festapptickets, then repeat live contrast check",
+    "Production backend/CORS, payment lifecycle, native Safari, other lifecycle cases remain pending",
+    "Harmony is absent from native dev-site selector; ordinary free Harmony site route not investigated"
+  ]
+}

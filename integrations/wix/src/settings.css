@@ -1,6 +1,7 @@
 :root { font-family: Arial, sans-serif; color: #162d3d; background: #fff; font-size: 14px; }
+html, body { height: 100%; overflow: hidden; }
 body { margin: 0; }
-main { padding: 24px; }
+main { box-sizing: border-box; height: 100%; overflow: auto; overscroll-behavior: contain; padding: 24px; }
 h1 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
 p { line-height: 1.5; }
 label { display: block; margin-top: 20px; margin-bottom: 6px; font-weight: 600; }

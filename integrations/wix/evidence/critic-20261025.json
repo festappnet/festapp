@@ -1,0 +1,101 @@
+{
+  "reviewedAt": "2026-10-25",
+  "reviewer": "Independent wix_critic agent explicitly requested by owner",
+  "sourceHead": "7b9f85d478418480cdd417d4f4d1aba61c5fcdc5",
+  "localVerdict": "No remaining demonstrated local blocker for standalone static asset deployment",
+  "finding": {
+    "priority": "P1",
+    "file": "src/widget.js",
+    "problem": "Self-managed widget called site-window.viewMode without initializing the self-managed Site host",
+    "resolution": "Lazy @wix/site host + @wix/sdk client using the assigned app ID; manifest records actual app ID; bundled-entry SDK regression tests added",
+    "state": "FIXED_REVIEWED"
+  },
+  "coverage": [
+    "Canonical public-form URL validation and source/origin/instance boundary",
+    "Serialized settings writes and readback",
+    "Checkout ownership retained by canonical service",
+    "Sealed public-only archive and separate private data",
+    "Truthful distinction between preparation, registration, hosting and actual host qualification"
+  ],
+  "remainingPublicationGates": [
+    "Written applicable billing model / ticket face value exclusions / zero fixed publisher fee confirmation",
+    "Real Wix host, editor and checkout qualification",
+    "Current store identity, assets, help and required reporting implementation"
+  ],
+  "supportRequestReview": {
+    "file": "SUPPORT-REQUEST.md",
+    "verdict": "No factual blocker after adding explicit app-instance attribution, API reporting and uninstall/reinstall questions",
+    "sentAtReview": false,
+    "currentSent": true,
+    "supportReceipt": "support-history-20261025.json"
+  },
+  "finalEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking finding; site app record is explicitly distinguished from real host/widget qualification",
+    "corrections": "Historical sent flag clarified; history marked pre-submission; real checkout phrasing changed to a pending requirement"
+  },
+  "settingsPropagationFixReview": {
+    "date": "2026-10-25",
+    "verdict": "Approved bounded polling until getProp confirms each setProp; one write per property, stop before sibling write on timeout",
+    "source": "https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop",
+    "regressionTest": "Stale reads before each confirmed property; asserts next property write only after confirmation",
+    "testsPassed": 12
+  },
+  "finalEditorEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No unsupported checkout/publication/readiness claims; align historical installation flags and test count with latest editor receipt",
+    "correctionsApplied": true
+  },
+  "publishedCheckoutReview": {
+    "date": "2026-10-25",
+    "verdict": "Scoped published Wix checkout with production JS/helper and disposable backend verified; not production CORS/payments/native Safari",
+    "correctionsApplied": [
+      "SQL IS DISTINCT FROM guards missing organization",
+      "Persistent DNS fencing verified before interception and after SIGKILL",
+      "Fetch setup completes before READY",
+      "Owned headless browser and exact flags verified; shutdown restricted to it"
+    ],
+    "afterKillReceipt": "published-checkout-20261025.json"
+  },
+  "studioAndPortalReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking source/evidence issue; candidate helper and simulated dark styling explicitly scoped; native portal CDN403 and unsaved phone recorded",
+    "sharedHelperTestsPassed": 21,
+    "candidateHelperOverrideReviewed": true,
+    "targetDestroyedStartupWaitReviewed": true,
+    "sourcePrReady": true,
+    "marketplaceReady": false
+  },
+  "publicGuideReview": {
+    "date": "2026-10-25",
+    "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+    "verdict": "No content blocker; preparation notice, Editor/Studio steps and pending commercial terms match evidence",
+    "finding": "Existing placeholder test expected the old help URL",
+    "resolution": "Assertion now imports HELP_URL; all 12 Wix tests pass",
+    "guideLinkReadback": "https://vstupenky.online/napoveda/prodejni-formular/ HTTP 200 independently verified",
+    "mobileWidth": 320,
+    "documentScrollWidth": 320
+  },
+  "studioLifecycleReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: evidence and SETUP matrix correctly prove Editor lifecycle/property isolation only; published interaction remains pending",
+    "receipt": "studio-lifecycle-20261025.json",
+    "cleanup": "Reviewer required actual reload readback before claiming persistent cleanup; final receipt includes cold-reopen original-only readback"
+  },
+  "helperOutageReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: published iframe/direct-link fallback only; absent synthetic route, untested checkout/recovery and explicit remaining gates correctly disclosed",
+    "receipt": "helper-outage-20261025.json"
+  },
+  "portalFollowupReview": {
+    "date": "2026-10-25",
+    "file": "../SUPPORT-FOLLOWUP.md",
+    "verdict": "PASS: owner/app-specific Harmony selector mismatch, limited mailbox observation, no global unsupported claim, no commercial acceptance; draft not sent and existing-thread/owner-authorization guard explicit"
+  },
+  "publishedPairReview": {
+    "date": "2026-10-25",
+    "receipt": "published-pair-20261025.json",
+    "verdict": "PASS: actual native published pair, independent values/helper instances and temporary runtime attribute isolation correctly scoped; no native saved-public-settings, alternate URL success or complete lifecycle claim",
+    "knownLimits": "First load near summary close disclosed; live contrast defect and complete checkout/payment/browser gates remain pending"
+  }
+}

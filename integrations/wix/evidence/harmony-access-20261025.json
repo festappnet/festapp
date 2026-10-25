@@ -1,0 +1,39 @@
+{
+  "verifiedAt": "2026-10-25T18:58:53.123489+00:00",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "owner": "info@festapp.net",
+  "nativePath": [
+    "Test App",
+    "Test on dev site",
+    "Create Dev Site",
+    "Choose site editor"
+  ],
+  "editorOptionsObserved": [
+    "Wix Editor",
+    "Wix Studio"
+  ],
+  "harmonyOptionObserved": false,
+  "newSiteCreated": false,
+  "creationCanceled": true,
+  "officialTestingGuide": {
+    "url": "https://dev.wix.com/docs/build-apps/launch-your-app/app-distribution/test-your-app/test-your-app-on-a-premium-site",
+    "updated": "2026-09-22",
+    "documentsHarmonyDevTemplates": true
+  },
+  "officialCompatibilityGuide": {
+    "url": "https://dev.wix.com/docs/build-apps/get-started/overview/about-wix-harmony-and-apps",
+    "updated": "2026-07-22",
+    "selfManagedSiteExtensionsSupported": true
+  },
+  "finding": "Documented free Harmony development-site route is not offered in this owner/app native selector",
+  "qualified": false,
+  "ordinarySiteAlternativeInvestigated": false,
+  "limits": "This does not establish that Harmony is unavailable globally or that all alternative ordinary-site routes fail",
+  "supportFollowup": "../SUPPORT-FOLLOWUP.md - draft only, not sent",
+  "billingReplyMailboxSearch": {
+    "query": "(from:(wix.com) OR from:(wix.dev)) (subject:(\"Custom billing\") OR subject:(\"vstupenky\") OR subject:(\"Developer support\")) newer_than:2d",
+    "matchingEmails": 0,
+    "scope": "Connected mailbox and this query only; not proof of absence in another inbox"
+  },
+  "browserClosed": true
+}

@@ -4,6 +4,22 @@ Status: **no Wix-specific billing or checkout approval obtained**. This document
 is a draft brief/questions for an authorized operator, not a message already sent.
 No new agreement, paid product or marketplace application was accepted.
 
+## Owner constraint confirmed 2026-10-25
+
+No fixed publisher registration, submission, listing or recurring retention fee
+is acceptable. A commission tied to sales/service revenue is acceptable, subject
+to the revenue-base distinction below. Do not buy a Wix Premium plan to build or
+test this widget. Wix documents [development sites](https://dev.wix.com/docs/build-apps/develop-your-app/development-sites/about-development-sites)
+as free, including Premium capabilities for app testing.
+
+The public agreement's pricing section describes revenue sharing and transaction
+charges; no separate fixed listing charge was found in the reviewed public
+materials. That observation is not an individually confirmed zero-fee offer.
+Record the actual publisher terms, zero upfront/recurring amounts and their
+evidence in `publisherFees` in private release inputs. The release check rejects
+unknown, nonzero and undocumented publisher fee declarations. Ordinary organizer
+website tariffs are separate from what Wix charges us to publish the app.
+
 ## Proposed service model
 
 The installer/widget is free to add. It connects an organizer's public

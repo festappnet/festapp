@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-25T17:09:21.099819+00:00",
+  "widgetSourceHead": "84d3f8d5f168717c73b3e194fbed2d0c129ac21d",
+  "editor": "Wix Editor",
+  "publishedDevelopmentSite": "https://dev-sitex-1268240078.wix-dev-sites.org/",
+  "marketplacePublication": false,
+  "environment": "Owned isolated headless Chrome; iPhone 15 UA emulation at 320x800, not native Safari",
+  "fixture": {
+    "container": "supabase_db_festapp-vo-wordpress-20261023",
+    "backend": "http://127.0.0.1:59821",
+    "organization": "Test Organization",
+    "formId": 9,
+    "link": "wix-qa-20261025",
+    "copiedProducts": true,
+    "existingTestOrdersReset": false
+  },
+  "adaptedTransport": {
+    "productionHtmlTemplateSource": "https://vstupenky.online/form/country_bal_vetrkovice?embed=1",
+    "templateSha256": "23af33794ba6b30ac875c3c8a59a59c535c86d998394a86f8587c697ab2f4108",
+    "clientVersion": "0.20.394+895",
+    "htmlResponseAdaptedForSyntheticRoute": true,
+    "productionFrontendJavaScriptModified": false,
+    "backendRequestsForwardedOnlyToDisposableBackend": true,
+    "anonymousKeyOverride": true,
+    "corsResponseAdapted": true,
+    "productionRouteOrCorsQualified": false
+  },
+  "publishedRuntime": {
+    "actualSdkMode": "Site",
+    "helperLoaded": true,
+    "protocolObservation": {
+      "version": 1,
+      "types": [
+        "scroll-save",
+        "price",
+        "resize",
+        "scroll-request"
+      ],
+      "allObservedSourcesMatchedCheckoutIframe": true,
+      "origin": "https://vstupenky.online",
+      "instanceIdentifiersPresent": true,
+      "capture": "Interactive agent-browser eval output; not inferred from static source"
+    },
+    "desktopWidth": 1280,
+    "autoHeight": {
+      "iframeHeight": 803,
+      "widgetAndWixContainerHeight": 814,
+      "footerTopMatchedContentEnd": true,
+      "initialFallbackHeight": 800
+    },
+    "mobile": {
+      "viewportWidth": 320,
+      "viewportHeight": 800,
+      "hostScrollWidth": 320,
+      "iframeWidth": 320,
+      "iframeScrollWidth": 320,
+      "horizontalOverflow": false,
+      "summarySubmitButtonVisible": true,
+      "submittedMobileOrder": false
+    },
+    "validation": {
+      "missingFieldsDisabledContinue": true,
+      "invalidEmailRejected": true
+    },
+    "summaryClose": {
+      "scrollBefore": 273,
+      "scrollInSummary": 4,
+      "scrollAfterClose": 273,
+      "focusReturnedTo": "Continue"
+    },
+    "desktopOrderReceipt": {
+      "uiHeading": "Your order was accepted!",
+      "headingY": 134.578125,
+      "databaseOrder": {
+        "id": 7,
+        "form": 9,
+        "price": 120.0,
+        "state": "ordered",
+        "countForForm": 1
+      },
+      "currency": "CZK",
+      "realPaymentMade": false,
+      "externalEmailDeliveryProven": false
+    }
+  },
+  "backendRequestEvidence": [
+    {
+      "method": "GET",
+      "path": "/form/wix-qa-20261025",
+      "status": 200,
+      "template": "Exact production HTML from known public form; fixture URL preserved"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/rest/v1/rpc/get_form_by_link",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_form_by_link",
+      "status": 200
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/functions/v1/send-ticket-order",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/send-ticket-order",
+      "status": 200
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/email-confirmation-status",
+      "status": 200
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/rest/v1/rpc/get_form_by_link",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_form_by_link",
+      "status": 200
+    }
+  ],
+  "hardenedTransport": {
+    "initialTargetsConfigured": 1,
+    "initialNetworkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "positiveReadback": [
+      {
+        "method": "GET",
+        "path": "/form/wix-qa-20261025",
+        "status": 200,
+        "documentAdapted": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200
+      }
+    ],
+    "afterTransportSigkill": {
+      "verifiedAt": "2026-10-25T17:05:12.219Z",
+      "transportExitCode": 137,
+      "browserSurvived": true,
+      "readOnlyProbes": [
+        {
+          "host": "api.festapp.net",
+          "errorText": "net::ERR_NAME_NOT_RESOLVED"
+        },
+        {
+          "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+          "errorText": "net::ERR_NAME_NOT_RESOLVED"
+        }
+      ],
+      "productionWrites": 0
+    },
+    "browserClosedAfterVerification": true
+  },
+  "limitations": [
+    "Production HTML response and backend/CORS transport were adapted; production route and CORS policy are not qualified",
+    "Payment-provider redirect/return, third-party storage and native Safari remain unverified",
+    "Wix Studio/Harmony, seat map, multiple widgets, uninstall/reinstall, dark host typography and helper outage remain pending",
+    "The published dev site has no production synthetic form; the fixture requires the guarded QA transport",
+    "Commercial approval and reporting model remain pending"
+  ]
+}

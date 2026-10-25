@@ -1,6 +1,9 @@
 # Wix submission kit - vstupenky.online
 
-Preparation version 0.1.0; **not a publicly released or registered Wix app**.
+Preparation version 0.1.0; **app/widget registered and Wix Editor installation
+verified, including a published synthetic checkout with adapted test transport.
+Other editor/payment qualification and commercial approval remain pending; not
+submitted or publicly released in the App Market**.
 
 ## Draft listing identity
 
@@ -12,6 +15,7 @@ Preparation version 0.1.0; **not a publicly released or registered Wix app**.
   ticket sales. Final Wix pricing model and billing text require approval.
 - Support contact: `info@festapp.net`.
 - Service: `https://vstupenky.online/`.
+- Wix guide: `https://festapp-wix.pages.dev/help`.
 - General help: `https://vstupenky.online/napoveda/vlozeni-na-web/`.
 - Privacy: `https://vstupenky.online/privacy/`.
 - Terms: `https://vstupenky.online/terms/`.
@@ -29,10 +33,14 @@ this wrapper does not add its own analytics.
 
 ## Remaining material before actual review
 
-1. An authorized owner workspace, assigned app ID and widget extension ID.
+1. Owner access and assigned app/widget identities are recorded in
+   [the account receipt](evidence/account-20261025.json) and registration receipt.
+   Keep the public listing identity consistent with the assigned application.
 2. Approved billing model, service-fee-only revenue base and external ticket
    checkout permission, with actual reporting implemented if required.
-3. Approved HTTPS hosting with CORS/cache/CSP and live source hashes.
+   Confirm zero fixed publisher upfront/recurring fees with actual terms evidence.
+3. Dedicated free HTTPS asset hosting is live with verified CORS, content types,
+   caching and source hashes: [hosting receipt](evidence/hosting-20261025.json).
 4. Real installation and published development-site receipts for Harmony,
    Editor and Studio, including authorized synthetic purchases/payment returns.
 5. Verified Wix-specific public setup guide and source-grounded screenshots of
@@ -50,13 +58,38 @@ unlisted install link is a public catalog listing.
 
 ## Validation performed locally
 
-Seven Node tests cover canonical URL validation, no live checkout in editor or
+Twelve Node tests cover canonical URL validation, no live checkout in editor or
 preview, rejected/missing SDK context, detached asynchronous completion, instance
 isolation, no checkout reload on presentation changes, settings persistence/read
-back and the incomplete release gate. `pnpm run build` successfully bundles the
-pinned official Wix SDK modules. These checks do not prove Wix editor/runtime
+back, the actual bundled SDK entry and its Site host initialization, the
+zero-fixed-fee constraint, sealed package contents and the incomplete
+release gate. `pnpm run build` successfully bundles the pinned official Wix SDK
+modules; `pnpm run package` verifies their manifest and excludes private inputs.
+These checks do not prove Wix editor/runtime
 integration or grant commercial approval.
 
 The default `pnpm run release:check` is expected to fail until genuine missing
-inputs and independent real-site receipts are supplied. No submission has been
-attempted and no external message has been sent.
+inputs and independent real-site receipts are supplied. No marketplace submission has been
+attempted. One custom-billing approval request was submitted through the official
+developer support intake on 2026-10-25; see the support-history receipt.
+
+## Current portal state
+
+The app icon, company profile, category and keywords are saved. The required
+phone is `+420 792 759 379`, taken from `https://festapp.net/` at the owner's
+instruction. It is prepared, not entered: Contact Info and Security & Privacy
+fail to load their Wix CDN modules (HTTP403, independently reproduced). See
+[portal evidence](evidence/portal-20261025.json). Do not create a duplicate support
+case; the existing billing request is already submitted.
+
+The remaining native portal blockers are contact info, gallery images and the
+security/privacy questionnaire. Final gallery images are held until the shared
+helper contrast fix is deployed and verified. Registration/profile saves do not
+constitute Marketplace submission or commercial approval.
+
+The documented Harmony development-site flow was rechecked: this owner/app
+selector still offers Editor and Studio only. This is a portal limitation, not
+a claim of global incompatibility. See [Harmony access evidence](evidence/harmony-access-20261025.json).
+A [technical follow-up](SUPPORT-FOLLOWUP.md) covering that mismatch and the two
+CDN403 pages is prepared for owner review, not sent. Use the existing support
+conversation after authorization; do not open a duplicate billing request.
