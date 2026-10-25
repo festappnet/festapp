@@ -1,0 +1,14 @@
+{
+  "fio-token": {
+    "cs": {
+      "url": "https://www.youtube.com/watch?v=px9MCABSQbI",
+      "title": "Video: Jak vytvořit Fio API token",
+      "description": "Video přehrajete přímo v návodu nebo otevřete na YouTube."
+    },
+    "en": {
+      "url": "https://www.youtube.com/watch?v=px9MCABSQbI",
+      "title": "Video: create a Fio API token",
+      "description": "Play the Czech-language walkthrough here or open it on YouTube."
+    }
+  }
+}

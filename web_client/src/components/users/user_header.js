@@ -146,6 +146,11 @@ export class UserHeader extends HTMLElement {
 
         const actions = document.createElement('div');
         actions.className = 'header-actions';
+        if (this.hasAttribute('data-marketing') && new URL(AppConfig.webLink).hostname === 'vstupenky.online') {
+            const help = document.createElement('a');
+            help.className = 'header-help'; help.href = '/napoveda/'; help.textContent = 'Nápověda';
+            actions.appendChild(help);
+        }
         
         // If context isn't loaded yet, don't show anything here to avoid blinking "Sign In"
         // RightsService.context is null initially.

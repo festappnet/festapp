@@ -42,7 +42,7 @@ test('unknown public paths render the catalogue without reloading', async t => {
             window, document, console, UnitPage, RouterService, AppConfig,
             isEmbed: () => false, applyEmbedContext() {}, resolveScannerRoute: () => null,
             GoogleAuthService: { takeCallback: () => null },
-            initializeCoreServices: async () => {}, handleOrganizerIntent: async () => null,
+            initializeCoreServices: async () => {}, handleHelpAction: async () => false, handleOrganizerIntent: async () => null,
             LocalizationService: {}, SupabaseService: {}, RightsService: {},
             ThemeService: noop, ImageLoader: noop, FeedbackFab: noop,
         });

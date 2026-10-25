@@ -91,8 +91,9 @@ class OccasionSetupPage extends StatefulWidget {
   const OccasionSetupPage({super.key, required this.draft});
   static Future<OccasionSetupResult?> open(
     BuildContext context,
-    OccasionSetupDraft draft,
-  ) async {
+    OccasionSetupDraft draft, {
+    bool showCompletion = true,
+  }) async {
     final initialized = await ExceptionHandler.guard(
       context,
       futureFunction: () => OccasionSetupDrafts(Supabase.instance.client)
@@ -102,7 +103,7 @@ class OccasionSetupPage extends StatefulWidget {
     final result = await Navigator.of(context).push<OccasionSetupResult>(
       MaterialPageRoute(builder: (_) => OccasionSetupPage(draft: initialized)),
     );
-    if (result != null && context.mounted) {
+    if (result != null && context.mounted && showCompletion) {
       final next = await Navigator.of(context).push<OccasionSetupNext>(
         MaterialPageRoute(
           builder: (_) => OccasionSetupCompleted(result: result),
@@ -686,13 +687,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     _debounce?.cancel();
     if (_pending != null) return _pending!;
     if (_conflict) return Future.value(false);
-    final operation = _drain();
-    _pending = operation;
-    if (mounted) setState(() {});
-    return operation.whenComplete(() {
-      _pending = null;
-      if (mounted) setState(() {});
+    // Reads such as email previews also flush an already-clean draft. Do not
+    // retain a completed no-op as a pending save and block subsequent edits.
+    if (!_dirty) return Future.value(true);
+    // Preview builders can request a flush while this page is building. Start
+    // after that build and install cleanup before notifying the widget tree;
+    // otherwise a setState-during-build exception strands a completed _pending.
+    final operation = Future<bool>.microtask(() async {
+      try {
+        if (mounted) setState(() {});
+        return await _drain();
+      } finally {
+        _pending = null;
+        if (mounted) setState(() {});
+      }
     });
+    _pending = operation;
+    return operation;
   }
 
   Future<bool> _drain() async {

@@ -69,7 +69,8 @@ done < <(sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' "$GENERATED_POLICY")
 is_generated() {
   local candidate=$1 entry
   for entry in "${GENERATED_PATHS[@]}"; do
-    [[ "$candidate" == "$entry" ]] && return 0
+    # Generated patterns have the same trusted main-owned authority as overlays.
+    [[ "$candidate" == $entry ]] && return 0
   done
   return 1
 }
@@ -130,7 +131,8 @@ done < <(git diff --name-only -z "$BASE_MAIN_SHA" "$PROD_TIP")
 
 (cd "$EXPECTED_TREE" && bash automation/apply_config.sh automation/project.conf >/dev/null)
 
-for path in "${GENERATED_PATHS[@]}"; do
+while IFS= read -r -d '' path; do
+  is_generated "$path" || continue
   expected="$EXPECTED_TREE/$path"
   if [[ -e "$expected" ]] && git cat-file -e "${PROD_TIP}:${path}" 2>/dev/null; then
     # Compare Git object IDs instead of redirecting `git show`. Native Git
@@ -146,6 +148,11 @@ for path in "${GENERATED_PATHS[@]}"; do
     echo "Error: generated path presence mismatch: $path" >&2
     exit 71
   fi
-done
+done < <({
+  # Check the union, including added/deleted leaves under generated globs.
+  git ls-tree -rz --name-only "$PROD_TIP"
+  (cd "$EXPECTED_TREE" && find . -type f -print0) |
+    while IFS= read -r -d '' candidate; do printf '%s\0' "${candidate#./}"; done
+} | sort -zu)
 
 echo "Tenant drift check passed: tenant=$TENANT_ID base=$BASE_MAIN_SHA tip=$(git rev-parse "$PROD_TIP")"

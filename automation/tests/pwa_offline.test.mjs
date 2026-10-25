@@ -234,6 +234,7 @@ try {
       if (url.includes('/web-assets/index.js')) {
         return new Response('web client bundle');
       }
+      if (url.includes('/napoveda/')) return new Response('public help from network');
       throw new Error(`unexpected network request: ${url}`);
     },
     self: {
@@ -309,6 +310,10 @@ try {
     assert.equal(response.status,308);
     assert.equal(response.headers.get('location'),'https://app.test/');
   }
+  const helpRequest = new Request('https://app.test/napoveda/vlozeni-na-web/');
+  Object.defineProperty(helpRequest, 'mode', {value: 'navigate'});
+  await assert.rejects(dispatchFetch(helpRequest, '', 'help-tab'), /offline/, 'help must not fall back to an unrelated cached app');
+  await assert.rejects(dispatchFetch(new Request('https://app.test/napoveda/assets/help.js')), /offline/);
   const freshAssetResponse = await dispatchFetch(
     new Request('https://app.test/assets/translation.json'),
     'fresh-tab',
@@ -769,6 +774,12 @@ try {
   )).text(), 'offline catalogue module', 'the offline root catalogue keeps its cached modules');
   cachedMarketingModule = false;
   networkAvailable = true;
+  // Public help has no offline-app version reporter. Its entire shared graph
+  // must work even after a worker restart or with an older app installed.
+  const helpClient = {id:'help-client', url:'https://app.test/napoveda/objednavky/', postMessage:()=>{}};
+  clientsById.set(helpClient.id,helpClient);
+  const helpModule = await dispatchFetch(new Request('https://app.test/web-assets/index.js'),helpClient.id);
+  assert.equal(await helpModule.text(),'web client bundle','help imports must not wait for an app version report');
   // Other app pages still recover a missing old-generation module normally.
   await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
   const oldAppModule = await dispatchFetch(

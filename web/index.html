@@ -88,7 +88,8 @@
         // Check for redirect query param (Clean URL Logic)
         const params = new URLSearchParams(window.location.search);
         const redirect = params.get('redirect');
-        if (redirect) {
+        // Login owns its redirect query until authentication finishes.
+        if (redirect && !['/login', '/app/login'].includes(window.location.pathname)) {
             // Immediately restore the original path
             // This hides 'flutter.html' and tells Flutter to load this route
             console.log('Restoring clean URL via redirect param:', redirect);

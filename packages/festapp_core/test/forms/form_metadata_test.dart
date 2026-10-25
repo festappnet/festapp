@@ -2,6 +2,24 @@ import 'package:test/test.dart';
 import 'package:festapp_core/forms.dart';
 
 void main() {
+  test('setup forms accept explicitly null schedule dates', () {
+    final form = FormDefinition.fromJson({
+      'data': {
+        'schedule': {
+          'start_time': null,
+          'end_time': null,
+          'sale_preparation': true,
+          'enable_countdown': false,
+        },
+      },
+    });
+    expect(form.startTimeUtc, isNull);
+    expect(form.endTimeUtc, isNull);
+    final scheduled = form.withStartTimeUtc(DateTime.utc(2027, 2, 12));
+    expect(scheduled.startTimeUtc, DateTime.utc(2027, 2, 12));
+    expect(scheduled.endTimeUtc, isNull);
+  });
+
   group('form_metadata', () {
     test(
       'reading design and schedule defaults does not create an unsaved change',

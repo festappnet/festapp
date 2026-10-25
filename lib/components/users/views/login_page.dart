@@ -1,3 +1,4 @@
+import 'package:fstapp/services/help_destination.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -80,7 +81,13 @@ class _LoginPageState extends State<LoginPage> {
           GoogleAuthService.isContinuation) {
         return;
       }
-      await _refreshSignedInStatus(null).timeout(const Duration(seconds: 15));
+      // Help onboarding includes human-paced event selection and setup. A
+      // navigation timeout would mark that still-running wizard as failed.
+      if (HelpDestination.parse(widget.redirect) != null) {
+        await _refreshSignedInStatus(null);
+      } else {
+        await _refreshSignedInStatus(null).timeout(const Duration(seconds: 15));
+      }
     } catch (error) {
       AppLogger.error('Initial signed-in navigation failed: $error');
       _initialNavigationFailed = true;
@@ -91,6 +98,10 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _recoverAuthenticatedNavigation() async {
     if (!mounted) return;
+    if (HelpDestination.parse(widget.redirect) != null) {
+      setState(() => _initialNavigationFailed = true);
+      return;
+    }
     RouterService.popOrHome(context);
   }
 
@@ -196,7 +207,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   TextButton(
                                       onPressed: () => RouterService.navigate(
-                                          context, SignupPage.ROUTE),
+                                          context,
+                                          HelpDestination.authenticationPath(
+                                              SignupPage.ROUTE,
+                                              widget.redirect)),
                                       child: Text(UserStrings.signUp,
                                           style: StylesConfig.normalTextStyle))
                                 ]),

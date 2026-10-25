@@ -1,3 +1,4 @@
+import 'package:fstapp/services/help_destination.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
 import 'package:fstapp/services/google_auth_service.dart';
@@ -65,6 +66,11 @@ class _SignupPageState extends State<SignupPage> {
         style: style, textAlign: TextAlign.center);
   }
 
+  String? get _helpReturnPath {
+    final value = context.routeData.queryParams.optString('redirect');
+    return HelpDestination.parse(value) == null ? null : value;
+  }
+
   bool _isLoading = false;
   bool _isRegistrationSuccess = false;
   Map<String, dynamic>? fieldsData;
@@ -122,32 +128,46 @@ class _SignupPageState extends State<SignupPage> {
               child: _isRegistrationSuccess
                   ? Padding(
                       padding: const EdgeInsets.fromLTRB(12, 88, 12, 12),
-                      child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    color: ThemeConfig.blackColor(context)),
-                                text: UserStrings.credentialsSentLong(
-                                    fieldsData?["email"]?.toString() ?? ""),
-                              ),
-                              const WidgetSpan(
-                                child: Padding(
-                                    padding: EdgeInsets.fromLTRB(6, 0, 0, 0),
-                                    child: Icon(Icons.check_circle)),
-                              )
-                            ],
-                          )))
+                      child: Column(children: [
+                        RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      color: ThemeConfig.blackColor(context)),
+                                  text: UserStrings.credentialsSentLong(
+                                      fieldsData?["email"]?.toString() ?? ""),
+                                ),
+                                const WidgetSpan(
+                                  child: Padding(
+                                      padding: EdgeInsets.fromLTRB(6, 0, 0, 0),
+                                      child: Icon(Icons.check_circle)),
+                                )
+                              ],
+                            )),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: () => RouterService.navigate(
+                              context,
+                              HelpDestination.authenticationPath(
+                                  'login', _helpReturnPath)),
+                          child: Text(UserStrings.signIn),
+                        ),
+                      ]))
                   : FormBuilder(
                       key: _formKey,
                       child: AutofillGroup(
                         child: Column(children: [
                           GoogleLoginPanel(
+                              returnPath: _helpReturnPath,
                               onAuthenticated: () =>
                                   RouterService.handlePostLoginNavigation(
                                       context,
+                                      fallbackPath: _helpReturnPath ??
+                                          GoogleAuthService.state.value
+                                              .result['returnPath'] as String?,
                                       useReplacement: true)),
                           if (!GoogleAuthService.isContinuation) ...[
                             ...FormHelper.getAllFormFields(context,

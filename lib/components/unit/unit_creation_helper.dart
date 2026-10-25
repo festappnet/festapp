@@ -4,7 +4,6 @@ import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/db_units.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 
 class UnitCreationHelper {
   static Future<UnitModel?> createNewUnit(BuildContext context) async {
@@ -48,7 +47,7 @@ class UnitCreationHelper {
               onPressed: () {
                 Navigator.of(context).pop(null);
               },
-              child: Text(CommonStrings.storno),
+              child: Text(CommonStrings.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -57,7 +56,6 @@ class UnitCreationHelper {
                   try {
                     final newUnitId =
                         await DbUnits.createUnitAndAssignManager(title!);
-                    final currentUser = RightsService.currentUser();
 
                     final newUnit = UnitModel(
                       id: newUnitId,

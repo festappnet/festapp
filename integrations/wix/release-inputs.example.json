@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "wixAppId": null,
+  "widgetExtensionId": null,
+  "hosting": {
+    "widgetScriptUrl": null,
+    "settingsUrl": null
+  },
+  "billingApproval": {
+    "reference": null,
+    "serviceFeeOnly": false,
+    "grossTicketValueExcluded": false,
+    "externalTicketCheckoutApproved": false,
+    "partnerBillingApproved": false,
+    "refundTreatmentConfirmed": false
+  },
+  "editorReceipts": {
+    "Harmony": null,
+    "Editor": null,
+    "Studio": null
+  },
+  "publicStoreAssetsVerified": false,
+  "billingImplementationReceipt": null
+}
