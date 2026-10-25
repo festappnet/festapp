@@ -28,7 +28,7 @@ BEGIN
  SELECT to_jsonb(o)-'data'-'updated_at' INTO before_order FROM eshop.orders o WHERE id=oid;
  SELECT jsonb_agg(to_jsonb(t)) INTO before_tickets FROM eshop.tickets t WHERE t.occasion=oc;
  SELECT to_jsonb(p) INTO before_payment FROM eshop.payment_info p WHERE id=pi;
- a:=public.enqueue_order_email('TICKET_ORDER_CONFIRMATION',jsonb_build_object('order_id',oid),org,oc,un);
+ a:=public.enqueue_order_email('TICKET_ORDER_CONFIRMATION',jsonb_build_object('order_id',oid,'command_id',gen_random_uuid()),org,oc,un);
  src:=(a->>'message_id')::uuid;
  UPDATE public.email_messages SET workflow_state='accepted',bounced_at=now(),recipient='old@example.invalid' WHERE message_id=src;
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
@@ -55,6 +55,8 @@ BEGIN
  a:=pg_temp.repair(oid,'fixed+alias@example.invalid',src,true,cmd);
  msg:=(a#>>'{data,intent,message_id}')::uuid;
  PERFORM assert_true(msg IS NOT NULL,'one canonical intent returned');
+ PERFORM assert_eq((SELECT data->>'command_id' FROM public.email_messages WHERE message_id=msg),cmd::text,'resend owns its command identity');
+ PERFORM assert_true((SELECT data->>'command_id' FROM public.email_messages WHERE message_id=src)<>cmd::text,'checkout command evidence preserved');
  PERFORM assert_eq((SELECT data#>>'{ticket_order,order,data,email}' FROM public.email_messages WHERE message_id=msg),'fixed+alias@example.invalid','renderer snapshot has current contact');
  PERFORM assert_eq((SELECT data#>>'{ticket_order,order,order_symbol}' FROM public.email_messages WHERE message_id=msg),(SELECT order_symbol FROM eshop.orders WHERE id=oid),'renderer snapshot preserves identity');
  b:=public.repair_order_email_client_sync_v1(oid,'fixed+alias@example.invalid','ordered',v,'fixed+alias@example.invalid',src,true,cmd,public.order_email_payment_fingerprint(oid));
