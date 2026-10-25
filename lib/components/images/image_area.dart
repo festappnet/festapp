@@ -26,6 +26,7 @@ class ImageArea extends StatefulWidget {
 
   /// Controls if the user can change or remove the image.
   final bool enabled;
+  final double dropHeight;
   final bool dropEnabled;
   final List<String>? allowedExtensions;
 
@@ -35,6 +36,7 @@ class ImageArea extends StatefulWidget {
     required this.onFileSelected,
     required this.onRemove,
     this.hint,
+    this.dropHeight = 250,
     this.preview,
     this.enabled = true,
     this.dropEnabled = true,
@@ -188,6 +190,7 @@ class _ImageAreaState extends State<ImageArea> {
       child: Opacity(
         opacity: widget.enabled ? 1.0 : 0.5,
         child: DropFile(
+          height: widget.dropHeight,
           hint: widget.hint,
           dropEnabled: widget.enabled && widget.dropEnabled,
           allowedExtensions: widget.allowedExtensions ??

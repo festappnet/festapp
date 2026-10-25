@@ -6,7 +6,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  started jsonb; receipt jsonb; new_id bigint; form_id bigint; form_data jsonb; fields jsonb := '[]';
  field jsonb; pt jsonb; products jsonb; product jsonb; result jsonb; source_id bigint; configuration_source bigint;
  old_products jsonb := '[]'; old_types jsonb := '[]'; type_map jsonb := '{}'; final_features jsonb; new_products jsonb; product_map jsonb := '{}'; idx integer; j integer;
- intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
+ email_banner text; intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  payment_method text;
@@ -65,6 +65,7 @@ BEGIN
  END IF;
  source_id := (payload->>'sourceId')::bigint;
  intro_image:=nullif(payload->>'introImage','');
+ email_banner:=nullif(payload->>'emailBanner','');
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN
   RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
  FOREACH configuration_source IN ARRAY ARRAY[nullif(payload->>'formSourceOccasionId','')::bigint,nullif(payload->>'blueprintSourceOccasionId','')::bigint] LOOP
@@ -93,6 +94,8 @@ BEGIN
  -- arbitrary URL supplied by a client, or adopt another unit's image.
  IF intro_image IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=intro_image AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft image access denied'; END IF;
+ IF email_banner IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
  IF coalesce((payload->>'isPromoted')::boolean,false) AND intro_image IS NULL THEN
   RAISE invalid_parameter_value USING MESSAGE='Promotion requires an intro image'; END IF;
  -- Selection is sufficient; current permissions, currencies and account
@@ -152,7 +155,7 @@ BEGIN
   'is_promoted',coalesce((payload->>'isPromoted')::boolean,false),
   'features',features,'data',jsonb_strip_nulls(jsonb_build_object('client_sync_v1',false,
    'setup_listing_intent',coalesce((payload->>'listPubliclyOnPublish')::boolean,true),
-   'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''),'reply_to',reply_email)));
+   'email_banner',email_banner,'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''),'reply_to',reply_email)));
  policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],d.unit,d.organization);
  IF source_id IS NOT NULL AND (coalesce((payload->>'copyProgram')::boolean,false) OR coalesce((payload->>'copyInformation')::boolean,false) OR coalesce((payload->>'copyEmails')::boolean,false)) THEN
   PERFORM public.admit_occasion_copy_v1(source_id,d.unit,d.organization,policies->'occasion.copy'); END IF;
@@ -327,6 +330,9 @@ BEGIN
   SELECT new_id,d.unit,d.organization,code,title,subject,html FROM public.email_templates WHERE occasion=source_id;
  END IF;
  PERFORM public.admit_occasion_copy_v1(new_id,d.unit,d.organization,policies->'occasion.copy');
+ IF email_banner IS NOT NULL THEN
+  PERFORM public.update_entity_email_banner('occasion',new_id,email_banner);
+ END IF;
  -- Draft edits override copied/inherited content only on the newly created occasion.
  FOR pt IN SELECT jsonb_build_object('code',key,'content',value)
   FROM jsonb_each(coalesce(payload->'emailTemplateOverrides','{}')) LOOP
