@@ -1391,6 +1391,8 @@
     "fontFamily": "Layout font",
     "productsTitle": "Products and prices",
     "manageSeats": "Manage seats",
+    "backToGroup": "Back to group {name}",
+    "seatLabel": "Seat",
     "emptyGroup": "This group has no seats yet.",
     "inheritedProduct": "Matches the group default",
     "productOverride": "Individual product override",

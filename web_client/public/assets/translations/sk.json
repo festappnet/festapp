@@ -1174,6 +1174,8 @@
     "no_matching_answers": "Žiadne ďalšie zodpovedajúce údaje."
   },
   "FeatureBlueprint": {
+    "backToGroup": "Späť na skupinu {name}",
+    "seatLabel": "Miesto",
     "orderRecoveryRequired": "Najprv overte výsledok pôvodnej objednávky v pôvodnom plánku. Ak overenie zlyhá, pred vytvorením ďalšej objednávky kontaktujte správcu.",
     "orderBatchImmutable": "Vstupenky z tlačovej dávky nemožno presunúť ani nahradiť inou objednávkou.",
     "orderReview": "Skontrolovať objednávku",

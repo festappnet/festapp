@@ -1168,6 +1168,8 @@
     "no_matching_answers": "Keine weiteren passenden Felder."
   },
   "FeatureBlueprint": {
+    "backToGroup": "Zurück zur Gruppe {name}",
+    "seatLabel": "Platz",
     "orderRecoveryRequired": "Prüfen Sie zuerst die ursprüngliche Bestellung im ursprünglichen Sitzplan. Wenn die Wiederherstellung fehlschlägt, wenden Sie sich vor einer neuen Bestellung an die Administration.",
     "orderBatchImmutable": "Tickets aus einem Druckstapel können nicht verschoben oder durch eine andere Bestellung ersetzt werden.",
     "orderReview": "Bestellung prüfen",
