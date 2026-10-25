@@ -1,8 +1,8 @@
 # Wix submission kit - vstupenky.online
 
-Preparation version 0.1.0; **app/widget registered and Wix Editor installation
-verified, including a published synthetic checkout with adapted test transport.
-Other editor/payment qualification and commercial approval remain pending; not
+Preparation version 0.1.0; **app/widget registered and installation verified in
+Wix Editor, Wix Studio and Harmony. Published synthetic checkout observations use
+adapted test transport. The full payment/lifecycle matrix and commercial approval remain pending; not
 submitted or publicly released in the App Market**.
 
 ## Draft listing identity
@@ -21,7 +21,9 @@ submitted or publicly released in the App Market**.
 - Terms: `https://vstupenky.online/terms/`.
 - Support: `https://vstupenky.online/support/`.
 - Framework: self-managed Site Widget (Custom Element) + settings panel.
-- Requested data permissions: none for the current public form wrapper. If
+- Requested additional data permissions: none for the current public form wrapper.
+  Native installation still displays baseline access to site/business details and
+  the owner login email; do not claim that Wix grants no permissions. If
   later instance-linked billing needs extra permissions, review them separately.
 
 The site owner saves only a public form URL, accessible title and appearance
@@ -90,7 +92,10 @@ constitute Marketplace submission or commercial approval.
 
 The documented Harmony development-site flow was rechecked: this owner/app
 selector still offers Editor and Studio only. This is a portal limitation, not
-a claim of global incompatibility. See [Harmony access evidence](evidence/harmony-access-20261025.json).
+a claim of global incompatibility. An ordinary free Harmony site now passed
+installation, saved settings, Editor/Preview isolation and published 320 px summary
+with QA transport, using the unlisted 1.0 owner-site install flow. See
+[Harmony qualification](evidence/harmony-qualification-20261025.json).
 A [technical follow-up](SUPPORT-FOLLOWUP.md) covering that mismatch and the two
 CDN403 pages is prepared for owner review, not sent. Use the existing support
 conversation after authorization; do not open a duplicate billing request.

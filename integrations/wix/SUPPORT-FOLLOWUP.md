@@ -20,8 +20,9 @@ App ID: 9c099206-ce3d-43de-bd9d-deb96bb4f51e
 Owner: info@festapp.net
 
 We have registered a self-managed custom-element site widget and tested native
-installation in Wix Editor and Wix Studio. Three portal issues prevent us from
-finishing the remaining preparation:
+installation in Wix Editor, Wix Studio and Harmony. Two portal pages prevent us
+from finishing preparation; we also observed a discrepancy in the documented
+Harmony development-site selector:
 
 1. App Profile > Contact Info displays “We couldn't load this page”. The
    Contact Info module returns HTTP 403, also reproduced without the browser:
@@ -29,7 +30,9 @@ finishing the remaining preparation:
 2. Security & Privacy displays the same loading error. Its module returns
    HTTP 403 as well:
    https://static.parastorage.com/services/security-and-privacy/1.394.0/module.bundle.min.js
-3. Test App > Test on dev site > Create Dev Site > Choose site editor offers
+3. We can now test our unlisted app on an ordinary free Harmony site using an
+   official template and direct owner-site installation. The documented premium
+   development-site route still differs: Test App > Test on dev site > Create Dev Site > Choose site editor offers
    only Wix Editor and Wix Studio for this owner. Your testing documentation
    lists Harmony development-site templates, and your compatibility guide lists
    self-managed site extensions as supported. Could you enable the documented
@@ -55,6 +58,5 @@ Thank you.
 
 Do not include cookies, authentication tokens, buyer information or private
 backend receipts. The public module URLs and app ID above suffice to describe
-the problem. Ordinary site-creation alternatives have not been exhausted;
-missing Harmony in this documented flow is an account/portal observation, not a
-claim that Harmony is unavailable everywhere.
+the problem. The ordinary free-site route now works; the Harmony point concerns the documented
+premium dev-site selector only, not general Harmony access.

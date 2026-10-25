@@ -20,7 +20,7 @@
   "remainingPublicationGates": [
     "Individual billing approval, service-revenue-only basis, zero fixed publisher fee confirmation and required reporting implementation",
     "Contact Info and Security & Privacy portal pages; both currently fail with Wix CDN HTTP 403",
-    "Harmony, native Safari, full payment/lifecycle/browser matrix and clean native installation; observed Add to Site warning remains"
+    "Native Safari, full payment/lifecycle/browser matrix including remaining Harmony cases, and clean native Editor installation; observed Add to Site warning remains"
   ],
   "supportRequestReview": {
     "file": "SUPPORT-REQUEST.md",
@@ -121,6 +121,26 @@
     ],
     "validation": "Existing 12-test/build/package PASS supplied by primary; source checks were not rerun for this evidence review",
     "marketplaceReady": false,
+    "externalMessagesSentByReviewer": false,
+    "productionOperationsByReviewer": false
+  },
+  "harmonyQualificationReview": {
+    "reviewedAt": "2026-10-25T21:38:46.945032+00:00",
+    "receipt": "harmony-qualification-20261025.json",
+    "verdict": "No blocking evidence or scope finding; actual ordinary free Harmony site installation and scoped published summary verification are distinguished from the still-unavailable premium dev-site route",
+    "reviewedScope": [
+      "Unlisted 1.0 release and owner-site install; no access-private, Marketplace or commercial approval claim",
+      "Settings persistence after full editor reload and Editor/Preview checkout isolation",
+      "Live published helper and unmodified production client 0.20.404+905 with adapted synthetic HTML/backend/auth/CORS",
+      "Native per-breakpoint widget width adjustments explicitly required; no source DOM/CSS override claim",
+      "320px screenshot visually inspected: summary submit button visible; no submission and fixture order count remains 2",
+      "Support follow-up remains unsent and restricted to existing authorized conversation"
+    ],
+    "correctionsApplied": [
+      "Support follow-up now distinguishes two blocking portal pages from the nonblocking Harmony premium dev-site discrepancy",
+      "Submission introduction reflects installation in all three editors while keeping the full matrix and commercial gates pending"
+    ],
+    "fullyQualified": false,
     "externalMessagesSentByReviewer": false,
     "productionOperationsByReviewer": false
   }

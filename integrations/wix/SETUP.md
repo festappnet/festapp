@@ -78,13 +78,13 @@ existing integration tests; never place real orders or reserve production seats.
 
 | Area | Harmony | Wix Editor | Wix Studio |
 | --- | --- | --- | --- |
-| Install, add widget, settings persist after editor reload | not run | pass | pass |
-| Editor/Preview have no checkout iframe or helper loaded | not run | pass | pass |
-| Published form, auto height, helper/version handshake | not run | pass with QA transport | pass with QA transport; live helper fixed |
-| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: live contrast/320 px verified |
+| Install, add widget, settings persist after editor reload | pass on owned ordinary free site | pass | pass |
+| Editor/Preview have no checkout iframe or helper loaded | pass on owned ordinary free site | pass | pass |
+| Published form, auto height, helper/version handshake | pass with QA transport | pass with QA transport | pass with QA transport; live helper fixed |
+| 320 px mobile, keyboard/focus, light/dark host typography | partial: 320 px width and summary pass; keyboard/dark pending | partial: width/focus; dark pending | partial: live contrast/320 px verified |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor lifecycle pass; published pair/attribute isolation pass with QA transport |
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
-| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
+| Summary reveals submit; submission shows receipt top | mobile summary pass; no submission | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
 | Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall observed with native setup warning/workaround; remaining cases pending | helper outage fallback pass; other cases pending |
 
@@ -159,8 +159,14 @@ The native development-site selector currently offers Editor and Studio only.
 The [official testing guide](https://dev.wix.com/docs/build-apps/launch-your-app/app-distribution/test-your-app/test-your-app-on-a-premium-site)
 includes Harmony templates, but this owner/app still lacks that choice on a
 fresh native flow check. See [access evidence](evidence/harmony-access-20261025.json).
-Harmony through an ordinary free site has not been investigated; this does not
-establish that Harmony itself is unsupported.
+The ordinary free-site alternative now works: use a template from
+https://www.wix.com/harmony, then install the reviewed unlisted version through
+Distribute App > Install on a site. In Harmony, insert via Add > Elements > More
+> Installed Apps, then open the native settings action. The template placed the
+widget too narrowly; resize it independently on Desktop and Mobile before
+publishing. See [actual qualification](evidence/harmony-qualification-20261025.json).
+No install link was shared. The ordinary-site result does not establish that the
+premium development-site selector is fixed.
 
 Native Studio duplicate/settings/delete/re-add checks are recorded in
 [evidence/studio-lifecycle-20261025.json](evidence/studio-lifecycle-20261025.json).
@@ -176,7 +182,7 @@ production route was absent; this check does not qualify checkout or recovery.
 two natively published Studio sections, distinct helper instances, independent
 form values and first-summary/sibling isolation. Temporary runtime attribute
 changes reload only the changed URL; they do not claim native settings persistence
-on the public site. The live contrast defect and payment/browser gates remain.
+on the public site. The live contrast defect was fixed in the service release; payment/browser gates remain.
 
 [Editor uninstall/reinstall evidence](evidence/uninstall-reinstall-20261025.json)
 records native app counts 1 -> 0 -> 1 and public widget removal/restoration.
