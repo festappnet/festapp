@@ -129,3 +129,9 @@ Content audit: organizer scanner configuration is separate from door-staff
 check-in and recovery. Receiving accounts in existing forms are automatic by
 currency and organizer account priority; do not invent a per-form account picker.
 Keep QA narration and pixel dimensions in provenance metadata, not captions.
+
+Directory previews: each task page and localized category selects a `preview`
+media identity. The renderer uses existing content-addressed assets. Optional
+`previewCrop` on the media entry selects the curated detail/upper thumbnail crop
+without changing the full screenshot. Keep previews relevant to the article and
+its workflow, localized, and decorative within the descriptive guide link.

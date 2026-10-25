@@ -38,6 +38,14 @@ test('public guides render crawlable linked documents, code generator and exact 
  }
  const home=fs.readFileSync(path.join(target,'index.html'),'utf8');
  assert.ok(home.indexOf('href="/napoveda/zaciname-s-akci/"')<home.indexOf('href="/napoveda/integrace/"'));
+ for(const category of categories){
+  const listing=fs.readFileSync(path.join(target,category.slug,'index.html'),'utf8');
+  const expected=pages.filter(p=>p.category===category.id.replace('category.','')).length;
+  assert.equal((listing.match(/class="guide-preview(?:[^"]*)"/g)||[]).length,expected,'every listed guide has a preview');
+ }
+ assert.equal((home.match(/class="guide-preview(?:[^"]*)"/g)||[]).length,categories.length+3,'overview has category and entry-point previews');
+ const mediaById=new Map(JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/media.json'))).map(item=>[item.id,item]));
+ for(const page of pages.filter(p=>p.category)) assert.equal(mediaById.get(page.preview)?.locale,'cs','previews use real media from their own locale');
  const bank=fs.readFileSync(path.join(target,'fio-api-token/index.html'),'utf8');
  assert.match(bank,/https:\/\/www\.youtube\.com\/watch\?v=px9MCABSQbI/);
  assert.match(bank,/data-help-workflow="organization"/);
@@ -61,6 +69,7 @@ test('public guides render crawlable linked documents, code generator and exact 
  const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);
  const englishPages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.en.json')));
+ for(const page of englishPages.filter(p=>p.category)) assert.equal(mediaById.get(page.preview)?.locale,'en','English preview uses English UI captures');
  assert.deepEqual(englishPages.map(p=>p.id),pages.map(p=>p.id),'both locales address the same topics');
  for(const page of englishPages){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');

@@ -276,3 +276,28 @@ page/viewport/theme cases. The final scoped design detector had no findings.
 The earlier whole-stylesheet CLI findings were not reproduced in rendered
 inspection and were recorded as false positives instead of changing unrelated
 homepage styling. Questions skipped: the user had already authorized corrections.
+
+## Visual previews in guide directories
+
+Every task guide and category now selects a real localized screenshot through
+its preview metadata. The hub's three entry choices, eight category links and
+all category guide lists show those previews before opening an article. The
+renderer reuses the existing hashed screenshot assets with lazy loading; no
+invented illustrations or additional screenshots were introduced. English uses
+its own interface captures. Where an English platform-specific editor capture
+is unavailable (Webnode), the preview shows the relevant English embed-code
+preparation step rather than substituting a Czech editor screenshot.
+
+Preview crops emphasize the relevant form region or account list instead of
+blank viewport space. Originals and their provenance/hash remain unchanged.
+Desktop guide rows pair the preview with title and summary; narrow mobile rows
+place the title, a larger preview and then the summary in one column. Images are
+decorative within the already descriptively named link, avoiding duplicate screen
+reader announcements and extra image-only focus stops. Existing guide text,
+workflow distinctions and help-action destinations are unchanged.
+
+Renderer/search tests passed five cases and all 100 locale/page/viewport/theme
+cases passed. A final targeted two-test batch covered the last media selection
+refinement. Desktop and 390px preview composition were visually inspected; the
+final design detector reported no findings. The task-specific automated browser
+was closed; the user-requested HTTP preview remains running for the video.

@@ -16,7 +16,8 @@
     "seoTitle": "Create an event: dates, organizer and sales preparation",
     "description": "Create your event, save a private draft, check the summary and distinguish publishing from opening sales.",
     "label": "Event setup wizard",
-    "workflow": "wizard"
+    "workflow": "wizard",
+    "preview": "en/setup/name"
   },
   {
     "id": "event-settings",
@@ -26,7 +27,8 @@
     "seoTitle": "Event settings: change name, dates and publication",
     "description": "Edit an existing event in administration: name, dates, venue, publication and features. Event settings are separate from form sales settings.",
     "label": "Existing event settings",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/administration/event-settings"
   },
   {
     "id": "form",
@@ -36,7 +38,8 @@
     "seoTitle": "Order form: fields, public link and sales availability",
     "description": "Prepare buyer details, ticket choices, required fields, the saved public link and ordering availability.",
     "label": "Order form",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/forms/editor"
   },
   {
     "id": "ticket-pricing",
@@ -46,7 +49,8 @@
     "seoTitle": "Tickets: variants, prices, capacity and availability",
     "description": "Set ticket and extra-product choices, prices, currencies, quantities and shared capacity groups.",
     "label": "Prices and capacity",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/forms/editor"
   },
   {
     "id": "seating",
@@ -56,7 +60,8 @@
     "seoTitle": "Seating plan: seats, products, prices and buyer checks",
     "description": "Build the venue layout, assign products to seats and verify a particular seat and its price in the form.",
     "label": "Seating plan",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/seating/editor"
   },
   {
     "id": "ticket-design",
@@ -66,7 +71,8 @@
     "seoTitle": "Ticket design: templates, QR and PDF preview",
     "description": "Choose a template, adjust information and artwork and verify QR readability and the generated PDF.",
     "label": "Ticket design and PDF",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/tickets/example"
   },
   {
     "id": "bank-accounts",
@@ -76,7 +82,8 @@
     "seoTitle": "Bank account setup for ticket payments",
     "description": "Prepare organizer account details, supported currencies and priority. Check which account the form uses for receiving payments.",
     "label": "Bank account setup",
-    "workflow": "organization"
+    "workflow": "organization",
+    "preview": "en/banking/accounts"
   },
   {
     "id": "fio-token",
@@ -86,7 +93,8 @@
     "seoTitle": "Fio API token: creation, authorization and ticket payment connection",
     "description": "Create and authorize a read-only Fio API token, save it in the bank account connection and verify synchronization status.",
     "label": "Fio API token and connection",
-    "workflow": "organization"
+    "workflow": "organization",
+    "preview": "en/banking/fio-connection"
   },
   {
     "id": "payments",
@@ -96,7 +104,8 @@
     "seoTitle": "Ticket payments: account, QR, deadlines and matching",
     "description": "Check the receiving account, bank connection, payment references, deadlines and buyer instructions.",
     "label": "Payment setup",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/administration/form-payments"
   },
   {
     "id": "embed",
@@ -105,7 +114,8 @@
     "title": "How to embed ticket sales in your website",
     "seoTitle": "Embed ticket sales: HTML order form",
     "description": "Generate HTML to embed your public order form, with automatic height or a fixed-height option.",
-    "label": "Embed in a website"
+    "label": "Embed in a website",
+    "preview": "en/embed/01-generated-code"
   },
   {
     "id": "wordpress",
@@ -114,7 +124,8 @@
     "title": "Sell tickets on WordPress",
     "seoTitle": "WordPress ticket sales with or without a plugin",
     "description": "Use the ticket form block and shortcode, or add a Custom HTML block without installing a plugin.",
-    "label": "WordPress"
+    "label": "WordPress",
+    "preview": "en/wordpress/02-block-editor"
   },
   {
     "id": "webnode",
@@ -123,7 +134,8 @@
     "title": "How to embed ticket sales in Webnode",
     "seoTitle": "Webnode: embed a ticket order form",
     "description": "Check the Webnode plan requirements, add an HTML block and verify the published form on mobile.",
-    "label": "Webnode"
+    "label": "Webnode",
+    "preview": "en/embed/01-generated-code"
   },
   {
     "id": "orders",
@@ -133,7 +145,8 @@
     "seoTitle": "Orders: payments, email repair and ticket delivery",
     "description": "Find orders, verify payment and email delivery, fix contact details and resend the appropriate current message.",
     "label": "Orders and delivery",
-    "workflow": "administration"
+    "workflow": "administration",
+    "preview": "en/orders/report"
   },
   {
     "id": "check-in",
@@ -143,7 +156,8 @@
     "seoTitle": "Visitor check-in: QR scanning, ticket states and offline work",
     "description": "Prepare staff access, scan QR codes, confirm admission and handle used or unpaid tickets and pending offline records.",
     "label": "Visitor check-in",
-    "workflow": "check-in"
+    "workflow": "check-in",
+    "preview": "en/check-in/used-mobile"
   },
   {
     "id": "scanner-settings",
@@ -153,7 +167,8 @@
     "title": "Configure the web scanner display",
     "seoTitle": "Ticket scanner settings: details, products and permissions",
     "description": "For organizers: products, form answers, search, internal details and preview before saving. Settings apply to the whole event.",
-    "label": "Scanner settings"
+    "label": "Scanner settings",
+    "preview": "en/scanner-advanced/settings"
   },
   {
     "id": "troubleshooting",
@@ -162,6 +177,7 @@
     "title": "When your embedded form does not look right",
     "seoTitle": "Embedded form help: height, appearance and updates",
     "description": "Check the public URL, HTML code, automatic height and website cache before contacting support.",
-    "label": "Troubleshooting"
+    "label": "Troubleshooting",
+    "preview": "en/forms/buyer-mobile"
   }
 ]

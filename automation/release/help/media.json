@@ -131,7 +131,8 @@
     "caption": "Enter a recognizable name and wait for the draft to be saved before leaving.",
     "openLabel": "Enlarge the application screenshot (new tab)",
     "file": "en/setup/01-name.png",
-    "capturedAt": "2026-10-25"
+    "capturedAt": "2026-10-25",
+    "previewCrop": "detail"
   },
   {
     "id": "en/forms/editor",
@@ -226,7 +227,8 @@
     "alt": "A demonstration event report with orders, tickets, occupancy and revenue summaries.",
     "caption": "Report summarizes overall sales. Verify one order’s payment and delivery in its own detail.",
     "openLabel": "Enlarge the application screenshot (new tab)",
-    "sourceAsset": "web/organizers-media/en/orders-overview.webp"
+    "sourceAsset": "web/organizers-media/en/orders-overview.webp",
+    "previewCrop": "upper"
   },
   {
     "id": "en/check-in/mobile",
@@ -266,7 +268,8 @@
     "alt": "Název rozpracovaného plesu v průvodci založením.",
     "caption": "Název zadáváte v prvním kroku. Ukázková akce se jmenuje Slavnostní ples U Lípy.",
     "openLabel": "Zvětšit snímek (nová karta)",
-    "workflow": "wizard"
+    "workflow": "wizard",
+    "previewCrop": "detail"
   },
   {
     "id": "cs/setup/dates",
@@ -279,7 +282,8 @@
     "sha256": "1b7b7a1a19d98b448489cd40968273b759bcce00414c0a497d1a8bea48aec21b",
     "alt": "Nastavení vytvořené akce s názvem, termínem a místem konání.",
     "caption": "Termín a místo hotové akce najdete také v Nastavení. Ukázka používá testovací termín v listopadu 2026.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "previewCrop": "upper"
   },
   {
     "id": "cs/setup/ticket-templates",
@@ -611,7 +615,8 @@
     "sha256": "8685238fa91871b6fe5aefab208b4d22a4f5b189f7cc5c8a37f54fdf4559cf14",
     "alt": "Objednávka v administraci s cenou a stavem doručení čekajícím na odeslání.",
     "caption": "Přijatá objednávka už je v administraci; potvrzení v této chvíli ještě čeká na odeslání.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "previewCrop": "upper"
   },
   {
     "id": "cs/orders/delivery",
@@ -1110,7 +1115,8 @@
     "sha256": "34d4c37416fe35bb4db41d07066fae14aa8a014f35d5a25e9a2fe49a14b5d86e",
     "alt": "Seznam bankovních účtů pořadatele v administraci.",
     "caption": "Bankovní účty patří pořadateli. V ukázce nejsou propojené s bankou; nejde o účty určené k platbě.",
-    "openLabel": "Zvětšit snímek administrace (nová karta)"
+    "openLabel": "Zvětšit snímek administrace (nová karta)",
+    "previewCrop": "upper"
   },
   {
     "id": "cs/banking/details",
@@ -1166,7 +1172,8 @@
     "sha256": "b0e686ec19653af547ec0de1b160ed14f53fd1f63ba0a76be7b5a00fafa5a2cb",
     "alt": "Organizer bank account list in administration.",
     "caption": "Bank accounts belong to the organizer. These sample accounts are not connected and must not be used for payments.",
-    "openLabel": "Enlarge administration screenshot (new tab)"
+    "openLabel": "Enlarge administration screenshot (new tab)",
+    "previewCrop": "upper"
   },
   {
     "id": "en/banking/details",
@@ -1208,7 +1215,8 @@
     "sha256": "6d79f552acd67c07492244fca81628212ffe82e6eb542e4d130d28f1ce111681",
     "alt": "Settings tab for an existing event in administration.",
     "caption": "These are existing-event settings. Initial creation is covered separately in the wizard guide.",
-    "openLabel": "Enlarge administration screenshot (new tab)"
+    "openLabel": "Enlarge administration screenshot (new tab)",
+    "previewCrop": "upper"
   },
   {
     "id": "en/administration/form-payments",

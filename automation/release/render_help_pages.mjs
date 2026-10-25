@@ -35,6 +35,7 @@ const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const assets = {};
 const media = JSON.parse(read('media.json')).filter(item => item.locale === locale);
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
+const previewImages = new Map();
 const figures = new Map(media.map(item => {
   if (!/^[a-z0-9/-]+$/.test(item.id)) throw new Error('Invalid help media identity');
   const relative = item.sourceAsset || item.file;
@@ -45,6 +46,7 @@ const figures = new Map(media.map(item => {
   const name = `${item.id.replaceAll('/','-')}.${digest(data)}${path.extname(relative)}`;
   assets[name] = data;
   const href = `${helpRoot}assets/${name}`;
+  previewImages.set(item.id, `<span class="guide-preview${item.device === 'mobile' ? ' guide-preview-mobile' : ''}${['detail','upper'].includes(item.previewCrop) ? ' guide-preview-'+item.previewCrop : ''}"><img src="${href}" width="${item.width}" height="${item.height}" alt="" loading="lazy" decoding="async"></span>`);
   return [item.id, `<figure class="guide-screenshot${item.device === 'mobile' ? ' guide-screenshot-mobile' : ''}"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
 }));
 let fontFaces = '';
@@ -70,9 +72,13 @@ const categoryPages = JSON.parse(read('categories.json')).map(category => ({...c
 const categoryFor = page => categoryPages.find(category => category.category === page.category);
 const allPages = [...pages, ...categoryPages];
 if (new Set(allPages.map(page => page.slug)).size !== allPages.length) throw new Error('Duplicate help route');
-const articleList = category => `<div class="guide-list">${pages.filter(p => p.category === category).map(page => `<a href="${href(page)}"><strong>${escape(page.title)}</strong><span>${escape(page.description)}</span></a>`).join('')}</div>`;
+const previewImage = id => {
+  if (!previewImages.has(id)) throw new Error(`Missing ${locale} guide preview: ${id}`);
+  return previewImages.get(id);
+};
+const articleList = category => `<div class="guide-list">${pages.filter(p => p.category === category).map(page => `<a href="${href(page)}">${previewImage(page.preview)}<strong>${escape(page.title)}</strong><span>${escape(page.description)}</span></a>`).join('')}</div>`;
 const navigation = current => `<ul><li><a href="${helpRoot}"${!current.slug ? ' aria-current="page"' : ''}>${escape(pages[0].label)}</a></li>${categoryPages.map(category => `<li><a href="${href(category)}"${current.id === category.id ? ' aria-current="page"' : ''}>${escape(category.label)}</a>${current.category === category.category ? `<ul class="help-nav-articles">${pages.filter(page => page.category === category.category).map(page => `<li><a href="${href(page)}"${page.id === current.id ? ' aria-current="page"' : ''}>${escape(page.label)}</a></li>`).join('')}</ul>` : ''}</li>`).join('')}</ul>`;
-const guideDirectory = `<div class="help-category-directory">${categoryPages.map(category => `<section><h2><a href="${href(category)}">${escape(category.label)}</a></h2><p>${escape(category.description)}</p><a href="${href(category)}">${escape(ui.browseCategory)}</a></section>`).join('')}</div>`;
+const guideDirectory = `<div class="help-category-directory">${categoryPages.map(category => `<section><h2><a href="${href(category)}">${previewImage(category.preview)}${escape(category.label)}</a></h2><p>${escape(category.description)}</p><a href="${href(category)}">${escape(ui.browseCategory)}</a></section>`).join('')}</div>`;
 const appLink = intent => {
   const label = ui.appActions[intent];
   if (!label) throw new Error(`Unknown help action: ${intent}`);
@@ -102,6 +108,7 @@ const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
     .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replace(/\{\{PREVIEW:([a-z0-9/-]+)\}\}/g, (_,id) => previewImage(id))
     .replace(/\{\{VIDEO:([a-z-]+)\}\}/g, (_,id) => videoLink(id))
     .replace(/\{\{APP_LINK:([a-z-]+)\}\}/g, (_,intent) => appLink(intent))
     .replace(/\{\{MEDIA:([a-z0-9/-]+)\}\}/g,(_,id) => {
