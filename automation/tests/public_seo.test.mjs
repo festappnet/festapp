@@ -221,7 +221,7 @@ test('marketing tenant keeps scanner, OAuth and internal document response polic
   for (const path of ['/scan', '/scan/private-code', '/login-qr', '/google-auth', '/app/google-auth']) {
     const response = await productionWorker.fetch(request(path), env);
     assert.equal(response.status, 200, path);
-    assert.equal(response.headers.get('cache-control'), 'no-store', path);
+    assert.equal(response.headers.get('cache-control'), 'no-store, no-transform', path);
     assert.equal(response.headers.get('referrer-policy'), 'no-referrer', path);
   }
   for (const path of ['/organizers-page', '/webclient', '/flutter']) {
@@ -289,7 +289,7 @@ test('independent customer overview serves private web shell without resolving a
  t.mock.method(globalThis,'fetch',async()=>{throw new Error('order shell must not query public form metadata');});
  const response=await worker.fetch(request('/order?order_id=1&token=secret'),env);
  assert.equal(response.status,200);
- assert.equal(response.headers.get('cache-control'),'no-store');
+ assert.equal(response.headers.get('cache-control'),'no-store, no-transform');
  assert.equal(response.headers.get('referrer-policy'),'no-referrer');
  assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
  assert.notEqual(await response.text(),'flutter app');

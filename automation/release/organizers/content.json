@@ -110,11 +110,6 @@
       "catalogTitle": "Akce a plesy - vstupenky online | vstupenky.online",
       "catalogDescription": "Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa."
     },
-    "analytics": {
-      "provider": "cloudflare",
-      "token": "e2b62eb2e6824423b457214e0b286f0a",
-      "spa": true
-    },
     "page": {
       "PAGE_SKIP_TO_CONTENT": "Přejít k obsahu",
       "PAGE_APP_NAME_HOME": "{{APP_NAME}} - úvodní stránka",
