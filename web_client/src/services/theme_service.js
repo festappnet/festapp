@@ -84,6 +84,9 @@ export class ThemeService {
     }
 
     static apply() {
+        // Native inputs, checkboxes and select popups must follow the selected
+        // application theme, including a manual override of the OS preference.
+        document.body.style.colorScheme = ThemeService.isDark ? 'dark' : 'light';
         if (ThemeService.isDark) {
             document.body.classList.add('dark-mode');
         } else {

@@ -445,7 +445,10 @@ async function routeRequest(request, env) {
         const document = path.slice(1).replace(/index\.html$/, "").replace(/\/?$/, "/") + "index.html";
         if (!HELP_PAGES.includes(document)) return notFound();
         if (path !== "/" + document.replace(/index\.html$/, "")) return Response.redirect(new URL("/" + document.replace(/index\.html$/, "") + url.search, url).href, 308);
-        const response = await env.ASSETS.fetch(request);
+        // Conditional browser headers can make ASSETS return a bodyless 304.
+        // This route assembles the full HTML response, so fetch the document
+        // through the same unconditional asset boundary as other HTML entries.
+        const response = await serveAsset(env, request, path);
         if (!response.ok) return notFound();
         return htmlResponse(response.body, response.headers, 200, CSP_MANIFEST.documents[document].profile);
       }
