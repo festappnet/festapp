@@ -39,8 +39,8 @@
     "essential": false,
     "addElementsPanel": true,
     "description": "Vložte prodejní formulář ze vstupenky.online. Akce, vstupenky i objednávky spravujete ve službě.",
-    "previewImage": "Existing canonical brand icon uploaded for development; replace with a real widget screenshot before marketplace submission",
-    "previewImageUrl": "https://static.wixstatic.com/media/397be0_af584b79dd0a4dd2a5f5b59e91d18d13~mv2.png",
+    "previewImage": "Actual published Wix Studio gallery screenshot; saved and reloaded in extension configuration",
+    "previewImageUrl": "https://static.wixstatic.com/media/397be0_5561fa2f82bb42fd98998b546e9fe296~mv2.png",
     "verification": "Authenticated Wix component readback returned default-preset thumbnail URL and autoAdd=false"
   },
   "appInfoDraft": {

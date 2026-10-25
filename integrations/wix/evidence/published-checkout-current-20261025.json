@@ -1,0 +1,217 @@
+{
+  "verifiedAt": "2026-10-25T20:51:22.902867+00:00",
+  "site": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "editor": "Wix Studio",
+  "widgetAssetSource": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+  "liveHelperSha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+  "helperSource": "Live canonical service; no local helper override",
+  "environment": "Owned isolated headless Chromium; public Wix host, production frontend assets, adapted disposable-backend transport",
+  "transport": {
+    "backend": "http://127.0.0.1:59821",
+    "htmlTemplateBuild": "0.20.401+902",
+    "runtimeObservedBuild": "0.20.402+903",
+    "templateSha256": "a1b36e8be10e6b96bc0715143a5245222b6c7defaa3b86971876e3853bc4b60e",
+    "productionHtmlAdaptedForSyntheticRoute": true,
+    "productionFrontendJavascriptModified": false,
+    "authAndCorsAdapted": true,
+    "networkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "productionBackendWrites": 0
+  },
+  "contrast": {
+    "hostSectionBackground": "rgba(255, 255, 255, 0)",
+    "disabled": [
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": true,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "0.5",
+          "box": {
+            "x": 509.796875,
+            "y": 651.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 651.4375,
+            "right": 690.203125,
+            "bottom": 693.4375,
+            "left": 509.796875
+          }
+        },
+        "scrollWidth": 1200,
+        "width": 1200,
+        "build": "0.20.402+903"
+      },
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": true,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "0.5",
+          "box": {
+            "x": 509.796875,
+            "y": 651.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 651.4375,
+            "right": 690.203125,
+            "bottom": 693.4375,
+            "left": 509.796875
+          }
+        },
+        "scrollWidth": 1200,
+        "width": 1200,
+        "build": "0.20.402+903"
+      }
+    ],
+    "enabled": [
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": false,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "1",
+          "box": {
+            "x": 509.796875,
+            "y": 579.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 579.4375,
+            "right": 690.203125,
+            "bottom": 621.4375,
+            "left": 509.796875
+          }
+        },
+        "scrollWidth": 1200,
+        "width": 1200,
+        "build": "0.20.402+903"
+      },
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": true,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "0.5",
+          "box": {
+            "x": 509.796875,
+            "y": 551.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 551.4375,
+            "right": 690.203125,
+            "bottom": 593.4375,
+            "left": 509.796875
+          }
+        },
+        "scrollWidth": 1200,
+        "width": 1200,
+        "build": "0.20.402+903"
+      }
+    ],
+    "mobileVisibleButtons": [
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": false,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "1",
+          "box": {
+            "x": 69.796875,
+            "y": 597.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 597.4375,
+            "right": 250.203125,
+            "bottom": 639.4375,
+            "left": 69.796875
+          }
+        },
+        "scrollWidth": 320,
+        "width": 320,
+        "build": "0.20.402+903"
+      },
+      {
+        "lang": "cs",
+        "button": {
+          "text": "Pokračovat",
+          "disabled": true,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(0, 0, 0)",
+          "opacity": "0.5",
+          "box": {
+            "x": 69.796875,
+            "y": 569.4375,
+            "width": 180.40625,
+            "height": 42,
+            "top": 569.4375,
+            "right": 250.203125,
+            "bottom": 611.4375,
+            "left": 69.796875
+          }
+        },
+        "scrollWidth": 320,
+        "width": 320,
+        "build": "0.20.402+903"
+      }
+    ],
+    "liveFixVerified": true
+  },
+  "mobile": {
+    "viewportWidth": 320,
+    "documentScrollWidth": 320,
+    "iframeWidths": [
+      320,
+      320
+    ],
+    "nativeSafari": false
+  },
+  "fallback": {
+    "fontSize": 14,
+    "clickableHeight": 44,
+    "textAlign": "center"
+  },
+  "purchase": {
+    "buyer": "wix-final-903-20261025@example.invalid",
+    "buyerOrdersBefore": 0,
+    "submitClicks": 1,
+    "orderId": 8,
+    "formId": 9,
+    "price": 120,
+    "currency": "CZK",
+    "state": "ordered",
+    "fixtureOrdersBefore": 1,
+    "fixtureOrdersAfter": 2,
+    "successHeading": "Vaše objednávka byla přijata!",
+    "headingYWithinIframe": 134.578125,
+    "realPaymentMade": false,
+    "externalEmailDeliveryProven": false
+  },
+  "presentationFixture": "../tests/gallery-fixture.sql; local-only Czech example, no prices/stock/orders/shared bank data reset",
+  "qaBrowserAndTransportClosed": true,
+  "marketplacePublication": false,
+  "fullyQualified": false,
+  "limits": [
+    "Synthetic HTML/backend/auth/CORS are adapted; production route/CORS and a real payment-provider return are not qualified",
+    "Template reported build 0.20.401+902; actual runtime reported 0.20.402+903. Both are recorded rather than conflated",
+    "Desktop bank-style order creation verified; no mobile order was submitted",
+    "Harmony, native Safari, complete payment/lifecycle matrix and clean native Add to Site remain pending"
+  ]
+}

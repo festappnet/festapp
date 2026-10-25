@@ -80,11 +80,11 @@ existing integration tests; never place real orders or reserve production seats.
 | --- | --- | --- | --- |
 | Install, add widget, settings persist after editor reload | not run | pass | pass |
 | Editor/Preview have no checkout iframe or helper loaded | not run | pass | pass |
-| Published form, auto height, helper/version handshake | not run | pass with QA transport | partial: live contrast fix pending |
-| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: candidate contrast verified |
+| Published form, auto height, helper/version handshake | not run | pass with QA transport | pass with QA transport; live helper fixed |
+| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: live contrast/320 px verified |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor lifecycle pass; published pair/attribute isolation pass with QA transport |
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
-| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
+| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
 | Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall observed with native setup warning/workaround; remaining cases pending | helper outage fallback pass; other cases pending |
 
@@ -140,7 +140,8 @@ This is scoped integration evidence, not production route/CORS qualification.
 
 Before a purchase, assert no previous order exists for the chosen synthetic
 buyer. The recorded buyer `wix-qa-20261025@example.invalid` already has one order;
-do not submit it again. Other readonly checks need no new purchase. Never enter
+do not submit it again. The final buyer
+`wix-final-903-20261025@example.invalid` also already has order 8. Other readonly checks need no new purchase. Never enter
 real payment details, submit to production stock or claim provider payments from
 an `ordered` synthetic record. Close the owned browser and transport after QA.
 
@@ -148,8 +149,11 @@ For a shared-helper fix, append `--local-helper` to the transport command. This
 serves only the repository's canonical `web_client/public/embed.js` candidate and
 records its SHA-256. Such a run proves candidate behavior, not live deployment.
 The Studio check found transparent white section backgrounds turning checkout
-button text transparent. Its fix must reach canonical main and the selected
-`prod/festapptickets` service release before final live qualification/gallery.
+button text transparent. The fix is now on canonical main and the selected
+`prod/festapptickets` release 0.20.402+903. Actual published Studio contrast,
+320 px layout and one additional isolated order passed; see
+[current evidence](evidence/published-checkout-current-20261025.json).
+Real provider payments and the remaining browser/editor matrix stay unqualified.
 
 The native development-site selector currently offers Editor and Studio only.
 The [official testing guide](https://dev.wix.com/docs/build-apps/launch-your-app/app-distribution/test-your-app/test-your-app-on-a-premium-site)

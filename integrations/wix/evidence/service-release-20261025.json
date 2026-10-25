@@ -1,0 +1,167 @@
+{
+  "verifiedAt": "2026-10-25T20:51:22.902867+00:00",
+  "sharedBackend": true,
+  "frontendTenant": "festapptickets",
+  "frontendScope": "Only vstupenky.online frontend was rolled out; shared backend changes retain existing frontend contracts",
+  "frontend": {
+    "history": [
+      {
+        "observed_at": "2026-10-25T20:00:31Z",
+        "tenant": "festapptickets",
+        "public_origin": "https://vstupenky.online",
+        "cloudflare": {
+          "account_id": "84b32318ac235bf6738bdf1c8caa0795",
+          "project": "vstupenkyonline",
+          "environment": "production",
+          "branch": "prod/festapptickets",
+          "source_sha": "1c4c20c23e9b6e0632620e8d38eb6e9a9ffb8753",
+          "deployment_id": "22dfa88f-23ec-4334-a361-42acd6a1cca6",
+          "deployment_url": "https://22dfa88f.vstupenkyonline.pages.dev"
+        },
+        "public_release": {
+          "version": "0.20.401+902",
+          "manifest_main": "main.dart.0.20.401-902.js",
+          "admin_status": 200,
+          "admin_runtime": "cloudflare-pages",
+          "version_manifest_status": 200,
+          "admin_cache_control": "no-cache, must-revalidate, no-transform",
+          "embed_js_status": 200,
+          "embed_js_sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5"
+        },
+        "canonical_verifier": {
+          "command": "node automation/verify_web_deployment.mjs https://vstupenky.online 0.20.401+902",
+          "result": "passed",
+          "consecutive_probes": 3
+        },
+        "limits": [
+          "Read-only verification; no build, push, deployment, or backend query performed."
+        ]
+      }
+    ],
+    "current": {
+      "observed_at": "2026-10-25T20:26:03Z",
+      "tenant": "festapptickets",
+      "public_origin": "https://vstupenky.online",
+      "cloudflare": {
+        "account_id": "84b32318ac235bf6738bdf1c8caa0795",
+        "project": "vstupenkyonline",
+        "environment": "production",
+        "branch": "prod/festapptickets",
+        "source_sha": "ec0b8b5625f4eb53afa1c75a2af9c320b4848e6c",
+        "deployment_id": "bac69b6b-4433-4601-8409-8719d3c224e0",
+        "deployment_url": "https://bac69b6b.vstupenkyonline.pages.dev"
+      },
+      "main_head": "4fb9e38096b2ea39195b00b19151a7f8e52e2a42",
+      "public_release": {
+        "version": "0.20.402+903",
+        "main": "main.dart.0.20.402-903.js",
+        "admin_status": 200,
+        "admin_runtime": "cloudflare-pages",
+        "manifest_status": 200,
+        "version_manifest_status": 200,
+        "revalidated_cache_headers": true,
+        "embed_js_status": 200,
+        "embed_js_sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5"
+      },
+      "canonical_verifier": {
+        "command": "node automation/verify_web_deployment.mjs https://vstupenky.online 0.20.402+903",
+        "result": "passed",
+        "consecutive_probes": 3
+      },
+      "limits": [
+        "Read-only public verification; no tenant frontend deployment or backend query during this observation."
+      ]
+    }
+  },
+  "sqlMigration": {
+    "version": "20261025190000",
+    "name": "setup_email_banner",
+    "source_main_sha": "4fb9e38096b2ea39195b00b19151a7f8e52e2a42",
+    "source_file_sha256": "688232130e392f45dd86a155e0b338fe765b2b43b09f37f87a4dc245308a0360",
+    "applied_envelope_sha256": "935cd39e273c9da729472d151a847273a0d49f9a12f7a079f1c7b706b5d6eff0",
+    "ledger_readback": {
+      "recorded": true,
+      "name": "setup_email_banner",
+      "statement_count": 0
+    },
+    "verified_functions": [
+      {
+        "signature": "finalize_occasion_setup_draft(uuid,bigint,uuid)",
+        "owner": "postgres",
+        "authenticated_execute": true,
+        "service_role_execute_preserved": true,
+        "source_body_match": true
+      },
+      {
+        "signature": "get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)",
+        "owner": "postgres",
+        "authenticated_execute": true,
+        "source_body_match": true
+      },
+      {
+        "signature": "get_occasion_setup_email_preview(uuid,bigint)",
+        "owner": "postgres",
+        "authenticated_execute": true,
+        "source_body_match": true
+      },
+      {
+        "signature": "repair_order_email_client_sync_v1(bigint,text,text,bigint,text,uuid,boolean,uuid,text)",
+        "owner": "postgres",
+        "confirmation_source_body_unchanged": true
+      }
+    ],
+    "preview_overloads_after": [
+      "2 args",
+      "5 args"
+    ],
+    "no_customer_row_mutations": true
+  },
+  "edgeBundle": {
+    "source_sha": "4fb9e38096b2ea39195b00b19151a7f8e52e2a42",
+    "bundle_id": "4fb9e38096b2-20261025T200920Z",
+    "archive_sha256": "fbf8dcf839bfc5151081b26cf55bade456b105b53158449e3b8866994fdda9cc",
+    "installed_tree_sha256": "390b996959550baef94244c6e59b588d81cb6ab80816a199de1f0f64833581af",
+    "previous_tree_sha256": "e693a4ca9a6c4fa73bf3418ab5a2f827265f011b2bedc162cd79dea035083a38",
+    "runtime_service_restarted": "functions only",
+    "runtime_started_at": "2026-10-25T20:14:22.323042953Z",
+    "runtime_image": "supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7",
+    "runtime_tree_matches_installed_tree": true,
+    "canaries": {
+      "occasion-setup-email-preview": {
+        "options_status": 200,
+        "allow_origin": "https://vstupenky.online",
+        "unauthenticated_post_status": 401
+      },
+      "preview-ticket-layout": {
+        "options_status": 200,
+        "allow_origin": "https://vstupenky.online",
+        "unauthenticated_post_status": 401
+      }
+    },
+    "no_auth_or_service_secrets_changed": true,
+    "no_cloud_supabase_deploy": true
+  },
+  "compatibility": {
+    "review": "Independent critic compared actual pre-migration definitions/ACLs and new canonical source; no breaking change found",
+    "existingParametersAndReturnTypesPreserved": true,
+    "twoAndFiveArgumentPreviewOverloadsPreserved": true,
+    "existingServiceRoleFinalizerExecutePreserved": true,
+    "bannerAbsentPreservesExistingBehavior": true,
+    "previewResponseFieldsAreAdditive": true,
+    "edgeHttpContractPreserved": true,
+    "harfbuzzApiAndEnginePreserved": true,
+    "localRollbackFixtures": [
+      "email_preview_test.sql",
+      "finalize_test.sql",
+      "draft_email_templates_test.sql"
+    ],
+    "localResult": "PASS on canonical disposable DB; all changes rolled back",
+    "localFixtureLimit": "Earlier WordPress fixture had obsolete 4/7-argument preview functions; it was not modified. Canonical production has 2/5 arguments."
+  },
+  "noCustomerRowMutations": true,
+  "noPaymentActivationOrNewContractAccepted": true,
+  "limits": [
+    "Post-restart live endpoint checks prove CORS and authentication boundary, not a real production payment or customer transaction",
+    "Local fixture results and ABI review are the compatibility evidence; no claim that every released frontend was manually exercised"
+  ]
+}
