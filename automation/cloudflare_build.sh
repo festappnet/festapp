@@ -395,7 +395,8 @@ async function routeRequest(request, env) {
     const path = url.pathname;
     if (path === "/_security/csp-report") return cspReport(request);
 
-    const appRedirect = !IS_APP_SUPPORTED ? unsupportedOccasionAppRedirect(path) : null;
+    const marketingPage = ORGANIZERS_ENABLED ? MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path)) : null;
+    const appRedirect = !IS_APP_SUPPORTED && !marketingPage ? unsupportedOccasionAppRedirect(path) : null;
     if (appRedirect) {
       return Response.redirect(new URL(appRedirect, url).toString(), 302);
     }
@@ -430,7 +431,6 @@ async function routeRequest(request, env) {
       if (path === "/events/" || (path === "/" && url.searchParams.has("q"))) {
         return Response.redirect(new URL("/events" + url.search, url).href, 308);
       }
-      const marketingPage = MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path));
       if (marketingPage && path !== marketingPage.path) return Response.redirect(new URL(marketingPage.path + url.search,url).href,308);
       if (marketingPage) {
         const res = await serveAsset(env, request, marketingPage.asset);
