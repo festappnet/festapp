@@ -104,6 +104,7 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
 class OccasionSetupCommunication extends StatefulWidget {
   final String draftId;
   final int? unitId;
+  final ValueChanged<bool>? onBusyChanged;
   final bool paymentTiming;
   final Map<String, dynamic> data;
   final ValueChanged<Map<String, dynamic>> onChanged;
@@ -114,6 +115,7 @@ class OccasionSetupCommunication extends StatefulWidget {
     super.key,
     required this.draftId,
     this.unitId,
+    this.onBusyChanged,
     this.paymentTiming = false,
     required this.data,
     required this.onChanged,
@@ -311,6 +313,7 @@ class _OccasionSetupCommunicationState
                   'draftId': widget.draftId,
                   'sourceId': widget.data['sourceId'],
                   'copyEmails': widget.data['copyEmails'],
+                  'emailBanner': widget.data['emailBanner'],
                   'emailTemplateOverrides':
                       widget.data['emailTemplateOverrides'],
                 }),
@@ -330,6 +333,8 @@ class _OccasionSetupCommunicationState
         if (widget.loadPreview != null) ...[
           const SizedBox(height: 24),
           OccasionSetupEmailTemplates(
+              unitId: widget.unitId,
+              onBusyChanged: widget.onBusyChanged,
               draft: widget.data,
               loadPreview: widget.loadPreview!,
               onChanged: widget.onChanged),

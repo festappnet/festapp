@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.get_occasion_setup_email_preview(
  p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE d public.occasion_setup_drafts; unit_data jsonb; resolved jsonb; copied jsonb;
- source_id bigint; tone text; reply_to text;
+ email_banner text; inherited_banner text; source_id bigint; tone text; reply_to text;
  o public.occasions; selected_code text; feature jsonb; ticket_catalog jsonb; template_code text; templates jsonb:='[]'; overrides jsonb; effective jsonb;
 BEGIN
  IF p_message_type IS NULL OR p_message_type NOT IN ('order_confirmation','order_tickets') THEN
@@ -30,6 +30,10 @@ BEGIN
  END IF;
  SELECT data INTO unit_data FROM public.units WHERE id=d.unit AND organization=d.organization;
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='Draft hierarchy denied'; END IF;
+ email_banner:=CASE WHEN p_occasion IS NULL THEN nullif(d.data->>'emailBanner','') END;
+ IF email_banner IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
+ SELECT coalesce(unit_data->>'email_banner',data->>'email_banner') INTO inherited_banner FROM public.organizations WHERE id=d.organization;
  tone:=coalesce(nullif(nullif(d.data->>'communicationTone',''),'inherit'),CASE WHEN unit_data->>'communication_tone'='informal' THEN 'informal' ELSE 'formal' END);
  IF tone NOT IN ('formal','informal') THEN RAISE invalid_parameter_value USING MESSAGE='Invalid tone'; END IF;
  IF coalesce(d.data->>'replyToMode','inherit') NOT IN ('inherit','custom') THEN
@@ -76,6 +80,7 @@ BEGIN
   'ticketFeature',feature,'ticketCatalog',ticket_catalog,'occasion',CASE WHEN p_occasion IS NOT NULL THEN to_jsonb(o) ELSE jsonb_build_object('id',0,'title',d.data->>'title','start_time',d.data->>'start','end_time',d.data->>'end','data',jsonb_build_object('place_name',d.data->>'placeName')) END,
   'revision' ,d.revision,'title',coalesce(nullif(d.data->>'title',''),'Ukázková událost'),
   'tone',tone,'replyTo',reply_to,'resolved',resolved,
+  'emailBanner',email_banner,'inheritedEmailBanner',inherited_banner,
   'emailTemplates',templates,'emailScope',jsonb_build_object(
    'unit',jsonb_build_object('id',d.unit,'title',(SELECT title FROM public.units WHERE id=d.unit)),
    'organization',jsonb_build_object('id',d.organization,'title',(SELECT title FROM public.organizations WHERE id=d.organization))),
