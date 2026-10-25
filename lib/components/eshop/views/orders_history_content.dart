@@ -2,7 +2,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Retries a failed preview twice, then leaves the existing error affordance.
 /// The provider retains its normal cache policy for successful images.

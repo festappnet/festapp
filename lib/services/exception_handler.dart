@@ -1,7 +1,7 @@
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';

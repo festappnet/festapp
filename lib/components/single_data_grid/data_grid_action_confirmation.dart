@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 
 import 'data_grid_strings.dart';

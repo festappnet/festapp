@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A bounded decoded preview, not a JPEG/PNG encoder. Uploads retain the source
 /// bytes and receive their final processing from the image Worker.

@@ -1,6 +1,6 @@
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'id_document_data.dart';
 
 class IdDocumentFieldHolder extends FieldHolder {

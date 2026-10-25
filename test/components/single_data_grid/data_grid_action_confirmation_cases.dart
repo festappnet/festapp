@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/views/order_delete_dialog.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
@@ -19,7 +20,7 @@ void main() {
   });
   testWidgets('ticket row preserves labels, parent and edited note',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       final order = OrderModel(
         id: 10,
         orderSymbol: 'ORDER10',
@@ -74,7 +75,7 @@ void main() {
       TicketModel(id: 3, ticketSymbol: 'TICKET3', relatedOrder: otherOrder),
       TicketModel(id: 4, ticketSymbol: 'TICKET4'),
     ];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: DataGridActionSummary<TicketModel>(
           items: items,
@@ -102,7 +103,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     bool? result;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       return Scaffold(
         body: TextButton(
           onPressed: () async {
@@ -150,7 +151,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     bool? result;
     var hasFakturoid = true;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: Builder(
                 builder: (context) => ElevatedButton(

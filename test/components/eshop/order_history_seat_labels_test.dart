@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/orders_history_model.dart';
@@ -41,7 +42,7 @@ void main() {
           jsonDecode(File('assets/translations/cs.json').readAsStringSync());
       await WidgetEnvironmentFixture(
               locale: const Locale('cs'), translations: catalog)
-          .pumpWidget(tester, MaterialApp(home: Builder(builder: (context) {
+          .pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
         final summary = current
             .toTrinaRow(context)
             .cells[EshopColumnIds.HISTORY_CHANGES_SUMMARY]!
@@ -60,7 +61,7 @@ void main() {
         jsonDecode(File('assets/translations/cs.json').readAsStringSync());
     await WidgetEnvironmentFixture(
             locale: const Locale('cs'), translations: catalog)
-        .pumpWidget(tester, MaterialApp(home: Builder(builder: (context) {
+        .pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       String summary(OrderHistoryModel model) => model
           .toTrinaRow(context)
           .cells[EshopColumnIds.HISTORY_CHANGES_SUMMARY]!

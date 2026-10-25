@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
@@ -62,7 +63,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1500, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final calls = <Map<String, dynamic>>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EmailDeliveryHistory(
       occasionId: 3,
@@ -143,7 +144,7 @@ void main() {
       'history loads only rows and organization switch preserves the selected scope',
       (tester) async {
     final calls = <Map<String, dynamic>>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EmailDeliveryHistory(
       embedded: true,
@@ -177,7 +178,7 @@ void main() {
       return args['p_occasion'] == 3 ? pending.future : [message(2)];
     }
 
-    Widget page(int occasion) => MaterialApp(
+    Widget page(int occasion) => MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EmailDeliveryHistory(
                 embedded: true,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../_shared/copy_button.dart';
 
 /// Readonly symbol and compact inline copy action, shared by order grids.

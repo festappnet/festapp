@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,7 +44,7 @@ void main() {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeConfig.theme(brightness: dark ? Brightness.dark : Brightness.light),
-        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)), child: child!),
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)), child: child!)),
         home: Builder(builder: (context) => Scaffold(body: Center(child: TextButton(
           onPressed: () => showDialog<void>(context: context,
             builder: (_) => OrderEmailRepairDialog(

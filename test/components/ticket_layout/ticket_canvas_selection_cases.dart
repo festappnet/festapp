@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:ui' show PointerDeviceKind;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_controller.dart';
@@ -35,7 +36,7 @@ void main() {
           addTearDown(controller.dispose);
           addTearDown(transform.dispose);
           addTearDown(resources.dispose);
-          await tester.pumpWidget(MaterialApp(
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
               home: TicketLayoutCanvas(
                   controller: controller,
                   resources: resources,

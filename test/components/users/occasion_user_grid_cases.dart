@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -9,7 +10,7 @@ void main() {
       (tester) async {
     const expectedAggregateVersion = 7;
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(builder: (builderContext) {
         context = builderContext;
         return const SizedBox();

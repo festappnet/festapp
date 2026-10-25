@@ -10,17 +10,17 @@
     "test:integration": "vitest run tests/integration/"
   },
   "dependencies": {
-    "aws4fetch": "^1.0.0",
-    "jose": "^5.0.0"
+    "aws4fetch": "^1.0.20",
+    "jose": "^6.2.13"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261021.1",
+    "@cloudflare/workers-types": "^5.20261024.1",
     "@types/node": "^25.9.9",
-    "@types/pg": "^8.16.0",
+    "@types/pg": "^8.23.1",
     "pg": "^8.23.1",
-    "typescript": "^5.0.0",
-    "vitest": "^4.1.12",
-    "wrangler": "^4.151.3"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.152.0"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {

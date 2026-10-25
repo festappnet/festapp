@@ -2,7 +2,7 @@ import 'data_grid_action_confirmation.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:trina_grid/trina_grid.dart';

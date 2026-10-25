@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:festapp_core/eshop.dart';
 // Isolated report smoke harness. Uses synthetic data and never contacts a backend.
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/views/report_tab.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import '../../../packages/festapp_core/test/support/occasion_report_fixture.dart';
@@ -29,7 +30,7 @@ void main() async {
     startLocale: const Locale('cs'),
     path: 'assets/translations',
     child: Builder(
-        builder: (context) => MaterialApp(
+        builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeConfig.theme(),
               darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
               themeMode: Uri.base.queryParameters['theme'] == 'dark'
@@ -37,7 +38,7 @@ void main() async {
                   : ThemeMode.light,
               locale: context.locale,
               supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
               home: Builder(
                   builder: (context) => MediaQuery(
                         data: MediaQuery.of(context).copyWith(

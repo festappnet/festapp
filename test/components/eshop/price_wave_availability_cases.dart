@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
@@ -33,10 +34,10 @@ void main() {
       await environment.pumpWidget(
           tester,
           MaterialApp(
-              builder: (context, child) => MediaQuery(
+              builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                   data: MediaQuery.of(context)
                       .copyWith(textScaler: const TextScaler.linear(1.5)),
-                  child: child!),
+                  child: child!)),
               home: Builder(
                   builder: (context) => Scaffold(
                         body: TextButton(
@@ -107,10 +108,10 @@ void main() {
           await environment.pumpWidget(
               tester,
               MaterialApp(
-                builder: (context, child) => MediaQuery(
+                builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                     data: MediaQuery.of(context)
                         .copyWith(textScaler: const TextScaler.linear(1.5)),
-                    child: child!),
+                    child: child!)),
                 home: Builder(
                     builder: (context) => Scaffold(
                           body: TextButton(

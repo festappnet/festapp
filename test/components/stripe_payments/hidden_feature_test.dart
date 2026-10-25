@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
@@ -8,7 +9,7 @@ import 'package:fstapp/main.dart' as app;
 void main() {
   testWidgets('default build hides the direct card settings route before loading account data', (tester) async {
     expect(StripeFeature.visible, isFalse);
-    await tester.pumpWidget(const MaterialApp(home: UnitCardPaymentsPage()));
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: UnitCardPaymentsPage()));
     expect(find.byType(UnitCardPaymentsView), findsNothing);
     expect(tester.takeException(), isNull);
   });

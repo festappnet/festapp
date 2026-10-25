@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'layout_scene_surface.dart';

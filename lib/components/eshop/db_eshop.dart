@@ -2,7 +2,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/supabase_eshop_commands.dart';
 import 'package:fstapp/components/eshop/supabase_product_schedule_commands.dart';

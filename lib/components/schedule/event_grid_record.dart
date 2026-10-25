@@ -1,6 +1,6 @@
 import 'package:festapp_core/program.dart';
 import 'package:festapp_core/map.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/schedule/event_commands.dart';

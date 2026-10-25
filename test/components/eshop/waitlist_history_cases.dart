@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
@@ -8,14 +9,14 @@ import 'package:easy_localization/easy_localization.dart' as easy;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/order_data_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_data_product_model.dart';
 import 'package:fstapp/components/eshop/models/orders_history_model.dart';
 import 'package:fstapp/components/eshop/models/waitlist_summary_model.dart';
-import 'package:timezone/data/latest.dart' as zones;
+import 'package:festapp_core/time.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
 
 late WidgetEnvironmentFixture _environment;
@@ -36,7 +37,7 @@ void main() {
         translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync()));
     if (!tz.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));
@@ -71,7 +72,7 @@ void main() {
         orderModel: OrderModel(state: 'paid'));
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: Builder(
                     builder: (context) => Column(children: [
@@ -103,7 +104,7 @@ void main() {
         ]);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: Builder(
                     builder: (context) => Column(children: [
@@ -142,7 +143,7 @@ void main() {
               path: 'unused',
               assetLoader: _TestTranslations(),
               child:
-                  MaterialApp(home: Scaffold(body: Builder(builder: (context) {
+                  MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
                 final column = EshopColumns.generateColumns(
                     context, [EshopColumnIds.ORDER_STATE]).single;
                 return column.renderer!(TrinaColumnRendererContext(
@@ -169,7 +170,7 @@ void main() {
           'ticketIds': [1]
         });
     await _environment.pumpWidget(tester,
-        MaterialApp(home: Builder(builder: (context) {
+        MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       final cell = history
           .toTrinaRow(context)
           .cells[EshopColumnIds.HISTORY_STATE]!
@@ -200,7 +201,7 @@ void main() {
       final formatted = history.waitlistHistoryState!;
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: Center(
                       child: SizedBox(

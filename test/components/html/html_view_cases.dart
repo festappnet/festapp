@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_view.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -20,7 +21,7 @@ void main() {
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
           body: HtmlView(
         html: '<a href="$url">Tabulka spolujízdy</a>',
@@ -37,7 +38,7 @@ void main() {
 
   testWidgets('plain contacts are clickable in existing displayed HTML',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: HtmlView(
       html: '<p>or call 731140198, info@example.org, www.example.org</p>',
@@ -54,7 +55,7 @@ void main() {
       (tester) async {
     const imageUrl =
         'https://a.img.festapp.net/images/643/information-image.png';
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: HtmlView(
           html: '<img src="$imageUrl">',
@@ -88,7 +89,7 @@ void main() {
   testWidgets('offline YouTube anchor becomes a disabled external link',
       (tester) async {
     const url = 'https://youtu.be/dQw4w9WgXcQ';
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: HtmlView(
           html: '<a href="$url">Video</a>',

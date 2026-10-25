@@ -6,7 +6,7 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/schedule/event_page_theme.dart';
 

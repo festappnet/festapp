@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_communication.dart';
 import 'dart:async';
@@ -140,7 +141,7 @@ void main() {
     bool paymentTiming = false,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: SingleChildScrollView(
             child: StatefulBuilder(
@@ -264,7 +265,7 @@ void main() {
       return calls == 1 ? first.future : second.future;
     }
 
-    Widget view() => MaterialApp(
+    Widget view() => MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionSetupEmailPreview(draft: data, loadPreview: load)));
     await tester.pumpWidget(view());

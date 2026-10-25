@@ -1,8 +1,5 @@
 enableGlobalVirtualStore: false
 
-patchedDependencies:
-  '@festapp/venue-layout@0.3.6': patches/venue-layout-hit-slop.patch
-
 allowBuilds:
   esbuild: true
   workerd: true

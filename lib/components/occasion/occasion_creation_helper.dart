@@ -10,7 +10,7 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/app_config.dart';

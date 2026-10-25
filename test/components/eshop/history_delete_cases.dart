@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:timezone/timezone.dart' as fixtureTimezone;
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -5,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -16,7 +17,7 @@ import 'package:fstapp/components/single_data_grid/single_data_grid_controller.d
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as zones;
+import 'package:festapp_core/time.dart' as zones;
 
 class _Translations extends AssetLoader {
   @override
@@ -31,7 +32,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     if (!fixtureTimezone.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = fixtureTimezone.local;
     addTearDown(() => fixtureTimezone.setLocalLocation(previousZone));
@@ -51,7 +52,7 @@ void main() {
       supportedLocales: const [Locale('cs')],
       path: 'unused',
       assetLoader: _Translations(),
-      child: MaterialApp(home: Builder(builder: (context) {
+      child: MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
         expect(
             order.toTrinaRow(context).cells[EshopColumnIds.ORDER_FORM]!.value,
             'Přihláška');

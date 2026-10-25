@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'widget_environment_fixture.dart';
 import 'localization_log_cases.dart' as localization;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'root_supabase_fixture.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'dart:convert';
@@ -93,7 +94,7 @@ void main() {
       });
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Builder(builder: (_) => Text('fixture.value'.tr()))));
       expect(find.text(value), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());

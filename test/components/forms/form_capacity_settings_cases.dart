@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'dart:convert';
@@ -5,7 +6,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,10 +52,10 @@ void main() {
             child: MaterialApp(
                 debugShowCheckedModeBanner: false,
                 theme: ThemeConfig.theme(brightness: Brightness.dark),
-                builder: (context, child) => MediaQuery(
+                builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                     data: MediaQuery.of(context)
                         .copyWith(textScaler: TextScaler.linear(scale)),
-                    child: child!),
+                    child: child!)),
                 home: Scaffold(
                     body: FormCapacitySettings(
                         form: form, canEdit: true, onChanged: () {})))));
@@ -218,7 +219,7 @@ void main() {
     expect(form.definition.participantCapacity, 10);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: FormCapacitySettings(
                     form: form, canEdit: false, onChanged: () {}))));
@@ -274,7 +275,7 @@ void main() {
               {'occupiedPeople': 10, 'offeredPlaces': 1, 'limit': 11}));
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: FormCapacitySettings(
                       form: form,
@@ -322,7 +323,7 @@ void main() {
               {'occupiedPeople': 11, 'offeredPlaces': 0}));
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: FormCapacitySettings(
                       form: form, canEdit: true, onChanged: () {}))));
@@ -355,7 +356,7 @@ void main() {
           participantCapacity: 11, waitlistEnabled: true, capacity: capacity);
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: Column(children: [
             FormCapacitySettings(form: form, canEdit: false, onChanged: () {}),

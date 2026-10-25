@@ -3,7 +3,7 @@ import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/components/timetable/timetable_helper.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/timetable/horizontal_line_widget.dart';
 import 'package:fstapp/components/timetable/timetable_items_widget.dart';
 import 'package:fstapp/theme_config.dart';

@@ -3,7 +3,7 @@ import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_field_holder.dart';

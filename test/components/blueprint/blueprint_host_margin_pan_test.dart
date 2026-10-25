@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
@@ -71,12 +72,12 @@ void main() {
     late StateSetter updateHost;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeConfig.theme(brightness: Brightness.dark),
             locale: const Locale('cs'),
             supportedLocales: VenueLayoutLocalizations.supportedLocales,
             localizationsDelegates:
-                VenueLayoutLocalizations.localizationsDelegates,
+                [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
             home: StatefulBuilder(builder: (context, update) {
               updateHost = update;
               return RawGestureDetector(

@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/images/recovering_image.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -34,7 +35,7 @@ void main() {
       owner: const HtmlMediaOwner.none(), authoring: EmailAuthoringProvider(
         EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'), field: EmailTargetField.subject));
     final body = RichHtmlEditorController(initialHtml: '<p>Body</p>', owner: const HtmlMediaOwner.none());
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Column(children: [
       RichHtmlEditor(controller: subject), RichHtmlEditor(controller: body),
     ]))));
     await tester.tap(find.text('Subject', findRichText: true));
@@ -64,7 +65,7 @@ void main() {
   });
   testWidgets('only approved wrapper banner uses canonical image delivery', (tester) async {
     const banner = 'https://img.festapp.net/images/preview-banner.png';
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: EmailReceivedMessage(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: EmailReceivedMessage(
       subject: 'Subject', senderAddress: 'info@festapp.net',
       html: '<img src="$banner" alt="Banner"><img src="https://tracker.invalid/pixel.png"><img src="cid:qr">',
       allowedRemoteImageSources: {banner},
@@ -73,13 +74,13 @@ void main() {
     expect((image.image as NetworkImage).url,
         ImageUrlHelper.transformImageUrl(banner, width: ImageUrlHelper.mediumWidth));
     expect(find.byIcon(Icons.image_outlined), findsNWidgets(2));
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: EmailPreviewHtml(html: '<p>No banner</p>'))));
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: EmailPreviewHtml(html: '<p>No banner</p>'))));
     expect(find.byType(RecoveringImage), findsNothing);
     expect(find.byIcon(Icons.image_outlined), findsNothing);
   });
   testWidgets('fidelity email font does not inherit app typography',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeData(fontFamily: 'Futura'),
         home: const Scaffold(
             body: EmailPreviewHtml(html: '<p>Message text</p>'))));
@@ -97,7 +98,7 @@ void main() {
         'sans-serif');
   });
   testWidgets('fidelity preserves fragment edge margins', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Align(alignment: Alignment.topLeft,
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Align(alignment: Alignment.topLeft,
       child: EmailPreviewHtml(html: '<div style="margin:20px 0"><p style="margin:0">Canonical card</p></div>')))));
     await tester.pumpAndSettle();
     final preview = tester.getRect(find.byType(EmailPreviewHtml));
@@ -107,7 +108,7 @@ void main() {
   });
   testWidgets('fidelity preserves canonical empty spacer heights',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EmailPreviewHtml(
                 html:
@@ -129,7 +130,7 @@ void main() {
               EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
               field: EmailTargetField.body,
               scenario: scenario));
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(brightness: brightness),
           home: Scaffold(
               body: SingleChildScrollView(
@@ -184,7 +185,7 @@ void main() {
             EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
             field: EmailTargetField.subject,
             scenario: scenario));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: Align(
                 alignment: Alignment.topLeft,
@@ -210,7 +211,7 @@ void main() {
           scenario: scenario.withContext(const EmailPreviewContext(occasionTitle: title)));
       final controller = RichHtmlEditorController(initialHtml: '<p>{{occasionTitle}}</p>',
           owner: const HtmlMediaOwner.none(), authoring: provider);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Align(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Align(
           alignment: Alignment.topLeft, child: RichHtmlEditor(controller: controller)))));
       await tester.pumpAndSettle();
       expect(find.text('@'), findsOneWidget);
@@ -246,7 +247,7 @@ void main() {
             '<p>{{fullOrder}}</p><p>{{order_overview_button}}</p><p>Text</p>',
         owner: const HtmlMediaOwner.none(),
         authoring: provider);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: RichHtmlEditor(controller: controller)))));
@@ -286,7 +287,7 @@ void main() {
   testWidgets('received message is phone width and retains completed content',
       (tester) async {
     final html = scenario.composeHtml('<p>{{fullOrder}}</p>');
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: EmailReceivedMessage(
@@ -313,7 +314,7 @@ void main() {
             EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
             field: EmailTargetField.body,
             scenario: scenario));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: RichHtmlEditor(controller: controller)))));
@@ -345,7 +346,7 @@ void main() {
         initialHtml: '<p></p>',
         owner: const HtmlMediaOwner.none(),
         authoring: provider);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: RichHtmlEditor(controller: controller)))));
@@ -396,7 +397,7 @@ void main() {
         initialHtml: '<p>Intro {{fullOrder}}</p><p>{{balanceReasoning}}</p>',
         owner: const HtmlMediaOwner.none(),
         authoring: provider);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: RichHtmlEditor(controller: controller, fullscreen: true))));
     final block = controller.editor.document.last;
@@ -433,7 +434,7 @@ void main() {
           initialHtml: source,
           owner: const HtmlMediaOwner.none(),
           authoring: provider);
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: RichHtmlEditor(controller: controller, fullscreen: true))));
       expect(controller.editor.document.whereType<TextNode>(), isEmpty);
@@ -462,7 +463,7 @@ void main() {
   }
   testWidgets('preview surface follows dark app theme', (tester) async {
     final theme = ThemeData.dark();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: theme,
         home: const Scaffold(
             body: EmailPreviewHtml(html: '<p>Jana Nováková</p>'))));

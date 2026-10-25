@@ -4,7 +4,7 @@ import 'package:fstapp/components/occasion/demo/demo_occasion_navigation.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'package:fstapp/components/_shared/breadcrumb_row.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/app_router.gr.dart';

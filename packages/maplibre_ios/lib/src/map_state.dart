@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:maplibre_ios/src/extensions.dart';
 import 'package:maplibre_ios/src/maplibre_ffi.g.dart';
+import 'package:maplibre_ios/src/tile_source_options.dart';
 import 'package:maplibre_platform_interface/maplibre_platform_interface.dart';
 import 'package:objective_c/objective_c.dart';
 
@@ -146,11 +147,23 @@ final class MapLibreMapStateIos extends MapLibreMapState {
       ffiCamera.centerCoordinate = center.toCLLocationCoordinate2D();
     }
     if (zoom != null) {
+      // zoomLevelToAltitudeWithZoomLevel() divides internally by the map
+      // view's native frame size. If this is called before the native
+      // UIKitView has actually been laid out (frame still zero-size), it
+      // produces a non-finite altitude that crashes natively with an
+      // uncaught std::domain_error deep in MapLibre's camera/projection
+      // code. Skip the update in that case; callers can retry once the map
+      // is idle/laid out. `ffiCamera` is a local value not yet applied, so
+      // returning here has no side effect on the real camera.
+      final frameSize = mapView.frame.size;
+      if (frameSize.width <= 0 || frameSize.height <= 0) {
+        return;
+      }
       ffiCamera.altitude = Helpers.zoomLevelToAltitudeWithZoomLevel(
         zoom,
         pitch: ffiCamera.pitch,
         latitude: ffiCamera.centerCoordinate.latitude,
-        size: mapView.frame.size,
+        size: frameSize,
       );
     }
     mapView.flyToCamera$1(

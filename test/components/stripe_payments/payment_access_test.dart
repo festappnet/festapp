@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/stripe_payment_api.dart';
 import 'package:fstapp/components/stripe_payments/stripe_payment_page.dart';
@@ -71,7 +72,7 @@ void main() {
           bool handoff = false,
           String? surface,
           Future<bool> Function(String)? open}) =>
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: StripePaymentAccessView(
                   token: 'a' * 64,

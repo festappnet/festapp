@@ -6,7 +6,7 @@ import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart'
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,3 +1,4 @@
+import 'package:festapp_core/program.dart' as occasion_time;
 import '../support/fixtures/root_supabase_fixture.dart';
 import '../support/fixtures/local_app_storage_fixture.dart';
 import '../support/fixtures/rights_context_fixture.dart';
@@ -9,7 +10,6 @@ import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:timezone/data/latest.dart' as tz;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ void main() {
       () async {
     const userId = '00000000-0000-4000-8000-000000000001';
     final requests = <String>[];
-    tz.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     final state = RightsContextFixture();
     addTearDown(state.dispose);
     final storage = await LocalAppStorageFixture.open();

@@ -1,5 +1,5 @@
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/app_management/app_management_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';

@@ -1,7 +1,7 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_service.dart';

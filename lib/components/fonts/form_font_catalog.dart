@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart' deferred as font_runtime;
 
 /// Loads the dynamic font registry only for a form that actually needs it.

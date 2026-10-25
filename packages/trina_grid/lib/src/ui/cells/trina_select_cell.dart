@@ -1,0 +1,88 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:trina_grid/src/ui/miscellaneous/trina_popup_cell_state_with_menu.dart';
+import 'package:trina_grid/src/ui/widgets/trina_dropdown_menu.dart';
+import 'package:trina_grid/trina_grid.dart';
+
+import 'popup_cell.dart';
+
+class TrinaSelectCell<T> extends StatefulWidget implements PopupCell {
+  @override
+  final TrinaGridStateManager stateManager;
+
+  @override
+  final TrinaCell cell;
+
+  @override
+  final TrinaColumn column;
+
+  @override
+  final TrinaRow row;
+
+  const TrinaSelectCell({
+    required this.stateManager,
+    required this.cell,
+    required this.column,
+    required this.row,
+    super.key,
+  });
+
+  @override
+  TrinaSelectCellState<T> createState() => TrinaSelectCellState<T>();
+}
+
+class TrinaSelectCellState<T>
+    extends TrinaPopupCellStateWithMenu<TrinaSelectCell<T>> {
+  TrinaColumnTypeSelect<T> get _column => widget.column.type.asSelect();
+
+  @override
+  IconData? get popupMenuIcon => _column.popupIcon;
+
+  @override
+  List<T> get menuItems => _column.items;
+
+  @override
+  TrinaDropdownMenu<T> buildMenu() {
+    // Size the popup to its content so empty/short lists don't leave a tall
+    // blank area below items. The MenuAnchor container itself reserves
+    // [_menuVerticalChrome] (padding + border) on top of the content height,
+    // handled in [TrinaPopupCellStateWithMenu.defaultEditWidget].
+    final hasSearch =
+        _column.menuVariant == TrinaDropdownMenuVariant.selectWithSearch;
+    // Search field (~52) + horizontal separator (1).
+    final chrome = hasSearch ? 53.0 : 0.0;
+    final contentHeight = chrome + menuItems.length * _column.menuItemHeight;
+    final effectiveMaxHeight = math
+        .min(_column.menuMaxHeight, contentHeight)
+        // Always leave room for the search field even when there are no items.
+        .clamp(chrome, _column.menuMaxHeight);
+
+    return TrinaDropdownMenu.variant(
+      _column.menuVariant,
+      items: menuItems,
+      filters: _column.menuFilters,
+      emptyFilterResultBuilder: _column.menuEmptyFilterResultBuilder,
+      emptySearchResultBuilder: _column.menuEmptySearchResultBuilder,
+      itemToString: _column.itemToString,
+      onItemSelected: (item) {
+        _column.onItemSelected?.call(item);
+
+        handleSelected(item);
+        menuController.close();
+      },
+      width: _column.menuWidth ?? widget.column.width,
+      // Guard against a cell value whose runtime type does not match the
+      // column's item type [T] (e.g. a select<int?> column fed a String).
+      // Without this, the implicit `value as T?` downcast throws and brings
+      // down the entire grid build. A mismatched value simply means "no item
+      // is pre-selected".
+      initialValue: widget.cell.value is T ? widget.cell.value as T : null,
+      itemHeight: _column.menuItemHeight,
+      maxHeight: effectiveMaxHeight,
+      itemBuilder: _column.menuItemBuilder,
+      itemToValue: _column.itemToValue,
+      searchHint: widget.stateManager.configuration.localeText.selectSearchHint,
+    );
+  }
+}

@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,7 +94,7 @@ void main() {
     final rebuild = ValueNotifier(0);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
           body: ValueListenableBuilder<int>(
             valueListenable: rebuild,
@@ -154,12 +155,12 @@ void main() {
         tester,
         RepaintBoundary(
             key: key,
-            child: MaterialApp(
+            child: MaterialApp(builder: DependencyMaterialBridge.builder,
                 debugShowCheckedModeBanner: false,
                 locale: const Locale('cs'),
                 supportedLocales: VenueLayoutLocalizations.supportedLocales,
                 localizationsDelegates:
-                    VenueLayoutLocalizations.localizationsDelegates,
+                    [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
                 theme: ThemeConfig.theme(brightness: Brightness.dark),
                 home: Scaffold(
                     body: SingleChildScrollView(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../controller/venue_seat_controller.dart';
 import '../model/seat_adapter.dart';

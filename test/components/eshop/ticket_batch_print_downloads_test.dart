@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/ticket_batch_document_part.dart';
 import 'package:fstapp/components/eshop/views/ticket_batch_print_downloads.dart';
@@ -20,7 +21,7 @@ void main() {
             kind: 'single',
             state: 'ready',
             pages: 1));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: Column(children: [
       TicketBatchPrintDownloads(
@@ -45,7 +46,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected, 'zip');
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: TicketBatchPrintDownloads(
                 parts: const [

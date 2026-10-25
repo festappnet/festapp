@@ -1,12 +1,12 @@
+import 'package:festapp_core/program.dart' as occasion_time;
 import 'package:fstapp/services/time_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/program.dart';
-import 'package:timezone/data/latest.dart' as timezone_data;
 import 'package:timezone/timezone.dart' as timezone;
 
 void main() {
   setUpAll(() {
-    timezone_data.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     timezone.setLocalLocation(timezone.getLocation('Europe/Prague'));
   });
 

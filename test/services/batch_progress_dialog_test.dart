@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/services/batch_progress_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -24,7 +25,7 @@ void main() {
               if (i == 2 && calls[i] == 1) return BatchTaskOutcome.deferred;
               return BatchTaskOutcome.completed;
             }));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
             builder: (context) => Scaffold(
                 body: TextButton(

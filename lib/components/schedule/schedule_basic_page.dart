@@ -2,7 +2,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/map.dart';

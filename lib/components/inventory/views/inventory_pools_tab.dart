@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/inventory/models/inventory_pools_list_bundle.dart';
 import 'package:fstapp/components/inventory/db_inventory_pools.dart';

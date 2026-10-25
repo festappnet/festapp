@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/exclusive_events_cell.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';

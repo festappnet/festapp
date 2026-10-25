@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/images/recovering_image.dart';
 
@@ -29,7 +30,7 @@ void main() {
         image: (await tester
             .runAsync(() => createTestImage(width: 200, height: 300)))!);
     await tester
-        .pumpWidget(MaterialApp(home: RecoveringImage(image: provider)));
+        .pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: RecoveringImage(image: provider)));
     await tester.pump();
     expect(find.byIcon(Icons.broken_image), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 500));
@@ -44,7 +45,7 @@ void main() {
             .runAsync(() => createTestImage(width: 200, height: 300)))!,
         failures: 100);
     await tester
-        .pumpWidget(MaterialApp(home: RecoveringImage(image: provider)));
+        .pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: RecoveringImage(image: provider)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
@@ -66,9 +67,9 @@ void main() {
         image: (await tester
             .runAsync(() => createTestImage(width: 200, height: 300)))!,
         failures: 0);
-    await tester.pumpWidget(MaterialApp(home: RecoveringImage(image: old)));
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: RecoveringImage(image: old)));
     await tester.pump();
-    await tester.pumpWidget(MaterialApp(home: RecoveringImage(image: current)));
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: RecoveringImage(image: current)));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 30));
     expect(old.calls, 1);
@@ -82,7 +83,7 @@ void main() {
             .runAsync(() => createTestImage(width: 200, height: 300)))!,
         failures: 100);
     await tester
-        .pumpWidget(MaterialApp(home: RecoveringImage(image: provider)));
+        .pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: RecoveringImage(image: provider)));
     await tester.pump();
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 30));

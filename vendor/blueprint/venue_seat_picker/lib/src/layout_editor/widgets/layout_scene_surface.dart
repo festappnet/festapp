@@ -6,7 +6,7 @@ import 'layout_table_selection.dart';
 import 'layout_context_menu_stub.dart'
     if (dart.library.js_interop) 'layout_context_menu_web.dart'
     as context_menu;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import '../layout_scene_cache.dart';

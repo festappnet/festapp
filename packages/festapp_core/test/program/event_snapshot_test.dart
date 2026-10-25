@@ -1,13 +1,13 @@
+import 'package:festapp_core/program.dart' as occasion_time;
 import 'package:festapp_core/map.dart';
 import 'package:festapp_core/program.dart';
 import 'package:test/test.dart';
-import 'package:timezone/data/latest.dart' as data;
 import 'package:timezone/timezone.dart' as tz;
 
 void main() {
   late OccasionTimeContext prague;
   setUpAll(() {
-    data.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     prague = OccasionTimeContext(tz.getLocation('Europe/Prague'));
   });
 

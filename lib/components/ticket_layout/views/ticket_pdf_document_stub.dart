@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:file_saver/file_saver.dart';
 import '../ticket_layout_strings.dart';
 

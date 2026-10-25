@@ -2,7 +2,7 @@ import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../blueprint_layout_resources.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';

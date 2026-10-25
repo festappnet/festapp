@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/map_locate_coordinator.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';

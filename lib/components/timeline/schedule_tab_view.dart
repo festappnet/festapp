@@ -1,7 +1,7 @@
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'schedule_timeline.dart';

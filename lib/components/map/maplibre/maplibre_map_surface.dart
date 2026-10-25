@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/map/map_direction_marker.dart';
 import 'package:fstapp/components/map/map_location_accuracy.dart';
 import 'package:fstapp/components/map/map_location_pin_helper.dart';

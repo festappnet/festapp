@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
@@ -25,7 +26,7 @@ void main() {
       'paid_count': 2, 'sent_count': 1, 'purchased_count': 3,
       'form_ids': [9],
     }).copyWith(formTitles: 'Registration');
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       final record = ProductGridRecord(product: product,
           commands: _Commands((_) {}), guard: ExceptionHandler.guardVoid);
       final row = record.toTrinaRow(context);
@@ -65,7 +66,7 @@ void main() {
       commands.reject = action == 'rejected save';
       late SingleDataGridController<ProductGridRecord> controller;
       await tester.pumpWidget(
-          MaterialApp(home: Scaffold(body: Builder(builder: (context) {
+          MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
         ProductGridRecord record(ProductModel product) => ProductGridRecord(
             product: product,
             commands: commands,

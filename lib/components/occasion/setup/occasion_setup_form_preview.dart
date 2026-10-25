@@ -1,7 +1,7 @@
 import 'occasion_setup_strings.dart';
 
 import 'package:festapp_core/forms.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 

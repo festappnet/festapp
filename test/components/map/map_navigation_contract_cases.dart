@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
 import 'package:fstapp/components/map/public_map_host.dart';
@@ -10,7 +11,7 @@ void main() {
     final session = PublicMapSession()..setVisible(true);
     final dependencyChanges = ValueNotifier<int>(0);
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: PublicMapSessionScope(
         session: session,
         child: _CommandCaller(dependencyChanges: dependencyChanges),

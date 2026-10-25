@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/speakers/counseling_picker.dart';
 import 'package:fstapp/components/speakers/speakers_strings.dart';
 import 'package:fstapp/styles/styles_config.dart';

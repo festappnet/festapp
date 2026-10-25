@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/views/ticket_batch_detail_header.dart';
@@ -34,7 +35,7 @@ void main() {
                 File('assets/translations/cs.json').readAsStringSync()));
         await environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 theme: ThemeConfig.theme(
                     brightness: dark ? Brightness.dark : Brightness.light),
                 home: Scaffold(

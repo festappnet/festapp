@@ -11,7 +11,7 @@ import 'dart:typed_data';
 import 'package:file_saver/file_saver.dart';
 import 'package:uuid/uuid.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';

@@ -1,16 +1,17 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/unit_user_model.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:festapp_core/time.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -36,7 +37,7 @@ void main() {
   testWidgets(
       'landing is controlled only through card menus with one visible marker',
       (tester) async {
-    tzdata.initializeTimeZones();
+    tzdata.OccasionTimeContext.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -80,10 +81,10 @@ void main() {
         path: 'assets/translations',
         assetLoader: const _Translations(),
         child: Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 theme: ThemeData(fontFamily: 'Roboto'),
                 home: RepaintBoundary(
                     key: boundary,
@@ -148,7 +149,7 @@ void main() {
   testWidgets(
       'unit role labels never substitute for creation capabilities and revocation hides controls',
       (tester) async {
-    tzdata.initializeTimeZones();
+    tzdata.OccasionTimeContext.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -186,10 +187,10 @@ void main() {
         path: 'assets/translations',
         assetLoader: const _Translations(),
         child: Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 home:
                     OccasionsScreen(unit: unit, initialOccasions: const [])))));
     await tester.pumpAndSettle();

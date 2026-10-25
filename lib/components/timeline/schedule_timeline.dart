@@ -1,5 +1,5 @@
 // schedule_timeline.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/schedule/schedule_strings.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/widgets/detail_dialog.dart';

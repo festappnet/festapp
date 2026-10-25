@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -68,11 +69,10 @@ void main() {
         path: 'unused',
         assetLoader: _Translations(),
         child: Builder(
-            builder: (localizedContext) => MaterialApp(
+            builder: (localizedContext) => MaterialApp(builder: DependencyMaterialBridge.builder,
                   locale: localizedContext.locale,
                   supportedLocales: localizedContext.supportedLocales,
-                  localizationsDelegates:
-                      localizedContext.localizationDelegates,
+                  localizationsDelegates: [...localizedContext.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                   home: Scaffold(body: Builder(builder: (context) {
                     final columns = EshopColumns.generateColumns(
                         context, [EshopColumnIds.TICKET_CONFIRM]);

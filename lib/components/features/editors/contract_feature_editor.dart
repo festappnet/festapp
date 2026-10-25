@@ -1,5 +1,5 @@
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import '../contract_feature.dart';

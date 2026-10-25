@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/speakers/admin/speaker_picker_field.dart';
 import 'package:fstapp/components/speakers/speaker_model.dart';
@@ -14,7 +15,7 @@ final _speakers = [
   SpeakerModel(id: 3, title: 'Petr Malý', subtitle: 'lékař'),
 ];
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: child));
 
 void main() {
   // This suite intentionally uses untranslated key fallback (no catalog).

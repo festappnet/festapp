@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';

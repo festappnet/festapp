@@ -65,7 +65,7 @@ for package in ('venue_layout_core', 'venue_seat_picker'):
     archive = artifacts / f'{package}.tar.gz'
     with tarfile.open(archive) as source:
         pubspec = source.extractfile('pubspec.yaml').read().decode()
-    version = {'venue_layout_core': '0.2.2', 'venue_seat_picker': '0.3.7'}[package]
+    version = {'venue_layout_core': '0.2.2', 'venue_seat_picker': '0.4.0'}[package]
     if f'version: {version}' not in pubspec.splitlines():
         raise SystemExit(f'Unexpected {package} artifact version')
     target = vendor / package
@@ -98,12 +98,12 @@ pack = json.loads((artifacts / 'npm-pack.json').read_text())[0]['filename']
 archive = artifacts / pack
 with tarfile.open(archive) as source:
     package = json.load(source.extractfile('package/package.json'))
-if package['name'] != '@festapp/venue-layout' or package['version'] != '0.3.6':
+if package['name'] != '@festapp/venue-layout' or package['version'] != '0.3.7':
     raise SystemExit('Unexpected npm artifact')
 for name, expected in receipt['requiredNpmFiles'].items():
     if digest(artifacts / 'npm' / name) != expected:
         raise SystemExit(f'Extracted npm receipt mismatch: {name}')
-immutable_pack = f'festapp-venue-layout-0.3.6-{digest(archive)[:12]}.tgz'
+immutable_pack = f'festapp-venue-layout-0.3.7-{digest(archive)[:12]}.tgz'
 target_pack = HOST / 'web_client' / 'vendor' / immutable_pack
 if target_pack.exists() and digest(target_pack) != digest(archive):
     raise SystemExit('Immutable npm artifact collision')
@@ -113,8 +113,8 @@ manifest['archives'][immutable_pack] = digest(archive)
 shutil.copyfile(artifacts / 'archive-result.json', vendor / 'archive-result.json')
 (vendor / 'README.md').write_text('''# Blueprint distribution snapshot
 
-These are the exact pub-selected 0.3.7 wrapper and 0.2.2 core archives,
-verified with the npm 0.3.6 archive by the package archive gate.
+These are the exact pub-selected 0.4.0 wrapper and 0.2.2 core archives,
+verified with the npm 0.3.7 archive by the package archive gate.
 They are dependency artifacts. Edit the canonical `festappnet/venue_seat_picker`
 package, then rebuild and verify its distributions before updating this snapshot.
 Do not patch these copies or add another rendering implementation here.

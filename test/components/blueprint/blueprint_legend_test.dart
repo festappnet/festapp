@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
@@ -24,7 +25,7 @@ void main() {
     BlueprintSeatState? hovered;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintLayoutLegend(
                     compact: true,
@@ -44,7 +45,7 @@ void main() {
   testWidgetsWithEnvironment(() => environment,
       'mobile legend stays one row and exposes every state by horizontal scrolling',
       (tester) async {
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(body: Align(
+    await environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Align(
       alignment: Alignment.topCenter,
       child: SizedBox(width: 360, child: BlueprintLayoutLegend(
         compact: true, states: const [BlueprintSeatState.available])),
@@ -66,7 +67,7 @@ void main() {
           (tester) async {
         await environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeData(brightness: brightness),
               home: Scaffold(
                   body: Center(

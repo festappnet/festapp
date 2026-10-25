@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/users/companion/companion_admin_dialog.dart';
@@ -37,7 +38,7 @@ void main() {
     final existing = user('existing', 'Michael B', 'existing@example.test',
         owner: 'someone-else');
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionAdminDialog(
         owner: owner,
         users: [owner, existing],
@@ -77,7 +78,7 @@ void main() {
     var assigned = false;
     var refreshed = false;
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionAdminDialog(
         owner: owner,
         users: [owner, candidate],

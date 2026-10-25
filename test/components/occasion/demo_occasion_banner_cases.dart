@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,7 +55,7 @@ void main() {
           final frame = GlobalKey();
           await _environment.pumpWidget(
               tester,
-              MaterialApp(
+              MaterialApp(builder: DependencyMaterialBridge.builder,
                   theme: ThemeConfig.theme(
                       brightness: dark ? Brightness.dark : Brightness.light),
                   home: MediaQuery(

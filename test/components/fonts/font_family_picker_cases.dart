@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/fonts/font_family_picker.dart';
@@ -18,7 +19,7 @@ void main() {
       (tester) async {
     String? previewed;
     final chosen = <String?>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SizedBox(
       width: 320,
@@ -66,7 +67,7 @@ void main() {
     final calls = <String>[];
     final pending = Completer<TextStyle>();
     var changes = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeData.dark(),
         home: Scaffold(
             body: FontFamilyPicker(
@@ -112,7 +113,7 @@ void main() {
   testWidgets('font previews keep dark theme text readable in the menu',
       (tester) async {
     final theme = ThemeData.dark();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       theme: theme,
       home: Scaffold(
         body: FontFamilyPicker(
@@ -138,7 +139,7 @@ void main() {
     String? value;
     var fail = false;
     final calls = <String?>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: StatefulBuilder(
                 builder: (context, setState) => FontFamilyPicker(
@@ -180,7 +181,7 @@ void main() {
   testWidgets('loading is visible and disposed response cannot update picker',
       (tester) async {
     final pending = Completer<void>();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: FontFamilyPicker(
                 value: null,
@@ -205,10 +206,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     String? selected;
     await tester.pumpWidget(MaterialApp(
-        builder: (context, child) => MediaQuery(
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: const TextScaler.linear(1.3)),
-            child: child!),
+            child: child!)),
         home: Scaffold(
             body: Padding(
                 padding: const EdgeInsets.all(12),

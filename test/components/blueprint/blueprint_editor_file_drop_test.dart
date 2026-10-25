@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -54,11 +55,11 @@ void main() {
         client: MockClient((_) async => http.Response.bytes(bytes, 200)));
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           locale: const Locale('cs'),
           supportedLocales: VenueLayoutLocalizations.supportedLocales,
           localizationsDelegates:
-              VenueLayoutLocalizations.localizationsDelegates,
+              [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
           home: Scaffold(
               body: BlueprintPlanEditor(
             controller: controller,

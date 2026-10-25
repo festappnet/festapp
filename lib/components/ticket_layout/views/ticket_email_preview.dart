@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../email_templates/email_preview_html.dart';
 import '../../email_templates/db_email_templates.dart';
 import 'package:festapp_core/email_templates.dart';

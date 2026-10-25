@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:crypto/crypto.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_resources.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_layout_background.dart';
@@ -52,14 +52,14 @@ void main() {
             ImageUploadResult(asset['url'] as String, asset: asset);
         final pending = background
             ? uploadBlueprintBackground(
-                selection: XFile.fromData(bytes, name: 'new.png'),
+                selection: ImportFile.fromData(bytes, name: 'new.png'),
                 controller: controller,
                 assets: resolver,
                 isMounted: () => live,
                 occasionId: 1,
                 uploadBitmap: upload)
             : uploadBlueprintGraphic(
-                selection: XFile.fromData(bytes, name: 'new.png'),
+                selection: ImportFile.fromData(bytes, name: 'new.png'),
                 controller: controller,
                 assets: resolver,
                 isMounted: () => live,

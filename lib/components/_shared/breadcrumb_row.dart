@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Keeps breadcrumb labels aligned when regular and bold fonts have different metrics.
 class BreadcrumbRow extends StatelessWidget {

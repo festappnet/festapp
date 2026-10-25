@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shared occasion navigation chrome. Routing, login and modal actions belong
 /// to the retained occasion shell, so a tap also reaches it on reselection.

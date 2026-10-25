@@ -1,7 +1,7 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 // day_list.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/activities/activities_component_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/users/companion/companion_visibility.dart';

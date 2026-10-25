@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/html/html_view.dart';
 
 class FormMessageWidget extends StatelessWidget {

@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/client_changes/client_change_model.dart';
 import 'package:fstapp/components/client_changes/client_changes_tab.dart';
@@ -10,12 +11,12 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  Widget testApp(Widget child) => MaterialApp(home: Scaffold(body: child));
+  Widget testApp(Widget child) => MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: child));
 
   testWidgets('shows the pre-activation state without querying Supabase',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: ClientChangesTab(clientSyncEnabled: false),
         ),

@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -16,7 +17,7 @@ void main() {
       (tester) async {
     final order =
         OrderModel.fromJson({'id': 5, 'state': 'waitlisted', 'price': null});
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       final row = order.toTrinaRow(context);
       expect(row.cells[EshopColumnIds.PAYMENT_INFO_REMINDER_SENT]!.value, '');
       expect(row.cells[EshopColumnIds.ORDER_PRICE]!.value, '');

@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/news/news_notification_audience_selector.dart';
 
@@ -10,7 +11,7 @@ Future<void> _pumpSelector(
   required ValueChanged<NewsNotificationAudience> onChanged,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: SingleChildScrollView(
           child: NewsNotificationAudienceSelector(

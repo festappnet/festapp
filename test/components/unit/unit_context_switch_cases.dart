@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -10,7 +11,7 @@ import 'package:fstapp/components/unit/unit_occasion_dashboard.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/unit_administration_access.dart';
@@ -92,7 +93,7 @@ void main() {
   testWidgets(
       'context dashboard renders without an initialized SDK or follow-up reads',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: OccasionsScreen(
             unit: UnitModel(id: 7),
             initialDashboard:
@@ -105,7 +106,7 @@ void main() {
   testWidgets('provided demo catalogue performs no independent load',
       (tester) async {
     var loads = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: DemoOccasionsSection(
                 initialCatalog: const DemoCatalog(hasOwnWork: false, items: []),
@@ -139,7 +140,7 @@ void main() {
                 initial: true)
           ])
     ]);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
     await tester.pumpAndSettle();
@@ -172,7 +173,7 @@ void main() {
           path: '/unit/1/edit',
           usesPathAsKey: true)
     ]);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
     for (var i = 0; i < 30; i++) {
@@ -208,7 +209,7 @@ void main() {
         ],
       ),
     ]);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) => DeepLink.path('/unit/1/edit'))));
     await tester.pumpAndSettle();

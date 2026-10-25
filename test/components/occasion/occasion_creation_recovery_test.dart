@@ -1,13 +1,14 @@
+import 'package:festapp_core/program.dart' as occasion_time;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:http/http.dart' as http;
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:intl/date_symbol_data_local.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
@@ -19,7 +20,7 @@ void main() {
   late WidgetEnvironmentFixture environment;
   final requests = <Map<String, dynamic>>[];
   setUpAll(() async {
-    tz.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     await initializeDateFormatting('cs');
     environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
@@ -64,10 +65,10 @@ void main() {
     await environment.pumpWidget(
         tester,
         Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                   locale: context.locale,
                   supportedLocales: context.supportedLocales,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                   home: Builder(
                       builder: (context) => Scaffold(
                               body: TextButton(

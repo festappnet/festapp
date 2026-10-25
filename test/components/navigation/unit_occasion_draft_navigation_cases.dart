@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -5,7 +6,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/html_strings.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -102,7 +103,7 @@ void main() {
       final router = _UnitOccasionRouter();
       await _environment.pumpWidget(
           tester,
-          MaterialApp.router(
+          MaterialApp.router(builder: DependencyMaterialBridge.builder,
               routerConfig: router.config(
             deepLinkBuilder: (_) =>
                 const DeepLink.path('/unit/8/edit/email-templates'),

@@ -1,6 +1,6 @@
 import 'blueprint_setup_layout_draft.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';

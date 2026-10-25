@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/icons/icons_strings.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
@@ -74,7 +75,7 @@ void main() {
     bool showOther = true,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Stack(
             children: [
@@ -180,7 +181,7 @@ void main() {
   testWidgets('selection feedback briefly shows the selected type name',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Stack(
             children: [

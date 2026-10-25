@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/app_management/app_management_strings.dart';
 import 'package:fstapp/components/app_management/pwa_storage_advanced_settings.dart';
@@ -34,7 +35,7 @@ void main() {
   testWidgets('storage controls stay collapsed and prune requires confirmation',
       (tester) async {
     final storage = _FakeStorage();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: PwaStorageAdvancedSettings(storage: storage),
       ),

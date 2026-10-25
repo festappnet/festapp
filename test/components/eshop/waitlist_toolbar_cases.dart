@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
@@ -5,7 +6,7 @@ import 'dart:convert';
 
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
@@ -24,7 +25,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 // The localization fixture uses its shared_preferences dependency.
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as zones;
+import 'package:festapp_core/time.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:trina_grid/trina_grid.dart';
 
@@ -43,7 +44,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     if (!tz.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));
@@ -133,10 +134,10 @@ void main() {
         path: 'unused',
         assetLoader: _Translations(),
         child: Builder(
-            builder: (localized) => MaterialApp(
+            builder: (localized) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: localized.locale,
                 supportedLocales: localized.supportedLocales,
-                localizationsDelegates: localized.localizationDelegates,
+                localizationsDelegates: [...localized.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 home: Scaffold(body: Builder(builder: (context) {
                   Widget offerButton(BuildContext context,
                           SingleDataGridController<OrderModel> grid) =>

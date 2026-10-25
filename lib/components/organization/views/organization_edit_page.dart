@@ -1,7 +1,7 @@
 import '../../unit/verification/verification_queue.dart';
 import '../../unit/verification/verification_strings.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/organization/db_organizations.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -10,7 +10,7 @@ import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/organization/organization_admin_guard.dart';
 import 'package:fstapp/components/forms/logic/phone_country_codes.dart';
-import 'package:select_dialog/select_dialog.dart';
+import 'package:fstapp/components/dialogs/responsive_search_dialog.dart';
 
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
@@ -471,39 +471,36 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
           const SizedBox(height: 8),
           InkWell(
             onTap: () {
-              // Prepare items for SelectDialog
-              // Each item is the formatted string from PhoneCountryCodes.getAll()
-              // e.g. "CZ +420"
-              SelectDialog.showModal<String>(
-                context,
-                label: "Select Countries",
-                multipleSelectedValues: currentPrefixes.map((p) {
-                  // Reconstruct the label for the pre-selection
-                  // p is just the prefix e.g. "+420"
-                  // We need to find the matching entry in PhoneCountryCodes.getAll()
-                  // or just construct it if we knew the ISO.
-                  // Simpler: Just rely on string matching if getAll() returns "ISO +Prefix"
-                  // Actually, getAll() returns "ISO +Prefix".
-                  // So we need to map current prefixes to these full strings.
-                  final iso = PhoneCountryCodes.getIso(p);
-                  if (iso != null) {
-                    return "$iso $p";
-                  }
-                  return p; // Fallback? But SelectDialog matches by value.
-                }).toList(),
-                items: PhoneCountryCodes.getAll(),
-                onMultipleItemsChange: (List<String> selected) {
-                  setState(() {
-                    // Extract just the prefixes from the selection (e.g. "CZ +420" -> "+420")
-                    final prefixes = selected.map((s) {
-                      final parts = s.split(' ');
-                      return parts.last; // Assuming valid format "ISO +Prefix"
-                    }).toList();
-                    _phonePrefixesController.text = prefixes.join(', ');
-                  });
-                },
-                searchBoxDecoration: const InputDecoration(
-                  hintText: "Search country or code",
+              final selected = currentPrefixes.map((prefix) {
+                final iso = PhoneCountryCodes.getIso(prefix);
+                return iso == null ? prefix : '$iso $prefix';
+              }).toSet();
+              showDialog<void>(
+                context: context,
+                builder: (dialogContext) => StatefulBuilder(
+                  builder: (context, updateDialog) =>
+                      ResponsiveSearchDialog<String>(
+                    items: PhoneCountryCodes.getAll(),
+                    searchLabel: 'Search country or code',
+                    filter: (country, query) =>
+                        country.toLowerCase().contains(query.toLowerCase()),
+                    itemBuilder: (country) => CheckboxListTile(
+                      title: Text(country),
+                      value: selected.contains(country),
+                      onChanged: (checked) {
+                        updateDialog(() {
+                          if (checked == true) {
+                            selected.add(country);
+                          } else {
+                            selected.remove(country);
+                          }
+                        });
+                        setState(() => _phonePrefixesController.text = selected
+                            .map((country) => country.split(' ').last)
+                            .join(', '));
+                      },
+                    ),
+                  ),
                 ),
               );
             },

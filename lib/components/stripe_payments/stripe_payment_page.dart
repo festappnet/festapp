@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/card_payment_strings.dart';
 import 'package:fstapp/components/forms/widgets_view/card_payment_status.dart';
 import 'package:fstapp/services/launch_url_service.dart';

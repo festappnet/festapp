@@ -4,7 +4,7 @@ import 'package:fstapp/services/locale_date_time.dart';
 import 'admin_tab_activity.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'data_grid_strings.dart';

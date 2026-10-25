@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,7 +19,7 @@ void main() {
         '${futureDialog ? "future" : "basic"} progress closes its root dialog without popping the nested editor',
         (tester) async {
       late BuildContext editorContext;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Navigator(
           initialRoute: '/editor',
           onGenerateRoute: (settings) => MaterialPageRoute<void>(
@@ -60,7 +61,7 @@ void main() {
   testWidgets('completed summary can be acknowledged without completing twice',
       (tester) async {
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (value) {
       context = value;
       return const Scaffold(body: Text('Editor'));
     })));
@@ -79,7 +80,7 @@ void main() {
       'basic progress displays a failed write and returns false after closing its dialog',
       (tester) async {
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Navigator(
             onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (value) {
                   context = value;

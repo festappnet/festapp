@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
@@ -38,7 +39,7 @@ void main() {
       late SingleDataGridController<_Row> grid;
       late TabController tabs;
       var calls = 0;
-      await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
         tabs = TabController(length: 2, vsync: tester);
         grid = SingleDataGridController(
             context: context,
@@ -89,7 +90,7 @@ void main() {
     late TabController tabs;
     late SingleDataGridController<_Row> grid;
     int calls = 0;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       tabs = TabController(length: 2, vsync: tester);
       grid = SingleDataGridController(
           context: context,
@@ -138,7 +139,7 @@ void main() {
       (tester) async {
     late SingleDataGridController<_Row> grid;
     Completer<List<_Row>>? pending;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       grid = SingleDataGridController(
           context: context,
           loadData: () async {

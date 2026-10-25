@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/foundation.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -11,7 +12,7 @@ import 'package:fstapp/components/features/form_feature.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -76,7 +77,7 @@ void main() {
         ]));
         await _environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: FormSettingsContent(
               bankConnectionChanges: _bankChanges,
               formLink: 'test',
@@ -129,7 +130,7 @@ void main() {
     var calls = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: FormEditorContent(
                 formLink: 'test',
                 loadBundle: (_) async {
@@ -166,7 +167,7 @@ void main() {
     final navigator = GlobalKey<NavigatorState>();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             navigatorKey: navigator, home: const Scaffold(body: Text('home'))));
     navigator.currentState!.push(MaterialPageRoute<void>(
         builder: (_) => FormEditorContent(
@@ -248,7 +249,7 @@ void main() {
           availableBankAccounts: []);
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: design
                   ? FormDesignContent(
                       formLink: 'test',

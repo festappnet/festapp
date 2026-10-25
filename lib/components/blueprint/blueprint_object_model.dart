@@ -1,5 +1,5 @@
 import 'package:fstapp/components/eshop/order_item_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:festapp_core/eshop.dart';

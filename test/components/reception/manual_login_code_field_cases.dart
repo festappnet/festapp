@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/reception/manual_login_code_field.dart';
 
@@ -7,7 +8,7 @@ void main() {
       'manual code entry formats lowercase input without requiring separators',
       (tester) async {
     final controller = TextEditingController();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: ManualLoginCodeField(controller: controller),
       ),
@@ -24,7 +25,7 @@ void main() {
   testWidgets('manual code entry ignores pasted spaces and dashes',
       (tester) async {
     final controller = TextEditingController();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: ManualLoginCodeField(controller: controller),
       ),
@@ -39,7 +40,7 @@ void main() {
   testWidgets('manual code is offered as an inline scanner fallback',
       (tester) async {
     String? submitted;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: ManualLoginCodeEntry(
           onSubmitted: (value) => submitted = value,

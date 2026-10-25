@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../blueprint_strings.dart';
 
 /// Only controls supported in the current plan mode belong in this list.

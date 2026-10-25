@@ -186,3 +186,11 @@ own font/image resources without runtime font downloads.
 [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 Licensed under the MIT License.
+
+### Flutter UI types in 0.4
+
+The Flutter wrapper uses `material_ui` and `cupertino_ui` with Flutter 3.47.7.
+Use their widgets/themes in the host and include
+`VenueLayoutLocalizations.localizationsDelegates`. The public geometry, resource,
+reservation and serialization contracts remain unchanged. The external
+flutter_colorpicker is isolated behind the SDK Material compatibility bridge.

@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -105,7 +106,7 @@ void main() {
       });
       await environment.pumpWidget(
           tester,
-          MaterialApp.router(
+          MaterialApp.router(builder: DependencyMaterialBridge.builder,
               routerConfig: router.config(
                   deepLinkBuilder: (_) => DeepLink.path('/fixture'))));
       await tester.pumpAndSettle();

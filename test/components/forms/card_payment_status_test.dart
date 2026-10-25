@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/widgets_view/card_payment_status.dart';
 import 'package:fstapp/components/forms/views/order_finish_screen.dart';
@@ -42,7 +43,7 @@ void main() {
     final fixture = env();
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: CardPaymentStatus(
                     payment: payment('open'), onRefresh: () {}))));
@@ -68,7 +69,7 @@ void main() {
     ]) {
       await fixture.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: CardPaymentStatus(
                       payment: {...payment(state), 'deliveryState': 'failed'},
@@ -93,7 +94,7 @@ void main() {
     final fixture = env();
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeConfig.theme(brightness: Brightness.dark),
             home: RepaintBoundary(
                 key: const ValueKey('card-payment-capture'),
@@ -132,7 +133,7 @@ void main() {
     final fixture = env();
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: FinishOrderScreen(
           orderFutureFunction: () async => FunctionResponse(status: 200, data: {

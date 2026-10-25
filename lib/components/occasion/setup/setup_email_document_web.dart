@@ -1,6 +1,6 @@
 import 'occasion_setup_strings.dart';
 import 'dart:js_interop';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:web/web.dart' as web;
 
 /// The exact server-rendered email document, isolated from application CSS.

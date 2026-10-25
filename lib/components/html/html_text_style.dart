@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 
 /// Base typography shared by displayed HTML and its editors.

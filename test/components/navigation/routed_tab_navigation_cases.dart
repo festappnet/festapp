@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'dart:ui' as ui;
@@ -7,7 +8,7 @@ import '../../support/navigation_fixture.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/router_service.dart';
@@ -18,7 +19,7 @@ Future<void> mount(WidgetTester tester, FixtureRouter router, String path,
     {GlobalKey? frameKey, WidgetEnvironmentFixture? environment}) async {
   final view = RepaintBoundary(
       key: frameKey,
-      child: MaterialApp.router(
+      child: MaterialApp.router(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(
               appBarTheme:
                   const AppBarTheme(backgroundColor: Color(0xff101828))),
@@ -212,7 +213,7 @@ void main() {
       throw StateError('Access denied without an occasion');
     };
     final router = FixtureRouter(access);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) => DeepLink.path(
                 '/denied-occasion/reservations/orders/current'))));
@@ -492,7 +493,7 @@ void main() {
       ..beforeLoad =
           (link) => link == 'occasion-a' ? blocker.future : Future.value();
     final router = FixtureRouter(access);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) => const DeepLink.path(
                 '/occasion-a/reservations/orders/history'))));

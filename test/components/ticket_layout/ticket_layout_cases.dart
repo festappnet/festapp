@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -5,7 +6,7 @@ import 'package:fstapp/components/images/image_control_client.dart';
 import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
 import '../../support/editor_file_drop.dart';
 import 'package:fstapp/components/images/image_area.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -19,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/ticket_layout/ticket_snapping.dart';
 import 'package:flutter/rendering.dart';
@@ -290,7 +291,7 @@ void main() {
       final service = BackgroundDropService();
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: TicketLayoutEditor(
             occasionId: 1,
             type: 'wide',
@@ -323,7 +324,7 @@ void main() {
       await tester.pumpAndSettle();
       service.fail = true;
       await state
-          .upload(XFile.fromData(Uint8List.fromList(bytes), name: 'fail.png'));
+          .upload(ImportFile.fromData(Uint8List.fromList(bytes), name: 'fail.png'));
       await tester.pumpAndSettle();
       expect(service.uploads, 2);
       expect(state.background, 'https://example.test/new.png');
@@ -334,7 +335,7 @@ void main() {
       expect(service.uploads, 2);
       RightsService.occasionLinkModelNotifier.value = null;
       await state.upload(
-          XFile.fromData(Uint8List.fromList(bytes), name: 'denied.png'));
+          ImportFile.fromData(Uint8List.fromList(bytes), name: 'denied.png'));
       expect(service.uploads, 2);
       await tester.pump(const Duration(seconds: 4));
     });
@@ -348,7 +349,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeConfig.theme(brightness: Brightness.dark),
             home: TicketLayoutEditor(
                 occasionId: 1,
@@ -378,7 +379,7 @@ void main() {
     final c = TicketLayoutController(TicketTemplate.fromJson(raw));
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 340,
@@ -429,7 +430,7 @@ void main() {
             tester,
             RepaintBoundary(
                 key: capture,
-                child: MaterialApp(
+                child: MaterialApp(builder: DependencyMaterialBridge.builder,
                     theme: ThemeConfig.theme(brightness: brightness),
                     home: TicketLayoutEditor(
                         occasionId: 1,
@@ -769,7 +770,7 @@ void main() {
     });
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeData.dark(),
             home: TicketLayoutEditor(
                 occasionId: 1,
@@ -851,7 +852,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeData(
                 appBarTheme:
                     const AppBarTheme(backgroundColor: Color(0xFF0D1323))),
@@ -913,7 +914,7 @@ void main() {
     final separate = TicketLayoutController(document());
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -987,7 +988,7 @@ void main() {
     service.fontResponses[asset['id']] = loaded;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => TextButton(
                     onPressed: () => showDialog(
@@ -1094,7 +1095,7 @@ void main() {
     final c = TicketLayoutController(document())..select('occasionTitle');
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeData(useMaterial3: false),
             home: Scaffold(
                 body: SingleChildScrollView(
@@ -1134,7 +1135,7 @@ void main() {
             tester,
             RepaintBoundary(
                 key: boundaryKey,
-                child: MaterialApp(
+                child: MaterialApp(builder: DependencyMaterialBridge.builder,
                     theme: ThemeData(
                         useMaterial3: material3, brightness: brightness),
                     home: Scaffold(
@@ -1185,7 +1186,7 @@ void main() {
       picture.dispose();
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SingleChildScrollView(
                       child: TicketLayoutProperties(
@@ -1267,7 +1268,7 @@ void main() {
       (tester) async {
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -1323,7 +1324,7 @@ void main() {
     final c = TicketLayoutController(document())..select('occasionTitle');
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: TicketLayoutProperties(controller: c)))));
@@ -1358,7 +1359,7 @@ void main() {
         capabilities: {AuthorizationCapabilities.scannerSettingsWrite: true});
     final feature = TicketFeature(code: 'ticket', canScanManually: true, showHiddenNote: true);
     final original = feature.toJson();
-    await _environment.pumpWidget(tester, MaterialApp(home: Scaffold(
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(
       body: SingleChildScrollView(child: TicketSettings(
         feature: feature, occasionId: 7, service: SettingsService(), showPreview: false)))));
     await tester.pumpAndSettle();
@@ -1382,7 +1383,7 @@ void main() {
       final service = SettingsService();
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SingleChildScrollView(
                       child: TicketSettings(
@@ -1420,7 +1421,7 @@ void main() {
     final feature = TicketFeature(code: 'ticket', ticketType: 'named');
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: TicketSettings(
@@ -1573,7 +1574,7 @@ void main() {
     String? result;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(
@@ -1678,7 +1679,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -1884,7 +1885,7 @@ void main() {
     final transform = TransformationController();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: TicketLayoutCanvas(
                     controller: c,
@@ -1916,7 +1917,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -1978,7 +1979,7 @@ void main() {
     TicketLayoutResult? result;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(
@@ -2038,7 +2039,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2084,7 +2085,7 @@ void main() {
       (tester) async {
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2117,7 +2118,7 @@ void main() {
     final before = controller.selection!.color;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: TicketLayoutProperties(controller: controller))));
     await tester.tap(find.text('TicketLayout.color'.tr()));
@@ -2276,7 +2277,7 @@ void main() {
       final transform = TransformationController();
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: TicketLayoutCanvas(
             controller: c,
@@ -2312,7 +2313,7 @@ void main() {
     final transform = TransformationController();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: TicketLayoutCanvas(
                     controller: c,
@@ -2416,7 +2417,7 @@ void main() {
     addTearDown(outerFocus.dispose);
     final r = resources(template: document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
     r.scenarios['normal']!['occasionStartTime'] = '19:00';
-    await _environment.pumpWidget(tester, MaterialApp(home: Focus(focusNode: outerFocus,
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Focus(focusNode: outerFocus,
         child: TicketLayoutEditor(occasionId: 1, type: 'named', resources: r, service: FakeService()))));
     await tester.pumpAndSettle();
     final c = tester.widget<TicketLayoutCanvas>(find.byType(TicketLayoutCanvas)).controller;
@@ -2446,7 +2447,7 @@ void main() {
     addTearDown(dialogFocus.dispose);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Focus(
                 focusNode: dialogFocus,
                 child: TicketLayoutEditor(
@@ -2495,7 +2496,7 @@ void main() {
     final service = FakeService();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(
@@ -2568,7 +2569,7 @@ void main() {
     final service = FakeService();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2619,7 +2620,7 @@ void main() {
     final service = FakeService()..pending = Completer();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2666,7 +2667,7 @@ void main() {
         transform = TransformationController();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: SizedBox(
                 width: 500,
                 height: 450,
@@ -2705,7 +2706,7 @@ void main() {
     final service = FakeService();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2743,7 +2744,7 @@ void main() {
     c.change(c.selection!.copyWith(fontSize: 20));
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: TicketLayoutProperties(
                     controller: c, defaults: document()))));
@@ -2768,7 +2769,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2799,7 +2800,7 @@ void main() {
     final c = TicketLayoutController(document())..select('ticketSymbol');
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: TicketLayoutProperties(controller: c)))));
@@ -2862,7 +2863,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2917,7 +2918,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1,
                 type: 'named',
@@ -2978,7 +2979,7 @@ void main() {
     final initial = c.document.toJson();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: TicketLayoutProperties(controller: c)))));
@@ -3081,7 +3082,7 @@ void main() {
     final service = FakeService();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1, type: 'wide', resources: r, service: service)));
     await tester.pumpAndSettle();
@@ -3105,7 +3106,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final r = resources(template: document().withPaper(true).resizeCanvasArea(const Size(200, 600)));
-    await _environment.pumpWidget(tester, MaterialApp(home: TicketLayoutEditor(
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: TicketLayoutEditor(
         occasionId: 1, type: 'wide', resources: r, service: FakeService())));
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
@@ -3190,7 +3191,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final r = resources(template: document().withPaper(true)
         .resizeCanvasArea(const Size(200, 600)));
-    await _environment.pumpWidget(tester, MaterialApp(home: TicketLayoutEditor(
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: TicketLayoutEditor(
         occasionId: 1, type: 'wide', resources: r, service: FakeService())));
     await tester.pumpAndSettle();
     final dynamic state = tester.state(find.byType(TicketLayoutEditor));
@@ -3316,7 +3317,7 @@ void main() {
     final service = FakeService();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1, type: 'wide', resources: r, service: service)));
     await tester.pumpAndSettle();
@@ -3396,7 +3397,7 @@ void main() {
         qrSize: r.qrSize,
         qrModules: r.qrModules);
     final service = FakeService();
-    await _environment.pumpWidget(tester, MaterialApp(
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder,
         home: TicketLayoutEditor(
             occasionId: 1,
             type: 'wide',
@@ -3431,10 +3432,10 @@ void main() {
           {'id': 23, 'value': 'Autobus', 'price': 50, 'currency_code': 'CZK'})
     ];
     await _environment.pumpWidget(tester, MaterialApp(
-        builder: (context, child) => MediaQuery(
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(2)),
-            child: child!),
+            child: child!)),
         home: TicketLayoutEditor(
             occasionId: 1,
             type: 'wide',
@@ -3513,7 +3514,7 @@ void main() {
     });
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: TicketLayoutEditor(
                 occasionId: 1, type: 'wide', resources: r, service: service)));
     await tester.pumpAndSettle();

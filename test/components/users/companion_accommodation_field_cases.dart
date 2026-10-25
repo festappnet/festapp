@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/users/companion/companion_accommodation_field.dart';
 import 'package:fstapp/components/users/companion/companion_model.dart';
@@ -21,7 +22,7 @@ void main() {
       eventIds: const [],
     );
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: CompanionAccommodationField(
           companion: companion,
@@ -37,7 +38,7 @@ void main() {
 
   testWidgets('shows an explicit value when accommodation is not assigned',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: CompanionAccommodationField(
           companion: CompanionModel(

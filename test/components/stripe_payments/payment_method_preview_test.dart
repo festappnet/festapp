@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -39,7 +40,7 @@ void main() {
     int sent = 0;
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OrderPreviewScreen(
                     formHolder: h,
@@ -67,7 +68,7 @@ void main() {
     int sent = 0;
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OrderPreviewScreen(
                     formHolder: h,
@@ -91,7 +92,7 @@ void main() {
     final fixture = env();
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OrderPreviewScreen(
                     formHolder: h,
@@ -104,7 +105,7 @@ void main() {
     expect(sent, 0);
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OrderPreviewScreen(
                     key: const ValueKey('free'),

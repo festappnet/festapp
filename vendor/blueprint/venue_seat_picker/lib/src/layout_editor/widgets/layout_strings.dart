@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../layout_localizations.dart';
 
 /// Optional host localization boundary for the standalone layout widgets.

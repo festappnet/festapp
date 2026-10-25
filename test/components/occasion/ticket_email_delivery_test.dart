@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:fstapp/components/email_templates/email_preview_examples.dart';
@@ -148,7 +149,7 @@ void main() {
     final service = _NoPdfService();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: TicketSettings(
@@ -199,7 +200,7 @@ void main() {
       final requests = <Map<String, dynamic>>[];
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SingleChildScrollView(
                       child: StatefulBuilder(
@@ -263,7 +264,7 @@ void main() {
     final first = Completer<Map<String, dynamic>>();
     final current = Completer<Map<String, dynamic>>();
     var calls = 0;
-    await environment.pumpWidget(tester, MaterialApp(
+    await environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: StatefulBuilder(builder: (context, setState) {
       update = setState;
       return TicketDeliveryPreview(
@@ -311,7 +312,7 @@ void main() {
       var calls = 0;
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeConfig.theme(),
               home: Scaffold(
                   body: Padding(

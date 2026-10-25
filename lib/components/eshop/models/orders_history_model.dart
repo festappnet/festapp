@@ -1,7 +1,7 @@
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_data_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';

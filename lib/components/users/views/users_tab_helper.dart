@@ -2,7 +2,7 @@ import 'package:uuid/uuid.dart';
 import 'package:fstapp/services/batch_progress_dialog.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/i_has_id.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';

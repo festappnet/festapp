@@ -1,5 +1,5 @@
 import 'package:flutter/rendering.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A one-off acknowledgement after returning from creation, with no extra badge.
 class OccasionCreatedHighlight extends StatelessWidget {

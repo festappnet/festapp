@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:fstapp/services/dialog_helper.dart';

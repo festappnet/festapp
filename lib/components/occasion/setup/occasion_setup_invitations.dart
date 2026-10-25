@@ -1,5 +1,5 @@
 import 'package:fstapp/components/forms/email_validation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

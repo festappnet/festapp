@@ -1,10 +1,10 @@
+import 'package:festapp_core/program.dart' as occasion_time;
 import 'package:test/test.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import '../support/occasion_report_fixture.dart';
 
 void main() {
-  setUpAll(tzdata.initializeTimeZones);
+  setUpAll(occasion_time.OccasionTimeContext.initializeTimeZones);
   test(
     'Stripe subsets, dispute availability and unattributed external amounts survive snapshot parsing',
     () {

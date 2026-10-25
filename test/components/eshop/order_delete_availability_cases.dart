@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
@@ -71,7 +72,7 @@ void main() {
     final models = orders.map((order) => _OrderRow(order, deleted)).toList();
     late SingleDataGridController<_OrderRow> grid;
     await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: Builder(builder: (context) {
+        MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
       grid = SingleDataGridController<_OrderRow>(
         context: context,
         loadData: () async => models,

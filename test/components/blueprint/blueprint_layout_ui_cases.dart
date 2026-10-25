@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/seat_order_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import '../../support/fixtures/blueprint_order_preview_fixture.dart';
@@ -49,7 +50,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
@@ -129,7 +130,7 @@ void main() {
     final changes = <String>[];
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintInlineName(
                     nodeId: 'table',
@@ -230,12 +231,12 @@ void main() {
               locale: const Locale('cs'),
               supportedLocales: VenueLayoutLocalizations.supportedLocales,
               localizationsDelegates:
-                  VenueLayoutLocalizations.localizationsDelegates,
+                  [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
               theme: ThemeConfig.theme(brightness: Brightness.dark),
-              builder: (context, child) => MediaQuery(
+              builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                   data: MediaQuery.of(context)
                       .copyWith(textScaler: TextScaler.linear(mobile.$3)),
-                  child: child!),
+                  child: child!)),
               home: BlueprintLayoutHost(
                   source: source, reload: () async => source)));
       await tester.pump(const Duration(milliseconds: 500));
@@ -289,7 +290,7 @@ void main() {
     };
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SeatReservationWidget(
                     blueprintId: 4,
@@ -340,7 +341,7 @@ void main() {
         : pickerRead(request, 'ordered');
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SeatReservationWidget(
                     blueprintId: 4,
@@ -401,7 +402,7 @@ void main() {
     addTearDown(c.dispose);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: AnimatedBuilder(
                     animation: c,
@@ -430,7 +431,7 @@ void main() {
     Map<String, dynamic>? submitted;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
           request: seatOrderRequestFixture(),
@@ -503,7 +504,7 @@ void main() {
             : {'code': 409, 'reason': 'BATCH_TICKET_PRINT_IMMUTABLE'});
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
                     request: seatOrderRequestFixture(), commands: commands))));
@@ -522,7 +523,7 @@ void main() {
       'whole order cancellation email is an optional follow-up',
       (tester) async {
     await environment.pumpWidget(
-        tester, const MaterialApp(home: Scaffold(body: Text('Ready'))));
+        tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Text('Ready'))));
     final context = tester.element(find.text('Ready'));
     final skipped =
         confirmCancelledOrderEmail(context, 'customer@example.test');
@@ -589,7 +590,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintPlanEditor(
                 controller: controller,
                 loadTextResources: () async => provider!)));
@@ -704,7 +705,7 @@ void main() {
     source.layoutResources = blueprintPreparedResourcesFixture(document);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pumpAndSettle();
@@ -1134,7 +1135,7 @@ void main() {
       }));
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: BlueprintLayoutHost(
                   key: const ValueKey('old-host'),
                   source: source,
@@ -1166,7 +1167,7 @@ void main() {
             layoutResources: resources, layoutSnapshot: source.layoutSnapshot);
         await environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: BlueprintLayoutHost(
                     key: const ValueKey('new-host'),
                     source: fresh,
@@ -1268,7 +1269,7 @@ void main() {
               document: document));
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: BlueprintLayoutHost(
                   source: source,
                   reload: () async => source,
@@ -1391,7 +1392,7 @@ void main() {
             document: document));
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pumpAndSettle();
@@ -1456,7 +1457,7 @@ void main() {
     Map<String, dynamic>? savedResources;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutDemo(
                 initialDocument: document,
                 initialResources: resources,
@@ -1539,7 +1540,7 @@ void main() {
     final pending = Completer<void>();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
           request: seatOrderRequestFixture(),
@@ -1596,7 +1597,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: EditProductDialog(
                     product: ProductModel(title: '', price: 100),
@@ -1653,7 +1654,7 @@ void main() {
         })));
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source,
                 reload: () async => source,
@@ -1791,7 +1792,7 @@ void main() {
         })));
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source,
                 reload: () async => source,
@@ -1987,7 +1988,7 @@ void main() {
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source,
                 reload: () async => source,
@@ -2391,7 +2392,7 @@ void main() {
     addTearDown(outerScroll.dispose);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
           controller: outerScroll,
@@ -2508,7 +2509,7 @@ void main() {
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pump(const Duration(milliseconds: 500));
@@ -2549,7 +2550,7 @@ void main() {
     final pending = Completer<void>();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutDemo(
           // Existing draft: an empty document intentionally opens the template
           // gallery, whose modal barrier is unrelated to save/retry behavior.
@@ -2596,7 +2597,7 @@ void main() {
     final pending = Completer<void>();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutDemo(
           initialDocument: VenueLayoutDocument(nodes: [
             LayoutNode(
@@ -2641,7 +2642,7 @@ void main() {
       (tester) async {
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SelectProductDialog.catalog(
                     products: const [],
@@ -2699,7 +2700,7 @@ void main() {
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: BlueprintLayoutHost(
                 source: source,
                 reload: () async => source,

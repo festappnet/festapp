@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/payment_method_strings.dart';
 
 /// The form's saved payment policy, independent of temporary availability.

@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/views/customer_order_overview.dart';
@@ -59,7 +60,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     var calls = 0;
     var fail = false;
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body:
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body:
         SingleChildScrollView(child: CustomerOrderOverviewView(load: () async {
       calls++;
       if (fail) throw StateError('offline');

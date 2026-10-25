@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';

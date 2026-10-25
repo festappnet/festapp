@@ -1,0 +1,96 @@
+## 2.4.0
+
+- On macOS, `FilePickerDarwin(viewId:)` attaches the pickers to that Flutter view's window, and fails with `window_not_found` when that window is closed or hidden.
+
+## 2.3.4
+
+- On macOS, the pickers now open in the window the user is in, and still open when no window is visible instead of completing with `null`. [#2277](https://github.com/vicajilau/flutter_file_picker/pull/2277)
+
+## 2.3.3
+
+- The `load_failed` error on iOS now lists in its `details` why each picked item could not be loaded. [#2274](https://github.com/vicajilau/flutter_file_picker/pull/2274)
+
+## 2.3.2
+
+- Fixed picking a Live Photo on iOS copying its paired video too and leaving it in the temporary directory. Only the still image is loaded now. [#2260](https://github.com/vicajilau/flutter_file_picker/issues/2260)
+- Fixed picking a package document on iOS, such as an `.rtfd`, returning an image from inside it. [#2259](https://github.com/vicajilau/flutter_file_picker/issues/2259)
+- Fixed files picked with the iOS document picker being stored twice in the temporary directory. [#2261](https://github.com/vicajilau/flutter_file_picker/issues/2261)
+
+## 2.3.1
+
+- Fixed a pick on iOS where none of the picked items could be loaded completing with an empty list, as if the user had cancelled. It now throws a `PlatformException` with the `load_failed` code. [#2248](https://github.com/vicajilau/flutter_file_picker/issues/2248)
+
+## 2.3.0
+
+- Added `DarwinPlatformFile.assetIdentifier` for media picked from the iOS photo library, and support for `DarwinOptions(copyMedia: false)` to skip the copy. [#2245](https://github.com/vicajilau/flutter_file_picker/issues/2245)
+
+## 2.2.0
+
+- Added support for `DarwinOptions.orderedSelection`. Setting it to `false` restores swipe to select in the iOS photo library picker, which ordered selection disables. [#2241](https://github.com/vicajilau/flutter_file_picker/issues/2241)
+
+## 2.1.4
+
+- Fixed a partial swipe down on the iOS picker sheet completing the pick as cancelled while the picker stayed open, which dropped the files selected afterwards. [#2243](https://github.com/vicajilau/flutter_file_picker/issues/2243)
+
+## 2.1.3
+
+- Fixed `saveFile()` on macOS appending a second, lowercased extension to file names with a custom extension, such as `j.nme2mbAllpreset`. [#2238](https://github.com/vicajilau/flutter_file_picker/issues/2238)
+
+## 2.1.2
+
+- Fixed `initialDirectory` having no effect on macOS and iOS for `pickFile()`, `pickFiles()`, and `getDirectoryPath()`. [#2216](https://github.com/vicajilau/flutter_file_picker/issues/2216)
+
+## 2.1.1
+
+- Fixed picking multiple items on iOS silently returning nothing. `copyToTemporaryDirectory` derived its destination from the source's file name alone, which is not unique — photos edited in the Photos app are exported under a fixed name, and Live Photos arrive as `.pvt` packages. Those copies run concurrently, so colliding names raced: one item would remove the file another was still copying, both `copyItem` calls then threw and both items were dropped by the `compactMap` over the resolved results. When every item lost the race the picker called back with `nil`, reaching Dart as an empty list — indistinguishable from the user cancelling. Each item is now copied into its own freshly created subdirectory.
+
+## 2.1.0
+
+- Added support for UIScene on iOS.
+
+## 2.0.0
+
+- **BREAKING CHANGE**: `PlatformFile.length()` now returns `Future<int?>` instead of `Future<int>`. Returns `null` when the length could not be determined (e.g. a failed disk read), instead of `0`, matching `lengthSync()`. [#2197](https://github.com/vicajilau/flutter_file_picker/issues/2197)
+- Removed the native code path behind `withData` on iOS, dead since the Dart facade stopped forwarding it (`file_picker` 12.0.0). Picked files are no longer eagerly read into memory on the platform side; `PlatformFile.readAsBytes()` already reads lazily on demand. [#2202](https://github.com/vicajilau/flutter_file_picker/issues/2202)
+
+## 1.2.0
+
+- Added `DarwinOptions.acceptLabel`, letting callers set the confirm button text (`NSOpenPanel.prompt`) on macOS for `pickFile()`/`pickFiles()`. Has no effect on iOS, `UIDocumentPickerViewController` has no equivalent there. [#1861](https://github.com/vicajilau/flutter_file_picker/issues/1861)
+
+## 1.1.0
+
+- Implemented `PlatformFile.lengthSync()`, returning the length iOS/macOS already reports for a picked file synchronously, without doing any I/O.
+
+## 1.0.4
+
+- `skipEntitlementsChecks()` now overrides the new `FilePickerPlatform.skipEntitlementsChecks()` hook instead of being called through a type test on `FilePickerPlatform.instance`. No behavior change on iOS or macOS.
+- Added `DarwinOptions.assetRepresentationMode` support on iOS, mapped to `PHPickerConfiguration.preferredAssetRepresentationMode`. Requesting `current` or `compatible` lets large HEVC, HDR, or slow-motion videos skip the transcoding `automatic` (the default) would otherwise require. Non-automatic modes require `compressionQuality` to be `0`.
+
+## 1.0.3
+
+- Fixed a regression where `PrivacyInfo.xcprivacy` was never being bundled by Swift Package Manager, because SwiftPM resolves resource paths relative to the target's own directory. [#2175](https://github.com/vicajilau/flutter_file_picker/issues/2175)
+
+## 1.0.2
+
+- Fixed a crash (`FileSystemException`/`OSError: Is a directory`) when picking a Live Photo from the iOS gallery. Live Photos are saved by iOS as `.pvt` packages (directories), which `loadFileRepresentation(forTypeIdentifier: UTType.item...)` returned as-is; the still image contained in the package is now extracted instead.
+- Fixed `getDirectoryPath`, `pickFiles`, `pickFileAndDirectoryPaths`, and `saveFile` on macOS defaulting to the sandbox container's `Data` folder instead of the user's real home directory when no `initialDirectory` is provided and the app has App Sandbox enabled.
+- Fixed the Save dialog on macOS auto-selecting the file extension along with the rest of the file name, making it easy to accidentally delete the extension when renaming. The extension is now hidden by default via `NSSavePanel.isExtensionHidden`.
+- Fixed bundle-like directories (e.g. `.app`, `.fcpbundle`) not being selectable as files on macOS file pickers, a regression since 8.2.0. `NSOpenPanel.treatsFilePackagesAsDirectories` is now explicitly set to `false` so these are presented as selectable files, matching Finder and other native apps.
+- Fixed `saveFile` on macOS never enforcing an extension on the destination file when the user cleared it from the suggested name. `allowedExtensions` is not forwarded to `saveFile` yet, so the dialog now falls back to the extension of the suggested file name.
+- Fixed `saveFile` returning a scheme-less, percent-encoded `Uri` on macOS instead of a proper `file://` Uri, unlike Windows and Linux.
+- Added `FilePickerDarwin.skipEntitlementsChecks()`, letting non-sandboxed macOS apps opt out of the App Sandbox entitlement checks performed before showing a dialog. This was previously only reachable through a deprecated, no-op method on `FilePicker` in the root package.
+- Fixed a brief UI freeze on macOS right when calling `pickFiles`, `pickFileAndDirectoryPaths`, `getDirectoryPath`, or `saveFile`. The entitlement check now runs on a background queue before the dialog is created, instead of blocking the main thread synchronously.
+
+## 1.0.1
+
+- Fixed `pickFileAndDirectoryPaths` never returning directories on iOS and macOS. It now calls the native combined file and directory picker instead of silently falling back to file only selection.
+- Fixed `MissingPluginException` on macOS by registering the event channel stream handler.
+- Fixed method channel handling on macOS to support all file types and actions (`any`, `image`, `video`, `audio`, `media`, `custom`, `dir`, `save`).
+- Fixed `saveFile` on macOS not writing the provided file `bytes` to the chosen location.
+- Added safe argument unwrapping in macOS handler to prevent runtime crashes when arguments are null.
+- Added native `UTType` file type filtering for macOS file dialogs.
+- Improved package description, added example, and added missing API documentation.
+
+## 1.0.0
+
+- Initial release of iOS and macOS implementation package for `file_picker`.

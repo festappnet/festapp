@@ -7,7 +7,7 @@
     "test": "node --test"
   },
   "devDependencies": {
-    "wrangler": "^4.131.0"
+    "wrangler": "^4.152.0"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {

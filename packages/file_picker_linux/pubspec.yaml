@@ -1,0 +1,34 @@
+name: file_picker_linux
+description: Linux implementation of the file_picker plugin using GTK3 and XDG Desktop Portals for native file and directory picking.
+version: 2.0.0
+homepage: https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_linux
+repository: https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_linux
+topics:
+  - file-picker
+  - linux
+
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.0"
+
+flutter:
+  plugin:
+    implements: file_picker
+    platforms:
+      linux:
+        dartPluginClass: FilePickerLinux
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker_platform_interface:
+    path: ../file_picker_platform_interface
+  cross_file: ^0.4.0
+  dbus: ^0.7.13
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

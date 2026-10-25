@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:festapp_core/forms.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
@@ -64,7 +65,7 @@ void main() {
       var changes = 0;
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SingleChildScrollView(
                       child: ProductTypeEditor(
@@ -138,7 +139,7 @@ void main() {
                 .withMetaSurchargeCurrency('EUR');
         await _environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 theme: ThemeData(brightness: brightness),
                 home: Scaffold(
                     body: SingleChildScrollView(

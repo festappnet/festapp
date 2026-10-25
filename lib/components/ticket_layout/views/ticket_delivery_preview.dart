@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../ticket_delivery_strings.dart';
 import '../../features/ticket_feature.dart';
 import '../../email_templates/email_preview_examples.dart';

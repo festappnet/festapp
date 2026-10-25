@@ -3,7 +3,7 @@ import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show VenueLayoutLocalizations;
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../ticket_layout_controller.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_text.dart';

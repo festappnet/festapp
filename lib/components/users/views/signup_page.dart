@@ -11,7 +11,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';

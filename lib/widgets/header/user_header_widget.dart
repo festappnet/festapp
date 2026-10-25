@@ -13,7 +13,7 @@ import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';

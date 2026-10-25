@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_email_preview.dart';
@@ -10,7 +11,7 @@ void main() {
       (tester) async {
     const source =
         '<html><head><style>p {color:red}</style></head><body style="background:white"><p style="font-family:serif">Exact body</p><img src="data:image/png;base64," alt="Logo"></body></html>';
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionSetupEmailPreview(draft: const {
       'title': 'Test'

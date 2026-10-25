@@ -100,6 +100,10 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 
 ## Code Patterns
 
+- **Upgraded UI contract**: Application, tests and the canonical vendored venue editor use `material_ui`/`cupertino_ui` together. `DependencyMaterialBridge` supplies SDK theme/localizations to external SDK Material widgets; flutter_colorpicker has the equivalent local boundary inside the shared editor. Use the standalone UI localization delegates in app/test MaterialApp roots.
+- **Time ownership**: `festapp_core/time.dart` owns embedded `latest_all` timezone initialization and instant/wall conversion; `program.dart` re-exports the API. `TimeHelper` delegates to it. Keep legacy IANA aliases, saved settings, Prague fallback, UTC precision, 04:00 program boundaries, overnight grouping and DST gaps/overlaps. Tests must initialize through this owner instead of replacing its data with timezone's reduced default dataset.
+- **Imported files**: `ImportFile` owns stable metadata and lazy/retained bytes. Await desktop_drop consumers and retain content before returning it from selection dialogs. Keep size preflight before byte reads; imports use copy. Picker and SDK compatibility patches live under versioned `packages/`; no machine-specific package override is needed.
+
 - **FVM**: Always prefix flutter/dart commands with `fvm`
 - **Error handling**: Prefer `ExceptionHandler.guard()` over try-catch in UI code
 - **Admin modals**: Use `widgets/app_dialog.dart` (`AppAlertDialog`,

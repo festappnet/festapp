@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/models/orders_history_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
@@ -17,7 +18,7 @@ void main() {
   testWidgets(
       'order email cells show empty text for missing email and preserve stored email',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       for (final email in [null, 'customer@example.org']) {
         final order = OrderModel(
           id: 6500,

@@ -1,6 +1,6 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'form_embed_code.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/link.dart';
 import 'package:fstapp/app_config.dart';
 import '../../_shared/copy_button.dart';

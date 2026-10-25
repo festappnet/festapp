@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/map_description_popup.dart';
 import 'package:fstapp/components/map/map_place_model.dart';
@@ -15,7 +16,7 @@ void main() {
     var closed = false;
 
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: MapDescriptionPopup(
             place: MapPlaceModel(
@@ -40,7 +41,7 @@ void main() {
     var navigated = false;
 
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: MapDescriptionPopup(
             place: MapPlaceModel(

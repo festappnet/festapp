@@ -2,7 +2,7 @@ import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:festapp_core/time.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
@@ -17,7 +17,7 @@ void main() {
   // GoTrue initializes its PKCE storage even with session persistence disabled.
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
-    tzdata.initializeTimeZones();
+    tzdata.OccasionTimeContext.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   });
   test(

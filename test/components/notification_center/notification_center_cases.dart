@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,7 +47,7 @@ void main() {
         'items': [],
       })
     ];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
     await tester.pumpAndSettle();
@@ -171,7 +172,7 @@ void main() {
     });
     group.loaded = true;
     c.groups = [group];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
     await tester.pumpAndSettle();
@@ -229,7 +230,7 @@ void main() {
       }),
     ];
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: NotificationCenterPanel(controller: c, onDetail: (_) {}),
         ),
@@ -477,10 +478,10 @@ void main() {
       tester.view.physicalSize = Size(width, 1000);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(MaterialApp(
-          builder: (context, child) => MediaQuery(
+          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: TextScaler.linear(2)),
-              child: child!),
+              child: child!)),
           home: Builder(
               builder: (context) => Scaffold(
                   body: TextButton(
@@ -536,7 +537,7 @@ void main() {
       })
     ];
     controller.unread = true;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home:
             NotificationCenterPanel(controller: controller, onDetail: (_) {})));
     expect(find.text('NotificationCenter.newItems'), findsOneWidget);
@@ -604,7 +605,7 @@ void main() {
       }),
     ];
     var details = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: NotificationCenterPanel(
             controller: controller, onDetail: (_) => details++)));
     await tester.pumpAndSettle();
@@ -653,7 +654,7 @@ void main() {
       NotificationGroup.fromJson(
           {'key': 'email-group', 'kind': 'email_problem', 'count': 2})
     ];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home:
             NotificationCenterPanel(controller: controller, onDetail: (_) {})));
     expect(find.text('2'), findsOneWidget);
@@ -672,7 +673,7 @@ void main() {
     for (final dark in [true, false]) {
       final foreground = dark ? Colors.white : Colors.black;
       final background = dark ? Colors.black : Colors.white;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Center(
               child: RepaintBoundary(
         key: boundaryKey,
@@ -720,7 +721,7 @@ void main() {
     ]) {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Builder(
               builder: (context) => Scaffold(
                     body: TextButton(
@@ -787,10 +788,10 @@ void main() {
         ];
         await tester.pumpWidget(MaterialApp(
             theme: ThemeData(brightness: brightness),
-            builder: (context, child) => MediaQuery(
+            builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(2)),
-                child: child!),
+                child: child!)),
             home: NotificationCenterPanel(
                 controller: controller, onDetail: (_) => details++)));
         await tester.pumpAndSettle();
@@ -834,7 +835,7 @@ void main() {
       NotificationGroup.fromJson(
           {'key': 'orders', 'kind': 'order_created', 'count': 2})
     ];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: NotificationCenterPanel(
                 controller: controller, onDetail: (_) {}))));
@@ -862,7 +863,7 @@ void main() {
     addTearDown(controller.dispose);
     controller.pageFailed = true;
     controller.nextCursor = {'id': 5};
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home:
             NotificationCenterPanel(controller: controller, onDetail: (_) {})));
     await tester.tap(find.text('Common.retry'));
@@ -897,7 +898,7 @@ void main() {
     }
 
     for (final brightness in Brightness.values) {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeConfig.theme(brightness: brightness),
         home: Scaffold(
             appBar: AppBar(actions: [

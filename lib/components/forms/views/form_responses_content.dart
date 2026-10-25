@@ -4,7 +4,7 @@ import 'package:fstapp/components/eshop/models/order_model.dart';
 import '../models/form_bundle.dart';
 import '../waitlist_strings.dart';
 import 'waitlist_offers_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';

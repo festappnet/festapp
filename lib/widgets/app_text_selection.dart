@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One selection region for web pages, including headers and rendered HTML.
 class AppTextSelection extends StatelessWidget {

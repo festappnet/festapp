@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/users/views/occasion_team_invitation_page.dart';
@@ -31,7 +32,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(home: page));
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: page));
     await tester.pumpAndSettle();
   }
 

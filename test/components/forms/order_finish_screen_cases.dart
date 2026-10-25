@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/components/forms/views/order_finish_screen.dart';
@@ -17,7 +18,7 @@ void main() {
       'overview close notifies once after route pop so the preview can close',
       (tester) async {
     var closed = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
             builder: (context) => TextButton(
                 onPressed: () => showGeneralDialog(
@@ -48,7 +49,7 @@ void main() {
       (tester) async {
     for (final fail in [false, true]) {
       final status = Completer<String?>();
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: FinishOrderScreen(
               key: ValueKey(fail),
               hasTickets: false,
@@ -93,7 +94,7 @@ void main() {
     final response = Completer<FunctionResponse>();
 
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: FinishOrderScreen(
           orderFutureFunction: () => response.future,
           hasTickets: false,

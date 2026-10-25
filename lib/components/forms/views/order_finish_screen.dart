@@ -2,7 +2,7 @@ import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
 import '../waitlist_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connect_callback_page.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
@@ -34,7 +35,7 @@ void main() {
       'login replacement preserves callback until authenticated return and success clears memory',
       (tester) async {
     final owner = StripeConnectionCallbackOwner(), api = CallbackApi();
-    Widget page({bool loggedIn = false, bool capture = false}) => MaterialApp(
+    Widget page({bool loggedIn = false, bool capture = false}) => MaterialApp(builder: DependencyMaterialBridge.builder,
             home: StripeConnectCallbackView(
           callbackOwner: owner,
           api: api,
@@ -46,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(api.calls, isEmpty);
     // Login's replaceAll destroys the callback route rather than popping back.
-    await environment.pumpWidget(tester, const MaterialApp(home: SizedBox()));
+    await environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: SizedBox()));
     expect(owner.retain(null),
         {'code': 'synthetic-code', 'state': 'synthetic-state'});
     await environment.pumpWidget(tester, page(loggedIn: true));
@@ -63,13 +64,13 @@ void main() {
     final owner = StripeConnectionCallbackOwner(),
         api = CallbackApi()..fail = true;
     owner.retain({'error': 'access_denied', 'state': 'synthetic-state'});
-    Widget page() => MaterialApp(
+    Widget page() => MaterialApp(builder: DependencyMaterialBridge.builder,
         home: StripeConnectCallbackView(
             callbackOwner: owner, api: api, isLoggedIn: () => true));
     await environment.pumpWidget(tester, page());
     await tester.pumpAndSettle();
     expect(owner.retain(null), isNotNull);
-    await environment.pumpWidget(tester, const MaterialApp(home: SizedBox()));
+    await environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: SizedBox()));
     api
       ..fail = false
       ..result = {'status': 'cancelled'};

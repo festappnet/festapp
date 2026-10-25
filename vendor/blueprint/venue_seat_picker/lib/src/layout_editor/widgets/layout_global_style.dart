@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
 import '../venue_layout_controller.dart';

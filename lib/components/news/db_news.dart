@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/news/news_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';

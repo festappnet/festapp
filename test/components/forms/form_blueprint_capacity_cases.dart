@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/forms/views/form_capacity_settings.dart';
 import 'package:flutter/foundation.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -52,7 +53,7 @@ void main() {
       FormEditorDraft? saved;
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: FormCapacitySettings(
             form: form,

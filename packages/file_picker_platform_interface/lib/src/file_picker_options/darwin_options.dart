@@ -1,0 +1,84 @@
+/// The representation that iOS should provide for assets selected with
+/// `PHPickerViewController`.
+enum DarwinAssetRepresentationMode {
+  /// Lets the system select the best representation for the asset.
+  automatic,
+
+  /// Uses the current representation to avoid transcoding when possible.
+  current,
+
+  /// Uses a broadly compatible representation, transcoding when necessary.
+  compatible,
+}
+
+/// Platform-specific options for file picking on Apple platforms.
+class DarwinOptions {
+  const DarwinOptions({
+    this.assetRepresentationMode = DarwinAssetRepresentationMode.automatic,
+    this.acceptLabel,
+    this.orderedSelection = true,
+    this.copyMedia = true,
+  });
+
+  /// The preferred representation for media selected from the iOS photo
+  /// library.
+  ///
+  /// This option only applies when `compressionQuality` is `0`. It has no
+  /// effect on macOS or when selecting files with the iOS document picker.
+  final DarwinAssetRepresentationMode assetRepresentationMode;
+
+  /// The label for the confirm button of the file dialog.
+  ///
+  /// Maps to `NSOpenPanel.prompt` on macOS. Only honored by `pickFile()` and
+  /// `pickFiles()`, the only entry points that accept [DarwinOptions] on
+  /// macOS. Has no effect on iOS, `UIDocumentPickerViewController` has no
+  /// equivalent there.
+  final String? acceptLabel;
+
+  /// Whether the iOS photo library picker numbers selected media and returns
+  /// it in the order the user selected it.
+  ///
+  /// Ordered selection disables selecting several items by swiping across
+  /// the grid, so users have to tap each one. Set it to `false` to restore
+  /// swipe to select when the selection order does not matter, in which case
+  /// the order of the results is not guaranteed to follow the selection.
+  ///
+  /// Only applies to `FileType.image`, `FileType.video` and `FileType.media`,
+  /// which use the photo library picker. Other types use the Files picker,
+  /// which has no ordered selection. Requires iOS 15 or newer and has no
+  /// effect on macOS.
+  final bool orderedSelection;
+
+  /// Whether media picked from the iOS photo library is copied into the app's
+  /// temporary directory.
+  ///
+  /// Set it to `false` to skip the copy, for example to avoid duplicating
+  /// large videos. Each picked item then only carries its photo library
+  /// identifier, `DarwinPlatformFile.assetIdentifier`, and a `ph:///` URI, and
+  /// its content cannot be read through the returned file: open the original
+  /// asset by its identifier instead, which needs photo library access.
+  ///
+  /// Only applies to `FileType.image`, `FileType.video` and `FileType.media`,
+  /// which use the photo library picker. It has no effect on macOS.
+  final bool copyMedia;
+
+  /// Throws an [ArgumentError] if this configuration conflicts with
+  /// [compressionQuality].
+  ///
+  /// A non-automatic [assetRepresentationMode] requests a specific,
+  /// uncompressed representation of the asset, which [compressionQuality]
+  /// would then recompress, defeating the point of requesting it. Callers
+  /// (the `file_picker` facade and each platform implementation) call this
+  /// before picking so the conflict is always reported the same way,
+  /// regardless of platform or entry point.
+  void validate(int compressionQuality) {
+    if (compressionQuality != 0 &&
+        assetRepresentationMode != DarwinAssetRepresentationMode.automatic) {
+      throw ArgumentError.value(
+        assetRepresentationMode,
+        'assetRepresentationMode',
+        'A non-automatic Darwin asset representation mode requires compressionQuality to be 0.',
+      );
+    }
+  }
+}

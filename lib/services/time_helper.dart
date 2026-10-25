@@ -1,14 +1,12 @@
 import 'package:festapp_core/program.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
-import 'package:fstapp/services/time_utils/platform_timezone_universal.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:timezone/timezone.dart' as tz;
 
 class TimeHelper {
   static DateTime? currentTime;
-  static OccasionTimeContext get eventTime => OccasionTimeContext(tz.local);
-  static TimeZoneUniversal timeZoneUniversal = TimeZoneUniversal();
+  static OccasionTimeContext get eventTime => OccasionTimeContext.local();
 
   static void Function()? toggleTimeTravel;
 
@@ -30,31 +28,14 @@ class TimeHelper {
     if (currentTime != null) {
       return currentTime!.toOccasionTime();
     }
-    return tz.TZDateTime.now(tz.local);
+    return eventTime.now();
   }
 
-  static void setTimeZoneLocation([String? location]) {
-    location ??= "Europe/Prague"; // Default location if none provided
-    tz.Location targetLocation;
-    try {
-      targetLocation = tz.getLocation(location);
-    } catch (e) {
-      // Error getting location, defaulting to Europe/Prague
-      targetLocation =
-          tz.getLocation("Europe/Prague"); // Fallback to a known good default
-    }
+  static void setTimeZoneLocation([String? location]) =>
+      OccasionTimeContext.setLocalLocation(location);
 
-    timeZoneUniversal.setTimeZoneLocationPlatform(
-        targetLocation); // Uses conditionally imported method
-
-    DateTime nowInTz = tz.TZDateTime.now(tz.local);
-  }
-
-  static List<String> getAvailableTimezoneNames() {
-    // Ensure the database is initialized before accessing locations.
-    // This typically happens once at app startup via initializeTimeZone().
-    return tz.timeZoneDatabase.locations.keys.toList()..sort();
-  }
+  static List<String> getAvailableTimezoneNames() =>
+      OccasionTimeContext.availableLocationNames;
 
   static int getTimeNowIndexFromDays(Iterable<int> weekdays) {
     var index = weekdays.toList().indexOf(now().weekday);
@@ -89,7 +70,10 @@ class TimeHelper {
   }
 
   static String getMinimalisticDateRange(
-      BuildContext context, DateTime start, DateTime end) {
+    BuildContext context,
+    DateTime start,
+    DateTime end,
+  ) {
     final locale = Localizations.localeOf(context).languageCode;
     final fullFormat = DateFormat.yMMMd(locale);
 
@@ -121,27 +105,26 @@ class TimeHelper {
 
     List<String> availableTimezones = getAvailableTimezoneNames();
 
-    List<String> europeanTimezones = availableTimezones
-        .where((name) => name.startsWith("Europe/"))
-        .toList()
-      ..sort();
+    List<String> europeanTimezones =
+        availableTimezones.where((name) => name.startsWith("Europe/")).toList()
+          ..sort();
 
-    List<String> africanTimezones = availableTimezones
-        .where((name) => name.startsWith("Africa/"))
-        .toList()
-      ..sort();
+    List<String> africanTimezones =
+        availableTimezones.where((name) => name.startsWith("Africa/")).toList()
+          ..sort();
 
     List<String> preferredOrderTimezones = [
       ...europeanTimezones,
       ...africanTimezones,
       ...availableTimezones.where(
-          (name) => !name.startsWith("Europe/") && !name.startsWith("Africa/"))
+        (name) => !name.startsWith("Europe/") && !name.startsWith("Africa/"),
+      ),
     ];
 
     for (final locationName in preferredOrderTimezones) {
       try {
-        final location = tz.getLocation(locationName);
-        final tzDateTime = tz.TZDateTime.from(systemNow, location);
+        final tzDateTime = OccasionTimeContext.named(locationName)
+            .atInstant(systemNow);
         if (tzDateTime.timeZoneOffset == systemUtcOffset) {
           return locationName;
         }
@@ -152,7 +135,7 @@ class TimeHelper {
   }
 
   static Future<void> initializeTimeZone() async {
-    await timeZoneUniversal.initializeTimeZonePlatform();
+    OccasionTimeContext.initializeTimeZones();
   }
 }
 
@@ -162,7 +145,9 @@ extension DateTimeExtension on DateTime {
     final roundedMs = ms - ms % delta.inMilliseconds;
     if (this is tz.TZDateTime) {
       return tz.TZDateTime.fromMillisecondsSinceEpoch(
-          (this as tz.TZDateTime).location, roundedMs);
+        (this as tz.TZDateTime).location,
+        roundedMs,
+      );
     }
     return DateTime.fromMillisecondsSinceEpoch(roundedMs, isUtc: isUtc);
   }
@@ -176,7 +161,9 @@ extension DateTimeExtension on DateTime {
     final roundedMs = ms - mod + delta.inMilliseconds;
     if (this is tz.TZDateTime) {
       return tz.TZDateTime.fromMillisecondsSinceEpoch(
-          (this as tz.TZDateTime).location, roundedMs);
+        (this as tz.TZDateTime).location,
+        roundedMs,
+      );
     }
     return DateTime.fromMillisecondsSinceEpoch(roundedMs, isUtc: isUtc);
   }
@@ -190,14 +177,14 @@ extension DateTimeExtension on DateTime {
   }
 
   DateTime toOccasionTime([String? targetTimezoneName]) =>
-      OccasionTimeContext(targetTimezoneName == null
-              ? tz.local
-              : tz.getLocation(targetTimezoneName))
+      (targetTimezoneName == null
+              ? TimeHelper.eventTime
+              : OccasionTimeContext.named(targetTimezoneName))
           .toOccasionTime(this);
 
   DateTime toUtcFromOccasionTime([String? sourceTimezoneName]) =>
-      OccasionTimeContext(sourceTimezoneName == null
-              ? tz.local
-              : tz.getLocation(sourceTimezoneName))
+      (sourceTimezoneName == null
+              ? TimeHelper.eventTime
+              : OccasionTimeContext.named(sourceTimezoneName))
           .toUtc(this);
 }

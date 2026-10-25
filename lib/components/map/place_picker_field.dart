@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/views/place_search_dialog.dart';
 import 'package:fstapp/components/inventory/views/quick_search_dialog.dart';
 import 'package:festapp_core/map.dart';

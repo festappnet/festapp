@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:festapp_core/forms.dart';
@@ -135,7 +136,7 @@ void main() {
     testWidgets('responses show the document answer without raw map keys',
         (tester) async {
       late BuildContext context;
-      await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (value) {
         context = value;
         return const SizedBox();
       })));

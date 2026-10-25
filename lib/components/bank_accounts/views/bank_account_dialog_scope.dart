@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Routes nested pickers above the URL-backed bank account modal.
 class BankAccountDialogScope extends InheritedWidget {

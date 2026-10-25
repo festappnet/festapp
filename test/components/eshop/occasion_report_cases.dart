@@ -1,3 +1,5 @@
+import 'package:festapp_core/program.dart' as occasion_time;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -5,7 +7,6 @@ import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/views/report_text.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:auto_route/auto_route.dart';
@@ -13,7 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/eshop/report_strings.dart';
@@ -43,10 +44,10 @@ Widget app(
       assetLoader: const _ReportAssetLoader(),
       startLocale: const Locale('cs'),
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 home: MediaQuery(
                     data: MediaQueryData(
                         textScaler: TextScaler.linear(scale),
@@ -124,7 +125,7 @@ void main() {
   });
 
   setUpAll(() async {
-    tzdata.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
@@ -173,10 +174,10 @@ void main() {
         (tester) async {
       final start = DateTime.utc(2026, 1, 1), end = DateTime.utc(2026, 1, 2);
       await tester.pumpWidget(MaterialApp(
-          builder: (context, child) => MediaQuery(
+          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: TextScaler.linear(layout.$2)),
-              child: child!),
+              child: child!)),
           home: Scaffold(
               body: SingleChildScrollView(
                   child: Align(
@@ -248,10 +249,10 @@ void main() {
       assetLoader: const _ReportAssetLoader(),
       startLocale: const Locale('cs'),
       child: Builder(
-          builder: (context) => MaterialApp.router(
+          builder: (context) => MaterialApp.router(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 routerConfig: router.config(
                     deepLinkBuilder: (_) =>
                         const DeepLink.path('/occasion-a/reservations/report')),
@@ -346,7 +347,7 @@ void main() {
     await tester.tap(find.text(ReportStrings.refresh));
     await tester.pump();
     expect(calls, 2);
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: SizedBox()));
     second.complete(reportFixture());
     await tester.pump();
     expect(tester.takeException(), isNull);

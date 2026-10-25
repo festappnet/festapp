@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
@@ -45,7 +46,7 @@ void main() {
       );
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: FormFieldsGenerator(bundle: bundle),
@@ -120,7 +121,7 @@ void main() {
       final form = FormEditorDraft(occasionId: 59, relatedFields: [field]);
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: FormFieldsGenerator(

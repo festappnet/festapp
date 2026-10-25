@@ -14,7 +14,7 @@ import 'product_price_change_cell.dart';
 import 'product_price_changes_dialog.dart';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/features/feature_constants.dart';

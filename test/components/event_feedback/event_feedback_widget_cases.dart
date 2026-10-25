@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_model.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_widget.dart';
@@ -25,7 +26,7 @@ Future<void> _pump(
   bool settle = true,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: EventFeedbackWidget(
           eventId: 1,

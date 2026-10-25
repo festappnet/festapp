@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -66,7 +67,7 @@ void main() {
         () => RightsService.occasionLinkModelNotifier.value = previousRights);
     final router = _NewsNavigationRouter(NewsPage().createState());
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
       routerConfig: router.config(
         deepLinkBuilder: (_) => DeepLink.path('/occasion-a/news'),
       ),
@@ -107,7 +108,7 @@ void main() {
     messages.single.createdAt = null;
     final router = AppRouter();
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: StackRouterScope(
         controller: router,
         stateHash: 0,

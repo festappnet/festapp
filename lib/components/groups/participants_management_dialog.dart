@@ -1,6 +1,6 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/groups/group_participant_model.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';

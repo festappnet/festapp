@@ -1,7 +1,7 @@
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/program.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/components/map/db_places.dart';

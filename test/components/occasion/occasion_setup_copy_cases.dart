@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_ticket_gallery.dart';
 import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_references.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_reference_dialog.dart';
@@ -118,7 +119,7 @@ void main() {
     TicketLayoutResources? loaded;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: OccasionSetupTicketGallery(
@@ -225,7 +226,7 @@ void main() {
     ];
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OccasionSetupSourcePicker(
                     sources: sources,
@@ -245,7 +246,7 @@ void main() {
       (tester) async {
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OccasionSetupSourcePicker(
                     sources: const [],
@@ -263,7 +264,7 @@ void main() {
     final data = candidate();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(

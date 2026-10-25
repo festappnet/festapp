@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:festapp_core/forms.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -48,7 +49,7 @@ void main() {
       final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
             body: SingleChildScrollView(
                 child: Builder(
@@ -63,7 +64,7 @@ void main() {
           blueprintEnabled ? 4 : 1);
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
             body: Builder(
                 builder: (context) =>
@@ -95,7 +96,7 @@ void main() {
       final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SingleChildScrollView(
                       child: Builder(
@@ -158,7 +159,7 @@ void main() {
             productType: meals),
         if (hasExistingSpotField) seatGroup,
       ]);
-      await _environment.pumpWidget(tester, MaterialApp(home: Scaffold(body:
+      await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body:
           SingleChildScrollView(
               child: StatefulBuilder(builder: (context, setState) {
         return TicketEditorWidgets.buildTicketEditor(

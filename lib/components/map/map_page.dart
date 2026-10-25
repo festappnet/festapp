@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'package:auto_route/auto_route.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -47,7 +47,7 @@ import 'package:fstapp/components/icons/db_place_types.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/drop_file.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/map/db_places.dart';
@@ -2120,7 +2120,7 @@ class _MapPageState extends State<MapPage>
   }
 
   /// Import a route from a GPX file (Mapy.com, Strava, Garmin, komoot, …).
-  Future<void> _importGpxFile(XFile file) async {
+  Future<void> _importGpxFile(ImportFile file) async {
     List<List<PathNode>> segments;
     try {
       final content = await file.readAsString();

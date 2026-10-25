@@ -1,6 +1,6 @@
 import '../blueprint_layout_resources.dart';
 import 'blueprint_plan_editor.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../blueprint_strings.dart';
 import '../../_shared/common_strings.dart';

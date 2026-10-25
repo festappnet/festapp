@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:convert';
 
-import 'package:cross_file/cross_file.dart';
-import 'package:flutter/material.dart';
+import 'package:fstapp/services/import_file.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/icons/icons_management_widget.dart';
 import 'package:fstapp/widgets/drop_file.dart';
@@ -12,14 +13,14 @@ const _svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
 
 Future<void> _pumpDialog(WidgetTester tester) async {
   await tester.pumpWidget(
-    const MaterialApp(home: Scaffold(body: UploadIconDialog())),
+    const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: UploadIconDialog())),
   );
 }
 
 Future<void> _selectSvg(WidgetTester tester,
     {String name = 'my_icon.svg'}) async {
   final dropFile = tester.widget<DropFile>(find.byType(DropFile));
-  dropFile.onFilePathChanged(XFile.fromData(utf8.encode(_svg), name: name));
+  await dropFile.onFilePathChanged(ImportFile.fromData(utf8.encode(_svg), name: name));
   await tester.pumpAndSettle();
 }
 
@@ -40,12 +41,9 @@ void main() {
     await _pumpDialog(tester);
     await _selectSvg(tester);
 
-    // Note: XFile.fromData ignores `name` off-web, so auto-fill from the
-    // filename can't be asserted here; the field itself must appear and
-    // Save enables once a name is typed.
     expect(find.byType(TextField), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'my_icon');
-    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'my_icon', reason: 'The selected filename is retained on every platform');
     final save = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(save.onPressed, isNotNull);
   });

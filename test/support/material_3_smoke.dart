@@ -1,13 +1,14 @@
+import 'package:festapp_core/program.dart' as occasion_time;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/services/time_helper.dart';
 // Offline visual smoke harness using production widgets and a mocked backend.
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
@@ -45,7 +46,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   WidgetsBinding.instance.ensureSemantics();
   await EasyLocalization.ensureInitialized();
-  tzdata.initializeTimeZones();
+  occasion_time.OccasionTimeContext.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   await Supabase.initialize(
       url: 'https://example.test',
@@ -132,16 +133,16 @@ class _FixtureAppState extends State<FixtureApp> {
     final light = ThemeConfig.theme();
     return MaterialApp(
       locale: context.locale,
-      localizationsDelegates: context.localizationDelegates,
+      localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
       supportedLocales: context.supportedLocales,
       theme: light,
       darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => MediaQuery(
+      builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(large ? 2 : 1)),
-          child: child!),
+          child: child!)),
       home: Builder(
           builder: (context) => Scaffold(
                 body: Column(children: [

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';

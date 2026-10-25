@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/cleaning/cleaning_strings.dart';
 import 'package:fstapp/styles/styles_config.dart';
 

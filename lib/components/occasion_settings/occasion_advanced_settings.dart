@@ -1,5 +1,5 @@
 import 'package:fstapp/components/forms/email_validation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';

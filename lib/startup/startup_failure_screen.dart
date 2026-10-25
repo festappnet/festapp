@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Does not depend on localization assets or storage that may have stalled.
 class StartupFailureScreen extends StatelessWidget {

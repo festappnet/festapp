@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Lets nested editor controls report model mutations without rebuilding the
 /// whole form (and recreating text controllers while the user is typing).

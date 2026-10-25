@@ -1,8 +1,10 @@
+import 'package:festapp_core/program.dart' as occasion_time;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/program.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -28,7 +30,6 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tzdata;
 
 import '../../support/fixtures/root_supabase_fixture.dart';
 import '../../support/fixtures/rights_context_fixture.dart';
@@ -42,7 +43,7 @@ void main() {
   final preferences = SharedPreferencesAsyncPlatform.instance;
   final saves = <Map<String, dynamic>>[];
   setUpAll(() async {
-    tzdata.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
     environment = WidgetEnvironmentFixture(
@@ -107,7 +108,7 @@ void main() {
     final form = GlobalKey<FormState>();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: Form(
@@ -173,7 +174,7 @@ void main() {
         topics: [2]);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(
@@ -213,7 +214,7 @@ void main() {
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await environment.pumpWidget(
             tester,
-            MaterialApp.router(
+            MaterialApp.router(builder: DependencyMaterialBridge.builder,
                 routerConfig: router.config(
                     deepLinkBuilder: (_) =>
                         DeepLink.path('/event/shell/$section'))));

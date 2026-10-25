@@ -1,7 +1,12 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'dart:async';
+
+import 'package:cross_file/cross_file.dart' as cross;
+import 'package:fstapp/services/import_file.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/platform_helper.dart';
 import 'package:fstapp/theme_config.dart';
@@ -16,14 +21,15 @@ const _mimeToExt = {
 
 class DropFile extends StatefulWidget {
   /// Called when a single file is dropped/selected (first valid file).
-  final void Function(XFile) onFilePathChanged;
+  final FutureOr<void> Function(ImportFile) onFilePathChanged;
 
   /// Called when multiple valid files are found (e.g. folder drop).
   /// If null, only [onFilePathChanged] is called with the first file.
-  final void Function(List<XFile>)? onMultipleFilesChanged;
+  final FutureOr<void> Function(List<ImportFile>)? onMultipleFilesChanged;
 
   /// Optional hint text (e.g. what files, dimensions, etc.) displayed above the upload icon.
   final String? hint;
+  final Future<ImportFile?> Function()? pickFile;
 
   /// List of allowed file extensions (e.g. ['jpg', 'png']).
   final List<String>? allowedExtensions;
@@ -34,20 +40,17 @@ class DropFile extends StatefulWidget {
   final bool singleFileOnly;
   final VoidCallback? onInvalidDrop;
 
-  /// Optional picker used by hosts that need custom file loading on every platform.
-  final Future<XFile?> Function()? pickFile;
-
   const DropFile({
     super.key,
     required this.onFilePathChanged,
     this.onMultipleFilesChanged,
     this.hint,
+    this.pickFile,
     this.allowedExtensions,
     this.height = 250,
     this.dropEnabled = true,
     this.singleFileOnly = false,
     this.onInvalidDrop,
-    this.pickFile,
   });
 
   @override
@@ -55,13 +58,13 @@ class DropFile extends StatefulWidget {
 }
 
 class _DropFileState extends State<DropFile> {
-  XFile? file;
+  ImportFile? file;
   int _fileCount = 0;
   bool _dragging = false;
   Offset? offset;
 
   /// Check whether a single [DropItem] passes the extension / MIME filter.
-  bool _isAllowed(XFile item) {
+  bool _isAllowed(ImportFile item) {
     if (widget.allowedExtensions == null) return true;
 
     final name = item.name.toLowerCase();
@@ -76,61 +79,91 @@ class _DropFileState extends State<DropFile> {
     return mimeExt != null && widget.allowedExtensions!.contains(mimeExt);
   }
 
-  /// Recursively extract all leaf files from a list of [DropItem]s,
-  /// flattening any [DropItemDirectory] children.
-  List<DropItem> _flattenDropItems(List<DropItem> items) {
-    final result = <DropItem>[];
+  Future<List<ImportFile>> _flattenDropItems(List<DropItem> items) async {
+    final result = <ImportFile>[];
+    ImportFile fromFile(cross.XFile file, String name, [String? mimeType]) =>
+        ImportFile(
+          name: name,
+          mimeType: mimeType,
+          readBytes: file.readAsBytes,
+          size: file.length,
+        );
+    Future<void> directory(cross.XDirectory container) async {
+      await for (final entity in container.list()) {
+        if (entity is cross.XDirectory) {
+          await directory(entity);
+        } else if (entity is cross.XFile) {
+          result.add(fromFile(entity, await entity.name() ?? ''));
+        }
+      }
+    }
+
     for (final item in items) {
-      if (item is DropItemDirectory) {
-        result.addAll(_flattenDropItems(item.children));
-      } else {
-        result.add(item);
+      if (item is DropDirectoryItem) {
+        await directory(item.directory);
+      } else if (item is DropFileItem) {
+        result.add(fromFile(item.file, item.name, item.mimeType));
       }
     }
     return result;
+  }
+
+  Future<void> _deliver(List<ImportFile> selected) async {
+    if (selected.isEmpty || !mounted) return;
+    final delivered = widget.onMultipleFilesChanged == null
+        ? [selected.first]
+        : selected;
+    // Await consumers so provider access survives their reads. Consumers that
+    // keep a file beyond this callback must retain its content explicitly.
+    setState(() {
+      file = selected.first;
+      _fileCount = selected.length;
+    });
+    if (delivered.length > 1 && widget.onMultipleFilesChanged != null) {
+      await widget.onMultipleFilesChanged!(delivered);
+    } else {
+      await widget.onFilePathChanged(delivered.first);
+    }
   }
 
   Future<void> _pickFile() async {
     if (widget.pickFile != null) {
       final picked = await widget.pickFile!();
       if (!mounted || picked == null) return;
-      setState(() {
-        file = picked;
-        _fileCount = 1;
-      });
-      widget.onFilePathChanged(picked);
+      await _deliver([await picked.retain()]);
       return;
     }
     if (!PlatformHelper.isWeb) return;
 
-    FilePickerResult? result = await FilePicker.pickFiles(
-      type: widget.allowedExtensions != null ? FileType.custom : FileType.any,
-      allowedExtensions: widget.allowedExtensions,
-      allowMultiple: widget.onMultipleFilesChanged != null,
-    );
-
-    if (result != null && result.files.isNotEmpty) {
-      final xFiles = <XFile>[];
-      for (final picked in result.files) {
-        if (picked.bytes != null) {
-          xFiles.add(XFile.fromData(picked.bytes!, name: picked.name));
-        } else if (picked.path != null) {
-          xFiles.add(XFile(picked.path!, name: picked.name));
-        }
-      }
-      if (xFiles.isEmpty) return;
-
-      setState(() {
-        file = xFiles.first;
-        _fileCount = xFiles.length;
-      });
-
-      if (xFiles.length > 1 && widget.onMultipleFilesChanged != null) {
-        widget.onMultipleFilesChanged!(xFiles);
-      } else {
-        widget.onFilePathChanged(xFiles.first);
-      }
+    final List<PlatformFile> selected;
+    final type = widget.allowedExtensions != null
+        ? FileType.custom
+        : FileType.any;
+    if (widget.onMultipleFilesChanged != null) {
+      selected = await FilePicker.pickFiles(
+        type: type,
+        allowedExtensions: widget.allowedExtensions,
+      );
+    } else {
+      final picked = await FilePicker.pickFile(
+        type: type,
+        allowedExtensions: widget.allowedExtensions,
+      );
+      selected = picked == null ? [] : [picked];
     }
+    if (!mounted) return;
+
+    await _deliver(
+      selected
+          .map(
+            (picked) => ImportFile(
+              name: picked.name,
+              readBytes: picked.readAsBytes,
+              size: picked.length,
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override
@@ -141,50 +174,45 @@ class _DropFileState extends State<DropFile> {
     double iconSpacing = isCompact ? 6 : 12;
 
     return DropTarget(
-      enable: widget.dropEnabled,
-      onDragDone: (detail) async {
-        if (!widget.dropEnabled || detail.files.isEmpty) return;
-        if (widget.singleFileOnly &&
-            (detail.files.length != 1 ||
-                detail.files.single is DropItemDirectory ||
-                !_isAllowed(detail.files.single))) {
-          widget.onInvalidDrop?.call();
-          return;
-        }
-
-        // Flatten directories into individual files
-        final allFiles = _flattenDropItems(detail.files);
-        if (allFiles.isEmpty) return;
-
-        // Filter by allowed extensions / MIME types
-        final valid = widget.allowedExtensions != null
-            ? allFiles.where(_isAllowed).toList()
-            : allFiles;
-        if (valid.isEmpty) return;
-
-        setState(() {
-          file = valid.first;
-          _fileCount = valid.length;
-        });
-
-        if (valid.length > 1 && widget.onMultipleFilesChanged != null) {
-          widget.onMultipleFilesChanged!(valid);
-        } else {
-          widget.onFilePathChanged(valid.first);
-        }
-      },
-      onDragUpdated: (details) {
+      enabled: widget.dropEnabled,
+      operation: DropOperation.copy,
+      acceptedKinds: const {DropItemKind.file, DropItemKind.directory},
+      onDrop: (detail) => ExceptionHandler.guardVoid(
+        context,
+        futureFunction: () async {
+          if (!widget.dropEnabled) return;
+          final items = detail.items
+              .where(
+                (item) => item is DropFileItem || item is DropDirectoryItem,
+              )
+              .toList();
+          if (items.isEmpty) return;
+          if (widget.singleFileOnly &&
+              (items.length != 1 || items.single is! DropFileItem)) {
+            widget.onInvalidDrop?.call();
+            return;
+          }
+          final allFiles = await _flattenDropItems(items);
+          final valid = allFiles.where(_isAllowed).toList();
+          if (widget.singleFileOnly && valid.isEmpty) {
+            widget.onInvalidDrop?.call();
+            return;
+          }
+          await _deliver(valid);
+        },
+      ),
+      onMove: (details) {
         setState(() {
           offset = details.localPosition;
         });
       },
-      onDragEntered: (detail) {
+      onEnter: (detail) {
         setState(() {
           _dragging = true;
           offset = detail.localPosition;
         });
       },
-      onDragExited: (detail) {
+      onLeave: () {
         setState(() {
           _dragging = false;
           offset = null;

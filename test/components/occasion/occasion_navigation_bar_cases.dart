@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_navigation_bar.dart';
 import 'package:fstapp/theme_config.dart';
@@ -32,7 +33,7 @@ void main() {
           final light = ThemeConfig.theme();
           var active = 0;
           final taps = <int>[];
-          await tester.pumpWidget(MaterialApp(
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             theme:
                 dark ? ThemeConfig.theme(brightness: Brightness.dark) : light,
             home: MediaQuery(
@@ -121,7 +122,7 @@ void main() {
         final light = ThemeConfig.theme();
         final theme =
             dark ? ThemeConfig.theme(brightness: Brightness.dark) : light;
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: theme,
           home: MediaQuery(
             data: MediaQueryData(
@@ -164,7 +165,7 @@ void main() {
       'deep-linked modal suppresses its selected label and icon styling',
       (tester) async {
     final theme = ThemeConfig.theme();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       theme: theme,
       home: Scaffold(
         bottomNavigationBar: OccasionNavigationBar(

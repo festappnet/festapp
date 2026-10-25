@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 
 void main() {
@@ -83,7 +84,7 @@ void main() {
         '/resetPassword?token=00000000-0000-0000-0000-000000000000';
     final router = AppRouter();
 
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
       routerConfig: router.config(
         deepLinkBuilder: (_) => const DeepLink.path(
           resetPath,

@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -5,7 +6,7 @@ import 'package:fstapp/components/unit/views/occasion_sale_badge.dart';
 import 'package:fstapp/components/unit/views/occasion_created_highlight.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_completed.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_result.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:festapp_core/time.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import 'dart:convert';
@@ -17,7 +18,7 @@ import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_seat_preview.dart';
 import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -31,7 +32,7 @@ void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   setUpAll(() {
-    tzdata.initializeTimeZones();
+    tzdata.OccasionTimeContext.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('UTC'));
     environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
@@ -67,7 +68,7 @@ void main() {
         }
       ]
     };
-    await environment.pumpWidget(tester, const MaterialApp(home: SizedBox()));
+    await environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: SizedBox()));
     // Localization is supplied by the same fixture as the wizard widgets.
     final starter = defaultDraftForm(configuration);
     final type = starter.relatedFields.single.definition.productType!;
@@ -95,7 +96,7 @@ void main() {
     final saved = jsonEncode(data);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OccasionSetupCustomerPreview(
                     data: data,
@@ -125,7 +126,7 @@ void main() {
     final requests = <Map<String, dynamic>>[];
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OccasionSetupCustomerPreview(
           data: data,
@@ -174,7 +175,7 @@ void main() {
     OccasionSetupSeatSelection? result;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: Builder(
                     builder: (context) => TextButton(
@@ -364,7 +365,7 @@ void main() {
     };
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
           body: SingleChildScrollView(
               child: StatefulBuilder(
@@ -411,7 +412,7 @@ void main() {
     };
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: StatefulBuilder(
@@ -464,7 +465,7 @@ void main() {
     OccasionSetupNext? next;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                     body: TextButton(
@@ -505,7 +506,7 @@ void main() {
         (tester) async {
       final grid = GlobalKey();
       final controller = ScrollController();
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: SizedBox(
                   width: 500,
@@ -554,7 +555,7 @@ void main() {
         saleForms: [form(), form()]);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 312,
@@ -584,7 +585,7 @@ void main() {
         saleForms: [form(open: false)]);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 312,
@@ -652,7 +653,7 @@ void main() {
           saleForms: [form(), form(mode: 'waitlist'), form(open: false)]);
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: MediaQuery(
                       data:
@@ -719,7 +720,7 @@ void main() {
               : null);
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: SizedBox(
                       width: 312,
@@ -778,7 +779,7 @@ void main() {
             saleForms: [form(start: start, countdown: countdown)]);
         await environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: Scaffold(
                     body: MediaQuery(
                         data: MediaQueryData(
@@ -845,10 +846,10 @@ void main() {
       await environment.pumpWidget(
           tester,
           Builder(
-              builder: (context) => MaterialApp(
+              builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                     locale: context.locale,
                     supportedLocales: context.supportedLocales,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                     theme: ThemeData(
                         brightness: brightness,
                         fontFamily: 'CardPreviewFutura'),
@@ -960,7 +961,7 @@ void main() {
         saleForms: [form(open: false)]);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 312,

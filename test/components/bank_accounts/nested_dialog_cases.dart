@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_dialog_scope.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
@@ -16,7 +17,7 @@ void main() {
         (tester) async {
       var parentClosed = false;
       var selected = false;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Navigator(
             onGenerateRoute: (_) => MaterialPageRoute<void>(
                   builder: (_) => RoutedBankAccountDialog(

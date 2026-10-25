@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/email_templates.dart';
 import '../html/template_authoring.dart';
 import 'email_template_model.dart';

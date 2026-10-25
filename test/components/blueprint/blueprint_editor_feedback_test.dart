@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -9,7 +10,7 @@ void main() {
   testWidgets(
       'save progress and success share a centered notice above the canvas',
       (tester) async {
-    Future<void> render(bool saving) => tester.pumpWidget(MaterialApp(
+    Future<void> render(bool saving) => tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: BlueprintEditorFeedback(
                 message: null,
@@ -36,7 +37,7 @@ void main() {
     (tester) async {
       String? message = 'Upload failed';
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, update) => BlueprintEditorFeedback(
@@ -75,7 +76,7 @@ void main() {
       addTearDown(c.dispose);
       c.select({node.id});
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: EditorColorDialogTheme(
               builder: (context, dialog) => AppAlertDialog(

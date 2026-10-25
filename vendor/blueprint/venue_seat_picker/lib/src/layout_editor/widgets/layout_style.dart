@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'layout_scene_surface.dart';
 import 'canonical_appearance_panel.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
 import '../venue_layout_controller.dart';
 import 'layout_strings.dart';

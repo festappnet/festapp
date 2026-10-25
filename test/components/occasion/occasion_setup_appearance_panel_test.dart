@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance_panel.dart';
 
@@ -31,7 +32,7 @@ void main() {
       String? selected = 'clean';
       String selectedFont = 'Roboto';
       late StateSetter update;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: MediaQuery(
         data: MediaQueryData(

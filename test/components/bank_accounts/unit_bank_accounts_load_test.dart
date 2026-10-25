@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -31,9 +32,9 @@ Widget _screen() => EasyLocalization(
       startLocale: const Locale('cs'),
       assetLoader: _Translations(),
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 supportedLocales: context.supportedLocales,
                 home: const UnitBankAccountsScreen(unitId: 1),
               )),
@@ -151,9 +152,9 @@ void main() {
         startLocale: const Locale('cs'),
         assetLoader: _Translations(),
         child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
             locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
+            localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
             supportedLocales: context.supportedLocales,
             home: Scaffold(
               appBar: AppBar(title: const Text('Administration')),

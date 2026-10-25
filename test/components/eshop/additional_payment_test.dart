@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -102,10 +103,10 @@ void main() {
             path: 'unused',
             assetLoader: _Translations(),
             child: Builder(
-                builder: (localized) => MaterialApp(
+                builder: (localized) => MaterialApp(builder: DependencyMaterialBridge.builder,
                     locale: localized.locale,
                     supportedLocales: localized.supportedLocales,
-                    localizationsDelegates: localized.localizationDelegates,
+                    localizationsDelegates: [...localized.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                     home: Scaffold(
                         body: Builder(
                             builder: (context) => TrinaGrid(

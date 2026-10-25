@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
@@ -9,9 +10,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:timezone/data/latest.dart' as zones;
+import 'package:festapp_core/time.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -64,7 +65,7 @@ void main() {
     var loads = 0;
     await _environment.pumpWidget(
       tester,
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: WaitlistOrderDetail(
             order: OrderModel(
@@ -161,7 +162,7 @@ void main() {
       late StateSetter parentState;
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: StatefulBuilder(
             builder: (context, setState) {
               parentState = setState;
@@ -289,7 +290,7 @@ void main() {
       var refreshed = 0;
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: WaitlistOrderDetail(
               order: OrderModel(id: 5, state: 'waitlisted'),
@@ -337,7 +338,7 @@ void main() {
       (tester) async {
     editor();
     if (!tz.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));
@@ -350,7 +351,7 @@ void main() {
     final order = OrderModel(id: 5, state: 'waitlisted', form: form);
     await _environment.pumpWidget(
       tester,
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: WaitlistOrderDetail(
             order: order,
@@ -441,7 +442,7 @@ void main() {
       editor();
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: WaitlistOrderDetail(
               order: OrderModel(
@@ -494,7 +495,7 @@ void main() {
       var mutations = 0;
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: WaitlistOrderDetail(
               order: OrderModel(id: 5, state: 'waitlisted'),
@@ -556,7 +557,7 @@ void main() {
       (tester) async {
         editor();
         if (!tz.timeZoneDatabase.isInitialized) {
-          zones.initializeTimeZones();
+          zones.OccasionTimeContext.initializeTimeZones();
         }
         final previousZone = tz.local;
         addTearDown(() => tz.setLocalLocation(previousZone));
@@ -568,7 +569,7 @@ void main() {
         final sent = <Map<String, dynamic>>[];
         await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: WaitlistOrderDetail(
                 order: OrderModel(
@@ -677,7 +678,7 @@ void main() {
     ) async {
       editor();
       if (!tz.timeZoneDatabase.isInitialized) {
-        zones.initializeTimeZones();
+        zones.OccasionTimeContext.initializeTimeZones();
       }
       final previousZone = tz.local;
       addTearDown(() => tz.setLocalLocation(previousZone));
@@ -693,7 +694,7 @@ void main() {
         tester,
         RepaintBoundary(
           key: capture,
-          child: MaterialApp(
+          child: MaterialApp(builder: DependencyMaterialBridge.builder,
             debugShowCheckedModeBanner: false,
             theme: ThemeConfig.theme(
               brightness: size.width > 500 ? Brightness.dark : Brightness.light,
@@ -781,14 +782,14 @@ void main() {
   ) async {
     RightsService.invalidateCapabilities();
     if (!tz.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     await _environment.pumpWidget(
       tester,
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: WaitlistOrderDetail(
             order: OrderModel(id: 5, state: 'waitlisted'),
@@ -825,7 +826,7 @@ void main() {
     var loads = 0;
     await _environment.pumpWidget(
       tester,
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: WaitlistOrderDetail(
             order: OrderModel(id: 5, state: 'waitlisted'),

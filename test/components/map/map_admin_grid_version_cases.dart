@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/map/place_grid_record.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
@@ -11,7 +12,7 @@ void main() {
   testWidgets('map admin grids preserve optimistic versions', (tester) async {
     const expectedAggregateVersion = 11;
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(builder: (builderContext) {
         context = builderContext;
         return const SizedBox();

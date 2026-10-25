@@ -1,7 +1,7 @@
 # Blueprint distribution snapshot
 
-These are the exact pub-selected 0.3.7 wrapper and 0.2.2 core archives,
-verified with the npm 0.3.6 archive by the package archive gate.
+These are the exact pub-selected 0.4.0 wrapper and 0.2.2 core archives,
+verified with the npm 0.3.7 archive by the package archive gate.
 They are dependency artifacts. Edit the canonical `festappnet/venue_seat_picker`
 package, then rebuild and verify its distributions before updating this snapshot.
 Do not patch these copies or add another rendering implementation here.

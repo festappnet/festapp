@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/map/external_map_navigation.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 

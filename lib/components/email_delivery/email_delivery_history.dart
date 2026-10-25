@@ -5,7 +5,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/views/order_state_display.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';

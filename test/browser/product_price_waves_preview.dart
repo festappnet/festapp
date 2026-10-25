@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 // Isolated visual fixture of the real widgets. No backend or production writes.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'package:fstapp/theme_config.dart';
@@ -54,11 +55,11 @@ Future<void> main() async {
       startLocale: const Locale('cs'),
       path: 'assets/translations',
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeConfig.theme(),
               locale: context.locale,
               supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
               home: ProductPriceWavesDialog(
                   occasionLink: 'preview',
                   initialBundle: bundle,

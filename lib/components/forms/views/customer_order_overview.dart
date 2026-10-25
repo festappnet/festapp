@@ -1,7 +1,7 @@
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/forms.dart';
 import '../widgets_view/card_payment_status.dart';
 import 'package:easy_localization/easy_localization.dart';

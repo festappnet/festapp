@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/users/companion/companion_model.dart';
 import 'package:fstapp/components/users/widgets/profile_place_field.dart';

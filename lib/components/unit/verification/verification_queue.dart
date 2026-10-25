@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/organization/organization_admin_guard.dart';
 import 'package:fstapp/components/forms/widgets_view/organization_identity_footer.dart';

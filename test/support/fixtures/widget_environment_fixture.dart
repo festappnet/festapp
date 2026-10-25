@@ -1,3 +1,4 @@
+import 'package:material_ui/material_ui.dart' show GlobalMaterialLocalizations;
 import 'dart:async';
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
@@ -37,7 +38,10 @@ class WidgetEnvironmentFixture {
         child: Builder(
             builder: (context) => Localizations(
                 locale: context.locale,
-                delegates: context.localizationDelegates,
+                delegates: [
+                  ...context.localizationDelegates,
+                  ...GlobalMaterialLocalizations.delegates
+                ],
                 child: KeyedSubtree(key: _ready, child: child)))));
     // Wait only for localization, never for an intentionally pending save/load
     // or an animation in the actual widget under test.

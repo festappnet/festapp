@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';

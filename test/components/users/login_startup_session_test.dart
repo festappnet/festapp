@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // Test the Supabase SDK's shared-preferences storage boundary.
@@ -79,7 +80,7 @@ void main() {
   testWidgetsWithEnvironment(() => _environment,
       'restored web session never renders the sign-in form while admin context loads',
       (tester) async {
-    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: LoginPage()));
     expect(find.text(UserStrings.signIn), findsNothing,
         reason:
             'a restored SDK session must not flash the signed-out login UI');
@@ -99,7 +100,7 @@ void main() {
       (tester) async {
     await tester.runAsync(
         () => Supabase.instance.client.auth.signOut(scope: SignOutScope.local));
-    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: LoginPage()));
     await tester.pump();
     expect(find.text(UserStrings.signIn), findsWidgets);
     expect(find.byType(TextFormField), findsWidgets);
@@ -113,7 +114,7 @@ void main() {
   testWidgetsWithEnvironment(() => _environment,
       'stalled authenticated navigation offers retry without showing login',
       (tester) async {
-    await _environment.pumpWidget(tester, const MaterialApp(home: LoginPage()));
+    await _environment.pumpWidget(tester, const MaterialApp(builder: DependencyMaterialBridge.builder, home: LoginPage()));
     await tester.pump(const Duration(seconds: 16));
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text(CommonStrings.retry), findsOneWidget);

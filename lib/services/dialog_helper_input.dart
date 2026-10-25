@@ -1,6 +1,6 @@
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:cross_file/cross_file.dart';
-import 'package:flutter/material.dart';
+import 'package:fstapp/services/import_file.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 import 'package:fstapp/widgets/password_field.dart';
@@ -14,8 +14,9 @@ class InputDialogs {
     required String dialogTitle,
     required String labelText,
   }) async {
-    final TextEditingController controller =
-        TextEditingController(text: initialValue);
+    final TextEditingController controller = TextEditingController(
+      text: initialValue,
+    );
 
     return await showDialog<String>(
       context: context,
@@ -99,7 +100,7 @@ class InputDialogs {
     String? confirmButtonMessage,
     String? cancelButtonMessage,
   }) async {
-    XFile? filePath;
+    ImportFile? filePath;
     ImportDialogChoice? result;
 
     await showDialog(
@@ -109,10 +110,11 @@ class InputDialogs {
           builder: (context, setState) {
             final dropFileWidget = DropFile(
               allowedExtensions: const ['csv'],
-              onFilePathChanged: (file) {
+              onFilePathChanged: (file) async {
                 setState(() {
                   filePath = file;
                 });
+                await file.retain();
               },
             );
 
@@ -168,28 +170,36 @@ class InputDialogs {
         );
       },
     );
+    await result?.fromFile?.retain();
     return result;
   }
 
-  static Future<XFile?> dropFilesHere(
+  static Future<ImportFile?> dropFilesHere(
     BuildContext context,
     String titleMessage,
     String confirmButtonMessage,
     String cancelButtonMessage, {
     Widget? headerContent,
+    List<String>? allowedExtensions,
+    bool singleFileOnly = false,
+    VoidCallback? onInvalidDrop,
   }) async {
-    XFile? filePath;
+    ImportFile? filePath;
     final dropFileWidget = DropFile(
-      onFilePathChanged: (file) => filePath = file,
+      allowedExtensions: allowedExtensions,
+      singleFileOnly: singleFileOnly,
+      onInvalidDrop: onInvalidDrop,
+      onFilePathChanged: (file) async {
+        filePath = file;
+        await file.retain();
+      },
     );
 
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AppAlertDialog(
-          title: Text(
-            titleMessage,
-          ),
+          title: Text(titleMessage),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -221,6 +231,7 @@ class InputDialogs {
         );
       },
     );
+    await filePath?.retain();
     return filePath;
   }
 }

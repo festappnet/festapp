@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Presentation-only navigation. Completion and visitation come from the owner.
 class OccasionSetupStoryShell extends StatefulWidget {

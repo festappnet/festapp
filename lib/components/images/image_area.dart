@@ -1,12 +1,12 @@
-import 'package:cross_file/cross_file.dart';
-import 'package:flutter/material.dart';
+import 'package:fstapp/services/import_file.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 
 /// onFileSelected now returns the new public URL
-typedef FileUploadCallback = Future<String?> Function(XFile file);
+typedef FileUploadCallback = Future<String?> Function(ImportFile file);
 
 class ImageArea extends StatefulWidget {
   /// Initial image URL
@@ -67,7 +67,7 @@ class _ImageAreaState extends State<ImageArea> {
     }
   }
 
-  Future<void> _handleFileSelected(XFile file) async {
+  Future<void> _handleFileSelected(ImportFile file) async {
     if (!mounted || !widget.enabled || _uploading) return;
     setState(() {
       _uploading = true;

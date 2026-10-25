@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
 import 'package:festapp_core/map.dart';
@@ -87,7 +88,7 @@ void main() {
 
       // toTrinaRow needs a BuildContext but only uses it to build cells.
       late BuildContext ctx;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(builder: (c) {
           ctx = c;
           return const SizedBox.shrink();

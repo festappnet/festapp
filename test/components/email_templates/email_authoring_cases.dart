@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/email_templates.dart';
@@ -26,7 +27,7 @@ void main() {
         EmailTemplateModel(code: 'TICKET_ORDER_PAYMENT_DONE'),
         field: EmailTargetField.body)
       ..inlineTicketsEnabled = true;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: Builder(
                 builder: (context) => provider.preview(context, 'tickets')!))));
@@ -82,7 +83,7 @@ void main() {
             EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
             field: EmailTargetField.body));
     var cancelled = false;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: RichHtmlEditor(
                 controller: controller, onCancel: () => cancelled = true))));
@@ -159,7 +160,7 @@ void main() {
           owner: const HtmlMediaOwner.none(),
           authoring: provider);
       var outsideClicks = 0;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: Column(children: [
         Expanded(child: RichHtmlEditor(controller: controller)),
@@ -217,7 +218,7 @@ void main() {
         authoring: EmailAuthoringProvider(
             EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
             field: EmailTargetField.subject));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: RichHtmlEditor(controller: controller))));
     await tester.tap(find.byIcon(Icons.alternate_email));
     await tester.pumpAndSettle();
@@ -275,7 +276,7 @@ void main() {
       'preview preserves readable button styles without tap or URL semantics',
       (tester) async {
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EmailPreviewHtml(
                 html:

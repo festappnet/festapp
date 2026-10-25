@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:festapp_core/map.dart';
@@ -24,7 +25,7 @@ void main() {
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
           body: Builder(
               builder: (context) => TrinaGrid(
@@ -83,7 +84,7 @@ void main() {
     ];
     for (final (icon, expectedLabel) in cases) {
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Builder(
             builder: (context) => DataGridHelper.iconToRow(
               context,
@@ -103,7 +104,7 @@ void main() {
   testWidgets('malformed SVG records use the renderer fallback',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
           builder: (context) => DataGridHelper.iconToRow(
             context,

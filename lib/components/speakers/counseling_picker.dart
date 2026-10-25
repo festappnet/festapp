@@ -2,7 +2,7 @@ import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/map/map_navigation.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:festapp_core/program.dart';

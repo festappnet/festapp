@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/widgets_view/payment_qr_card.dart';
 
@@ -15,7 +16,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: SingleChildScrollView(
             child: PaymentQrCard(
