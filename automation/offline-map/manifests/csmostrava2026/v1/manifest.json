@@ -1,0 +1,103 @@
+{
+  "schema_version": "1",
+  "occasion": {
+    "slug": "csmostrava2026",
+    "id": 643
+  },
+  "artifact_version": "v1",
+  "built_at": "2026-08-01T00:55:50Z",
+  "source": {
+    "url": "https://download.versatiles.org/osm.versatiles",
+    "etag": "\"6fef9cb2804ab456b1653a93b8a2073a-9065\"",
+    "last_modified": ""
+  },
+  "build": {
+    "requested_bounds": [
+      18.13,
+      49.76,
+      18.36,
+      49.89
+    ],
+    "min_zoom": 0,
+    "max_zoom": 14,
+    "bbox_border_tiles": 3,
+    "compression": "gzip"
+  },
+  "live_content": {
+    "bounds": {
+      "west": 18.15917318348585,
+      "south": 49.785913,
+      "east": 18.3297425,
+      "north": 49.863396
+    },
+    "margins_km": {
+      "west_km": 2.095,
+      "south_km": 2.885,
+      "east_km": 2.173,
+      "north_km": 2.962
+    },
+    "places": 189,
+    "path_groups": 8,
+    "free_route_points": 1047
+  },
+  "tools": {
+    "versatiles": "versatiles 4.6.1",
+    "sqlite": "3.51.0",
+    "jq": "jq-1.7.1-apple",
+    "shasum": "6.02"
+  },
+  "mbtiles": {
+    "tile_count": 1000,
+    "metadata": {
+      "bounds": "-90.010986328125,-66.51763851435186,135.010986328125,79.17339847797243",
+      "center": "18.248291015625,49.82367616954049,2",
+      "description": "A basic, lean, general-purpose vector tile schema for OpenStreetMap data. See https://shortbread-tiles.org/",
+      "format": "pbf",
+      "json": "{\"vector_layers\":[{\"fields\":{\"block\":\"String\",\"housename\":\"String\",\"housenumber\":\"String\",\"unit\":\"String\"},\"id\":\"addresses\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\"},\"id\":\"aerialways\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"admin_level\":\"Number\",\"disputed\":\"Boolean\",\"maritime\":\"Boolean\"},\"id\":\"boundaries\",\"maxzoom\":14,\"minzoom\":0},{\"fields\":{\"admin_level\":\"Number\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"way_area\":\"Number\"},\"id\":\"boundary_labels\",\"maxzoom\":14,\"minzoom\":2},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"bridges\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"dummy\":\"Number\",\"height\":\"Number\",\"hide_3d\":\"Boolean\",\"min_height\":\"Number\"},\"id\":\"buildings\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\"},\"id\":\"dam_lines\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\"},\"id\":\"dam_polygons\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"ferries\",\"maxzoom\":14,\"minzoom\":10},{\"fields\":{\"kind\":\"String\"},\"id\":\"land\",\"maxzoom\":14,\"minzoom\":7},{\"fields\":{},\"id\":\"ocean\",\"maxzoom\":14,\"minzoom\":0},{\"fields\":{\"kind\":\"String\"},\"id\":\"pier_lines\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\"},\"id\":\"pier_polygons\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"population\":\"Number\"},\"id\":\"place_labels\",\"maxzoom\":14,\"minzoom\":4},{\"fields\":{\"amenity\":\"String\",\"atm\":\"Boolean\",\"cuisine\":\"String\",\"denomination\":\"String\",\"emergency\":\"String\",\"highway\":\"String\",\"historic\":\"String\",\"housename\":\"String\",\"housenumber\":\"String\",\"information\":\"String\",\"leisure\":\"String\",\"man_made\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"office\":\"String\",\"recycling:clothes\":\"Boolean\",\"recycling:glass_bottles\":\"Boolean\",\"recycling:paper\":\"Boolean\",\"recycling:scrap_metal\":\"Boolean\",\"religion\":\"String\",\"shop\":\"String\",\"sport\":\"String\",\"tourism\":\"String\",\"tower:type\":\"String\",\"vending\":\"String\"},\"id\":\"pois\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"iata\":\"String\",\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"public_transport\",\"maxzoom\":14,\"minzoom\":11},{\"fields\":{\"kind\":\"String\"},\"id\":\"sites\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"ref\":\"String\",\"ref_cols\":\"Number\",\"ref_rows\":\"Number\",\"tunnel\":\"Boolean\"},\"id\":\"street_labels\",\"maxzoom\":14,\"minzoom\":10},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"ref\":\"String\"},\"id\":\"street_labels_points\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"rail\":\"Boolean\",\"service\":\"String\",\"surface\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"street_polygons\",\"maxzoom\":14,\"minzoom\":11},{\"fields\":{\"bicycle\":\"String\",\"bridge\":\"Boolean\",\"horse\":\"String\",\"kind\":\"String\",\"link\":\"Boolean\",\"oneway\":\"Boolean\",\"oneway_reverse\":\"Boolean\",\"rail\":\"Boolean\",\"service\":\"String\",\"surface\":\"String\",\"tracktype\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"streets\",\"maxzoom\":14,\"minzoom\":5},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\"},\"id\":\"streets_polygons_labels\",\"maxzoom\":14,\"minzoom\":14},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"water_lines\",\"maxzoom\":14,\"minzoom\":9},{\"fields\":{\"bridge\":\"Boolean\",\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"tunnel\":\"Boolean\"},\"id\":\"water_lines_labels\",\"maxzoom\":14,\"minzoom\":12},{\"fields\":{\"kind\":\"String\",\"way_area\":\"Number\"},\"id\":\"water_polygons\",\"maxzoom\":14,\"minzoom\":4},{\"fields\":{\"kind\":\"String\",\"name\":\"String\",\"name_ar\":\"String\",\"name_de\":\"String\",\"name_el\":\"String\",\"name_en\":\"String\",\"name_es\":\"String\",\"name_fr\":\"String\",\"name_it\":\"String\",\"name_nl\":\"String\",\"name_pl\":\"String\",\"name_pt\":\"String\",\"name_uk\":\"String\",\"way_area\":\"Number\"},\"id\":\"water_polygons_labels\",\"maxzoom\":14,\"minzoom\":4}]}",
+      "maxzoom": "14",
+      "minzoom": "0",
+      "name": "Shortbread",
+      "type": "baselayer",
+      "version": "1.1"
+    }
+  },
+  "assets": [
+    {
+      "path": "ostrava-z0-14.mbtiles",
+      "content_type": "application/vnd.sqlite3",
+      "bytes": 41041920,
+      "sha256": "cb74339148c835278d79dddceb6b263b71ad48b7cdc77ae5b6956e2b367f443f"
+    },
+    {
+      "path": "style.json",
+      "content_type": "application/json",
+      "bytes": 304299,
+      "sha256": "6f9e9b25ca7f5b6ddde2ddb9b483ab2c9a7161f3260ce6fc9277c21bb6347591"
+    },
+    {
+      "path": "sprites/sprites.json",
+      "content_type": "application/json",
+      "bytes": 9683,
+      "sha256": "96077f855d9d10317f4b2c88251c7f4c4e88e6e8d16d944fffe3b892e9945726"
+    },
+    {
+      "path": "sprites/sprites.png",
+      "content_type": "image/png",
+      "bytes": 79640,
+      "sha256": "e78547f3299a509721a7f404c78c40e84d6f3e5f09f2cf232ecf60bad3ffbc04"
+    },
+    {
+      "path": "sprites/sprites@2x.json",
+      "content_type": "application/json",
+      "bytes": 9725,
+      "sha256": "ca1afe6368f8fadc69857d8f6a86a466987b92c8fa31ab47958b734d5663663d"
+    },
+    {
+      "path": "sprites/sprites@2x.png",
+      "content_type": "image/png",
+      "bytes": 198396,
+      "sha256": "b240a3c69bbfcc7590b9019c0a0058e04d3fbb4e580cfa24ae29401ae4f73083"
+    }
+  ],
+  "manifest_note": "The manifest cannot contain its own SHA-256; record it in the rollout log."
+}
