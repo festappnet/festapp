@@ -11,7 +11,7 @@ development site are in the [registration receipt](evidence/registration-2026102
 The [hosting receipt](evidence/hosting-20261025.json) records exact public asset
 hashes and URLs. No paid plan or listing fee has been accepted.
 
-Eleven tests, build and sealed public-asset packaging pass. The actual bundled
+Twelve tests, build and sealed public-asset packaging pass. The actual bundled
 entry now initializes the self-managed Site host using the assigned application
 ID; its regression test runs the real pinned Wix SDK against a synthetic host
 boundary. This does not replace real Wix qualification. The built settings panel
@@ -104,3 +104,8 @@ free product while charging usage fees through the connected service.
 
 The review kit is [SUBMISSION.md](SUBMISSION.md). Required gates are reflected
 in `release-inputs.example.json`; none is marked as already passed.
+
+Real Wix Editor checks now confirm widget insertion, all three saved settings
+after a cold browser reopen, and no checkout iframe/helper in Editor or Preview.
+See [editor receipt](evidence/editor-20261025.json); published-site qualification
+and other editors remain pending.

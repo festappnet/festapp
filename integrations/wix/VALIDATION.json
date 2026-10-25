@@ -24,8 +24,8 @@
     "checkoutFrames": 0,
     "realWixHost": false
   },
-  "realWixInstallation": false,
-  "wixSdkHostBoundaryVerified": false,
+  "realWixInstallation": true,
+  "wixSdkHostBoundaryVerified": true,
   "publicSubmission": false,
   "billingApprovalObtained": false,
   "externalSupportMessageSent": true,
@@ -53,9 +53,16 @@
     "componentId": "comp-mvo14z52",
     "placeholderObserved": true,
     "settingsPanelOpened": true,
-    "settingsPersistence": "Pending retest after actual asynchronous readback fix; first write reached iframe but immediate readback aborted remaining writes",
+    "settingsPersistence": "PASS: all3 attributes saved and retained after cold browser reopen",
     "syntheticFormUrl": "https://vstupenky.online/form/wix_qa_20261025",
     "syntheticFormExists": false,
-    "checkoutSubmitted": false
-  }
+    "checkoutSubmitted": false,
+    "editorAndPreviewHostModeVerified": true,
+    "liveCheckoutAbsentInEditorAndPreview": true
+  },
+  "editorReceipt": "evidence/editor-20261025.json",
+  "realWixInstallationScope": "Wix Editor development site; published runtime and other editors remain unqualified",
+  "wixSdkHostBoundaryScope": "Actual Editor and Preview modes only",
+  "publishedSdkHostBoundaryVerified": false,
+  "publishedRuntimeQualified": false
 }

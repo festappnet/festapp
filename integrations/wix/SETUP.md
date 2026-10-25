@@ -68,14 +68,16 @@ Do not publish a claim of verified compatibility until the matrix below passes.
 
 ## Required real-site matrix
 
-Every row is currently **NOT RUN**. Unit tests simulate the host boundary only.
+The first two Wix Editor rows passed on the registered development site; see
+[evidence/editor-20261025.json](evidence/editor-20261025.json). Other rows remain
+**NOT RUN**. This does not establish published-site compatibility.
 The parent checkout must use the same disposable backend and synthetic stock as
 existing integration tests; never place real orders or reserve production seats.
 
 | Area | Harmony | Wix Editor | Wix Studio |
 | --- | --- | --- | --- |
-| Install, add widget, settings persist after editor reload | not run | not run | not run |
-| Editor/Preview make no checkout/helper/reservation request | not run | not run | not run |
+| Install, add widget, settings persist after editor reload | not run | pass | not run |
+| Editor/Preview have no checkout iframe or helper loaded | not run | pass | not run |
 | Published form, auto height, helper/version handshake | not run | not run | not run |
 | 320 px mobile, keyboard/focus, light/dark host typography | not run | not run | not run |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | not run |

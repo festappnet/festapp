@@ -20,11 +20,11 @@
     "editor": "Wix Editor",
     "name": "Festapp Tickets - Wix Editor QA",
     "published": false,
-    "installationVerified": false,
-    "installationEvidence": "Actual isolated browser Manage Apps page listed the app on the selected development site with Setup required / Complete Setup",
-    "widgetOnCanvasVerified": false,
+    "installationVerified": true,
+    "installationEvidence": "evidence/editor-20261025.json: widget inserted from native App Widgets, settings saved and retained after cold browser reopen",
+    "widgetOnCanvasVerified": true,
     "siteAppRecordObserved": true,
-    "note": "Manage Apps lists Setup required; this proves a site app record, not a completed widget placement or checkout qualification."
+    "note": "Earlier Setup required snapshot was superseded by completed Editor placement. Published runtime and other editor qualification remain pending."
   },
   "paidActionTaken": false,
   "marketplaceSubmission": false,

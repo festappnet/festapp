@@ -40,5 +40,10 @@
     "source": "https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop",
     "regressionTest": "Stale reads before each confirmed property; asserts next property write only after confirmation",
     "testsPassed": 12
+  },
+  "finalEditorEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No unsupported checkout/publication/readiness claims; align historical installation flags and test count with latest editor receipt",
+    "correctionsApplied": true
   }
 }
