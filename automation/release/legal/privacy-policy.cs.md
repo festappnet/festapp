@@ -53,3 +53,9 @@ V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace.
 Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
 
 Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+
+
+
+## Souhrnné měření veřejných stránek
+
+Na veřejných stránkách tohoto webu používáme Cloudflare Web Analytics pro souhrnné počty návštěv, zobrazení a zdrojových webů. Měření nepoužívá analytické cookies, trvalý identifikátor návštěvníka ani fingerprinting a nepropojujeme je s účty nebo objednávkami. Administrace, přihlašovací stránky a soukromé části aplikace jsou z měření vyloučeny. Cloudflare při přenosu technicky přijímá IP adresu a další síťové údaje; nejde o tvrzení, že veškeré doručování webu probíhá bez osobních údajů. Blokování skriptu zabrání tomuto měření, nikoli serverovým provozním záznamům.
