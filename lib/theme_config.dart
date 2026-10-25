@@ -25,6 +25,13 @@ class ThemeConfig {
       fontFamily: fontFamily,
       colorScheme: scheme,
       primaryColor: primary,
+      switchTheme: SwitchThemeData(
+        trackColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) &&
+                    !states.contains(WidgetState.disabled)
+                ? primary
+                : null),
+      ),
       scaffoldBackgroundColor: dark ? dddBackground : lllBackground,
       dialogTheme: const DialogThemeData(shape: appDialogShape, elevation: 16),
       datePickerTheme: const DatePickerThemeData(shape: appDialogShape),

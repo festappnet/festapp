@@ -3162,6 +3162,20 @@
       "duplicateTypes": "Two ticket fields cannot refer to the same product group within one template. Choose different groups.",
       "invalidReferences": "The seating plan or ticket refers to products missing from the selected form. Choose their replacements in the form step.",
       "repairReferences": "Connect products"
+    },
+    "ui": {
+      "palette_ocean": "Ocean",
+      "palette_royal": "Royal",
+      "palette_lavender": "Lavender",
+      "palette_citrus": "Citrus",
+      "palette_sunset": "Sunset",
+      "palette_wine": "Wine",
+      "palette_terracotta": "Terracotta",
+      "palette_forest": "Forest",
+      "palette_graphite": "Graphite",
+      "palette_rose": "Rose",
+      "palette_azure": "Azure",
+      "palette_cream": "Cream"
     }
   },
   "Waitlist": {

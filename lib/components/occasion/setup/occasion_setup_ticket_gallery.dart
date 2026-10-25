@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'occasion_setup_strings.dart';
 import 'package:flutter/material.dart';
 import '../../ticket_layout/ticket_layout_service.dart';
@@ -117,6 +118,7 @@ class _OccasionSetupTicketGalleryState
           for (final key in _controllers.keys.toList()) {
             if (!_activeKeys.contains(key)) {
               _controllers.remove(key)?.dispose();
+              _controllerInputs.remove(key);
               _prepared.remove(key);
               _styledResources?.artworks.remove(key)?.image?.dispose();
             }
@@ -173,6 +175,7 @@ class _OccasionSetupTicketGalleryState
         },
       );
   final _controllers = <String, TicketLayoutController>{};
+  final _controllerInputs = <String, String>{};
   Widget _card(BuildContext context, TicketLayoutResources resources,
       MapEntry<String, TicketTemplate> entry, double width,
       {bool current = false}) {
@@ -183,12 +186,17 @@ class _OccasionSetupTicketGalleryState
             entry.value.toJson(), widget.appearance,
             decorated: decorated, composition: entry.key);
     final previous = _controllers[entry.key];
-    final template = TicketTemplate.fromJson(raw);
-    final controller = previous != null && previous.document == template
-        ? previous
-        : TicketLayoutController(template,
-            artworkKey: decorated ? entry.key : null);
-    if (previous != controller) previous?.dispose();
+    final signature = jsonEncode(raw);
+    final controller =
+        previous != null && _controllerInputs[entry.key] == signature
+            ? previous
+            : TicketLayoutController(TicketTemplate.fromJson(raw),
+                artworkKey: decorated ? entry.key : null);
+    if (previous != controller) {
+      previous?.dispose();
+      _prepared.remove(entry.key);
+    }
+    _controllerInputs[entry.key] = signature;
     _controllers[entry.key] = controller;
     final background = (decorated
             ? OccasionSetupAppearance.ticketBackground(
@@ -228,12 +236,9 @@ class _OccasionSetupTicketGalleryState
                       child: FutureBuilder<void>(
                           future: _prepared.putIfAbsent(entry.key, () async {
                             if (!current && decorated) {
-                              if (decorated &&
-                                  background !=
-                                      resources
-                                          .artworks[entry.key]?.background) {
+                              if (background != null) {
                                 final image = await TicketPreviewAssets.shared
-                                    .image(background!);
+                                    .image(background, maxWidth: 640);
                                 if (!mounted ||
                                     !resources.isValid ||
                                     !_activeKeys.contains(entry.key)) {
@@ -270,8 +275,9 @@ class _OccasionSetupTicketGalleryState
                                 ConnectionState.done)
                               return const Center(
                                   child: CircularProgressIndicator());
-                            return FittedBox(
-                                child: CustomPaint(
+                            return RepaintBoundary(
+                                child: FittedBox(
+                                    child: CustomPaint(
                               size: controller.document.area.size,
                               painter: TicketLayoutPainter(
                                   controller,
@@ -279,7 +285,7 @@ class _OccasionSetupTicketGalleryState
                                   resources.previewData(
                                       controller.document, 'normal'),
                                   cropToTicket: true),
-                            ));
+                            )));
                           }),
                     ),
                     const SizedBox(height: 12),

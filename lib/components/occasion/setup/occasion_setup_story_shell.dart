@@ -8,7 +8,6 @@ class OccasionSetupStoryShell extends StatefulWidget {
     required this.currentIndex,
     required this.eventTitle,
     required this.status,
-    required this.readiness,
     required this.questionCount,
     required this.segmentStates,
     required this.leaveLabel,
@@ -50,7 +49,6 @@ class OccasionSetupStoryShell extends StatefulWidget {
   final int currentIndex;
   final String eventTitle;
   final String status;
-  final String readiness;
   final String questionCount;
 
   /// Completed, current and upcoming labels, in that order.
@@ -384,11 +382,6 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
                         ),
                         if (widget.primaryAction != null) widget.primaryAction!,
                       ]),
-                  const SizedBox(height: 4),
-                  Text(widget.readiness,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: colors.onSurfaceVariant)),
                 ]),
               ),
             ),
