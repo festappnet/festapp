@@ -37,7 +37,7 @@ test('public guides render crawlable linked documents, code generator and exact 
   }
  }
  const home=fs.readFileSync(path.join(target,'index.html'),'utf8');
- for (const route of ['/prodej-vstupenek-na-ples','/rezervacni-system-s-planem-salu']) {
+ for (const route of ['/rezervacni-system-s-planem-salu']) {
   assert.ok(home.slice(0,home.indexOf('<footer')).includes(`href="${route}"`),'topic is discoverable from help overview');
   assert.ok(home.slice(home.indexOf('<footer')).includes(`href="${route}"`),'topic is linked in shared footer');
  }

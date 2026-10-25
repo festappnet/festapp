@@ -1,7 +1,7 @@
 import { expandSiteShell } from './organizers/site_shell.mjs';
 import { renderLandingContent } from './organizers/render_content.mjs';
 import { readConfig, resolveContext, publicManifest, marketingMedia } from './organizers/context.mjs';
-import { pageDefinitions } from './organizers/page_definitions.mjs';
+import { pageDefinitions, retiredPageAssets } from './organizers/page_definitions.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +41,7 @@ const html = fs.readFileSync(index, 'utf8')
 }
 const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
 const cleanOutputs = () => {
-  for (const {asset} of Object.values(pageDefinitions)) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
+  for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
 if (!enabled) {
   cleanOutputs();
@@ -97,6 +97,14 @@ if (builtIndexArg >= 0) {
     }));
   });
   let body = template;
+  if (projection.locale === 'cs') {
+    body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
+    const reference=body.match(/<section id="reference"[\s\S]*?<\/section>/)?.[0] ?? '';
+    body=body.replace(reference,'').replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
+    body=body.replace(/<details><summary>{{PAGE_(?:CAN_GUESTS_CHOOSE_SPECIFIC_SEATS|WHAT_CAN_I_CUSTOMIZE|HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR)}}<\/summary>[\s\S]*?<\/details>/g,'');
+    body=body.replace('<section class="payments',reference+'<section class="payments');
+  }
+
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");
   if (page.id !== 'home') body = body.replace(/<main id="main">[\s\S]*?<\/main>/, '<main id="main">{{TOPIC_CONTENT}}</main>');
   const content = substitute(body);

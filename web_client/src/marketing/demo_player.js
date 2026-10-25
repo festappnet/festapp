@@ -15,7 +15,7 @@ export function initDemoPlayers(root = document) {
   const win = root.defaultView ?? window;
   const motion = win.matchMedia('(prefers-reduced-motion: reduce)');
   const narrow = win.matchMedia('(max-width: 760px)');
-  const adapt = variant => ({...variant, src: narrow.matches && variant.mobileSrc ? variant.mobileSrc : variant.src, poster: narrow.matches && variant.mobilePoster ? variant.mobilePoster : variant.poster});
+  const adapt = variant => ({...variant, src: narrow.matches && variant.mobileSrc ? variant.mobileSrc : variant.src, poster: narrow.matches && variant.mobilePoster ? variant.mobilePoster : variant.poster, width: narrow.matches && variant.mobileWidth ? variant.mobileWidth : variant.width, height: narrow.matches && variant.mobileHeight ? variant.mobileHeight : variant.height});
   const connection = win.navigator.connection;
   const players = [];
   const removers = [];
@@ -33,6 +33,8 @@ export function initDemoPlayers(root = document) {
     const text = player.error ? ui.retry : player.ended ? ui.replay : !player.video.paused ? ui.pause : ui.play;
     player.button.setAttribute('aria-pressed', String(!player.video.paused));
     player.button.setAttribute('aria-label', `${text}: ${player.variant.description}`);
+    const label=player.button.querySelector('[data-playback-label]');
+    if (label) label.textContent=text;
   }
   function load(player) {
     if (!player.variant.src) return false;
@@ -76,14 +78,27 @@ export function initDemoPlayers(root = document) {
     timer = win.setTimeout(measure, 550);
   }
   root.querySelectorAll('[data-demo-player]').forEach(stage => {
-    let variants;
-    try { variants = JSON.parse(stage.dataset.variants).map(adapt); } catch { return; }
+    let variants,originalVariants;
+    try { originalVariants=JSON.parse(stage.dataset.variants); variants = originalVariants.map(adapt); } catch { return; }
     const video = stage.querySelector('video');
     const button = stage.querySelector('[data-playback-surface]');
     if (!video || !button || !variants?.length) return;
     const player = { stage, video, button, variants, variant: variants[0], ratio: 0, manualPause: false, ended: false, error: false, fallback: stage.querySelector('.media-fallback') };
     players.push(player);
-    if (player.variant.poster) video.poster = player.variant.poster;
+    const resizeMedia = () => {
+      const currentId=player.variant.id;
+      player.variants=originalVariants.map(adapt);
+      player.variant=player.variants.find(variant=>variant.id===currentId) ?? player.variants[0];
+      if (video.getAttribute('src') && video.getAttribute('src') !== player.variant.src) {
+        video.pause();video.removeAttribute('src');video.load();
+      }
+      if (player.variant.poster) video.poster=player.variant.poster;
+      if (player.variant.width) video.width=player.variant.width;
+      if (player.variant.height) video.height=player.variant.height;
+      updateButton(player);schedule();
+    };
+    resizeMedia();
+    listen(narrow,'change',resizeMedia);
     listen(button, 'click', () => {
       if (!video.paused) { player.manualPause = true; video.pause(); updateButton(player); }
       else play(player, true);

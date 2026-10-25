@@ -81,7 +81,8 @@ real URLs/Search Console before reporting any indexing or ranking result.
 `context.mjs` validates the explicit content profile and locale; `page_definitions.mjs`
 provides stable document IDs/assets. The resolved `organizer-pages.json` drives
 rendering, Worker routing, static/dynamic sitemaps, CSP and PWA navigation. Czech
-profile `vstupenky-cs` adds the ball-sales and seating-reservation pages. Existing
+profile `vstupenky-cs` adds the seating-reservation page. The former ball-sales
+URL permanently redirects to the homepage through the same public registry. Existing
 shared header/footer, account controls, help, analytics and immutable application
 cache remain owned by their current implementations. Marketing documents and
 media stay outside the installed app cache; topics return the standard offline
@@ -106,18 +107,28 @@ rendered document locale and `persist: false`. Browser language or the saved
 application preference cannot retag a Czech marketing document as English;
 ordinary application startup still uses the saved preference.
 
-## Organizer guide and seating feature
+## Product overview and seating feature
 
-The ball-sales URL is a concise illustrated overview with direct links to
-application help. Following user feedback, the checklist, progress counter,
-printing controls, long chapters and sidebar were removed. Four short sections
-cover seating, offer/payments, tickets/sharing and entry. Existing product
-screenshots show the actual interface.
+The homepage owns the service overview. Following user feedback and Astra
+design review, the former ball-sales guide was consolidated into it: its
+content repeated the homepage. The old URL now returns a permanent 308 redirect
+to `/` with query parameters preserved. It is absent from links, sitemap and
+PWA documents; the renderer deletes its former generated asset on every run.
+`publicProjection.redirects` owns this compatibility route and permits only
+unique non-reserved sources targeting registered pages.
 
-The seating URL explains the feature with real layout templates and existing
-editor/buyer clips. Native radio inputs select examples; without JavaScript
-all examples remain readable. `topic_tools.js` only enhances these examples.
+Three product demonstrations cover seating, offer/tickets and orders/check-in.
+The original typography, palette, geometric hero and real product media remain.
+Each demonstration links to its feature detail or exact application help.
+The offer pairs the form editor with a real ticket design; operations pairs
+the report with the mobile check-in clip. Captured example prices are not
+service pricing. Technical-team cards and repeated setup steps are omitted
+from the Czech marketing flow. Existing English content keeps its own layout.
 
-Both pages are linked in the shared marketing/help footer and the help index.
-The homepage's seating demonstration links directly to the feature detail.
-The homepage remains the service overview; application help owns exact steps.
+The seating page demonstrates the editor, buyer selection and actual templates.
+Native radio inputs select examples; without JavaScript all examples remain
+readable. Application help owns detailed preparation and troubleshooting.
+
+Playback controls have a visible label. Mobile posters, sources and intrinsic
+dimensions follow the viewport; changing the breakpoint pauses incompatible
+media and preserves deliberate pause/completion state.

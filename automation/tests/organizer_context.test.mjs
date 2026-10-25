@@ -23,9 +23,13 @@ function fixture(t) {
 }
 test('one registry drives CS HTML, offline topics, sitemap and deterministic generation',async t=>{
   const f=fixture(t); f.setConfig(csConfig);
+  mkdirSync(join(f.root,'web/organizers'),{recursive:true});
+  writeFileSync(join(f.root,'web/organizers/ball-ticket-sales'),'retired article');
   const result=f.render(); assert.equal(result.status,0,result.stderr);
   const context=await verifyMarketingBundle(join(f.root,'web'),f.configPath);
-  assert.equal(context.pages.length,3);
+  assert.equal(context.pages.length,2);
+  assert.equal(existsSync(join(f.root,'web/organizers/ball-ticket-sales')),false);
+  assert.deepEqual(context.redirects,[{from:'/prodej-vstupenek-na-ples',to:'/'}]);
   const manifest=JSON.parse(readFileSync(join(f.root,'web/organizer-pages.json')));
   assert.deepEqual(manifest,publicManifest(context));
   for (const name of ['flutter','webclient']) writeFileSync(join(f.root,'web',name),name);
@@ -50,7 +54,7 @@ test('synthetic EN uses same renderer, empty references, own media and optional 
   p.provider={name:'Example Operator',identifier:'123456',identifierLabel:'Business ID'};
   p.cta={href:'/login',label:'Create event',note:'Sign in to prepare your event.'};
   p.templateTexts=Object.fromEntries(Object.keys(p.page ?? p.templateTexts).map(key=>[key,'Example event information']));
-  p.helpLink=null;
+  p.helpLink=null;p.redirects=[];
   p.templateTexts.TEXT_5='Tickets';p.templateTexts.TEXT_6='for your event.';
   p.page=p.templateTexts;
   p.templateTexts.TEXT_35='Payments';p.templateTexts.TEXT_36='Contact us to discuss payment options.';
@@ -102,6 +106,11 @@ test('invalid paths, duplicate identities and missing media never replace accept
   for(const path of ['/events','/login','/settings','/map-editor','/google-auth','/check/1','/unit/event','/../escape','https://foreign.invalid/','//foreign.invalid','/privacy/choices','/with?query','/']) {
     const content=JSON.parse(original);content.publicProjection.pages[1].path=path;
     writeFileSync(contentPath,JSON.stringify(content));assert.notEqual(f.render().status,0,path);
+    assert.equal(readFileSync(target,'utf8'),before);
+  }
+  for(const redirects of [[{from:'/login',to:'/'}],[{from:'/old-page',to:'https://foreign.invalid/'}]]) {
+    const changed=JSON.parse(original);changed.publicProjection.redirects=redirects;
+    writeFileSync(contentPath,JSON.stringify(changed));assert.notEqual(f.render().status,0);
     assert.equal(readFileSync(target,'utf8'),before);
   }
   const content=JSON.parse(original);content.publicProjection.pages[1].id='home';
