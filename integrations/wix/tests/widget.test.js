@@ -87,6 +87,27 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],'true');
 });
 
+test('settings wait for propagated readback before writing sibling properties', async () => {
+  let pending, reads = 0;
+  const confirmed = [];
+  await saveSettings({
+    async setProp(name, value) {
+      assert.equal(pending, undefined, 'previous property must be confirmed first');
+      pending = {name, value};
+      reads = 0;
+    },
+    async getProp(name) {
+      assert.equal(name, pending.name);
+      if (++reads < 3) return undefined;
+      const value = pending.value;
+      confirmed.push(name);
+      pending = undefined;
+      return value;
+    },
+  }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
+  assert.deepEqual(confirmed, ['form-url', 'form-title', 'inherit-style']);
+});
+
 test('settings page fails closed outside editor and surfaces save success', async () => {
   const html = readFileSync(new URL('../src/settings.html',import.meta.url),'utf8');
   const dom = new JSDOM(html);
