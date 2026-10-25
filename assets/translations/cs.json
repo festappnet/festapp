@@ -1248,6 +1248,8 @@
   },
   "Administration": {
     "webAnalytics": "Webová analytika",
+    "analyticsVisits": "Návštěvnost a zdroje návštěv",
+    "analyticsPages": "Zobrazení stránek",
     "openCloudflareAnalytics": "Otevřít přehled v Cloudflare",
     "organizationSettings": "Nastavení organizace",
     "findUnitHint": "Najít organizaci...",

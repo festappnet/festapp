@@ -756,6 +756,8 @@
   },
   "Administration": {
     "webAnalytics": "Webanalyse",
+    "analyticsVisits": "Besuche und Besucherquellen",
+    "analyticsPages": "Seitenaufrufe",
     "openCloudflareAnalytics": "Statistik in Cloudflare öffnen",
     "organizationSettings": "Organisationseinstellungen",
     "copyLink": "Link kopieren",

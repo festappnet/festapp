@@ -32,6 +32,12 @@ Browser checks verified one beacon, `spa: false`, and successful collector POST 
 
 Velehrad follow-up: its previous zone-backed collector returned 404. A dedicated manual site for `app.absolventskyvelehrad.cz` now owns its public-page measurement, using the official external Cloudflare collector. The original parent-zone analytics setup is preserved. The Velehrad-only follow-up is deployed at `0.20.392+893` from source `6d6a72f79c52df9a73ab5150ef42e92f37152de0` (tenant `4e1f9cafb4731035b73c4b2c8e4ed8d9c23e6d21`). Its three coherent live probes passed. The unmodified deployed public form sent a successful POST 204; a real navigation to the scanner loaded zero beacons and the payload contained no synthetic private code. The dedicated property also contains stored Czech visits. The other eight production tenants were not changed in this follow-up.
 
+## Organization Edit shortcuts
+
+Organization 3 on vstupenky.online exposes three always-visible report groups: Plesy, vstupenky.online, and Festapp + Absolventský Velehrad. Each group has separate links to Cloudflare Visits (including referring sites) and Page views (including popular paths). The combined group selects both site tags without a hostname filter; the two ticketing reports pin their own exact hostname. Titles and action labels wrap without ellipsis on narrow screens.
+
+Cloudflare's chart dimension selection and the 5/10/15-item selector are local dashboard state: selecting Path and 15 items did not change the URL, and reloading reset the item count to 5. These display settings cannot be reliably carried by the verified report links. No unsupported query parameters or browser-style overrides are added; Cloudflare controls its own path-label truncation. The app's shortcuts remain fully visible.
+
 ## Collection boundary
 
 - Pages response owners insert the bootstrap only into the public catalogue, organizer landing page and resolved public forms. Flutter, scanner, authentication, payments, PWA cache shells, static legal pages and embeds have no beacon.
