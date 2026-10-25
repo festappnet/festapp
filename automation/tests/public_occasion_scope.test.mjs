@@ -16,7 +16,7 @@ const disabled = [
 ];
 const preserved = [
   '/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/',
-  '/', '/events', '/events/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
+  '/', '/napoveda/', '/events', '/events/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
   '/demo/reservations/orders/current',
   '/demo/check/42',
   '/google-auth', '/app/google-auth', '/resetPassword',
@@ -34,7 +34,7 @@ async function workerFor(supported, dir, origin = 'https://tenant.invalid') {
   const file = path.join(dir, 'worker.js');
   const config = path.join(dir, 'project.conf');
   writeFileSync(file, template);
-  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=${origin}\n`);
+  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=${origin}\nWEB_ORGANIZER_LANDING_ENABLED=${origin === "https://vstupenky.online"}\n`);
   const stamped = spawnSync('python3', ['-', file, config], {
     input: stamp, encoding: 'utf8', cwd: projectRoot,
   });
@@ -50,6 +50,10 @@ const assets = { fetch: async request => {
 
 test('public path policy separates occasion screens from ticketing and account flows', () => {
   assert.equal(isPublicOccasionAppPath('/demo/event'), true);
+  for (const pathname of ['/napoveda', '/napoveda/', '/napoveda/objednavky/']) {
+    assert.equal(isPublicOccasionAppPath(pathname), false, pathname);
+    assert.equal(unsupportedOccasionAppRedirect(pathname), null, pathname);
+  }
   for (const pathname of oldAdministration) assert.equal(unsupportedOccasionAppRedirect(pathname), '/demo/reservations', pathname);
   for (const pathname of disabled) assert.equal(unsupportedOccasionAppRedirect(pathname), '/', pathname);
   for (const pathname of preserved) assert.equal(unsupportedOccasionAppRedirect(pathname), null, pathname);
@@ -92,7 +96,7 @@ test('ticket-only marketing tenant keeps its catalog accessible', async t => {
   const worker = await workerFor(false, dir, 'https://vstupenky.online');
   t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [] }));
   const env = {
-    SUPABASE_URL: 'https://api.invalid', SUPABASE_ANON_KEY: 'fixture',
+    SUPABASE_URL: 'https://api.invalid', SUPABASE_ANON_KEY: 'fixture', ORGANIZATION_ID: 3,
     ASSETS: { fetch: async request => new Response(new URL(request.url).pathname === '/organizers-page'
       ? '<h1>Marketing</h1>' : '<div id="events-grid"></div>') },
   };
@@ -143,7 +147,7 @@ test('ticket-only catalog and sitemap do not advertise public app URLs', async t
   try {
     const worker = await workerFor(false, dir);
     const env = {
-      SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'public-fixture',
+      SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'public-fixture', ORGANIZATION_ID: 3,
       ASSETS: { fetch: async () => new Response('<div id="events-grid"></div>') },
     };
     for (const pathname of ['/', '/sitemap.xml']) {
@@ -166,7 +170,7 @@ test('web client does not initialize Flutter for unsupported public links', asyn
   t.mock.method(RouterService, 'openExternalUrl', target => opened.push(target));
   try {
     AppConfig.isAppSupported = false;
-    assert.equal(await RouterService.handleInitialLoad(), true);
+    assert.equal(await RouterService.handleInitialLoad(), false); // Main renders the redirected catalogue.
     assert.deepEqual(replaced, ['/']);
     assert.equal(RouterService.getOccasionAppPath('demo'), '/');
     await RouterService.navigateToOccasionApp('demo');
