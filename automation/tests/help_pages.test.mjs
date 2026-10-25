@@ -25,12 +25,16 @@ test('public guides render crawlable linked documents, code generator and exact 
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{|<iframe/);
   assert.match(html,/<header class="site-header/);assert.match(html,/<footer class="site-footer wrap"/);
   assert.doesNotMatch(html,/class="help-header|class="help-footer/);
-  if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot">/,`Missing actual product screenshot: ${page.id}`);
+  if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing actual product screenshot: ${page.id}`);
   for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)) {
    const local=match[1].slice('/napoveda/'.length);const file=local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local);
    assert.ok(fs.existsSync(file),`Missing guide/asset ${match[1]}`);
   }
  }
+ const form=fs.readFileSync(path.join(target,'prodejni-formular/index.html'),'utf8');
+ assert.ok(form.indexOf('class="help-step-action"')<form.indexOf('<h2 id="pole">'),'app link belongs to the opening step');
+ assert.match(form,/href="\/login\?redirect=%2Fhelp-action%2Fforms" target="_blank"/);
+ assert.doesNotMatch(form,/help-app-action/);assert.match(form,/guide-screenshot-mobile/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
  const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/vstupenky_online url=/);
  const zip=fs.readdirSync(path.join(target,'assets')).find(name=>name.endsWith('.zip'));const packageZip=fs.readFileSync(path.join(root,'integrations/wordpress/dist',zip));
@@ -44,7 +48,7 @@ test('public guides render crawlable linked documents, code generator and exact 
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
   assert.match(html,/<html lang="en">/);assert.match(html,/noindex,nofollow/);
   assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
-  if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot">/,`Missing localized screenshot: ${page.id}`);
+  if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);
   for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)){
    const local=match[1].slice('/napoveda/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local)),match[1]);
   }

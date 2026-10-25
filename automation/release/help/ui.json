@@ -45,7 +45,17 @@
     "searchClose": "Zavřít vyhledávání",
     "searchIntro": "Co potřebujete vyřešit?",
     "searchHint": "Hledejte postup, nastavení nebo problém. Prohledáváme celý obsah všech návodů.",
-    "searchKeyboard": "Přejít na výsledky"
+    "searchKeyboard": "Přejít na výsledky",
+    "appActions": {
+      "forms": "Otevřít formuláře v aplikaci",
+      "seating": "Otevřít plánek v aplikaci",
+      "tickets": "Otevřít vstupenky v aplikaci",
+      "products": "Otevřít produkty v aplikaci",
+      "orders": "Otevřít objednávky v aplikaci",
+      "settings": "Otevřít nastavení akce",
+      "report": "Otevřít report v aplikaci"
+    },
+    "opensNewTab": "nová karta"
   },
   "en": {
     "languageTag": "en",
@@ -93,6 +103,16 @@
     "searchClose": "Close search",
     "searchIntro": "What do you need help with?",
     "searchHint": "Find a task, setting or problem. Search covers the full content of every guide.",
-    "searchKeyboard": "Go to results"
+    "searchKeyboard": "Go to results",
+    "appActions": {
+      "forms": "Open forms in the app",
+      "seating": "Open the seating plan in the app",
+      "tickets": "Open tickets in the app",
+      "products": "Open products in the app",
+      "orders": "Open orders in the app",
+      "settings": "Open event settings",
+      "report": "Open the report in the app"
+    },
+    "opensNewTab": "new tab"
   }
 }

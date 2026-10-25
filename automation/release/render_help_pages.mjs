@@ -44,7 +44,7 @@ const figures = new Map(media.map(item => {
   const name = `${item.id.replaceAll('/','-')}.${digest(data)}${path.extname(relative)}`;
   assets[name] = data;
   const href = `${helpRoot}assets/${name}`;
-  return [item.id, `<figure class="guide-screenshot"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
+  return [item.id, `<figure class="guide-screenshot${item.device === 'mobile' ? ' guide-screenshot-mobile' : ''}"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
 }));
 let fontFaces = '';
 for (const [file,weight] of [['FuturaPTBook.ttf',400],['FuturaPTMedium.ttf',500]]) {
@@ -72,7 +72,12 @@ if (new Set(allPages.map(page => page.slug)).size !== allPages.length) throw new
 const articleList = category => `<div class="guide-list">${pages.filter(p => p.category === category).map(page => `<a href="${href(page)}"><strong>${escape(page.title)}</strong><span>${escape(page.description)}</span></a>`).join('')}</div>`;
 const navigation = current => `<ul><li><a href="${helpRoot}"${!current.slug ? ' aria-current="page"' : ''}>${escape(pages[0].label)}</a></li>${categoryPages.map(category => `<li><a href="${href(category)}"${current.id === category.id ? ' aria-current="page"' : ''}>${escape(category.label)}</a>${current.category === category.category ? `<ul class="help-nav-articles">${pages.filter(page => page.category === category.category).map(page => `<li><a href="${href(page)}"${page.id === current.id ? ' aria-current="page"' : ''}>${escape(page.label)}</a></li>`).join('')}</ul>` : ''}</li>`).join('')}</ul>`;
 const guideDirectory = `<div class="help-category-directory">${categoryPages.map(category => `<section><h2><a href="${href(category)}">${escape(category.label)}</a></h2><p>${escape(category.description)}</p><a href="${href(category)}">${escape(ui.browseCategory)}</a></section>`).join('')}</div>`;
-const actions = {'form':'forms','seating':'seating','ticket-design':'settings','ticket-pricing':'products','orders':'orders','payments':'settings','check-in':'tickets'};
+const appLink = intent => {
+  const label = ui.appActions[intent];
+  if (!label) throw new Error(`Unknown help action: ${intent}`);
+  const url = '/login?redirect=' + encodeURIComponent('/help-action/' + intent);
+  return `<a class="help-step-action" href="${url}" target="_blank" rel="noopener" aria-label="${escape(label+' ('+ui.opensNewTab+')')}">${escape(label)}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3h7v7M21 3 10 14M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg></a>`;
+};
 const searchIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
 const searchChrome = `<div class="help-toolbar"><div class="help-toolbar-inner"><a href="${helpRoot}" class="help-toolbar-home">${escape(ui.organizerHelp)}</a><button type="button" class="help-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="help-search-dialog" hidden>${searchIcon}<span>${escape(ui.searchTrigger)}</span><kbd data-search-shortcut>Ctrl K</kbd></button></div></div><dialog id="help-search-dialog" class="help-search-dialog" aria-labelledby="help-search-title"><div class="help-search-top"><h2 id="help-search-title">${escape(ui.searchLabel)}</h2><button type="button" data-search-close aria-label="${escape(ui.searchClose)}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><form class="help-search" data-help-search role="search" action="${helpRoot}" method="get"><div class="help-search-fields">${searchIcon}<input id="help-query" name="q" aria-label="${escape(ui.searchLabel)}" type="search" maxlength="200" placeholder="${escape(ui.searchPlaceholder)}" autocomplete="off" autofocus><button type="button" data-search-clear hidden>${escape(ui.searchClear)}</button></div><div class="help-search-options"><label for="help-category">${escape(ui.searchCategory)}</label><select id="help-category" name="category"><option value="">${escape(ui.searchAll)}</option>${categoryPages.map(category => `<option value="${category.category}">${escape(category.label)}</option>`).join('')}</select></div></form><div class="help-search-body"><div data-search-intro><h3>${escape(ui.searchIntro)}</h3><p>${escape(ui.searchHint)}</p></div><section data-search-results aria-label="${escape(ui.searchTitle)}"><p role="status" aria-live="polite" aria-atomic="true"></p><ol></ol></section></div><div class="help-search-footer"><span><kbd>↓</kbd> ${escape(ui.searchKeyboard)}</span><span><kbd>Esc</kbd> ${escape(ui.searchClose)}</span></div></dialog><a data-help-base href="${helpRoot}" hidden></a>`;
 let accountScript = '', themeLinks = '';
@@ -89,6 +94,7 @@ const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
     .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replace(/\{\{APP_LINK:([a-z-]+)\}\}/g, (_,intent) => appLink(intent))
     .replace(/\{\{MEDIA:([a-z0-9/-]+)\}\}/g,(_,id) => {
       if (!figures.has(id)) throw new Error(`Missing ${locale} help screenshot: ${id}`);
       return figures.get(id);
@@ -104,11 +110,7 @@ const searchData = {entries,locale,ui,helpRoot,supportUrl:origin+'/support/'};
 const searchScript = 'globalThis.FestappHelpSearchData='+JSON.stringify(searchData).replace(/</g,'\\u003c')+';\n'+read('search_engine.js')+'\n'+read('search_ui.js');
 const searchName = `search.${digest(searchScript)}.js`; assets[searchName] = searchScript;
 for (const page of allPages) {
-  const action = actions[page.id];
-  const actionUrl = '/login?redirect=' + encodeURIComponent('/help-action/' + action);
-  const actionCopy = locale === 'cs' ? ['Pokračovat v administraci','Otevřít příslušnou část aplikace','Po přihlášení vyberte akci. Naposledy používanou nabídneme jako první. Ověřte název v hlavičce administrace; výběrem odkazu nic neměníte.'] : ['Continue in administration','Open this section in the app','Sign in and choose an event. Your recently used event appears first. Check its name in the administration header; opening the link makes no changes.'];
-  const actionBlock = action ? `<aside class="help-app-action" aria-label="${escape(actionCopy[0])}"><a class="button primary" href="${actionUrl}">${escape(actionCopy[1])}</a><p>${escape(actionCopy[2])}</p></aside>` : '';
-  const body = bodies.get(page.id) + actionBlock;
+  const body = bodies.get(page.id);
   const toc = [...body.matchAll(/<h2 id="([^"]+)">([^<]+)<\/h2>/g)].map(([,id,label]) => `<li><a href="#${id}">${label}</a></li>`).join('');
   const canonical = origin + href(page);
   const category = categoryFor(page);

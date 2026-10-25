@@ -95,3 +95,16 @@ Fresh application screenshots and reproducible video chapters are recorded in
 capture timestamps, hashes, exact actions/results and unverified boundaries.
 Raw failed attempts and local session logs stay private. Never replace an
 unverified outcome with a fabricated screenshot or a successful-sounding caption.
+
+Application actions are authored inline with `{{APP_LINK:forms}}` (or another
+allowlisted intent) in the exact step that enters that screen. Labels live in
+`ui.json` for both locales; the renderer rejects unknown intents. Links explicitly
+open a new tab, preserving the guide beside the administration. There is no
+separate generic application-action panel at the bottom of each article.
+
+Mobile captures use `device: "mobile"` in `media.json`. The shared renderer gives
+these real portrait screenshots a readable phone-width presentation in either
+locale. Capture metadata distinguishes a desktop Chromium mobile viewport from a
+physical iPhone or Safari/camera qualification. Keep that distinction in video
+scripts. The October 25 follow-up adds nine CS/EN mobile-view images and a ninth
+scenario chapter; the additional mobile purchase stops before submitting an order.

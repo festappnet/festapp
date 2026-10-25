@@ -97,7 +97,6 @@ body[data-page=help].dark-mode .embed-generator input[aria-invalid=true]{border-
 
 @media(max-width:650px){.help-category-directory{grid-template-columns:minmax(0,1fr);gap:0}}
 
-.help-app-action{border-top:1px solid var(--line);padding-top:24px;margin-top:36px}.help-main .help-app-action .button{color:white;text-decoration:none}.help-main .help-app-action p{font-size:17px;color:var(--muted);margin:14px 0 0}
 
 /* Shared documentation chrome; search never replaces the article underneath. */
 .help-toolbar{border-bottom:1px solid var(--line);background:var(--surface)}
@@ -148,3 +147,6 @@ body[data-page=help] .help-search-fields input:focus-visible{outline:none}
 @keyframes help-search-enter{from{transform:translateY(-6px)}to{transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.help-search-dialog[open]{animation:none}}
 @media(max-width:650px){.help-toolbar-inner{padding:12px 24px}.help-toolbar-home{display:none}.help-search-trigger{width:100%}.help-search-trigger kbd{display:none}.help-search-dialog{width:calc(100% - 16px);max-height:calc(100dvh - 32px);margin:16px auto auto;border-radius:12px}.help-search{padding-inline:16px}.help-search-top{padding-inline:12px}.help-search-fields{gap:8px}.help-search input{font-size:16px}.help-search-fields>svg{display:none}.help-search [data-search-clear]{max-width:72px;line-height:1.2}.help-search-footer{display:none}.help-search-body{min-height:220px}.help-search-options label{flex-shrink:0}}
+
+.guide-step-link{display:block;margin-top:12px}.help-main .help-step-action{display:inline-flex;align-items:center;gap:8px;font-weight:500;min-height:44px}.help-step-action svg{flex-shrink:0}
+.guide-screenshot-mobile{max-width:360px;margin-inline:auto}.guide-screenshot-mobile img{border:6px solid var(--ink);border-radius:24px}.guide-screenshot-mobile figcaption{font-size:17px}

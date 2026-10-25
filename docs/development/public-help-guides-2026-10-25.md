@@ -94,3 +94,25 @@ produce standalone file previews. Production publication is a separate step.
   opaque results surfaces. The mechanical design detector returned no findings.
 - Fetched main was 928f15349, with no upstream commits missing from this branch
   immediately before publication preparation. Production was not deployed.
+
+## Inline actions and mobile follow-up
+
+Application links now sit inside the opening step for that task and use explicit
+localized labels, such as **Otevřít plánek v aplikaci**. They open a new tab so the
+reader can keep the guide and administration side by side. Czech and English
+sources use the same authored action-token mechanism and intent allowlist.
+
+Nine additional real mobile-view captures bring the curated collection to 47.
+They show seat selection, a filled form, the summary with its visible submission
+action, and manual ticket lookup/already-used results. English has its own new
+form and scanner captures. The presentation is a 390 × 844 desktop Chromium
+viewport, not a claim of physical iPhone, Safari or camera testing. The second
+purchase demonstration stopped before submission. Its selected seat was a local
+temporary hold. The video manifest preserves these details as a ninth chapter.
+
+The failed remote startup check was an outdated VM harness: it removed the
+`initAccountHeader` import from the landing entry without evaluating the extracted
+shared module. The harness now executes the real shared module and its real
+caller together. The complete `automation/test_web_startup.sh` gate passed locally,
+including its seven isolated Chromium access/provider-handoff cases. The new
+inline-action assertions and the 76 page/locale/viewport/theme checks also passed.

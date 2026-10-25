@@ -316,6 +316,123 @@
       "capturedAt": "2026-10-24T23:36:08.344968+00:00",
       "captureStep": "363-context-picker-shot",
       "alt": "Výběr akce po otevření odkazu z nápovědy."
+    },
+    {
+      "mediaId": "cs/forms/buyer-mobile",
+      "file": "cs/walkthrough/63-mobile-completed-form.png",
+      "sha256": "dbc87ce8f96635dd7d8652da2f97a57d83983cdc99941ab2f9b20919aa5edd5b",
+      "capturedAt": "2026-10-25T00:07:00.850051+00:00",
+      "captureStep": "M18-completed-mobile",
+      "alt": "Vyplněný mobilní formulář s vybraným místem a cenou 350 Kč.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/forms/summary-mobile",
+      "file": "cs/walkthrough/64-mobile-order-summary.png",
+      "sha256": "4ba25cf9f0e7d6737f93d8a07ea611300d86f6203a880e25b5e250f92d1b1cc7",
+      "capturedAt": "2026-10-25T00:07:01.212318+00:00",
+      "captureStep": "M21-mobile-summary-shot",
+      "alt": "Mobilní souhrn objednávky se jménem, místem, cenou a viditelným odesílacím tlačítkem.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/seating/buyer-mobile",
+      "file": "cs/walkthrough/62-mobile-seat-selection.png",
+      "sha256": "be96cd3d684bf8cc27e445f9b659f013d7cf2b3c97e9376c83540608745e2dc0",
+      "capturedAt": "2026-10-25T00:06:38.846258+00:00",
+      "captureStep": "M13-mobile-seat-chosen",
+      "alt": "Mobilní plánek plesu s výběrem sedadla, přiblížením a tlačítkem Pokračovat.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/check-in/ready-mobile",
+      "file": "cs/walkthrough/65-mobile-scanner-ready.png",
+      "sha256": "f90416a1041b89b3062fb240c9b033fcbe667b7f563059e12eaf8a9ca9a2b7e8",
+      "capturedAt": "2026-10-25T00:07:39.543483+00:00",
+      "captureStep": "M26-mobile-scan-ready",
+      "alt": "Mobilní úvod skeneru se správnou akcí a volbami kamery nebo ručního zadání.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/check-in/manual-mobile",
+      "file": "cs/walkthrough/66-mobile-scanner-manual.png",
+      "sha256": "0fcda4e5a2b324c24219aa71323a0be45ec4b778a85bcc186c87a893fbc61251",
+      "capturedAt": "2026-10-25T00:07:39.760015+00:00",
+      "captureStep": "M28-mobile-manual-shot",
+      "alt": "Mobilní skener s ručním zadáním symbolu vstupenky.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/check-in/used-mobile",
+      "file": "cs/walkthrough/67-mobile-scanner-used.png",
+      "sha256": "f858f1973733d19e37be27239775016af3ba7d47c3f99f7b53bec90ea082a907",
+      "capturedAt": "2026-10-25T00:07:39.959477+00:00",
+      "captureStep": "M31-mobile-used-shot",
+      "alt": "Mobilní upozornění Vstupenka už byla použita.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/forms/buyer-mobile",
+      "file": "en/walkthrough/68-en-mobile-form.png",
+      "sha256": "8a5893106946931c11eabf1595cb8d673250dc76153850588a844c7cfeb6b9ab",
+      "capturedAt": "2026-10-25T00:07:51.414135+00:00",
+      "captureStep": "M37-english-form-shot",
+      "alt": "The event order form in English at mobile width.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/check-in/manual-mobile",
+      "file": "en/walkthrough/69-en-mobile-scanner-manual.png",
+      "sha256": "7793c0e9bce71a515214cb0b1cb095733b4dbf2ac630a9dc3da443a93c991202",
+      "capturedAt": "2026-10-25T00:08:06.342371+00:00",
+      "captureStep": "M43-en-manual-shot",
+      "alt": "English mobile scanner with a Ticket code field and Look up button.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
+    },
+    {
+      "mediaId": "en/check-in/used-mobile",
+      "file": "en/walkthrough/70-en-mobile-scanner-used.png",
+      "sha256": "3482cbbf99bd7d30792b437e880dbfee0114aa9e47ed3854be1067915545fc22",
+      "capturedAt": "2026-10-25T00:08:14.223854+00:00",
+      "captureStep": "M47-en-result-shot",
+      "alt": "English mobile result stating that the ticket has already been used.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "physicalDevice": false
     }
   ],
   "chapters": [
@@ -534,6 +651,36 @@
         "cs/navigation/picker"
       ],
       "videoNote": "Žádné pevné ID ani event link v samotném návodu. Přístup se ověřuje přes běžnou administrativní hranici."
+    },
+    {
+      "id": "mobile-purchase-and-check-in",
+      "guide": "check-in",
+      "steps": [
+        {
+          "action": "Mobilní veřejný formulář → Výběr místa → souhrn",
+          "outcome": "Ověřeno na šířce 390 px; odesílací tlačítko je viditelné. Druhá objednávka nebyla odeslána."
+        },
+        {
+          "action": "Mobilní skener → Zadat kód ručně → načíst již použitou testovací vstupenku",
+          "outcome": "Skutečný serverový výsledek: Vstupenka už byla použita."
+        },
+        {
+          "action": "Přepnout lokalizaci na English → mobilní formulář a ruční skener",
+          "outcome": "Skutečná anglická rozhraní a stejný serverový výsledek."
+        }
+      ],
+      "stills": [
+        "cs/forms/buyer-mobile",
+        "cs/forms/summary-mobile",
+        "cs/seating/buyer-mobile",
+        "cs/check-in/ready-mobile",
+        "cs/check-in/manual-mobile",
+        "cs/check-in/used-mobile",
+        "en/forms/buyer-mobile",
+        "en/check-in/manual-mobile",
+        "en/check-in/used-mobile"
+      ],
+      "videoNote": "Mobilní viewport Chromium 390 × 844, bez makety iOS stavového řádku; nesmí být vydáván za fyzický test Safari nebo kamery iPhonu. Pro video lze nahradit fyzickým telefonem při stejných krocích."
     }
   ],
   "notVerified": [
