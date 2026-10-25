@@ -8,15 +8,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1152.0"
+    "@aws-sdk/client-s3": "^3.1155.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261015.1",
+    "@cloudflare/workers-types": "^5.20261021.1",
     "@types/node": "^24.19.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
-    "vitest": "^4.0.18",
-    "wrangler": "^4.151.0"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.151.3"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {
