@@ -3,7 +3,7 @@
   "verifiedAt": "2026-10-25",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "EDITOR_AND_STUDIO_INSTALLED_LIVE_HELPER_CONTRAST_FIX_PENDING",
+  "state": "LIVE_HELPER_FIXED_CURRENT_CHECKOUT_VERIFIED_SUBMISSION_GATED",
   "localTests": {
     "count": 12,
     "passed": 12,
@@ -12,10 +12,10 @@
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
   "package": {
     "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "0de22c6266c3ceb91bde9c31295fb4d9cb56c2980f12733b8ed6e3e249fed8f3",
+    "sha256": "f7790aa0b631e32c0c07fa4e77ee13e02674a42c1caceb887c7ed374efbaeb67",
     "type": "public-asset deployment archive, not a Wix App Store installer"
   },
-  "releaseCheck": "EXPECTED_BLOCKED: commercial approvals, documented zero-fixed-fee terms, complete real-editor/checkout receipts, store assets and approved reporting implementation remain pending",
+  "releaseCheck": "EXPECTED_BLOCKED: individual billing approval, zero-fixed-fee terms, reporting implementation, two portal pages and remaining qualification matrix",
   "browserCheck": {
     "environment": "isolated headless Chromium, file:// built settings panel",
     "viewport": "320x800",
@@ -37,9 +37,9 @@
     "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
     "settings.js": "55faea259c5a8484e8b943fe86f59f835c7089674a4cdcb4ae6856c86ed7f3dc",
-    "widget.js": "855f5628e251a1ef6df3f40af1918d7c1763f5a9ed12a880d77a422148c0f258"
+    "widget.js": "909666e08e16a89d40e425896c6885a5c04a42cc1df76570dd538e167df81d04"
   },
-  "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+  "sourceHead": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
   "realWixWidgetOnCanvasVerified": true,
   "registrationReceipt": "evidence/registration-20261025.json",
   "hostingReceipt": "evidence/hosting-20261025.json",
@@ -48,38 +48,25 @@
   "supportConversationStarted": true,
   "supportCaseSubmitted": true,
   "supportReceipt": "evidence/support-history-20261025.json",
-  "editorQualification": {
-    "editor": "Wix Editor",
-    "widgetPlacedVia": "Add Elements > App Widgets > vstupenky.online",
-    "componentId": "comp-mvo14z52",
-    "placeholderObserved": true,
-    "settingsPanelOpened": true,
-    "settingsPersistence": "PASS: all3 attributes saved and retained after cold browser reopen",
-    "syntheticFormUrl": "https://vstupenky.online/form/wix_qa_20261025",
-    "syntheticFormExists": false,
-    "checkoutSubmitted": false,
-    "editorAndPreviewHostModeVerified": true,
-    "liveCheckoutAbsentInEditorAndPreview": true
-  },
   "editorReceipt": "evidence/editor-20261025.json",
-  "realWixInstallationScope": "Wix Editor development site with scoped synthetic published checkout; production transport and other editors remain unqualified",
+  "realWixInstallationScope": "Wix Editor and Studio development sites, published isolated-backend checkout; full production/payment matrix remains unqualified",
   "wixSdkHostBoundaryScope": "Actual Editor and Preview modes only",
   "publishedSdkHostBoundaryVerified": true,
   "publishedRuntimeQualified": false,
-  "publishedCheckoutReceipt": "evidence/published-checkout-20261025.json",
+  "publishedCheckoutReceipt": "evidence/published-checkout-current-20261025.json",
   "publishedSyntheticCheckoutVerified": true,
   "productionCheckoutQualified": false,
-  "checkoutClientVersionTested": "0.20.394+895",
+  "checkoutClientVersionTested": "0.20.402+903",
   "studioReceipt": "evidence/studio-20261025.json",
   "portalReceipt": "evidence/portal-20261025.json",
   "sharedHelperFix": {
-    "liveSha256": "f7051b56a8f14856fdad7bad02fb86cfb1df62ccd4529ca97d633252afa342d1",
+    "liveSha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
     "candidateSha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
     "testsPassed": 21,
     "actualStudioCandidateContrastVerified": true,
-    "liveFixVerified": false
+    "liveFixVerified": true
   },
-  "storeAssetsVerified": false,
+  "storeAssetsVerified": true,
   "publicGuide": {
     "url": "https://festapp-wix.pages.dev/help",
     "source": "src/help.html",
@@ -95,5 +82,31 @@
   "publishedHelperOutageReceipt": "evidence/helper-outage-20261025.json",
   "publishedHelperOutageFallbackVerified": true,
   "studioPublishedMultipleWidgetsScope": "Actual native published pair with adapted disposable backend; form values, helper instances and runtime attribute isolation only",
-  "publishedPairReceipt": "evidence/published-pair-20261025.json"
+  "publishedPairReceipt": "evidence/published-pair-20261025.json",
+  "editorUninstallReinstallReceipt": "evidence/uninstall-reinstall-20261025.json",
+  "editorUninstallReinstallObserved": true,
+  "nativeCleanSetupQualified": false,
+  "historicalInitialEditorQualification": {
+    "editor": "Wix Editor",
+    "widgetPlacedVia": "Add Elements > App Widgets > vstupenky.online",
+    "componentId": "comp-mvo14z52",
+    "placeholderObserved": true,
+    "settingsPanelOpened": true,
+    "settingsPersistence": "PASS: all3 attributes saved and retained after cold browser reopen",
+    "syntheticFormUrl": "https://vstupenky.online/form/wix_qa_20261025",
+    "syntheticFormExists": false,
+    "checkoutSubmitted": false,
+    "editorAndPreviewHostModeVerified": true,
+    "liveCheckoutAbsentInEditorAndPreview": true
+  },
+  "editorQualification": {
+    "receipt": "evidence/uninstall-reinstall-20261025.json",
+    "componentId": "comp-mvo8fey9",
+    "syntheticFormUrl": "https://vstupenky.online/form/wix-qa-20261025",
+    "nativeCleanSetupQualified": false
+  },
+  "checkoutHtmlTemplateVersion": "0.20.401+902",
+  "galleryAssetsVerified": true,
+  "galleryReceipt": "evidence/gallery-20261025.json",
+  "serviceReleaseReceipt": "evidence/service-release-20261025.json"
 }

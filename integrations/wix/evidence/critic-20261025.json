@@ -1,7 +1,7 @@
 {
   "reviewedAt": "2026-10-25",
   "reviewer": "Independent wix_critic agent explicitly requested by owner",
-  "sourceHead": "7b9f85d478418480cdd417d4f4d1aba61c5fcdc5",
+  "sourceHead": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
   "localVerdict": "No remaining demonstrated local blocker for standalone static asset deployment",
   "finding": {
     "priority": "P1",
@@ -18,9 +18,9 @@
     "Truthful distinction between preparation, registration, hosting and actual host qualification"
   ],
   "remainingPublicationGates": [
-    "Written applicable billing model / ticket face value exclusions / zero fixed publisher fee confirmation",
-    "Real Wix host, editor and checkout qualification",
-    "Current store identity, assets, help and required reporting implementation"
+    "Individual billing approval, service-revenue-only basis, zero fixed publisher fee confirmation and required reporting implementation",
+    "Contact Info and Security & Privacy portal pages; both currently fail with Wix CDN HTTP 403",
+    "Harmony, native Safari, full payment/lifecycle/browser matrix and clean native installation; observed Add to Site warning remains"
   ],
   "supportRequestReview": {
     "file": "SUPPORT-REQUEST.md",
@@ -97,5 +97,31 @@
     "receipt": "published-pair-20261025.json",
     "verdict": "PASS: actual native published pair, independent values/helper instances and temporary runtime attribute isolation correctly scoped; no native saved-public-settings, alternate URL success or complete lifecycle claim",
     "knownLimits": "First load near summary close disclosed; live contrast defect and complete checkout/payment/browser gates remain pending"
+  },
+  "editorUninstallReinstallReview": {
+    "date": "2026-10-25",
+    "receipt": "uninstall-reinstall-20261025.json",
+    "verdict": "PASS: native removal/restoration/fresh settings correctly separated from checkout; persistent native setup warning and workaround disclosed; clean install remains unqualified"
+  },
+  "finalCurrentReleaseAndGalleryReview": {
+    "reviewedAt": "2026-10-25T20:58:42.533752+00:00",
+    "widgetAssetSource": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+    "verdict": "No remaining demonstrated blocker to source publication and the standalone Wix asset release; Marketplace submission remains gated",
+    "scope": [
+      "Fallback link presentation and guarded local gallery fixture diff",
+      "Current published Studio checkout evidence with live helper and unmodified production frontend assets; HTML/auth/backend/CORS adapted to disposable backend",
+      "Runtime 0.20.402+903 explicitly distinguished from HTML template 0.20.401+902",
+      "Additional isolated order 8, fixture total 2; no production order/payment claim",
+      "Shared SQL/Edge release receipt, preserved old function contracts/ACLs and stated compatibility limits",
+      "Both actual 1200x900 gallery images visually inspected; sample form/fictional buyer, no real payment receipt or customer data",
+      "Draft gallery/thumbnail save-and-reload receipts; support case 3000345850 acknowledgement distinguished from approval"
+    ],
+    "correctionsApplied": [
+      "Updated stale Studio matrix entry from no new order to desktop order/receipt pass with QA transport; mobile summary only"
+    ],
+    "validation": "Existing 12-test/build/package PASS supplied by primary; source checks were not rerun for this evidence review",
+    "marketplaceReady": false,
+    "externalMessagesSentByReviewer": false,
+    "productionOperationsByReviewer": false
   }
 }

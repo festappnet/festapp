@@ -6,7 +6,7 @@
     "sentSearch": "in:sent (wix OR \"Partner Billed\" OR \"publisher fee\" OR \"revenue sharing\")",
     "matchingSentMessages": 0,
     "wixCorrespondenceSince": "2026-10-20",
-    "results": "Only account verification and Wix Studio welcome messages; GitHub notifications about local Wix preparation are not support submissions"
+    "results": "Pre-submission search found no prior request. Later broad incoming search found the acknowledgement of this single submission; no expert reply observed."
   },
   "wixWorkspaceHistory": {
     "url": "https://manage.wix.com/studio/partner-tickets",
@@ -22,9 +22,12 @@
     "messageSha256": "1fb9017962f6e9bbc19069cfd17ee338572a979c61c6314277b771ce952ab1c9",
     "channel": "https://www.wix.com/support-chatbot?nodeId=25a57397-ccf7-4376-8b74-48d51edf7159&referral=devRels",
     "confirmation": "Request submitted! All requests related to app development and the App Market are currently handled via email. One of our Experts will reply to you within 72 hours.",
-    "caseId": null,
-    "emailReceiptObserved": false,
+    "caseId": "3000345850",
+    "emailReceiptObserved": true,
     "fixedChargesAccepted": false,
-    "reasonContactNecessary": "Both custom billing and usage-based billing access require individual approval in live Pricing UI; public documentation cannot grant it."
-  }
+    "reasonContactNecessary": "Both custom billing and usage-based billing access require individual approval in live Pricing UI; public documentation cannot grant it.",
+    "acknowledgedAt": "2026-10-25T16:09:49Z",
+    "approvalObtained": false
+  },
+  "additionalMessagesSent": false
 }
