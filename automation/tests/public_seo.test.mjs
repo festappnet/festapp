@@ -207,7 +207,8 @@ test('marketing root stays backend independent; catalog and legacy redirects pre
   for (const [source, target] of [
     ['/?create=1&utm_source=mail', '/login?utm_source=mail'],
     ['/?q=ples', '/events?q=ples'], ['/events/?q=ples', '/events?q=ples'],
-    ['/pro-poradatele?utm_source=mail', '/?utm_source=mail'], ['/pro-poradatele/', '/'],
+    ['/pro-poradatele?utm_source=mail', '/?utm_source=mail'],
+    ['/prodej-vstupenek-na-ples?utm_source=mail','/?utm_source=mail'], ['/prodej-vstupenek-na-ples/','/'], ['/pro-poradatele/', '/'],
   ]) {
     const response = await productionWorker.fetch(request(source), env);
     assert.equal(response.status, 308);
@@ -385,6 +386,10 @@ test('registered marketing documents precede occasion redirects in ticketing-onl
     const html=await response.text();assert.ok(html.includes(`<title>${page.title}</title>`));assert.ok(html.includes(`href="${page.canonical}"`));assert.ok(html.includes(page.heading));
     const slash=await ticketing.fetch(new Request(page.canonical+'/?utm_source=guide'),fixture);
     assert.equal(slash.status,308);assert.equal(slash.headers.get('location'),page.canonical+'?utm_source=guide');
+  }
+  for (const path of ['/prodej-vstupenek-na-ples','/prodej-vstupenek-na-ples/']) {
+    const response=await ticketing.fetch(new Request(context.origin+path+'?utm_source=old'),fixture);
+    assert.equal(response.status,308);assert.equal(response.headers.get('location'),context.origin+'/?utm_source=old');
   }
   const legacy=await ticketing.fetch(new Request(context.origin+'/legacy-occasion/event'),fixture);
   assert.equal(legacy.status,302);assert.equal(legacy.headers.get('location'),context.origin+'/');

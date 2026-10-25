@@ -176,52 +176,30 @@
     {
       "id": "planek",
       "eyebrow": "01 / Prostor pro Váš večer",
-      "title": "Sál poskládáte podle sebe.",
-      "description": "Stoly, židle, parket. Z jednotlivých prvků sestavíte prostor, ve kterém se hosté snadno zorientují.",
-      "detail": "Přetáhněte prvky do sálu nebo začněte hotovou šablonou.",
+      "title": "Váš sál. Jejich místo.",
+      "description": "Sestavte rozmístění stolů a židlí. Hosté si vyberou konkrétní sedadla přímo při objednávce.",
+      "detail": "",
       "tags": [
         "Stoly a židle",
         "Přetažení do sálu",
         "Hotové šablony"
       ],
       "clips": [
-        "layout-build",
-        "layout-refine",
-        "layout-grid"
+        "layout-build"
       ],
-      "showcase": {
-        "title": "Sál se stoly, kino i banket.",
-        "description": "Začněte existující šablonou a upravte ji podle své akce.",
-        "items": [
-          {
-            "title": "Sál s tanečním parketem",
-            "description": "186 míst u stolů, taneční parket a oddělené části sálu.",
-            "image": "/organizers-media/layout-sal-s-parketem-wood.svg",
-            "alt": "Šablona sálu se 186 místy, dřevěnými stoly, tanečním parketem a oddělenými částmi.",
-            "width": 2868,
-            "height": 2660
-          },
-          {
-            "title": "Kino",
-            "description": "Přehledné řady, uličky a výhled na plátno.",
-            "image": "/organizers-media/layout-cinema.jpg",
-            "alt": "Skutečný kinový plánek z editoru s řadami sedadel a plátnem"
-          },
-          {
-            "title": "Moderní ples",
-            "description": "68 míst u kulatých a obdélníkových stolů.",
-            "image": "/organizers-media/layout-modern.jpg",
-            "alt": "Skutečná šablona Moderní ples s kulatými a obdélníkovými stoly ve dvou barevných zónách"
-          }
-        ]
-      }
+      "links": [
+        {
+          "href": "/rezervacni-system-s-planem-salu",
+          "label": "Prohlédnout možnosti plánku"
+        }
+      ]
     },
     {
       "id": "formular",
       "eyebrow": "02 / Všechno, co potřebujete vědět",
-      "title": "Formulář podle Vaší akce.",
-      "description": "Přidejte otázky, nabídněte kuřecí nebo vegetariánskou večeři a zvolte povinné údaje.",
-      "detail": "Jméno, příjmení, e-mail, telefon či datum narození. Přidejte vlastní otázky, výběr jedné nebo více odpovědí a souhlasy a určete, které údaje jsou povinné.",
+      "title": "Od nabídky po vstupenku.",
+      "description": "Nabídněte vstupné i varianty večeře. Upravte potřebné údaje a vzhled vstupenky.",
+      "detail": "Počet míst a počet porcí nastavíte odděleně. Cenové varianty vstupenky mohou čerpat ze společné kapacity.",
       "tags": [
         "Vlastní otázky",
         "Výběr večeře",
@@ -229,127 +207,32 @@
       ],
       "clips": [
         "form-build"
-      ]
-    },
-    {
-      "id": "vstupenka",
-      "eyebrow": "03 / První dojem ještě před plesem",
-      "title": "Vstupenka ve Vašem stylu.",
-      "description": "Přesouvejte texty a QR kód přímo v návrhu. Vyberte motiv a uspořádejte vstupenku podle své akce.",
-      "detail": "Výsledná vstupenka nese údaje hosta a QR kód pro kontrolu u vstupu.",
-      "tags": [
-        "Obrazový motiv",
-        "Rozmístění",
-        "PDF vstupenka"
       ],
-      "clips": [
-        "ticket-design"
+      "composition": "offer",
+      "links": [
+        {
+          "href": "/napoveda/prodejni-formular/",
+          "label": "Nastavení prodeje"
+        },
+        {
+          "href": "/napoveda/vzhled-vstupenky/",
+          "label": "Vzhled vstupenky"
+        }
       ],
-      "showcase": {
-        "title": "Každá akce má svůj rukopis.",
-        "description": "Skutečné šablony a návrhy vstupenek. Motiv a rozmístění prvků přizpůsobíte své akci.",
-        "items": [
-          {
-            "title": "Gala pozvánka",
-            "description": "Zeleno-zlatý motiv pro slavnostní večer.",
-            "image": "/organizers-media/ticket-ball.jpg",
-            "alt": "Skutečná zeleno-zlatá gala šablona vstupenky",
-            "width": 525,
-            "height": 1200
-          },
-          {
-            "title": "Klubová vstupenka",
-            "description": "Fialový panoramatický formát pro klubový večer.",
-            "image": "/organizers-media/ticket-concert.jpg",
-            "alt": "Skutečná fialová panoramatická klubová šablona vstupenky",
-            "width": 920,
-            "height": 308
-          },
-          {
-            "title": "Divadelní program",
-            "description": "Krémovo-vínový program na výšku.",
-            "image": "/organizers-media/ticket-theatre.jpg",
-            "alt": "Skutečná krémovo-vínová divadelní šablona vstupenky",
-            "width": 576,
-            "height": 810
-          },
-          {
-            "title": "Palubní vstupenka",
-            "description": "Zelenobílá vstupenka s oddělenými údaji a QR kódem.",
-            "image": "/organizers-media/ticket-showcase-boarding-pass.webp",
-            "alt": "Zelenobílá vstupenka s oddělenými údaji a QR kódem.",
-            "width": 1200,
-            "height": 540
-          },
-          {
-            "title": "Filmový pás",
-            "description": "Černozlatá vstupenka s filmovou perforací a QR kódem.",
-            "image": "/organizers-media/ticket-showcase-cinema-strip.webp",
-            "alt": "Černozlatá vstupenka s filmovou perforací a QR kódem.",
-            "width": 1200,
-            "height": 450
-          },
-          {
-            "title": "Galerijní vstupenka",
-            "description": "Čtvercová bílá vstupenka s červenou typografií a QR kódem.",
-            "image": "/organizers-media/ticket-showcase-gallery-square.webp",
-            "alt": "Čtvercová bílá vstupenka s červenou typografií a QR kódem.",
-            "width": 1200,
-            "height": 1200
-          },
-          {
-            "title": "Sportovní aréna",
-            "description": "Tmavomodrá vstupenka s oranžovým pruhem a časem začátku.",
-            "image": "/organizers-media/ticket-showcase-sports-arena.webp",
-            "alt": "Tmavomodrá vstupenka s oranžovým pruhem a časem začátku.",
-            "width": 1200,
-            "height": 505
-          },
-          {
-            "title": "Tvůrčí dílna",
-            "description": "Světlá vstupenka Tvůrčí dílna se zeleným postranním panelem.",
-            "image": "/organizers-media/ticket-showcase-workshop-card.webp",
-            "alt": "Světlá vstupenka Tvůrčí dílna se zeleným postranním panelem.",
-            "width": 1200,
-            "height": 851
-          }
-        ]
+      "companion": {
+        "image": "/organizers-media/ticket-ball.jpg",
+        "width": 525,
+        "height": 1200,
+        "alt": "Zeleno-zlatá ukázková vstupenka s údaji hosta a QR kódem.",
+        "caption": "Vlastní vzhled vstupenky s QR kódem."
       }
-    },
-    {
-      "id": "vyber-mist",
-      "eyebrow": "04 / Společně u jednoho stolu",
-      "title": "Hosté si vyberou konkrétní místo.",
-      "description": "Hosté si přiblíží sál, vyberou místa u jednoho stolu a hned vidí celkovou cenu.",
-      "detail": "Jednotlivá místa i celý stůl. Přehledně a pohodlně v telefonu.",
-      "tags": [
-        "Konkrétní místa",
-        "Mobilní výběr"
-      ],
-      "clips": [
-        "seat-select"
-      ]
-    },
-    {
-      "id": "odbaveni",
-      "eyebrow": "05 / Večer právě začíná",
-      "title": "U vstupu stačí Váš telefon.",
-      "description": "Fotoaparát načte QR kód. Jedním klepnutím potvrdíte vstup.",
-      "detail": "Žádné speciální čtečky. Použijete svůj vlastní telefon.",
-      "tags": [
-        "QR kontrola",
-        "Opakovaný vstup"
-      ],
-      "clips": [
-        "check-in"
-      ]
     },
     {
       "id": "prehled",
       "eyebrow": "06 / Méně tabulek, více přehledu",
-      "title": "Objednávky a platby po ruce.",
-      "description": "Objednávky, platby i změny vyřídíte na jednom místě.",
-      "detail": "A další užitečné nástroje, se kterými máte svou akci pod kontrolou.",
+      "title": "Přehled během prodeje. Kontrola u vstupu.",
+      "description": "Sledujte objednávky a platby, vyhledejte konkrétní vstupenku nebo exportujte tabulku vstupenek.",
+      "detail": "U vstupu načtěte QR kód telefonem, ověřte stav vstupenky a potvrďte vstup.",
       "tags": [
         "Stavy objednávek",
         "Export"
@@ -357,12 +240,21 @@
       "clips": [
         "orders-overview"
       ],
-      "features": [
-        "Automatické připomínky plateb",
-        "Změny a storna objednávek",
-        "Evidence plateb v hotovosti",
-        "Náhradníci při vyprodání",
-        "Filtrování a export vstupenek"
+      "composition": "operations",
+      "secondaryClips": [
+        "check-in"
+      ],
+      "primaryLabel": "Správa objednávek",
+      "secondaryLabel": "Odbavení telefonem",
+      "links": [
+        {
+          "href": "/napoveda/objednavky/",
+          "label": "Správa objednávek"
+        },
+        {
+          "href": "/napoveda/odbaveni/",
+          "label": "Odbavení hostů"
+        }
       ]
     }
   ]

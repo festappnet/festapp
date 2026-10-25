@@ -396,6 +396,8 @@ async function routeRequest(request, env) {
     if (path === "/_security/csp-report") return cspReport(request);
 
     const marketingPage = ORGANIZERS_ENABLED ? MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path)) : null;
+    const marketingRedirect = ORGANIZERS_ENABLED ? (MARKETING.redirects ?? []).find(redirect=>path === redirect.from || path === redirect.from + '/') : null;
+    if (marketingRedirect) return Response.redirect(new URL(marketingRedirect.to + url.search,url).href,308);
     const appRedirect = !IS_APP_SUPPORTED && !marketingPage ? unsupportedOccasionAppRedirect(path) : null;
     if (appRedirect) {
       return Response.redirect(new URL(appRedirect, url).toString(), 302);

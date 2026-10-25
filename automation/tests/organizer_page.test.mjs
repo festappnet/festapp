@@ -50,6 +50,13 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
 
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
   assert.ok(html.includes('href="/login"'));
+  const footer = html.slice(html.indexOf('<footer'));
+  for (const route of ['/rezervacni-system-s-planem-salu']) assert.ok(footer.includes(`href="${route}"`),'topic is discoverable from shared footer');
+  const seatingSection = html.slice(html.indexOf('id="planek"'), html.indexOf('id="formular"'));
+  assert.ok(seatingSection.includes('href="/rezervacni-system-s-planem-salu"'),'seating demo links to its detail');
+  assert.equal(existsSync(join(root,'web/organizers/ball-ticket-sales')),false,'retired article is removed');
+  assert.ok(!html.includes('href="/prodej-vstupenek-na-ples"'));
+
   assert.ok(html.includes('info@vstupenky.online'));
   assert.ok(html.includes('https://cal.com/michael-bujnovsky-5srszz/ukazka'));
   // Shared documents never own a beacon: only resolved public responses do.

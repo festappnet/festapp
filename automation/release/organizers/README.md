@@ -81,7 +81,8 @@ real URLs/Search Console before reporting any indexing or ranking result.
 `context.mjs` validates the explicit content profile and locale; `page_definitions.mjs`
 provides stable document IDs/assets. The resolved `organizer-pages.json` drives
 rendering, Worker routing, static/dynamic sitemaps, CSP and PWA navigation. Czech
-profile `vstupenky-cs` adds the ball-sales and seating-reservation pages. Existing
+profile `vstupenky-cs` adds the seating-reservation page. The former ball-sales
+URL permanently redirects to the homepage through the same public registry. Existing
 shared header/footer, account controls, help, analytics and immutable application
 cache remain owned by their current implementations. Marketing documents and
 media stay outside the installed app cache; topics return the standard offline
@@ -106,16 +107,28 @@ rendered document locale and `persist: false`. Browser language or the saved
 application preference cannot retag a Czech marketing document as English;
 ordinary application startup still uses the saved preference.
 
-## Organizer guide and seating feature
+## Product overview and seating feature
 
-The ball-sales URL is a practical seven-chapter organizer guide, with linked
-application help and a printable pre-sale checklist. Checklist state stays in
-the current document; it does not create orders or store personal data. Print
-styles isolate the checklist. The seating URL explains the feature with real
-layout templates and existing editor/buyer clips. Native radio inputs select
-examples; without JavaScript all examples remain readable. Both compositions
-reuse the original typography, palette and vector ticket/hall geometry.
+The homepage owns the service overview. Following user feedback and Astra
+design review, the former ball-sales guide was consolidated into it: its
+content repeated the homepage. The old URL now returns a permanent 308 redirect
+to `/` with query parameters preserved. It is absent from links, sitemap and
+PWA documents; the renderer deletes its former generated asset on every run.
+`publicProjection.redirects` owns this compatibility route and permits only
+unique non-reserved sources targeting registered pages.
 
-`topic_pages.mjs` owns these distinct compositions, while shared chrome and
-application help retain their existing owners. `topic_tools.js` only enhances
-the checklist and examples. The homepage remains the service overview.
+Three product demonstrations cover seating, offer/tickets and orders/check-in.
+The original typography, palette, geometric hero and real product media remain.
+Each demonstration links to its feature detail or exact application help.
+The offer pairs the form editor with a real ticket design; operations pairs
+the report with the mobile check-in clip. Captured example prices are not
+service pricing. Technical-team cards and repeated setup steps are omitted
+from the Czech marketing flow. Existing English content keeps its own layout.
+
+The seating page demonstrates the editor, buyer selection and actual templates.
+Native radio inputs select examples; without JavaScript all examples remain
+readable. Application help owns detailed preparation and troubleshooting.
+
+Playback controls have a visible label. Mobile posters, sources and intrinsic
+dimensions follow the viewport; changing the breakpoint pauses incompatible
+media and preserves deliberate pause/completion state.
