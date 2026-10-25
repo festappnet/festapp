@@ -240,7 +240,11 @@
       "contactAction": "Domluvit ukázku",
       "legalNav": "Právní a podpůrné odkazy",
       "closing": "Připravte svou další akci.",
-      "priceNote": "Cena služby se domlouvá samostatně. Projdeme Vaši akci a konkrétní nabídku."
+      "priceNote": "Cena služby se domlouvá samostatně. Projdeme Vaši akci a konkrétní nabídku.",
+      "breadcrumbs": "Umístění na webu",
+      "continueReading": "Související čtení",
+      "backToContents": "Zpět na obsah",
+      "practicalGuide": "Průvodce pro pořadatele"
     },
     "footerLinks": [
       {
@@ -274,69 +278,350 @@
       {
         "id": "ball-ticket-sales",
         "path": "/prodej-vstupenek-na-ples",
-        "title": "Prodej vstupenek na ples | vstupenky.online",
-        "heading": "Prodej vstupenek na ples",
-        "description": "Připravte prodej vstupenek na ples, večeře, výběr míst i odbavení hostů. Vlastní formulář a vstupenky od vstupenky.online.",
-        "intro": "Od prvních rezervací po příchod hostů. Připravte formulář, vstupenky a případně plánek sálu; hostům pak sdílejte jediný odkaz.",
-        "sections": [
-          "formular",
-          "vstupenka",
-          "odbaveni"
-        ],
-        "stepsHeading": "Co připravit před spuštěním prodeje",
-        "steps": [
-          "Doplňte název, termín, místo a podmínky plesu. Připravte ceny vstupenek a případné večeře jako samostatné položky.",
-          "Sestavte formulář a vzhled vstupenky. Pokud prodáváte konkrétní místa, připravte také rozložení stolů a židlí.",
-          "Nastavte platby a sdílejte odkaz na prodej. Před plesem si připravte telefon pro kontrolu vstupenek."
-        ],
-        "faqHeading": "Prodej a platby",
+        "title": "Jak připravit prodej vstupenek na ples | vstupenky.online",
+        "heading": "Jak připravit prodej vstupenek na ples",
+        "description": "Praktický průvodce předprodejem na ples: místa, kapacity, vstupné a večeře, nákup na telefonu i příprava odbavení. Včetně kontrolního seznamu.",
+        "intro": "Než zveřejníte první odkaz, rozhodněte o místech, nabídce a průběhu nákupu. Projděte přípravu předprodeje krok za krokem a na závěr si odškrtněte, co už máte hotové.",
+        "faqHeading": "Otázky před prvním předprodejem",
         "faq": [
           {
-            "question": "Lze nabídnout také večeři?",
-            "answer": "Ano, ve formuláři lze nabídnout vstupenky i další položky, například večeři. Jejich cenu a dostupnost určuje pořadatel."
+            "question": "Potřebuje každý ples plánek sálu?",
+            "answer": "Plánek dává smysl, když si má host vybrat konkrétní stůl nebo židli. Pro volný vstup bez přidělených míst je důležitější srozumitelná nabídka a správně nastavená kapacita. Rozhodněte podle skutečného uspořádání Vašeho večera."
           },
           {
-            "question": "Jak hosté zaplatí?",
-            "answer": "QR bankovním převodem přímo na účet pořadatele. Transakční poplatek za QR převod je 0 Kč; cena služby se domlouvá samostatně. Platební karty jsou dostupné po domluvě."
+            "question": "Mohu prodávat vstupenku a večeři zvlášť?",
+            "answer": "Ano. V nabídce můžete rozlišit vstupné a další produkty, například jednotlivé varianty večeře. Předem rozhodněte, co je povinné, co si host volí a kolik porcí můžete nabídnout. Ve veřejném formuláři zkontrolujte rekapitulaci celé objednávky."
           },
           {
-            "question": "Kolik služba stojí?",
-            "answer": "Domluvte si ukázku nebo nám napište. Projdeme rozsah akce a cenu služby; příprava účtu sama není nákupem vstupenky."
+            "question": "Je QR platba totéž co cena služby?",
+            "answer": "Ne. Transakční poplatek za QR bankovní převod je 0 Kč. Cena služby vstupenky.online se domlouvá samostatně. Platební karty jsou dostupné po domluvě; prodejní formulář musí mít konkrétní platební metodu skutečně připravenou."
+          },
+          {
+            "question": "Stačí zveřejnit akci v katalogu?",
+            "answer": "Zveřejnění akce a otevření objednávek jsou dvě různé věci. Ověřte dostupnost a termíny prodeje přímo ve veřejném formuláři. Hostům sdílejte jeho uložený odkaz, nikoli adresu administrace nebo neuloženého náhledu."
+          },
+          {
+            "question": "Jak se připravit na změny objednávek?",
+            "answer": "Určete jedno kontaktní místo pro hosty a předem si ujasněte postup změn. Při řešení konkrétní objednávky kontrolujte její obsah, cenu a skutečný platební stav. Úprava nabídky pro nové kupující sama nepřepisuje již vytvořené objednávky."
           }
-        ]
+        ],
+        "linkLabel": "Průvodce předprodejem na ples",
+        "highlight": "na ples",
+        "heroImage": "/organizers-media/ticket-ball.jpg",
+        "heroImageAlt": "Produktová ukázka zeleno-zlaté šablony vstupenky na slavnostní večer",
+        "heroCaption": "Vstupenka je až výsledek. Začněte tím, co si host opravdu kupuje.",
+        "guide": {
+          "label": "Průvodce pro pořadatele",
+          "contentsLabel": "V tomto průvodci",
+          "summary": "Nejdůležitější rozhodnutí před spuštěním",
+          "summaryItems": [
+            "Konkrétní místa, nebo volný vstup?",
+            "Co obsahuje vstupenka a co se přikupuje?",
+            "Kdo pomůže hostovi s objednávkou?"
+          ],
+          "chapters": [
+            {
+              "id": "mista-a-nabidka",
+              "title": "Rozhodněte, co si host kupuje",
+              "paragraphs": [
+                "Začněte podobou večera, ne nastavením formuláře. Bude se sedět u konkrétních stolů, vybírat jednotlivé židle, nebo stačí vstup do sálu? To určuje, jak má vypadat nabídka i co má host před zaplacením vědět.",
+                "Sepište si všechny varianty. Vstupné, večeře a případné další položky pojmenujte tak, aby host nepotřeboval dodatečné vysvětlení. Pokud je něco součástí vstupenky, napište to přímo k ní."
+              ],
+              "table": {
+                "caption": "Vyberte podle způsobu návštěvy",
+                "headers": [
+                  "Způsob prodeje",
+                  "Co potřebuje host vědět"
+                ],
+                "rows": [
+                  [
+                    "Konkrétní místo",
+                    "Označení stolu a sedadla, umístění v sále a cenu."
+                  ],
+                  [
+                    "Volný vstup",
+                    "Co vstupenka zahrnuje a zda si host vybírá místo až na akci."
+                  ],
+                  [
+                    "Vstupné a večeře",
+                    "Co je v základní ceně a které jídlo nebo doplněk se objednává zvlášť."
+                  ]
+                ]
+              },
+              "help": {
+                "href": "/rezervacni-system-s-planem-salu",
+                "label": "Kdy využít vlastní plánek sálu"
+              }
+            },
+            {
+              "id": "kapacita",
+              "title": "Oddělte místa v sále od počtu večeří",
+              "paragraphs": [
+                "Vycházejte ze skutečného uspořádání a kapacity potvrzené provozovatelem sálu. Ujasněte si, která místa půjdou do prodeje a která potřebují pořadatelé, účinkující nebo obsluha.",
+                "Počet židlí a počet porcí jsou různé limity. Stejně tak dvě cenové varianty vstupenky mohou čerpat ze stejných fyzických míst. Při nastavování nabídky kontrolujte společnou kapacitu, nejen číslo u každé varianty."
+              ],
+              "note": {
+                "title": "Malý příklad, velký rozdíl",
+                "text": "Modelový příklad: v sále je 120 míst a 8 ponecháte pořadatelům. Do prodeje tedy patří 112 míst. Počet večeří si stanovte samostatně podle možností kuchyně."
+              },
+              "help": {
+                "href": "/napoveda/ceny-a-kapacity/",
+                "label": "Jak nastavit ceny a sdílené kapacity"
+              }
+            },
+            {
+              "id": "vstupne-a-vecere",
+              "title": "Nabídku napište očima kupujícího",
+              "paragraphs": [
+                "Host má před objednáním rozumět tomu, za co platí. Uveďte cenu vstupného, obsah případného balíčku i cenu volitelných doplňků. Rozdíl mezi místem v hlavním sále a jinou částí prostoru popište přímo v nabídce.",
+                "U večeří napište konkrétní varianty, určete dostupné množství a rozhodněte, zda je výběr povinný. Pokud plánujete změnu ceny v čase, nastavte termíny a ověřte, jakou cenu uvidí host v jednotlivých obdobích. Starší cenu neprezentujte jako stále dostupnou."
+              ],
+              "bullets": [
+                "Každá varianta má srozumitelný název.",
+                "Host pozná, co je v ceně a co si přikupuje.",
+                "Cena v rekapitulaci odpovídá zvoleným položkám."
+              ],
+              "help": {
+                "href": "/napoveda/prodejni-formular/",
+                "label": "Jak sestavit nabídku ve formuláři"
+              }
+            },
+            {
+              "id": "udaje-od-hostu",
+              "title": "Ptejte se jen na údaje, které využijete",
+              "paragraphs": [
+                "Rozlišujte kontakt objednatele od údajů pro jednotlivé vstupenky. E-mail k objednávce slouží jinému účelu než například výběr večeře konkrétního hosta. Povinnost vyplnění nastavujte jen tam, kde je údaj skutečně potřeba.",
+                "Krátký formulář se lépe vyplňuje na telefonu. Zkontrolujte názvy polí, pořadí otázek i předvolené možnosti. Obecnou poznámku nechte volitelnou, pokud bez ní dokážete objednávku vyřídit."
+              ],
+              "note": {
+                "title": "Zkuste si každou otázku obhájit",
+                "text": "Když si neumíte říct, kdo a k čemu odpověď použije, pravděpodobně otázku v objednávce nepotřebujete."
+              },
+              "help": {
+                "href": "/napoveda/prodejni-formular/",
+                "label": "Nastavení polí a údajů objednávky"
+              }
+            },
+            {
+              "id": "zkouska-nakupu",
+              "title": "Projděte nákup na telefonu ještě před hosty",
+              "paragraphs": [
+                "Otevřete uložený veřejný odkaz v anonymním okně. Prohlédněte nabídku, vyberte místa nebo vstupenky a projděte povinná pole až do rekapitulace. Sledujte, zda je čitelná konečná cena a zda se člověk snadno vrátí k výběru.",
+                "Zkontrolujte platební instrukce a cestu k doručení vstupenek. Kontrolu vzhledu lze udělat bez odeslání objednávky; odeslaná zkušební objednávka už může rezervovat kapacitu a vytvořit e-mail. Pokud ji vytvoříte, vyřešte potom její stav."
+              ],
+              "bullets": [
+                "Ověřte správný termín, místo a kontakt pořadatele.",
+                "Vyzkoušejte čitelnost plánku a označení sedadel.",
+                "Porovnejte vybrané položky s rekapitulací.",
+                "Projděte postup pro nezaplacenou i zaplacenou objednávku."
+              ],
+              "help": {
+                "href": "/napoveda/platby/",
+                "label": "Co zkontrolovat u plateb"
+              }
+            },
+            {
+              "id": "zverejneni",
+              "title": "Zveřejněte jeden hlavní prodejní odkaz",
+              "paragraphs": [
+                "Používejte současný uložený odkaz veřejného formuláře. Dejte jej na vlastní web, do pozvánky i k informacím o akci. Když jej měníte, zkontrolujte také starší příspěvky a odkazy v připravených materiálech.",
+                "Vedle odkazu uveďte, do kdy prodej běží a na koho se mohou hosté obrátit. Samotná zveřejněná akce v katalogu ještě nepotvrzuje, že formulář v danou chvíli přijímá objednávky."
+              ],
+              "help": {
+                "href": "/napoveda/integrace/",
+                "label": "Jak prodej propojit s vlastním webem"
+              }
+            },
+            {
+              "id": "vecer-akce",
+              "title": "Připravte odbavení dřív, než se otevřou dveře",
+              "paragraphs": [
+                "Určete obsluhu vstupu a předem jí připravte oprávněný přístup ke správné akci. Na skutečném telefonu vyzkoušejte kameru, čitelnost QR kódu a postup potvrzení vstupu. Počítejte s nabitím zařízení a připojením.",
+                "Domluvte, kdo bude řešit nejasnou platbu, ztracený e-mail nebo již použitou vstupenku. Obsluha potřebuje znát postup, ne improvizovat před frontou hostů. Pokud chcete pracovat bez připojení, přípravu a dostupnost tohoto režimu ověřte předem v nápovědě pro skener."
+              ],
+              "note": {
+                "title": "Načtení není totéž co potvrzený vstup",
+                "text": "Po načtení QR kódu obsluha zkontroluje údaje a stav vstupenky a teprve potom vstup potvrdí. Přístupový kód skeneru patří obsluze, QR vstupenky hostovi."
+              },
+              "help": {
+                "href": "/napoveda/odbaveni/",
+                "label": "Příprava telefonu a odbavení hostů"
+              }
+            }
+          ],
+          "checklist": {
+            "id": "kontrolni-seznam",
+            "title": "Můžeme otevřít předprodej?",
+            "intro": "Projděte seznam s člověkem, který bude prodej spravovat. Zaškrtnutí slouží jen pro tuto stránku; žádné nastavení akce tím neměníte.",
+            "progress": "Hotovo {done} z {total} bodů",
+            "printLabel": "Vytisknout seznam",
+            "resetLabel": "Vymazat zaškrtnutí",
+            "items": [
+              "Máme potvrzený termín, místo a kontaktní osobu.",
+              "Víme, zda prodáváme konkrétní místa, nebo volný vstup.",
+              "Do prodeje pouštíme jen skutečně dostupnou kapacitu.",
+              "Vstupné, večeře a další varianty mají jasný obsah a cenu.",
+              "Sdílené varianty čerpají ze správné společné kapacity.",
+              "Formulář se ptá jen na potřebné údaje.",
+              "Veřejný nákup jsme prošli také na telefonu.",
+              "Platební instrukce a doručení vstupenek jsou zkontrolované.",
+              "Sdílíme současný uložený prodejní odkaz.",
+              "Obsluha ví, jak připravit telefon a ověřit vstupenku."
+            ]
+          },
+          "bridge": {
+            "title": "Připravený plán potřebuje dobrý nástroj",
+            "text": "Na vstupenky.online z něj sestavíte nabídku, vlastní vstupenku a podle potřeby i plánek sálu. Přesné nastavení jednotlivých obrazovek najdete v nápovědě.",
+            "primary": "Založit akci",
+            "secondary": "Prohlédnout plánek sálu",
+            "secondaryHref": "/rezervacni-system-s-planem-salu"
+          },
+          "faqIntro": "Rozhodnutí předem šetří pozdější vysvětlování hostům."
+        }
       },
       {
         "id": "seating-reservations",
         "path": "/rezervacni-system-s-planem-salu",
-        "title": "Rezervace míst s plánkem sálu | vstupenky.online",
-        "heading": "Rezervace míst s vlastním plánkem sálu",
-        "description": "Sestavte vlastní plánek sálu, rozmístěte stoly a sedadla. Hosté si při nákupu vstupenek vyberou konkrétní místo.",
-        "intro": "Rozmístěte stoly a sedadla podle skutečného sálu. Hostům nabídněte přehledný výběr konkrétních míst přímo v prodejním formuláři.",
-        "sections": [
-          "planek",
-          "vyber-mist"
-        ],
-        "stepsHeading": "Od prázdného sálu k výběru míst",
+        "title": "Rezervační systém s vlastním plánkem sálu | vstupenky.online",
+        "heading": "Rezervace míst podle Vašeho sálu",
+        "description": "Vlastní stoly, sedadla, řady i parket. Prohlédněte možnosti plánku, skutečné ukázky editoru a výběru míst a zjistěte, co připravit před prodejem.",
+        "intro": "Sestavte skutečné rozmístění stolů a židlí. Hostům nabídněte výběr konkrétního místa přímo ve formuláři, s označením sedadla a cenou před objednáním.",
+        "stepsHeading": "Od prostoru k prodejnému místu",
         "steps": [
-          "Připravte uspořádání sálu včetně parketu, pódia a průchodů. Zvolte kulaté nebo hranaté stoly a rozmístění židlí.",
-          "V editoru sestavte a označte stoly a sedadla. Přizpůsobte vzhled a zkontrolujte rozložení před zveřejněním.",
-          "Propojte plánek s prodejním formulářem. Host si vybere konkrétní místo a před objednáním uvidí dostupnost i cenu."
+          "Připravte uspořádání a vyberte vhodnou šablonu.",
+          "Upravte stoly, židle, označení a vzhled.",
+          "Ověřte přiřazený produkt, cenu a nákup místa."
         ],
-        "faqHeading": "Plánek a místa",
+        "faqHeading": "Co potřebujete vědět před přípravou",
         "faq": [
           {
             "question": "Musím použít předem daný sál?",
-            "answer": "Ne. Uspořádání sestavíte podle svého prostoru; lze kombinovat různé stoly, židle, parket a pódium."
+            "answer": "Šablona je výchozí bod. V editoru upravíte rozmístění, rozměry a natočení objektů i počet židlí u stolů. Připravte si skutečné uspořádání včetně pódia, parketu a průchodů."
           },
           {
-            "question": "Vidí host konkrétní sedadlo?",
-            "answer": "Ano. U akce s plánkem host vybírá konkrétní místa a při výběru vidí jejich dostupnost a cenu."
+            "question": "Jaký je rozdíl mezi nakresleným a prodejným místem?",
+            "answer": "Kresba popisuje prostor. Ve správě prodeje musí mít místo odpovídající produkt a cenu. Nově přidaná nebo nepřiřazená židle nemusí být automaticky v prodeji; ověřte ji ve veřejném formuláři."
           },
           {
-            "question": "Pomůžete s přípravou a cenou?",
-            "answer": "Domluvte si ukázku. Projdeme rozložení Vašeho sálu, nastavení prodeje a samostatnou cenu služby."
+            "question": "Může host vybrat místa na telefonu?",
+            "answer": "Ve veřejném formuláři otevře výběr místa, přiblíží si sál a zvolí sedadla. Před odesláním objednávky zkontroluje jejich označení, vybrané produkty a celkovou cenu. Mobilní průchod si vždy vyzkoušejte i na své akci."
+          },
+          {
+            "question": "Co když potřebuji změnit sál po začátku prodeje?",
+            "answer": "Už objednaná, použitá nebo právě rezervovaná místa jsou chráněná. Změnu rozložení a změnu konkrétní objednávky řešte odděleně; obsazené místo nepřekreslujte kvůli uvolnění prodeje. Postup najdete v nápovědě k plánku a objednávkám."
+          },
+          {
+            "question": "Pomůžete mi s přípravou plánku?",
+            "answer": "Domluvte si ukázku. Projdeme Váš sál, nabídku a způsob výběru míst. Cena služby se domlouvá podle konkrétní akce; nevychází z ceny vstupenky v produktové ukázce."
           }
-        ]
+        ],
+        "highlight": "Vašeho sálu",
+        "linkLabel": "Vlastní plánek sálu",
+        "heroImage": "/organizers-media/layout-modern.jpg",
+        "heroImageAlt": "Produktová ukázka sálu s kulatými i obdélníkovými stoly",
+        "heroCaption": "Skutečná šablona z editoru. Uspořádání přizpůsobíte vlastní akci.",
+        "feature": {
+          "contentsLabel": "Možnosti plánku",
+          "introTitle": "Jeden editor. Různé způsoby sezení.",
+          "introText": "Plesový sál se stoly potřebuje jiné rozložení než řady před pódiem. Vycházejte z prostoru a nechte plánek vysvětlit hostovi, kde bude sedět.",
+          "layoutLegend": "Prohlédněte si uspořádání",
+          "layouts": [
+            {
+              "label": "Stoly a parket",
+              "image": "/organizers-media/layout-sal-s-parketem-wood.svg",
+              "alt": "Plesový sál se stoly, židlemi a parketem",
+              "title": "Večer, ve kterém má své místo i tanec",
+              "text": "Rozmístěte stoly kolem parketu, oddělte části sálu a ponechte průchody. Host pozná označení místa i jeho polohu vůči pódiu.",
+              "width": 2868,
+              "height": 2660
+            },
+            {
+              "label": "Řady sedadel",
+              "image": "/organizers-media/layout-cinema.jpg",
+              "alt": "Ukázka kinového uspořádání v editoru",
+              "title": "Přehledné řady a uličky",
+              "text": "Prostor může být uspořádaný do řad. U konkrétního místa je důležité čitelné označení a orientace vůči pódiu nebo plátnu.",
+              "width": 820,
+              "height": 760
+            },
+            {
+              "label": "Kombinace stolů",
+              "image": "/organizers-media/layout-modern.jpg",
+              "alt": "Ukázka sálu s kulatými a obdélníkovými stoly",
+              "title": "Kulaté i hranaté stoly v jednom sále",
+              "text": "Kombinujte tvary stolů a upravte židle podle dispozice. Vzhled pomáhá orientaci; prodejní stav a nabídku ověřte samostatně.",
+              "width": 894,
+              "height": 716
+            }
+          ],
+          "editor": {
+            "id": "navrh-salu",
+            "title": "Sál sestavíte tak, jak ho opravdu chystáte",
+            "text": "Začněte šablonou, upravte stoly a židle a doplňte pódium nebo další plochy. Polohu, velikost a natočení ovládáte přímo v editoru.",
+            "bullets": [
+              "Upravte počet a rozmístění židlí u stolu.",
+              "Pojmenujte stoly a zkontrolujte čitelnost označení.",
+              "Přizpůsobte styl objektů, barvy i vzhled podlahy."
+            ],
+            "clips": [
+              "layout-build",
+              "layout-refine"
+            ],
+            "helpHref": "/napoveda/planek-salu/",
+            "helpLabel": "Podrobný návod k editoru plánku"
+          },
+          "buyer": {
+            "id": "vyber-hosta",
+            "title": "Host vybírá místo, ne číslo z dlouhého seznamu",
+            "text": "Ve veřejném formuláři si otevře sál, přiblíží potřebnou část a zvolí konkrétní sedadla. Před objednáním uvidí vybrané položky a cenu.",
+            "bullets": [
+              "Rozpoznatelná poloha stolu a sedadla.",
+              "Výběr přímo u nabídky vstupenek.",
+              "Rekapitulace ještě před odesláním objednávky."
+            ],
+            "clips": [
+              "seat-select"
+            ],
+            "helpHref": "/napoveda/prodejni-formular/",
+            "helpLabel": "Jak propojit výběr s formulářem"
+          },
+          "preparation": {
+            "title": "Co si připravit před prvním stolkem",
+            "items": [
+              {
+                "title": "Skutečné rozmístění",
+                "text": "Umístění pódia, parketu, pevných překážek a průchodů."
+              },
+              {
+                "title": "Místa určená k prodeji",
+                "text": "Počty židlí u stolů a místa ponechaná pořadatelům."
+              },
+              {
+                "title": "Srozumitelné označení",
+                "text": "Názvy stolů a sedadel, ve kterých se host vyzná i na telefonu."
+              },
+              {
+                "title": "Nabídku a ceny",
+                "text": "Produkt přiřazený místu a správnou cenu ve veřejném prodeji."
+              }
+            ]
+          },
+          "note": {
+            "title": "Geometrie a prodej mají každý svou kontrolu",
+            "text": "Pěkně nakreslený sál ještě nepotvrzuje, že je každé místo možné koupit. Po úpravě rozložení zkontrolujte produkt, cenu a dostupnost v režimu Rezervace a objednávky a potom projděte veřejný formulář."
+          },
+          "ending": {
+            "title": "Projděme společně Váš sál",
+            "text": "Přineste rozložení, počet míst a představu o nabídce. Na ukázce projdeme vhodný postup i cenu služby.",
+            "primary": "Domluvit ukázku",
+            "secondary": "Připravit vlastní akci"
+          },
+          "guideLinkLabel": "Ještě řešíte celý předprodej? Projděte si průvodce pro plesy.",
+          "zoomLabel": "Otevřít plánek v plné velikosti",
+          "guideLinkHref": "/prodej-vstupenek-na-ples"
+        },
+        "heroWidth": 894,
+        "heroHeight": 716
       }
     ],
     "helpLink": {
