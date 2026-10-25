@@ -114,6 +114,102 @@ class OccasionSetupAppearance {
           'gradient': false,
           'fontFamily': 'Roboto',
         },
+        {
+          'id': 'ocean',
+          'label': OccasionSetupStrings.ui('palette_ocean'),
+          'primary': '075985',
+          'secondary': '0F766E',
+          'gradient': true,
+          'fontFamily': 'Open Sans'
+        },
+        {
+          'id': 'royal',
+          'label': OccasionSetupStrings.ui('palette_royal'),
+          'primary': '312E81',
+          'secondary': '7E22CE',
+          'gradient': true,
+          'fontFamily': 'Playfair Display'
+        },
+        {
+          'id': 'lavender',
+          'label': OccasionSetupStrings.ui('palette_lavender'),
+          'primary': '6D28D9',
+          'secondary': 'A855A0',
+          'gradient': true,
+          'fontFamily': 'Lato'
+        },
+        {
+          'id': 'citrus',
+          'label': OccasionSetupStrings.ui('palette_citrus'),
+          'primary': '3F6212',
+          'secondary': 'A16207',
+          'gradient': true,
+          'fontFamily': 'Montserrat'
+        },
+        {
+          'id': 'sunset',
+          'label': OccasionSetupStrings.ui('palette_sunset'),
+          'primary': 'C2410C',
+          'secondary': '9D174D',
+          'gradient': true,
+          'fontFamily': 'Poppins'
+        },
+        {
+          'id': 'wine',
+          'label': OccasionSetupStrings.ui('palette_wine'),
+          'primary': '701A3C',
+          'secondary': '9F1239',
+          'gradient': true,
+          'fontFamily': 'Roboto Slab'
+        },
+        {
+          'id': 'terracotta',
+          'label': OccasionSetupStrings.ui('palette_terracotta'),
+          'primary': '9A3412',
+          'secondary': '92400E',
+          'gradient': true,
+          'fontFamily': 'Oswald'
+        },
+        {
+          'id': 'forest',
+          'label': OccasionSetupStrings.ui('palette_forest'),
+          'primary': '14532D',
+          'secondary': '365314',
+          'gradient': true,
+          'fontFamily': 'Open Sans'
+        },
+        {
+          'id': 'graphite',
+          'label': OccasionSetupStrings.ui('palette_graphite'),
+          'primary': '334155',
+          'secondary': '475569',
+          'gradient': true,
+          'fontFamily': 'Inter'
+        },
+        {
+          'id': 'rose',
+          'label': OccasionSetupStrings.ui('palette_rose'),
+          'primary': '9D174D',
+          'secondary': 'BE185D',
+          'gradient': true,
+          'fontFamily': 'Playfair Display'
+        },
+        {
+          'id': 'azure',
+          'label': OccasionSetupStrings.ui('palette_azure'),
+          'primary': '1D4ED8',
+          'secondary': '0369A1',
+          'gradient': true,
+          'fontFamily': 'Montserrat'
+        },
+        {
+          'id': 'cream',
+          'label': OccasionSetupStrings.ui('palette_cream'),
+          'primary': '785A38',
+          'secondary': 'A16207',
+          'gradient': true,
+          'fontFamily': 'Lato'
+        },
       ];
 
   static Map<String, dynamic> read(Map data) {

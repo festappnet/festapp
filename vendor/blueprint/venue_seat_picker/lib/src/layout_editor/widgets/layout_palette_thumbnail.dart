@@ -87,7 +87,10 @@ class _ThumbnailState extends State<LayoutPaletteThumbnail> {
               ],
             )
           : widget.document;
-      _scene = compileScene(preview, resources: widget.resources);
+      _scene = {
+        ...compileScene(preview, resources: widget.resources),
+        'canvas': {'fill': '#00000000'},
+      };
       _brightness = brightness;
       _document = widget.document;
       _resources = widget.resources;
@@ -117,41 +120,44 @@ class _ThumbnailState extends State<LayoutPaletteThumbnail> {
                   (width - padding * 2) / math.max(1, _bounds.width),
                   (height - padding * 2) / math.max(1, _bounds.height),
                 );
-                return RepaintBoundary(
-                  child: CustomPaint(
-                    size: extent,
-                    painter: LayoutScenePainter(
-                      scene: {
-                        ..._scene,
-                        'items': [
-                          for (final item in _scene['items'] as List)
-                            if ({
-                              'Line',
-                              'Arrow',
-                              'Polyline',
-                            }.contains(widget.kind))
-                              {
-                                ...Map<String, dynamic>.from(item as Map),
-                                'strokeWidth': math.max(
-                                  (item['strokeWidth'] as num? ?? 0).toDouble(),
-                                  1.5 / scale,
-                                ),
-                              }
-                            else
-                              item,
-                        ],
-                      },
-                      resources: widget.resources,
-                      selected: const {},
-                      scale: scale,
-                      offset: Offset(
-                        (width - _bounds.width * scale) / 2 -
-                            _bounds.left * scale,
-                        (height - _bounds.height * scale) / 2 -
-                            _bounds.top * scale,
+                return ClipRect(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      size: extent,
+                      painter: LayoutScenePainter(
+                        scene: {
+                          ..._scene,
+                          'items': [
+                            for (final item in _scene['items'] as List)
+                              if ({
+                                'Line',
+                                'Arrow',
+                                'Polyline',
+                              }.contains(widget.kind))
+                                {
+                                  ...Map<String, dynamic>.from(item as Map),
+                                  'strokeWidth': math.max(
+                                    (item['strokeWidth'] as num? ?? 0)
+                                        .toDouble(),
+                                    1.5 / scale,
+                                  ),
+                                }
+                              else
+                                item,
+                          ],
+                        },
+                        resources: widget.resources,
+                        selected: const {},
+                        scale: scale,
+                        offset: Offset(
+                          (width - _bounds.width * scale) / 2 -
+                              _bounds.left * scale,
+                          (height - _bounds.height * scale) / 2 -
+                              _bounds.top * scale,
+                        ),
+                        canvasColor: Colors.transparent,
+                        selectionColor: Theme.of(context).colorScheme.primary,
                       ),
-                      canvasColor: Colors.transparent,
-                      selectionColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 );

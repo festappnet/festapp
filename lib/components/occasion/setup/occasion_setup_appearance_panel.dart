@@ -94,6 +94,16 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     );
   }
 
+  Color _previewColor(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    var lightness = hsl.lightness;
+    while ((1.05 / (color.computeLuminance() + .05)) < 4.5 && lightness > .02) {
+      lightness -= .02;
+      color = hsl.withLightness(lightness.clamp(0.0, 1.0)).toColor();
+    }
+    return color;
+  }
+
   TextStyle _fontStyle(String family, TextStyle? base) {
     final resolvedBase = base ?? const TextStyle(fontSize: 16);
     return fontStyle?.call(family, resolvedBase) ?? resolvedBase;
@@ -104,6 +114,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     final theme = Theme.of(context);
     return LayoutBuilder(builder: (context, constraints) {
       final narrow = constraints.maxWidth < 700;
+      final columns = (constraints.maxWidth / 220).floor().clamp(2, 6);
       final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         DropdownButtonFormField<String>(
@@ -145,10 +156,10 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
               width: largeText
                   ? constraints.maxWidth
                   : narrow
-                      ? (constraints.maxWidth < 360
+                      ? (constraints.maxWidth < 320
                           ? constraints.maxWidth
                           : (constraints.maxWidth - 12) / 2)
-                      : (constraints.maxWidth - 24) / 3,
+                      : (constraints.maxWidth - (columns - 1) * 12) / columns,
               child: Semantics(
                 selected: selectedPresetId == preset.id,
                 child: OutlinedButton(
@@ -167,36 +178,43 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ExcludeSemantics(
-                            child: Container(
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: preset.gradient
-                                      ? null
-                                      : preset.primaryColor,
-                                  gradient: preset.gradient
-                                      ? LinearGradient(colors: [
-                                          preset.primaryColor,
-                                          preset.secondaryColor
-                                        ])
-                                      : null,
-                                ))),
-                        const SizedBox(height: 8),
-                        Text(preset.label,
-                            style: _fontStyle(preset.fontFamily,
-                                theme.textTheme.titleMedium)),
-                        Text(OccasionSetupStrings.ui('our_event_story'),
-                            style: _fontStyle(
-                                preset.fontFamily, theme.textTheme.bodyLarge)),
-                        SizedBox(
-                          height: 20,
-                          child: selectedPresetId == preset.id
-                              ? const Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: Icon(Icons.check, size: 20))
-                              : null,
+                        Container(
+                          constraints: const BoxConstraints(minHeight: 82),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: preset.gradient
+                                ? null
+                                : _previewColor(preset.primaryColor),
+                            gradient: preset.gradient
+                                ? LinearGradient(colors: [
+                                    _previewColor(preset.primaryColor),
+                                    _previewColor(preset.secondaryColor),
+                                  ])
+                                : null,
+                          ),
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                              OccasionSetupStrings.ui('our_event_story'),
+                              style: _fontStyle(preset.fontFamily,
+                                      theme.textTheme.titleLarge)
+                                  .copyWith(
+                                      color: Colors.white,
+                                      fontSize: narrow ? 18 : 22)),
                         ),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          Expanded(
+                              child: Text(preset.label,
+                                  style: _fontStyle(preset.fontFamily,
+                                      theme.textTheme.titleSmall))),
+                          SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: selectedPresetId == preset.id
+                                  ? const Icon(Icons.check, size: 20)
+                                  : null),
+                        ]),
                       ]),
                 ),
               ),

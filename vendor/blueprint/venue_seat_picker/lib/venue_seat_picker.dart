@@ -25,3 +25,5 @@ export 'src/layout_editor/widgets/layout_style.dart'
     show LayoutAppearance, layoutAppearancePresets, applyLayoutAppearance;
 
 export 'src/layout_editor/layout_localizations.dart';
+
+export 'src/layout_editor/widgets/layout_template_gallery.dart';

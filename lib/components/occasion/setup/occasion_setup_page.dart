@@ -34,7 +34,6 @@ import '../../blueprint/views/blueprint_layout_demo.dart';
 import '../../blueprint/views/blueprint_product_dialogs.dart';
 
 import 'package:festapp_core/forms.dart';
-import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -1234,29 +1233,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       SetupBlueprintConfiguration(data).areaCount;
 
   Future<void> _startNewBlueprint() async {
-    final selected = await showDialog<LayoutTemplate>(
-      context: context,
-      builder: (c) => AppAlertDialog(
-        title: Text(OccasionSetupStrings.story('chooseBlueprintTemplate')),
-        content: SizedBox(
-          width: 560,
-          height: 460,
-          child: ListView(
-            children: [
-              for (final template in VenueLayoutTemplates.all)
-                ListTile(
-                  title: Text(
-                    template.id == 'blank'
-                        ? OccasionSetupStrings.story('emptyBlueprint')
-                        : VenueLayoutLocalizations.of(c).text(template.title),
-                  ),
-                  onTap: () => Navigator.pop(c, template),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final selected = await showVenueLayoutTemplateGallery(context);
     if (!mounted || selected == null) return;
     _change((d) {
       SetupBlueprintConfiguration(d).clear(create: true);
@@ -2657,14 +2634,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
-  int _readiness(Map<String, dynamic> d) {
-    final required = _questions.where((q) => !q.optional).toList();
-    return (100 *
-            required.where((q) => _questionReady(d, q)).length /
-            required.length)
-        .round();
-  }
-
   Future<void> _jump(String key) async {
     if (_presentationUploading || _finalizeCommand != null) return;
     final target = _questions.indexWhere((q) => q.key == key);
@@ -2836,7 +2805,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       },
       visitedKeys:
           (d['visitedQuestions'] as List? ?? []).cast<String>().toSet(),
-      readiness: OccasionSetupStrings.readiness(_readiness(d)),
       introductionAction: (_sources.isNotEmpty ||
               _loadingSources ||
               _sourceError != null)
