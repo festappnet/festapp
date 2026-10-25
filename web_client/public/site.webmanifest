@@ -1,7 +1,7 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "CSM Ostrava",
+  "short_name": "CSM 2026",
+  "description": "Oficiální průvodce Celostátním setkáním mládeže Ostrava 2026.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -17,7 +17,7 @@
     }
   ],
   "id": "/",
-  "start_url": "/",
+  "start_url": "/csmostrava2026/event",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
