@@ -38,6 +38,9 @@ export async function initSettings(document, api) {
     event.preventDefault();
     if (!ready || submit.disabled) return;
     submit.disabled = true; status.textContent = 'Ukládání…';
+    // Keep progress and the result visible in Wix's small settings viewport.
+    const panel = form.closest('main');
+    if (panel) panel.scrollTop = 0;
     try {
       await saveSettings(api, {
         'form-url': form.elements.namedItem('form-url').value,
