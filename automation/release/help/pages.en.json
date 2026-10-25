@@ -74,7 +74,7 @@
     "slug": "bank-account",
     "title": "Set up the organizer receiving account",
     "seoTitle": "Bank account setup for ticket payments",
-    "description": "Create or link the organizer bank account, check its identity and currencies, and distinguish account management from selecting it for a sales form.",
+    "description": "Prepare organizer account details, supported currencies and priority. Check which account the form uses for receiving payments.",
     "label": "Bank account setup",
     "workflow": "organization"
   },
@@ -142,7 +142,18 @@
     "title": "How to check in visitors and verify tickets",
     "seoTitle": "Visitor check-in: QR scanning, ticket states and offline work",
     "description": "Prepare staff access, scan QR codes, confirm admission and handle used or unpaid tickets and pending offline records.",
-    "label": "Visitor check-in"
+    "label": "Visitor check-in",
+    "workflow": "check-in"
+  },
+  {
+    "id": "scanner-settings",
+    "category": "check-in",
+    "workflow": "scanner-settings",
+    "slug": "scanner-settings",
+    "title": "Configure the web scanner display",
+    "seoTitle": "Ticket scanner settings: details, products and permissions",
+    "description": "For organizers: products, form answers, search, internal details and preview before saving. Settings apply to the whole event.",
+    "label": "Scanner settings"
   },
   {
     "id": "troubleshooting",

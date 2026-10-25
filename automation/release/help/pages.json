@@ -74,7 +74,7 @@
     "slug": "bankovni-ucet",
     "title": "Jak nastavit bankovní účet pořadatele",
     "seoTitle": "Nastavení bankovního účtu pro příjem plateb za vstupenky",
-    "description": "Přidejte nebo připojte bankovní účet pořadatele, zkontrolujte číslo a měny a rozlište jeho správu od výběru účtu ve formuláři.",
+    "description": "Připravte účet pořadatele, měny a pořadí účtů. Ověřte, který účet aplikace použije pro platby formuláře.",
     "label": "Nastavení bankovního účtu",
     "workflow": "organization"
   },
@@ -142,7 +142,18 @@
     "title": "Jak odbavit návštěvníky a ověřit vstupenky",
     "seoTitle": "Odbavení návštěvníků: QR skener, stavy a provoz bez internetu",
     "description": "Připravte přístup pracovníků, načtěte QR, potvrďte vstup a řešte použité či neuhrazené vstupenky a čekající offline záznamy.",
-    "label": "Odbavení návštěvníků"
+    "label": "Odbavení návštěvníků",
+    "workflow": "check-in"
+  },
+  {
+    "id": "scanner-settings",
+    "category": "check-in",
+    "workflow": "scanner-settings",
+    "slug": "nastaveni-skeneru",
+    "title": "Jak nastavit zobrazení webového skeneru",
+    "seoTitle": "Nastavení skeneru vstupenek: údaje, produkty a oprávnění",
+    "description": "Návod pro pořadatele: produkty, odpovědi z formulářů, hledání, interní údaje a náhled před uložením. Nastavení platí pro celou akci.",
+    "label": "Nastavení skeneru"
   },
   {
     "slug": "reseni-potizi",

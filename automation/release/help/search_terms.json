@@ -112,6 +112,13 @@
       "autorizace tokenu",
       "propojení banky",
       "automatické párování"
+    ],
+    "scanner-settings": [
+      "nastavení skeneru",
+      "co zobrazit",
+      "údaje při skenování",
+      "interní poznámka",
+      "skrýt cenu"
     ]
   },
   "en": {
@@ -212,6 +219,12 @@
       "video",
       "YouTube",
       "token authorization"
+    ],
+    "scanner-settings": [
+      "scanner display settings",
+      "what to show",
+      "hide prices",
+      "internal note"
     ]
   }
 }

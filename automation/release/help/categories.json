@@ -56,15 +56,15 @@
       "slug": "bankovni-ucty-a-propojeni",
       "title": "Bankovní účty a příjem plateb",
       "seoTitle": "Bankovní účet, Fio API token a nastavení plateb za vstupenky",
-      "description": "Přidejte účet pořadatele, propojte Fio banku a nastavte platební údaje formuláře. Rozlišujte účet, propojení banky a přiřazení k prodeji.",
-      "intro": "Nejdříve připravte bankovní účet pořadatele, potom jeho propojení s bankou a použití v konkrétním formuláři. Průvodce založením pouze vybírá připravený účet."
+      "description": "Připravte účet pořadatele, propojte Fio a ověřte platební údaje. Použitý účet se určuje podle měny a pořadí účtů.",
+      "intro": "Bankovní účet a jeho propojení spravujete u pořadatele. Formuláře používají pro každou měnu první podporující účet podle pořadí."
     },
     "en": {
       "slug": "bank-accounts-and-connections",
       "title": "Bank accounts and receiving payments",
       "seoTitle": "Bank accounts, Fio API token and ticket payment settings",
-      "description": "Prepare the receiving account, connect Fio and configure form payment instructions. Account setup, bank connection and assignment to sales are separate tasks.",
-      "intro": "Prepare the organizer account first, then its bank connection and use in a form. The event wizard selects an account that has already been prepared."
+      "description": "Prepare the organizer account, connect Fio and check payment instructions. Receiving accounts follow currency support and account priority.",
+      "intro": "Manage accounts and connections at organizer level. Forms use the first account supporting each currency, in priority order."
     }
   },
   {

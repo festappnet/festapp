@@ -62,7 +62,9 @@
     "workflows": {
       "wizard": "Průvodce založením: nová akce před dokončením.",
       "administration": "Administrace: úpravy již vytvořené akce.",
-      "organization": "Nastavení pořadatele: bankovní účty mimo průvodce založením."
+      "organization": "Nastavení pořadatele: bankovní účty mimo průvodce založením.",
+      "check-in": "Webový skener: postup pro obsluhu u vstupu.",
+      "scanner-settings": "Webový skener: společné nastavení akce pro pořadatele a editory."
     }
   },
   "en": {
@@ -128,7 +130,9 @@
     "workflows": {
       "wizard": "Setup wizard: a new event before creation.",
       "administration": "Administration: changes to an existing event.",
-      "organization": "Organizer settings: bank accounts outside the event wizard."
+      "organization": "Organizer settings: bank accounts outside the event wizard.",
+      "check-in": "Web scanner: the door staff workflow.",
+      "scanner-settings": "Web scanner: shared event settings for organizers and editors."
     }
   }
 }

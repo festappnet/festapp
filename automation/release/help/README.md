@@ -3,7 +3,7 @@
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
 The implementation shares the homepage header/footer fragments, canonical
 organizer CSS and account-header startup. The current outline supersedes the
-initial ordering: eight areas and fifteen task guides, with matching English
+initial ordering: eight areas and sixteen task guides, with matching English
 preview routes and stable topic IDs. Start with the new-event wizard, then
 existing-event administration, tickets/seating, banking, website publication,
 order management, check-in and troubleshooting. The hub has separate entry
@@ -124,3 +124,8 @@ The video iframe requires an HTTP(S) parent origin for YouTube client identity.
 The file:// export remains useful for the documentation UI, but video playback
 needs a web preview; an HTTP preview is justified for this explicit player
 request. Do not claim file:// playback or a deployed production check.
+
+Content audit: organizer scanner configuration is separate from door-staff
+check-in and recovery. Receiving accounts in existing forms are automatic by
+currency and organizer account priority; do not invent a per-form account picker.
+Keep QA narration and pixel dimensions in provenance metadata, not captions.

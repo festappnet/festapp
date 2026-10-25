@@ -1041,5 +1041,20 @@
     ],
     "existingEvent": "cs/setup/dates is the existing-event Settings capture and is now used only by that administration guide.",
     "videoRule": "Use the workflow metadata and current article references for wizard versus administration shots; original scenario chapters remain historical receipts."
+  },
+  "contentAudit": {
+    "sourceBase": "13c41b7e487d44b02284f5e09eda24b93ac82b34",
+    "method": "Independent content/source/UX critic and independent browser/detector evidence; focused critic readback after corrections.",
+    "bankRoutingAuthority": "lib/components/forms/views/form_settings_content.dart:530-575",
+    "corrections": [
+      "Receiving-account priority/currency routing instead of nonexistent per-form selection",
+      "EN seating wizard/admin split",
+      "Form versus Settings availability controls",
+      "WordPress block attributes versus plugin software updates",
+      "Separate organizer scanner-settings guide from door-staff workflow",
+      "Shorter captions, removal of irrelevant cautions, bounded reading measure"
+    ],
+    "evidence": ".private/help-critique-20261025/evidence-b.json",
+    "validation": "28 help/search/public-SEO tests; 100 page/locale/viewport/theme cases; final scoped detector no findings."
   }
 }

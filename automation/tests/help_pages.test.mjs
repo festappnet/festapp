@@ -13,7 +13,7 @@ test('public guides render crawlable linked documents, code generator and exact 
  const render=()=>spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target],{encoding:'utf8'});
  let run=render();assert.equal(run.status,0,run.stderr);
  const pages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.json')));
- const coreTopics=['getting-started','form','ticket-pricing','seating','ticket-design','payments','orders','check-in'];
+ const coreTopics=['getting-started','form','ticket-pricing','seating','ticket-design','payments','orders','check-in','scanner-settings'];
  for(const id of [...coreTopics,'event-settings','bank-accounts','fio-token']) assert.ok(pages.some(page=>page.id===id),`Missing core organizer guide: ${id}`);
  assert.deepEqual([...new Set(pages.filter(page=>page.category).map(page=>page.category))],['basics','administration','tickets','banking','integrations','orders','check-in','troubleshooting']);
  const categories=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/categories.json'))).map(c=>({...c.cs,id:'category.'+c.id}));
@@ -51,7 +51,7 @@ test('public guides render crawlable linked documents, code generator and exact 
  assert.ok(form.indexOf('class="help-step-action"')<form.indexOf('<h2 id="pole">'),'app link belongs to the opening step');
  assert.match(form,/href="\/login\?redirect=%2Fhelp-action%2Fforms" target="_blank"/);
  assert.doesNotMatch(form,/help-app-action/);assert.match(form,/guide-screenshot-mobile/);
- const scanner=fs.readFileSync(path.join(target,'odbaveni/index.html'),'utf8');
+ const scanner=fs.readFileSync(path.join(target,'nastaveni-skeneru/index.html'),'utf8');
  assert.match(scanner,/href="\/login\?redirect=%2Fhelp-action%2Fscanner-settings" target="_blank"/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
  const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/vstupenky_online url=/);
@@ -81,11 +81,12 @@ test('public guides render crawlable linked documents, code generator and exact 
 test('phone scanner guides use only mobile webclient captures in both locales',()=>{
  const directory=path.join(root,'automation/release/help');
  const media=new Map(JSON.parse(fs.readFileSync(path.join(directory,'media.json'))).map(item=>[item.id,item]));
- for(const [locale,file] of [['cs','odbaveni.html'],['en','en/check-in.html']]){
-  const html=fs.readFileSync(path.join(directory,file),'utf8');
-  const figures=[...html.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
-  assert.ok(figures.length>=2,'include verified mobile webclient controls and result');
-  assert.match(html,/\{\{APP_LINK:scanner-settings\}\}/,'settings instruction must open the matching help intent');
+ for(const [locale,doorFile,settingsFile] of [['cs','odbaveni.html','nastaveni-skeneru.html'],['en','en/check-in.html','en/scanner-settings.html']]){
+  const door=fs.readFileSync(path.join(directory,doorFile),'utf8');
+  const settings=fs.readFileSync(path.join(directory,settingsFile),'utf8');
+  const figures=[...`${door}\n${settings}`.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
+  assert.match(settings,/\{\{APP_LINK:scanner-settings\}\}/,'organizer settings must open the matching help intent');
+  assert.doesNotMatch(door,/MEDIA:[^}]+\/(?:field-options|advanced|preview)\}\}/,'door staff recovery stays separate from organizer setup');
   for(const state of ['invalid-access','not-found','settings','field-options','advanced','preview']) {
    assert.ok(figures.some(([,id])=>id===`${locale}/scanner-advanced/${state}`),`Missing actual ${locale} scanner walkthrough: ${state}`);
   }

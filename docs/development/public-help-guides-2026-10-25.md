@@ -242,3 +242,37 @@ blocked embedding on the site. The user-requested playable embed is therefore
 previewed via owned loopback HTTP on port 57982 instead of file://. Only that
 preview server remains running for the user; the automated browser was closed.
 Two affected renderer tests passed and the CSS detector reported no findings.
+
+## Independent content/context critic pass
+
+Two independent agents reviewed the frozen 13c41b7 help: assessment A checked
+all original task guides/categories in CS and EN against actual UI source and
+representative rendered pages; assessment B independently inspected browser,
+accessibility and detector evidence. A finished before B's findings were released.
+The archived dual-agent report is under .impeccable/critique; B evidence is in
+.private/help-critique-20261025/evidence-b.json. Both isolated browsers and B's
+injection server were closed; the user's HTTP preview remains available.
+
+Corrected six material content/UX findings: account routing uses the first
+organizer account supporting the currency by priority, not a per-form picker;
+EN seating uses existing-event administration; Form handles availability while
+Settings handles address/payment details; saving WordPress block attributes is
+separate from installing plugin updates; organizer scanner settings moved to
+their own guide; irrelevant cautions and QA narration were removed. The context
+of bank-account changes and their effect on new orders is now explicit. A's
+focused readback confirmed these corrections, with one remaining payment-lead
+verb corrected before validation. No improved numeric score is invented.
+
+There are now sixteen task guides, the overview and eight categories (25 pages
+per locale). Door staff get an uninterrupted scan/results/recovery procedure;
+organizers get a separate settings guide retaining its existing help action,
+permissions, shared-event scope and preview/save boundaries. Existing scanner
+anchors remain as links to the settings guide. Images remain real responsive
+webclient captures. Reading measure is bounded without changing the shared site
+header/footer or introducing a new visual style.
+
+Final validation passed 28 help/search/public-SEO tests and 100 localized
+page/viewport/theme cases. The final scoped design detector had no findings.
+The earlier whole-stylesheet CLI findings were not reproduced in rendered
+inspection and were recorded as false positives instead of changing unrelated
+homepage styling. Questions skipped: the user had already authorized corrections.
