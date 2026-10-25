@@ -55,6 +55,14 @@
         for (const sheet of document.styleSheets) read(sheet, sheet.href || document.baseURI);
         return faces;
     };
+    const isTransparent = color => {
+        if (!color || color === 'transparent') return true;
+        // CSS can serialize transparent white (or any other RGB value), not just
+        // rgba(0, 0, 0, 0). Modern color functions separate alpha with a slash.
+        const alpha = color.match(/\/\s*([\d.]+%?)\s*\)$/) ||
+            color.match(/^(?:rgba|hsla)\([^)]*,\s*([\d.]+%?)\s*\)$/);
+        return !!alpha && parseFloat(alpha[1]) === 0;
+    };
     const presentation = frame => {
         if (frame.dataset.festappStyle !== 'inherit') return null;
         const container = frame.parentElement;
@@ -62,14 +70,15 @@
         let background = 'rgb(255, 255, 255)';
         for (let node = container; node; node = node.parentElement) {
             const color = getComputedStyle(node).backgroundColor;
-            if (color && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') { background = color; break; }
+            if (!isTransparent(color)) { background = color; break; }
         }
         const button = container.querySelector('button, .wp-element-button, .wp-block-button__link') || document.querySelector('.wp-element-button, .wp-block-button__link, button');
         const candidate = button && getComputedStyle(button);
         // Navigation/outline buttons often have no fill; they cannot supply a
         // usable primary/background pair for checkout buttons.
-        const buttonStyle = candidate && candidate.backgroundColor &&
-            candidate.backgroundColor !== 'transparent' && candidate.backgroundColor !== 'rgba(0, 0, 0, 0)' ? candidate : null;
+        const buttonStyle = candidate && candidate.opacity !== '0' && candidate.display !== 'none' &&
+            candidate.visibility !== 'hidden' && !isTransparent(candidate.backgroundColor) &&
+            !isTransparent(candidate.color) ? candidate : null;
         const primary = style.getPropertyValue('--wp--preset--color--primary').trim() || buttonStyle?.backgroundColor || style.color;
         return {fontFamily: style.fontFamily, text: style.color, background, primary,
             buttonText: buttonStyle?.color || background, fonts: fontFaces(style.fontFamily)};

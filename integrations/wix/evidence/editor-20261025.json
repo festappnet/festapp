@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-25T16:32:05.646901+00:00",
+  "sourceHead": "84d3f8d5f168717c73b3e194fbed2d0c129ac21d",
+  "editor": "Wix Editor",
+  "metaSiteId": "14641e99-51d9-40f8-b768-4ffc1f5d3929",
+  "documentId": "ee35a3e8-7faa-4065-a84b-d9c6a837e2de",
+  "widgetComponentId": "comp-mvo14z52",
+  "browser": "isolated headless installed Chrome; no user windows controlled",
+  "insertion": "Official Manage Apps > Open in Editor > Add to Site; after Wix background-save failure manually saved document; Add Elements > App Widgets > vstupenky.online",
+  "editorHostViewMode": "Editor",
+  "previewHostViewMode": "Preview",
+  "editorCheckoutIframeCount": 0,
+  "editorEmbedHelperCount": 0,
+  "previewCheckoutIframeCount": 0,
+  "previewEmbedHelperCount": 0,
+  "settingsSaveStatus": "Uloženo. Formulář ověřte na zveřejněném webu.",
+  "persistedAfterSaveAndColdBrowserReopen": {
+    "form-url": "https://vstupenky.online/form/wix_qa_20261025",
+    "form-title": "Wix QA - ulozene nastaveni",
+    "inherit-style": "false"
+  },
+  "syntheticFormExists": false,
+  "syntheticUrlPurpose": "Settings persistence only; no live form or checkout qualification claimed",
+  "realOrderOrReservationCreated": false,
+  "publishedSite": false,
+  "publishedRuntimeQualified": false,
+  "otherEditorsQualified": false,
+  "limitations": [
+    "Published-site checkout/helper/height/mobile/payment tests remain pending",
+    "Editor sometimes stalls after warm reload; cold isolated browser reopen recovered",
+    "CLI could not target settings OOPIF; native mouse/keyboard inputs used and read-only CDP verified actual DOM status and widget attributes"
+  ]
+}

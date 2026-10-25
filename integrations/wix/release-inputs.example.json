@@ -2,6 +2,12 @@
   "schemaVersion": 1,
   "wixAppId": null,
   "widgetExtensionId": null,
+  "publisherFees": {
+    "upfrontAmount": null,
+    "recurringAmount": null,
+    "currency": null,
+    "evidence": null
+  },
   "hosting": {
     "widgetScriptUrl": null,
     "settingsUrl": null

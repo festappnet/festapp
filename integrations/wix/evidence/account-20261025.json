@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-25",
+  "email": "info@festapp.net",
+  "initialLookup": "Wix login explicitly reported that this email was not associated with an account",
+  "signupAttempted": true,
+  "signupOutcome": "User completed signup/login; authenticated owner workspace observed through background-only browser automation",
+  "confirmationEmailFound": true,
+  "authenticated": true,
+  "registeredAppId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "credentialStorage": "Authenticated Wix browser session reused only in an owned background automation window; earlier generated signup credential in Keychain remains unverified and is not proof of account password access",
+  "paidActionTaken": false,
+  "userStep": null,
+  "sources": [
+    "isolated Wix login/signup UI",
+    "connected mailbox search",
+    "macOS login Keychain metadata"
+  ],
+  "workspaceDisplayName": "info9468674",
+  "emailVerificationState": "Verification message received; completion not separately asserted",
+  "isolatedSessionVerified": true
+}

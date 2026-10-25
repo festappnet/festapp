@@ -2,10 +2,15 @@ import {PROPERTIES, HELP_URL, DEFAULT_TITLE, settingsFrom} from './config.js';
 
 export async function saveSettings(api, values) {
   const settings = settingsFrom(values);
-  // Wix requires serial writes/readback to avoid overwriting sibling props.
+  // Wix propagates custom-element attributes asynchronously after setProp resolves.
+  // Confirm each write before touching sibling props; never repeat the write itself.
   for (const name of PROPERTIES) {
     await api.setProp(name, settings[name]);
-    if (await api.getProp(name) !== settings[name]) throw new Error('Nastavení se nepodařilo potvrdit. Zkuste uložit znovu.');
+    const deadline = Date.now() + 5000;
+    while (await api.getProp(name) !== settings[name]) {
+      if (Date.now() >= deadline) throw new Error('Nastavení se nepodařilo potvrdit. Zkuste uložit znovu.');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   }
 }
 
@@ -33,6 +38,9 @@ export async function initSettings(document, api) {
     event.preventDefault();
     if (!ready || submit.disabled) return;
     submit.disabled = true; status.textContent = 'Ukládání…';
+    // Keep progress and the result visible in Wix's small settings viewport.
+    const panel = form.closest('main');
+    if (panel) panel.scrollTop = 0;
     try {
       await saveSettings(api, {
         'form-url': form.elements.namedItem('form-url').value,

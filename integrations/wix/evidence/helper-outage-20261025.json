@@ -1,0 +1,57 @@
+{
+  "verifiedAt": "2026-10-25T18:54:44.786246+00:00",
+  "sourceHead": "71abae992",
+  "publicSite": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "environment": "Owned isolated headless Chromium; no user browser attached",
+  "productionBackendFence": {
+    "verifiedAt": "2026-10-25T18:53:20.388Z",
+    "ownedHeadlessBrowser": true,
+    "readOnlyProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "productionWrites": 0
+  },
+  "faultInjection": "agent-browser network route exact https://vstupenky.online/embed.js --abort before navigation; failure independently observed through CDP Network.loadingFailed after reload",
+  "observedHelperFailure": {
+    "url": "https://vstupenky.online/embed.js",
+    "errorText": "net::ERR_FAILED",
+    "canceled": false
+  },
+  "hostMode": "Site",
+  "helperLoaded": false,
+  "helperScriptElements": 1,
+  "iframe": {
+    "height": 800,
+    "embedParameterPresent": true,
+    "title": "Wix Studio QA - vstupenky"
+  },
+  "fallback": {
+    "href": "https://vstupenky.online/form/wix-qa-20261025",
+    "text": "Otevřít formulář v novém okně",
+    "target": "_blank",
+    "rel": "noopener noreferrer",
+    "keyboardReturn": "PASS: Shift+Tab then Tab returns focus to fallback anchor; mobile page scrolls it into view",
+    "linkFollowed": false
+  },
+  "mobile": {
+    "viewportWidth": 320,
+    "documentScrollWidth": 320,
+    "horizontalOverflow": false,
+    "scrollYAfterKeyboardFocus": 191
+  },
+  "newOrders": 0,
+  "browserClosed": true,
+  "qualifiedScope": "Published widget retains fixed-height iframe and keyboard-accessible direct fallback when canonical helper cannot load",
+  "limits": [
+    "Synthetic form has no production route: embedded page displayed Stránka nenalezena; checkout not tested in this run",
+    "No local backend transport used; DNS fence confirmed canonical and legacy endpoints unresolved before navigation",
+    "No helper recovery, payment return, iframe storage, native Safari or published multi-widget isolation claim"
+  ]
+}

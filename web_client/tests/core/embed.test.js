@@ -165,6 +165,40 @@ test('host appearance is opt-in, resolves stylesheet-relative fonts, updates and
     dom.window.close();
 });
 
+test('host theme skips transparent white ancestors and unpainted button colors', () => {
+    const dom = new JSDOM('<body><section><iframe data-festapp-embed src="https://tickets.invalid/form/a?embed=1"></iframe></section></body>',
+        {url:'https://host.invalid', runScripts:'outside-only', pretendToBeVisual:true});
+    const document = dom.window.document;
+    const frame = document.querySelector('iframe');
+    const section = document.querySelector('section');
+    const sent = [];
+    frame.contentWindow.postMessage = (...args) => sent.push(args);
+    dom.window.eval(hostScript);
+    document.body.style.cssText = 'color:rgb(0, 0, 0);background-color:rgb(255, 255, 255)';
+    section.style.backgroundColor = 'rgba(255, 255, 255, 0)';
+    frame.dataset.festappStyle = 'inherit';
+    const theme = () => {
+        dom.window.dispatchEvent(new dom.window.MessageEvent('message',
+            {source:frame.contentWindow, origin:'https://tickets.invalid', data:envelope('ready')}));
+        return sent.at(-1)[0].theme;
+    };
+    assert.equal(theme().background, 'rgb(255, 255, 255)');
+    assert.equal(theme().buttonText, 'rgb(255, 255, 255)');
+    // An opaque color with a zero blue channel must not be mistaken for alpha 0.
+    section.style.backgroundColor = 'rgb(255, 255, 0)';
+    assert.equal(theme().buttonText, 'rgb(255, 255, 0)');
+    const button = document.createElement('button');
+    button.style.cssText = 'background-color:navy;color:white;opacity:0';
+    section.append(button);
+    assert.equal(theme().primary, 'rgb(0, 0, 0)');
+    button.style.opacity = '1'; button.style.color = 'rgba(255, 255, 255, 0)';
+    assert.equal(theme().primary, 'rgb(0, 0, 0)');
+    button.style.color = 'white';
+    assert.equal(theme().primary, 'rgb(0, 0, 128)');
+    assert.equal(theme().buttonText, 'rgb(255, 255, 255)');
+    dom.window.close();
+});
+
 test('theme requires the pinned parent, rejects CSS/URL injection, cleans fonts and restores service appearance', async () => {
     const dom = new JSDOM('<body><main>Checkout</main></body>', {url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
     const win=dom.window;

@@ -41,13 +41,16 @@ export function registerTicketElement(win, getViewMode) {
       this.frame = null;
       const section = this.ownerDocument.createElement('section');
       section.className = 'vstupenky-wix-placeholder';
+      section.style.cssText = 'box-sizing:border-box;padding:24px;border:1px solid #c7cdd1;border-radius:4px;background:#fff;color:#162d3d;font:14px/1.5 Arial,sans-serif';
       const heading = this.ownerDocument.createElement('strong');
       heading.textContent = 'vstupenky.online';
+      heading.style.fontSize = '18px';
       const detail = this.ownerDocument.createElement('p');
       detail.textContent = message;
       const help = this.ownerDocument.createElement('a');
       help.href = HELP_URL; help.target = '_blank'; help.rel = 'noopener noreferrer';
       help.textContent = 'Návod na vložení formuláře';
+      help.style.color = '#0754bf';
       section.append(heading, detail, help);
       const url = formUrl(this.getAttribute('form-url'));
       if (this.mode === 'Unavailable' && url) {

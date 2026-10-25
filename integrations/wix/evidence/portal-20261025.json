@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-25T18:28:25.310395+00:00",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "currentVersion": "Draft",
+  "marketplaceSubmitted": false,
+  "paidCommitmentAccepted": false,
+  "icon": {
+    "path": "media/icon-1000.png",
+    "sha256": "9c280cfb5da476af1d72c0545b04d1de40b209d511672118c23eb0c775e73cd8",
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "source": "../wordpress/catalog/artwork.html?kind=icon; existing ticket vector, rendered without edits",
+    "wixUrl": "https://static.wixstatic.com/media/397be0_b6dcc358c55d42f5b9f01cf14864e2a0~mv2.png",
+    "saved": true
+  },
+  "company": {
+    "name": "Michael Bujnovský",
+    "address": "Přívozská 1704/24, 702 00 Moravská Ostrava, Czechia",
+    "website": "https://vstupenky.online/",
+    "privacy": "https://vstupenky.online/privacy/",
+    "source": "https://vstupenky.online/terms/",
+    "savedAndReloadVerified": true
+  },
+  "category": "Services & Events",
+  "keywords": [
+    "tickets",
+    "events",
+    "seating",
+    "checkout",
+    "vstupenky"
+  ],
+  "categoryAndKeywordsSavedAndReloadVerified": true,
+  "phone": {
+    "value": "+420 792 759 379",
+    "source": "https://festapp.net/",
+    "ownerInstruction": "Use the phone published on festapp.net",
+    "enteredInWix": false
+  },
+  "preparedContactEmails": {
+    "support": "info@festapp.net",
+    "billing": "info@festapp.net",
+    "urgent": "info@festapp.net",
+    "saved": false
+  },
+  "remainingPortalBlockers": 3,
+  "blockedModules": [
+    {
+      "page": "Contact Info",
+      "url": "https://static.parastorage.com/services/contact-info/1.643.0/module.bundle.min.js",
+      "browserStatus": 403,
+      "independentCurlStatus": 403
+    },
+    {
+      "page": "Security & Privacy",
+      "url": "https://static.parastorage.com/services/security-and-privacy/1.394.0/module.bundle.min.js",
+      "browserStatus": 403,
+      "independentCurlStatus": 403
+    }
+  ],
+  "mediaRequirements": {
+    "galleryMinimum": [
+      1200,
+      900
+    ],
+    "galleryRatio": "4:3",
+    "recommendedImages": "2-3",
+    "promotionalBannerOptional": [
+      540,
+      360
+    ],
+    "gallerySaved": false,
+    "reason": "Live shared helper contrast failure must be fixed before final gallery/publication"
+  },
+  "nativeDevSiteEditorChoices": [
+    "Wix Editor",
+    "Wix Studio"
+  ],
+  "newSupportMessageSent": false
+}

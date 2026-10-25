@@ -3,9 +3,12 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 export function releaseBlockers(input) {
   const blockers=[];
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return ['Missing release input object'];
   const uuid=value=>typeof value==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   const https=value=>{try {const url=new URL(value);return url.protocol==='https:' && !url.username && !url.password && !url.search && !url.hash;}catch{return false;}};
   if(input.schemaVersion!==1)blockers.push('Unsupported release input schema');
+  if(input.publisherFees?.upfrontAmount!==0 || input.publisherFees?.recurringAmount!==0)blockers.push('Publisher registration/listing/retention must have zero fixed upfront and recurring fees');
+  if(typeof input.publisherFees?.currency!=='string' || !/^[A-Z]{3}$/.test(input.publisherFees.currency) || typeof input.publisherFees?.evidence!=='string' || !input.publisherFees.evidence.trim())blockers.push('Missing verified publisher fee terms and currency');
   for(const key of ['wixAppId','widgetExtensionId'])if(!uuid(input[key]))blockers.push(`Missing assigned Wix ${key}`);
   for(const key of ['widgetScriptUrl','settingsUrl'])if(!https(input.hosting?.[key]))blockers.push(`Missing verified HTTPS hosting ${key}`);
   if(typeof input.billingApproval?.reference!=='string' || !input.billingApproval.reference.trim())blockers.push('Missing written billing approval reference');

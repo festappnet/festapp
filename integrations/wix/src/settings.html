@@ -11,6 +11,7 @@
   <main>
     <h1>Prodej vstupenek</h1>
     <p>Vložte veřejný odkaz uloženého formuláře ze vstupenky.online.</p>
+    <p id="status" role="status" aria-live="polite">Načítání nastavení…</p>
     <form>
       <label for="form-url">Odkaz formuláře</label>
       <input id="form-url" name="form-url" type="url" required placeholder="https://vstupenky.online/form/…" autocomplete="off" aria-describedby="url-help">
@@ -19,7 +20,6 @@
       <input id="form-title" name="form-title" maxlength="200" autocomplete="off">
       <label class="choice"><input type="checkbox" id="inherit-style" name="inherit-style" checked> Přizpůsobit vzhled webu</label>
       <button type="submit" disabled>Uložit nastavení</button>
-      <p id="status" role="status" aria-live="polite">Načítání nastavení…</p>
     </form>
     <p>Prodej a platby zpracovává služba vstupenky.online. Cena služby se řídí dohodou pořadatele; bezplatná instalace neznamená bezplatný prodej.</p>
     <a id="help" target="_blank" rel="noopener noreferrer">Návod na vložení formuláře</a>
