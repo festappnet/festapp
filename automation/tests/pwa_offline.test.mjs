@@ -774,6 +774,12 @@ try {
   )).text(), 'offline catalogue module', 'the offline root catalogue keeps its cached modules');
   cachedMarketingModule = false;
   networkAvailable = true;
+  // Public help has no offline-app version reporter. Its entire shared graph
+  // must work even after a worker restart or with an older app installed.
+  const helpClient = {id:'help-client', url:'https://app.test/napoveda/objednavky/', postMessage:()=>{}};
+  clientsById.set(helpClient.id,helpClient);
+  const helpModule = await dispatchFetch(new Request('https://app.test/web-assets/index.js'),helpClient.id);
+  assert.equal(await helpModule.text(),'web client bundle','help imports must not wait for an app version report');
   // Other app pages still recover a missing old-generation module normally.
   await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
   const oldAppModule = await dispatchFetch(

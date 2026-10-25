@@ -96,8 +96,25 @@ if (arg('--built-index')) {
   const manifest = JSON.parse(fs.readFileSync(path.join(path.dirname(builtIndex),'.vite/manifest.json'),'utf8'));
   const entry = manifest['src/marketing/help.js'];
   if (!entry?.file) throw new Error('Built help needs the Vite help entry');
-  accountScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
-  themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).join('');
+  // The installed app worker intentionally never pins /napoveda/assets/.
+  // Publish the same built graph under that public owner so existing workers
+  // can load help without an app-version report or forced PWA update.
+  const dist = path.dirname(builtIndex);
+  const runtimeRoot = helpRoot + 'assets/runtime/';
+  const relocate = text => text.replaceAll('web-assets/', runtimeRoot.slice(1))
+    .replaceAll('/assets/translations/', helpRoot + 'assets/translations/');
+  for (const file of fs.readdirSync(path.join(dist,'web-assets'),{recursive:true})) {
+    const full = path.join(dist,'web-assets',file);
+    if (!fs.statSync(full).isFile()) continue;
+    assets['runtime/' + file] = /\.(?:m?js|css)$/.test(file)
+      ? relocate(fs.readFileSync(full,'utf8')) : fs.readFileSync(full);
+  }
+  const translations = path.join(dist,'assets/translations');
+  for (const file of fs.readdirSync(translations)) {
+    if (file.endsWith('.json')) assets['translations/' + file] = fs.readFileSync(path.join(translations,file));
+  }
+  accountScript = `<script type="module" src="${escape(relocate('/' + entry.file))}"></script>`;
+  themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).map(relocate).join('');
 }
 const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:helpRoot,helpLabel:ui.help,accountHeader:!!accountScript});
 const videos = JSON.parse(read('videos.json'));
@@ -155,7 +172,7 @@ for (const page of allPages) {
 <main id="main" class="help-main"><nav class="breadcrumb" aria-label="${escape(ui.breadcrumb)}">${breadcrumb}</nav><h1>${escape(page.title)}</h1><div data-help-browse>${page.slug && toc ? `<details class="guide-toc"><summary>${escape(ui.onThisPage)}</summary><ul>${toc}</ul></details>` : ''}${body}<div class="guide-related"><p>${escape(ui.related)}</p>${category && !page.collection ? `<a href="${href(category)}">${escape(category.label)}</a>` : ''}<a href="${helpRoot}">${escape(ui.allGuides)}</a><a href="/support/">${escape(ui.support)}</a></div></div></main></div>${shell.footer}${accountScript}</body></html>\n`;
   for (const target of targets) {const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);}
 }
-for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) fs.writeFileSync(path.join(target,'assets',name),data);}
+for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}}
 console.log(`Rendered ${allPages.length} ${locale} help pages and verified WordPress download.`);
 if (!arg('--output')) {
   const sitemap = path.join(root,'web_client/public/sitemap.xml');
