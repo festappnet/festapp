@@ -1,29 +1,22 @@
 @font-face {
-    font-family: 'Futura';
-    src: url('./assets/fonts/FuturaPTBook.ttf') format('truetype');
+    font-family: 'Cerebri-Sans';
+    src: url('./assets/fonts/Cerebri-Sans-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
-    font-family: 'Futura';
-    src: url('./assets/fonts/FuturaPTMedium.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Futura';
-    src: url('./assets/fonts/GillSansBold.otf') format('opentype');
+    font-family: 'Cerebri-Sans';
+    src: url('./assets/fonts/Cerebri-Sans-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
 }
 
 :root {
     /* Colors from properties matches Flutter ThemeConfig */
-    --seed-1: #253759;
-    --seed-2: #80BDF2; /* dddPrimary */
-    --seed-3: #4465A6; /* lllPrimary */
+    --seed-1: #D0B26C;
+    --seed-2: #9687CA; /* dddPrimary */
+    --seed-3: #290694; /* lllPrimary */
     --white: #ffffff;
 
     /* Light Theme (Default) */
@@ -51,7 +44,7 @@
     --radius-round: 50%;
     
     /* Font Scale (Default for Futura) */
-    --font-scale: 1.2;
+    --font-scale: 1.0;
 }
 
 body.dark-mode {
@@ -68,7 +61,7 @@ body.dark-mode {
 }
 
 body {
-    font-family: 'Futura', sans-serif; /* Default font from Flutter */
+    font-family: 'Cerebri-Sans', sans-serif; /* Default font from Flutter */
     margin: 0;
     background-color: var(--background-color);
     color: var(--text-color);
