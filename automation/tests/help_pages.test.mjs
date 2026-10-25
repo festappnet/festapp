@@ -46,6 +46,10 @@ test('public guides render crawlable linked documents, code generator and exact 
  assert.equal((home.match(/class="guide-preview(?:[^"]*)"/g)||[]).length,categories.length+3,'overview has category and entry-point previews');
  const mediaById=new Map(JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/media.json'))).map(item=>[item.id,item]));
  for(const page of pages.filter(p=>p.category)) assert.equal(mediaById.get(page.preview)?.locale,'cs','previews use real media from their own locale');
+ for(const slug of ['odbaveni-navstevniku','pomoc-a-reseni-potizi']){
+  const directoryHtml=fs.readFileSync(path.join(target,slug,'index.html'),'utf8');
+  assert.match(directoryHtml,/class="guide-device"/,'portrait previews use a complete phone frame');
+ }
  const bank=fs.readFileSync(path.join(target,'fio-api-token/index.html'),'utf8');
  assert.match(bank,/https:\/\/www\.youtube\.com\/watch\?v=px9MCABSQbI/);
  assert.match(bank,/data-help-workflow="organization"/);

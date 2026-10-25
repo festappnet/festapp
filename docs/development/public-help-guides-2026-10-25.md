@@ -301,3 +301,15 @@ cases passed. A final targeted two-test batch covered the last media selection
 refinement. Desktop and 390px preview composition were visually inspected; the
 final design detector reported no findings. The task-specific automated browser
 was closed; the user-requested HTTP preview remains running for the video.
+
+## Phone framing for portrait directory previews
+
+Portrait webclient screenshots now sit uncropped inside a proportional phone
+frame instead of filling a landscape tile. This applies to admission,
+troubleshooting and scanner-setting previews in both locales. The phone frame
+is rendered with the existing brand chrome color; no native OS controls,
+illustrated app states, upscaled images or modified source captures were added.
+Original guide figures and provenance remain unchanged. The renderer's two
+checks and twelve affected page/locale/viewport/theme cases passed, with no
+scoped detector findings. The complete rendered phone previews were visually
+inspected and the isolated browser was closed.

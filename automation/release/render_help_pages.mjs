@@ -46,7 +46,8 @@ const figures = new Map(media.map(item => {
   const name = `${item.id.replaceAll('/','-')}.${digest(data)}${path.extname(relative)}`;
   assets[name] = data;
   const href = `${helpRoot}assets/${name}`;
-  previewImages.set(item.id, `<span class="guide-preview${item.device === 'mobile' ? ' guide-preview-mobile' : ''}${['detail','upper'].includes(item.previewCrop) ? ' guide-preview-'+item.previewCrop : ''}"><img src="${href}" width="${item.width}" height="${item.height}" alt="" loading="lazy" decoding="async"></span>`);
+  const previewContent = `<img src="${href}" width="${item.width}" height="${item.height}" alt="" loading="lazy" decoding="async">`;
+  previewImages.set(item.id, `<span class="guide-preview${item.device === 'mobile' ? ' guide-preview-mobile' : ''}${['detail','upper'].includes(item.previewCrop) ? ' guide-preview-'+item.previewCrop : ''}">${item.device === 'mobile' ? `<span class="guide-device">${previewContent}</span>` : previewContent}</span>`);
   return [item.id, `<figure class="guide-screenshot${item.device === 'mobile' ? ' guide-screenshot-mobile' : ''}"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
 }));
 let fontFaces = '';
