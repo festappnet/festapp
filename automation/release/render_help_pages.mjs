@@ -96,8 +96,25 @@ if (arg('--built-index')) {
   const manifest = JSON.parse(fs.readFileSync(path.join(path.dirname(builtIndex),'.vite/manifest.json'),'utf8'));
   const entry = manifest['src/marketing/help.js'];
   if (!entry?.file) throw new Error('Built help needs the Vite help entry');
-  accountScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
-  themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).join('');
+  // The installed app worker intentionally never pins /napoveda/assets/.
+  // Publish the same built graph under that public owner so existing workers
+  // can load help without an app-version report or forced PWA update.
+  const dist = path.dirname(builtIndex);
+  const runtimeRoot = helpRoot + 'assets/runtime/';
+  const relocate = text => text.replaceAll('web-assets/', runtimeRoot.slice(1))
+    .replaceAll('/assets/translations/', helpRoot + 'assets/translations/');
+  for (const file of fs.readdirSync(path.join(dist,'web-assets'),{recursive:true})) {
+    const full = path.join(dist,'web-assets',file);
+    if (!fs.statSync(full).isFile()) continue;
+    assets['runtime/' + file] = /\.(?:m?js|css)$/.test(file)
+      ? relocate(fs.readFileSync(full,'utf8')) : fs.readFileSync(full);
+  }
+  const translations = path.join(dist,'assets/translations');
+  for (const file of fs.readdirSync(translations)) {
+    if (file.endsWith('.json')) assets['translations/' + file] = fs.readFileSync(path.join(translations,file));
+  }
+  accountScript = `<script type="module" data-help-runtime src="${escape(relocate('/' + entry.file))}"></script>`;
+  themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).map(relocate).join('');
 }
 const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:helpRoot,helpLabel:ui.help,accountHeader:!!accountScript});
 const videos = JSON.parse(read('videos.json'));
@@ -150,12 +167,12 @@ for (const page of allPages) {
   ]};
   const json = JSON.stringify(structured).replace(/</g,'\\u003c');
   const breadcrumb = crumbs.map((crumb,i) => i === crumbs.length-1 ? `<span aria-current="page">${escape(crumb.name)}</span>` : `<a href="${escape(new URL(crumb.item).pathname)}">${escape(crumb.name)}</a>`).join(' / ');
-  const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script>${body.includes('data-embed-generator') ? `<script src="${helpRoot}assets/${jsName}" defer></script>` : ''}<noscript><style>.auth-pending .header-signin{visibility:visible}</style></noscript></head><body data-page="help"><a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
+  const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script><script src="${helpRoot}assets/${jsName}" defer></script><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="help"><a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
 <div class="help-layout"><aside class="help-sidebar"><p>${escape(ui.organizerHelp)}</p><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></aside><details class="help-mobile-menu"><summary>${escape(ui.mobileGuides)}</summary><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></details>
 <main id="main" class="help-main"><nav class="breadcrumb" aria-label="${escape(ui.breadcrumb)}">${breadcrumb}</nav><h1>${escape(page.title)}</h1><div data-help-browse>${page.slug && toc ? `<details class="guide-toc"><summary>${escape(ui.onThisPage)}</summary><ul>${toc}</ul></details>` : ''}${body}<div class="guide-related"><p>${escape(ui.related)}</p>${category && !page.collection ? `<a href="${href(category)}">${escape(category.label)}</a>` : ''}<a href="${helpRoot}">${escape(ui.allGuides)}</a><a href="/support/">${escape(ui.support)}</a></div></div></main></div>${shell.footer}${accountScript}</body></html>\n`;
   for (const target of targets) {const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);}
 }
-for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) fs.writeFileSync(path.join(target,'assets',name),data);}
+for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}}
 console.log(`Rendered ${allPages.length} ${locale} help pages and verified WordPress download.`);
 if (!arg('--output')) {
   const sitemap = path.join(root,'web_client/public/sitemap.xml');

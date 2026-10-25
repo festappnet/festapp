@@ -75,7 +75,7 @@ body[data-page=help] [hidden]{display:none!important}
 }
 @media(max-width:380px){.help-layout{padding-inline:18px}.help-main h1{font-size:34px}.embed-generator{padding:18px}body[data-page=help]{font-size:19px}}
 @media(prefers-color-scheme:dark){
- body[data-page=help]:not([data-public-theme]){--paper:var(--background-color,#232529);--surface:var(--surface-color,#2b2d31);--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;--help-error:#ffb4ab;--help-control-line:#71839c;color-scheme:dark}
+ body[data-page=help]:not([data-public-theme]){--paper:#232529;--surface:#2b2d31;--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;--help-error:#ffb4ab;--help-control-line:#71839c;color-scheme:dark}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 

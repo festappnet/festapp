@@ -80,6 +80,7 @@
     dialog.showModal(); render(); input.focus();
   }
   function close() {if (dialog.open) dialog.close();}
+  document.addEventListener('help:navigating', () => {previousFocus = null; close();});
   dialog.addEventListener('close', () => {
     clearTimeout(timer);
     document.body.style.overflow = previousOverflow;
