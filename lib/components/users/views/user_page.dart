@@ -9,7 +9,7 @@ import 'package:fstapp/components/users/password_reset_request.dart';
 import 'package:fstapp/components/users/account_deletion_service.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/app_config.dart';

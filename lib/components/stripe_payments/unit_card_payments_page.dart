@@ -1,7 +1,7 @@
 import 'stripe_feature.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/unit/views/unit_admin_page.dart';
 import 'package:fstapp/services/launch_url_service.dart';

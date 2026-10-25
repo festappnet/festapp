@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
@@ -41,7 +42,7 @@ void main() {
       final ticket = TicketModel(id: 20, relatedOrder: order)
         ..totalPrice = 123.45;
       late BuildContext localized;
-      await environment.pumpWidget(tester, MaterialApp(home: Scaffold(
+      await environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(
         body: Builder(builder: (context) {
           localized = context;
           return ProductInfoPanel(
@@ -97,7 +98,7 @@ void main() {
           ..orderModel = order;
     late BuildContext localized;
     await environment.pumpWidget(tester,
-        MaterialApp(home: Builder(builder: (context) {
+        MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       localized = context;
       return const SizedBox.shrink();
     })));

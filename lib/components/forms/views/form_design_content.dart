@@ -1,6 +1,6 @@
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/views/form_design_settings.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/data_services/rights_service.dart';

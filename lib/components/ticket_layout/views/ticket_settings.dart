@@ -10,7 +10,7 @@ import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';

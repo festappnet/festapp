@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import '../../images/image_control_client.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import '../../_shared/editor_file_drop_region.dart';
 import '../../_shared/editor_file_drop_strings.dart';
 import '../blueprint_font_selection.dart';
@@ -8,7 +8,7 @@ import 'blueprint_editor_feedback.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../../_shared/common_strings.dart';
 import '../../fonts/font_family_picker.dart';
@@ -232,7 +232,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
     });
   }
 
-  Future<void> _importSelection(XFile selection,
+  Future<void> _importSelection(ImportFile selection,
       {required bool graphic}) async {
     final session = controller;
     if (graphic) {
@@ -265,7 +265,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
     }
   }
 
-  Future<void> _dropBackground(XFile selection) async {
+  Future<void> _dropBackground(ImportFile selection) async {
     if (_busy || !_editing || !editorFileDropIsActive(context)) return;
     await _run(() => _importSelection(selection, graphic: false));
   }

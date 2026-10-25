@@ -1,5 +1,5 @@
 import 'package:festapp_core/forms.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
 
 class InternalFormFields {

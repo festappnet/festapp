@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/order_commands.dart';
 import 'package:fstapp/theme_config.dart';
@@ -37,7 +38,7 @@ void main() {
             'recipient': 'blocked@example.invalid'},
         ],
       };
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SizedBox(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: SizedBox(
       width: 250, height: 50,
       child: OrderStateCell(label: 'ORDERED', background: Colors.white,
           occasionId: 7, order: order),
@@ -111,7 +112,7 @@ void main() {
               : {
                   'current_issues': [issue(state)]
                 };
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: OrderEmailRepairDialog(
                   orderId: 4, occasionId: 7, read: read, canWrite: false))));
@@ -129,7 +130,7 @@ void main() {
   testWidgets('show order closes the dialog and reveals its grid row',
       (tester) async {
     var revealed = false;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
             builder: (context) => Scaffold(
                 body: TextButton(
@@ -169,7 +170,7 @@ void main() {
   testWidgets('late object read after closing cannot display contact data',
       (tester) async {
     final response = Completer<dynamic>();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
             builder: (context) => Scaffold(
                 body: TextButton(
@@ -235,10 +236,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(
           theme: ThemeConfig.theme(
               brightness: dark ? Brightness.dark : Brightness.light),
-          builder: (context, child) => MediaQuery(
+          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: const TextScaler.linear(2)),
-              child: child!),
+              child: child!)),
           home: Builder(
               builder: (context) => Scaffold(
                       appBar: AppBar(actions: [
@@ -308,7 +309,7 @@ void main() {
       };
     }
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OrderEmailRepairDialog(
                 orderId: 4,
@@ -358,7 +359,7 @@ void main() {
         'current_issues': [issue('bounce')],
       };
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Column(
             children: [
@@ -408,7 +409,7 @@ void main() {
     order.emailDelivery = {
       'current_issues': [issue('suppressed'), issue('unknown', id: 'second')]
     };
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SizedBox(
                 width: 250,
@@ -424,7 +425,7 @@ void main() {
       'attention_count': 2,
       'current_issues': []
     };
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OrderStateCell(
                 label: 'ORDERED', background: Colors.white, order: order))));

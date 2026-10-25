@@ -22,7 +22,7 @@ import 'package:fstapp/components/information/song/song_page.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/js/js_stub.dart';
 import 'package:fstapp/styles/styles_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:fstapp/widgets/pop_button.dart';

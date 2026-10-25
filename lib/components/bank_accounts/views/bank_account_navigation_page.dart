@@ -9,7 +9,7 @@ import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';

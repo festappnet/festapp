@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/theme_config.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../blueprint_seat_state.dart';
 import '../blueprint_strings.dart';
 

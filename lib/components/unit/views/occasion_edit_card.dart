@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
 import 'occasion_sale_badge.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';

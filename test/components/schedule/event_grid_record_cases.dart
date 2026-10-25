@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:festapp_core/program.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -44,7 +45,7 @@ void main() {
       commands.reject = action == 'rejected save';
       late SingleDataGridController<EventGridRecord> controller;
       await tester.pumpWidget(
-          MaterialApp(home: Scaffold(body: Builder(builder: (context) {
+          MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
         EventGridRecord record(EventModel event) =>
             EventGridRecord(event: event, commands: commands, occasionId: 1);
         controller = SingleDataGridController<EventGridRecord>(

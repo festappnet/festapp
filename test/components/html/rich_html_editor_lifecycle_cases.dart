@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:html/parser.dart' as html_parser;
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
@@ -11,7 +12,7 @@ import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 import 'package:image/image.dart' as test_image;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -151,7 +152,7 @@ void main() {
       owner: const HtmlMediaOwner.none(),
       embeddedBlock: countdownBlock(target, () {}),
     );
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
       body:
           SingleChildScrollView(child: RichHtmlEditor(controller: controller)),
@@ -164,7 +165,7 @@ void main() {
     await tester.tap(find.byTooltip(HtmlStrings.moveDown));
     await tester.pump();
     expect(controller.html, '<p>Before</p>$countdownBlockHtml<p>After</p>');
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: CountdownContent(
       targetTime: target,
@@ -214,7 +215,7 @@ void main() {
       final controller = RichHtmlEditorController(
           initialHtml: html, owner: const HtmlMediaOwner.none());
       final original = controller.html;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(body: RichHtmlEditor(controller: controller))));
       await tester.pump();
       expect(find.widgetWithIcon(TextButton, Icons.edit), findsNothing);
@@ -227,7 +228,7 @@ void main() {
   testWidgets('HTML typography survives inline and fullscreen editing',
       (tester) async {
     for (final fontSize in [18.0, 24.0]) {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeData(
           brightness: Brightness.dark,
           textTheme: const TextTheme(
@@ -282,7 +283,7 @@ void main() {
     addTearDown(controller.dispose);
     for (final fullscreen in [false, true]) {
       for (final brightness in [Brightness.light, Brightness.dark]) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(brightness: brightness),
           home: Scaffold(
             body:
@@ -307,7 +308,7 @@ void main() {
     (tester) async {
       var writes = 0;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: EditableHtmlField(
@@ -366,7 +367,7 @@ void main() {
     (tester) async {
       var html = '<p>Original</p>';
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: EditableHtmlField(
               html: html,
@@ -405,7 +406,7 @@ void main() {
     'fullscreen Save tracks edits and Escape confirms before cancelling',
     (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        const MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: EditableHtmlField(
               html: '<p>Original</p>',
@@ -447,7 +448,7 @@ void main() {
     );
     addTearDown(controller.dispose);
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: RichHtmlEditor(controller: controller)),
       ),
     );
@@ -535,7 +536,7 @@ void main() {
     addTearDown(controller.dispose);
     addTearDown(media.dispose);
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: RichHtmlEditor(controller: controller)),
       ),
     );
@@ -554,7 +555,7 @@ void main() {
     late StateSetter rebuild;
     var changes = 0;
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: HtmlEditingScope(
             coordinator: coordinator,
@@ -599,7 +600,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Navigator(
             onGenerateRoute: (_) => MaterialPageRoute<void>(
@@ -689,7 +690,7 @@ void main() {
         var html = '<p>Original</p>';
         var writes = 0;
         await tester.pumpWidget(
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
@@ -748,7 +749,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -794,7 +795,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     String? saved;
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -861,7 +862,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final html = List.generate(80, (i) => '<p>Paragraph $i</p>').join();
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: EditableHtmlField(html: html, onChanged: _ignoreHtml),
@@ -917,7 +918,7 @@ void main() {
           );
           tester.view.devicePixelRatio = 1;
           await tester.pumpWidget(
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeData(brightness: brightness),
               home: Scaffold(
                 body: SingleChildScrollView(
@@ -953,7 +954,7 @@ void main() {
       var html = '<p>Original</p>';
       var writes = 0;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: HtmlEditingScope(
               coordinator: coordinator,
@@ -1013,7 +1014,7 @@ void main() {
       var attempts = 0;
       var html = '<p>Original</p>';
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) => SingleChildScrollView(
@@ -1063,7 +1064,7 @@ Future<RichHtmlEditorController> mountLinkEditor(WidgetTester tester,
     {int start = 10, int end = 10, String initialHtml = linkEditorHtml}) async {
   final controller = RichHtmlEditorController(
       initialHtml: initialHtml, owner: const HtmlMediaOwner.none());
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
           body: SingleChildScrollView(
               child: RichHtmlEditor(controller: controller)))));

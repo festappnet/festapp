@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/external_map_navigation.dart';
 import 'package:fstapp/components/map/ios_navigation_app_picker.dart';
@@ -8,7 +9,7 @@ void main() {
       (tester) async {
     IosNavigationApp? selected;
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: IosNavigationAppPicker(
             apps: const [

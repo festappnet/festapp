@@ -10,7 +10,7 @@ import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 import '../../eshop/db_orders.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../eshop/models/order_model.dart';
 import '../models/form_bundle.dart';

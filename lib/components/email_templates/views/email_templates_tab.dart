@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';

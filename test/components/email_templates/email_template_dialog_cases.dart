@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:convert';
 import 'package:fstapp/components/features/ticket_feature.dart';
@@ -13,7 +14,7 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
@@ -43,7 +44,7 @@ Future<void> openTemplate(WidgetTester tester,
       unitUser: OccasionUserModel(isEditor: true),
       occasionUser: OccasionUserModel(isEditor: true));
   addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
     home: Scaffold(
       body: Builder(
         builder: (context) => TextButton(

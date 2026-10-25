@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +32,7 @@ void main() {
       final boundaryKey = GlobalKey();
       var advances = 0;
       var leaves = 0;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeData(
             fontFamily: 'Futura',
             colorScheme: ColorScheme.fromSeed(
@@ -121,7 +122,7 @@ void main() {
       (tester) async {
     final semantics = tester.ensureSemantics();
     final selected = <String>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: OccasionSetupStoryShell(
           questionTitles: const ['Source', 'Name', 'Start'],
@@ -176,7 +177,7 @@ void main() {
   });
   testWidgets('optional targets do not consume question numbers',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionSetupStoryShell(
       questionTitles: const [
@@ -219,7 +220,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final selected = <String>[];
       for (final active in [0, 8, 17]) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OccasionSetupStoryShell(
           questionTitles: List.generate(18, (i) => 'Full question $i'),

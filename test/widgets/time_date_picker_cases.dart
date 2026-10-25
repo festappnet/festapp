@@ -1,18 +1,20 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' show GlobalWidgetsLocalizations;
+import 'package:cupertino_ui/cupertino_ui.dart' show GlobalCupertinoLocalizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 
-Widget app(Widget child, {Locale locale = const Locale('cs')}) => MaterialApp(
+Widget app(Widget child, {Locale locale = const Locale('cs')}) => MaterialApp(builder: DependencyMaterialBridge.builder,
       locale: locale,
       supportedLocales: const [Locale('cs'), Locale('en')],
-      localizationsDelegates: const [
+      localizationsDelegates: [...const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-      ],
+      ], ...GlobalMaterialLocalizations.delegates],
       home: Scaffold(body: child),
     );
 

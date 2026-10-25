@@ -1,5 +1,5 @@
 import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';

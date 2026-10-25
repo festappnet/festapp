@@ -1,3 +1,4 @@
+import 'package:festapp_core/time.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class ProductPriceChange {
@@ -39,26 +40,6 @@ class ProductPriceChange {
     });
 
   /// All instants that actually map to this wall time. No DST normalization.
-  static List<DateTime> instants(DateTime wall, tz.Location location) {
-    final nominal = DateTime.utc(
-      wall.year,
-      wall.month,
-      wall.day,
-      wall.hour,
-      wall.minute,
-    );
-    final results = <DateTime>[];
-    for (final offset in location.zones.map((z) => z.offset).toSet()) {
-      final instant = nominal.subtract(Duration(milliseconds: offset));
-      final local = tz.TZDateTime.from(instant, location);
-      if (local.year == wall.year &&
-          local.month == wall.month &&
-          local.day == wall.day &&
-          local.hour == wall.hour &&
-          local.minute == wall.minute) {
-        results.add(instant);
-      }
-    }
-    return results..sort();
-  }
+  static List<DateTime> instants(DateTime wall, tz.Location location) =>
+      OccasionTimeContext(location).instantsForWallTime(wall);
 }

@@ -1,6 +1,8 @@
+import 'package:festapp_core/program.dart' as occasion_time;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,7 +11,6 @@ import 'package:fstapp/components/timeline/advanced_timeline_view.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as timezone_data;
 import 'package:timezone/timezone.dart' as timezone;
 
 TimeBlockItem _eventOn(DateTime date) => TimeBlockItem(
@@ -35,11 +36,11 @@ Widget _testApp(List<TimeBlockItem> events, int occasionId,
       assetLoader: const _EmptyAssetLoader(),
       fallbackLocale: const Locale('cs'),
       child: Builder(
-        builder: (context) => MaterialApp(
+        builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: theme ?? ThemeConfig.theme(),
           locale: context.locale,
           supportedLocales: context.supportedLocales,
-          localizationsDelegates: context.localizationDelegates,
+          localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
           home: Scaffold(
             body: advanced
                 ? DefaultTabController(
@@ -84,7 +85,7 @@ void main() {
       ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
     await loader.load();
     SharedPreferences.setMockInitialValues({});
-    timezone_data.initializeTimeZones();
+    occasion_time.OccasionTimeContext.initializeTimeZones();
     timezone.setLocalLocation(timezone.getLocation('Europe/Prague'));
     await EasyLocalization.ensureInitialized();
   });

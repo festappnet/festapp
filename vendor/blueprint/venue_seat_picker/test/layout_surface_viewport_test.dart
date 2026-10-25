@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';

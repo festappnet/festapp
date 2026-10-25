@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/reception/login_qr_transition.dart';
 
 void main() {
   testWidgets('shows an explicit successful QR sign-in confirmation',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: LoginQrTransition(
           state: LoginQrTransitionState.success,
@@ -23,7 +24,7 @@ void main() {
 
   testWidgets('shows progress while the QR credential is exchanged',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: LoginQrTransition(
           state: LoginQrTransitionState.signingIn,

@@ -1,4 +1,5 @@
-import 'package:timezone/data/latest.dart' as timezone_data;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:festapp_core/time.dart' as timezone_data;
 import '../../support/fixtures/rights_context_fixture.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/link.dart';
@@ -10,7 +11,7 @@ import '../../support/fixtures/root_supabase_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -28,7 +29,7 @@ class _Translations extends AssetLoader {
 
 void main() {
   setUpAll(() async {
-    timezone_data.initializeTimeZones();
+    timezone_data.OccasionTimeContext.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
@@ -109,9 +110,9 @@ void main() {
         startLocale: const Locale('en'),
         assetLoader: const _Translations(),
         child: Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                   locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                   supportedLocales: context.supportedLocales,
                   home: Scaffold(
                       body: SizedBox(
@@ -187,9 +188,9 @@ void main() {
         startLocale: const Locale('en'),
         assetLoader: const _Translations(),
         child: Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                   locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                   supportedLocales: context.supportedLocales,
                   home: Scaffold(body: OrderBankSyncWarning(order: order)),
                 )),
@@ -242,9 +243,9 @@ void main() {
       startLocale: const Locale('en'),
       assetLoader: const _Translations(),
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 supportedLocales: context.supportedLocales,
                 home: const Scaffold(
                     body: BankSyncWarningButton(
@@ -327,9 +328,9 @@ void main() {
           startLocale: const Locale('en'),
           assetLoader: const _Translations(),
           child: Builder(
-              builder: (context) => MaterialApp(
+              builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                     supportedLocales: context.supportedLocales,
                     home: const BankAccountConnectionSettingsPage(
                         accountId: '42'),

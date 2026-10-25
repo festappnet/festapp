@@ -1,5 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'mcp_callback_browser.dart';

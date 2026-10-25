@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_header.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:trina_grid/trina_grid.dart';

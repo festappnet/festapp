@@ -43,7 +43,7 @@ class OccasionSettingsModel {
         dataPart[Tb.occasions.services] as Map<String, dynamic>?;
     final gameSettings =
         dataPart[Tb.occasions.data_game] as Map<String, dynamic>? ??
-            <String, dynamic>{};
+        <String, dynamic>{};
 
     final gameStartString =
         gameSettings[Tb.occasions.data_game_start] as String?;
@@ -53,10 +53,12 @@ class OccasionSettingsModel {
       eventStartTime: occasion.startTime,
       eventEndTime: occasion.endTime,
       services: servicesPart,
-      gameStartTime:
-          gameStartString != null ? DateTime.tryParse(gameStartString) : null,
-      gameEndTime:
-          gameEndString != null ? DateTime.tryParse(gameEndString) : null,
+      gameStartTime: gameStartString != null
+          ? DateTime.tryParse(gameStartString)
+          : null,
+      gameEndTime: gameEndString != null
+          ? DateTime.tryParse(gameEndString)
+          : null,
       features: occasion.features,
       data: occasion.data,
       isHidden: occasion.isHidden,
@@ -100,8 +102,11 @@ class OccasionSettingsModel {
   }
 
   Map<String, dynamic> toJson() {
+    final existingGame = data?[Tb.occasions.data_game];
     final dataMap = <String, dynamic>{
+      ...?data,
       Tb.occasions.data_game: {
+        if (existingGame is Map<String, dynamic>) ...existingGame,
         Tb.occasions.data_game_start: gameStartTime?.toIso8601String(),
         Tb.occasions.data_game_end: gameEndTime?.toIso8601String(),
       },
@@ -118,13 +123,16 @@ class OccasionSettingsModel {
   static OccasionSettingsModel defaultSettings = OccasionSettingsModel();
 
   ServiceItemModel? getReferenceToService(
-      String serviceType, Map<String, dynamic>? userServices) {
+    String serviceType,
+    Map<String, dynamic>? userServices,
+  ) {
     // Retrieve the list of services for the specified service type
     var servs = services?[serviceType] ?? [];
 
     var serviceRecords = userServices?[serviceType] as Map? ?? {};
-    var userCode =
-        serviceRecords.keys.firstWhereOrNull((key) => key.isNotEmpty);
+    var userCode = serviceRecords.keys.firstWhereOrNull(
+      (key) => key.isNotEmpty,
+    );
     if (userCode == null) {
       return null;
     }

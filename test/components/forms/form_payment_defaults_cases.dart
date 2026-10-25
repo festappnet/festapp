@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:flutter/foundation.dart';
@@ -5,7 +6,7 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:festapp_core/forms.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -64,7 +65,7 @@ void main() {
       var saves = 0;
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: FormSettingsContent(
             bankConnectionChanges: _bankChanges,
             formLink: 'test',

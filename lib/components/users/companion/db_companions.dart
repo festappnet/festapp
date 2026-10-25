@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/schedule/db_events.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';

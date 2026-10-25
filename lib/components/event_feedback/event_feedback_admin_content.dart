@@ -1,5 +1,5 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/event_feedback/db_event_feedback.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_admin_row.dart';

@@ -1,7 +1,7 @@
 import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';

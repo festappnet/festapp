@@ -4,7 +4,7 @@ import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';

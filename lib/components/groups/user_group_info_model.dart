@@ -1,6 +1,6 @@
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';

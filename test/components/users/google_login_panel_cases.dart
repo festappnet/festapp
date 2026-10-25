@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,10 +115,10 @@ void main() {
                 path: 'assets/translations',
                 assetLoader: translations,
                 child: Builder(
-                    builder: (context) => MaterialApp(
+                    builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                           locale: context.locale,
                           supportedLocales: context.supportedLocales,
-                          localizationsDelegates: context.localizationDelegates,
+                          localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                           theme: theme,
                           home: child,
                         )),

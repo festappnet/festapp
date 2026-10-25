@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/speakers/speaker_topic_model.dart';
 import 'package:fstapp/components/speakers/topic_picker.dart';
@@ -16,7 +17,7 @@ Future<void> _pumpTopicPicker(
 }) async {
   int? selected = initial;
   await tester.pumpWidget(
-    MaterialApp(
+    MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: StatefulBuilder(
           builder: (context, setState) => TopicPicker(

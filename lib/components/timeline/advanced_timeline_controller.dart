@@ -1,5 +1,5 @@
 // advanced_timeline_controller.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'schedule_helper.dart'; // Assuming this is a local file
 
 /// Centralizes all data & callbacks for the timeline view.

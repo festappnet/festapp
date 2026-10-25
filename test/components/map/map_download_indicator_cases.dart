@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/map_download_indicator.dart';
 
 void main() {
   testWidgets('checking an existing cache is visually silent', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: MapDownloadIndicator(
             state: MapDownloadCheckingCache(),
@@ -22,7 +23,7 @@ void main() {
   testWidgets('an actual download shows one determinate percentage indicator',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: MapDownloadIndicator(
             state: MapDownloading(0.42),

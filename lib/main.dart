@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:intl/intl.dart' show Intl;
 import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
@@ -34,7 +35,7 @@ import 'package:fstapp/services/installation_cutover_service.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -220,7 +221,7 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
     if (_isReady) return widget.buildReadyApp();
     final baseTheme = ThemeConfig.theme();
     if (_startupFailed) {
-      return MaterialApp(
+      return MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: baseTheme,
         darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
         debugShowCheckedModeBanner: false,
@@ -234,7 +235,7 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
         ),
       );
     }
-    return MaterialApp(
+    return MaterialApp(builder: DependencyMaterialBridge.builder,
       theme: baseTheme,
       darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
       key: const ValueKey('festapp-startup-material-app'),
@@ -601,7 +602,7 @@ class _MyAppState extends State<MyApp> {
           navigatorObservers: () => [RoutingObserver()],
         ),
         debugShowCheckedModeBanner: false,
-        builder: (context, child) {
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) {
           return CallbackShortcuts(
             bindings: {
               // Ctrl+F on Windows/Linux, Cmd+F on macOS (Command maps to meta,
@@ -629,9 +630,10 @@ class _MyAppState extends State<MyApp> {
               ],
             ),
           );
-        },
+        }),
         localizationsDelegates: [
           ...context.localizationDelegates,
+          ...GlobalMaterialLocalizations.delegates,
           FormBuilderLocalizations.delegate,
           VenueLayoutLocalizations.delegate,
         ],

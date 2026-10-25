@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/router_service.dart';

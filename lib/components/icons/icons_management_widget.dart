@@ -2,9 +2,9 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 import 'package:fstapp/components/icons/db_icons.dart';
 import 'package:fstapp/components/icons/icons_strings.dart';
@@ -343,7 +343,7 @@ class _UploadIconDialogState extends State<UploadIconDialog> {
     super.dispose();
   }
 
-  Future<void> _onFile(XFile file) async {
+  Future<void> _onFile(ImportFile file) async {
     final bytes = await file.readAsBytes();
     setState(() {
       _error = null;

@@ -1,7 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'common_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/services/exception_handler.dart';

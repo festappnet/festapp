@@ -1,7 +1,7 @@
 // Real application, local Auth/REST only. External push callbacks are stubbed.
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/main.dart' as app;
 import 'package:fstapp/data_services/synchro_service.dart';

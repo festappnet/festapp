@@ -21,7 +21,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'blueprint_plan_editor.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';

@@ -1,6 +1,5 @@
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:csv/csv.dart';
-import 'package:csv/csv_settings_autodetection.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:intl/intl.dart';
@@ -10,33 +9,30 @@ class ImportHelper {
   static const String deliveryEmailField = 'email_delivery';
 
   static Map<String, String> get migrateColumns => {
-        Tb.occasion_users.data_email: "E-mailová adresa",
-        Tb.occasion_users.data_sex: "Jsi:",
-        Tb.occasion_users.data_name: "Jméno:",
-        Tb.occasion_users.data_surname: "Příjmení:",
-        Tb.occasion_users.services_accommodation: "Ubytování:",
-        Tb.occasion_users.data_phone: "Mobilní telefon:",
-        Tb.occasion_users.data_text1: "Typ účastníka:",
-        Tb.occasion_users.data_text2: "Přípravný tým:",
-        Tb.occasion_users.data_birthDate: "Datum narození:",
-        Tb.occasion_users.data_note: "Poznámka:",
-        Tb.occasion_users.data_diet: "Stravovací omezení:",
-        Tb.occasion_users.services_food: "Stravování:",
-        groupColumn: "Skupina:",
-      };
+    Tb.occasion_users.data_email: "E-mailová adresa",
+    Tb.occasion_users.data_sex: "Jsi:",
+    Tb.occasion_users.data_name: "Jméno:",
+    Tb.occasion_users.data_surname: "Příjmení:",
+    Tb.occasion_users.services_accommodation: "Ubytování:",
+    Tb.occasion_users.data_phone: "Mobilní telefon:",
+    Tb.occasion_users.data_text1: "Typ účastníka:",
+    Tb.occasion_users.data_text2: "Přípravný tým:",
+    Tb.occasion_users.data_birthDate: "Datum narození:",
+    Tb.occasion_users.data_note: "Poznámka:",
+    Tb.occasion_users.data_diet: "Stravovací omezení:",
+    Tb.occasion_users.services_food: "Stravování:",
+    groupColumn: "Skupina:",
+  };
 
-  static Future<List<Map<String, dynamic>>> getUsersFromFile(XFile file) async {
+  static Future<List<Map<String, dynamic>>> getUsersFromFile(ImportFile file) async {
     final rawData = await file.readAsString();
     return getUsersFromCsv(rawData);
   }
 
   static List<Map<String, dynamic>> getUsersFromCsv(String rawData) {
-    final fields = const CsvToListConverter(
-      csvSettingsDetector: FirstOccurrenceSettingsDetector(
-        fieldDelimiters: [',', ';'],
-        eols: ['\r\n', '\n'],
-      ),
-    ).convert(rawData);
+    // Imported user fields are text, including phone numbers and postal codes.
+    // Keep quoted newlines and let the maintained decoder detect CSV dialects.
+    final fields = Csv().decode(rawData);
 
     if (fields.isEmpty) {
       throw const FormatException('CSV file is empty.');
@@ -56,12 +52,14 @@ class ImportHelper {
       ];
       if (matchingIndexes.length > 1) {
         throw FormatException(
-            'CSV contains duplicate column ${keyValue.value}.');
+          'CSV contains duplicate column ${keyValue.value}.',
+        );
       }
       var index = matchingIndexes.isEmpty ? -1 : matchingIndexes.single;
       if (index == -1 && keyValue.key == groupColumn) {
-        index = firstRow
-            .indexWhere((header) => header.trim().toLowerCase() == 'skupina');
+        index = firstRow.indexWhere(
+          (header) => header.trim().toLowerCase() == 'skupina',
+        );
       }
       if (index == -1) {
         continue;
@@ -103,7 +101,8 @@ class ImportHelper {
           if (trimmedString.isEmpty) {
             continue;
           }
-          trimmedString = (trimmedString.toLowerCase().startsWith("m") ||
+          trimmedString =
+              (trimmedString.toLowerCase().startsWith("m") ||
                   trimmedString.toLowerCase().startsWith("k"))
               ? "male"
               : "female";
@@ -116,16 +115,24 @@ class ImportHelper {
           userJsonObject[entry.key] = dateTime.toIso8601String();
           continue;
         } else if (entry.key == Tb.occasion_users.services_food) {
-          var foodJson =
-              createServicesJson(trimmedString, DbOccasions.serviceTypeFood);
-          userJsonObject[Tb.occasion_users.services] =
-              addJson(userJsonObject[Tb.occasion_users.services], foodJson);
+          var foodJson = createServicesJson(
+            trimmedString,
+            DbOccasions.serviceTypeFood,
+          );
+          userJsonObject[Tb.occasion_users.services] = addJson(
+            userJsonObject[Tb.occasion_users.services],
+            foodJson,
+          );
           continue;
         } else if (entry.key == Tb.occasion_users.services_accommodation) {
           var accommodationJson = createServicesJson(
-              trimmedString, DbOccasions.serviceTypeAccommodation);
+            trimmedString,
+            DbOccasions.serviceTypeAccommodation,
+          );
           userJsonObject[Tb.occasion_users.services] = addJson(
-              userJsonObject[Tb.occasion_users.services], accommodationJson);
+            userJsonObject[Tb.occasion_users.services],
+            accommodationJson,
+          );
           continue;
         }
 
@@ -165,8 +172,10 @@ class ImportHelper {
     final deliveryEmails = usersByDeliveryEmail.keys.toList()..sort();
     for (final deliveryEmail in deliveryEmails) {
       final sharedMailboxUsers = usersByDeliveryEmail[deliveryEmail]!
-        ..sort((first, second) =>
-            _stableIdentityKey(first).compareTo(_stableIdentityKey(second)));
+        ..sort(
+          (first, second) =>
+              _stableIdentityKey(first).compareTo(_stableIdentityKey(second)),
+        );
       final identityKeys = sharedMailboxUsers.map(_stableIdentityKey).toList();
       if (identityKeys.toSet().length != identityKeys.length) {
         throw const FormatException(
@@ -194,11 +203,9 @@ class ImportHelper {
   }
 
   static String _stableIdentityKey(Map<String, dynamic> user) => [
-        user[Tb.occasion_users.data_surname],
-        user[Tb.occasion_users.data_name],
-      ]
-          .map((value) => value?.toString().trim().toLowerCase() ?? '')
-          .join('\u0000');
+    user[Tb.occasion_users.data_surname],
+    user[Tb.occasion_users.data_name],
+  ].map((value) => value?.toString().trim().toLowerCase() ?? '').join('\u0000');
 
   static String _withNumericAlias(String email, int suffix) {
     final at = email.lastIndexOf('@');
@@ -222,7 +229,9 @@ class ImportHelper {
   }
 
   static Map<String, dynamic> createServicesJson(
-      String data, String serviceType) {
+    String data,
+    String serviceType,
+  ) {
     final items = data
         .split(',')
         .map((item) => item.trim())
@@ -237,14 +246,18 @@ class ImportHelper {
   }
 
   static Map<String, dynamic> addJson(
-      Map<String, dynamic>? existingJson, Map<String, dynamic> newJson) {
+    Map<String, dynamic>? existingJson,
+    Map<String, dynamic> newJson,
+  ) {
     existingJson ??= {};
 
     // Merge new JSON into existing JSON
     newJson.forEach((key, value) {
       if (existingJson![key] is Map && value is Map) {
-        existingJson[key] = addJson(existingJson[key] as Map<String, dynamic>,
-            value as Map<String, dynamic>);
+        existingJson[key] = addJson(
+          existingJson[key] as Map<String, dynamic>,
+          value as Map<String, dynamic>,
+        );
       } else {
         existingJson[key] = value;
       }

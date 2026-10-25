@@ -5,7 +5,7 @@ import '../../features/ticket_feature.dart';
 import '../../ticket_layout/views/ticket_delivery_selector.dart';
 import '../../ticket_layout/views/ticket_delivery_preview.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import '../occasion_sale_strings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';

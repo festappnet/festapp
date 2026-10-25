@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
@@ -38,7 +39,7 @@ void main() {
   });
 
   testWidgets('native offline maps use MapLibre', (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: true,
         model: model(),
@@ -56,7 +57,7 @@ void main() {
 
   testWidgets('keeps the concrete surface warm while its tab is inactive',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(active: false),
@@ -69,7 +70,7 @@ void main() {
   });
 
   testWidgets('online raster supports the shared maximum zoom', (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(),
@@ -84,7 +85,7 @@ void main() {
 
   testWidgets('Raster renders the location supplied by the shared map scene',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(
@@ -115,7 +116,7 @@ void main() {
 
   testWidgets('Raster hides a retained location while its scene is inactive',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(
@@ -135,7 +136,7 @@ void main() {
 
   testWidgets('does not silently fall back when MapLibre is unavailable',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: true,
         model: model(),
@@ -163,7 +164,7 @@ void main() {
 
   testWidgets('online raster overzooms without requesting deeper raster tiles',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(),
@@ -184,7 +185,7 @@ void main() {
   testWidgets(
       'configured provider failure switches layer and attribution to OSM',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: model(),
@@ -269,7 +270,7 @@ void main() {
       onPlaceLongPress: (placeId) => longPressedPlaceId = placeId,
     );
 
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: MapRendererHost(
         isOffline: false,
         model: longPressModel,

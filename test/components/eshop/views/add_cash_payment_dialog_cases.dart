@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/views/add_cash_payment_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -24,7 +25,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: AddCashPaymentDialog(
             unitId: 100,

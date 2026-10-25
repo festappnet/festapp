@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:typed_data';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_image_preview.dart';
 import 'package:image/image.dart' as image;
@@ -28,7 +29,7 @@ void main() {
       stream.removeListener(listener);
       info.dispose();
     });
-    await tester.pumpWidget(MaterialApp(home: preview));
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: preview));
     expect(find.byType(Image), findsOneWidget);
     expect(bytes, copy);
     await tester.pumpWidget(const SizedBox());

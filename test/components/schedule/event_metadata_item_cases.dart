@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/schedule/event_metadata_item.dart';
 import 'package:fstapp/theme_config.dart';
@@ -16,7 +17,7 @@ void main() {
             data: const MediaQueryData(textScaler: TextScaler.linear(2)),
             child: const Center(),
           ),
-          builder: (context, child) => MediaQuery(
+          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(2)),
             child: Center(
@@ -32,7 +33,7 @@ void main() {
                 ]),
               ),
             ),
-          ),
+          )),
         ));
         final textRect = tester.getRect(find.text(duration));
         final rowRect = tester.getRect(find.byType(EventMetadataItem));
@@ -47,7 +48,7 @@ void main() {
   testWidgets(
       'compact metadata remains scrollable without an unbounded flex error',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       theme: ThemeConfig.theme(),
       home: const Center(
         child: SizedBox(

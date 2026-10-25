@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Flat, renderer-neutral current-location mark. It deliberately echoes a map
 /// pin without sharing the narrower silhouette used by place markers.

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/unit/verification/db_unit_verification.dart';
 import 'package:fstapp/components/unit/verification/verification_queue.dart';
@@ -66,10 +67,10 @@ void main() {
             tester,
             MaterialApp(
               navigatorKey: navigator,
-              builder: (context, child) => MediaQuery(
+              builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                   data: MediaQuery.of(context)
                       .copyWith(textScaler: TextScaler.linear(textScale)),
-                  child: child!),
+                  child: child!)),
               home: const Scaffold(body: Text('Review queue')),
             ));
     showDialog<void>(

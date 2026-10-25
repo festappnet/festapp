@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart' as sdk_material show Checkbox;
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:ui' show PointerDeviceKind;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_column_header.dart';
@@ -34,7 +36,7 @@ Future<TrinaGridStateManager> mountGrid(
 }) async {
   DataGridColumnHeader.install(columns, explanations, style);
   late TrinaGridStateManager manager;
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
     home: Scaffold(
       body: MediaQuery(
         data: MediaQueryData(
@@ -233,7 +235,7 @@ void main() {
       expect(text.style, style.columnTextStyle);
       await tester.tap(find.descendant(
         of: find.byType(DataGridColumnHeader),
-        matching: find.byType(Checkbox),
+        matching: find.byType(sdk_material.Checkbox),
       ));
       await tester.pumpAndSettle();
       expect(manager.rows.every((row) => row.checked == true), isTrue);
@@ -331,7 +333,7 @@ void main() {
       (tester) async {
     late SingleDataGridController<_MemoryRow> controller;
     final explanations = {'Value': help};
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(body: Builder(builder: (context) {
         controller = SingleDataGridController<_MemoryRow>(
           context: context,

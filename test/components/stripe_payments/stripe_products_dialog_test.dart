@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -73,7 +74,7 @@ void main() {
         );
         await environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: Scaffold(
                     body: ProductsDialog(
               ticketId: 2,

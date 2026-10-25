@@ -1,5 +1,5 @@
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
 import '../deposit_feature.dart';

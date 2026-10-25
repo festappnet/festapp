@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/widgets_view/form_total_price.dart';
 
@@ -8,7 +9,7 @@ void main() {
       testWidgets(
           'floating $currency total keeps ${stripe ? 'Stripe cents' : 'legacy bank rounding'}',
           (tester) async {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: FormTotalPrice(
           amount: 98.76,

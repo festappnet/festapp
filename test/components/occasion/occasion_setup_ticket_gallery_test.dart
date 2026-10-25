@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/fonts/ticket_font_ids.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_ticket_gallery.dart';
@@ -28,7 +29,7 @@ void main() {
     var status = 'pending';
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: StatefulBuilder(
                 builder: (context, update) => Scaffold(
                       body: Column(children: [
@@ -79,7 +80,7 @@ void main() {
     OccasionSetupTicketChoice? choice;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: OccasionSetupTicketGallery(

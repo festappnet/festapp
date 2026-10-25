@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/activities/activity_commands.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:festapp_core/time.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 void main() {
@@ -91,7 +91,7 @@ void main() {
       'UTC history and undo preserve instants across DST; restored graph keeps current session clocks',
       () {
     if (!tz.timeZoneDatabase.isInitialized) {
-      tzdata.initializeTimeZones();
+      tzdata.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));

@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'stripe_connection_api.dart';

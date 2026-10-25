@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/scan/scan_strings.dart';

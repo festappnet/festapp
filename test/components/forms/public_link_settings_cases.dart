@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/forms/views/form_embed_code.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
@@ -6,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -68,7 +69,7 @@ void main() {
       (tester) async {
     await _environment.pumpWidget(
         tester,
-        const MaterialApp(
+        const MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: FormPublicLink(link: 'draft', savedLink: 'saved'))));
     await tester.tap(find.text(FormStrings.embedAction));
@@ -82,7 +83,7 @@ void main() {
     await tester.pumpAndSettle();
     await _environment.pumpWidget(
         tester,
-        const MaterialApp(
+        const MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(body: FormPublicLink(link: 'new-draft'))));
     await tester.pumpAndSettle();
     expect(find.text(FormStrings.embedAction), findsNothing);
@@ -113,7 +114,7 @@ void main() {
     var saves = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: FormSettingsContent(
           bankConnectionChanges: _bankChanges,
           formLink: 'Legacy_address',

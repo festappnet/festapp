@@ -1,6 +1,6 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../ticket_layout_strings.dart';
 import 'ticket_color_suggestions.dart';

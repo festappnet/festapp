@@ -1,7 +1,7 @@
 import 'waitlist_summary_model.dart';
 import '../../forms/waitlist_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';

@@ -1,5 +1,5 @@
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/db_inventory_pools.dart';
 import 'package:fstapp/services/exception_handler.dart';

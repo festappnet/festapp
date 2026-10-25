@@ -1,5 +1,5 @@
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import '../services_feature.dart';

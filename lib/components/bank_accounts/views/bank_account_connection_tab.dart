@@ -4,7 +4,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';

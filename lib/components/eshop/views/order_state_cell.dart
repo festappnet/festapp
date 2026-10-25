@@ -3,7 +3,7 @@ import 'order_email_repair_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'order_bank_sync_warning.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 import '../models/order_model.dart';
 import '../orders_strings.dart';

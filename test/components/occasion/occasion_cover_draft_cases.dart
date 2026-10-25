@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:timezone/timezone.dart' as fixtureTimezone;
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -8,7 +9,7 @@ import 'package:fstapp/app_router.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
@@ -18,7 +19,7 @@ import 'package:fstapp/components/occasion_settings/occasion_settings_tab.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:festapp_core/time.dart' as tz;
 
 late WidgetEnvironmentFixture _environment;
 
@@ -55,7 +56,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting('cs');
     if (!fixtureTimezone.timeZoneDatabase.isInitialized) {
-      tz.initializeTimeZones();
+      tz.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = fixtureTimezone.local;
     addTearDown(() => fixtureTimezone.setLocalLocation(previousZone));
@@ -85,7 +86,7 @@ void main() {
             supportedLocales: const [Locale('cs')],
             startLocale: const Locale('cs'),
             path: 'assets/translations',
-            child: MaterialApp.router(
+            child: MaterialApp.router(builder: DependencyMaterialBridge.builder,
                 routerConfig: router.config(
                     deepLinkBuilder: (_) =>
                         const DeepLink.path('/example/settings')))));

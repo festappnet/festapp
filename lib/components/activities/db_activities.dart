@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/activities/activities_component_strings.dart';
 import 'package:fstapp/components/activities/activity_data_helper.dart';
 import 'package:fstapp/services/time_helper.dart';

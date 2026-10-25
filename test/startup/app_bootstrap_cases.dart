@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/main.dart';
 import 'package:fstapp/startup/startup_failure_policy.dart';
@@ -131,7 +132,7 @@ void main() {
 
     await tester.pumpWidget(FestappBootstrap(
       initialize: () => initialization.future,
-      buildReadyApp: () => const MaterialApp(home: Text('ready')),
+      buildReadyApp: () => const MaterialApp(builder: DependencyMaterialBridge.builder, home: Text('ready')),
     ));
 
     expect(find.byKey(FestappBootstrap.loadingKey), findsOneWidget);
@@ -149,7 +150,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(FestappBootstrap(
       initialize: () => Future<void>.error(Exception('startup failed')),
-      buildReadyApp: () => const MaterialApp(home: Text('offline shell')),
+      buildReadyApp: () => const MaterialApp(builder: DependencyMaterialBridge.builder, home: Text('offline shell')),
     ));
 
     await tester.pump();

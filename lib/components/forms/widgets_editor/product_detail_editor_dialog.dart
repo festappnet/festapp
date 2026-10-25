@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';

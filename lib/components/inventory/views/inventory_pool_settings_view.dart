@@ -2,7 +2,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';

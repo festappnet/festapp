@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_strings.dart';
@@ -38,7 +39,7 @@ void main() {
     late SingleDataGridController<RowModel> controller;
     var canBulkEdit = true;
     await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: Builder(builder: (context) {
+        MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
       controller = SingleDataGridController<RowModel>(
         context: context,
         loadData: () async => [RowModel(1)],

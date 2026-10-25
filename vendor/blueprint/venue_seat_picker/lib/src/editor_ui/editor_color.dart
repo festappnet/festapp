@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart' as sdk_material;
+
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'editor_image_palette.dart';
@@ -369,27 +371,34 @@ class _EditorColorDialogState extends State<EditorColorDialog> {
                     ],
                   ),
                 ),
-              LayoutBuilder(
-                builder: (context, constraints) => ColorPicker(
-                  key: ValueKey(_secondaryActive),
-                  pickerColor: _active.color,
-                  onColorChanged: (color) => _change(
-                    EditorColorValue(
-                      hex: color
-                          .toARGB32()
-                          .toRadixString(16)
-                          .padLeft(8, '0')
-                          .substring(2),
-                      opacity: _active.opacity,
+              // Required until flutter_colorpicker adopts standalone UI types.
+              // ignore: deprecated_member_use
+              MaterialUiCompatibilityBridge(
+                child: sdk_material.Material(
+                  type: sdk_material.MaterialType.transparency,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => ColorPicker(
+                      key: ValueKey(_secondaryActive),
+                      pickerColor: _active.color,
+                      onColorChanged: (color) => _change(
+                        EditorColorValue(
+                          hex: color
+                              .toARGB32()
+                              .toRadixString(16)
+                              .padLeft(8, '0')
+                              .substring(2),
+                          opacity: _active.opacity,
+                        ),
+                      ),
+                      enableAlpha: false,
+                      portraitOnly: true,
+                      labelTypes: const [],
+                      displayThumbColor: true,
+                      colorPickerWidth: constraints.maxWidth,
+                      pickerAreaHeightPercent: .48,
+                      pickerAreaBorderRadius: BorderRadius.circular(6),
                     ),
                   ),
-                  enableAlpha: false,
-                  portraitOnly: true,
-                  labelTypes: const [],
-                  displayThumbColor: true,
-                  colorPickerWidth: constraints.maxWidth,
-                  pickerAreaHeightPercent: .48,
-                  pickerAreaBorderRadius: BorderRadius.circular(6),
                 ),
               ),
               TextField(

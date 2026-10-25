@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/map_feature.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
@@ -21,7 +22,7 @@ void main() {
       onPlaceTap: (_) {},
       onCameraReady: viewport.markReady,
     );
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: SizedBox(
         width: 800,
         height: 600,

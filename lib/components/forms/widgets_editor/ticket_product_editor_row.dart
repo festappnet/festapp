@@ -1,6 +1,6 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';

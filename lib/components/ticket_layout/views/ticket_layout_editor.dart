@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import '../../_shared/editor_file_drop_region.dart';
 import '../../_shared/editor_file_drop_strings.dart';
 import '../../images/image_upload_limits.dart';
@@ -22,7 +22,7 @@ import '../../fonts/font_family_picker.dart';
 import '../../fonts/ticket_font_catalog.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
@@ -335,7 +335,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) setState(() => pdfBusy = false);
   }
 
-  Future<String?> upload(XFile file) async {
+  Future<String?> upload(ImportFile file) async {
     if (!_canChangeBackground) return null;
     setState(() => imageBusy = true);
     String? uploaded;

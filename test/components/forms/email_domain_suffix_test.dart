@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
@@ -23,7 +24,7 @@ void main() {
     testWidgets('design $card: email errors wait for blur, including corrections', (tester) async {
       final key = GlobalKey<_HarnessState>();
       await environment.pumpWidget(tester,
-          MaterialApp(home: _Harness(key: key, card: card, tickets: true)));
+          MaterialApp(builder: DependencyMaterialBridge.builder, home: _Harness(key: key, card: card, tickets: true)));
       final inputs = find.byType(TextField);
       final error = find.text(FormHelper.emailInvalidMessage());
       await tester.enterText(inputs.at(0), 'bujnmi@co');
@@ -48,7 +49,7 @@ void main() {
         (tester) async {
       final key = GlobalKey<_HarnessState>();
       await environment.pumpWidget(tester,
-          MaterialApp(home: _Harness(key: key, card: card, tickets: true)));
+          MaterialApp(builder: DependencyMaterialBridge.builder, home: _Harness(key: key, card: card, tickets: true)));
       final inputs = find.byType(TextField);
       await tester.enterText(inputs.at(0), 'a@example.czz');
       expect(find.text(FormStrings.emailSuffixConfirm), findsNothing);
@@ -92,7 +93,7 @@ void main() {
           reason: 'suffix warnings are not format errors');
       // A fresh form session must not inherit confirmation.
       await environment.pumpWidget(
-          tester, MaterialApp(home: _Harness(key: UniqueKey(), card: card)));
+          tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: _Harness(key: UniqueKey(), card: card)));
       await tester.enterText(find.byType(TextField), 'a@example.czz');
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
@@ -104,7 +105,7 @@ void main() {
       (tester) async {
     final key = GlobalKey<_HarnessState>();
     await environment.pumpWidget(
-        tester, MaterialApp(home: _Harness(key: key, card: false)));
+        tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: _Harness(key: key, card: false)));
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
     expect(key.currentState!.requests, 0);
@@ -123,7 +124,7 @@ void main() {
     for (final mode in ['optional', 'hidden', 'disabled']) {
       final special = GlobalKey<_HarnessState>();
       await environment.pumpWidget(tester,
-          MaterialApp(home: _Harness(key: special, card: true, mode: mode)));
+          MaterialApp(builder: DependencyMaterialBridge.builder, home: _Harness(key: special, card: true, mode: mode)));
       if (mode != 'optional') {
         special.currentState!.formKey.currentState!.fields['1']!
             .didChange('a@example.czz');

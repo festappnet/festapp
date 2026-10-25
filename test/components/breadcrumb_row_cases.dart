@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/breadcrumb_row.dart';
@@ -16,7 +17,7 @@ void main() {
         '${withIcon ? "form" : "admin"} breadcrumb fonts share a baseline',
         (tester) async {
       for (final scale in [1.0, 1.5]) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeConfig.theme(),
             home: Scaffold(
                 appBar: AppBar(

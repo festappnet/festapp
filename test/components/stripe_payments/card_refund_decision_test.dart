@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/card_refund_decision_api.dart';
 import 'package:fstapp/components/stripe_payments/card_refund_decision_dialog.dart';
@@ -73,7 +74,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Builder(
                 builder: (context) => Scaffold(
                       body: TextButton(
@@ -178,7 +179,7 @@ void main() {
       });
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: CardRefundDecisionPanel(
           orderId: 10,

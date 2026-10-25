@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -37,7 +38,7 @@ void main() {
     final pending = Completer<void>();
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 400,
@@ -96,7 +97,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: dark ? ThemeData.dark() : ThemeData.light(),
               home: MediaQuery(
                   data: const MediaQueryData(textScaler: TextScaler.linear(2)),

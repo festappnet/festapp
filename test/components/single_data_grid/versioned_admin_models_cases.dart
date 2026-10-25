@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/information/information_model.dart';
@@ -18,7 +19,7 @@ void main() {
       (tester) async {
     const expectedAggregateVersion = 13;
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(builder: (builderContext) {
         context = builderContext;
         return const SizedBox();

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/product_grid_record.dart';
@@ -24,7 +25,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 // Supabase's storage fixture uses its shared_preferences dependency.
 // ignore: depend_on_referenced_packages
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:festapp_core/time.dart' as tz;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +43,7 @@ void main() {
         version: '1',
         buildNumber: '1',
         buildSignature: '');
-    tz.initializeTimeZones();
+    tz.OccasionTimeContext.initializeTimeZones();
     fixture = await RootSupabaseFixture.open((request) async {
       if (request.url.path == '/auth/v1/logout') {
         return http.Response('', 204, request: request);
@@ -287,7 +288,7 @@ void main() {
           commands: commands,
           guard: ExceptionHandler.guardVoid);
       await tester
-          .pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+          .pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: SizedBox())));
       final context = tester.element(find.byType(Scaffold));
       const channel = MethodChannel('PonnamKarthik/fluttertoast');
       final messenger =

@@ -17,7 +17,7 @@ import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/widgets/pop_button.dart';
 import 'package:fstapp/components/images/zoomable_image/zoomable_image.dart';
 import '../html/rich_html_editor_controller.dart';

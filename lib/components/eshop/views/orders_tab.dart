@@ -1,7 +1,7 @@
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/eshop/views/orders_history_content.dart';

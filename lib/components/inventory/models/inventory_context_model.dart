@@ -3,7 +3,7 @@ import 'package:fstapp/components/eshop/models/spot_model.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'inventory_pool_model.dart';
 

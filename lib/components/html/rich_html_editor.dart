@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:flutter/services.dart';
@@ -551,13 +551,12 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   Future<void> _image() async {
     final selection = controller.editor.composer.selection;
     final revision = controller.revision;
-    final selected = await FilePicker.pickFiles(
+    final selected = await FilePicker.pickFile(
         type: FileType.custom,
-        allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic'],
-        withData: true);
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic']);
     if (selected == null || !mounted) return;
-    final bytes = selected.files.single.bytes;
-    if (bytes == null) throw StateError('Image bytes are unavailable');
+    final bytes = await selected.readAsBytes();
+    if (!mounted) return;
     if (controller.revision != revision)
       throw StateError('The document changed during image selection');
     if (selection != null)

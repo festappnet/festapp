@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,7 +31,7 @@ void main() {
     testWidgets(
         'delivery and engagement have distinct check indicators: $state',
         (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: EmailDeliveryIndicator(summary: {'state': state}))));
       final opened = ['open', 'click'].contains(state);
@@ -52,7 +53,7 @@ void main() {
       'email explanation is directly tappable, accessible and does not activate its row',
       (tester) async {
     var rowTaps = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: GestureDetector(
                 onTap: () => rowTaps++,
@@ -65,7 +66,7 @@ void main() {
     expect(rowTaps, 0);
   });
   testWidgets('keyboard focus and Enter show explanation', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: EmailDeliveryIndicator(summary: summary))));
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pumpAndSettle();
@@ -81,7 +82,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: EmailDeliveryIndicator())));
+        const MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: EmailDeliveryIndicator())));
     expect(find.byIcon(Icons.mail_outline), findsOneWidget);
     await tester.tap(find.byType(IconButton));
     await tester.pumpAndSettle();

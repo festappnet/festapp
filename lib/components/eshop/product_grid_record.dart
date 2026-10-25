@@ -1,5 +1,5 @@
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';

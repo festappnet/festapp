@@ -27,7 +27,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/blueprint/seat_reservation/widgets/seat_reservation_widget.dart';

@@ -1,7 +1,7 @@
 import 'email_delivery_issue_icon.dart';
 import 'order_email_issue.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'email_delivery_strings.dart';

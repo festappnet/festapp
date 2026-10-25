@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/html/html_strings.dart';

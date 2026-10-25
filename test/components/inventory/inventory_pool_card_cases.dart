@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/inventory/models/inventory_pools_list_bundle.dart';
 import 'package:fstapp/components/inventory/views/inventory_pool_card.dart';
@@ -54,7 +55,7 @@ void main() {
         bundle.contextStocks.first.context.inventoryPool, bundle.pools.single);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SizedBox(
                     width: 900,

@@ -1,6 +1,6 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/unit/views/unit_admin_page.dart';

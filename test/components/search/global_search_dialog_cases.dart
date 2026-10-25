@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/search/global_search_dialog.dart';
 import 'package:fstapp/components/search/search_result_model.dart';
@@ -19,7 +20,7 @@ void main() {
   testWidgets('open search refreshes when a new projection is activated',
       (tester) async {
     var title = 'Původní program';
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(builder: (context) {
         return TextButton(
           onPressed: () => showDialog<void>(
@@ -58,7 +59,7 @@ void main() {
 
   testWidgets('speaker without an event still opens a profile', (tester) async {
     final speakers = Completer<SpeakersBundle?>();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(builder: (context) {
         return TextButton(
           onPressed: () => showDialog<void>(

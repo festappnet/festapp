@@ -14,7 +14,7 @@ import 'dart:async' as _i79;
 import 'package:auto_route/auto_route.dart' as _i77;
 import 'package:festapp_core/eshop.dart' as _i80;
 import 'package:flutter/foundation.dart' as _i81;
-import 'package:flutter/material.dart' as _i78;
+import 'package:material_ui/material_ui.dart' as _i78;
 import 'package:fstapp/components/activities/volunteers_section_page.dart'
     as _i76;
 import 'package:fstapp/components/app_management/install_page.dart' as _i24;

@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-
+import 'package:material_ui/material_ui.dart';
 import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';

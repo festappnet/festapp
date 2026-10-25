@@ -3,7 +3,7 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/forms/db_forms.dart';

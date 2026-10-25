@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:festapp_core/forms.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -93,7 +94,7 @@ void main() {
     var saves = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: FormEditorContent.prototype(
           bundle: bundle,
           onPrototypeSave: (_) => saves++,
@@ -137,7 +138,7 @@ void main() {
     var changes = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: FormCapacitySettings(
                     form: form, canEdit: true, onChanged: () => changes++))));

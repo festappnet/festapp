@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';

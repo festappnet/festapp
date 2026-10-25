@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -5,7 +6,7 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -93,7 +94,7 @@ void main() {
       'normal form settings hide cards and avoid Stripe reads while retaining saved configuration',
       (tester) async {
     var reads = 0;
-    await _environment.pumpWidget(tester, MaterialApp(home: FormSettingsContent(
+    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: FormSettingsContent(
       bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
       formLink: 'hidden-payment-test',
       loadBundle: (link) async => _bundle(link, 5, {'bankEnabled': true, 'stripeConnectionId': _connection}),
@@ -113,7 +114,7 @@ void main() {
     var saves = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
             showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             formLink: 'payment-test',
@@ -175,7 +176,7 @@ void main() {
     final pending = Completer<Map<String, dynamic>?>();
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
             showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             key: const ValueKey('old-form'),
@@ -193,7 +194,7 @@ void main() {
     expect(_selection(tester), FormPaymentMethod.stripe);
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
             showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             key: const ValueKey('new-form'),

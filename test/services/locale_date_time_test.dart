@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 // Test-only delegates already supplied by the localization SDK.
 // ignore: depend_on_referenced_packages
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:fstapp/services/locale_date_time.dart';
@@ -54,7 +54,7 @@ void main() {
       'Czech delivery tooltip and explanation ignore an English Intl default',
       (tester) async {
     final local = DateTime(2026, 10, 23, 18, 30);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       locale: const Locale('cs'),
       supportedLocales: const [Locale('cs')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/news/news_strings.dart';
 

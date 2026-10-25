@@ -1,5 +1,5 @@
 // activity_timeline_controller.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/activities/activity_model.dart';
 
 class ActivityTimelineController {

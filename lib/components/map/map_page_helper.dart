@@ -1,5 +1,5 @@
 import 'package:festapp_core/map.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/map/map_scene.dart';
 import 'package:festapp_core/program.dart';

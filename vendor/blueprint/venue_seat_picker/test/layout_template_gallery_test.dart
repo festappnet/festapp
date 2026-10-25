@@ -1,10 +1,37 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_template_card.dart';
 
 void main() {
+  testWidgets(
+    'public gallery supports host creation without private package imports',
+    (tester) async {
+      LayoutTemplate? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  selected = await showVenueLayoutTemplateGallery(context);
+                },
+                child: const Text('Open public gallery'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open public gallery'));
+      await tester.pumpAndSettle();
+      final first = VenueLayoutTemplates.recommended.first;
+      await tester.tap(find.byKey(ValueKey('layout-template-${first.id}')));
+      await tester.pumpAndSettle();
+      expect(selected?.id, first.id);
+    },
+  );
+
   testWidgets('template card stays rectangular and exposes details on focus', (
     tester,
   ) async {

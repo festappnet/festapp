@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Derived cleaning status of a toilet. The order of the enum encodes severity
 /// (green < paper < hygiene < contamination); the highest open report wins.

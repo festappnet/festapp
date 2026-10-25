@@ -1,11 +1,12 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/map_current_location_drop.dart';
 import 'package:fstapp/components/map/map_offscreen_location_indicator.dart';
 import 'package:fstapp/components/map/map_location_style.dart';
 
-Widget _app(Offset target, {VoidCallback? onPressed}) => MaterialApp(
+Widget _app(Offset target, {VoidCallback? onPressed}) => MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: SizedBox(
           width: 400,

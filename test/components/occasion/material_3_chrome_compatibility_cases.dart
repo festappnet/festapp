@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_navigation_bar.dart';
@@ -13,7 +14,7 @@ void main() {
   });
   testWidgets('occasion navigation retains the original size and selection',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeConfig.theme(),
         home: Scaffold(
           bottomNavigationBar: OccasionNavigationBar(
@@ -38,7 +39,7 @@ void main() {
   testWidgets('secondary tabs retain the previous typography and dimensions',
       (tester) async {
     Future<void> pump(ThemeData theme) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: theme,
           home: DefaultTabController(
               length: 2,

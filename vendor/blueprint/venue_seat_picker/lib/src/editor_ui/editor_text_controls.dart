@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shared B/I/U control. Hosts own the document and available font faces.
 class EditorTextStyleControl extends StatelessWidget {

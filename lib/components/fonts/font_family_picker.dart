@@ -1,5 +1,5 @@
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../forms/form_strings.dart';
 import '../html/html_view.dart';

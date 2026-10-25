@@ -2,7 +2,7 @@ import 'occasion_setup_strings.dart';
 import '../../images/image_area.dart';
 import '../../images/db_images.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:festapp_core/email_templates.dart';

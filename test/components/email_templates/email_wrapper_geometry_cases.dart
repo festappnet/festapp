@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
 
@@ -14,7 +15,7 @@ String _bannerWrapper({required bool inset}) =>
     '$_message</div></div>';
 
 Future<Rect> _render(WidgetTester tester, String html, double width) async {
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
           body: Align(
     alignment: Alignment.topLeft,

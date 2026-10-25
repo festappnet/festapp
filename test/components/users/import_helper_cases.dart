@@ -1,7 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/import/csv_import_helper.dart';
 import 'package:fstapp/components/occasion/db_occasions.dart';
@@ -18,31 +21,26 @@ void main() {
     addTearDown(logs.dispose);
   });
   OccasionUserModel existingBujnmiUser() => OccasionUserModel(
-        occasion: 42,
-        user: 'existing-user',
-        role: 2,
-        isEditorView: true,
-        isCleaningCrew: true,
-        data: {
-          Tb.occasion_users.data_email: 'bujnmi@gmail.com',
-          Tb.occasion_users.data_name: 'Bujn',
-          Tb.occasion_users.data_surname: 'Mi',
-          Tb.occasion_users.data_sex: 'male',
-          Tb.occasion_users.data_note: 'Původní poznámka',
-        },
-        services: {
-          DbOccasions.serviceTypeAccommodation: {
-            'room-a': DbOccasions.servicePaid,
-          },
-          DbOccasions.serviceTypeFood: {
-            'lunch': DbOccasions.servicePaid,
-          },
-        },
-      );
+    occasion: 42,
+    user: 'existing-user',
+    role: 2,
+    isEditorView: true,
+    isCleaningCrew: true,
+    data: {
+      Tb.occasion_users.data_email: 'bujnmi@gmail.com',
+      Tb.occasion_users.data_name: 'Bujn',
+      Tb.occasion_users.data_surname: 'Mi',
+      Tb.occasion_users.data_sex: 'male',
+      Tb.occasion_users.data_note: 'Původní poznámka',
+    },
+    services: {
+      DbOccasions.serviceTypeAccommodation: {'room-a': DbOccasions.servicePaid},
+      DbOccasions.serviceTypeFood: {'lunch': DbOccasions.servicePaid},
+    },
+  );
 
-  Map<String, dynamic> fixture(String path) => ImportHelper.getUsersFromCsv(
-        File(path).readAsStringSync(),
-      ).single;
+  Map<String, dynamic> fixture(String path) =>
+      ImportHelper.getUsersFromCsv(File(path).readAsStringSync()).single;
 
   test('CSV import reads the optional group column', () {
     final users = ImportHelper.getUsersFromCsv(
@@ -54,6 +52,21 @@ void main() {
     expect(users.single[Tb.occasion_users.data_email], 'jan@example.com');
     expect(users.single[ImportHelper.groupColumn], 'Modří');
   });
+
+  test(
+    'CSV import preserves quoted multiline text and leading-zero phones',
+    () {
+      final users = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa;Jméno:;Příjmení:;Mobilní telefon:;Poznámka:\r\n'
+        'jan@example.com;Jan;Novák;001234;"První řádek\nDruhý; ""citace"""',
+      );
+      expect(users.single[Tb.occasion_users.data_phone], '001234');
+      expect(
+        users.single[Tb.occasion_users.data_note],
+        'První řádek\nDruhý; "citace"',
+      );
+    },
+  );
 
   test('CSV import keeps working without the optional group column', () {
     final users = ImportHelper.getUsersFromCsv(
@@ -129,7 +142,9 @@ void main() {
     );
 
     expect(
-        users.single[Tb.occasion_users.data_note], 'Poznámka; s oddělovačem');
+      users.single[Tb.occasion_users.data_note],
+      'Poznámka; s oddělovačem',
+    );
   });
 
   test('CSV import rejects impossible calendar dates', () {
@@ -142,24 +157,26 @@ void main() {
     );
   });
 
-  test('CSV import preserves duplicate delivery emails with sign-in aliases',
-      () {
-    final users = ImportHelper.getUsersFromCsv(
-      'E-mailová adresa,Jméno:,Příjmení:\n'
-      'shared@example.com,Klára,Vomelová\n'
-      'shared@example.com,Marie,Vomelová',
-    );
+  test(
+    'CSV import preserves duplicate delivery emails with sign-in aliases',
+    () {
+      final users = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa,Jméno:,Příjmení:\n'
+        'shared@example.com,Klára,Vomelová\n'
+        'shared@example.com,Marie,Vomelová',
+      );
 
-    expect(users, hasLength(2));
-    expect(
-      users.map((user) => user[Tb.occasion_users.data_email]),
-      ['shared@example.com', 'shared+1@example.com'],
-    );
-    expect(
-      users.map((user) => user[ImportHelper.deliveryEmailField]),
-      everyElement('shared@example.com'),
-    );
-  });
+      expect(users, hasLength(2));
+      expect(users.map((user) => user[Tb.occasion_users.data_email]), [
+        'shared@example.com',
+        'shared+1@example.com',
+      ]);
+      expect(
+        users.map((user) => user[ImportHelper.deliveryEmailField]),
+        everyElement('shared@example.com'),
+      );
+    },
+  );
 
   test('CSV aliases do not collide with another real delivery address', () {
     final users = ImportHelper.getUsersFromCsv(
@@ -169,76 +186,89 @@ void main() {
       'shared@example.com,Marie,Vomelová',
     );
 
-    expect(
-      users.map((user) => user[Tb.occasion_users.data_email]),
-      ['shared@example.com', 'shared+1@example.com', 'shared+2@example.com'],
-    );
+    expect(users.map((user) => user[Tb.occasion_users.data_email]), [
+      'shared@example.com',
+      'shared+1@example.com',
+      'shared+2@example.com',
+    ]);
   });
 
-  test('CSV aliases stay attached to people when duplicate rows are reordered',
-      () {
-    final firstOrder = ImportHelper.getUsersFromCsv(
-      'E-mailová adresa,Jméno:,Příjmení:\n'
-      'shared@example.com,Klára,Vomelová\n'
-      'shared@example.com,Marie,Vomelová',
-    );
-    final reversedOrder = ImportHelper.getUsersFromCsv(
-      'E-mailová adresa,Jméno:,Příjmení:\n'
-      'shared@example.com,Marie,Vomelová\n'
-      'shared@example.com,Klára,Vomelová',
-    );
+  test(
+    'CSV aliases stay attached to people when duplicate rows are reordered',
+    () {
+      final firstOrder = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa,Jméno:,Příjmení:\n'
+        'shared@example.com,Klára,Vomelová\n'
+        'shared@example.com,Marie,Vomelová',
+      );
+      final reversedOrder = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa,Jméno:,Příjmení:\n'
+        'shared@example.com,Marie,Vomelová\n'
+        'shared@example.com,Klára,Vomelová',
+      );
 
-    Map<String, String> aliasesByName(List<Map<String, dynamic>> users) => {
-          for (final user in users)
-            user[Tb.occasion_users.data_name] as String:
-                user[Tb.occasion_users.data_email] as String,
-        };
-    expect(aliasesByName(reversedOrder), aliasesByName(firstOrder));
-  });
+      Map<String, String> aliasesByName(List<Map<String, dynamic>> users) => {
+        for (final user in users)
+          user[Tb.occasion_users.data_name] as String:
+              user[Tb.occasion_users.data_email] as String,
+      };
+      expect(aliasesByName(reversedOrder), aliasesByName(firstOrder));
+    },
+  );
 
-  test('partial reimport of a shared mailbox keeps the same person identity',
-      () {
-    final original = ImportHelper.getUsersFromCsv(
-      'E-mailová adresa,Jméno:,Příjmení:\n'
-      'shared@example.com,Klára,Vomelová\n'
-      'shared@example.com,Marie,Vomelová',
-    );
-    final existing = original
-        .map((row) => OccasionUserModel(
+  test(
+    'partial reimport of a shared mailbox keeps the same person identity',
+    () {
+      final original = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa,Jméno:,Příjmení:\n'
+        'shared@example.com,Klára,Vomelová\n'
+        'shared@example.com,Marie,Vomelová',
+      );
+      final existing = original
+          .map(
+            (row) => OccasionUserModel(
               user: row[Tb.occasion_users.data_name] == 'Klára'
                   ? 'user-klara'
                   : 'user-marie',
               data: Map<String, dynamic>.from(row),
-            ))
-        .toList();
-    final partial = ImportHelper.getUsersFromCsv(
-      'E-mailová adresa,Jméno:,Příjmení:\n'
-      'shared@example.com,Marie,Vomelová',
-    );
+            ),
+          )
+          .toList();
+      final partial = ImportHelper.getUsersFromCsv(
+        'E-mailová adresa,Jméno:,Příjmení:\n'
+        'shared@example.com,Marie,Vomelová',
+      );
 
-    final rows = CsvImportHelper.buildImportRows(partial, existing);
+      final rows = CsvImportHelper.buildImportRows(partial, existing);
 
-    expect(rows, hasLength(1));
-    expect(rows.single[CsvImportHelper.payloadUserId], 'user-marie');
-    expect(
-      (rows.single[CsvImportHelper.payloadData]
-          as Map<String, dynamic>)[Tb.occasion_users.data_email],
-      'shared+1@example.com',
-    );
-  });
+      expect(rows, hasLength(1));
+      expect(rows.single[CsvImportHelper.payloadUserId], 'user-marie');
+      expect(
+        (rows.single[CsvImportHelper.payloadData]
+            as Map<String, dynamic>)[Tb.occasion_users.data_email],
+        'shared+1@example.com',
+      );
+    },
+  );
 
   test('a later person sharing a mailbox receives the next free alias', () {
     final existing = [
-      OccasionUserModel(user: 'user-klara', data: {
-        Tb.occasion_users.data_email: 'shared@example.com',
-        Tb.occasion_users.data_name: 'Klára',
-        Tb.occasion_users.data_surname: 'Vomelová',
-      }),
-      OccasionUserModel(user: 'user-marie', data: {
-        Tb.occasion_users.data_email: 'shared+1@example.com',
-        Tb.occasion_users.data_name: 'Marie',
-        Tb.occasion_users.data_surname: 'Vomelová',
-      }),
+      OccasionUserModel(
+        user: 'user-klara',
+        data: {
+          Tb.occasion_users.data_email: 'shared@example.com',
+          Tb.occasion_users.data_name: 'Klára',
+          Tb.occasion_users.data_surname: 'Vomelová',
+        },
+      ),
+      OccasionUserModel(
+        user: 'user-marie',
+        data: {
+          Tb.occasion_users.data_email: 'shared+1@example.com',
+          Tb.occasion_users.data_name: 'Marie',
+          Tb.occasion_users.data_surname: 'Vomelová',
+        },
+      ),
     ];
     final imported = ImportHelper.getUsersFromCsv(
       'E-mailová adresa,Jméno:,Příjmení:\n'
@@ -283,15 +313,18 @@ void main() {
     expect(updated[Tb.occasion_users.data_email], 'bujnmi@gmail.com');
     expect(first[ImportHelper.groupColumn], 'Testovací skupina CSV');
     expect(
-        updated[ImportHelper.groupColumn], 'Přesunutá testovací skupina CSV');
+      updated[ImportHelper.groupColumn],
+      'Přesunutá testovací skupina CSV',
+    );
     expect(withoutGroup[ImportHelper.groupColumn], isEmpty);
     expect(OccasionUserModel(data: first).importedEquals(first), isTrue);
     expect(OccasionUserModel(data: first).importedEquals(updated), isFalse);
 
     final existing = OccasionUserModel(user: 'existing-user', data: first);
     expect(CsvImportHelper.getUsersToBeCreated([updated], [existing]), isEmpty);
-    expect(
-        CsvImportHelper.getUsersToBeUpdated([updated], [existing]), [updated]);
+    expect(CsvImportHelper.getUsersToBeUpdated([updated], [existing]), [
+      updated,
+    ]);
   });
 
   test('full editor payload matches existing users beyond row 1000', () {
@@ -316,16 +349,15 @@ void main() {
       },
     );
 
-    expect(
-      CsvImportHelper.getUsersToBeCreated(imported, existing),
-      isEmpty,
-    );
+    expect(CsvImportHelper.getUsersToBeCreated(imported, existing), isEmpty);
     final rows = CsvImportHelper.buildImportRows(imported, existing);
     expect(rows, hasLength(2431));
     expect(rows.first[CsvImportHelper.payloadUserId], 'user-704');
     expect(rows.last[CsvImportHelper.payloadUserId], 'user-3134');
-    expect(rows.every((row) => row[CsvImportHelper.payloadUserId] != null),
-        isTrue);
+    expect(
+      rows.every((row) => row[CsvImportHelper.payloadUserId] != null),
+      isTrue,
+    );
     expect(
       rows.every((row) => row.containsKey(CsvImportHelper.payloadGroupTitle)),
       isTrue,
@@ -338,10 +370,7 @@ void main() {
     expect(imported, isNot(contains(Tb.occasion_users.data_sex)));
     expect(imported, isNot(contains(Tb.occasion_users.services)));
     expect(
-      CsvImportHelper.getUsersToBeUpdated(
-        [imported],
-        [existingBujnmiUser()],
-      ),
+      CsvImportHelper.getUsersToBeUpdated([imported], [existingBujnmiUser()]),
       isEmpty,
     );
   });
@@ -354,9 +383,7 @@ void main() {
 
     expect(imported, isNot(contains(Tb.occasion_users.data_sex)));
     expect(imported[Tb.occasion_users.services], {
-      DbOccasions.serviceTypeAccommodation: {
-        'room-b': DbOccasions.servicePaid,
-      },
+      DbOccasions.serviceTypeAccommodation: {'room-b': DbOccasions.servicePaid},
     });
   });
 
@@ -380,14 +407,18 @@ void main() {
     final data = row[CsvImportHelper.payloadData] as Map<String, dynamic>;
 
     expect(row[CsvImportHelper.payloadUserId], 'existing-user');
-    expect(data[Tb.occasion_users.data_note],
-        'Druhý import aktualizoval poznámku');
+    expect(
+      data[Tb.occasion_users.data_note],
+      'Druhý import aktualizoval poznámku',
+    );
     expect(data, isNot(contains(Tb.occasion_users.data_sex)));
     expect(row, isNot(contains(Tb.occasion_users.services)));
     expect(row, isNot(contains(Tb.occasion_users.role)));
     expect(row, isNot(contains(Tb.occasion_users.is_editor_view)));
-    expect(row[CsvImportHelper.payloadGroupTitle],
-        'Přesunutá testovací skupina CSV');
+    expect(
+      row[CsvImportHelper.payloadGroupTitle],
+      'Přesunutá testovací skupina CSV',
+    );
   });
 
   test('import payload separates sign-in and delivery email', () {
@@ -404,8 +435,10 @@ void main() {
           as Map<String, dynamic>)[Tb.occasion_users.data_email],
       'shared+1@example.com',
     );
-    expect(rows[1][CsvImportHelper.payloadData],
-        isNot(contains(ImportHelper.deliveryEmailField)));
+    expect(
+      rows[1][CsvImportHelper.payloadData],
+      isNot(contains(ImportHelper.deliveryEmailField)),
+    );
   });
 
   test('reimport sends only service families present in CSV', () {
@@ -419,21 +452,25 @@ void main() {
     ).single;
 
     expect(row[Tb.occasion_users.services], {
-      DbOccasions.serviceTypeAccommodation: {
-        'room-b': DbOccasions.servicePaid,
-      },
+      DbOccasions.serviceTypeAccommodation: {'room-b': DbOccasions.servicePaid},
     });
   });
 
-  testWidgets('user table exposes the imported group as read only',
-      (tester) async {
+  testWidgets('user table exposes the imported group as read only', (
+    tester,
+  ) async {
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(
-      home: Builder(builder: (builderContext) {
-        context = builderContext;
-        return const SizedBox();
-      }),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Builder(
+          builder: (builderContext) {
+            context = builderContext;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
 
     final user = OccasionUserModel.fromJson({
       DbUsers.groupTitleKey: 'Testovací skupina CSV',
@@ -441,12 +478,14 @@ void main() {
     });
     final groupColumn = UserColumns.generateColumns([UserColumns.GROUP]).single;
 
-    expect(user.toTrinaRow(context).cells[UserColumns.GROUP]?.value,
-        'Testovací skupina CSV');
+    expect(
+      user.toTrinaRow(context).cells[UserColumns.GROUP]?.value,
+      'Testovací skupina CSV',
+    );
     expect(groupColumn.readOnly, isTrue);
 
-    final invitedColumn =
-        UserColumns.generateColumns([UserColumns.INVITED]).single;
+    final invitedColumn = UserColumns.generateColumns([UserColumns.INVITED])
+        .single;
     expect(invitedColumn.readOnly, isTrue);
   });
 }

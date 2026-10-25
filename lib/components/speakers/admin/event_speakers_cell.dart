@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/speakers/admin/speaker_picker_field.dart';
 import 'package:fstapp/components/speakers/speaker_avatar.dart';
 import 'package:fstapp/components/speakers/speaker_model.dart';

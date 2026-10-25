@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -43,7 +44,7 @@ void main() {
           productTypes: [],
           products: [],
           availableBankAccounts: []);
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: SingleChildScrollView(
                   child: FormFieldsGenerator(bundle: bundle)))));

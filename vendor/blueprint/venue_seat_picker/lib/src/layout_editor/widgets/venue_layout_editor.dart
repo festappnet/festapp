@@ -1,11 +1,14 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
+
 import 'layout_scene_surface.dart';
+
 import 'package:venue_seat_picker/editor_ui.dart';
-import 'layout_template_gallery.dart';
+
 import 'layout_table_selection.dart';
 import 'layout_palette_drag_feedback.dart';
 import 'layout_palette_thumbnail.dart';
@@ -2165,13 +2168,13 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                     horizontal: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surface,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface,
                                     border: Border.all(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outlineVariant,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant,
                                     ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
@@ -2196,9 +2199,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
             child: LayoutText(
               'Objects',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Padding(
@@ -2207,9 +2209,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
               onChoose != null
                   ? 'Tap an object to add it. Drawing tools continue on the plan.'
                   : 'Drag onto the plan, or click to place',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colors.onSurfaceVariant),
             ),
           ),
           Padding(
@@ -3270,9 +3271,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               isScrollControlled: true,
                                               builder: (context) => SizedBox(
                                                 height:
-                                                    MediaQuery.sizeOf(
-                                                      context,
-                                                    ).height *
+                                                    MediaQuery.sizeOf(context)
+                                                        .height *
                                                     .8,
                                                 child: AnimatedBuilder(
                                                   animation: Listenable.merge([
@@ -3300,9 +3300,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               : !_canEdit
                                               ? 'Read only'
                                               : 'Saved',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelMedium,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium,
                                         ),
                                       ),
                                   ],
@@ -3332,9 +3332,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               isScrollControlled: true,
                                               builder: (context) => SizedBox(
                                                 height:
-                                                    MediaQuery.sizeOf(
-                                                      context,
-                                                    ).height *
+                                                    MediaQuery.sizeOf(context)
+                                                        .height *
                                                     .8,
                                                 child: AnimatedBuilder(
                                                   animation: Listenable.merge([
@@ -3594,9 +3593,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surface,
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 12,

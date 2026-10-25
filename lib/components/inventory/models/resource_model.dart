@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/inventory/views/resource_editor_view.dart';
 import 'package:fstapp/database_tables/tb.dart';

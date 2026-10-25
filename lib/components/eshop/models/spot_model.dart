@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
 import 'package:fstapp/components/inventory/models/resource_slot_model.dart';

@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -30,7 +31,7 @@ void main() {
   testWidgets('user can enable reminders and select the lead time',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: ProgramNotificationSettingsCard()),
       ),
     );

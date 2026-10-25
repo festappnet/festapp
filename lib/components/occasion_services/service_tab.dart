@@ -1,5 +1,5 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';

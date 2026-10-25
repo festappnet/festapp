@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
@@ -27,7 +28,7 @@ void main() {
     var linkSaves = 0;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
           body: SingleChildScrollView(
               child: Form(

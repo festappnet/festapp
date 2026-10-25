@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/components/features/feature_settings_editor.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/features_strings.dart';
@@ -58,7 +59,7 @@ void main() {
         (tester) async {
       final feature = MapFeature.getDefault();
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Form(
             child: SingleChildScrollView(
@@ -91,7 +92,7 @@ void main() {
       final formKey = GlobalKey<FormState>();
       final feature = MapFeature.getDefault();
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Form(
             key: formKey,
@@ -128,7 +129,7 @@ void main() {
       final formKey = GlobalKey<FormState>();
       final feature = MapFeature.getDefault();
 
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Form(
             key: formKey,

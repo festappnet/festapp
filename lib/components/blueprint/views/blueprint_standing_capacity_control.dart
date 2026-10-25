@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 import '../blueprint_layout_controller.dart';
 import '../blueprint_strings.dart';

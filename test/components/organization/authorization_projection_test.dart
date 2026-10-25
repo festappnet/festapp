@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -10,7 +11,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:festapp_core/time.dart' as tz;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
 
@@ -19,7 +20,7 @@ void main() {
   late RootSupabaseFixture backend;
   Completer<bool>? contextResult;
   setUpAll(() async {
-    tz.initializeTimeZones();
+    tz.OccasionTimeContext.initializeTimeZones();
     backend = await RootSupabaseFixture.open((request) async {
       if (request.url.path == '/rest/v1/rpc/get_app_config_v219') {
         expect(jsonDecode(request.body)['data_in']['organization'],
@@ -91,7 +92,7 @@ void main() {
         RightsService.occasionLinkModelNotifier.value = initialContext;
         contextResult = Completer<bool>();
         final requests = backend.requests.length;
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             home: OrganizationAdminGuard(
                 targetOrganizationId: AppConfig.organization,
                 builder: (_, org) => Text('organization-$org'))));
@@ -125,7 +126,7 @@ void main() {
         capabilities: {
           AuthorizationCapabilities.organizationSettingsWrite: true
         });
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: OrganizationAdminGuard(
             targetOrganizationId: AppConfig.organization,
             builder: (_, org) => Text('organization-$org'))));
@@ -140,7 +141,7 @@ void main() {
         });
     await tester.pump();
     expect(find.text('organization-${AppConfig.organization}'), findsOneWidget);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: OrganizationAdminGuard(
             targetOrganizationId: AppConfig.organization + 1,
             builder: (_, org) => Text('organization-$org'))));

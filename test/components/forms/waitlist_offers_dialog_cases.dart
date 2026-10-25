@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'dart:convert';
@@ -7,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:fstapp/components/forms/views/waitlist_offers_dialog.dart';
@@ -15,7 +16,7 @@ import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/waitlist_summary_model.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
-import 'package:timezone/data/latest.dart' as zones;
+import 'package:festapp_core/time.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
 
 late WidgetEnvironmentFixture _environment;
@@ -38,7 +39,7 @@ void main() {
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
     if (!tz.timeZoneDatabase.isInitialized) {
-      zones.initializeTimeZones();
+      zones.OccasionTimeContext.initializeTimeZones();
     }
     final previousZone = tz.local;
     addTearDown(() => tz.setLocalLocation(previousZone));
@@ -74,7 +75,7 @@ void main() {
         final sent = <Map<String, dynamic>>[];
         await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
@@ -239,7 +240,7 @@ void main() {
       final sentRevisions = <int>[];
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
@@ -318,7 +319,7 @@ void main() {
       expect(tz.local.name, 'Europe/Prague');
       await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
@@ -417,11 +418,11 @@ void main() {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeConfig.theme(brightness: brightness),
-          builder: (context, child) => MediaQuery(
+          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
-          ),
+          )),
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(

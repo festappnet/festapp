@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/rights_context_fixture.dart';
-import 'package:timezone/data/latest.dart' as timezone_data;
+import 'package:festapp_core/time.dart' as timezone_data;
 import 'dart:convert';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
@@ -9,7 +10,7 @@ import 'package:trina_grid/trina_grid.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +29,7 @@ class _Translations extends AssetLoader {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
-    timezone_data.initializeTimeZones();
+    timezone_data.OccasionTimeContext.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     final loader = FontLoader('Roboto');
     loader.addFont(Future.value(ByteData.sublistView(
@@ -61,9 +62,9 @@ void main() {
         startLocale: const Locale('en'),
         assetLoader: const _Translations(),
         child: Builder(
-            builder: (context) => MaterialApp(
+            builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                   locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                   supportedLocales: context.supportedLocales,
                   home: Scaffold(
                       body: MediaQuery(
@@ -143,12 +144,12 @@ void main() {
         child: Builder(
             builder: (context) => RepaintBoundary(
                   key: previewKey,
-                  child: MaterialApp(
+                  child: MaterialApp(builder: DependencyMaterialBridge.builder,
                     debugShowCheckedModeBanner: false,
                     theme:
                         ThemeData(brightness: brightness, fontFamily: 'Roboto'),
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                     supportedLocales: context.supportedLocales,
                     home: Scaffold(
                         body: SafeArea(

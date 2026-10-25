@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/views/product_price_waves_dialog.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -11,10 +12,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:festapp_core/time.dart' as tzdata;
 import 'package:fstapp/components/eshop/views/product_price_change_cell.dart';
 import 'package:fstapp/components/eshop/views/product_price_changes_dialog.dart';
 
@@ -31,10 +32,10 @@ Widget app(Widget child) => EasyLocalization(
       path: 'assets/translations',
       assetLoader: const _Loader(),
       child: Builder(
-        builder: (context) => MaterialApp(
+        builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
           locale: context.locale,
           supportedLocales: context.supportedLocales,
-          localizationsDelegates: context.localizationDelegates,
+          localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
           home: Scaffold(body: child),
         ),
       ),
@@ -65,7 +66,7 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
-    tzdata.initializeTimeZones();
+    tzdata.OccasionTimeContext.initializeTimeZones();
   });
   for (final dirty in [false, true]) {
     testWidgets('opening price waves closes the small dialog, dirty=$dirty',

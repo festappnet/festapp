@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/components/users/companion/companion_dialog.dart';
@@ -33,7 +34,7 @@ void main() {
 
   testWidgets('management separates create and origin-safe delete actions',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionManagementDialog(
         allowUserCreate: false,
         maxCompanions: 2,
@@ -53,7 +54,7 @@ void main() {
   testWidgets('attendance has no lifecycle controls and targets companion id',
       (tester) async {
     String? participant;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionAttendanceDialog(
         eventId: 42,
         companions: [assigned],
@@ -83,7 +84,7 @@ void main() {
       ...assigned.toJson(),
       'event_ids': [42],
     });
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionAttendanceDialog(
         eventId: 42,
         companions: [assigned],
@@ -122,7 +123,7 @@ void main() {
       (tester) async {
     final reload = Completer<List<CompanionModel>>();
     final calls = <String>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Builder(
           builder: (context) => Scaffold(
                 body: TextButton(
@@ -166,7 +167,7 @@ void main() {
     addTearDown(() => ConnectivityService.isOfflineNotifier.value = wasOffline);
     ConnectivityService.isOfflineNotifier.value = false;
     var changes = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: CompanionAttendanceDialog(
         eventId: 42,
         companions: [

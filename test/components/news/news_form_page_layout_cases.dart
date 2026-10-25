@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/news/news_form_page.dart';
@@ -17,7 +18,7 @@ void main() {
       (tester) async {
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     addTearDown(tester.view.resetViewInsets);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: NewsFormPage(
             editorOverride: const SizedBox(height: 200),
             onSubmit: (_) async {})));
@@ -32,7 +33,7 @@ void main() {
   testWidgets('uses the shared Super Editor and refuses empty submission',
       (tester) async {
     var submissions = 0;
-    await tester.pumpWidget(MaterialApp(home: NewsFormPage(onSubmit: (_) async {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: NewsFormPage(onSubmit: (_) async {
       submissions++;
     })));
     expect(find.byType(RichHtmlEditor), findsOneWidget);
@@ -72,7 +73,7 @@ void main() {
       (tester) async {
     final completed = Completer<void>();
     var submissions = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Builder(
             builder: (context) => Scaffold(
                 body: TextButton(
@@ -120,7 +121,7 @@ void main() {
   testWidgets('unknown publish retains the draft and disables a new command',
       (tester) async {
     var submissions = 0;
-    await tester.pumpWidget(MaterialApp(home: NewsFormPage(onSubmit: (_) async {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: NewsFormPage(onSubmit: (_) async {
       submissions++;
       throw http.ClientException('response lost');
     })));
@@ -154,7 +155,7 @@ void main() {
   testWidgets('cancelled notification confirmation does not invoke the writer',
       (tester) async {
     var submissions = 0;
-    await tester.pumpWidget(MaterialApp(home: NewsFormPage(onSubmit: (_) async {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: NewsFormPage(onSubmit: (_) async {
       submissions++;
     })));
     final controller =

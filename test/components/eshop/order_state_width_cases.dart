@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -44,9 +45,9 @@ void main() {
       startLocale: const Locale('cs'),
       assetLoader: const _Translations(),
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 supportedLocales: context.supportedLocales,
                 home: Builder(builder: (context) {
                   regular = orderStateColumnWidth(context, [plain]);
@@ -61,7 +62,7 @@ void main() {
                 }),
               )),
     ));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(regular, greaterThanOrEqualTo(140));
     expect(decorated, greaterThanOrEqualTo(regular));
     expect(scaled, greaterThan(decorated));

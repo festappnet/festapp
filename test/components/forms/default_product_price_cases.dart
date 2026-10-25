@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_session.dart';
@@ -58,7 +59,7 @@ void main() {
             globalKey: key, updateTotalPrice: session.recalculateTotals);
         await _environment.pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: Scaffold(
                     body: FormBuilder(
                         key: key,

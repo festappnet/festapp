@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_config.dart';
@@ -49,7 +50,7 @@ void main() {
       'app login is offered without fetching account details anonymously',
       (tester) async {
     var called = false;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => false,
@@ -67,7 +68,7 @@ void main() {
       'existing login sees consent and must explicitly select an occasion',
       (tester) async {
     var calls = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
@@ -99,7 +100,7 @@ void main() {
   testWidgets(
       'expired request displays a recoverable error without a consent button',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
@@ -116,7 +117,7 @@ void main() {
       final approval = Completer<Map<String, dynamic>>();
       var approvals = 0;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: McpConnectionPage(
             request: List.filled(43, 'r').join(),
             isLoggedIn: () => true,
@@ -179,7 +180,7 @@ void main() {
 
   testWidgets('empty eligible list has no select-all control', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
           request: List.filled(43, 'r').join(),
           isLoggedIn: () => true,
@@ -204,7 +205,7 @@ void main() {
       (tester) async {
     final callback = _CallbackWindow();
     var confirmed = false;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
@@ -256,7 +257,7 @@ void main() {
       (tester) async {
     Map<String, dynamic>? approved;
     final callback = _CallbackWindow();
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
@@ -309,7 +310,7 @@ void main() {
       'occasions are grouped by unit and sorted without broadening selection',
       (tester) async {
     Map<String, dynamic>? approved;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,

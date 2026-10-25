@@ -937,6 +937,27 @@
       "sources": [
         "test/components/blueprint/blueprint_host_margin_pan_test.dart"
       ]
+    },
+    "test/components/occasion/occasion_setup_preview_performance_test.dart": {
+      "kind": "environment",
+      "reason": "Measures actual Flutter preview compilation and rebuild behavior.",
+      "sources": [
+        "test/components/occasion/occasion_setup_preview_performance_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_blueprint_open_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises current canonical editor navigation and authenticated setup context.",
+      "sources": [
+        "test/components/occasion/occasion_setup_blueprint_open_test.dart"
+      ]
+    },
+    "test/services/help_destination_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises Flutter routing and configured help destinations.",
+      "sources": [
+        "test/services/help_destination_test.dart"
+      ]
     }
   }
 }

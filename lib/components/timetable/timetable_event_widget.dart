@@ -1,5 +1,5 @@
 import 'package:fstapp/components/schedule/event_type_colors.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/timeline/schedule_helper.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:intl/intl.dart';

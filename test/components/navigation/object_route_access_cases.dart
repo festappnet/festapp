@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/forms/views/form_tab.dart';
@@ -171,7 +172,7 @@ class ObjectFixture extends RootStackRouter {
 
 Future<void> mount(WidgetTester tester, ObjectFixture router, String path,
     {WidgetEnvironmentFixture? environment}) async {
-  final view = MaterialApp.router(
+  final view = MaterialApp.router(builder: DependencyMaterialBridge.builder,
       routerConfig: router.config(
           deepLinkBuilder: (link) =>
               link.initial ? DeepLink.path(path) : link));
@@ -198,7 +199,7 @@ void main() {
         future: BankAccountsLoadScope.maybeOf(context)!.load(false),
         builder: (_, snapshot) =>
             Text(snapshot.hasData ? 'ACCOUNT LIST' : 'LOADING LIST'));
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (_) =>
                 const DeepLink.path('/unit/5/edit/bank-accounts/9/general'))));
@@ -418,7 +419,7 @@ void main() {
           : Future.value([
               FormEditorDraft(id: 2, link: 'second', title: 'Second').toBundle()
             ]);
-    await tester.pumpWidget(MaterialApp.router(
+    await tester.pumpWidget(MaterialApp.router(builder: DependencyMaterialBridge.builder,
         routerConfig: router.config(
             deepLinkBuilder: (link) => const DeepLink.path(
                 '/occasion-a/reservations/forms/first/responses'))));

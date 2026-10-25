@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
@@ -55,7 +56,7 @@ void main() {
               ]);
     await _environment.pumpWidget(
         tester,
-        MaterialApp.router(
+        MaterialApp.router(builder: DependencyMaterialBridge.builder,
             routerConfig: router.config(
                 deepLinkBuilder: (_) =>
                     const DeepLink.path('/occasion-a/reservations/forms'))));
@@ -150,7 +151,7 @@ void main() {
           });
     await _environment.pumpWidget(
         tester,
-        MaterialApp.router(
+        MaterialApp.router(builder: DependencyMaterialBridge.builder,
             routerConfig: router.config(
                 deepLinkBuilder: (_) => const DeepLink.path(
                     '/occasion-a/reservations/forms?list=true'))));

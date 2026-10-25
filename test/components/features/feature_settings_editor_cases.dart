@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/components/features/feature_settings_editor.dart';
@@ -17,7 +18,7 @@ void main() {
       (tester) async {
     final feature = DepositFeature(code: FeatureConstants.deposit);
     var changes = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EditorDraftScope(
                 onChanged: () => changes++,
@@ -38,7 +39,7 @@ void main() {
     }
 
     late Widget result;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       result = buildFeatureSettingsEditor(context, feature,
           occasionId: 42, onSaveTicket: save);
       return const SizedBox.shrink();
@@ -80,7 +81,7 @@ void main() {
   testWidgets('unknown feature dispatcher keeps empty editor', (tester) async {
     final feature = Feature.fromJson({'code': 'unknown', 'is_enabled': true});
     late Widget result;
-    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (context) {
       result = buildFeatureSettingsEditor(context, feature, occasionId: 42);
       return const SizedBox.shrink();
     })));

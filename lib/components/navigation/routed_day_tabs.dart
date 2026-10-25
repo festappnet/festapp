@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/app_logger.dart';
 
 /// Calendar identity in the occasion's timezone, independent of weekday/order.

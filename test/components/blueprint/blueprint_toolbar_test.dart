@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,13 +80,13 @@ void main() {
               locale: const Locale('cs'),
               supportedLocales: VenueLayoutLocalizations.supportedLocales,
               localizationsDelegates:
-                  VenueLayoutLocalizations.localizationsDelegates,
+                  [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
               theme: ThemeConfig.theme(brightness: brightness),
-              builder: (context, child) => MediaQuery(
+              builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                 data: MediaQuery.of(context).copyWith(
                     textScaler: TextScaler.linear(width == 320 ? 1.6 : 1)),
                 child: child!,
-              ),
+              )),
               home: RepaintBoundary(
                 key: boundaryKey,
                 child: BlueprintLayoutHost(

@@ -66,7 +66,7 @@ test('a changed release uses normal navigation instead of mixing its runtime wit
  const dom=new JSDOM(html('Home'),{url:'https://vstupenky.online/napoveda/',virtualConsole:new VirtualConsole()});t.after(()=>dom.window.close());
  const win=dom.window;let destination;
  win.fetch=async()=>response(html('New release','','next.js'));win.scrollTo=()=>{};
- const wrapped=new Proxy(win,{get(target,key){if(key==='location')return {origin:win.location.origin,pathname:win.location.pathname,search:'',assign:url=>{destination=url;}};return Reflect.get(target,key,target);}});
+ const wrapped=new Proxy(win,{get(target,key){if(key==='location')return {origin:win.location.origin,pathname:win.location.pathname,search:'',assign:url=>{destination=url;}};const value=Reflect.get(target,key,target);return typeof value === 'function' ? value.bind(target) : value;}});
  initHelpNavigation(wrapped);click(win,'/napoveda/objednavky/');await new Promise(resolve=>setImmediate(resolve));
  assert.equal(destination,'https://vstupenky.online/napoveda/objednavky/');assert.equal(win.document.title,'Home');
 });

@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
@@ -39,7 +40,7 @@ void main() {
       return null;
     });
     const value = 'https://example.invalid/form/saved';
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: CopyButton(value: value, showLabel: true))));
     await tester.tap(find.text(CommonStrings.copy));
     await tester.pumpAndSettle();
@@ -55,7 +56,7 @@ void main() {
 
   testWidgets('labelled completion copy is accessible and copies the saved URL',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SizedBox(
                 width: 288,
@@ -78,7 +79,7 @@ void main() {
   for (final brightness in Brightness.values) {
     testWidgets('visible hover tooltip changes on copy and resets: $brightness',
         (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(brightness: brightness),
           home: const Scaffold(
               body: Center(child: CopyButton(value: 'ABC123')))));
@@ -104,7 +105,7 @@ void main() {
   testWidgets(
       'public form link copies server-confirmed baseline and fits narrow layout',
       (tester) async {
-    Widget app(String link, {String? savedLink}) => MaterialApp(
+    Widget app(String link, {String? savedLink}) => MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SizedBox(
                 width: 220,
@@ -137,7 +138,7 @@ void main() {
       (tester) async {
     for (final isForm in [true, false]) {
       for (final draft in ['', 'manual-slug']) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(body: PublicLink(link: draft, isForm: isForm))));
         expect(find.byType(CopyButton), findsNothing);
       }

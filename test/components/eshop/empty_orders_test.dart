@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/views/order_email_repair_dialog.dart';
 import 'dart:convert';
@@ -5,7 +6,7 @@ import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
@@ -93,10 +94,10 @@ void main() {
       path: 'unused',
       assetLoader: _Translations(),
       child: Builder(
-          builder: (context) => MaterialApp.router(
+          builder: (context) => MaterialApp.router(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 routerConfig: router.config(
                     deepLinkBuilder: (_) => DeepLink.path(path)),
               )),

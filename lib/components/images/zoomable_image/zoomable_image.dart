@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/zoomable_image/pinch_zoom_release_unzoom_widget.dart';
 
 /// Provides the “blockScroll” callbacks to all descendants.

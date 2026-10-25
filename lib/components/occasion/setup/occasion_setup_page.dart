@@ -39,7 +39,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';

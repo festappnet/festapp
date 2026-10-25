@@ -1,10 +1,11 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/views/form_variable_symbol_settings.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_presentation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_form_link.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_pricing.dart';
@@ -23,7 +24,7 @@ void main() {
       FormDefinition.metaStartingNumber: 202600,
     };
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) => FormVariableSymbolSettings(
@@ -47,7 +48,7 @@ void main() {
     final data = <String, dynamic>{'isPromoted': false};
     Map<String, dynamic>? patch;
     Future<void> render() => tester.pumpWidget(
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: OccasionSetupPromotion(
                 data: data,
@@ -74,7 +75,7 @@ void main() {
       var automatic = true;
       bool? valid;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) => OccasionSetupFormLink(
@@ -123,7 +124,7 @@ void main() {
     var automatic = true;
     late StateSetter update;
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {
@@ -245,7 +246,7 @@ void main() {
       };
       late StateSetter update;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -302,7 +303,7 @@ void main() {
       final data = <String, dynamic>{};
       var created = false;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) => OccasionSetupBankAccount(

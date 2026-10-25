@@ -17,7 +17,7 @@ import 'dart:typed_data';
 import 'package:auto_route/auto_route.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/report_strings.dart';

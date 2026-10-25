@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -18,7 +19,7 @@ void main() {
           greaterThanOrEqualTo(4.5));
       Future<Size> buttonSize(
           ThemeData buttonTheme, VoidCallback? onPressed) async {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: buttonTheme,
             home: Scaffold(
               body: Center(

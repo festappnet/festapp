@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import '../html/html_embedded_block.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as parser;
 import 'email_templates_strings.dart';

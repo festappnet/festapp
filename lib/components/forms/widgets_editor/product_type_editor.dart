@@ -1,5 +1,5 @@
 import 'product_detail_editor_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/eshop.dart';

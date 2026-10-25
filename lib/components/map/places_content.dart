@@ -1,6 +1,6 @@
 import 'package:fstapp/components/map/place_grid_record.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/router_service.dart';

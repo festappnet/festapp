@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -5,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:super_editor/super_editor.dart';
@@ -76,7 +77,7 @@ void main() {
                 locale: const Locale('cs'), translations: translations)
             .pumpWidget(
                 tester,
-                MaterialApp(
+                MaterialApp(builder: DependencyMaterialBridge.builder,
                     theme: ThemeConfig.theme(brightness: Brightness.dark),
                     home: MediaQuery(
                         data: MediaQueryData(
@@ -131,7 +132,7 @@ void main() {
                 as Map<String, dynamic>)
         .pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: Scaffold(
                     body: SingleChildScrollView(
                         child: OccasionSetupEmailTemplates(
@@ -165,7 +166,7 @@ void main() {
             locale: const Locale('cs'), translations: translations)
         .pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 home: Scaffold(
                     body: SingleChildScrollView(
                         child: OccasionSetupEmailTemplates(

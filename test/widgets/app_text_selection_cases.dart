@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_view.dart';
@@ -24,8 +25,8 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(
         theme: ThemeData(platform: TargetPlatform.linux),
-        builder: (context, child) =>
-            AppTextSelection(enabled: true, child: child!),
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) =>
+            AppTextSelection(enabled: true, child: child!)),
         home: Scaffold(
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +68,7 @@ void main() {
   }
 
   testWidgets('disabled selection preserves the child', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(const MaterialApp(builder: DependencyMaterialBridge.builder,
       home: AppTextSelection(enabled: false, child: Text('Native content')),
     ));
     expect(find.text('Native content'), findsOneWidget);

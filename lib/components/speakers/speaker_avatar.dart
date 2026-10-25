@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 
 /// A circular speaker/counselor avatar. Falls back to a person icon when the

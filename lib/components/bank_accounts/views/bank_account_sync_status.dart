@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../bank_account_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import '../../eshop/orders_strings.dart';

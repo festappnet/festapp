@@ -1,0 +1,307 @@
+![File Picker](https://raw.githubusercontent.com/vicajilau/flutter_file_picker/main/.github/assets/readme_banner.svg)
+<p align="center">
+  <a href="https://pub.dev/packages/file_picker">
+    <img alt="File Picker" src="https://img.shields.io/pub/v/file_picker.svg">
+  </a>
+  <a href="https://github.com/Solido/awesome-flutter">
+    <img alt="Awesome Flutter" src="https://img.shields.io/badge/Awesome-Flutter-blue.svg?longCache=true&style=flat-square">
+  </a>
+  <a href="https://github.com/vicajilau/flutter_file_picker/issues">
+    <img src="https://img.shields.io/github/issues/vicajilau/flutter_file_picker" alt="GitHub issues badge">
+  </a>
+  <a href="https://github.com/vicajilau/flutter_file_picker?tab=MIT-1-ov-file">
+    <img src="https://img.shields.io/github/license/vicajilau/flutter_file_picker" alt="GitHub license badge">
+  </a>
+  <a href="https://github.com/vicajilau/flutter_file_picker/actions/workflows/main.yml">
+    <img alt="CI pipeline status" src="https://github.com/vicajilau/flutter_file_picker/actions/workflows/main.yml/badge.svg">
+  </a>
+</p>
+
+# File Picker
+
+A plugin that allows you to use the native file explorer to pick single or multiple files, with extensions filtering support.
+
+## Currently supported features
+
+* Uses OS default native pickers
+* Supports multiple platforms (Mobile, Web, Desktop)
+* Supports **WebAssembly (Wasm)** compilation
+* Pick files using **custom format** filtering — you can provide a list of file extensions (pdf, svg, zip, etc.)
+* Pick files from **cloud files** (GDrive, Dropbox, iCloud)
+* Single or multiple file picks
+* Supports retrieving as `XFile` (`cross_file`) for easy manipulation with other libraries
+* Different default type filtering (media, image, video, audio or any)
+* Picking directories
+* Picking both files and directories simultaneously
+* Read file content easily via `file.readAsBytes()` or stream via `file.readAsByteStream()`
+* Open a save-file / save-as dialog (a dialog that lets the user specify the drive, directory, and name of a file to save)
+
+If you have any feature that you want to see in this package, please feel free to issue a suggestion. 🎉
+
+## Compatibility Chart
+
+| API                           | Android            | iOS                | Linux              | macOS              | Windows            | Web                |
+|-------------------------------|--------------------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| `clearTemporaryFiles()`       | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                |
+| `getDirectoryPath()`          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| `pickFileAndDirectoryPaths()` | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| `pickFile()`                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| `pickFiles()`                 | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| `saveFile()`                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+
+See the [official API reference on pub.dev](https://pub.dev/documentation/file_picker/latest/file_picker/FilePicker-class.html) for further details.
+
+### Darwin implementation notes
+
+The iOS and macOS native implementations live under the shared Darwin source tree (`file_picker_darwin`). The iOS implementation requires iOS 14.0 or newer because it uses `PHPickerViewController` and `PHPickerResult`.
+
+## Migrating to v13
+
+1. **`PlatformFile.length()` Returns `Future<int?>`**:
+   * `null` means the length could not be determined (e.g. a failed disk read), distinct from a genuinely empty file, which still returns `0`.
+   * **v12**: `int bytes = await file.length();`
+   * **v13**: `int? bytes = await file.length();`
+   * **Tip**: You can also use `int? syncBytes = file.lengthSync();` to get the length immediately without disk I/O when already reported by the native picker, or combine them: `file.lengthSync() ?? await file.length()`.
+
+2. **Removed Parameters Deprecated Since v12**:
+   * `allowMultiple`, `withData`, `withReadStream`, and `readSequential` on `pickFiles()`: use `pickFile()` for single-file selection, and `PlatformFile.readAsBytes()`/`readAsByteStream()` to read file data.
+   * `lockParentWindow` on `pickFiles()`/`pickFile()`/`getDirectoryPath()`/`saveFile()`: use `WindowsOptions.lockParentWindow` or `LinuxOptions.lockParentWindow`.
+   * `cancelUploadOnWindowBlur` on `pickFiles()`/`pickFile()`: pass `webOptions: FilePickerWebOptions(cancelUploadOnWindowBlur: false)`. `FilePickerWebOptions` lives in `package:file_picker_web`, so add it as a direct dependency to import it.
+   * `androidSafOptions` on `pickFiles()`/`pickFile()`/`getDirectoryPath()`: use `androidOptions`.
+
+## Migrating to v12
+
+Version 12.0 transitions `file_picker` to a **federated plugin architecture**.
+
+### Key Breaking Changes & Migration Steps
+
+1. **`FilePicker.pickFiles()` Returns `List<PlatformFile>`**:
+   * `FilePickerResult` has been removed in favor of direct lists of `PlatformFile`.
+   * Returns an empty list (`[]`) if the user canceled the operation.
+   * **v11**: `FilePickerResult? result = await FilePicker.pickFiles();`
+   * **v12**: `List<PlatformFile> files = await FilePicker.pickFiles();`
+
+2. **Single File Picking**:
+   * Use `FilePicker.pickFile()` to pick a single file returning `PlatformFile?`.
+
+3. **Reading Bytes and Streaming**:
+   * Instead of using `withData: true` or `withReadStream: true` flags, use `PlatformFile` methods directly:
+     * `Uint8List bytes = await file.readAsBytes();`
+     * `Stream<Uint8List> stream = file.readAsByteStream();`
+
+4. **Platform Options**:
+   * Platform-specific parameters are grouped into configuration options, with implementations per platform:
+     * `AndroidOptions` / `FilePickerAndroidOptions`
+     * `DarwinOptions`
+     * `WindowsOptions` / `FilePickerWindowsOptions`
+     * `LinuxOptions` / `FilePickerLinuxOptions`
+     * `WebOptions` / `FilePickerWebOptions`
+
+5. **`PlatformFile.size` Removed**:
+   * The `size` property is gone. Reading a file's length is now a method, because on some platforms it means touching the disk.
+   * **v11**: `int bytes = file.size;`
+   * **v12**: `int bytes = await file.length();`
+   * Since 12.2.0 there is also `int? lengthSync()`, which returns the length the native picker already reported without doing any I/O, or `null` when it did not report one. Use `file.lengthSync() ?? await file.length()` when you want a value either way.
+
+## Documentation
+
+For platform-specific setup, see the README of the platform package you're targeting (e.g. [`file_picker_darwin`](https://pub.dev/packages/file_picker_darwin) for macOS entitlements, [`android_file_picker`](https://pub.dev/packages/android_file_picker) for Android notes). For the full API, see the [official API reference on pub.dev](https://pub.dev/documentation/file_picker/latest/file_picker/FilePicker-class.html).
+
+## Usage
+
+#### Single file
+
+```dart
+PlatformFile? file = await FilePicker.pickFile();
+
+if (file != null) {
+  print(file.name);
+  print(await file.length());
+} else {
+  // User canceled the picker
+}
+```
+
+#### Multiple files
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles();
+
+if (files.isNotEmpty) {
+  for (final file in files) {
+    print(file.name);
+  }
+} else {
+  // User canceled the picker
+}
+```
+
+#### Multiple files with extension filter
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles(
+  type: FileType.custom,
+  allowedExtensions: ['jpg', 'pdf', 'doc'],
+);
+```
+
+#### iOS photo-library asset representation
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles(
+  type: FileType.video,
+  compressionQuality: 0,
+  darwinOptions: const DarwinOptions(
+    assetRepresentationMode: DarwinAssetRepresentationMode.current,
+  ),
+);
+```
+
+`DarwinAssetRepresentationMode.automatic` is the default. Use `current` to
+avoid transcoding when possible, or `compatible` to request a broadly
+compatible representation. Non-automatic modes require
+`compressionQuality: 0` and only affect media selected from the iOS photo
+library.
+
+#### iOS photo-library swipe to select
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles(
+  type: FileType.media,
+  darwinOptions: const DarwinOptions(orderedSelection: false),
+);
+```
+
+By default the iOS photo library picker numbers the selected media and returns
+it in the order the user selected it, which disables selecting several items
+by swiping across the grid. Set `orderedSelection: false` to restore swipe to
+select when the selection order does not matter. It only applies to
+`FileType.image`, `FileType.video` and `FileType.media`, the types that use the
+photo library picker.
+
+#### iOS photo-library assets without a copy
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles(
+  type: FileType.video,
+  darwinOptions: const DarwinOptions(copyMedia: false),
+);
+final assetIdentifiers = [
+  for (final file in files)
+    if (file case DarwinPlatformFile(:final assetIdentifier?)) assetIdentifier,
+];
+// Open the original assets by their identifiers, for example with photo_manager.
+```
+
+Media picked from the iOS photo library is copied into the app's temporary
+directory, and each file also carries its photo library `assetIdentifier`
+(`DarwinPlatformFile` comes from `package:file_picker_darwin`). Set
+`copyMedia: false` to skip the copy, for example for large videos: the files
+then only reference the original assets, which can be opened by their
+identifier with photo library access, and reading them through the returned
+file throws an `UnsupportedError`.
+
+#### Confirm button text
+
+```dart
+List<PlatformFile> files = await FilePicker.pickFiles(
+  windowsOptions: const WindowsOptions(acceptLabel: 'Choose'),
+  linuxOptions: const LinuxOptions(acceptLabel: 'Choose'),
+  darwinOptions: const DarwinOptions(acceptLabel: 'Choose'),
+);
+```
+
+Sets the confirm button text of the file dialog. Supported on Windows
+(`pickFile()`, `pickFiles()`, `getDirectoryPath()`, `saveFile()`), Linux (same
+four), and macOS (`pickFile()`/`pickFiles()` only). Has no effect on iOS,
+Android, or Web.
+
+#### Save dialog on the web
+
+By default `saveFile()` downloads the file on the web, which most browsers
+drop into the Downloads folder. To let the user pick the folder and the file
+name, use the browser's save dialog:
+
+```dart
+await FilePicker.saveFile(
+  fileName: 'report.pdf',
+  bytes: bytes,
+  webOptions: FilePickerWebOptions(
+    saveMode: supportsShowSaveFileDialog
+        ? WebSaveFileMode.dialog
+        : WebSaveFileMode.download,
+  ),
+);
+```
+
+It returns a `Uri` whose path is the chosen file name, or `null` if the user
+cancelled. Browsers do not expose the folder, so that `Uri` has no scheme and
+cannot be used to read the file back. Not every browser supports the dialog,
+and `saveFile()` throws an `UnsupportedError` where it is missing, so check
+`supportsShowSaveFileDialog` first. The dialog only opens right after a user
+gesture, so without one it falls back to the download.
+
+`FilePickerWebOptions` comes from `package:file_picker_web`, which can only be
+imported when compiling for the web. In an app that also targets other
+platforms, build the options in a web only file chosen with a conditional
+import (`if (dart.library.js_interop)`).
+
+#### Recover a pick on Android
+
+When the operating system is low on memory, Android can destroy the app while
+the file picker is open, so the pending `pickFile()` or `pickFiles()` call
+never completes.
+The picked files are kept, and can be recovered once the app is restarted
+through `FilePickerAndroid`, which comes from `package:android_file_picker`:
+
+```dart
+if (FilePickerPlatform.instance case final FilePickerAndroid android) {
+  final lost = await android.retrieveLostData();
+  if (lost != null) {
+    if (lost.exception != null) {
+      // Picking succeeded but processing the files failed.
+    } else {
+      // Use lost.files as if pickFiles() had returned them.
+    }
+  }
+}
+```
+
+Call it early, for example in the `initState` of the screen that started the
+pick, which a `RestorationScope` can bring back. The result is delivered once,
+and only the most recent lost pick is kept. To reproduce it, enable
+"Don't keep activities" in the Android developer options.
+
+#### Pick a directory
+
+```dart
+String? selectedDirectory = await FilePicker.getDirectoryPath();
+
+if (selectedDirectory == null) {
+  // User canceled the picker
+}
+```
+
+#### Save-file / save-as dialog
+
+```dart
+Uri? outputFile = await FilePicker.saveFile(
+  dialogTitle: 'Please select an output file:',
+  fileName: 'output-file.pdf',
+  bytes: pdfBytes,
+);
+
+if (outputFile == null) {
+  // User canceled the picker
+}
+```
+
+## Credits
+
+`file_picker` is [Miguel Ruivo](https://github.com/miguelpruivo)'s work.
+
+He wrote the first commit on 23 June 2018 and spent the next eight years turning it into the package Flutter reaches for whenever an app needs a file. Six platform implementations, more than a hundred releases, millions of downloads every month, and over a hundred people who sent a patch along the way.
+
+Maintenance moved to this repository in 2026. The architecture, the API and most of the hard problems were solved long before that, and everything here is built on top of them.
+
+Thank you, Miguel.

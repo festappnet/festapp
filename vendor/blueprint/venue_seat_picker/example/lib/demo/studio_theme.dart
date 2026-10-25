@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 ThemeData studioTheme() {
   const ink = Color(0xff182230), muted = Color(0xff667085);

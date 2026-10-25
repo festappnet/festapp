@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/startup/startup_failure_screen.dart';
 import 'package:fstapp/startup/startup_language.dart';
@@ -19,7 +20,7 @@ void main() {
       final language = await resolveStartupLanguage(defaultLanguage: 'cs');
       expect(language, saved);
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: StartupFailureScreen(
             phase: 'S05',
             language: language,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class MouseDetector extends StatefulWidget {
   final Widget Function(BuildContext context, bool mouseIsConnected) builder;

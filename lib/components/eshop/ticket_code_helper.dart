@@ -1,6 +1,6 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';

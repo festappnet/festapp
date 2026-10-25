@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/map/map_current_location_drop.dart';
 import 'package:fstapp/components/map/map_edge_indicator_layout.dart';
 import 'package:fstapp/components/map/map_location_style.dart';

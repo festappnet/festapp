@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_sync_warning_button.dart';
 

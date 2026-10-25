@@ -2,7 +2,7 @@ import 'package:fstapp/components/occasion/demo/demo_occasion_banner.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';

@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/theme_config.dart';
@@ -37,7 +38,7 @@ void main() {
         (tester) async {
       final saved = Completer<void>();
       var saves = 0;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeConfig.theme(brightness: brightness),
           home: Scaffold(
               bottomNavigationBar: EditorActionBar(

@@ -2,7 +2,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';

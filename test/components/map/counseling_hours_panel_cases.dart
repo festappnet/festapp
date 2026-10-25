@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/counseling_hours_panel.dart';
 import 'package:fstapp/components/map/map_page_helper.dart';
@@ -19,7 +20,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         theme: ThemeData(colorSchemeSeed: Colors.blue),
         darkTheme: ThemeData(
           brightness: Brightness.dark,

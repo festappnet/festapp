@@ -9,7 +9,7 @@ import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/information/information_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/styles/styles_config.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart' show ThemeConfig;
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'dart:async';

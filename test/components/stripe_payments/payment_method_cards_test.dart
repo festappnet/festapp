@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
@@ -29,7 +30,7 @@ void main() {
             locale: const Locale('cs'), translations: catalog)
         .pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeData(brightness: brightness),
               home: Scaffold(
                   body: SingleChildScrollView(

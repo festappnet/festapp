@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/components/forms/form_session.dart';

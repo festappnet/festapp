@@ -1,7 +1,7 @@
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'ticket_feature.dart';
 import 'feature_settings_editor.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 
 import 'feature.dart';

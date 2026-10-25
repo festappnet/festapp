@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:ui' show PointerDeviceKind;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
@@ -12,7 +13,7 @@ void main() {
   ) async {
     const contentKey = Key('unit-content');
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp(builder: DependencyMaterialBridge.builder,
         home: DefaultTabController(
           length: 2,
           child: Builder(

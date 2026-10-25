@@ -20,7 +20,7 @@ import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';

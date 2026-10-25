@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:festapp_core/map.dart';
@@ -13,7 +14,7 @@ void main() {
     required PlaceModel? place,
     required ValueChanged<int> onOpenPlace,
   }) {
-    return MaterialApp(
+    return MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: ProfilePlaceField(
           label: UserInfoModel.userGroupColumn,

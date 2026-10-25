@@ -1,7 +1,7 @@
 import 'package:fstapp/components/users/widgets/account_connections_link.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';

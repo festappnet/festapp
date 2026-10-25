@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart' show Color, TextStyle;
+import 'package:material_ui/material_ui.dart' show Color, TextStyle;
 import 'package:html/dom.dart' as dom;
 import 'package:csslib/parser.dart' as css;
 import 'package:html/parser.dart' as parser;

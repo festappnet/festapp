@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'layout_style.dart';
 import 'layout_font_size_control.dart';

@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -43,7 +44,7 @@ void main() {
         products: [product],
         availableBankAccounts: []);
     var edits = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: FormFieldsGenerator(
@@ -77,7 +78,7 @@ void main() {
       (tester) async {
     const bodyKey = Key('body');
     const footerKey = Key('footer');
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: DemoOccasionOverlay(
             child: Scaffold(
                 body: Container(key: bodyKey, color: Colors.green),

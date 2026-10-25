@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -11,7 +12,7 @@ void main() {
   for (final selected in [false, true]) {
     testWidgets('landing menu and marker selected=$selected', (tester) async {
       var called = false;
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
               body: SizedBox(
                   width: 320,
@@ -41,7 +42,7 @@ void main() {
     });
   }
   testWidgets('read-only card has no landing command', (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionEditCard(
       occasion: OccasionModel(
@@ -66,7 +67,7 @@ void main() {
           'Helpni víkendovka v komunitě s přípravou programu a společným setkáním všech dobrovolníků';
       var opened = false;
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(brightness: brightness),
           home: Scaffold(
             body: Center(

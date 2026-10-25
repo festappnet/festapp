@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/local_storage_fixture.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -187,7 +188,7 @@ void main() {
     final information = cached.singleWhere((info) => info.id == 12);
     expect(information.aggregateVersion, 7);
     Future<void>? saving;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: EditableHtmlField(
                 html: information.description,

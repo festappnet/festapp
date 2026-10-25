@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 // The actual editor with local fixtures. No production connection or writes.
 import 'dart:convert';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -32,9 +33,9 @@ void main() async {
       path: 'assets/translations',
       startLocale: const Locale('cs'),
       child: Builder(
-          builder: (context) => MaterialApp(
+          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
               theme: ThemeData(fontFamily: 'TicketLayoutFont'),
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
               supportedLocales: context.supportedLocales,
               locale: context.locale,
               home: _Preview(fixture: fixture)))));

@@ -42,7 +42,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://fixture.invalid',
-      anonKey: 'fixture',
+      publishableKey: 'fixture',
       authOptions: const FlutterAuthClientOptions(
         autoRefreshToken: false,
         localStorage: EmptyLocalStorage(),
@@ -158,4 +158,70 @@ void main() {
       },
     );
   }
+  test('invalid ticket background fails before upload', () async {
+    await http.runWithClient(() async {
+      await expectLater(
+        TicketLayoutService().uploadBackground(
+          Uint8List.fromList([1, 2, 3]),
+          12,
+        ),
+        throwsFormatException,
+      );
+    }, () => client);
+    expect(uploads, isEmpty);
+  });
+  test(
+    'large JPEG ticket background retains source bytes for server processing',
+    () async {
+      final bytes = Uint8List.fromList(
+        image.encodeJpg(image.Image(width: 2400, height: 600)),
+      );
+      await http.runWithClient(
+        () => TicketLayoutService().uploadBackground(bytes, 12),
+        () => client,
+      );
+      final body = latin1.decode(uploads.single.bodyBytes);
+      expect(body, contains(latin1.decode(bytes)));
+      expect(body, contains('\r\nticket-background\r\n'));
+      expect(body, isNot(contains('name="maxEdge"')));
+    },
+  );
+  test(
+    'landscape and portrait ticket backgrounds use the server print profile',
+    () async {
+      for (final size in [(2000, 600), (600, 2000)]) {
+        uploads.clear();
+        final bytes = Uint8List.fromList(
+          image.encodeJpg(image.Image(width: size.$1, height: size.$2)),
+        );
+        await http.runWithClient(
+          () => TicketLayoutService().uploadBackground(bytes, 12),
+          () => client,
+        );
+        final body = latin1.decode(uploads.single.bodyBytes);
+        expect(body, contains(latin1.decode(bytes)));
+        expect(body, contains('\r\nticket-background\r\n'));
+      }
+    },
+  );
+  test('suitable JPEG and transparent PNG ticket backgrounds retain original bytes', () async {
+    final transparent = image.Image(width: 20, height: 10, numChannels: 4);
+    for (final bytes in [
+      image.encodeJpg(image.Image(width: 20, height: 10)),
+      image.encodePng(transparent),
+    ]) {
+      uploads.clear();
+      await http.runWithClient(
+        () => TicketLayoutService().uploadBackground(
+          Uint8List.fromList(bytes),
+          12,
+        ),
+        () => client,
+      );
+      expect(
+        latin1.decode(uploads.single.bodyBytes),
+        contains(latin1.decode(bytes)),
+      );
+    }
+  });
 }

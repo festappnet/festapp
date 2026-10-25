@@ -1,6 +1,6 @@
 import 'package:fstapp/components/forms/email_validation.dart';
 import 'email_suffix_confirmation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/forms/logic/phone_country_codes.dart';

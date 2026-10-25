@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_invitations.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
@@ -29,7 +30,7 @@ void main() {
       'teamInviteEmails': ['one@example.org'],
       'sendTeamInvitations': true
     };
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: StatefulBuilder(
@@ -68,7 +69,7 @@ void main() {
   testWidgets('ordinary editor cannot look up recipients or add invitations',
       (tester) async {
     final patches = <Map<String, dynamic>>[];
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionSetupInvitations(
                 draftId: 'draft',
@@ -85,7 +86,7 @@ void main() {
   testWidgets('review shows each selected role and does not opt into sending',
       (tester) async {
     bool? choice;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: OccasionSetupInvitationsSummary(data: {
       'teamInviteEmails': ['read@example.org'],

@@ -1,8 +1,8 @@
-import 'package:timezone/timezone.dart' as tz;
+import 'package:festapp_core/time.dart';
 
 /// Calendar day in the same timezone as the report's SQL order buckets.
 DateTime reportDay(DateTime instant) {
-  final local = tz.TZDateTime.from(instant, tz.getLocation('Europe/Prague'));
+  final local = OccasionTimeContext.named('Europe/Prague').atInstant(instant);
   return DateTime.utc(local.year, local.month, local.day);
 }
 

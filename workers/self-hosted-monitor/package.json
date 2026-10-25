@@ -7,7 +7,7 @@
     "test": "node --test"
   },
   "devDependencies": {
-    "wrangler": "^4.151.3"
+    "wrangler": "^4.152.0"
   },
   "dependencies": {
     "@festapp/monitoring": "file:vendor/festapp-monitoring-0.1.1.tgz"

@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/fonts/font_family_picker.dart';
@@ -47,7 +48,7 @@ void main() {
     var changes = 0;
     await _environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: FormDesignSettings(
               form: form,
@@ -74,8 +75,10 @@ void main() {
     expect(find.text(FormStrings.fontLoadFailed), findsNothing);
     expect(form.definition.fontFamily, 'Inter');
 
-    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    final choice = find.descendant(of: find.byType(FontFamilyPicker),
+        matching: find.byType(DropdownButtonFormField<String>));
+    await tester.ensureVisible(choice);
+    await tester.tap(choice);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Roboto').last);
     await tester.pumpAndSettle();

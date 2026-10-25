@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -7,7 +8,7 @@ import 'package:fstapp/theme_config.dart';
 
 Future<void> openDialog(WidgetTester tester, WidgetBuilder builder,
     {ValueChanged<String?>? onResult}) async {
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
     home: Scaffold(
       body: Builder(
         builder: (context) => TextButton(
@@ -57,7 +58,7 @@ void main() {
       (tester) async {
     final caller = FocusNode();
     addTearDown(caller.dispose);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: Builder(
                 builder: (context) => Focus(

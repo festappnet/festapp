@@ -1,9 +1,10 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/order_symbol_cell.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -106,7 +107,7 @@ void main() {
         order.paymentInfoModel = PaymentInfoModel();
       }
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Builder(
             builder: (context) {
               grid = SingleDataGridController<OrderModel>(
@@ -279,7 +280,7 @@ void main() {
       final theme = ThemeData(
           colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.indigo, brightness: brightness));
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: theme,
           home: Scaffold(
               body: SizedBox(
@@ -307,7 +308,7 @@ void main() {
       expect(find.byIcon(Icons.copy), findsOneWidget);
       await tester.tap(find.byIcon(Icons.copy));
       await tester.pumpAndSettle();
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: theme,
           home: Scaffold(
               body: SizedBox(
@@ -342,7 +343,7 @@ void main() {
         TicketModel(id: 5, state: null, relatedOrder: parent),
       ];
       await tester.pumpWidget(
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
           home: Builder(
             builder: (context) {
               grid = SingleDataGridController<TicketModel>(
@@ -412,7 +413,7 @@ void main() {
       await font.load();
     });
     for (final scale in [1.0, 1.3]) {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
           theme: ThemeData(fontFamily: 'RealRoboto'),
           home: MediaQuery(
               data: MediaQueryData(textScaler: TextScaler.linear(scale)),

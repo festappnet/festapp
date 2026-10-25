@@ -1,7 +1,8 @@
-import 'package:cross_file/cross_file.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/toast_helper.dart';
+
 import 'editor_file_drop_strings.dart';
 
 const editorRasterExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
@@ -35,7 +36,7 @@ class EditorFileDropRegion extends StatefulWidget {
   final bool active;
   final String hint;
   final List<String> allowedExtensions;
-  final Future<void> Function(XFile) onFileDropped;
+  final Future<void> Function(ImportFile) onFileDropped;
   final Widget child;
 
   @override
@@ -63,14 +64,18 @@ class _EditorFileDropRegionState extends State<EditorFileDropRegion> {
     if (!editorFileDropIsActive(context)) _hover = false;
   }
 
-  Future<void> _drop(DropDoneDetails details) async {
+  Future<void> _drop(DropDetails details) async {
     if (_hover) setState(() => _hover = false);
     if (!_enabled) return;
+    final files = details.items
+        .where((item) => item is DropFileItem || item is DropDirectoryItem)
+        .toList();
     String? error;
-    if (details.files.length != 1 || details.files.first is DropItemDirectory) {
+    if (files.length != 1 || files.first is! DropFileItem) {
       error = EditorFileDropStrings.singleFile;
-    } else if (!widget.allowedExtensions
-        .contains(details.files.single.name.toLowerCase().split('.').last)) {
+    } else if (!widget.allowedExtensions.contains(
+      (files.single as DropFileItem).name.toLowerCase().split('.').last,
+    )) {
       error = EditorFileDropStrings.unsupported;
     }
     if (error != null) {
@@ -79,7 +84,16 @@ class _EditorFileDropRegionState extends State<EditorFileDropRegion> {
     }
     setState(() => _busy = true);
     try {
-      await widget.onFileDropped(details.files.single);
+      final item = files.single as DropFileItem;
+      // Await the consumer before returning; the provider stays live throughout.
+      await widget.onFileDropped(
+        ImportFile(
+          name: item.name,
+          mimeType: item.mimeType,
+          readBytes: item.file.readAsBytes,
+          size: item.file.length,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -88,45 +102,50 @@ class _EditorFileDropRegionState extends State<EditorFileDropRegion> {
   @override
   Widget build(BuildContext context) {
     // Subscribe to nearest route changes as well as retained-tab TickerMode.
-    final active = (ModalRoute.isCurrentOf(context) ?? true) &&
+    final active =
+        (ModalRoute.isCurrentOf(context) ?? true) &&
         TickerMode.valuesOf(context).enabled &&
         _enabled;
     return DropTarget(
-      enable: active,
-      onDragEntered: (_) {
+      enabled: active,
+      operation: DropOperation.copy,
+      acceptedKinds: const {DropItemKind.file, DropItemKind.directory},
+      onEnter: (_) {
         if (_enabled) setState(() => _hover = true);
       },
-      onDragExited: (_) {
+      onLeave: () {
         if (mounted && _hover) setState(() => _hover = false);
       },
-      onDragDone: _drop,
-      child: Stack(fit: StackFit.expand, children: [
-        widget.child,
-        if (_hover && active)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primaryContainer
-                      .withValues(alpha: .9),
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.primary, width: 3),
+      onDrop: _drop,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          if (_hover && active)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer
+                        .withValues(alpha: .9),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 3,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.hint,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Center(
-                    child: Text(widget.hint,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer))),
               ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';

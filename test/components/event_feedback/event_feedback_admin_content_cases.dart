@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_admin_content.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -44,7 +45,7 @@ void main() {
       ),
       occasionUser: OccasionUserModel(isEditor: true, isEditorView: true),
     );
-    return MaterialApp(
+    return MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: EventFeedbackAdminContent(
           loadOverride: loadOverride ?? (_) async => [feedbackRow],

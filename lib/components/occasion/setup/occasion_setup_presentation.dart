@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';

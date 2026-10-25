@@ -3,7 +3,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/reception/reception_service.dart';
 import 'package:fstapp/components/reception/reception_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';

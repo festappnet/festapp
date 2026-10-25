@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../venue_layout_controller.dart';
 import 'layout_strings.dart';
 

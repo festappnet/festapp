@@ -1,5 +1,6 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/groups/group_place_dialog.dart';
 import 'package:festapp_core/map.dart';
@@ -15,7 +16,7 @@ void main() {
     ValueChanged<Object?> onResult,
     List<PlaceModel> places,
   ) {
-    return MaterialApp(
+    return MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: Builder(
           builder: (dialogContext) => ElevatedButton(

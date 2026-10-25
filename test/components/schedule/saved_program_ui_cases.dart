@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/schedule/saved_program_ui.dart';
 
@@ -42,7 +43,7 @@ void main() {
     const primary = Color(0xff0000f4);
     final canSave = ValueNotifier(true);
     addTearDown(canSave.dispose);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       theme: ThemeData(
         colorScheme: const ColorScheme.light(
           primary: primary,
@@ -100,7 +101,7 @@ void main() {
       (tester) async {
     final canSave = ValueNotifier(false);
     addTearDown(canSave.dispose);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: SavedProgramActionIcon(
         canSave: canSave,
         color: Colors.black,

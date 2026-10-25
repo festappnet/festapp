@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'package:fstapp/components/unit/verification/ares_lookup_service.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
@@ -162,7 +163,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: OrganizationIdentityFooter(
                     identity: VerifiedOrganizationIdentity.tryParse(
@@ -180,7 +181,7 @@ void main() {
     addTearDown(controller.dispose);
     await fixture.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: Column(children: [
           TextField(controller: controller),
@@ -195,7 +196,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.text, 'Draft');
     await fixture.pumpWidget(tester,
-        const MaterialApp(home: OrganizationIdentityFooter(identity: null)));
+        const MaterialApp(builder: DependencyMaterialBridge.builder, home: OrganizationIdentityFooter(identity: null)));
     expect(find.byType(TextButton), findsNothing);
   });
   testWidgets(
@@ -215,7 +216,7 @@ void main() {
     });
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: UnitLegalProfileSection(
@@ -251,7 +252,7 @@ void main() {
               locale: const Locale('en'), translations: translations)
           .pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             theme: ThemeData.dark(),
             home: Scaffold(
                 body: SingleChildScrollView(
@@ -304,7 +305,7 @@ void main() {
               locale: const Locale('en'), translations: translations)
           .pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
           child: UnitLegalProfileSection(unitId: 1, canEdit: true, service: db),
@@ -364,7 +365,7 @@ void main() {
     });
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
           child: UnitLegalProfileSection(
@@ -418,7 +419,7 @@ void main() {
     });
     await env().pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: SingleChildScrollView(
           child: UnitLegalProfileSection(
@@ -461,7 +462,7 @@ void main() {
               'profile': {...identity, 'status': 'unverified'}
             });
     await env().pumpWidget(tester,
-        MaterialApp(navigatorKey: navigator, home: const Text('Settings')));
+        MaterialApp(builder: DependencyMaterialBridge.builder, navigatorKey: navigator, home: const Text('Settings')));
     unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
         builder: (_) => Scaffold(
             body: SingleChildScrollView(
@@ -500,10 +501,10 @@ void main() {
           tester,
           MaterialApp(
               theme: ThemeData(brightness: Brightness.dark),
-              builder: (context, child) => MediaQuery(
+              builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                   data: MediaQuery.of(context)
                       .copyWith(textScaler: const TextScaler.linear(1.5)),
-                  child: child!),
+                  child: child!)),
               home: Scaffold(
                   body: Center(
                       child: ConstrainedBox(

@@ -1,8 +1,9 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/blueprint/views/blueprint_plan_editor.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../../support/fixtures/layout_canvas_fixture.dart';
@@ -43,11 +44,11 @@ void main() {
     addTearDown(controller.dispose);
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             locale: const Locale('cs'),
             supportedLocales: VenueLayoutLocalizations.supportedLocales,
             localizationsDelegates:
-                VenueLayoutLocalizations.localizationsDelegates,
+                [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
             home: Scaffold(
                 body: BlueprintPlanEditor(
                     controller: controller, showGallery: false))));
@@ -90,7 +91,7 @@ void main() {
     final controller = VenueLayoutController(VenueLayoutDocument.empty());
     final originalDocument = controller.document;
     addTearDown(controller.dispose);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: VenueLayoutEditor(
           controller: controller,
@@ -149,7 +150,7 @@ void main() {
     var selectionChanges = 0;
     await environment.pumpWidget(
         tester,
-        MaterialApp(
+        MaterialApp(builder: DependencyMaterialBridge.builder,
             home: Scaffold(
                 body: BlueprintPlanEditor(
                     controller: controller,

@@ -1,7 +1,8 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
@@ -41,7 +42,7 @@ void main() {
       DemoOccasion? copied;
       await _environment.pumpWidget(
           tester,
-          MaterialApp(
+          MaterialApp(builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                   body: DemoOccasionsSection(
                       hasOwnOccasions: own,

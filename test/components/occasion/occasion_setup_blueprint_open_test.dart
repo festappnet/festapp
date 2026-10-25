@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -123,9 +124,9 @@ void main() {
                 as Map<String, dynamic>)
         .pumpWidget(
             tester,
-            MaterialApp(
+            MaterialApp(builder: DependencyMaterialBridge.builder,
                 localizationsDelegates:
-                    VenueLayoutLocalizations.localizationsDelegates,
+                    [...VenueLayoutLocalizations.localizationsDelegates, ...GlobalMaterialLocalizations.delegates],
                 supportedLocales: VenueLayoutLocalizations.supportedLocales,
                 locale: const Locale('cs'),
                 home: OccasionSetupPage(draft: draft)));

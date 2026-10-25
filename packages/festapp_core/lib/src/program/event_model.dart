@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'package:festapp_core/map.dart';
 import 'package:festapp_core/json_values.dart';
 import 'package:intl/intl.dart';
-import 'occasion_time_context.dart';
+import 'package:festapp_core/time.dart';
 
 const _unchanged = Object();
 

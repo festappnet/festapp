@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/map/map_page_helper.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 

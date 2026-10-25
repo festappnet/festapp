@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:fstapp/components/information/info_page.dart';
 import 'package:fstapp/components/map/map_navigation.dart';

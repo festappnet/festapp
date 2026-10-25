@@ -1,6 +1,7 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
@@ -110,10 +111,10 @@ void main() {
       path: 'unused',
       assetLoader: const _Strings(),
       child: Builder(
-          builder: (context) => MaterialApp.router(
+          builder: (context) => MaterialApp.router(builder: DependencyMaterialBridge.builder,
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
                 routerConfig: router.config(
                     deepLinkBuilder: (_) => const DeepLink.path(
                         '/occasion-a/admin/info/information')),
