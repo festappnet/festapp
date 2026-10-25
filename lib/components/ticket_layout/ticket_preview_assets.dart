@@ -65,19 +65,20 @@ class TicketPreviewAssets {
 
   /// The cache owns one handle; each session owns and disposes its clone.
   /// Eviction therefore never invalidates a canvas already using the image.
-  Future<ui.Image?> image(String url) async {
+  Future<ui.Image?> image(String url, {int? maxWidth}) async {
+    final cacheKey = maxWidth == null ? url : "$url@w$maxWidth";
     if ((await manifest)['artwork'][url] == null && _palette(url) == null)
       return null;
     while (true) {
-      final hit = _decoded.remove(url);
+      final hit = _decoded.remove(cacheKey);
       if (hit != null) {
-        _decoded[url] = hit;
+        _decoded[cacheKey] = hit;
         return hit.clone();
       }
       await _decoding.putIfAbsent(
-          url,
-          () => _decode(url).whenComplete(() {
-                _decoding.remove(url);
+          cacheKey,
+          () => _decode(url, cacheKey, maxWidth).whenComplete(() {
+                _decoding.remove(cacheKey);
               }));
     }
   }
@@ -86,13 +87,14 @@ class TicketPreviewAssets {
           r'^https://img\.festapp\.net/ticket-presets/v1/palette-([A-Fa-f0-9]{6})-([A-Fa-f0-9]{6})-([a-z_]{1,32})-v([12])\.png' +
               r'$')
       .firstMatch(url);
-  Future<void> _decode(String url) async {
+  Future<void> _decode(String url, String cacheKey, int? maxWidth) async {
     final custom = _palette(url);
     final source =
         custom == null ? url : (await manifest)['backgrounds'][custom.group(3)];
     if (source == null) throw const FormatException('Palette artwork source');
     final data = await artwork(source);
-    final codec = await ui.instantiateImageCodec(data!);
+    final codec = await ui.instantiateImageCodec(data!,
+        targetWidth: maxWidth, allowUpscaling: false);
     late ui.Image image;
     try {
       image = (await codec.getNextFrame()).image;
@@ -110,6 +112,9 @@ class TicketPreviewAssets {
           throw const FormatException('Artwork roles');
         final colors = <int, int>{};
         for (var i = 0; i < pixels.length; i += 4) {
+          // Keep input and scrolling responsive while recoloring on web.
+          if (i > 0 && i % 65536 == 0)
+            await Future<void>.delayed(Duration.zero);
           final rgb = (pixels[i] << 16) | (pixels[i + 1] << 8) | pixels[i + 2];
           final target = colors.putIfAbsent(
               rgb,
@@ -162,7 +167,7 @@ class TicketPreviewAssets {
       _decodedBytes -= previous.width * previous.height * 4;
       previous.dispose();
     }
-    _decoded[url] = image;
+    _decoded[cacheKey] = image;
     _decodedBytes += size;
   }
 }

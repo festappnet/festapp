@@ -66,7 +66,6 @@ void main() {
                 visitedKeys: const {'4'},
                 eventTitle: 'Koncept · Podzimní slavnost',
                 status: 'Uloženo',
-                readiness: 'Dokončené nastavení: 20 %',
                 questionCount: 'Otázka 2 z 10',
                 segmentStates: const ['Dokončeno', 'Právě teď', 'Následuje'],
                 leaveLabel: 'Odejít',
@@ -136,7 +135,6 @@ void main() {
           currentIndex: 1,
           eventTitle: 'Draft',
           status: 'Saved',
-          readiness: 'Required setup: 20 %',
           questionCount: 'Question 2 of 3',
           segmentStates: const ['Completed', 'Current', 'Upcoming'],
           leaveLabel: 'Leave',
@@ -158,7 +156,7 @@ void main() {
           widget.properties.value == pair.$2);
       expect(segment, findsOneWidget);
     }
-    expect(find.text('Required setup: 20 %'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('story-target-start')));
     expect(selected, ['start']);
     // Request the Material button's actual focus node, then activate by Space.
@@ -193,7 +191,6 @@ void main() {
       currentIndex: 1,
       eventTitle: 'Draft',
       status: 'Saved',
-      readiness: 'Incomplete',
       questionCount: 'Question 1 of 4',
       segmentStates: const ['Completed', 'Current', 'Upcoming'],
       leaveLabel: 'Leave',
@@ -234,7 +231,6 @@ void main() {
           onQuestionSelected: selected.add,
           eventTitle: 'Draft',
           status: 'Saved',
-          readiness: 'In progress',
           questionCount: 'Question ${active + 1} of 18',
           segmentStates: const ['Completed', 'Current', 'Upcoming'],
           leaveLabel: 'Leave',

@@ -420,9 +420,9 @@ class TicketLayoutService {
 
   Future<TicketFontResource> font(int occasionId, String id) async {
     final builtins = (await TicketPreviewAssets.shared.manifest)['fonts'] as Map;
-    if(builtins.containsKey(id) && _fonts.containsKey(id)) return _fonts[id]!;
-    final local = await TicketPreviewAssets.shared.font(id);
-    if (local != null) return _cache(id, () async => local);
+    if (builtins.containsKey(id)) {
+      return _cache(id, () async => (await TicketPreviewAssets.shared.font(id))!);
+    }
     final identity = identityKey();
     final reply = await _request({
       'occasionId': occasionId,

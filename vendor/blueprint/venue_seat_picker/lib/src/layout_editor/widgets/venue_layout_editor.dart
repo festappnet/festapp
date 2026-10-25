@@ -5,7 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'layout_scene_surface.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
-import 'layout_template_card.dart';
+import 'layout_template_gallery.dart';
 import 'layout_table_selection.dart';
 import 'layout_palette_drag_feedback.dart';
 import 'layout_palette_thumbnail.dart';
@@ -1929,59 +1929,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   }
 
   Future<void> _gallery() async {
-    final picked = await showEditorDialog<LayoutTemplate>(
-      context: context,
-      builder: (context) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 700),
-          child: Column(
-            children: [
-              ListTile(
-                title: const LayoutText('Choose a starting plan'),
-                subtitle: const LayoutText(
-                  'Every layout is editable. All sections stay on one plan.',
-                ),
-                trailing: IconButton(
-                  tooltip: VenueLayoutStrings.text(context, 'Close gallery'),
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, size) => GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: math.max(
-                        1,
-                        (size.maxWidth / 260).floor(),
-                      ),
-                      mainAxisExtent: 250,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: VenueLayoutTemplates.recommended.length,
-                    itemBuilder: (context, index) {
-                      final template = VenueLayoutTemplates.recommended[index];
-                      return LayoutTemplateCard(
-                        key: ValueKey('layout-template-${template.id}'),
-                        template: template,
-                        onPressed: () => Navigator.pop(context, template),
-                        preview: LayoutSceneSurface(
-                          showControls: false,
-                          animate: false,
-                          document: template.create(),
-                          resources: c.resources,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    final picked = await showVenueLayoutTemplateGallery(
+      context,
+      resources: c.resources,
     );
     if (picked != null && mounted) {
       if (c.document.nodes.isNotEmpty) {
@@ -2029,7 +1979,10 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     }
     final previous = _previews[kind];
     if (previous != null &&
-        !sameLayoutValue(previous.seatingDefaults, c.document.seatingDefaults)) {
+        !sameLayoutValue(
+          previous.seatingDefaults,
+          c.document.seatingDefaults,
+        )) {
       _previews.remove(kind);
     }
     final base = _previews.putIfAbsent(kind, () {

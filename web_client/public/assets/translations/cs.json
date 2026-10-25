@@ -3164,6 +3164,20 @@
       "duplicateTypes": "Dvě pole vstupenky nemohou v jedné šabloně odkazovat na stejnou skupinu produktů. Vyberte různé skupiny.",
       "invalidReferences": "Plánek nebo vstupenka odkazuje na produkty, které ve vybraném formuláři chybí. Ve formuláři vyberte jejich náhrady.",
       "repairReferences": "Propojit produkty"
+    },
+    "ui": {
+      "palette_ocean": "Oceán",
+      "palette_royal": "Královský",
+      "palette_lavender": "Levandulový",
+      "palette_citrus": "Citrusový",
+      "palette_sunset": "Západ slunce",
+      "palette_wine": "Vínový",
+      "palette_terracotta": "Terakotový",
+      "palette_forest": "Lesní",
+      "palette_graphite": "Grafitový",
+      "palette_rose": "Růžový",
+      "palette_azure": "Azurový",
+      "palette_cream": "Krémový"
     }
   },
   "Waitlist": {
