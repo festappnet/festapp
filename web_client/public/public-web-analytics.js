@@ -45,7 +45,11 @@
     const beacon = document.createElement('script');
     beacon.type = 'module';
     beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
-    beacon.dataset.cfBeacon = JSON.stringify({ token, spa: false });
+    // Zone-backed sites use Cloudflare's built-in same-origin collector. Manual
+    // sites retain the provider's external endpoint. Both use the official beacon.
+    const send = script.dataset.analyticsCollector === '/cdn-cgi/rum'
+        ? { to: '/cdn-cgi/rum' } : undefined;
+    beacon.dataset.cfBeacon = JSON.stringify({ token, spa: false, ...(send ? { send } : {}) });
     beacon.referrerPolicy = 'origin';
     document.head.appendChild(beacon);
 })();

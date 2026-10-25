@@ -163,7 +163,8 @@ function publicAnalyticsHtml(html, request) {
       !/^[a-f0-9]{32}$/.test(PUBLIC_WEB_ANALYTICS.token)) return html;
   // This helper is called only by the public catalogue/form/marketing owners.
   // The browser makes the final decision for fragments, private parameters and frames.
-  const script = `<script src="/public-web-analytics.js" data-analytics-host="${escapeHtml(url.hostname)}" data-analytics-token="${PUBLIC_WEB_ANALYTICS.token}"></script>`;
+  const collector = PUBLIC_WEB_ANALYTICS.collector === '/cdn-cgi/rum' ? ' data-analytics-collector="/cdn-cgi/rum"' : '';
+  const script = `<script src="/public-web-analytics.js" data-analytics-host="${escapeHtml(url.hostname)}" data-analytics-token="${PUBLIC_WEB_ANALYTICS.token}"${collector}></script>`;
   return html.replace(/<head\b[^>]*>/i, match => match + script);
 }
 
@@ -631,6 +632,8 @@ analytics_sites = json.loads(pathlib.Path('automation/cloudflare/web-analytics-s
 analytics_site = analytics_sites.get(canonical.hostname)
 if analytics_site and not all(re.fullmatch('[a-f0-9]{32}', analytics_site.get(key, '')) for key in ('siteTag', 'token')):
     raise SystemExit('Invalid public Web Analytics identity')
+if analytics_site and analytics_site.get('collector') not in (None, '/cdn-cgi/rum'):
+    raise SystemExit('Invalid public Web Analytics collector')
 source = source.replace('const PUBLIC_WEB_ANALYTICS = null;', 'const PUBLIC_WEB_ANALYTICS = ' + json.dumps(analytics_site) + ';', 1)
 landing_match = re.search(r'^WEB_ORGANIZER_LANDING_ENABLED=(.*)$', config, re.MULTILINE)
 landing_enabled = landing_match.group(1).strip() if landing_match else 'false'
