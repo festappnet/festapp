@@ -13,9 +13,9 @@
   "owner_authorization": "User explicitly authorized agent to configure 2FA as exception on 2026-10-23",
   "svn_password": "Account security currently exposes no SVN credentials setting; no plugin repository assigned before approval",
   "submission_form_available": true,
-  "pending_submission_detected": false,
+  "pending_submission_detected": true,
   "brand_relationship": "User-confirmed brand contact; actual confirmed account email info@festapp.net and profile site vstupenky.online verified. Directory reviewer retains final trademark/ownership assessment.",
-  "submitted": false,
+  "submitted": true,
   "published": false,
-  "verified_at": "2026-10-23T16:23:34.493016+00:00"
+  "verified_at": "2026-10-24T20:11:11.305117+00:00"
 }

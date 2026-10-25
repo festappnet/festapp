@@ -1,6 +1,12 @@
 # vstupenky.online - kontrola publikovatelnosti
 
-Ověřeno 2026-10-23/24 v odděleném lokálním prostředí. Oba pluginy jsou hotové jako samostatné instalační ZIPy. Veřejné podání, schválení WordPress.org, SVN vydání a produkční nasazení oprav služby neproběhly.
+**Podáno 2026-10-24:** vstupenky.online 1.0.0, předběžný slug
+`vstupenky-online`. Automatická kontrola WordPress.org: **Pass**.
+Ruční kontrola: **Awaiting Review**. Plugin ještě není veřejně v katalogu.
+Receipt: `evidence/submission-20261024.json`. Další distribuci nepodávat.
+
+
+Ověřeno 2026-10-23/24 v odděleném lokálním prostředí. Oba pluginy jsou hotové jako samostatné instalační ZIPy. Produkční opravy služby byly nasazeny jako 0.20.389+889; podání a schválení WordPress.org jsou samostatné kroky.
 
 | Produkt 1.0.0 | ZIP SHA-256 |
 | --- | --- |
@@ -9,7 +15,7 @@ Ověřeno 2026-10-23/24 v odděleném lokálním prostředí. Oba pluginy jsou h
 
 ZIPy jsou v `dist/`. Každý obsahuje vlastní kořenový adresář a 12 souborů. `shared/` je jediný společný zdroj rendereru, validace, nápovědy, editoru a překladů; `products.json` určuje dvě explicitní identity. Generátor vytvoří izolované PHP namespaces, textdomains, bloky, shortcode a asset handles. Instalace fungují jednotlivě i současně, bez dalšího runtime pluginu. Anglický zdroj obsahuje přibalené české překlady. Manifesty `evidence/shared-build.json` a `evidence/*-package-inputs.json` vážou přesné vstupy na oba balíčky. Opakované sestavení zachovalo oba hashe.
 
-## Audit publikovatelnosti 2026-10-24: produkční brána je otevřená
+## Audit publikovatelnosti 2026-10-24: připraveno k podání
 
 Aktuální návrh obsahuje pouze vstupenky.online. SaaS integrace tohoto typu není
 zakázaná; přijetí konkrétního podání posuzuje WordPress.org. Nezávislý kritik
@@ -23,14 +29,17 @@ WPCS českého pluginu (0 errors / 0 warnings) a produkční origin gate.
 Finální repack změnil pouze readme; jeho finální ZIP byl znovu instalován a
 prošel Plugin Check na obou sestavách. Runtime PHP/JS a překlady se nezměnily.
 
-**Podání ani veřejné vydání zatím není připravené:** živý helper má stále 3009
-bytes a chybí mu nové font/theme/price/scroll funkce. Potřebuje sladěný servisní
-release z kanonického mainu a skutečný cross-origin smoke. Rozpracovaný feature
-strom nelze nasadit celý místo novějšího mainu.
+**Produkční brány prošly:** main `db6db44d5`, tenant `fa0de1bd2`, verze
+0.20.389+889. Tři koherentní live probes a skutečný cross-origin embed
+z instalovaného ZIPu prošly. Plánek se otevře, Escape ho zavře a vrátí scroll
+na původních 885 px. Nebyla vytvořena objednávka ani rezervováno sedadlo.
+Helper SHA odpovídá zdroji. Doloženo v `evidence/production-release-20261024.json`.
+Vlastní doména nyní drží helper až čtyři hodiny v cache; klient je kompatibilní
+s předchozím helperem. Samotný formulář načítá živou službu.
 
 Přesný stav je v `evidence/publishability-review-20261024.json` a `dist/APPROVAL.json`.
 Kontrola `verify-submission.py --product vstupenky-online` ověřuje shodu artefaktů;
-`--submit-ready` odmítne návrh s otevřenou produkční bránou. Globální distribuce
+`--submit-ready` musí potvrdit uzavření produkčních bran. Globální distribuce
 není součástí tohoto podání. Následující onboarding receipt ověřoval dřívější ZIP.
 
 ## První použití po instalaci (2026-10-24, dřívější ZIP)
