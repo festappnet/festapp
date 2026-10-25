@@ -60,3 +60,38 @@ Interactive evidence is in ignored `.private/help-onboarding-20261025/`.
 These are local integration results, not evidence of a production deployment or
 real email/OAuth delivery. Production publication still requires the repository's
 independent review and normal single-tenant release gates.
+
+## Web sign-in correction
+
+The public entry now uses `/events?help=<allowlisted-intent>` and the same
+`LoginModal` as the web header. Previously shared `/login?redirect=/help-action/...`
+links redirect to that web entry. Signed-out visitors see the actual catalogue
+and standard web login/registration UI; Flutter is not loaded until authentication
+has completed. The existing modal preserves the help URL across registration and
+password login. Google return sanitization allows exactly the same validated
+help URL, including through account/profile proof, without permitting arbitrary
+return queries or external URLs.
+
+After authentication, the standard Flutter runtime handoff opens
+`/flutter?redirect=<encoded login-with-help-intent>`. The shell restores the login
+intent before bootstrap and the authenticated administration flow chooses an
+event or starts/resumes the existing first-event wizard. No second authentication
+implementation was introduced.
+
+Real headless UI follow-up against the same local backend:
+
+- Opened the exact reported orders URL in a fresh isolated browser. Result:
+  `/events?help=orders`, normal web login dialog, no `flt-glass-pane`.
+- Closed and reopened the dialog with the ordinary header sign-in button.
+- Signed in via the standard web form, selected `Slavnostní ples U Lípy`, and
+  reached `/b67pnakx/reservations/orders/current` with Orders selected.
+- Evidence screenshot: `.private/help-web-login-20261025/web-login.png`.
+- A separate synthetic account with zero events signed in through the web form,
+  reached the no-event chooser and started the existing first-event wizard.
+- Targeted web authentication/navigation tests passed (15), hosting/help/SEO/CSP
+  checks passed (36, including nested-shell regression), and the webclient
+  production build succeeded. Four old hosting assertions failed unchanged on
+  the previous commit as well; they now match the existing public-origin
+  referrer policy and accept no-store together with no-transform. Sensitive
+  callback no-referrer assertions remain unchanged.
+- No Dart source changed in this follow-up.

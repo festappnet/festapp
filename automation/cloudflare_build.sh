@@ -120,7 +120,7 @@ const PUBLIC_WEB_ANALYTICS = null; // stamped from the public hostname registry
 // PUBLIC_OCCASION_ROUTE_POLICY
 
 // Web client SPA routes (form list handled by /form/<slug> below).
-const WEB_CLIENT_EXACT = new Set(["/"]);
+const WEB_CLIENT_EXACT = new Set(["/", "/events"]);
 
 // Flutter SPA routes (login / admin / handover).
 const FLUTTER_PREFIXES = ["/login", "/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
@@ -404,6 +404,17 @@ async function routeRequest(request, env) {
         status: 204,
         headers: activationCorsHeaders(),
       });
+    }
+
+    // Previously shared help-login links enter the ordinary web login modal.
+    // Keep the public allowlist aligned with help_action_routes.js and Dart.
+    if (path === "/login" && url.searchParams.getAll("redirect").length === 1) {
+      const help = /^\/help-action\/(forms|seating|tickets|products|orders|report|settings|scanner-settings)$/.exec(url.searchParams.get("redirect") || "");
+      if (help) {
+        const target = new URL("/events", url);
+        target.searchParams.set("help", help[1]);
+        return Response.redirect(target.href, 302);
+      }
     }
 
     if (path === "/pro-poradatele" || path === "/pro-poradatele/") {

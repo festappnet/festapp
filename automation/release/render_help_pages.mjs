@@ -1,3 +1,4 @@
+import { helpActionWebPath } from '../../web_client/src/services/help_action_routes.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -83,7 +84,8 @@ const guideDirectory = `<div class="help-category-directory">${categoryPages.map
 const appLink = intent => {
   const label = ui.appActions[intent];
   if (!label) throw new Error(`Unknown help action: ${intent}`);
-  const url = '/login?redirect=' + encodeURIComponent('/help-action/' + intent);
+  const url = helpActionWebPath(intent);
+  if (!url) throw new Error(`Unknown help action: ${intent}`);
   return `<a class="help-step-action" href="${url}" target="_blank" rel="noopener" aria-label="${escape(label+' ('+ui.opensNewTab+')')}">${escape(label)}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3h7v7M21 3 10 14M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg></a>`;
 };
 const searchIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';

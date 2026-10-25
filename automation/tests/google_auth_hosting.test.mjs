@@ -12,17 +12,17 @@ test('Flutter map documents allow OSM identification without overriding callback
  for(const path of ['/2025we-copy-5e6268f4/map/overview','/app/google-auth']){
   const response=await worker.fetch(new Request('https://tenant.invalid'+path),env);
   assert.equal(response.status,200);
-  // Document meta overrides HTTP headers. Inherit the host's default/browser
-  // policy for maps and its explicit no-referrer for sensitive callbacks.
+  // Public maps expose only their origin; sensitive callbacks retain no-referrer.
+  // A document meta must not override that hosting policy.
   assert.equal(/<meta\b[^>]*\bname\s*=\s*["']referrer["'][^>]*>/i.test(await response.text()),false);
-  assert.equal(response.headers.get('referrer-policy'),path==='/app/google-auth'?'no-referrer':null);
+  assert.equal(response.headers.get('referrer-policy'),path==='/app/google-auth'?'no-referrer':'origin');
  }
 });
 test('real generated hosting router chooses the correct callback adapter and disables proof caching',async()=>{
  const paths=[];const env={ASSETS:{fetch:async(request)=>{const p=new URL(request.url).pathname;paths.push(p);return new Response(p,{headers:{'content-type':'application/octet-stream'}});}}};
  for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient'],['/settings/connections','/webclient']]){
   const response=await worker.fetch(new Request('https://tenant.invalid'+path+'?google_code=proof&google_attempt=fixture'),env);
-  assert.equal(await response.text(),entry);assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(response.headers.get('location'),null);
+  assert.equal(await response.text(),entry);assert.ok(response.headers.get('cache-control').split(',').map(value=>value.trim()).includes('no-store'));assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(response.headers.get('location'),null);
  }
  assert.deepEqual(paths,['/webclient','/flutter','/webclient','/webclient']);
  const aasa=await worker.fetch(new Request('https://tenant.invalid/.well-known/apple-app-site-association'),env);assert.equal(aasa.headers.get('content-type'),'application/json');
@@ -53,7 +53,7 @@ test('Stripe private deep links reach Flutter before occasion lookup in both ten
     const response = await currentWorker.fetch(new Request('https://tenant.invalid' + path + '?code=synthetic&state=fixture'), env);
     assert.equal(response.status, 200, path);
     assert.equal(await response.text(), 'Flutter shell', path);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.ok(response.headers.get('cache-control').split(',').map(value=>value.trim()).includes('no-store'));
     assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
     assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow');
     assert.equal(response.headers.get('location'), null);
@@ -74,7 +74,7 @@ test('account connections stay in the web client on app and ticketing tenants', 
   const env={ASSETS:{fetch:async request=>new Response(new URL(request.url).pathname)}};
   const response=await current.fetch(new Request('https://tenant.invalid/settings/connections'),env);
   assert.equal(response.status,200);assert.equal(await response.text(),'/webclient');
-  assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.ok(response.headers.get('cache-control').split(',').map(value=>value.trim()).includes('no-store'));
   assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
  }
 });

@@ -61,10 +61,10 @@ test('public guides render crawlable linked documents, code generator and exact 
  assert.doesNotMatch(existing,/cs-seating-saved|cs-seating-templates/,'wizard-only captures do not illustrate administration');
  const form=fs.readFileSync(path.join(target,'prodejni-formular/index.html'),'utf8');
  assert.ok(form.indexOf('class="help-step-action"')<form.indexOf('<h2 id="pole">'),'app link belongs to the opening step');
- assert.match(form,/href="\/login\?redirect=%2Fhelp-action%2Fforms" target="_blank"/);
+ assert.match(form,/href="\/events\?help=forms" target="_blank"/);
  assert.doesNotMatch(form,/help-app-action/);assert.match(form,/guide-screenshot-mobile/);
  const scanner=fs.readFileSync(path.join(target,'nastaveni-skeneru/index.html'),'utf8');
- assert.match(scanner,/href="\/login\?redirect=%2Fhelp-action%2Fscanner-settings" target="_blank"/);
+ assert.match(scanner,/href="\/events\?help=scanner-settings" target="_blank"/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
  const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/vstupenky_online url=/);
  const zip=fs.readdirSync(path.join(target,'assets')).find(name=>name.endsWith('.zip'));const packageZip=fs.readFileSync(path.join(root,'integrations/wordpress/dist',zip));
