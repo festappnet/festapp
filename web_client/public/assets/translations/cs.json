@@ -1537,9 +1537,7 @@
     "assignStandingProduct": "Přiřadit produkt",
     "standingSetupSaveHint": "Produkty a zásoby se ukládají ihned. Přiřazení plochy a změny kapacity se použijí po uložení plánu.",
     "standingCapacityGroup": "Skupina kapacity",
-    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt a jeho kapacitu.",
-    "backToGroup": "Zpět na skupinu {name}",
-    "seatLabel": "Místo"
+    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt a jeho kapacitu."
   },
   "OccasionSettings": {
     "title": "Název",

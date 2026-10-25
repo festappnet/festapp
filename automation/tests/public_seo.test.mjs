@@ -1,4 +1,3 @@
-import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +6,7 @@ import { getOccasionHref } from '../../web_client/src/components/occasion/occasi
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const scannerSource = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
-const workerSource = scannerSource + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
+const workerSource = scannerSource + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
   .replace('// SHARED_PUBLIC_PAGE_SEO', readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('// SHARED_CATALOG_CLASSIFICATION', readFileSync(new URL('../../web_client/src/components/occasion/catalog.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = "vstupenky.online";');
@@ -23,16 +22,6 @@ const env = {
   } },
 };
 const request = path => new Request('https://tickets.invalid' + path);
-
-test('reloading the creation handoff returns to web authentication with its intent', async () => {
-  const response = await worker.fetch(request('/login?redirect=%2Forganizer-action%2Fcreate'), env);
-  assert.equal(response.status, 302);
-  const target = new URL(response.headers.get('location'));
-  assert.equal(target.pathname + target.search, '/login?create=1');
-  const login = await worker.fetch(new Request(target), env);
-  assert.equal(login.status, 200);
-  assert.match(await login.text(), /id="app"/);
-});
 const occasions = [
   { title: 'Camp & <script>bad</script>', link: 'camp', form: { link: 'camp-registration' }, features: [{ code: 'form', is_enabled: true }] },
   { title: 'Program', link: 'program', features: [] },
