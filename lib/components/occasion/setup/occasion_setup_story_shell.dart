@@ -31,7 +31,6 @@ class OccasionSetupStoryShell extends StatefulWidget {
     this.primaryAction,
     this.error,
     this.maxContentWidth = 680,
-    this.centerQuestion = true,
   });
 
   final List<String>? questionKeys;
@@ -63,7 +62,6 @@ class OccasionSetupStoryShell extends StatefulWidget {
   final Widget? primaryAction;
   final Widget? error;
   final double maxContentWidth;
-  final bool centerQuestion;
 
   @override
   State<OccasionSetupStoryShell> createState() =>
@@ -319,9 +317,7 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
                     minHeight: (constraints.maxHeight - verticalSpace * 2)
                         .clamp(0.0, double.infinity)),
                 child: Column(
-                  mainAxisAlignment: widget.centerQuestion
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Center(
                       child: ConstrainedBox(

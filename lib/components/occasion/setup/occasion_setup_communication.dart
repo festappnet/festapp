@@ -364,7 +364,7 @@ class _OccasionSetupCommunicationState
         const SizedBox(height: 8),
         Text(story('cancelUnpaidManually')),
         const SizedBox(height: 16),
-        SwitchListTile.adaptive(
+        SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(t('paymentReminders')),
             value: reminders,

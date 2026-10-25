@@ -159,7 +159,7 @@ class OccasionSetupPricing extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SwitchListTile.adaptive(
+        SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(OccasionSetupDetailsStrings.text('enablePriceWaves')),
           subtitle: Text(OccasionSetupDetailsStrings.text('priceWavesHint')),

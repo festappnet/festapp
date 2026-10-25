@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../occasion_sale_strings.dart';
+
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,8 +12,9 @@ import 'occasion_setup_details_strings.dart';
 Set<String> setupPaidCurrencies(Map<String, dynamic> data) {
   final result = <String>{};
   if (data['formEnabled'] == false) return result;
-  for (final field in ((data['formDraft'] as Map?)?['fields'] as List? ?? [])
-      .whereType<Map>()) {
+  for (final field
+      in ((data['formDraft'] as Map?)?['fields'] as List? ?? [])
+          .whereType<Map>()) {
     if (field['is_hidden'] == true) continue;
     for (final product
         in ((field['product_type_data'] as Map?)?['products'] as List? ?? [])
@@ -88,8 +91,9 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
       final accounts = (result['accounts'] as List)
           .map((v) => Map<String, dynamic>.from(v as Map))
           .where(
-            (a) => Set<String>.from(a['currencies'] as List? ?? [])
-                .containsAll(required),
+            (a) =>
+                Set<String>.from(a['currencies'] as List? ?? [])
+                    .containsAll(required),
           )
           .toList();
       final previous = widget.data['bankAccountId'];
@@ -139,70 +143,72 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_loading) const LinearProgressIndicator(),
-          if (_error != null) ...[
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            TextButton(
-              onPressed: _load,
-              child: Text(OccasionSetupDetailsStrings.text('reloadAccounts')),
-            ),
-          ],
-          if (!_loading && _error == null) ...[
-            if (_accounts.isEmpty)
-              Text(OccasionSetupDetailsStrings.text('bankMissing'))
-            else ...[
-              for (final account in _accounts)
-                UnitBankAccountCard(
-                  showSyncHelp: false,
-                  account: BankAccountModel.fromJson({
-                    ...account,
-                    'account_number_human_readable': account['display'],
-                    'supported_currencies': account['currencies'],
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (_loading) const LinearProgressIndicator(),
+      if (_error != null) ...[
+        Text(
+          _error!,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+        TextButton(
+          onPressed: _load,
+          child: Text(OccasionSetupDetailsStrings.text('reloadAccounts')),
+        ),
+      ],
+      if (!_loading && _error == null) ...[
+        if (_accounts.isEmpty)
+          Text(OccasionSetupDetailsStrings.text('bankMissing'))
+        else ...[
+          for (final account in _accounts)
+            UnitBankAccountCard(
+              showSyncHelp: false,
+              account: BankAccountModel.fromJson({
+                ...account,
+                'account_number_human_readable': account['display'],
+                'supported_currencies': account['currencies'],
+              }),
+              primaryCurrencies: const {},
+              index: 0,
+              selection: Semantics(
+                label: _label(account),
+                child: Radio<int>(
+                  value: account['id'] as int,
+                  groupValue: widget.data['bankAccountId'] as int?,
+                  onChanged: (id) => widget.onChanged({
+                    'bankAccountId': id,
+                    'bankAccountLabel': _label(account),
+                    'bankAccountFingerprint': account['fingerprint'],
                   }),
-                  primaryCurrencies: const {},
-                  index: 0,
-                  selection: Semantics(
-                    label: _label(account),
-                    child: Radio<int>(
-                      value: account['id'] as int,
-                      groupValue: widget.data['bankAccountId'] as int?,
-                      onChanged: (id) => widget.onChanged({
-                        'bankAccountId': id,
-                        'bankAccountLabel': _label(account),
-                        'bankAccountFingerprint': account['fingerprint'],
-                      }),
-                    ),
-                  ),
                 ),
-            ],
-            const SizedBox(height: 8),
-            if (_canManage)
-              OutlinedButton.icon(
-                onPressed: _setup,
-                icon: const Icon(Icons.account_balance_outlined),
-                label: Text(
-                  OccasionSetupDetailsStrings.text(
-                    _accounts.isEmpty
-                        ? 'setupBankAccount'
-                        : 'manageBankAccounts',
-                  ),
-                ),
-              )
-            else
-              Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
-            Text(OccasionSetupDetailsStrings.text('bankSetupHint')),
-            if (_accounts.any((account) =>
-                account['id'] == widget.data['bankAccountId'] &&
-                (account['bank_sync'] as Map?)?['state'] != 'connected'))
-              Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(OccasionSaleStrings.text('manualPaymentsHelp'))),
-          ],
+              ),
+            ),
         ],
-      );
+        const SizedBox(height: 8),
+        if (_canManage)
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: _setup,
+              icon: const Icon(Icons.account_balance_outlined),
+              label: Text(
+                OccasionSetupDetailsStrings.text(
+                  _accounts.isEmpty ? 'setupBankAccount' : 'manageBankAccounts',
+                ),
+              ),
+            ),
+          )
+        else
+          Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
+        if (_accounts.any(
+          (account) =>
+              account['id'] == widget.data['bankAccountId'] &&
+              (account['bank_sync'] as Map?)?['state'] != 'connected',
+        ))
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(OccasionSaleStrings.text('manualPaymentsHelp')),
+          ),
+      ],
+    ],
+  );
 }

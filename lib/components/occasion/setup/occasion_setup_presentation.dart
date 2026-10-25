@@ -99,7 +99,7 @@ class OccasionSetupPromotion extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        SwitchListTile.adaptive(
+        SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: data['isPromoted'] == true,
           onChanged: hasImage ? (v) => onChanged({'isPromoted': v}) : null,
