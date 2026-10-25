@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "907d4f1225b98874f20698a98f063ca05150716f",
+  "release": {
+    "version": "0.20.394+895",
+    "note": "Fix public help index routing"
+  }
+}
