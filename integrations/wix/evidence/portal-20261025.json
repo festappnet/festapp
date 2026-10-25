@@ -78,5 +78,7 @@
     "Wix Editor",
     "Wix Studio"
   ],
-  "newSupportMessageSent": false
+  "newSupportMessageSent": false,
+  "unlistedReleasedVersion": "1.0",
+  "unlistedReleaseScope": "Owner-site Harmony QA only; not Marketplace submission or access-private distribution"
 }

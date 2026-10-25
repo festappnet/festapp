@@ -27,7 +27,7 @@
   },
   "finding": "Documented free Harmony development-site route is not offered in this owner/app native selector",
   "qualified": false,
-  "ordinarySiteAlternativeInvestigated": false,
+  "ordinarySiteAlternativeInvestigated": true,
   "limits": "This does not establish that Harmony is unavailable globally or that all alternative ordinary-site routes fail",
   "supportFollowup": "../SUPPORT-FOLLOWUP.md - draft only, not sent",
   "billingReplyMailboxSearch": {
@@ -35,5 +35,7 @@
     "matchingEmails": 0,
     "scope": "Connected mailbox and this query only; not proof of absence in another inbox"
   },
-  "browserClosed": true
+  "browserClosed": true,
+  "supersededBy": "harmony-qualification-20261025.json",
+  "ordinarySiteAlternativeResult": "Official Harmony template + unlisted owner-site installation works; documented premium-dev-site selector limitation remains"
 }
