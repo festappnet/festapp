@@ -7,6 +7,9 @@ import { JSDOM } from 'jsdom';
 const source = readFileSync(new URL('../../src/marketing/landing.js', import.meta.url), 'utf8')
     .replace(/^import .*;\n/gm, '');
 
+const accountSource = readFileSync(new URL('../../src/marketing/account_header.js', import.meta.url), 'utf8')
+    .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');
+
 test('marketing waits for shared account initialization before mounting the account header', async () => {
     const dom = new JSDOM('<header class="site-header auth-pending"></header>', { url: 'https://vstupenky.online/' });
     try {
@@ -21,7 +24,7 @@ test('marketing waits for shared account initialization before mounting the acco
             initializeCoreServices: () => new Promise(resolve => { complete = resolve; }),
             initDemoPlayers() {}, initMotion() {}, initReferenceCarousels() {},
         });
-        vm.runInContext(source, context);
+        vm.runInContext(accountSource + '\n' + source, context);
         assert.equal(themeInitialized, true);
         assert.ok(dom.window.document.querySelector('.auth-pending'));
         assert.equal(dom.window.document.querySelector('user-header'), null);
