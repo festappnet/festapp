@@ -35,6 +35,8 @@ test('public guides render crawlable linked documents, code generator and exact 
  assert.ok(form.indexOf('class="help-step-action"')<form.indexOf('<h2 id="pole">'),'app link belongs to the opening step');
  assert.match(form,/href="\/login\?redirect=%2Fhelp-action%2Fforms" target="_blank"/);
  assert.doesNotMatch(form,/help-app-action/);assert.match(form,/guide-screenshot-mobile/);
+ const scanner=fs.readFileSync(path.join(target,'odbaveni/index.html'),'utf8');
+ assert.match(scanner,/href="\/login\?redirect=%2Fhelp-action%2Fscanner-settings" target="_blank"/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
  const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/vstupenky_online url=/);
  const zip=fs.readdirSync(path.join(target,'assets')).find(name=>name.endsWith('.zip'));const packageZip=fs.readFileSync(path.join(root,'integrations/wordpress/dist',zip));
@@ -66,6 +68,7 @@ test('phone scanner guides use only mobile webclient captures in both locales',(
   const html=fs.readFileSync(path.join(directory,file),'utf8');
   const figures=[...html.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
   assert.ok(figures.length>=2,'include verified mobile webclient controls and result');
+  assert.match(html,/\{\{APP_LINK:scanner-settings\}\}/,'settings instruction must open the matching help intent');
   for(const state of ['invalid-access','not-found','settings','field-options','advanced','preview']) {
    assert.ok(figures.some(([,id])=>id===`${locale}/scanner-advanced/${state}`),`Missing actual ${locale} scanner walkthrough: ${state}`);
   }

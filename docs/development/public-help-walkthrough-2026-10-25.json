@@ -880,5 +880,38 @@
     "presentation": "mobile phone browser",
     "decision": "User explicitly selected webclient. Native Flutter experiment rejected; no native captures in published help.",
     "videoNote": "Use the actual responsive webclient scanner on a phone. Existing 390x844 Chromium captures verify the interface, not physical camera acquisition."
+  },
+  "helpActionVerification": {
+    "sourceBase": "78f96988e45c73dfa7645a3684343b8033a7957f",
+    "environment": "owned local Supabase and isolated headless Chromium; real Flutter login app and responsive webclient on one loopback origin",
+    "fixture": "Existing synthetic administrator and Slavnostní ples U Lípy; actual password login through UI. Native notification callbacks are isolated by the full-app E2E entry; Google sign-in/production push are outside the verified scope.",
+    "verified": [
+      "Actual generated scanner help link opened a separate tab retaining /help-action/scanner-settings through the login query.",
+      "Signed-out password login → explicit occasion picker → selected event → real webclient Scanner display settings.",
+      "Already-signed-in help link → picker without password → same real webclient settings.",
+      "Settings event title matched the choice; Back to tickets used /b67pnakx/reservations/tickets.",
+      "Separate tickets help action → chosen event → Tickets tab selected at the matching event route. Original guide remained in its own tab."
+    ],
+    "interaction": "Flutter event selection was activated through its real accessibility button click handler; no destination, auth result or settings result was injected. Initial coordinate/keyboard attempts did not activate that semantic control in the headless capture.",
+    "notVerified": [
+      "Live deployment of the new intent",
+      "Google OAuth",
+      "Physical phone camera"
+    ],
+    "privateEvidence": ".private/help-actions-20261025/interaction-log.jsonl",
+    "sourceFiles": [
+      {
+        "path": "lib/services/help_destination.dart",
+        "sha256": "5ed12b13ebaf99c2f072e8095b0b3e3d06ab29b0d43cbc8a1de5f6dd298fba43"
+      },
+      {
+        "path": "lib/router_service.dart",
+        "sha256": "f2d5802a0993c4bc4ff1a6aff56948864a5732ee17f8e90c5ddd9ec2ac396e5b"
+      },
+      {
+        "path": "lib/components/navigation/help_destination_picker.dart",
+        "sha256": "c8a42091ad179542114b9e85788b624328b799b17e8e19c03943982db6556670"
+      }
+    ]
   }
 }

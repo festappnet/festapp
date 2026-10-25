@@ -473,6 +473,29 @@ class RouterService {
       if (!context.mounted) return;
       final link = await chooseHelpOccasion(context);
       if (!context.mounted) return;
+      if (link != null && HelpDestination.isWebClient(helpIntent)) {
+        // Resolve the chosen event afresh. A remembered event or an ID in a help
+        // link must never choose the scanner's authorization context.
+        await RightsService.updateAppData(
+            link: link, force: true, refreshOffline: false);
+        if (!context.mounted) return;
+        final occasion = RightsService.currentOccasion();
+        final target = occasion?.link == link
+            ? HelpDestination.path(helpIntent, link, occasionId: occasion?.id)
+            : null;
+        if (target != null) {
+          // Keep browser Auth storage on the tenant's current origin. The
+          // webclient opens a fresh scanner session and enforces editor rights.
+          await LaunchUrlService.openExternalUrl(
+              kIsWeb ? target : '${AppConfig.webLink}$target',
+              inCurrentWindow: true);
+          return;
+        }
+        await handlePostLoginNavigation(context,
+            fallbackPath: HelpDestination.path('tickets', link),
+            useReplacement: true);
+        return;
+      }
       final target = HelpDestination.path(helpIntent, link);
       if (target == null) {
         await handlePostLoginNavigation(context, useReplacement: true);

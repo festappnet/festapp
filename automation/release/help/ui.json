@@ -53,7 +53,8 @@
       "products": "Otevřít produkty v aplikaci",
       "orders": "Otevřít objednávky v aplikaci",
       "settings": "Otevřít nastavení akce",
-      "report": "Otevřít report v aplikaci"
+      "report": "Otevřít report v aplikaci",
+      "scanner-settings": "Otevřít nastavení skeneru"
     },
     "opensNewTab": "nová karta"
   },
@@ -111,7 +112,8 @@
       "products": "Open products in the app",
       "orders": "Open orders in the app",
       "settings": "Open event settings",
-      "report": "Open the report in the app"
+      "report": "Open the report in the app",
+      "scanner-settings": "Open scanner display settings"
     },
     "opensNewTab": "new tab"
   }

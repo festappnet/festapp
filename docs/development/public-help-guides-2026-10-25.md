@@ -151,3 +151,30 @@ labels, hiding empty fields, ordering, optional search/prices/internal notes,
 offline authorization up to 12 hours, draft preview, save and renewal of access.
 No physical QR camera or offline sync claim is added. The timestamped private
 interaction log and tenth video chapter preserve the actions and outcomes.
+
+## Help action destination verification
+
+The scanner settings step now links to `/login?redirect=/help-action/scanner-settings`
+(encoded in generated HTML). After login and the explicit event chooser, the
+router reloads the selected event's rights and resolves its numeric occasion ID.
+It opens `/scan/settings?occasion=...&returnTo=...` in the actual webclient on the
+current browser origin, retaining shared Auth storage and the selected event's
+ticket-list return path. A help URL cannot supply its own event ID. Normal
+scanner session/settings APIs still enforce event editor permissions. Missing
+context falls through the regular protected ticket administration boundary.
+
+An isolated local browser exercised the generated link in its own new tab:
+signed-out password login, actual event choice, webclient settings and matching
+back link; a second signed-in run skipped the password prompt and reached the
+same event's settings. A separate tickets help link reached the selected Tickets
+tab. Flutter event choice used its real accessibility click handler, not injected
+routing or server results. The original documentation tab stayed intact. The
+local full-app bootstrap isolates notification callbacks; Google OAuth and live
+push are outside this check. Private timestamped actions and source hashes are
+recorded in the walkthrough manifest's helpActionVerification entry.
+
+Validation: 9 targeted help/login/settings Node tests, 2 Flutter intent tests,
+4 existing post-login navigation tests and a fresh local Flutter web build passed.
+Targeted analysis reported no errors, with 11 existing informational router lints.
+The UI detector reported no findings. This change must ship with both Flutter
+administration and the generated help; it is not yet verified in production.

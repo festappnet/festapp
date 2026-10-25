@@ -4,6 +4,9 @@ import 'package:fstapp/components/navigation/navigation_paths.dart';
 /// a destination; the ordinary administration boundary still checks access.
 abstract final class HelpDestination {
   static const prefix = '/help-action/';
+  static const scannerSettings = 'scanner-settings';
+
+  static bool isWebClient(String intent) => intent == scannerSettings;
   static const sections = <String, String>{
     'forms': NavigationPaths.forms,
     'seating': NavigationPaths.blueprint,
@@ -26,15 +29,22 @@ abstract final class HelpDestination {
       return null;
     }
     final intent = uri.path.substring(prefix.length);
-    return sections.containsKey(intent) ? intent : null;
+    return sections.containsKey(intent) || isWebClient(intent) ? intent : null;
   }
 
-  static String? path(String intent, String? link) {
+  static String? path(String intent, String? link, {int? occasionId}) {
     final section = sections[intent];
-    if (section == null ||
+    if ((section == null && !isWebClient(intent)) ||
         link == null ||
         !RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(link)) {
       return null;
+    }
+    if (isWebClient(intent)) {
+      if (occasionId == null || occasionId <= 0) return null;
+      return Uri(path: '/scan/settings', queryParameters: {
+        'occasion': '$occasionId',
+        'returnTo': '/$link/reservations/${NavigationPaths.tickets}',
+      }).toString();
     }
     return '/$link/reservations/$section';
   }
