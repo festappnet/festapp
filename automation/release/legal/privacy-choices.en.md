@@ -14,7 +14,7 @@ Request access, correction, erasure, restriction, portability, withdrawal of con
 
 ## Website traffic
 
-The English profile does not include a browser analytics script. Hosting and security providers process requests needed to deliver and protect the site. Server records can include IP addresses, paths and technical request data. You may object to processing based on legitimate interests at `info@festapp.net`.
+Aggregate browser measurement of public pages is described below. Hosting and security providers process requests needed to deliver and protect the site. Server records can include IP addresses, paths and technical request data. You may object to processing based on legitimate interests at `info@festapp.net`.
 
 ## Further information
 

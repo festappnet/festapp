@@ -1,0 +1,37 @@
+# Public web analytics
+
+Cloudflare Web Analytics measures public catalogue, organizer and resolved form pages only. Each link below has a fixed exact-host filter; the existing zone properties are shared storage, not separate Cloudflare site cards. Requests/server statistics remain separate.
+
+| Host | Public visits and sources |
+| --- | --- |
+| app.absolventskyvelehrad.cz | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=ca8876b7c786477fa6680a14a264eeee&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
+| biscup.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=biscup.festapp.net&excludeBots=Yes) |
+| clovekavira.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=clovekavira.festapp.net&excludeBots=Yes) |
+| csa2024.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csa2024.festapp.net&excludeBots=Yes) |
+| csmostrava.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csmostrava.festapp.net&excludeBots=Yes) |
+| farnostopava.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=farnostopava.festapp.net&excludeBots=Yes) |
+| hvezdamorska.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=hvezdamorska.festapp.net&excludeBots=Yes) |
+| jubileum2025.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=jubileum2025.festapp.net&excludeBots=Yes) |
+| live.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=live.festapp.net&excludeBots=Yes) |
+| slunovrat.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=slunovrat.festapp.net&excludeBots=Yes) |
+| tickets.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=tickets.festapp.net&excludeBots=Yes) |
+| vstupenky.online | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=4b64cee2415d4110b11abc4d56013278&host=vstupenky.online&excludeBots=Yes) |
+
+Use the Referer breakdown for source domains such as Google. Missing referrers cannot distinguish direct links from applications that hide their source. The provider does not report search terms or UTM campaigns.
+
+## Collection boundary
+
+- Pages response owners insert the bootstrap only into the public catalogue, organizer landing page and resolved public forms. Flutter, scanner, authentication, payments, PWA cache shells, static legal pages and embeds have no beacon.
+- Every HTML response uses `Cache-Control: no-transform` to prevent zone-wide automatic injection. The organizer renderer never inserts a beacon into shared app shells.
+- The bootstrap rejects fragments, private query parameters, framed documents and non-public referring paths. Only origin-only external referrers and same-host public referrers are accepted. This intentionally undercounts some arrivals rather than sending private URLs.
+- A single manual Cloudflare beacon uses `spa: false`. Measured pages cross a real document boundary for pathname changes, including history API navigation. Same-path order/waitlist fragments retain normal overlay behavior. A beacon cannot follow a public page into scanner/admin paths.
+- No Do Not Track/GPC gate, analytics cookies, persistent visitor identifiers, form fields, account IDs, order IDs or custom collector are added. The provider still receives network transport information. This is a technical collection description, not a blanket claim that all website processing is anonymous.
+- Existing site tags and tokens in the registry are public embed identities, never management credentials. Preview origins and unregistered hosts cannot use this configuration.
+
+## Verification
+
+`node --test automation/tests/public_web_analytics.test.mjs automation/tests/cloudflare_security_headers.test.mjs automation/tests/public_seo.test.mjs automation/tests/organizer_page.test.mjs automation/tests/csp_policy.test.mjs`
+
+A release additionally verifies one manual beacon on eligible public pages, none on private routes or private fragments, no automatic duplicate, and a real public-to-private navigation boundary. Inspect actual provider payloads for private path leakage. Existing open tabs need a reload to pick up a release.
+
+References: [Cloudflare SPA opt-out](https://developers.cloudflare.com/web-analytics/get-started/web-analytics-spa/), [automatic injection and no-transform](https://developers.cloudflare.com/web-analytics/faq/), [dimensions and referrers](https://developers.cloudflare.com/web-analytics/data-metrics/dimensions/).

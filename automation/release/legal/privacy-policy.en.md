@@ -36,7 +36,7 @@ Some providers have global infrastructure. Transfers outside the European Econom
 
 ## Website traffic and browser storage
 
-This English profile includes no browser analytics script. Hosting and security services process requests needed to deliver and protect the website. Server records may include IP addresses, requested paths and technical information. These records are not described as anonymous. Related processing relies on legitimate interests in availability, capacity and security.
+Aggregate browser measurement of public pages is described below. Hosting and security services process requests needed to deliver and protect the website. Server records may include IP addresses, requested paths and technical information. These records are not described as anonymous. Related processing relies on legitimate interests in availability, capacity and security.
 
 The browser stores sign-in state, language, appearance and application cache. Remove them in browser settings; doing so may sign you out.
 

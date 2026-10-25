@@ -115,6 +115,7 @@ const DEFAULT_LANGUAGE = "cs";
 function localized(cs, en) { return DEFAULT_LANGUAGE === "en" ? en : cs; }
 const SITE_NAME = "Festapp"; // replaced from project.conf after generation
 const IS_APP_SUPPORTED = true; // replaced from project.conf after generation
+const PUBLIC_WEB_ANALYTICS = null; // stamped from the public hostname registry
 // PUBLIC_OCCASION_ROUTE_POLICY
 
 // Web client SPA routes (form list handled by /form/<slug> below).
@@ -135,7 +136,7 @@ const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-pag
 // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
 // the bootstrap/loader, and the canvaskit/skwasm wasm runtime). These must be
 // revalidated on every load so a client never mixes assets from two builds.
-const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:embed\.js|backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
+const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:public-web-analytics\.js|embed\.js|backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
 
 function htmlResponse(body, originHeaders, status = 200, profile = "webclient") {
   const headers = new Headers(originHeaders || {});
@@ -154,6 +155,16 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[character]);
+}
+
+function publicAnalyticsHtml(html, request) {
+  const url = new URL(request.url);
+  if (!PUBLIC_WEB_ANALYTICS || url.origin !== CANONICAL_ORIGIN ||
+      !/^[a-f0-9]{32}$/.test(PUBLIC_WEB_ANALYTICS.token)) return html;
+  // This helper is called only by the public catalogue/form/marketing owners.
+  // The browser makes the final decision for fragments, private parameters and frames.
+  const script = `<script src="/public-web-analytics.js" data-analytics-host="${escapeHtml(url.hostname)}" data-analytics-token="${PUBLIC_WEB_ANALYTICS.token}"></script>`;
+  return html.replace(/<head\b[^>]*>/i, match => match + script);
 }
 
 // Must match the native links on OccasionCard (covered by contract tests).
@@ -236,7 +247,7 @@ async function handleHome(request, env) {
     console.error("Public catalog HTML unavailable", error.message);
     html = html.replace('<div id="events-grid"></div>', `<div id="events-grid" data-server-catalog="unavailable"><p role="status">${localized("Akce se nepodařilo načíst. Zkuste stránku znovu načíst.", "Events could not be loaded. Please reload the page.")}</p></div>`);
   }
-  return htmlResponse(html, base.headers);
+  return htmlResponse(publicAnalyticsHtml(html, request), base.headers);
 }
 
 function notFound() {
@@ -364,7 +375,8 @@ async function handlePublicPage(request, env, path, kind) {
     const summary = `<section id="public-seo-summary" style="max-width:48rem;margin:2rem auto;padding:1rem"><h1>${escapeHtml(seo.name)}</h1><p>${escapeHtml(seo.description)}</p>${data.start_time && Number.isFinite(Date.parse(data.start_time)) ? `<p><time datetime="${escapeHtml(data.start_time)}">${escapeHtml(new Intl.DateTimeFormat(DEFAULT_LANGUAGE, {dateStyle:'long', timeStyle:'short', timeZone:'Europe/Prague'}).format(new Date(data.start_time)))}</time></p>` : ''}</section>`;
     page = page.replace(/<body\b[^>]*>/i, match => match + summary);
 
-    return htmlResponse(page, baseRes.headers, 200, kind === "event" ? "flutter" : "webclient");
+    return htmlResponse(kind === 'form' ? publicAnalyticsHtml(page, request) : page,
+      baseRes.headers, 200, kind === "event" ? "flutter" : "webclient");
   } catch (error) {
     console.error('Public SEO unavailable', error.message);
     return publicSeoUnavailable(baseHtml, baseRes.headers, url, kind);
@@ -405,8 +417,8 @@ async function routeRequest(request, env) {
       }
       if (path === "/") {
         const res = await serveAsset(env, request, "/organizers-page");
-        const response = res.ok ? htmlResponse(res.body, res.headers, 200, "organizers") : notFound();
-        response.headers.set("referrer-policy", "no-referrer");
+        const response = res.ok ? htmlResponse(publicAnalyticsHtml(await res.text(), request), res.headers, 200, "organizers") : notFound();
+        response.headers.set("referrer-policy", "origin");
         return response;
       }
       if (path === "/events") return handleHome(request, env);
@@ -561,6 +573,13 @@ export default {
       }
     }
     const headers = new Headers(response.headers);
+    // Prevent a zone-wide automatic beacon from bypassing the public-only owner.
+    // Cloudflare documents no-transform as suppressing automatic RUM injection.
+    if (headers.get('content-type')?.includes('text/html')) {
+      const cache = headers.get('cache-control') || 'no-cache';
+      headers.set('cache-control', cache + (/(?:^|,)\s*no-transform\b/i.test(cache) ? '' : ', no-transform'));
+      if (!headers.has('referrer-policy')) headers.set('referrer-policy', 'origin');
+    }
     if (!headers.has("content-security-policy")) headers.set("content-security-policy", CSP_BASE);
     headers.set("x-content-type-options", "nosniff");
     if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
@@ -608,6 +627,11 @@ canonical = urlparse(web_link)
 if canonical.scheme != 'https' or not canonical.hostname or canonical.path or canonical.query or canonical.fragment or canonical.username or canonical.port:
     raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
 source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
+analytics_sites = json.loads(pathlib.Path('automation/cloudflare/web-analytics-sites.json').read_text())
+analytics_site = analytics_sites.get(canonical.hostname)
+if analytics_site and not all(re.fullmatch('[a-f0-9]{32}', analytics_site.get(key, '')) for key in ('siteTag', 'token')):
+    raise SystemExit('Invalid public Web Analytics identity')
+source = source.replace('const PUBLIC_WEB_ANALYTICS = null;', 'const PUBLIC_WEB_ANALYTICS = ' + json.dumps(analytics_site) + ';', 1)
 landing_match = re.search(r'^WEB_ORGANIZER_LANDING_ENABLED=(.*)$', config, re.MULTILINE)
 landing_enabled = landing_match.group(1).strip() if landing_match else 'false'
 if landing_enabled not in ('true', 'false'):
