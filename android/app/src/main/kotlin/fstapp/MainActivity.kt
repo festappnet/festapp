@@ -1,4 +1,4 @@
-package fstapp.fstapp
+package fstapp.cav
 
 import io.flutter.embedding.android.FlutterActivity
 
