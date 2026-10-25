@@ -1,14 +1,17 @@
 import 'dart:ui' as ui;
 import 'dart:math' as math;
+
 import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 import 'layout_style.dart';
 import 'layout_number_slider_control.dart';
 import 'canonical_appearance_panel.dart';
 import 'layout_global_style.dart';
 import 'layout_floor_style.dart';
+
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 class LayoutInspector extends StatefulWidget {
@@ -205,13 +208,20 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     ValueChanged<String> save, {
     bool multiline = false,
     bool numeric = false,
+    bool? enabled,
+    int? integerMax,
+    bool Function(int)? acceptsInteger,
+    Widget Function(VoidCallback)? suffixBuilder,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: _PropertyField(
       key: ValueKey(label),
       label: label,
       value: value,
-      enabled: !(c.readOnly || c.saving),
+      enabled: enabled ?? !(c.readOnly || c.saving),
+      integerMax: integerMax,
+      acceptsInteger: acceptsInteger,
+      suffixBuilder: suffixBuilder,
       multiline: multiline,
       numeric: numeric,
       onUndo: c.undo,
@@ -655,12 +665,10 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     );
   }
 
-  Widget _tableEdgeControls(LayoutNode table) {
+  List<int> _tableEdgeValues(LayoutNode table) {
     const edges = ['top', 'right', 'bottom', 'left'];
-    const labels = ['Top seats', 'Right seats', 'Bottom seats', 'Left seats'];
-    final capacities = tableEdgeCapacities(table);
     final preference = table.seating['edgeCounts'];
-    final counts = preference is List && preference.length == 4
+    return preference is List && preference.length == 4
         ? preference.cast<int>().toList()
         : [
             for (final edge in edges)
@@ -673,32 +681,88 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                   )
                   .length,
           ];
-    final enabled = !(c.readOnly || c.saving || table.locked);
-    Widget field(int side) => Expanded(
-      child: _number(labels[side], counts[side], (value) {
-        if (value != value.roundToDouble() ||
-            value < 0 ||
-            value > capacities[side]) {
-          throw FormatException(
-            VenueLayoutStrings.text(
-              context,
-              'Enter a whole seat count from 0 to ${capacities[side]}.',
-            ),
-          );
-        }
-        final next = [...counts]..[side] = value.toInt();
-        c.apply(
-          reflowTable(
-            c.document,
-            table.id,
-            next.fold<int>(0, (sum, count) => sum + count),
-            edgeCounts: next,
-            protectedSeatIds: c.protectedSeatIds?.call() ?? const {},
-          ),
-          label: 'Adjust table sides',
-        );
-      }),
+  }
+
+  Widget _tableEdgeControls(LayoutNode table) {
+    const labels = ['Top seats', 'Right seats', 'Bottom seats', 'Left seats'];
+    final capacities = tableEdgeCapacities(
+      table.copyWith(
+        seating: TableSeating.fromDocument(c.document, table).record,
+      ),
     );
+    final counts = _tableEdgeValues(table);
+    final enabled = !(c.readOnly || c.saving || table.locked);
+    Widget field(int side) {
+      final maximum = math.min(
+        capacities[side],
+        counts[side] +
+            layoutMaxSeats -
+            c.document.nodes.where((n) => n.kind == 'seat').length,
+      );
+      final validity = <int, bool>{counts[side]: true};
+      List<int> edgesWith(int value) => [...counts]..[side] = value;
+      bool allowed(int value) =>
+          value >= 0 &&
+          value <= maximum &&
+          validity.putIfAbsent(value, () {
+            final next = edgesWith(value);
+            return c.canSetSeatCount(
+              table.id,
+              next.fold<int>(0, (sum, n) => sum + n),
+              edgeCounts: next,
+            );
+          });
+      void save(int value) {
+        final live = c.document.nodes.firstWhere((n) => n.id == table.id);
+        final next = _tableEdgeValues(live)..[side] = value;
+        final count = next.fold<int>(0, (sum, n) => sum + n);
+        if (c.canSetSeatCount(table.id, count, edgeCounts: next)) {
+          c.setSeatCount(table.id, count, edgeCounts: next);
+        }
+      }
+
+      Widget step(int direction, VoidCallback commit) {
+        final label =
+            '${VenueLayoutStrings.text(context, labels[side])}: ${VenueLayoutStrings.text(context, direction < 0 ? 'Remove one seat' : 'Add one seat')}';
+        return IconButton(
+          tooltip: label,
+          constraints: const BoxConstraints.tightFor(width: 36, height: 40),
+          padding: EdgeInsets.zero,
+          iconSize: 20,
+          onPressed: enabled && allowed(counts[side] + direction)
+              ? () {
+                  commit();
+                  final live = c.document.nodes.firstWhere(
+                    (n) => n.id == table.id,
+                  );
+                  save(_tableEdgeValues(live)[side] + direction);
+                }
+              : null,
+          icon: Icon(
+            direction < 0
+                ? Icons.remove_circle_outline
+                : Icons.add_circle_outline,
+          ),
+        );
+      }
+
+      return Expanded(
+        child: _field(
+          labels[side],
+          '${counts[side]}',
+          (value) => save(int.parse(value)),
+          numeric: true,
+          enabled: enabled,
+          integerMax: maximum,
+          acceptsInteger: allowed,
+          suffixBuilder: (commit) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [step(-1, commit), step(1, commit)],
+          ),
+        ),
+      );
+    }
+
     return ExcludeFocus(
       excluding: !enabled,
       child: IgnorePointer(
@@ -725,6 +789,17 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     );
   }
 
+  void _stepSeatCount(LayoutNode node, int direction) {
+    final count = isCouchNode(node)
+        ? couchSeatCount(c.document, node.id)
+        : c.document.nodes
+              .where((n) => n.kind == 'seat' && n.parentId == node.id)
+              .length;
+    if (c.canSetSeatCount(node.id, count + direction)) {
+      c.setSeatCount(node.id, count + direction);
+    }
+  }
+
   Widget _seatCountControls(LayoutNode node) {
     final couch = isCouchNode(node), minimum = isCouchNode(node) ? 1 : 0;
     final count = couch
@@ -745,34 +820,38 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             ),
       count + remaining,
     );
+    final validity = <int, bool>{count: true};
+    bool allowed(int value) =>
+        value >= minimum &&
+        value <= maximum &&
+        validity.putIfAbsent(value, () => c.canSetSeatCount(node.id, value));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Expanded(
-              child: _number(couch ? 'Seats on couch' : 'Seats', count, (
-                value,
-              ) {
-                if (value != value.roundToDouble() || value < minimum) {
-                  throw const FormatException(
-                    'Enter a valid whole seat count.',
-                  );
-                }
-                c.setSeatCount(node.id, value.toInt());
-              }),
+              child: _field(
+                couch ? 'Seats on couch' : 'Seats',
+                '$count',
+                (value) => c.setSeatCount(node.id, int.parse(value)),
+                numeric: true,
+                enabled: enabled,
+                integerMax: maximum,
+                acceptsInteger: allowed,
+              ),
             ),
             IconButton(
               tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
-              onPressed: enabled && count > minimum
-                  ? () => c.setSeatCount(node.id, count - 1)
+              onPressed: enabled && allowed(count - 1)
+                  ? () => _stepSeatCount(node, -1)
                   : null,
               icon: const Icon(Icons.remove_circle_outline),
             ),
             IconButton(
               tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
-              onPressed: enabled && count < maximum
-                  ? () => c.setSeatCount(node.id, count + 1)
+              onPressed: enabled && allowed(count + 1)
+                  ? () => _stepSeatCount(node, 1)
                   : null,
               icon: const Icon(Icons.add_circle_outline),
             ),
@@ -782,9 +861,8 @@ class _LayoutInspectorState extends State<LayoutInspector> {
         Text(
           '${VenueLayoutStrings.text(context, 'Maximum seats')}: $maximum',
           key: const ValueKey('table-maximum-seats'),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         if (supportsTableSeatSides(node)) _tableEdgeControls(node),
       ],
@@ -1422,8 +1500,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                         'Width': (crop['width'] as num).toDouble(),
                         'Height': (crop['height'] as num).toDouble(),
                       },
-                      detail:
-                          'Normalized image coordinates, from 0 to 1. Original pixels are retained.',
+                      detail: 'Normalized image coordinates, from 0 to 1. Original pixels are retained.',
                     );
                   },
             child: const LayoutText('Crop image'),
@@ -1513,9 +1590,8 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                         node.id,
                         TableSeating.fromRecord({
                           ...TableSeating.fromDocument(c.document, node).record,
-                          field.key: documentSeating(
-                            c.document,
-                          ).record[field.key],
+                          field.key: documentSeating(c.document)
+                              .record[field.key],
                         }),
                         protectedSeatIds:
                             c.protectedSeatIds?.call() ?? const {},
@@ -1774,8 +1850,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                         'Width': (crop['width'] as num? ?? 1).toDouble(),
                         'Height': (crop['height'] as num? ?? 1).toDouble(),
                       },
-                      detail:
-                          'Normalized image coordinates, from 0 to 1. Original pixels are retained.',
+                      detail: 'Normalized image coordinates, from 0 to 1. Original pixels are retained.',
                     );
                   },
             child: const LayoutText('Crop image'),
@@ -1841,8 +1916,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                       'Width': (base.canvas['width'] as num).toDouble(),
                       'Height': (base.canvas['height'] as num).toDouble(),
                     },
-                    detail:
-                        'Objects keep their positions. A smaller canvas cannot hide seats.',
+                    detail: 'Objects keep their positions. A smaller canvas cannot hide seats.',
                   );
                 },
           child: const LayoutText('Set canvas size'),
@@ -1953,9 +2027,8 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                         ? 'Canvas'
                         : 'Properties',
                     key: const ValueKey('inspector-heading'),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 if (selected.isNotEmpty ||
@@ -2134,9 +2207,9 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: const Size(0, 40),
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .error,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -2385,6 +2458,9 @@ class _PropertyField extends StatefulWidget {
     required this.enabled,
     required this.multiline,
     this.numeric = false,
+    this.integerMax,
+    this.acceptsInteger,
+    this.suffixBuilder,
     required this.onUndo,
     required this.onRedo,
     required this.save,
@@ -2393,6 +2469,9 @@ class _PropertyField extends StatefulWidget {
   });
   final List<String> Function()? usedColors;
   final ui.Image? paletteImage;
+  final int? integerMax;
+  final bool Function(int)? acceptsInteger;
+  final Widget Function(VoidCallback)? suffixBuilder;
   final String label, value;
   final bool enabled, multiline, numeric;
   final VoidCallback onUndo, onRedo;
@@ -2453,6 +2532,14 @@ class _PropertyFieldState extends State<_PropertyField> {
         (_text.value.composing.isValid && !_text.value.composing.isCollapsed)) {
       return;
     }
+    if (widget.integerMax != null) {
+      final number = int.tryParse(_text.text);
+      if (number == null || !(widget.acceptsInteger?.call(number) ?? false)) {
+        _text.text = widget.value;
+        return;
+      }
+      if (_text.text != number.toString()) _text.text = number.toString();
+    }
     final value = _text.text;
     if (value == widget.value || value == _submittedThisFrame) return;
     // Blur and the suffix button can both submit before the model rebuilds.
@@ -2462,6 +2549,26 @@ class _PropertyFieldState extends State<_PropertyField> {
       if (mounted && _submittedThisFrame == value) _submittedThisFrame = null;
     });
     widget.save(value);
+  }
+
+  TextEditingValue _integerEdit(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty ||
+        (newValue.composing.isValid && !newValue.composing.isCollapsed)) {
+      return newValue;
+    }
+    if (!RegExp(r'^\d+$').hasMatch(text)) return oldValue;
+    final value = int.tryParse(text);
+    if (value == null || value > widget.integerMax!) return oldValue;
+    // Keep prefixes such as "1" when entering "10", even if reservations
+    // currently require at least eight seats. Empty edits are also temporary.
+    return (widget.acceptsInteger?.call(value) ?? false) ||
+            (value > 0 && value * 10 <= widget.integerMax!)
+        ? newValue
+        : oldValue;
   }
 
   Future<void> _chooseColor() async {
@@ -2493,13 +2600,21 @@ class _PropertyFieldState extends State<_PropertyField> {
     onRedo: widget.onRedo,
     child: EditorNumberScroll(
       enabled: widget.enabled && widget.numeric,
+      min: widget.integerMax == null ? null : 0,
+      max: widget.integerMax?.toDouble(),
       onChanged: _save,
       child: TextField(
         controller: _text,
+        inputFormatters: widget.integerMax == null
+            ? null
+            : [TextInputFormatter.withFunction(_integerEdit)],
         focusNode: _focus,
         enabled: widget.enabled,
         keyboardType: widget.numeric
-            ? const TextInputType.numberWithOptions(decimal: true, signed: true)
+            ? TextInputType.numberWithOptions(
+                decimal: widget.integerMax == null,
+                signed: widget.integerMax == null,
+              )
             : null,
         minLines: widget.multiline ? 2 : 1,
         maxLines: widget.multiline ? 6 : 1,
@@ -2507,6 +2622,10 @@ class _PropertyFieldState extends State<_PropertyField> {
           labelText: VenueLayoutStrings.text(context, widget.label),
           border: const OutlineInputBorder(),
           isDense: true,
+          suffixIcon: widget.suffixBuilder?.call(() {
+            _save();
+            _focus.unfocus();
+          }),
           prefixIcon: widget.label.contains('#RRGGBBAA')
               ? IconButton(
                   tooltip: VenueLayoutStrings.text(context, 'Choose color'),
