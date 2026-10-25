@@ -16,7 +16,7 @@ for (const page of fs.readdirSync(target, {recursive:true}).filter(file => file.
   html = html.replace(/<link rel="stylesheet" href="\/napoveda\/assets\/([^"]+)">/g, (_,name) => {
     const css = fs.readFileSync(path.join(target,'assets',name),'utf8').replace(/url\("([^"/]+\.ttf)"\)/g, (_,font) => `url("${data(path.join(target,'assets',font),'font/ttf')}")`);
     return `<style>${css}</style>`;
-  }).replace(/<script src="\/napoveda\/assets\/([^"]+)" defer><\/script>/g, (_,name) => `<script>${fs.readFileSync(path.join(target,'assets',name),'utf8').replace(/<\/script/g,'<\\/script')}</script>`)
+  }).replace(/<script src="\/napoveda\/assets\/([^"]+)" defer><\/script>/g, (_,name) => `<script>document.addEventListener('DOMContentLoaded',()=>{${fs.readFileSync(path.join(target,'assets',name),'utf8').replace(/<\/script/g,'<\\/script')}},{once:true});</script>`)
     .replace(/src="\/napoveda\/assets\/([^"]+\.(png|jpg|webp))"/g, (_,name,extension) => `src="${data(path.join(target,'assets',name),'image/'+(extension === 'jpg' ? 'jpeg' : extension))}"`)
     .replace(/href="(\/[^\"]*)"/g, (_,href) => {
       if (!href.startsWith('/napoveda/')) return `href="https://vstupenky.online${href}"`;
