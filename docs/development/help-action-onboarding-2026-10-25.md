@@ -45,8 +45,16 @@ Interactive evidence is in ignored `.private/help-onboarding-20261025/`.
 - Result: `/x3rvvkym/reservations/forms/help_onboarding_prvni_akce_2026/editor`,
   the expected event title and Forms tab selected. Screenshot
   `new-account-final-forms.png` and interaction steps 001-138 record this.
-- Targeted Flutter checks: 12 tests passed (destination contract, post-login
-  routing, existing communication/email template widgets). Hosting login-return
+- Existing signed-in account: selected the new event from a scanner-settings help
+  link and reached the real webclient's Scanner display settings, including the
+  Back to tickets link and authenticated settings controls (steps 139-150).
+- Separate legacy-style local account without any organizer: logged in through a
+  products help link, created its organizer in the normal dialog and reached the
+  first event wizard. Leaving retained the help intent (steps 151-163).
+- Synced authoritative main `e89037ef0` before publication; its setup appearance
+  and preview changes merged without conflicts.
+- Targeted Flutter checks after merge: 16 tests passed (destination contract, post-login
+  routing, communication/email template widgets and setup preview performance). Hosting login-return
   checks: 2 passed. Debug Flutter web build succeeded.
 
 These are local integration results, not evidence of a production deployment or
