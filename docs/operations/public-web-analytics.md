@@ -4,7 +4,7 @@ Cloudflare Web Analytics measures public catalogue, organizer and resolved form 
 
 | Host | Rollout status (2026-10-25) | Public visits and sources |
 | --- | --- | --- |
-| app.absolventskyvelehrad.cz | Dedicated manual site configured; release pending | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=cddce39c98cd4949b882c865471ab50d&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
+| app.absolventskyvelehrad.cz | 0.20.392+893; dedicated manual site, POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=cddce39c98cd4949b882c865471ab50d&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
 | biscup.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=biscup.festapp.net&excludeBots=Yes) |
 | clovekavira.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=clovekavira.festapp.net&excludeBots=Yes) |
 | csa2024.festapp.net | Unchanged by user request | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csa2024.festapp.net&excludeBots=Yes) |
@@ -21,11 +21,11 @@ Use the Referer breakdown for source domains such as Google. Missing referrers c
 
 ## Release evidence
 
-The nine selected web releases use source `be3a27ccd3fd1bfae34938ad7636f0c7f779591d` and version `0.20.391+892`; each passed its local build and three coherent live version/assets/legal probes. The three explicitly excluded tenants were not released.
+The initial nine selected web releases used source `be3a27ccd3fd1bfae34938ad7636f0c7f779591d` and version `0.20.391+892`; each passed its local build and three coherent live version/assets/legal probes. The three explicitly excluded tenants were not released.
 
-Browser checks verified one beacon, `spa: false`, and successful collector POST 204 on the eight working sites. On Hvězda mořská the same public form crossed into a fresh scanner document with zero beacons, and the captured analytics payload contained no synthetic private code. Private fragments and administration were also excluded. Stored Cloudflare GraphQL data independently showed Czech visits under the exact Hvězda mořská hostname.
+Browser checks verified one beacon, `spa: false`, and successful collector POST 204 on all nine working sites after the Velehrad follow-up. On Hvězda mořská the same public form crossed into a fresh scanner document with zero beacons, and the captured analytics payload contained no synthetic private code. Private fragments and administration were also excluded. Stored Cloudflare GraphQL data independently showed Czech visits under the exact Hvězda mořská hostname.
 
-Velehrad follow-up: its previous zone-backed collector returned 404. A dedicated manual site for `app.absolventskyvelehrad.cz` now owns its public-page measurement, using the official external Cloudflare collector. The original parent-zone analytics setup is preserved. Deployment and real data acceptance must be verified before marking this follow-up complete.
+Velehrad follow-up: its previous zone-backed collector returned 404. A dedicated manual site for `app.absolventskyvelehrad.cz` now owns its public-page measurement, using the official external Cloudflare collector. The original parent-zone analytics setup is preserved. The Velehrad-only follow-up is deployed at `0.20.392+893` from source `6d6a72f79c52df9a73ab5150ef42e92f37152de0` (tenant `4e1f9cafb4731035b73c4b2c8e4ed8d9c23e6d21`). Its three coherent live probes passed. The unmodified deployed public form sent a successful POST 204; a real navigation to the scanner loaded zero beacons and the payload contained no synthetic private code. The dedicated property also contains stored Czech visits. The other eight production tenants were not changed in this follow-up.
 
 ## Collection boundary
 
