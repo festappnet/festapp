@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
-import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN} from '../src/config.js';
+import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN, HELP_URL} from '../src/config.js';
 import {registerTicketElement} from '../src/element.js';
 import {initSettings, saveSettings} from '../src/settings_controller.js';
 
@@ -29,7 +29,7 @@ test('Editor, Preview and unavailable Wix context never load a live form or serv
     await tick();
     assert.equal(element.querySelector('iframe'), null);
     assert.equal(document.scripts.length, 0);
-    assert.equal(element.querySelector('a').href, `${SERVICE_ORIGIN}/napoveda/vlozeni-na-web/`);
+    assert.equal(element.querySelector('a').href, HELP_URL);
     dom.window.close();
   }
   const {dom, element, document} = host(async () => {throw Error('no Wix context');});
