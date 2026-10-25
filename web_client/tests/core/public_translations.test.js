@@ -13,7 +13,7 @@ for (const locale of ['cs', 'en']) {
     });
 }
 
-for (const [locale, expected] of [['cs', '+ Akce'], ['en', '+ Event'], ['uk', '+ Подія']]) {
+for (const [locale, expected] of [['cs', 'Založit zdarma'], ['en', '+ Event'], ['uk', '+ Подія']]) {
     test(`published ${locale} catalog translates the mobile create-event button`, async t => {
         const original = LocalizationService.translations;
         t.after(() => { LocalizationService.translations = original; });
