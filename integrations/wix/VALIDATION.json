@@ -88,5 +88,8 @@
     "independentReview": "PASS",
     "mobileViewport": 320,
     "horizontalOverflow": false
-  }
+  },
+  "studioLifecycleReceipt": "evidence/studio-lifecycle-20261025.json",
+  "studioEditorLifecycleVerified": true,
+  "studioPublishedMultipleWidgetsVerified": false
 }

@@ -82,7 +82,7 @@ existing integration tests; never place real orders or reserve production seats.
 | Editor/Preview have no checkout iframe or helper loaded | not run | pass | pass |
 | Published form, auto height, helper/version handshake | not run | pass with QA transport | partial: live contrast fix pending |
 | 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: candidate contrast verified |
-| Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | not run |
+| Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor pass; published interaction pending |
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
 | Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
@@ -154,3 +154,8 @@ button text transparent. Its fix must reach canonical main and the selected
 The native development-site selector currently offers Editor and Studio only.
 Harmony through an ordinary free site has not been investigated; this does not
 establish that Harmony itself is unsupported.
+
+Native Studio duplicate/settings/delete/re-add checks are recorded in
+[evidence/studio-lifecycle-20261025.json](evidence/studio-lifecycle-20261025.json).
+They prove Editor property isolation and fresh re-added properties, not published
+checkout/helper or scroll isolation. The test did not publish or submit orders.

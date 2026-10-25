@@ -75,5 +75,11 @@
     "guideLinkReadback": "https://vstupenky.online/napoveda/prodejni-formular/ HTTP 200 independently verified",
     "mobileWidth": 320,
     "documentScrollWidth": 320
+  },
+  "studioLifecycleReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: evidence and SETUP matrix correctly prove Editor lifecycle/property isolation only; published interaction remains pending",
+    "receipt": "studio-lifecycle-20261025.json",
+    "cleanup": "Reviewer required actual reload readback before claiming persistent cleanup; final receipt includes cold-reopen original-only readback"
   }
 }
