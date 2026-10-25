@@ -23,3 +23,8 @@ Serverové souhrny provozu nevyžadují analytický skript ani analytické cooki
 Samotná registrace není souhlasem s newsletterem ani nepovinným sledováním. V nastavení prohlížeče lze odstranit také uložené přihlašovací údaje, nastavení a mezipaměť; může tím dojít k odhlášení.
 
 Úplné informace najdete v dokumentu <https://vstupenky.online/privacy/>. Již zahájené smazání účtu dokončíte na stránce <https://vstupenky.online/delete-account/>.
+
+
+## Souhrnné měření veřejných stránek
+
+Veřejné stránky používají Cloudflare Web Analytics pro souhrnné počty návštěv. Administrace, přihlášení a soukromé části aplikace jsou vyloučeny. Měření nepoužívá analytické cookies ani trvalý identifikátor návštěvníka.

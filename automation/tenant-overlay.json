@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festivalslunovrat",
+  "baseMainSha": "be3a27ccd3fd1bfae34938ad7636f0c7f779591d",
+  "release": {
+    "version": "0.20.391+892",
+    "note": "Public browser analytics collector correction"
+  }
+}
