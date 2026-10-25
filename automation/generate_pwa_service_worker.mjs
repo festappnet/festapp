@@ -692,16 +692,14 @@ self.addEventListener('fetch', (event) => {
     // account header imports shared chunks too, not just landing-*.js. Keep
     // that entire graph outside version pinning and stale-module recovery.
     // Resolve the actual client on each fetch so worker restarts are safe.
-    if (url.pathname.startsWith('/web-assets/') && event.clientId) {
+    if (ORGANIZER_HOMEPAGE && url.pathname.startsWith('/web-assets/') && event.clientId) {
       const client = await self.clients.get(event.clientId);
       const page = client ? new URL(client.url) : null;
-      const helpPage = page?.pathname === '/napoveda' || page?.pathname.startsWith('/napoveda/');
-      const homePage = ORGANIZER_HOMEPAGE && page?.pathname === '/' &&
-        !page.searchParams.has('q') && !page.searchParams.has('create') && !page.hash.startsWith('#/');
-      if (page?.origin === self.location.origin && (helpPage || homePage)) {
+      if (page?.origin === self.location.origin && page.pathname === '/' &&
+          !page.searchParams.has('q') && !page.searchParams.has('create') &&
+          !page.hash.startsWith('#/')) {
         try { return await fetch(request); }
         catch (_) {
-          if (helpPage) return Response.error();
           // Offline / falls back to this worker's cached catalogue document.
           const cache = await caches.open(CACHE_NAME);
           return (await cache.match(request, { ignoreSearch: true })) || Response.error();
