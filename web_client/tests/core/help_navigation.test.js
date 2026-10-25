@@ -70,3 +70,10 @@ test('a changed release uses normal navigation instead of mixing its runtime wit
  initHelpNavigation(wrapped);click(win,'/napoveda/objednavky/');await new Promise(resolve=>setImmediate(resolve));
  assert.equal(destination,'https://vstupenky.online/napoveda/objednavky/');assert.equal(win.document.title,'Home');
 });
+
+
+test('clicking the current guide scrolls to its top without document navigation',t=>{
+ const win=fixture(t,()=>{throw Error('Current guide needs no fetch');});let top;win.scrollTo=options=>{top=options.top;};
+ const link=win.document.createElement('a');link.href='/napoveda/';win.document.body.append(link);
+ assert.equal(link.dispatchEvent(new win.MouseEvent('click',{bubbles:true,cancelable:true,button:0})),false);assert.equal(top,0);
+});

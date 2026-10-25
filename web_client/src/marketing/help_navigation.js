@@ -80,6 +80,7 @@ export function initHelpNavigation(win = window) {
         if (!url) return;
         if (url.pathname + url.search === renderedPath) {
             if (url.hash) doc.dispatchEvent(new win.CustomEvent('help:navigating'));
+            else {event.preventDefault(); scroll(url);}
             return;
         }
         event.preventDefault();

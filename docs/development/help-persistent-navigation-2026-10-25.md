@@ -31,3 +31,10 @@ Verification:
   verified transitions invoked actual anchor click handlers with HTMLElement.click.
 - Search closes and releases body scroll lock; screenshots inspected. Existing
   pending-account CSS detector returned no findings.
+
+Release follow-up: the canonical drift checker treated generated glob patterns
+as literal paths. It now matches the trusted main-owned patterns and verifies
+all real leaves in the union of replayed and tenant trees. The full existing
+branch-drift suite passes, including a valid Czech help overlay plus rejection
+of modified, added and missing help outputs. Current-guide self-links also avoid
+a document reload (final focused navigation suite: 7 passed).
