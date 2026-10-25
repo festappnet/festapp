@@ -1,4 +1,6 @@
 import 'occasion_setup_strings.dart';
+import '../../images/image_area.dart';
+import '../../images/db_images.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,9 +19,13 @@ class OccasionSetupEmailTemplates extends StatefulWidget {
   const OccasionSetupEmailTemplates(
       {super.key,
       required this.draft,
+      this.unitId,
+      this.onBusyChanged,
       required this.loadPreview,
       required this.onChanged});
   final Map<String, dynamic> draft;
+  final int? unitId;
+  final ValueChanged<bool>? onBusyChanged;
   final SetupEmailPreviewLoader loadPreview;
   final ValueChanged<Map<String, dynamic>> onChanged;
   @override
@@ -160,10 +166,10 @@ class _OccasionSetupEmailTemplatesState
         ],
         if (_catalog != null)
           LayoutBuilder(builder: (context, constraints) {
-            final columns = (constraints.maxWidth / 280).floor().clamp(1, 5);
+            final columns = (constraints.maxWidth / 240).floor().clamp(1, 6);
             final width = (constraints.maxWidth - 16 * (columns - 1)) / columns;
             final height =
-                220 * MediaQuery.textScalerOf(context).scale(14) / 14;
+                168 * MediaQuery.textScalerOf(context).scale(14) / 14;
             return Wrap(spacing: 16, runSpacing: 16, children: [
               for (final entry
                   in (_catalog!['emailTemplates'] as List).whereType<Map>())
@@ -180,5 +186,42 @@ class _OccasionSetupEmailTemplatesState
                     )),
             ]);
           }),
+        const SizedBox(height: 24),
+        Text(EmailTemplatesStrings.settingsBanner,
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(EmailTemplatesStrings.settingsBannerDescriptionOccasion),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ImageArea(
+            key: const ValueKey('setup-email-banner'),
+            dropHeight: 250 * MediaQuery.textScalerOf(context).scale(14) / 14,
+            imageUrl: widget.draft['emailBanner'] as String? ??
+                _catalog?['inheritedEmailBanner'] as String?,
+            hint: EmailTemplatesStrings.settingsBannerHint,
+            enabled: widget.unitId != null,
+            onFileSelected: (file) async {
+              if (widget.unitId == null) return null;
+              widget.onBusyChanged?.call(true);
+              try {
+                final url = await DbImages.uploadImage(
+                    await file.readAsBytes(), null, widget.unitId!,
+                    profile: ImageUploadProfile.banner);
+                if (mounted) {
+                  widget.onChanged({'emailBanner': url});
+                  await _load();
+                }
+                return url;
+              } finally {
+                if (mounted) widget.onBusyChanged?.call(false);
+              }
+            },
+            onRemove: () {
+              widget.onChanged({'emailBanner': null});
+              _load();
+            },
+          ),
+        ),
       ]);
 }

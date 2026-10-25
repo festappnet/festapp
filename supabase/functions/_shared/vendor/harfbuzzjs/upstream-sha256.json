@@ -1,0 +1,7 @@
+{
+  "dist/index.mjs": "04ece1914c8720ad96257728119c1bf24088ee4ef3ab2a2ca688c9a4895d4e7e",
+  "dist/index.d.mts": "c4a91bcf50954270e4970db99f0ff4d9a907a31d8406576df8c5168f1b4580ee",
+  "dist/harfbuzz.js": "ba43463df44851fd58211ef8c19aa7956965390857727ae867b70dc7b3682de1",
+  "dist/harfbuzz.wasm": "5f67e3bd1c4f40ffd07c12d7faa30ebc40cc65998ce058fde5b3c6504607bfb4",
+  "LICENSE": "5d09767b2cc476f08028b56d9384dc45061c5a3e90f9ad966e44addc8d26c8b1"
+}

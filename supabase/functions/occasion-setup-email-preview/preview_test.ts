@@ -204,3 +204,13 @@ Deno.test("existing-occasion preview forwards resource scope, and validates tick
   }
   assert(calls===1);
 });
+
+Deno.test("draft banner appears in the preview and authoring wrapper without changing inheritance", async () => {
+  const banner = "https://img.festapp.net/images/draft-banner.webp";
+  const preview = await renderDraftPreview({...context, emailBanner: banner,
+    inheritedEmailBanner: "https://img.festapp.net/images/inherited.webp"});
+  assert(preview.html.includes(banner));
+  assert(preview.authoringContext.wrapperHtml.includes(banner));
+  assert(preview.inheritedEmailBanner.endsWith("inherited.webp"));
+  assert(context.resolved.wrapper.html === "<main>{{content}}</main>");
+});
