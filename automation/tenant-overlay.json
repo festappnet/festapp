@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "e5e0549c5d7d7bc81517c268f502ba250c275dad",
+  "release": {
+    "version": "0.20.397+898",
+    "note": "Synchronize light and dark theme preferences"
+  }
+}
