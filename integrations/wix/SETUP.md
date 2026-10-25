@@ -81,13 +81,24 @@ existing integration tests; never place real orders or reserve production seats.
 | Install, add widget, settings persist after editor reload | pass on owned ordinary free site | pass | pass |
 | Editor/Preview have no checkout iframe or helper loaded | pass on owned ordinary free site | pass | pass |
 | Published form, auto height, helper/version handshake | pass with QA transport | pass with QA transport | pass with QA transport; live helper fixed |
-| 320 px mobile, keyboard/focus, light/dark host typography | partial: 320 px width and summary pass; keyboard/dark pending | partial: width/focus; dark pending | partial: live contrast/320 px verified |
+| 320 px mobile, keyboard/focus, light/dark host typography | partial: 320 px, map/summary keyboard-focus pass; dark pending | partial: width/focus; dark pending | partial: live contrast/320 px verified |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor lifecycle pass; published pair/attribute isolation pass with QA transport |
-| Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
-| Summary reveals submit; submission shows receipt top | mobile summary pass; no submission | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
-| Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
+| Validation, seat map, Escape/back, close restores scroll | seat map, zoom/fit, Escape/back, focus and scroll pass with QA transport | partial: email and summary close; map pending | not run |
+| Summary reveals submit; submission shows receipt top | mobile seat retry and bank receipt pass with QA transport | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
+| Bank instructions/QR and native blocked storage with lost-response retry | pass with QA transport; QR decoded, orders 0 -> 1 -> 1 | not run | not run |
 | Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall observed with native setup warning/workaround; remaining cases pending | helper outage fallback pass; other cases pending |
 
+[Final checkout evidence](evidence/final-checkout-qualification-20261025.json) records the
+Harmony seat-map, blocked-storage/idempotency and bank QR checks. The dedicated
+current-schema backend procedure is in [tests/README.md](tests/README.md); the
+older WordPress fixture below is only for its earlier basic scenarios.
+[Installation A/B evidence](evidence/editor-install-ab-20261025.json) records that
+both released manual setup and draft homepage auto-add retain the Wix warning.
+The draft was restored; no new app version was released.
+
+Provider redirect/return is conditional on offering such a provider. The current
+bank transfer flow was checked through its instructions and decoded QR without
+activating Stripe or transferring funds. Native Safari remains untested.
 Payment-return qualification must cover supported browsers and mobile Safari;
 third-party iframe storage and payment-provider redirects cannot be established
 by DOM unit tests. Preserve duplicate-order/idempotency checks from the canonical

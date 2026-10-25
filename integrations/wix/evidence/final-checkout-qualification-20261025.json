@@ -1,0 +1,105 @@
+{
+  "verifiedAt": "2026-10-25",
+  "host": "https://info9468674.wixsite.com/my-site-3",
+  "editor": "Harmony",
+  "browser": "isolated headless Chromium, native storage blocking preferences",
+  "viewport": {
+    "width": 320,
+    "height": 800,
+    "iframeWidth": 281,
+    "horizontalOverflow": false
+  },
+  "transport": {
+    "adaptedHtmlBackendAuthAndCors": true,
+    "productionFrontendJavaScriptUnmodified": true,
+    "productionBackendDnsBlocked": true,
+    "productionCorsQualified": false,
+    "savedWixSettingsChanged": false,
+    "runtimeFormUrlChangedForFixture": true,
+    "seatClientVersion": "0.20.405+906",
+    "seatTemplateSha256": "f29f7a51efd3fbe60b08d6afcc776aa4579777c1736c495307eb7272ddc46d02",
+    "bankClientVersion": "0.20.406+907",
+    "bankTemplateSha256": "2d6b54f36db659a1f8e9aca4fa605015d3848d93fd8bc99aa1facc887b1823cb",
+    "helper": "live service embed.js"
+  },
+  "seatMap": {
+    "form": "wix-qa-seats-20261025",
+    "validatedV2Layout": true,
+    "seat": "A1",
+    "nativeSelectionCreatedHold": true,
+    "zoomChangedViewBox": true,
+    "fitRestoredViewBox": [
+      0,
+      0,
+      400,
+      400
+    ],
+    "escapeAndBrowserBackClosedMap": true,
+    "focusReturnedToSeatButton": true,
+    "summaryEscapeReturnedFocusToContinue": true,
+    "scrollRestored": true,
+    "keyboardSpaceReleasedHold": true,
+    "ordersAfterMapOnly": 0
+  },
+  "storageAndRetry": {
+    "localStorage": "SecurityError",
+    "sessionStorage": "SecurityError",
+    "checkedBeforeAndAfterPurchase": true,
+    "firstSuccessfulBackendResponseDeliberatelyLost": true,
+    "orderCounts": [
+      0,
+      1,
+      1
+    ],
+    "explicitSubmitClicks": 2,
+    "orderId": 166,
+    "state": "ordered",
+    "amount": 150,
+    "currency": "CZK",
+    "oneSeatBoundToTicket": true,
+    "identicalPostPayloadSha256": "5802f277ffe65f810066a0c895fd89e364fd8a288f4b3ee96cb370a4e10f738c",
+    "receiptTopVisible": true,
+    "providerPaymentMade": false
+  },
+  "bankQr": {
+    "form": "wix-qa-bank-20261025",
+    "orderId": 167,
+    "ordersBefore": 0,
+    "ordersAfter": 1,
+    "explicitSubmitClicks": 1,
+    "nativeBarcodeDetectorDecodedActualRenderedImage": true,
+    "decoded": "SPD*1.0*ACC:CZ7001000000000000123457*AM:150.00*CC:CZK*X-VS:1137",
+    "ibanModulo97": 1,
+    "matchesStoredPayment": true,
+    "renderedQrWidth": 220,
+    "providerPaymentMade": false
+  },
+  "isolation": {
+    "project": "festapp-wix-qa-20261025",
+    "api": "http://127.0.0.1:59921",
+    "cron": "off",
+    "emailWake": "scheduled",
+    "emailCapacityPaused": true,
+    "emailWorkerUrl": null,
+    "externalEmailDeliveryClaimed": false,
+    "ordersPreservedAfterStopRestart": [
+      166,
+      167
+    ],
+    "backendStoppedWithBackupVolumeRetained": true,
+    "testBrowsersProxyAndEdgeStopped": true,
+    "olderWordpressFixtureUnchanged": true
+  },
+  "limits": [
+    "Transport adaptation does not qualify production form routing, authentication or CORS.",
+    "Seat order166 used the historical domestic CI bank example; valid receiver QR is qualified only by the separate bank order167. No immutable payment was rewritten.",
+    "Native Safari remains untested. Chromium storage denial is not Safari qualification.",
+    "Stripe/provider redirect-return is conditional on offering that provider; no provider was enabled and no real payment was made.",
+    "These new scenarios qualify Harmony only, not every editor/browser combination.",
+    "A stale bank HTML snapshot failed before backend requests after a concurrent release; the successful bank case used fresh907 HTML."
+  ],
+  "screenshots": {
+    "harmony-seat-map-mobile.png": "de89a96026b3d9b94f6a1a3af42893d61dac8e9ebfb35b2ed92dcd7643522273",
+    "harmony-bank-qr-mobile.png": "6e25b19661865d8e86c34a7fc8f19d3e81406d84da9f228d1069828ac04a9066"
+  }
+}
