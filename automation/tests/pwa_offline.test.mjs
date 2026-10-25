@@ -234,6 +234,7 @@ try {
       if (url.includes('/web-assets/index.js')) {
         return new Response('web client bundle');
       }
+      if (url.includes('/napoveda/')) return new Response('public help from network');
       throw new Error(`unexpected network request: ${url}`);
     },
     self: {
@@ -309,6 +310,10 @@ try {
     assert.equal(response.status,308);
     assert.equal(response.headers.get('location'),'https://app.test/');
   }
+  const helpRequest = new Request('https://app.test/napoveda/vlozeni-na-web/');
+  Object.defineProperty(helpRequest, 'mode', {value: 'navigate'});
+  await assert.rejects(dispatchFetch(helpRequest, '', 'help-tab'), /offline/, 'help must not fall back to an unrelated cached app');
+  await assert.rejects(dispatchFetch(new Request('https://app.test/napoveda/assets/help.js')), /offline/);
   const freshAssetResponse = await dispatchFetch(
     new Request('https://app.test/assets/translation.json'),
     'fresh-tab',

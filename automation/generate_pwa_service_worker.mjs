@@ -610,6 +610,12 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
+  // Public help belongs to the live website, including code and downloads.
+  if (url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // A marketing document is independent from the version-pinned offline app.
   // Serve it from the network; keep the installed catalogue usable offline.
   if (ORGANIZER_HOMEPAGE) {

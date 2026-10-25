@@ -203,3 +203,5 @@ body.dark-mode .output-card{background:var(--surface)}
 .feature#vyber-mist .feature-media,.feature#vyber-mist .media-stage{max-width:min(300px,100%)}
 .feature#vyber-mist .media-stage .media-viewport video{clip-path:inset(.45% 1.9% round 8.5% / 3.92%)}
 @media(max-width:760px){body.dark-mode .hero-outlines .architectural-plan{opacity:.23}}
+
+@media(max-width:820px){.site-header .header-help,user-header[data-marketing] .header-help{display:none}}

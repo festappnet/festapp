@@ -1,3 +1,4 @@
+import { expandSiteShell } from './organizers/site_shell.mjs';
 import { renderLandingContent } from './organizers/render_content.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,7 +54,7 @@ if (fs.existsSync(index)) {
   const html = fs.readFileSync(index, 'utf8')
     .replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
     .replace(/(<meta[^>]*property="(?:og:url|twitter:url)"[^>]*content=")[^"]*/gi, (_, prefix) => prefix + canonical);
-  const nav = enabled ? `\n            <nav class="catalog-navigation" aria-label="${locale === 'en' ? 'Main navigation' : 'Hlavní navigace'}"><a href="/">${locale === 'en' ? 'For organizers' : 'Pro pořadatele'}</a></nav>\n            ` : '\n            ';
+  const nav = enabled ? `\n            <nav class="catalog-navigation" aria-label="${locale === 'en' ? 'Main navigation' : 'Hlavní navigace'}"><a href="/">${locale === 'en' ? 'For organizers' : 'Pro pořadatele'}</a>${locale === 'cs' && new URL(value('WEB_LINK')).hostname === 'vstupenky.online' ? '<a href="/napoveda/">Nápověda</a>' : ''}</nav>\n            ` : '\n            ';
   let catalog = html.replace(/(<!-- ORGANIZERS_NAV_START -->)[\s\S]*?(<!-- ORGANIZERS_NAV_END -->)/, (_, start, end) => start + nav + end);
   if (enabled && seo) {
     const esc = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -83,10 +84,12 @@ tokens.EVENT_DIRECTORY_HREF = locale === 'cs' ? 'https://plesy.vstupenky.online'
 Object.assign(tokens, { CTA_LABEL: projection.cta?.label || tokens.CTA_LABEL, CTA_NOTE: projection.cta?.note || tokens.CTA_NOTE });
 tokens.CONTACT_EMAIL = contentData.publicProjection?.contact || tokens.CONTACT_EMAIL;
 const clipsData = JSON.parse(fs.readFileSync(path.join(root, `automation/release/organizers/${locale === 'cs' ? 'clips.json' : `clips.${locale}.json`}`), 'utf8'));
+tokens.HELP_LINK = locale === 'cs' && origin.hostname === 'vstupenky.online' ? '<a class="header-help" href="/napoveda/">Nápověda</a>' : '';
 const richTokens = renderLandingContent(contentData, clipsData, { locale, preview: process.argv.includes('--preview') });
-let template = fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8');
+let template = expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8'));
 if (!projection.references.length) template = template.replace(/<section id="reference"[\s\S]*?<\/section>/, '');
 const content = template.replace(/{{([A-Z0-9_]+)}}/g, (_, key) => {
+  if (key === 'HELP_LINK') return tokens.HELP_LINK;
   if (key in richTokens) return richTokens[key];
   if (key in projection.page) return escape(projection.page[key].replace(/{{([A-Z0-9_]+)}}/g, (_, nested) => { if (!(nested in tokens)) throw new Error(`Unknown nested token ${nested}`); return tokens[nested]; }));
   if (!(key in tokens)) throw new Error(`Unknown organizer token ${key}`);

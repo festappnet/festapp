@@ -953,6 +953,7 @@ fi
 # tenant identity come from the same project.conf used for the application.
 node "$LEGAL_RENDERER" --config "$CONFIG_FILE"
 node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
+node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE"
 
 echo "Project configuration applied successfully."
 

@@ -1,0 +1,183 @@
+[
+  {
+    "slug": "",
+    "title": "Nápověda pro pořadatele",
+    "seoTitle": "Nápověda pro pořadatele: založení akce, vstupenky a platby",
+    "description": "Průvodce založením akce, úpravy v administraci, bankovní účet a Fio, vstupenky, objednávky, odbavení a vložení na vlastní web.",
+    "label": "Přehled návodů",
+    "id": "overview",
+    "category": ""
+  },
+  {
+    "id": "getting-started",
+    "category": "basics",
+    "slug": "zaciname",
+    "title": "Průvodce založením akce krok za krokem",
+    "seoTitle": "Založení akce: termín, pořadatel a příprava prodeje",
+    "description": "Založte akci, uložte koncept a zkontrolujte termín, místo, souhrn a rozdíl mezi zveřejněním a otevřením prodeje.",
+    "label": "Průvodce založením akce",
+    "workflow": "wizard",
+    "preview": "cs/setup/name"
+  },
+  {
+    "id": "event-settings",
+    "category": "administration",
+    "slug": "nastaveni-akce",
+    "title": "Jak změnit nastavení vytvořené akce",
+    "seoTitle": "Nastavení akce: změna názvu, termínu a zveřejnění",
+    "description": "Upravte již vytvořenou akci v administraci: název, termín, místo, zveřejnění a funkce. Odlište nastavení akce od prodejního formuláře.",
+    "label": "Nastavení hotové akce",
+    "workflow": "administration",
+    "preview": "cs/setup/dates"
+  },
+  {
+    "id": "form",
+    "category": "administration",
+    "slug": "prodejni-formular",
+    "title": "Jak připravit a zveřejnit prodejní formulář",
+    "seoTitle": "Prodejní formulář: pole, veřejný odkaz a otevření prodeje",
+    "description": "Nastavte údaje kupujícího, nabídku vstupenek, povinná pole, uložený veřejný odkaz a dostupnost objednávek.",
+    "label": "Prodejní formulář",
+    "workflow": "administration",
+    "preview": "cs/forms/editor"
+  },
+  {
+    "id": "ticket-pricing",
+    "category": "tickets",
+    "slug": "ceny-a-kapacity",
+    "title": "Jak nastavit vstupenky, ceny a kapacity",
+    "seoTitle": "Vstupenky: typy, ceny, kapacity a dostupnost",
+    "description": "Připravte varianty vstupenek a doplňků, správné ceny a měny, množství a společné kapacitní skupiny.",
+    "label": "Ceny a kapacity",
+    "workflow": "administration",
+    "preview": "cs/prices/products"
+  },
+  {
+    "id": "seating",
+    "category": "tickets",
+    "slug": "planek-salu",
+    "title": "Jak vytvořit a připravit plánek sálu",
+    "seoTitle": "Plánek sálu: místa, produkty, ceny a kontrola nákupu",
+    "description": "Vytvořte rozmístění sálu, přiřaďte místům produkty a ověřte cenu i výběr konkrétního sedadla ve formuláři.",
+    "label": "Plánek sálu",
+    "workflow": "administration",
+    "preview": "cs/seating/editor"
+  },
+  {
+    "id": "ticket-design",
+    "category": "tickets",
+    "slug": "vzhled-vstupenky",
+    "title": "Jak upravit vzhled vstupenky a ověřit PDF",
+    "seoTitle": "Vzhled vstupenky: šablona, QR kód a náhled PDF",
+    "description": "Vyberte šablonu, upravte údaje a podklad, zkontrolujte čitelnost QR a výsledný formát PDF.",
+    "label": "Vzhled vstupenky a PDF",
+    "workflow": "administration",
+    "preview": "cs/tickets/editor"
+  },
+  {
+    "id": "bank-accounts",
+    "category": "banking",
+    "slug": "bankovni-ucet",
+    "title": "Jak nastavit bankovní účet pořadatele",
+    "seoTitle": "Nastavení bankovního účtu pro příjem plateb za vstupenky",
+    "description": "Připravte účet pořadatele, měny a pořadí účtů. Ověřte, který účet aplikace použije pro platby formuláře.",
+    "label": "Nastavení bankovního účtu",
+    "workflow": "organization",
+    "preview": "cs/banking/accounts"
+  },
+  {
+    "id": "fio-token",
+    "category": "banking",
+    "slug": "fio-api-token",
+    "title": "Jak propojit Fio banku pomocí API tokenu",
+    "seoTitle": "Fio API token: získání, autorizace a propojení s prodejem vstupenek",
+    "description": "Vytvořte a autorizujte Fio API token pro čtení pohybů, uložte ho v propojení bankovního účtu a ověřte stav synchronizace.",
+    "label": "Fio API token a propojení",
+    "workflow": "organization",
+    "preview": "cs/banking/fio-connection"
+  },
+  {
+    "id": "payments",
+    "category": "banking",
+    "slug": "platby",
+    "title": "Jak připravit platby za vstupenky",
+    "seoTitle": "Platby za vstupenky: účet, QR, splatnost a párování",
+    "description": "Zkontrolujte účet pro příjem plateb, propojení banky, platební údaje, splatnost a instrukce pro kupujícího.",
+    "label": "Nastavení plateb",
+    "workflow": "administration",
+    "preview": "cs/administration/form-payments"
+  },
+  {
+    "slug": "vlozeni-na-web",
+    "title": "Jak vložit prodej vstupenek na vlastní web",
+    "seoTitle": "Vložení prodeje vstupenek na web: HTML formulář",
+    "description": "Vložte objednávkový formulář vstupenky.online do libovolného webu s podporou HTML. Generátor kódu, automatická výška a odkaz na formulář.",
+    "label": "Vložení na web",
+    "id": "embed",
+    "category": "integrations",
+    "preview": "cs/embed/01-generated-code"
+  },
+  {
+    "slug": "wordpress",
+    "title": "Prodej vstupenek ve WordPressu",
+    "seoTitle": "WordPress: prodej vstupenek s doplňkem i bez něj",
+    "description": "Dva způsoby vložení vstupenky.online do WordPressu: doplněk s blokem a shortcode, nebo přímo blok Vlastní HTML bez instalace pluginu.",
+    "label": "WordPress",
+    "id": "wordpress",
+    "category": "integrations",
+    "preview": "cs/wordpress/02-block-editor"
+  },
+  {
+    "slug": "webnode",
+    "title": "Jak vložit prodej vstupenek do Webnode",
+    "seoTitle": "Webnode: vložení formuláře pro prodej vstupenek",
+    "description": "Návod na vložení prodeje vstupenek do Webnode přes HTML blok. Požadavky tarifu, vložení kódu, publikace a kontrola formuláře na mobilu.",
+    "label": "Webnode",
+    "id": "webnode",
+    "category": "integrations",
+    "preview": "cs/webnode/01-add-html"
+  },
+  {
+    "id": "orders",
+    "category": "orders",
+    "slug": "objednavky",
+    "title": "Jak pracovat s objednávkou a doručením vstupenek",
+    "seoTitle": "Objednávky: platby, oprava e-mailu a doručení vstupenek",
+    "description": "Najděte objednávku, ověřte platbu a doručení, opravte e-mail a bezpečně odešlete aktuální potvrzení nebo vstupenky.",
+    "label": "Objednávky a doručení",
+    "workflow": "administration",
+    "preview": "cs/orders/list"
+  },
+  {
+    "id": "check-in",
+    "category": "check-in",
+    "slug": "odbaveni",
+    "title": "Jak odbavit návštěvníky a ověřit vstupenky",
+    "seoTitle": "Odbavení návštěvníků: QR skener, stavy a provoz bez internetu",
+    "description": "Připravte přístup pracovníků, načtěte QR, potvrďte vstup a řešte použité či neuhrazené vstupenky a čekající offline záznamy.",
+    "label": "Odbavení návštěvníků",
+    "workflow": "check-in",
+    "preview": "cs/check-in/used-mobile"
+  },
+  {
+    "id": "scanner-settings",
+    "category": "check-in",
+    "workflow": "scanner-settings",
+    "slug": "nastaveni-skeneru",
+    "title": "Jak nastavit zobrazení webového skeneru",
+    "seoTitle": "Nastavení skeneru vstupenek: údaje, produkty a oprávnění",
+    "description": "Návod pro pořadatele: produkty, odpovědi z formulářů, hledání, interní údaje a náhled před uložením. Nastavení platí pro celou akci.",
+    "label": "Nastavení skeneru",
+    "preview": "cs/scanner-advanced/settings"
+  },
+  {
+    "slug": "reseni-potizi",
+    "title": "Když se formulář nezobrazuje podle očekávání",
+    "seoTitle": "Pomoc s vloženým formulářem: výška, vzhled a aktualizace",
+    "description": "Co zkontrolovat, když se vložený formulář nezobrazuje, ořezává se nebo má jiný vzhled. Pomoc s WordPressem, Webnode a obecným HTML vložením.",
+    "label": "Řešení potíží",
+    "id": "troubleshooting",
+    "category": "troubleshooting",
+    "preview": "cs/forms/summary-mobile"
+  }
+]

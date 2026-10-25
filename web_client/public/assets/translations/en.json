@@ -4109,5 +4109,15 @@
     "occasion": "Individual event #{id}",
     "loginHint": "Sign in to your account to manage connections.",
     "revoked": "App access has been removed."
+  },
+  "HelpNavigation": {
+    "chooseEvent": "Which event would you like to manage?",
+    "noEvents": "No events are available yet. Create your first event and we will open the section from the guide. To manage someone else’s event, ask its administrator for access.",
+    "recentEvent": "Recently used event",
+    "createEvent": "Create event",
+    "chooseOrganizer": "Which organizer should own the new event?",
+    "resumeSetup": "Continue an event draft",
+    "untitledEvent": "Untitled event",
+    "noCreateAccess": "You do not have permission to create events for this organizer. Ask an administrator for access or choose another organizer."
   }
 }
