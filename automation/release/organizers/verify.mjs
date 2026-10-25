@@ -8,7 +8,10 @@ export function verifyMarketingHtml(html, page, context) {
   assert.ok(html.includes(`<title>${escape(page.title)}</title>`), 'marketing title');
   assert.ok(html.includes(`rel="canonical" href="${page.canonical}"`), 'marketing canonical');
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, 'marketing heading');
-  if (page.heading) assert.ok(html.includes(escape(page.heading)), 'own topic content');
+  if (page.heading) {
+    const heading=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1].replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+    assert.equal(heading,escape(page.heading),'own topic heading');
+  }
   assert.ok(!html.includes('{{'), 'unresolved marketing text');
 }
 export async function verifyMarketingBundle(buildDir, configPath) {

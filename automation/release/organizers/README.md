@@ -1,7 +1,7 @@
 # Marketing document and application routing
 
 `render_organizer_page.mjs` owns the static marketing document for the
-`vstupenky.online` tenant. Its only public page is `/`; the catalog is `/events`.
+`vstupenky.online` tenant. Its public documents are `/` and the configured topic paths; the catalog is `/events`.
 The Worker redirects the former `/pro-poradatele` page and root `create=1`/`q`
 queries without dropping query parameters. Ordinary campaign queries stay on
 marketing. Other tenants retain their existing root and forced occasion routing.
@@ -13,8 +13,8 @@ application bootstrap. Release rendering resolves its fingerprinted filename
 from Vite's manifest. The internal `organizers-page` asset is not a public alias.
 
 The PWA manifest keeps its established `/` start URL. When the marketing document
-exists in the bundle, the service worker precaches it as an install-critical
-resource and selects it for offline `/`, while `/events` uses the catalog shell.
+exists in the bundle, the service worker keeps marketing network-only;
+`/events` uses the installed catalog shell.
 Existing release-version cache retirement remains authoritative. MP4/WebM files
 are excluded from both critical and general precache; posters remain available.
 Publish the Worker, document, assets and service worker as one version.
@@ -105,3 +105,17 @@ The account header initializes the existing localization service with the
 rendered document locale and `persist: false`. Browser language or the saved
 application preference cannot retag a Czech marketing document as English;
 ordinary application startup still uses the saved preference.
+
+## Organizer guide and seating feature
+
+The ball-sales URL is a practical seven-chapter organizer guide, with linked
+application help and a printable pre-sale checklist. Checklist state stays in
+the current document; it does not create orders or store personal data. Print
+styles isolate the checklist. The seating URL explains the feature with real
+layout templates and existing editor/buyer clips. Native radio inputs select
+examples; without JavaScript all examples remain readable. Both compositions
+reuse the original typography, palette and vector ticket/hall geometry.
+
+`topic_pages.mjs` owns these distinct compositions, while shared chrome and
+application help retain their existing owners. `topic_tools.js` only enhances
+the checklist and examples. The homepage remains the service overview.
