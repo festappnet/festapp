@@ -95,7 +95,8 @@ const videos = JSON.parse(read('videos.json'));
 const videoLink = id => {
   const video = videos[id]?.[locale];
   if (!video || !/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/.test(video.url)) throw new Error(`Invalid help video: ${id}`);
-  return `<p><a href="${escape(video.url)}" target="_blank" rel="noopener">${escape(video.title)}</a> <span>${escape(video.description)}</span></p>`;
+  const videoId = new URL(video.url).searchParams.get('v');
+  return `<figure class="guide-video"><div class="guide-video-player"><iframe src="https://www.youtube-nocookie.com/embed/${videoId}" title="${escape(video.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><figcaption>${escape(video.description)} <a href="${escape(video.url)}" target="_blank" rel="noopener">${escape(video.title)}</a></figcaption></figure>`;
 };
 const bodies = new Map();
 for (const page of pages) {

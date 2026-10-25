@@ -22,7 +22,12 @@ test('public guides render crawlable linked documents, code generator and exact 
   assert.equal((html.match(/<h1>/g)||[]).length,1);assert.match(html,/<html lang="cs">/);assert.ok(html.includes(page.description));
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
   assert.match(html,/data-help-search/);assert.match(html,/assets\/search\.[a-f0-9]+\.js/);assert.match(html,/BreadcrumbList/);if(page.id.startsWith('category.'))assert.match(html,/ItemList/);
-  assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{|<iframe/);
+  assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{/);
+  if(page.id==='fio-token') {
+   assert.equal((html.match(/<iframe /g)||[]).length,1);
+   assert.match(html,/src="https:\/\/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI"/);
+   assert.match(html,/referrerpolicy="strict-origin-when-cross-origin"/);
+  } else assert.doesNotMatch(html,/<iframe/);
   assert.match(html,/<header class="site-header/);assert.match(html,/<footer class="site-footer wrap"/);
   assert.doesNotMatch(html,/class="help-header|class="help-footer/);
   if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing actual product screenshot: ${page.id}`);
@@ -36,6 +41,7 @@ test('public guides render crawlable linked documents, code generator and exact 
  const bank=fs.readFileSync(path.join(target,'fio-api-token/index.html'),'utf8');
  assert.match(bank,/https:\/\/www\.youtube\.com\/watch\?v=px9MCABSQbI/);
  assert.match(bank,/data-help-workflow="organization"/);
+ assert.match(bank,/class="guide-video-player"/);
  const wizard=fs.readFileSync(path.join(target,'zaciname/index.html'),'utf8');
  assert.match(wizard,/data-help-workflow="wizard"/);
  const existing=fs.readFileSync(path.join(target,'planek-salu/index.html'),'utf8');
@@ -58,7 +64,8 @@ test('public guides render crawlable linked documents, code generator and exact 
  assert.deepEqual(englishPages.map(p=>p.id),pages.map(p=>p.id),'both locales address the same topics');
  for(const page of englishPages){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
-  assert.match(html,/<html lang="en">/);assert.match(html,/noindex,nofollow/);
+  assert.match(html,/<html lang="en">/);
+  if(page.id==='fio-token') assert.match(html,/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI/);assert.match(html,/noindex,nofollow/);
   assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
   if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);
   for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)){

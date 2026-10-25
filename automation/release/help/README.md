@@ -20,7 +20,7 @@ Flutter organizer UI because that is the administration used by the product.
 English never substitutes Czech interface captures. English publication and
 full Webnode verification remain separately gated.
 
-`videos.json` owns localized video references. The Fio guide links the verified
+`videos.json` owns localized video references. The Fio guide embeds the verified
 public v4 video on our YouTube channel; the earlier upload is private. English
 explicitly labels the existing video as Czech. Future English video URLs can be
 supplied independently without changing article or topic structure. New video
@@ -119,3 +119,8 @@ locale. Capture metadata distinguishes a desktop Chromium mobile viewport from a
 physical iPhone or Safari/camera qualification. Keep that distinction in video
 scripts. The October 25 follow-up adds nine CS/EN mobile-view images and a ninth
 scenario chapter; the additional mobile purchase stops before submitting an order.
+
+The video iframe requires an HTTP(S) parent origin for YouTube client identity.
+The file:// export remains useful for the documentation UI, but video playback
+needs a web preview; an HTTP preview is justified for this explicit player
+request. Do not claim file:// playback or a deployed production check.

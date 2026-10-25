@@ -224,3 +224,21 @@ startApplication. All 96 localized page/viewport/theme cases passed; a final
 four-case bank-guide check covered its last copy refinement. The design detector
 reported no findings. Private browser sessions and the owned backend were closed;
 backend data was preserved for future screenshots. English remains preview-only.
+
+## Embedded Fio tutorial
+
+The localized video renderer now produces the actual responsive 16:9 YouTube
+privacy-enhanced iframe, with a title, lazy loading, full-screen support and an
+explicit strict-origin-when-cross-origin referrer policy. The ordinary YouTube
+link remains in the caption. CS and EN use the same verified tutorial; English
+continues identifying its Czech language. Rendering tests cover the video ID,
+iframe boundary and referrer policy; other guides still reject unexpected frames.
+
+A real YouTube player thumbnail and controls loaded in isolated Chrome from the
+HTTP help preview. At 320px, the player measured 284 x 159.75 and the document had
+no horizontal overflow. The standalone file preview returned YouTube error 153
+(missing web referrer); this is a preview transport limitation, not evidence of
+blocked embedding on the site. The user-requested playable embed is therefore
+previewed via owned loopback HTTP on port 57982 instead of file://. Only that
+preview server remains running for the user; the automated browser was closed.
+Two affected renderer tests passed and the CSS detector reported no findings.
