@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "a5056dd0ba60c86893899b3fb9a04b6c1823a0e6",
+  "release": {
+    "version": "0.20.392+893",
+    "note": "Add grouped Cloudflare analytics report links"
+  }
+}
