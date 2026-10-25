@@ -91,5 +91,7 @@
   },
   "studioLifecycleReceipt": "evidence/studio-lifecycle-20261025.json",
   "studioEditorLifecycleVerified": true,
-  "studioPublishedMultipleWidgetsVerified": false
+  "studioPublishedMultipleWidgetsVerified": false,
+  "publishedHelperOutageReceipt": "evidence/helper-outage-20261025.json",
+  "publishedHelperOutageFallbackVerified": true
 }

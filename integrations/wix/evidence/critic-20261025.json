@@ -81,5 +81,10 @@
     "verdict": "PASS: evidence and SETUP matrix correctly prove Editor lifecycle/property isolation only; published interaction remains pending",
     "receipt": "studio-lifecycle-20261025.json",
     "cleanup": "Reviewer required actual reload readback before claiming persistent cleanup; final receipt includes cold-reopen original-only readback"
+  },
+  "helperOutageReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: published iframe/direct-link fallback only; absent synthetic route, untested checkout/recovery and explicit remaining gates correctly disclosed",
+    "receipt": "helper-outage-20261025.json"
   }
 }

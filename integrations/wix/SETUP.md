@@ -86,7 +86,7 @@ existing integration tests; never place real orders or reserve production seats.
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
 | Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
-| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | not run | not run |
+| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | not run | helper outage fallback pass; other cases pending |
 
 Payment-return qualification must cover supported browsers and mobile Safari;
 third-party iframe storage and payment-provider redirects cannot be established
@@ -159,3 +159,8 @@ Native Studio duplicate/settings/delete/re-add checks are recorded in
 [evidence/studio-lifecycle-20261025.json](evidence/studio-lifecycle-20261025.json).
 They prove Editor property isolation and fresh re-added properties, not published
 checkout/helper or scroll isolation. The test did not publish or submit orders.
+
+[Published helper-outage evidence](evidence/helper-outage-20261025.json)
+confirms a fixed-height iframe and keyboard-accessible direct link under an exact
+helper request abort. Production backend DNS remained blocked. The synthetic
+production route was absent; this check does not qualify checkout or recovery.
