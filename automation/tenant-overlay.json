@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "37f2606ea9d42b158c466e23e9d309d2f424c952",
+  "release": {
+    "version": "0.20.406+907",
+    "note": "Protect retired organizer document routes from stale assets"
+  }
+}
