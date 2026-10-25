@@ -23,7 +23,6 @@ function browser(path = '/', overrides = {}) {
   };
   Object.defineProperty(document, 'cookie', { get() { throw Error('No analytics cookies'); }, set() { throw Error('No analytics cookies'); } });
   Object.assign(document, overrides.document);
-  if (overrides.collector) document.currentScript.dataset.analyticsCollector = overrides.collector;
   Object.assign(navigator, overrides.navigator);
   if (overrides.embed) window.top = {};
   vm.runInNewContext(bootstrap, { window, document, navigator, URL });
@@ -37,15 +36,6 @@ test('public pages load one manual beacon without SPA tracking or persistent sto
     assert.deepEqual(JSON.parse(result.added[0].dataset.cfBeacon), { token, spa: false });
     assert.equal(result.added[0].referrerPolicy, 'origin');
   }
-});
-
-test('zone properties use the built-in same-origin collector and manual properties retain the provider default', () => {
-  assert.deepEqual(JSON.parse(browser('/', { collector: '/cdn-cgi/rum' }).added[0].dataset.cfBeacon), {
-    token, spa: false, send: { to: '/cdn-cgi/rum' },
-  });
-  assert.deepEqual(JSON.parse(browser('/', { collector: 'https://untrusted.invalid/' }).added[0].dataset.cfBeacon), {
-    token, spa: false,
-  });
 });
 
 test('private capabilities, legacy routes, previews and embeds never load a beacon', () => {
@@ -79,7 +69,7 @@ const source = shared('services/scanner_routes.js') + '\n' + script.match(/<<'WO
   .replace('// SHARED_PUBLIC_PAGE_SEO', shared('services/public_page_seo.js'))
   .replace('// SHARED_CATALOG_CLASSIFICATION', shared('components/occasion/catalog.js'))
   .replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = "https://tenant.invalid";')
-  .replace('const PUBLIC_WEB_ANALYTICS = null;', `const PUBLIC_WEB_ANALYTICS = ${JSON.stringify({ token, collector: '/cdn-cgi/rum' })};`);
+  .replace('const PUBLIC_WEB_ANALYTICS = null;', `const PUBLIC_WEB_ANALYTICS = ${JSON.stringify({ token })};`);
 const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const env = {
   SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'fixture', ORGANIZATION_ID: 1,
@@ -93,7 +83,6 @@ test('Pages owns public-only injection and suppresses automatic injection on eve
     const response = await worker.fetch(new Request('https://tenant.invalid' + path), env);
     const html = await response.text();
     assert.equal(html.includes('data-analytics-token='), measured, path);
-    assert.equal(html.includes('data-analytics-collector="/cdn-cgi/rum"'), measured, path);
     assert.match(response.headers.get('cache-control'), /no-transform/, path);
     assert.ok(!html.includes('data-cf-beacon'), 'shared document cannot contain an unconditional beacon');
   }
