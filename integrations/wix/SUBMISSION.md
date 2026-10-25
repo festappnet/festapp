@@ -15,7 +15,7 @@ submitted or publicly released in the App Market**.
   ticket sales. Final Wix pricing model and billing text require approval.
 - Support contact: `info@festapp.net`.
 - Service: `https://vstupenky.online/`.
-- Wix guide (deployment pending): `https://festapp-wix.pages.dev/help`.
+- Wix guide: `https://festapp-wix.pages.dev/help`.
 - General help: `https://vstupenky.online/napoveda/vlozeni-na-web/`.
 - Privacy: `https://vstupenky.online/privacy/`.
 - Terms: `https://vstupenky.online/terms/`.

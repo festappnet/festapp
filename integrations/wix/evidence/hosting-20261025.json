@@ -1,35 +1,38 @@
 {
-  "timestampUtc": "2026-10-25T17:49:29Z",
+  "timestampUtc": "2026-10-25T18:44:32Z",
   "provider": "Cloudflare Pages",
   "accountId": "84b32318ac235bf6738bdf1c8caa0795",
   "plan": "free static assets",
   "project": "festapp-wix",
   "productionBranch": "main",
-  "sourceHead": "ce50d38327d4d5fc18272137d8538ab6c0045beb",
-  "deploymentId": "48add2b7-fcca-4163-ab2e-198e5172e679",
-  "deploymentUrl": "https://48add2b7.festapp-wix.pages.dev",
+  "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+  "deploymentId": "b95074fc-9fcd-4d90-9704-74675a3d9222",
+  "deploymentUrl": "https://b95074fc.festapp-wix.pages.dev",
   "stableBaseUrl": "https://festapp-wix.pages.dev",
   "inputArchive": {
     "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "382c4b8c34c656716ecfc69969530dfcb1b30cc23b2a075a1c5a77eed9c972c0"
+    "sha256": "0de22c6266c3ceb91bde9c31295fb4d9cb56c2980f12733b8ed6e3e249fed8f3"
   },
   "uploadedDirectory": "integrations/wix/dist",
   "assets": {
-    "manifest.json": "363543f7b56e687caf2b9e8f836d4ca2b4bb0e207d00b99ea6aeeb5213f18978",
+    "manifest.json": "fe9a83aed3c11592d5b05a57a114c6f8189ab3a5759d349dc6f7f17e5536af0d",
     "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
+    "help.html": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
-    "settings.js": "ba3381536342c8a6e892ec014e3da9c67f85d62584491f6076ce70e2b1ed8959",
+    "settings.js": "55faea259c5a8484e8b943fe86f59f835c7089674a4cdcb4ae6856c86ed7f3dc",
     "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
-    "widget.js": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
+    "widget.js": "855f5628e251a1ef6df3f40af1918d7c1763f5a9ed12a880d77a422148c0f258"
   },
   "readback": {
-    "hashesMatched": ["manifest.json", "settings.html", "settings.js", "settings.css", "widget.js"],
+    "hashesMatched": ["manifest.json", "help.html", "settings.html", "settings.js", "settings.css", "widget.js"],
     "widgetJs": {
       "url": "https://festapp-wix.pages.dev/widget.js",
       "status": 200,
       "contentType": "application/javascript",
+      "sha256": "855f5628e251a1ef6df3f40af1918d7c1763f5a9ed12a880d77a422148c0f258",
       "accessControlAllowOrigin": "*",
-      "cacheControl": "public, max-age=300, must-revalidate"
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "helpUrl": "https://festapp-wix.pages.dev/help"
     },
     "settings": {
       "url": "https://festapp-wix.pages.dev/settings",
@@ -44,16 +47,34 @@
       "status": 308,
       "location": "/settings"
     },
+    "help": {
+      "url": "https://festapp-wix.pages.dev/help",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "sha256": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "czechGuide": true,
+      "guideSource": "https://vstupenky.online/napoveda/prodejni-formular",
+      "helpUrlInSettingsBundle": "https://festapp-wix.pages.dev/help"
+    },
     "manifest": {
       "url": "https://festapp-wix.pages.dev/manifest.json",
       "status": 200,
       "contentType": "application/json",
-      "sha256": "363543f7b56e687caf2b9e8f836d4ca2b4bb0e207d00b99ea6aeeb5213f18978"
+      "sha256": "fe9a83aed3c11592d5b05a57a114c6f8189ab3a5759d349dc6f7f17e5536af0d"
     },
     "headersPolicyApplied": "X-Content-Type-Options: nosniff; Referrer-Policy: strict-origin-when-cross-origin; Cache-Control: public, max-age=300, must-revalidate; Access-Control-Allow-Origin: * on widget.js and settings.js"
   },
   "scope": "Standalone Wix extension asset hosting; no App Market publication, DNS changes, paid upgrade, Flutter build, or tenant release.",
   "deploymentHistory": [
+    {
+      "timestampUtc": "2026-10-25T17:49:29Z",
+      "sourceHead": "ce50d38327d4d5fc18272137d8538ab6c0045beb",
+      "deploymentId": "48add2b7-fcca-4163-ab2e-198e5172e679",
+      "deploymentUrl": "https://48add2b7.festapp-wix.pages.dev",
+      "inputArchiveSha256": "382c4b8c34c656716ecfc69969530dfcb1b30cc23b2a075a1c5a77eed9c972c0",
+      "widgetJsSha256": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
+    },
     {
       "timestampUtc": "2026-10-25T14:47:30Z",
       "sourceHead": "84d3f8d5f168717c73b3e194fbed2d0c129ac21d",

@@ -88,9 +88,10 @@ extensionless URL. The dedicated static project uses the existing Cloudflare
 account and free static hosting; no tenant Flutter build, DNS change or paid
 subscription is needed. Widget JS has public CORS for the editor's opaque sandbox.
 
-Public help: https://vstupenky.online/napoveda/vlozeni-na-web/.
-Wix-specific public installation instructions must be written after the real
-installation flow has been checked. The current help link is generic.
+Wix-specific public help: https://festapp-wix.pages.dev/help.
+The guide follows the verified Editor/Studio installation and settings flow and
+explicitly marks the addon as preparation-only pending qualification/approval.
+Widget placeholders and the settings panel link directly to this guide.
 
 ## Billing and submission
 

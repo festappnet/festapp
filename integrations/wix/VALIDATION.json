@@ -12,7 +12,7 @@
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
   "package": {
     "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "382c4b8c34c656716ecfc69969530dfcb1b30cc23b2a075a1c5a77eed9c972c0",
+    "sha256": "0de22c6266c3ceb91bde9c31295fb4d9cb56c2980f12733b8ed6e3e249fed8f3",
     "type": "public-asset deployment archive, not a Wix App Store installer"
   },
   "releaseCheck": "EXPECTED_BLOCKED: commercial approvals, documented zero-fixed-fee terms, complete real-editor/checkout receipts, store assets and approved reporting implementation remain pending",
@@ -33,12 +33,13 @@
   "accountReceipt": "evidence/account-20261025.json",
   "distSha256": {
     "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
+    "help.html": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
     "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
-    "settings.js": "ba3381536342c8a6e892ec014e3da9c67f85d62584491f6076ce70e2b1ed8959",
-    "widget.js": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
+    "settings.js": "55faea259c5a8484e8b943fe86f59f835c7089674a4cdcb4ae6856c86ed7f3dc",
+    "widget.js": "855f5628e251a1ef6df3f40af1918d7c1763f5a9ed12a880d77a422148c0f258"
   },
-  "sourceHead": "ce50d38327d4d5fc18272137d8538ab6c0045beb",
+  "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
   "realWixWidgetOnCanvasVerified": true,
   "registrationReceipt": "evidence/registration-20261025.json",
   "hostingReceipt": "evidence/hosting-20261025.json",
@@ -78,5 +79,14 @@
     "actualStudioCandidateContrastVerified": true,
     "liveFixVerified": false
   },
-  "storeAssetsVerified": false
+  "storeAssetsVerified": false,
+  "publicGuide": {
+    "url": "https://festapp-wix.pages.dev/help",
+    "source": "src/help.html",
+    "status": "DEPLOYED_HTTP_200_HASH_VERIFIED",
+    "scope": "Actual Editor/Studio setup; explicitly preparation only, Harmony and commercial approval pending",
+    "independentReview": "PASS",
+    "mobileViewport": 320,
+    "horizontalOverflow": false
+  }
 }

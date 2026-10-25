@@ -65,5 +65,15 @@
     "targetDestroyedStartupWaitReviewed": true,
     "sourcePrReady": true,
     "marketplaceReady": false
+  },
+  "publicGuideReview": {
+    "date": "2026-10-25",
+    "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+    "verdict": "No content blocker; preparation notice, Editor/Studio steps and pending commercial terms match evidence",
+    "finding": "Existing placeholder test expected the old help URL",
+    "resolution": "Assertion now imports HELP_URL; all 12 Wix tests pass",
+    "guideLinkReadback": "https://vstupenky.online/napoveda/prodejni-formular/ HTTP 200 independently verified",
+    "mobileWidth": 320,
+    "documentScrollWidth": 320
   }
 }
