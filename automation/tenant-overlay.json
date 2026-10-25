@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "4fb9e38096b2ea39195b00b19151a7f8e52e2a42",
+  "release": {
+    "version": "0.20.402+903",
+    "note": "Keep Czech marketing account controls in Czech"
+  }
+}
