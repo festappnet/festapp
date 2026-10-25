@@ -30,8 +30,11 @@ this wrapper does not add its own analytics.
 ## Remaining material before actual review
 
 1. An authorized owner workspace, assigned app ID and widget extension ID.
+   Account signup for `info@festapp.net` currently needs human CAPTCHA completion;
+   see [the account receipt](evidence/account-20261025.json).
 2. Approved billing model, service-fee-only revenue base and external ticket
    checkout permission, with actual reporting implemented if required.
+   Confirm zero fixed publisher upfront/recurring fees with actual terms evidence.
 3. Approved HTTPS hosting with CORS/cache/CSP and live source hashes.
 4. Real installation and published development-site receipts for Harmony,
    Editor and Studio, including authorized synthetic purchases/payment returns.
@@ -50,13 +53,16 @@ unlisted install link is a public catalog listing.
 
 ## Validation performed locally
 
-Seven Node tests cover canonical URL validation, no live checkout in editor or
+Nine Node tests cover canonical URL validation, no live checkout in editor or
 preview, rejected/missing SDK context, detached asynchronous completion, instance
 isolation, no checkout reload on presentation changes, settings persistence/read
-back and the incomplete release gate. `pnpm run build` successfully bundles the
-pinned official Wix SDK modules. These checks do not prove Wix editor/runtime
+back, the zero-fixed-fee constraint, sealed package contents and the incomplete
+release gate. `pnpm run build` successfully bundles the pinned official Wix SDK
+modules; `pnpm run package` verifies their manifest and excludes private inputs.
+These checks do not prove Wix editor/runtime
 integration or grant commercial approval.
 
 The default `pnpm run release:check` is expected to fail until genuine missing
 inputs and independent real-site receipts are supplied. No submission has been
-attempted and no external message has been sent.
+attempted and no support/reviewer message has been sent. Signup verification
+requests are distinct from a marketplace submission.

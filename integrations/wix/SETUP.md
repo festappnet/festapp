@@ -12,7 +12,14 @@ Do not publish a claim of verified compatibility until the matrix below passes.
 
 1. Select the authorized Wix owner workspace, create a self-managed app, and
    record the assigned app ID. Account/contract acceptance is an operator action.
+   Check for an existing account before creating one. Do not buy a publisher
+   subscription, pay a listing charge or start a trial that converts to a paid
+   plan. Development sites are free; record actual zero-fixed-fee terms before
+   commercial submission.
 2. Publish the built assets at an approved HTTPS location. Verify:
+   - deploy the verified archive's contents, including dependency legal notices;
+     `_headers` targets a dedicated Cloudflare Pages/static-assets root. When
+     hosting under a path prefix, scope the rules to that prefix explicitly;
    - widget and settings JS return JavaScript, not the Flutter/marketing fallback;
    - settings HTML returns HTML, with its sibling CSS and JS available;
    - widget JS allows public CORS (`Access-Control-Allow-Origin: *`) because the

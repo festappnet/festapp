@@ -1,21 +1,38 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-24",
-  "sourceBase": "5d8bdecc12e0dbf0edc903b5acd115b7a4701322",
-  "state": "PREPARED_NOT_REGISTERED",
+  "verifiedAt": "2026-10-25",
+  "sourceBase": "1723fefcd",
+  "adoptedSourceCommit": "449942c0b",
+  "state": "PREPARED_REGISTRATION_BLOCKED_CAPTCHA",
   "localTests": {
-    "count": 7,
-    "passed": 7,
+    "count": 9,
+    "passed": 9,
     "failed": 0
   },
-  "build": "PASS: pinned official SDK modules bundled locally",
-  "releaseCheck": "EXPECTED_BLOCKED: missing assigned Wix identity, approved billing and real site receipts",
+  "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
+  "package": {
+    "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "65779ee80380a0b637afa14a0df89ca0223cc5c6f4c5a0555668d3c6fc690c63",
+    "type": "public-asset deployment archive, not a Wix App Store installer"
+  },
+  "releaseCheck": "EXPECTED_BLOCKED: fixed fee terms, assigned Wix identity, hosting, approved billing and real site receipts missing",
+  "browserCheck": {
+    "environment": "isolated headless Chromium, file:// built settings panel",
+    "viewport": "320x800",
+    "horizontalOverflow": false,
+    "outsideEditorSaveDisabled": true,
+    "checkoutFrames": 0,
+    "realWixHost": false
+  },
   "realWixInstallation": false,
   "wixSdkHostBoundaryVerified": false,
   "publicSubmission": false,
   "billingApprovalObtained": false,
-  "externalMessageSent": false,
+  "externalSupportMessageSent": false,
+  "paidSubscriptionStarted": false,
+  "accountReceipt": "evidence/account-20261025.json",
   "distSha256": {
+    "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
     "settings.css": "edbd872140457d528b353151d16d37aac1922f566e6372df484fc4028a7d8350",
     "settings.html": "4310ef806761938c1a9faea3ecd234ef92e14916b2eb1e52b9e53935281d8e46",
     "settings.js": "e4480f0d3e0e884ab5ae973fed3c5e04d3e910009e254352dd45b56844a19ae3",

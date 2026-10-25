@@ -1,1 +1,26 @@
-{"name":"vstupenky-online-wix","version":"0.1.0","private":true,"type":"module","packageManager":"pnpm@11.24.0","engines":{"node":">=24.22.1","pnpm":"11.24.0"},"scripts":{"test":"node --test tests/*.test.js","build":"node scripts/build.mjs","release:check":"node scripts/check-release.mjs"},"dependencies":{"@wix/editor":"1.979.0","@wix/sdk":"1.21.18","@wix/site-window":"1.59.0"},"devDependencies":{"esbuild":"0.27.1","jsdom":"27.4.0"}}
+{
+  "name": "vstupenky-online-wix",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24.22.1",
+    "pnpm": "11.24.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/build.mjs",
+    "release:check": "node scripts/check-release.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": {
+    "@wix/editor": "1.979.0",
+    "@wix/sdk": "1.21.18",
+    "@wix/site-window": "1.59.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.1",
+    "jsdom": "27.4.0"
+  }
+}

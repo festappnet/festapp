@@ -1,8 +1,18 @@
 # vstupenky.online - Wix release preparation
 
+Repository entry point: [all platform integrations](../README.md).
+
 Status: **source kit prepared, not installed or submitted to Wix**. The working
 widget is buildable locally; the real Wix SDK/host boundary is not yet tested.
 No Wix account, app identifier or billing approval has been invented.
+
+Updated 2026-10-25: nine tests, build and verified public-asset packaging pass.
+The built settings panel was inspected at 320 px with no horizontal overflow;
+outside Wix it correctly disables saving and explains how to open the editor.
+Account lookup for `info@festapp.net` found no existing Wix account. Signup was
+attempted but stopped at CAPTCHA; creation/login are unconfirmed. See the
+[account receipt](evidence/account-20261025.json). Complete that human step before
+registering the actual app. No paid plan or listing fee has been accepted.
 
 This is a self-managed **Site Widget (Custom Element)** with an editor settings
 panel. It loads the existing public checkout and service-owned `/embed.js`.
@@ -37,6 +47,7 @@ cd integrations/wix
 pnpm install --frozen-lockfile
 pnpm test
 pnpm run build
+pnpm run package
 pnpm run release:check
 ```
 
@@ -51,8 +62,11 @@ pnpm run release:check .private/release-inputs.json
 
 Passing that check validates declarations. It is not proof of Wix acceptance,
 a remote installation, payment authorization or completed public submission.
-`dist/` contains the self-managed `widget.js`, `settings.html`, `settings.js` and
-`settings.css`; it is not a Wix App Store ZIP or a registered CLI project.
+`dist/` contains the self-managed `widget.js`, `settings.html`, `settings.js`,
+`settings.css`, bundled dependency notices, public-asset `_headers` and a SHA-256
+`manifest.json`. `pnpm run package` verifies those hashes before creating the
+public-assets-only deployment ZIP in ignored `artifacts/`. It is not a Wix App
+Store installer or a registered CLI project.
 
 ## Registration and hosting
 
@@ -75,6 +89,9 @@ installation flow has been checked. The current help link is generic.
 ## Billing and submission
 
 Read [BILLING-APPROVAL.md](BILLING-APPROVAL.md) before registering monetization.
+The owner requires zero fixed publisher registration/listing/retention costs;
+sales commissions are acceptable. The release check requires zero upfront and
+recurring publisher fee declarations plus actual terms evidence.
 The app is an installer/wrapper for a paid service. Its installation being free
 does not make its revenue-sharing basis zero. Do not list it as an entirely
 free product while charging usage fees through the connected service.

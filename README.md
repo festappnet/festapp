@@ -33,6 +33,7 @@ map bundle. See [features and screenshots](docs/overview/features.md) for more.
 | Configure Cloudflare services | [Cloudflare infrastructure](docs/setup/cloudflare.md) |
 | Build or publish mobile apps | [Android](automation/release/android_play_release.md), [iOS](automation/release/ios_howto.md) |
 | Change code and run checks | [Contributing](CONTRIBUTING.md) |
+| Develop or publish a platform integration | [Integration directory and status](integrations/README.md) |
 
 ## How it fits together
 
