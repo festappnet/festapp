@@ -95,6 +95,10 @@ node automation/minify_web_translations.mjs build/web
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
 
+node automation/release/render_help_pages.mjs --config automation/project.conf --built-index web_client/dist/index.html
+rm -rf build/web/napoveda
+if [ -d web_client/public/napoveda ]; then cp -R web_client/public/napoveda build/web/; fi
+
 # Ship marketing media only when the shared organizer page is enabled.
 LANDING_ENABLED="$(sed -n 's/^WEB_ORGANIZER_LANDING_ENABLED=//p' automation/project.conf | tr -d '\"' | tr -d "'" | tr -d '\r')"
 if [ "$LANDING_ENABLED" != true ]; then

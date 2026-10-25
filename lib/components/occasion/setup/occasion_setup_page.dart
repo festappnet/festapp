@@ -34,7 +34,6 @@ import '../../blueprint/views/blueprint_layout_demo.dart';
 import '../../blueprint/views/blueprint_product_dialogs.dart';
 
 import 'package:festapp_core/forms.dart';
-import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -92,8 +91,9 @@ class OccasionSetupPage extends StatefulWidget {
   const OccasionSetupPage({super.key, required this.draft});
   static Future<OccasionSetupResult?> open(
     BuildContext context,
-    OccasionSetupDraft draft,
-  ) async {
+    OccasionSetupDraft draft, {
+    bool showCompletion = true,
+  }) async {
     final initialized = await ExceptionHandler.guard(
       context,
       futureFunction: () => OccasionSetupDrafts(Supabase.instance.client)
@@ -103,7 +103,7 @@ class OccasionSetupPage extends StatefulWidget {
     final result = await Navigator.of(context).push<OccasionSetupResult>(
       MaterialPageRoute(builder: (_) => OccasionSetupPage(draft: initialized)),
     );
-    if (result != null && context.mounted) {
+    if (result != null && context.mounted && showCompletion) {
       final next = await Navigator.of(context).push<OccasionSetupNext>(
         MaterialPageRoute(
           builder: (_) => OccasionSetupCompleted(result: result),
@@ -687,13 +687,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     _debounce?.cancel();
     if (_pending != null) return _pending!;
     if (_conflict) return Future.value(false);
-    final operation = _drain();
-    _pending = operation;
-    if (mounted) setState(() {});
-    return operation.whenComplete(() {
-      _pending = null;
-      if (mounted) setState(() {});
+    // Reads such as email previews also flush an already-clean draft. Do not
+    // retain a completed no-op as a pending save and block subsequent edits.
+    if (!_dirty) return Future.value(true);
+    // Preview builders can request a flush while this page is building. Start
+    // after that build and install cleanup before notifying the widget tree;
+    // otherwise a setState-during-build exception strands a completed _pending.
+    final operation = Future<bool>.microtask(() async {
+      try {
+        if (mounted) setState(() {});
+        return await _drain();
+      } finally {
+        _pending = null;
+        if (mounted) setState(() {});
+      }
     });
+    _pending = operation;
+    return operation;
   }
 
   Future<bool> _drain() async {
@@ -1223,29 +1233,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       SetupBlueprintConfiguration(data).areaCount;
 
   Future<void> _startNewBlueprint() async {
-    final selected = await showDialog<LayoutTemplate>(
-      context: context,
-      builder: (c) => AppAlertDialog(
-        title: Text(OccasionSetupStrings.story('chooseBlueprintTemplate')),
-        content: SizedBox(
-          width: 560,
-          height: 460,
-          child: ListView(
-            children: [
-              for (final template in VenueLayoutTemplates.all)
-                ListTile(
-                  title: Text(
-                    template.id == 'blank'
-                        ? OccasionSetupStrings.story('emptyBlueprint')
-                        : VenueLayoutLocalizations.of(c).text(template.title),
-                  ),
-                  onTap: () => Navigator.pop(c, template),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final selected = await showVenueLayoutTemplateGallery(context);
     if (!mounted || selected == null) return;
     _change((d) {
       SetupBlueprintConfiguration(d).clear(create: true);
@@ -2646,14 +2634,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
-  int _readiness(Map<String, dynamic> d) {
-    final required = _questions.where((q) => !q.optional).toList();
-    return (100 *
-            required.where((q) => _questionReady(d, q)).length /
-            required.length)
-        .round();
-  }
-
   Future<void> _jump(String key) async {
     if (_presentationUploading || _finalizeCommand != null) return;
     final target = _questions.indexWhere((q) => q.key == key);
@@ -2825,7 +2805,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       },
       visitedKeys:
           (d['visitedQuestions'] as List? ?? []).cast<String>().toSet(),
-      readiness: OccasionSetupStrings.readiness(_readiness(d)),
       introductionAction: (_sources.isNotEmpty ||
               _loadingSources ||
               _sourceError != null)

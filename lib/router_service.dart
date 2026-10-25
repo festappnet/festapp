@@ -1,3 +1,5 @@
+import 'package:fstapp/services/help_destination.dart';
+import 'package:fstapp/components/navigation/help_destination_picker.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/services/last_administration_context.dart';
@@ -465,6 +467,44 @@ class RouterService {
 
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    final helpIntent = HelpDestination.parse(fallbackPath);
+    if (helpIntent != null) {
+      await RightsService.updateAppData(force: true, refreshOffline: false);
+      if (!context.mounted) return;
+      final link = await chooseHelpOccasion(context);
+      if (!context.mounted) return;
+      if (link != null && HelpDestination.isWebClient(helpIntent)) {
+        // Resolve the chosen event afresh. A remembered event or an ID in a help
+        // link must never choose the scanner's authorization context.
+        await RightsService.updateAppData(
+            link: link, force: true, refreshOffline: false);
+        if (!context.mounted) return;
+        final occasion = RightsService.currentOccasion();
+        final target = occasion?.link == link
+            ? HelpDestination.path(helpIntent, link, occasionId: occasion?.id)
+            : null;
+        if (target != null) {
+          // Keep browser Auth storage on the tenant's current origin. The
+          // webclient opens a fresh scanner session and enforces editor rights.
+          await LaunchUrlService.openExternalUrl(
+              kIsWeb ? target : '${AppConfig.webLink}$target',
+              inCurrentWindow: true);
+          return;
+        }
+        await handlePostLoginNavigation(context,
+            fallbackPath: HelpDestination.path('tickets', link),
+            useReplacement: true);
+        return;
+      }
+      final target = HelpDestination.path(helpIntent, link);
+      if (target == null) {
+        await handlePostLoginNavigation(context, useReplacement: true);
+        return;
+      }
+      await handlePostLoginNavigation(context,
+          fallbackPath: target, useReplacement: true);
+      return;
+    }
     if (isStripeConnectionReturnPath(fallbackPath)) {
       await replaceRootPath(context.router.root, '/stripe/connect/callback');
       return;

@@ -1,4 +1,4 @@
-import { verifyWebhook, WebhookVerificationError } from "npm:@festapp/banksync@0.2.2";
+import { verifyWebhook, WebhookVerificationError } from "npm:@festapp/banksync@0.5.2";
 
 type Dependencies = {
   secret: string;

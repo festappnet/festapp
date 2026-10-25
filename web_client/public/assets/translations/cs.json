@@ -3164,6 +3164,20 @@
       "duplicateTypes": "Dvě pole vstupenky nemohou v jedné šabloně odkazovat na stejnou skupinu produktů. Vyberte různé skupiny.",
       "invalidReferences": "Plánek nebo vstupenka odkazuje na produkty, které ve vybraném formuláři chybí. Ve formuláři vyberte jejich náhrady.",
       "repairReferences": "Propojit produkty"
+    },
+    "ui": {
+      "palette_ocean": "Oceán",
+      "palette_royal": "Královský",
+      "palette_lavender": "Levandulový",
+      "palette_citrus": "Citrusový",
+      "palette_sunset": "Západ slunce",
+      "palette_wine": "Vínový",
+      "palette_terracotta": "Terakotový",
+      "palette_forest": "Lesní",
+      "palette_graphite": "Grafitový",
+      "palette_rose": "Růžový",
+      "palette_azure": "Azurový",
+      "palette_cream": "Krémový"
     }
   },
   "Waitlist": {
@@ -4097,5 +4111,15 @@
     "occasion": "Jednotlivá akce #{id}",
     "loginHint": "Pro správu propojení se přihlaste ke svému účtu.",
     "revoked": "Přístup aplikace byl odebrán."
+  },
+  "HelpNavigation": {
+    "chooseEvent": "Pro kterou akci chcete otevřít administraci?",
+    "noEvents": "Zatím nemáte dostupnou akci. Založte první akci a potom Vás přeneseme do sekce z návodu. Pokud spravujete cizí akci, požádejte jejího správce o přístup.",
+    "recentEvent": "Naposledy používaná akce",
+    "createEvent": "Založit akci",
+    "chooseOrganizer": "Pod kterým pořadatelem chcete akci založit?",
+    "resumeSetup": "Pokračujte v rozpracované akci",
+    "untitledEvent": "Akce bez názvu",
+    "noCreateAccess": "Pro tohoto pořadatele nemáte oprávnění zakládat akce. Požádejte správce o přístup nebo vyberte jiného pořadatele."
   }
 }

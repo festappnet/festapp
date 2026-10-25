@@ -73,19 +73,25 @@ class OccasionCreationHelper {
       UnitModel unit, List<OccasionModel> existingOccasions,
       {OccasionModel? source,
       String? copyLocale,
-      bool withoutWizard = false}) async {
+      bool withoutWizard = false,
+      bool showCompletion = true}) async {
     final intentLocale = copyLocale ?? context.locale.languageCode;
     if (source != null && AppConfig.occasionSetupEnabled) {
-      return _openSetup(context, unit, {
-        'sourceId': source.id,
-        'sourceUnitId': source.unit,
-        'sourceSelectionPending': true,
-        'copy_locale': intentLocale,
-        'copy_title_edited': false,
-      });
+      return _openSetup(
+          context,
+          unit,
+          {
+            'sourceId': source.id,
+            'sourceUnitId': source.unit,
+            'sourceSelectionPending': true,
+            'copy_locale': intentLocale,
+            'copy_title_edited': false,
+          },
+          showCompletion: showCompletion);
     }
     if (AppConfig.occasionSetupEnabled && !withoutWizard) {
-      return _openSetup(context, unit, const {});
+      return _openSetup(context, unit, const {},
+          showCompletion: showCompletion);
     }
     final formKey = GlobalKey<FormState>();
     String? title = AdministrationStrings.myFestival;
@@ -369,8 +375,9 @@ class OccasionCreationHelper {
     return occasion;
   }
 
-  static Future<OccasionModel?> _openSetup(BuildContext context, UnitModel unit,
-      Map<String, dynamic> initialData) async {
+  static Future<OccasionModel?> _openSetup(
+      BuildContext context, UnitModel unit, Map<String, dynamic> initialData,
+      {bool showCompletion = true}) async {
     final store = OccasionSetupDrafts(Supabase.instance.client);
     final draft =
         await ExceptionHandler.guard(context, futureFunction: () async {
@@ -378,7 +385,8 @@ class OccasionCreationHelper {
       return store.save(created, {...created.data, ...initialData}, 0);
     });
     if (draft != null && context.mounted) {
-      final result = await OccasionSetupPage.open(context, draft);
+      final result = await OccasionSetupPage.open(context, draft,
+          showCompletion: showCompletion);
       return result?.occasion;
     }
     return null;

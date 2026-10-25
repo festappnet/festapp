@@ -1,5 +1,6 @@
 import { isEmbed, applyEmbedContext } from './services/embed_context.js';
 import './embed.css';
+import { handleHelpAction } from './startup/help_action.js';
 import { handleOrganizerIntent } from './startup/organizer_intent.js';
 import { GoogleAuthService } from './services/google_auth_service.js';
 import { LoginModal } from './components/users/login_modal.js';
@@ -59,14 +60,15 @@ class Main {
                 return;
             }
 
-            const organizerIntent = isEmbed() ? null : await handleOrganizerIntent();
-            if (organizerIntent === 'navigated') {
+            const entryIntent = isEmbed() ? null :
+                await handleHelpAction() || await handleOrganizerIntent();
+            if (entryIntent === 'navigated') {
                 window.markFestappAppReady?.();
                 return;
             }
 
             // 2. Check Routing (SPA Support)
-            if (!organizerIntent && await RouterService.handleInitialLoad()) {
+            if (!entryIntent && await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
                  window.markFestappAppReady?.();
                  return;

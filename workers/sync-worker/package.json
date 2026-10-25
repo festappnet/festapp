@@ -8,10 +8,10 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261015.1",
+    "@cloudflare/workers-types": "^5.20261021.1",
     "typescript": "^5.9.2",
-    "vitest": "^4.0.18",
-    "wrangler": "^4.151.0"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.151.3"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {
