@@ -1,0 +1,79 @@
+{
+  "timestampUtc": "2026-10-25T23:04:02Z",
+  "provider": "Cloudflare Pages",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "plan": "free static assets",
+  "project": "festapp-wix",
+  "productionBranch": "main",
+  "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589",
+  "deploymentId": "83870904-fef5-4f4f-9c29-480cbcdc75fe",
+  "deploymentUrl": "https://83870904.festapp-wix.pages.dev",
+  "stableBaseUrl": "https://festapp-wix.pages.dev",
+  "inputArchive": {
+    "sha256": "3d212a1c2b4cfbe501b2ff6e833368f499d18b89da83171a0559e567cddd501c",
+    "sealed": true
+  },
+  "uploadedDirectory": "private immutable staging extracted from sealed archive",
+  "assets": {
+    "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
+    "help.html": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6",
+    "manifest.json": "6c26988b36600eaeb39ff94b96a8355bb5a7d77f8962f8f8270763863e8d11b5",
+    "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
+    "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
+    "settings.js": "d23136096f3d1e668aa5bb5fff987f40a898a58128ada7397254baa5a357cfec",
+    "widget.js": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
+  },
+  "readback": {
+    "hashesMatched": true,
+    "httpStatus": 200,
+    "contentTypes": {
+      "widget.js": "application/javascript",
+      "settings.js": "application/javascript",
+      "settings.css": "text/css; charset=utf-8",
+      "settings.html": "text/html; charset=utf-8",
+      "help.html": "text/html; charset=utf-8",
+      "manifest.json": "application/json"
+    },
+    "settingsAliases": {
+      "/settings": {
+        "status": 200,
+        "finalPath": "/settings",
+        "sha256": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896"
+      },
+      "/settings.html": {
+        "status": 200,
+        "finalPath": "/settings",
+        "sha256": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896"
+      }
+    },
+    "helpAliases": {
+      "/help": {
+        "status": 200,
+        "finalPath": "/help",
+        "sha256": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6"
+      },
+      "/help.html": {
+        "status": 200,
+        "finalPath": "/help",
+        "sha256": "317b67d5796711715cfe4a05fab05cc2e425183bd39c53d3801ed175818391f6"
+      }
+    },
+    "widgetJs": {
+      "sha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+      "cors": "*"
+    },
+    "settingsJs": {
+      "sha256": "d23136096f3d1e668aa5bb5fff987f40a898a58128ada7397254baa5a357cfec",
+      "cors": "*"
+    },
+    "headers": {
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "xContentTypeOptions": "nosniff",
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "contentSecurityPolicy": null,
+      "contentSecurityPolicyConfigured": false,
+      "headersPolicyHashVerifiedLocally": true
+    }
+  },
+  "scope": "Static Wix extension assets only. No native Wix, App Market, billing, DNS, backend, Flutter or tenant-service deployment."
+}

@@ -8,10 +8,10 @@ qualification in progress; not submitted to the App Market**.
 The owner completed signup/login for `info@festapp.net`. The assigned app ID is
 recorded in [wix-app.json](wix-app.json), and the widget extension ID and free
 development site are in the [registration receipt](evidence/registration-20261025.json).
-The [hosting receipt](evidence/hosting-20261025.json) records exact public asset
+The [hosting receipt](evidence/hosting-20261026.json) records exact public asset
 hashes and URLs. No paid plan or listing fee has been accepted.
 
-Twelve tests, build and sealed public-asset packaging pass. The actual bundled
+Fourteen tests, build and sealed public-asset packaging pass. The actual bundled
 entry now initializes the self-managed Site host using the assigned application
 ID; its regression test runs the real pinned Wix SDK against a synthetic host
 boundary. This does not replace real Wix qualification. The built settings panel
@@ -132,3 +132,9 @@ The template required native Desktop and Mobile width adjustments. No order was
 submitted in this run. See [Harmony qualification](evidence/harmony-qualification-20261025.json).
 Wix version 1.0 is released unlisted for this owned QA installation; this is not
 Marketplace publication, billing approval or an access-private release.
+
+The [recovery fixes](evidence/recovery-fixes-20261026.json) lock settings while
+loading/saving and permit a later render to retry a failed helper request.
+Published Editor recovery preserved the checkout iframe and loaded one helper;
+14 regression tests pass. This does not resolve native Wix portal/install errors
+or qualify commercial submission.
