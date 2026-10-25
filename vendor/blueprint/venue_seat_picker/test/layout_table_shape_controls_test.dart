@@ -137,7 +137,12 @@ void main() {
     expect(
       tester
           .widget<IconButton>(
-            find.widgetWithIcon(IconButton, Icons.add_circle_outline),
+            find
+                .ancestor(
+                  of: find.byTooltip('Add one seat'),
+                  matching: find.byType(IconButton),
+                )
+                .first,
           )
           .onPressed,
       isNotNull,
@@ -186,7 +191,12 @@ void main() {
       final c = VenueLayoutController(full)..select({table.id});
       await open(tester, c);
       IconButton add() => tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.add_circle_outline),
+        find
+            .ancestor(
+              of: find.byTooltip('Add one seat'),
+              matching: find.byType(IconButton),
+            )
+            .first,
       );
       expect(add().onPressed, isNull);
       await tester.tap(find.byTooltip('Remove one seat'));

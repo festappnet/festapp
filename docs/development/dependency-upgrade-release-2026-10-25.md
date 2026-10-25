@@ -61,3 +61,21 @@ analysis has zero errors; existing repository lint diagnostics are not suppresse
 
 Final client receipt: `/tmp/festapp-upgrade-release-20261025/client-release/summary.json`.
 Qualified package receipt: `/tmp/festapp-upgrade-release-20261025/archives-r4/archive-result.json`.
+
+
+## Seat-count follow-up, 2026-10-26
+
+Wrapper 0.4.1 imports canonical source
+`94f194570a04f50929a77320b9b626faef04a4ce` through a new official archive gate.
+Seat-count fields permit temporary empty edits and reject impossible committed
+values. Each table side now has circular minus/plus controls. Preflight uses
+existing geometry and live host-owned protected identities; adding free chairs
+remains possible while reserved or blocked identities remain protected.
+
+The targeted seating, inspector, couch and reservation checks pass, including
+six new editing cases. Package analysis is clean. The new immutable archive
+passed core byte-equivalence, actual pub/npm selection, 15 clean-consumer
+templates and the archived Flutter example build/browser gates. Core and
+JavaScript behavior are unchanged. Host seating/editor integration and all five
+repository artifact checks pass. Evidence:
+`/tmp/festapp-seat-count-release-20261026/`.

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+
 import 'layout_path.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
@@ -1113,8 +1115,7 @@ class VenueLayoutController extends ChangeNotifier {
 
   void _clipboardError() {
     if (_disposed) return;
-    error =
-        'Clipboard does not contain a valid layout selection, or access was denied.';
+    error = 'Clipboard does not contain a valid layout selection, or access was denied.';
     notifyListeners();
   }
 
@@ -1387,24 +1388,50 @@ class VenueLayoutController extends ChangeNotifier {
     }
   }
 
-  void setSeatCount(String tableId, int count) {
+  VenueLayoutDocument _seatCountDocument(
+    String tableId,
+    int count, {
+    List<int>? edgeCounts,
+  }) {
+    return isCouchNode(_document.nodes.firstWhere((n) => n.id == tableId))
+        ? resizeCouchSeats(
+            _document,
+            tableId,
+            count,
+            protectedSeatIds: protectedSeatIds?.call() ?? const {},
+          )
+        : reflowTable(
+            _document,
+            tableId,
+            count,
+            constrainToCanvas: true,
+            edgeCounts: edgeCounts,
+            protectedSeatIds: protectedSeatIds?.call() ?? const {},
+          );
+  }
+
+  /// Preflight without changing the draft, errors, selection or history.
+  /// The actual mutation still rechecks reservations and host constraints.
+  bool canSetSeatCount(String tableId, int count, {List<int>? edgeCounts}) {
+    if (readOnly || saving) return false;
+    try {
+      final next = _seatCountDocument(tableId, count, edgeCounts: edgeCounts);
+      return next.nodes
+                  .where((n) => n.kind == 'seat' && n.parentId == tableId)
+                  .length ==
+              count &&
+          validateDocument(next).isEmpty &&
+          (constraints?.call(_document, next).isEmpty ?? true);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void setSeatCount(String tableId, int count, {List<int>? edgeCounts}) {
     try {
       apply(
-        isCouchNode(_document.nodes.firstWhere((n) => n.id == tableId))
-            ? resizeCouchSeats(
-                _document,
-                tableId,
-                count,
-                protectedSeatIds: protectedSeatIds?.call() ?? const {},
-              )
-            : reflowTable(
-                _document,
-                tableId,
-                count,
-                constrainToCanvas: true,
-                protectedSeatIds: protectedSeatIds?.call() ?? const {},
-              ),
-        label: 'Seats',
+        _seatCountDocument(tableId, count, edgeCounts: edgeCounts),
+        label: edgeCounts == null ? 'Seats' : 'Adjust table sides',
       );
     } catch (e) {
       error = e is StateError ? e.message : e.toString();

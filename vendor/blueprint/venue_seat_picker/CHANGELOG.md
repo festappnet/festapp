@@ -1,3 +1,9 @@
+## 0.4.1
+
+- Keep seat-count edits within physical and reservation constraints while allowing temporary empty fields and multi-digit input.
+- Add circular minus/plus controls to each table side and preserve pending edits when stepping.
+- Recheck host-owned reserved and blocked seat identities before each change; allow adding and removing free seats where feasible.
+
 ## 0.4.0
 
 - Migrate Flutter UI types together to material_ui/cupertino_ui on stable Flutter 3.47.7.
