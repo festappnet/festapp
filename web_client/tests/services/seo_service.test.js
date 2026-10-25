@@ -47,11 +47,20 @@ test('hydrated metadata equals the edge projection, including alias identity, en
     const seo = { title: 'Occasion', form_title: 'Tickets', form_description: '<p>Dinner&nbsp;&amp; music &#269;</p><script>bad()</script>', form_link: 'saved', image: 'posters/event.png' };
     const expected = publicPageSeo(seo, {origin:'https://tickets.invalid', siteName:AppConfig.appTitleShort, path:'/form/old'});
     SeoService.updateMetaTags(new FormModel({title:'Different fallback', seo}), dom.window.location.href);
+    assert.equal(expected.title, `Occasion - Tickets - ${AppConfig.appTitleShort}`);
     assert.equal(document.title, expected.title);
     assert.equal(document.querySelector('meta[name="description"]').content, 'Dinner & music č');
     assert.equal(document.querySelector('meta[property="og:image"]').content, expected.image);
     assert.equal(document.querySelector('link[rel="canonical"]').href, expected.canonical);
     dom.window.close();
+});
+
+test('form titles retain a specific form name without repeating its event identity', () => {
+    const context = { origin: 'https://tickets.invalid', siteName: 'Tickets', path: '/form/live' };
+    assert.equal(publicPageSeo({ title: 'Ball 2027', form_title: 'Ball 2027 - VIP' }, context).name, 'Ball 2027 - VIP');
+    assert.equal(publicPageSeo({ title: 'Ball 2027', form_title: 'Dinner' }, context).name, 'Ball 2027 - Dinner');
+    assert.equal(publicPageSeo({ form_title: 'Dinner' }, context).name, 'Dinner');
+    assert.equal(publicPageSeo({ title: 'Ball 2027', form_title: 'Dinner' }, { ...context, kind: 'event' }).name, 'Ball 2027');
 });
 
 test('event date follows the selected interface language', async () => {
