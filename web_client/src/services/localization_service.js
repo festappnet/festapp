@@ -6,17 +6,20 @@ export class LocalizationService {
     static translations = {};
     static _initialization = null;
 
-    static init() {
+    static init({locale, persist = true} = {}) {
         if (!LocalizationService._initialization) {
-            LocalizationService._initialization = LocalizationService._initialize();
+            LocalizationService._initialization = LocalizationService._initialize({locale, persist});
         }
         return LocalizationService._initialization;
     }
 
-    static async _initialize() {
+    static async _initialize({locale, persist = true} = {}) {
         // 1. Load preference
         const saved = browserStorage.getItem(AppConfig.Keys.locale);
-        if (saved && AppConfig.supportedLanguages.includes(saved)) {
+        if (locale !== undefined) {
+            if (!AppConfig.supportedLanguages.includes(locale)) throw new Error('Unsupported document locale');
+            LocalizationService.currentLocale = locale;
+        } else if (saved && AppConfig.supportedLanguages.includes(saved)) {
             LocalizationService.currentLocale = saved;
         } else {
             // Auto-detect? For now default to CS as primary
@@ -27,16 +30,16 @@ export class LocalizationService {
              }
         }
 
-        await LocalizationService.loadTranslations(LocalizationService.currentLocale);
+        await LocalizationService.loadTranslations(LocalizationService.currentLocale, {persist});
     }
 
-    static async loadTranslations(locale) {
+    static async loadTranslations(locale, {persist = true} = {}) {
         try {
             const res = await fetch(`/assets/translations/${locale}.json`);
             if (!res.ok) throw new Error('Translation not found');
             LocalizationService.translations = await res.json();
             LocalizationService.currentLocale = locale;
-            browserStorage.setItem(AppConfig.Keys.locale, locale);
+            if (persist) browserStorage.setItem(AppConfig.Keys.locale, locale);
             document.documentElement.lang = locale;
         } catch (e) {
             console.error("Failed to load translations", e);

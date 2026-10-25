@@ -100,3 +100,8 @@ the latest complete 28 days, CZ/Web and separate mobile/desktop. Measure brand,
 generic `vstupenky online` and organizer topics separately. Record D0 at actual
 release, then compare D7/D14/D28 with the same filters; a CTA click is not a
 completed organizer signup. No new analytics service or schedule is introduced.
+
+The account header initializes the existing localization service with the
+rendered document locale and `persist: false`. Browser language or the saved
+application preference cannot retag a Czech marketing document as English;
+ordinary application startup still uses the saved preference.
