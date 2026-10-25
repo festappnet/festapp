@@ -2,6 +2,11 @@
 
 Cloudflare Web Analytics measures public catalogue, organizer and resolved form pages only. Each link below has a fixed exact-host filter; zone-backed sites share storage and use per-host views; Velehrad has its own manual site card. Requests/server statistics remain separate.
 
+
+Use the [combined Festapp + Velehrad overview](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8%2Ccddce39c98cd4949b882c865471ab50d&excludeBots=Yes) to view the Festapp-domain apps and Velehrad together. The dashboard was verified to show `Site is in festapp.net, app.absolventskyvelehrad.cz`; use Host to separate individual websites. The filter includes these two properties only, not every analytics site in the account.
+
+Cloudflare's [same-domain restriction](https://developers.cloudflare.com/web-analytics/faq/#can-i-use-the-same-js-snippet-for-a-different-domain) prevents moving a `.cz` hostname into the `festapp.net` collection property. The combined dashboard is the supported reporting group; Velehrad keeps its working exact-host collector identity. No tenant deployment or domain change is needed for this report grouping.
+
 | Host | Rollout status (2026-10-25) | Public visits and sources |
 | --- | --- | --- |
 | app.absolventskyvelehrad.cz | 0.20.392+893; dedicated manual site, POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=cddce39c98cd4949b882c865471ab50d&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
