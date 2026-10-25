@@ -10,8 +10,8 @@ const source = readFileSync(new URL('../../src/marketing/landing.js', import.met
 const accountSource = readFileSync(new URL('../../src/marketing/account_header.js', import.meta.url), 'utf8')
     .replace(/^import .*;\n/gm, '').replace(/^export /gm, '');
 
-test('marketing waits for shared account initialization before mounting the account header', async () => {
-    const dom = new JSDOM('<header class="site-header auth-pending"></header>', { url: 'https://vstupenky.online/' });
+for (const route of ['/', '/napoveda/']) test(`public ${route} waits for shared account initialization before mounting the account header`, async () => {
+    const dom = new JSDOM('<header class="site-header auth-pending"></header>', { url: 'https://vstupenky.online' + route });
     try {
         let complete;
         let themeInitialized = false;
@@ -24,7 +24,8 @@ test('marketing waits for shared account initialization before mounting the acco
             initializeCoreServices: () => new Promise(resolve => { complete = resolve; }),
             initDemoPlayers() {}, initMotion() {}, initReferenceCarousels() {},
         });
-        vm.runInContext(accountSource + '\n' + source, context);
+        const entry = route === '/' ? source : readFileSync(new URL('../../src/marketing/help.js', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');
+        vm.runInContext(accountSource + '\n' + entry, context);
         assert.equal(themeInitialized, true);
         assert.ok(dom.window.document.querySelector('.auth-pending'));
         assert.equal(dom.window.document.querySelector('user-header'), null);

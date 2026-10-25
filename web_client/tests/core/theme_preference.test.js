@@ -25,4 +25,13 @@ test('manual theme controls both page and native controls independently of the O
  osDark=false;ThemeService.setMode('auto');
  assert.equal(document.body.classList.contains('dark-mode'),false);
  assert.equal(document.body.style.colorScheme,'light');
+ // The preference changed in the other public tab, not in this document.
+ localStorage.setItem(AppConfig.Keys.theme,'dark');
+ dom.window.dispatchEvent(new dom.window.StorageEvent('storage',{key:AppConfig.Keys.theme,newValue:'dark',storageArea:localStorage}));
+ assert.equal(document.body.classList.contains('dark-mode'),true);
+ assert.equal(document.body.style.colorScheme,'dark');
+ localStorage.setItem(AppConfig.Keys.theme,'light');
+ dom.window.dispatchEvent(new dom.window.PageTransitionEvent('pageshow',{persisted:true}));
+ assert.equal(document.body.classList.contains('dark-mode'),false);
+ assert.equal(document.body.style.colorScheme,'light');
 });

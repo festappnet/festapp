@@ -30,6 +30,21 @@ export class ThemeService {
                 }
             };
             mq.addEventListener('change', ThemeService._mediaQueryListener);
+            // Other public pages share the same preference. Update an already
+            // open homepage/help tab without persisting the event back or
+            // disturbing its session or current form.
+            const syncPreference = () => {
+                ThemeService.init();
+                if (ThemeService._lastFormModel) {
+                    ThemeService.applyThemeFromModel(ThemeService._lastFormModel);
+                }
+            };
+            window.addEventListener('storage', event => {
+                if (event.key === AppConfig.Keys.theme || event.key === null) syncPreference();
+            });
+            window.addEventListener('pageshow', event => {
+                if (event.persisted) syncPreference();
+            });
         }
 
         ThemeService.apply();
