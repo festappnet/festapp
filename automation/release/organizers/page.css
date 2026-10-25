@@ -179,7 +179,7 @@
 @media(max-width:760px){.hero-outlines .architectural-plan{opacity:.25}}
 
 /* Share account settings and theme preference with the public application. */
-.auth-pending .header-signin{visibility:hidden}
+.auth-pending :is(.header-signin,.header-cta){visibility:hidden;pointer-events:none}
 body.dark-mode{--paper:var(--background-color,#232529);--surface:var(--surface-color,#2b2d31);--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;color-scheme:dark}
 body.dark-mode .hero-air .ink{color:#80bdf2}
 body.dark-mode .hero-air .hero-copy{background:radial-gradient(ellipse at center,#232529f0 10%,#232529b8 52%,transparent 78%)}

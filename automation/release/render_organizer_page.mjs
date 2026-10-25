@@ -138,7 +138,7 @@ const html = `<!doctype html><html lang="${locale}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending .header-signin{visibility:visible}</style></noscript></head><body data-page="organizers">${content}${entryScript}${beaconTag}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers">${content}${entryScript}${beaconTag}</body></html>\n`;
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, html);
