@@ -1,7 +1,7 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "Absolventský Velehrad",
+  "short_name": "AV",
+  "description": "Mobilní aplikace pro Absolventský Velehrad.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
