@@ -56,5 +56,14 @@
       "Owned headless browser and exact flags verified; shutdown restricted to it"
     ],
     "afterKillReceipt": "published-checkout-20261025.json"
+  },
+  "studioAndPortalReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking source/evidence issue; candidate helper and simulated dark styling explicitly scoped; native portal CDN403 and unsaved phone recorded",
+    "sharedHelperTestsPassed": 21,
+    "candidateHelperOverrideReviewed": true,
+    "targetDestroyedStartupWaitReviewed": true,
+    "sourcePrReady": true,
+    "marketplaceReady": false
   }
 }

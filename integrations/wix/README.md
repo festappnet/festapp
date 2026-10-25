@@ -115,3 +115,9 @@ auto height, 320 px layout, validation, visible summary/receipt and exact summar
 scroll restoration. [Evidence and limits](evidence/published-checkout-20261025.json).
 Production CORS/routing, payment returns, other editors and commercial approval
 remain pending; see the [qualification procedure](SETUP.md).
+
+Wix Studio installation, persisted settings and Editor/Preview isolation also
+passed. [Studio evidence](evidence/studio-20261025.json) records a live shared
+helper contrast defect and its verified repository candidate; the service release
+and live contrast recheck remain required. The compact settings panel now has
+its own keyboard-accessible scroll area and visible save status.

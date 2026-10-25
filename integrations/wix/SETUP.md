@@ -78,13 +78,13 @@ existing integration tests; never place real orders or reserve production seats.
 
 | Area | Harmony | Wix Editor | Wix Studio |
 | --- | --- | --- | --- |
-| Install, add widget, settings persist after editor reload | not run | pass | not run |
-| Editor/Preview have no checkout iframe or helper loaded | not run | pass | not run |
-| Published form, auto height, helper/version handshake | not run | pass with QA transport | not run |
-| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | not run |
+| Install, add widget, settings persist after editor reload | not run | pass | pass |
+| Editor/Preview have no checkout iframe or helper loaded | not run | pass | pass |
+| Published form, auto height, helper/version handshake | not run | pass with QA transport | partial: live contrast fix pending |
+| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: candidate contrast verified |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | not run |
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
-| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | not run |
+| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
 | Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | not run | not run |
 
@@ -143,3 +143,14 @@ buyer. The recorded buyer `wix-qa-20261025@example.invalid` already has one orde
 do not submit it again. Other readonly checks need no new purchase. Never enter
 real payment details, submit to production stock or claim provider payments from
 an `ordered` synthetic record. Close the owned browser and transport after QA.
+
+For a shared-helper fix, append `--local-helper` to the transport command. This
+serves only the repository's canonical `web_client/public/embed.js` candidate and
+records its SHA-256. Such a run proves candidate behavior, not live deployment.
+The Studio check found transparent white section backgrounds turning checkout
+button text transparent. Its fix must reach canonical main and the selected
+`prod/festapptickets` service release before final live qualification/gallery.
+
+The native development-site selector currently offers Editor and Studio only.
+Harmony through an ordinary free site has not been investigated; this does not
+establish that Harmony itself is unsupported.

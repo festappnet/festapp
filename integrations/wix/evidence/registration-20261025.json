@@ -46,7 +46,19 @@
     "teaser": "Embed your vstupenky.online ticket form",
     "saved": true,
     "termsUrl": "https://vstupenky.online/terms/",
-    "storeIcon": "Pending 1000x1000 asset",
+    "storeIcon": "Saved 1000x1000 existing ticket vector; see portal receipt",
     "marketplaceSubmission": false
+  },
+  "studioDevSite": {
+    "metaSiteId": "233dc4be-35f1-4187-93dd-5a3313c00ef6",
+    "documentId": "044eeafb-18f5-48bf-9c71-6cbe44ceb328",
+    "editor": "Wix Studio",
+    "name": "Festapp Tickets - Wix Studio QA",
+    "published": true,
+    "url": "https://dev-sitex1642529107.wix-development-sites.org/",
+    "installationVerified": true,
+    "settingsPersistenceVerified": true,
+    "receipt": "studio-20261025.json",
+    "qualificationComplete": false
   }
 }

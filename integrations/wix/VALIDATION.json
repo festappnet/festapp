@@ -3,7 +3,7 @@
   "verifiedAt": "2026-10-25",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "PUBLISHED_WIX_EDITOR_SYNTHETIC_CHECKOUT_VERIFIED_MARKETPLACE_PENDING",
+  "state": "EDITOR_AND_STUDIO_INSTALLED_LIVE_HELPER_CONTRAST_FIX_PENDING",
   "localTests": {
     "count": 12,
     "passed": 12,
@@ -12,7 +12,7 @@
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
   "package": {
     "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "4ec1dd457b6d4d95845a2964133b4ab1039820aea17d08bc8da8d6179c0574de",
+    "sha256": "382c4b8c34c656716ecfc69969530dfcb1b30cc23b2a075a1c5a77eed9c972c0",
     "type": "public-asset deployment archive, not a Wix App Store installer"
   },
   "releaseCheck": "EXPECTED_BLOCKED: commercial approvals, documented zero-fixed-fee terms, complete real-editor/checkout receipts, store assets and approved reporting implementation remain pending",
@@ -33,12 +33,12 @@
   "accountReceipt": "evidence/account-20261025.json",
   "distSha256": {
     "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
-    "settings.css": "edbd872140457d528b353151d16d37aac1922f566e6372df484fc4028a7d8350",
+    "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
-    "settings.js": "94e0802b2ae32d7bc1c68bcf411ba9c32336ff8b4586a7675ca52be586ad1581",
+    "settings.js": "ba3381536342c8a6e892ec014e3da9c67f85d62584491f6076ce70e2b1ed8959",
     "widget.js": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
   },
-  "sourceHead": "84d3f8d5f",
+  "sourceHead": "ce50d38327d4d5fc18272137d8538ab6c0045beb",
   "realWixWidgetOnCanvasVerified": true,
   "registrationReceipt": "evidence/registration-20261025.json",
   "hostingReceipt": "evidence/hosting-20261025.json",
@@ -68,5 +68,15 @@
   "publishedCheckoutReceipt": "evidence/published-checkout-20261025.json",
   "publishedSyntheticCheckoutVerified": true,
   "productionCheckoutQualified": false,
-  "checkoutClientVersionTested": "0.20.394+895"
+  "checkoutClientVersionTested": "0.20.394+895",
+  "studioReceipt": "evidence/studio-20261025.json",
+  "portalReceipt": "evidence/portal-20261025.json",
+  "sharedHelperFix": {
+    "liveSha256": "f7051b56a8f14856fdad7bad02fb86cfb1df62ccd4529ca97d633252afa342d1",
+    "candidateSha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+    "testsPassed": 21,
+    "actualStudioCandidateContrastVerified": true,
+    "liveFixVerified": false
+  },
+  "storeAssetsVerified": false
 }

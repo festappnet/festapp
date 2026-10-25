@@ -71,3 +71,17 @@ The default `pnpm run release:check` is expected to fail until genuine missing
 inputs and independent real-site receipts are supplied. No marketplace submission has been
 attempted. One custom-billing approval request was submitted through the official
 developer support intake on 2026-10-25; see the support-history receipt.
+
+## Current portal state
+
+The app icon, company profile, category and keywords are saved. The required
+phone is `+420 792 759 379`, taken from `https://festapp.net/` at the owner's
+instruction. It is prepared, not entered: Contact Info and Security & Privacy
+fail to load their Wix CDN modules (HTTP403, independently reproduced). See
+[portal evidence](evidence/portal-20261025.json). Do not create a duplicate support
+case; the existing billing request is already submitted.
+
+The remaining native portal blockers are contact info, gallery images and the
+security/privacy questionnaire. Final gallery images are held until the shared
+helper contrast fix is deployed and verified. Registration/profile saves do not
+constitute Marketplace submission or commercial approval.

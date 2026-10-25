@@ -1,25 +1,25 @@
 {
-  "timestampUtc": "2026-10-25T14:47:30Z",
+  "timestampUtc": "2026-10-25T17:49:29Z",
   "provider": "Cloudflare Pages",
   "accountId": "84b32318ac235bf6738bdf1c8caa0795",
   "plan": "free static assets",
   "project": "festapp-wix",
   "productionBranch": "main",
-  "sourceHead": "84d3f8d5f168717c73b3e194fbed2d0c129ac21d",
-  "deploymentId": "dd4eb27c-f9da-4d2f-bea1-79198c245940",
-  "deploymentUrl": "https://dd4eb27c.festapp-wix.pages.dev",
+  "sourceHead": "ce50d38327d4d5fc18272137d8538ab6c0045beb",
+  "deploymentId": "48add2b7-fcca-4163-ab2e-198e5172e679",
+  "deploymentUrl": "https://48add2b7.festapp-wix.pages.dev",
   "stableBaseUrl": "https://festapp-wix.pages.dev",
   "inputArchive": {
     "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "4ec1dd457b6d4d95845a2964133b4ab1039820aea17d08bc8da8d6179c0574de"
+    "sha256": "382c4b8c34c656716ecfc69969530dfcb1b30cc23b2a075a1c5a77eed9c972c0"
   },
   "uploadedDirectory": "integrations/wix/dist",
   "assets": {
-    "manifest.json": "85e13c415751a18bb9234c8353d0724e32e96a8e567bf8d7f272d56de2800051",
+    "manifest.json": "363543f7b56e687caf2b9e8f836d4ca2b4bb0e207d00b99ea6aeeb5213f18978",
     "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
     "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
-    "settings.js": "94e0802b2ae32d7bc1c68bcf411ba9c32336ff8b4586a7675ca52be586ad1581",
-    "settings.css": "edbd872140457d528b353151d16d37aac1922f566e6372df484fc4028a7d8350",
+    "settings.js": "ba3381536342c8a6e892ec014e3da9c67f85d62584491f6076ce70e2b1ed8959",
+    "settings.css": "f2d8bd7905a151bf6543a7df11912ab08da57515b1cf8718f38eae39e75aaed0",
     "widget.js": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
   },
   "readback": {
@@ -48,12 +48,20 @@
       "url": "https://festapp-wix.pages.dev/manifest.json",
       "status": 200,
       "contentType": "application/json",
-      "sha256": "85e13c415751a18bb9234c8353d0724e32e96a8e567bf8d7f272d56de2800051"
+      "sha256": "363543f7b56e687caf2b9e8f836d4ca2b4bb0e207d00b99ea6aeeb5213f18978"
     },
     "headersPolicyApplied": "X-Content-Type-Options: nosniff; Referrer-Policy: strict-origin-when-cross-origin; Cache-Control: public, max-age=300, must-revalidate; Access-Control-Allow-Origin: * on widget.js and settings.js"
   },
   "scope": "Standalone Wix extension asset hosting; no App Market publication, DNS changes, paid upgrade, Flutter build, or tenant release.",
   "deploymentHistory": [
+    {
+      "timestampUtc": "2026-10-25T14:47:30Z",
+      "sourceHead": "84d3f8d5f168717c73b3e194fbed2d0c129ac21d",
+      "deploymentId": "dd4eb27c-f9da-4d2f-bea1-79198c245940",
+      "deploymentUrl": "https://dd4eb27c.festapp-wix.pages.dev",
+      "inputArchiveSha256": "4ec1dd457b6d4d95845a2964133b4ab1039820aea17d08bc8da8d6179c0574de",
+      "widgetJsSha256": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
+    },
     {
       "timestampUtc": "2026-10-25T14:46:54Z",
       "sourceHead": "7b9f85d478418480cdd417d4f4d1aba61c5fcdc5",

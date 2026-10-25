@@ -3,10 +3,12 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 
-const [cdpFile, statusFile, templateFile, receiptFile] = process.argv.slice(2);
+const [cdpFile, statusFile, templateFile, receiptFile, helperFlag] = process.argv.slice(2);
 if (![cdpFile, statusFile, templateFile, receiptFile].every(Boolean)) {
-  throw Error('Usage: node tests/checkout-proxy.mjs <cdp-url-file> <local-backend-status> <production-html-template> <private-receipt>');
+  throw Error('Usage: node tests/checkout-proxy.mjs <cdp-url-file> <local-backend-status> <production-html-template> <private-receipt> [--local-helper]');
 }
+if (helperFlag && helperFlag !== '--local-helper') throw Error('Unknown helper option');
+const localHelper = helperFlag ? fs.readFileSync(new URL('../../../web_client/public/embed.js', import.meta.url)) : null;
 const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
 if (status.API_URL !== 'http://127.0.0.1:59821' || !status.ANON_KEY) throw Error('Disposable backend required');
 const databaseGuard = execFileSync('docker', [
@@ -21,6 +23,8 @@ const receipt = {
   backend: status.API_URL, syntheticBackendGuard: true,
   templateSha256: createHash('sha256').update(template).digest('hex'),
   clientVersion: /__FESTAPP_BUILD_VERSION__\s*=\s*"([^"]+)"/.exec(template.toString())?.[1],
+  helperSource: localHelper ? 'repository candidate, not deployed' : 'live service',
+  helperOverrideSha256: localHelper ? createHash('sha256').update(localHelper).digest('hex') : null,
   transportAdapted: true, productionCorsQualified: false, requests: [], networkFenceProbes: [],
 };
 const persist = () => fs.writeFileSync(receiptFile, JSON.stringify(receipt, null, 2) + '\n', {mode:0o600});
@@ -28,6 +32,14 @@ const ws = new WebSocket(endpoint);
 await new Promise((resolve, reject) => { ws.addEventListener('open', resolve, {once:true}); ws.addEventListener('error', reject, {once:true}); });
 let nextId = 0, ownsBrowser = false, stopping = false, interceptionEnabled = false;
 const pending = new Map(), setups = new Map(), probeRequests = new Map(), probeErrors = new Map();
+const destroyedTargets = new Set(), closingTargets = new Map();
+function waitForTargetClose(targetId) {
+  if (destroyedTargets.has(targetId)) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { closingTargets.delete(targetId); reject(Error('Owned startup tab did not close')); }, 10000);
+    closingTargets.set(targetId, () => { clearTimeout(timer); closingTargets.delete(targetId); resolve(); });
+  });
+}
 function call(method, params = {}, sessionId) {
   return new Promise((resolve, reject) => {
     const id = ++nextId;
@@ -58,6 +70,7 @@ async function configure(sessionId) {
     {urlPattern:'https://api.festapp.net/*', requestStage:'Request'},
     {urlPattern:'https://*.supabase.co/*', requestStage:'Request'},
     {urlPattern:'https://vstupenky.online/form/wix-qa-20261025*', requestStage:'Request'},
+    ...(localHelper ? [{urlPattern:'https://vstupenky.online/embed.js', requestStage:'Request'}] : []),
   ]}, sessionId);
   await call('Target.setAutoAttach', {autoAttach:true, waitForDebuggerOnStart:true, flatten:true,
     filter:[{type:'page'}, {type:'iframe'}]}, sessionId);
@@ -66,6 +79,15 @@ async function configure(sessionId) {
 async function intercept({requestId, request}, sessionId) {
   const url = new URL(request.url);
   try {
+    if (localHelper && url.origin === 'https://vstupenky.online' && url.pathname === '/embed.js') {
+      await call('Fetch.fulfillRequest', {requestId, responseCode:200, responseHeaders:[
+        {name:'Content-Type', value:'application/javascript; charset=utf-8'},
+        {name:'Cache-Control', value:'no-store'}, {name:'Access-Control-Allow-Origin', value:'*'},
+        {name:'X-Festapp-QA-Helper', value:'repository-candidate'},
+      ], body:localHelper.toString('base64')}, sessionId);
+      receipt.requests.push({method:request.method, path:url.pathname, status:200, helperAdapted:true});
+      persist(); return;
+    }
     if (url.origin === 'https://vstupenky.online' && url.pathname === '/form/wix-qa-20261025') {
       await call('Fetch.fulfillRequest', {requestId, responseCode:200, responseHeaders:[
         {name:'Content-Type', value:'text/html; charset=utf-8'}, {name:'Cache-Control', value:'no-store'},
@@ -112,6 +134,10 @@ ws.addEventListener('message', event => {
     if (data.error) item?.reject(Error(data.error.message)); else item?.resolve(data.result);
     return;
   }
+  if (data.method === 'Target.targetDestroyed') {
+    destroyedTargets.add(data.params.targetId);
+    closingTargets.get(data.params.targetId)?.();
+  }
   if (data.method === 'Network.requestWillBeSent' && data.params.request.url.includes('wix-qa-proxy-probe=1')) {
     probeRequests.set(data.params.requestId, data.params.request.url);
   }
@@ -135,14 +161,17 @@ try {
     throw Error('Owned headless Wix browser with persistent backend DNS fencing required');
   }
   ownsBrowser = true;
+  await call('Target.setDiscoverTargets', {discover:true});
   let {targetInfos} = await call('Target.getTargets');
+  const startupClosures = targetInfos.filter(t => t.url === 'chrome://newtab/' || t.url.startsWith('chrome-untrusted://new-tab-page/')).map(t => waitForTargetClose(t.targetId));
   for (const target of targetInfos.filter(t => t.type === 'page' && t.url === 'chrome://newtab/')) {
     await call('Target.closeTarget', {targetId:target.targetId});
   }
+  await Promise.all(startupClosures);
   ({targetInfos} = await call('Target.getTargets'));
   const pages = targetInfos.filter(t => ['page', 'iframe'].includes(t.type));
   if (pages.length !== 1 || pages[0].type !== 'page' || pages[0].url !== 'about:blank') {
-    throw Error('Start with one owned about:blank tab before installing the test transport');
+    throw Error('Start with one owned about:blank tab before installing the test transport; found ' + JSON.stringify(pages.map(t => ({type:t.type,url:t.url.split('?')[0]}))));
   }
   const {sessionId} = await call('Target.attachToTarget', {targetId:pages[0].targetId, flatten:true});
   await call('Network.enable', {}, sessionId);
