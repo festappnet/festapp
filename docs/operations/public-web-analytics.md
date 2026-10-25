@@ -2,22 +2,30 @@
 
 Cloudflare Web Analytics measures public catalogue, organizer and resolved form pages only. Each link below has a fixed exact-host filter; the existing zone properties are shared storage, not separate Cloudflare site cards. Requests/server statistics remain separate.
 
-| Host | Public visits and sources |
-| --- | --- |
-| app.absolventskyvelehrad.cz | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=ca8876b7c786477fa6680a14a264eeee&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
-| biscup.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=biscup.festapp.net&excludeBots=Yes) |
-| clovekavira.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=clovekavira.festapp.net&excludeBots=Yes) |
-| csa2024.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csa2024.festapp.net&excludeBots=Yes) |
-| csmostrava.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csmostrava.festapp.net&excludeBots=Yes) |
-| farnostopava.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=farnostopava.festapp.net&excludeBots=Yes) |
-| hvezdamorska.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=hvezdamorska.festapp.net&excludeBots=Yes) |
-| jubileum2025.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=jubileum2025.festapp.net&excludeBots=Yes) |
-| live.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=live.festapp.net&excludeBots=Yes) |
-| slunovrat.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=slunovrat.festapp.net&excludeBots=Yes) |
-| tickets.festapp.net | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=tickets.festapp.net&excludeBots=Yes) |
-| vstupenky.online | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=4b64cee2415d4110b11abc4d56013278&host=vstupenky.online&excludeBots=Yes) |
+| Host | Rollout status (2026-10-25) | Public visits and sources |
+| --- | --- | --- |
+| app.absolventskyvelehrad.cz | Web released; Cloudflare intake returns 404 | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=ca8876b7c786477fa6680a14a264eeee&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
+| biscup.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=biscup.festapp.net&excludeBots=Yes) |
+| clovekavira.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=clovekavira.festapp.net&excludeBots=Yes) |
+| csa2024.festapp.net | Unchanged by user request | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csa2024.festapp.net&excludeBots=Yes) |
+| csmostrava.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csmostrava.festapp.net&excludeBots=Yes) |
+| farnostopava.festapp.net | Unchanged by user request | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=farnostopava.festapp.net&excludeBots=Yes) |
+| hvezdamorska.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=hvezdamorska.festapp.net&excludeBots=Yes) |
+| jubileum2025.festapp.net | Unchanged by user request | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=jubileum2025.festapp.net&excludeBots=Yes) |
+| live.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=live.festapp.net&excludeBots=Yes) |
+| slunovrat.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=slunovrat.festapp.net&excludeBots=Yes) |
+| tickets.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=tickets.festapp.net&excludeBots=Yes) |
+| vstupenky.online | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=4b64cee2415d4110b11abc4d56013278&host=vstupenky.online&excludeBots=Yes) |
 
 Use the Referer breakdown for source domains such as Google. Missing referrers cannot distinguish direct links from applications that hide their source. The provider does not report search terms or UTM campaigns.
+
+## Release evidence
+
+The nine selected web releases use source `be3a27ccd3fd1bfae34938ad7636f0c7f779591d` and version `0.20.391+892`; each passed its local build and three coherent live version/assets/legal probes. The three explicitly excluded tenants were not released.
+
+Browser checks verified one beacon, `spa: false`, and successful collector POST 204 on the eight working sites. On Hvězda mořská the same public form crossed into a fresh scanner document with zero beacons, and the captured analytics payload contained no synthetic private code. Private fragments and administration were also excluded. Stored Cloudflare GraphQL data independently showed Czech visits under the exact Hvězda mořská hostname.
+
+Absolventský Velehrad remains an explicit exception: its web release passed, but the existing Cloudflare analytics setup returns 404 from the built-in collector and the external collector fails. Available credentials can deploy Pages and read analytics, but cannot manage the analytics setup. Do not call this site collection-complete until a real POST and stored data are verified.
 
 ## Collection boundary
 
