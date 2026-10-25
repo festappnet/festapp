@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-25T18:28:25.310395+00:00",
+  "checkedAt": "2026-10-25",
   "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
   "currentVersion": "Draft",
   "marketplaceSubmitted": false,
@@ -44,7 +44,7 @@
     "urgent": "info@festapp.net",
     "saved": false
   },
-  "remainingPortalBlockers": 3,
+  "remainingPortalBlockers": 2,
   "blockedModules": [
     {
       "page": "Contact Info",
@@ -70,8 +70,9 @@
       540,
       360
     ],
-    "gallerySaved": false,
-    "reason": "Live shared helper contrast failure must be fixed before final gallery/publication"
+    "gallerySaved": true,
+    "reason": "Two native screenshots saved and reloaded successfully after live helper fix",
+    "receipt": "evidence/gallery-20261025.json"
   },
   "nativeDevSiteEditorChoices": [
     "Wix Editor",

@@ -80,11 +80,12 @@ phone is `+420 792 759 379`, taken from `https://festapp.net/` at the owner's
 instruction. It is prepared, not entered: Contact Info and Security & Privacy
 fail to load their Wix CDN modules (HTTP403, independently reproduced). See
 [portal evidence](evidence/portal-20261025.json). Do not create a duplicate support
-case; the existing billing request is already submitted.
+case; the existing billing request is case **3000345850**, acknowledged but not approved.
 
-The remaining native portal blockers are contact info, gallery images and the
-security/privacy questionnaire. Final gallery images are held until the shared
-helper contrast fix is deployed and verified. Registration/profile saves do not
+The remaining native portal blockers are Contact Info and Security & Privacy.
+Two unedited 1200x900 published-Studio gallery screenshots are saved and verified
+after reload; see [gallery evidence](evidence/gallery-20261025.json).
+The live helper contrast fix is verified on 0.20.402+903. Registration/profile saves do not
 constitute Marketplace submission or commercial approval.
 
 The documented Harmony development-site flow was rechecked: this owner/app

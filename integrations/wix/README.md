@@ -118,7 +118,9 @@ Production CORS/routing, payment returns, other editors and commercial approval
 remain pending; see the [qualification procedure](SETUP.md).
 
 Wix Studio installation, persisted settings and Editor/Preview isolation also
-passed. [Studio evidence](evidence/studio-20261025.json) records a live shared
-helper contrast defect and its verified repository candidate; the service release
-and live contrast recheck remain required. The compact settings panel now has
+passed. [Studio evidence](evidence/studio-20261025.json) records the initial shared
+helper contrast defect. The fix is now live on 0.20.402+903 and verified in the
+actual published Studio, including 320 px layout and a second isolated order.
+See [current qualification](evidence/published-checkout-current-20261025.json) and
+[shared service release](evidence/service-release-20261025.json). The compact settings panel now has
 its own keyboard-accessible scroll area and visible save status.

@@ -3,8 +3,8 @@
 This is a technical addendum for owner review, not authorization to contact
 support. Do not open a duplicate case or repeat the billing request. The existing
 request, **Custom billing approval - vstupenky.online**, was confirmed once on
-2026-10-25 at 16:10 UTC; Wix stated an email response within 72 hours. No case ID
-or reply thread has been observed. Attach this only to that established
+2026-10-25 at 16:10 UTC; Wix stated an email response within 72 hours. The acknowledgement identifies case **3000345850**; no expert reply or approval
+has been observed. Attach this only to that established
 conversation if the owner authorizes the follow-up; otherwise keep it a draft.
 The original zero-fixed-fee and unapproved-billing constraints remain in force.
 

@@ -83,8 +83,10 @@ export function registerTicketElement(win, getViewMode) {
         frame.loading = 'lazy'; frame.width = '100%'; frame.height = '800';
         frame.style.cssText = 'display:block;width:100%;max-width:100%;border:0';
         const paragraph = this.ownerDocument.createElement('p');
+        paragraph.style.cssText = 'margin:12px 0 0;text-align:center;font-size:14px;line-height:1.5';
         const link = this.ownerDocument.createElement('a');
         link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.style.cssText = 'display:inline-flex;align-items:center;min-height:44px;padding:0 8px;color:inherit;text-underline-offset:3px';
         link.textContent = 'Otevřít formulář v novém okně';
         paragraph.append(link); host.append(frame, paragraph);
         this.replaceChildren(host);

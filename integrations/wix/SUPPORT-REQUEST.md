@@ -1,8 +1,8 @@
 # Wix custom billing request
 
 Status: submitted once on 2026-10-25 through the official developer intake.
-Wix confirmed receipt and an email response within 72 hours; no case ID was
-displayed and no approval has been received. The owner conditionally authorized
+Wix confirmed receipt and an email response within 72 hours. The acknowledgement
+identifies case **3000345850**; no expert reply or approval has been received. The owner conditionally authorized
 contact after duplicate checks and public-documentation research.
 
 [History check](evidence/support-history-20261025.json): the connected mailbox

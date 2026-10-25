@@ -5,6 +5,11 @@ in `../../wordpress/catalog/artwork.html?kind=icon`. Its colors and geometry wer
 preserved. The same uploaded icon is saved in the Wix app and company profile;
 see `../evidence/portal-20261025.json` for its hash and CDN URL.
 
-Wix gallery images must be at least 1200 x 900 px with a 4:3 ratio. Gallery is pending the
-live shared-helper contrast fix; candidate comparison screenshots live under
-`../evidence/screenshots/` and are not published listing images.
+`gallery-published-desktop.png` and `gallery-summary.png` are unedited native
+1200x900 screenshots of the actual published Wix Studio host. The guarded local
+fixture uses Czech sample labels, a fictional buyer and reserved example.com;
+it explicitly states that no actual payment takes place. No production buyer,
+payment receipt or ticket QR is included. Both images are saved in Wix and were
+verified after reload; hashes and original CDN URLs are in
+[gallery evidence](../evidence/gallery-20261025.json). The desktop image also
+replaces the old development thumbnail in Add Elements.
