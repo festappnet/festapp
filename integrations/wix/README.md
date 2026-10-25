@@ -107,5 +107,11 @@ in `release-inputs.example.json`; none is marked as already passed.
 
 Real Wix Editor checks now confirm widget insertion, all three saved settings
 after a cold browser reopen, and no checkout iframe/helper in Editor or Preview.
-See [editor receipt](evidence/editor-20261025.json); published-site qualification
-and other editors remain pending.
+See [editor receipt](evidence/editor-20261025.json).
+
+A published Wix Editor development site also passed a synthetic checkout through
+the real production client/helper and a guarded disposable backend: one order,
+auto height, 320 px layout, validation, visible summary/receipt and exact summary
+scroll restoration. [Evidence and limits](evidence/published-checkout-20261025.json).
+Production CORS/routing, payment returns, other editors and commercial approval
+remain pending; see the [qualification procedure](SETUP.md).

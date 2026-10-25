@@ -1,8 +1,9 @@
 # Wix submission kit - vstupenky.online
 
-Preparation version 0.1.0; **app and widget registered; a site app record exists on a free
-development site, with widget placement and installation qualification pending; not submitted or publicly released in the App Market**.
-Exact IDs and qualification state: [registration receipt](evidence/registration-20261025.json).
+Preparation version 0.1.0; **app/widget registered and Wix Editor installation
+verified, including a published synthetic checkout with adapted test transport.
+Other editor/payment qualification and commercial approval remain pending; not
+submitted or publicly released in the App Market**.
 
 ## Draft listing identity
 

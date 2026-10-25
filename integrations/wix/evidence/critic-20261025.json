@@ -45,5 +45,16 @@
     "date": "2026-10-25",
     "verdict": "No unsupported checkout/publication/readiness claims; align historical installation flags and test count with latest editor receipt",
     "correctionsApplied": true
+  },
+  "publishedCheckoutReview": {
+    "date": "2026-10-25",
+    "verdict": "Scoped published Wix checkout with production JS/helper and disposable backend verified; not production CORS/payments/native Safari",
+    "correctionsApplied": [
+      "SQL IS DISTINCT FROM guards missing organization",
+      "Persistent DNS fencing verified before interception and after SIGKILL",
+      "Fetch setup completes before READY",
+      "Owned headless browser and exact flags verified; shutdown restricted to it"
+    ],
+    "afterKillReceipt": "published-checkout-20261025.json"
   }
 }

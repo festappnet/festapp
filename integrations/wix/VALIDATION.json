@@ -3,7 +3,7 @@
   "verifiedAt": "2026-10-25",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "REGISTERED_HOSTED_WIDGET_ON_EDITOR_CANVAS_QUALIFICATION_PENDING",
+  "state": "PUBLISHED_WIX_EDITOR_SYNTHETIC_CHECKOUT_VERIFIED_MARKETPLACE_PENDING",
   "localTests": {
     "count": 12,
     "passed": 12,
@@ -61,8 +61,12 @@
     "liveCheckoutAbsentInEditorAndPreview": true
   },
   "editorReceipt": "evidence/editor-20261025.json",
-  "realWixInstallationScope": "Wix Editor development site; published runtime and other editors remain unqualified",
+  "realWixInstallationScope": "Wix Editor development site with scoped synthetic published checkout; production transport and other editors remain unqualified",
   "wixSdkHostBoundaryScope": "Actual Editor and Preview modes only",
-  "publishedSdkHostBoundaryVerified": false,
-  "publishedRuntimeQualified": false
+  "publishedSdkHostBoundaryVerified": true,
+  "publishedRuntimeQualified": false,
+  "publishedCheckoutReceipt": "evidence/published-checkout-20261025.json",
+  "publishedSyntheticCheckoutVerified": true,
+  "productionCheckoutQualified": false,
+  "checkoutClientVersionTested": "0.20.394+895"
 }

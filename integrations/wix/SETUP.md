@@ -68,9 +68,11 @@ Do not publish a claim of verified compatibility until the matrix below passes.
 
 ## Required real-site matrix
 
-The first two Wix Editor rows passed on the registered development site; see
-[evidence/editor-20261025.json](evidence/editor-20261025.json). Other rows remain
-**NOT RUN**. This does not establish published-site compatibility.
+Wix Editor installation, settings and a published synthetic checkout passed with
+an adapted disposable-backend transport. See [editor evidence](evidence/editor-20261025.json)
+and [published checkout evidence](evidence/published-checkout-20261025.json).
+These results do not qualify the production form route/CORS, actual payment
+provider, native Safari or other editors. Partial rows retain their missing cases.
 The parent checkout must use the same disposable backend and synthetic stock as
 existing integration tests; never place real orders or reserve production seats.
 
@@ -78,11 +80,11 @@ existing integration tests; never place real orders or reserve production seats.
 | --- | --- | --- | --- |
 | Install, add widget, settings persist after editor reload | not run | pass | not run |
 | Editor/Preview have no checkout iframe or helper loaded | not run | pass | not run |
-| Published form, auto height, helper/version handshake | not run | not run | not run |
-| 320 px mobile, keyboard/focus, light/dark host typography | not run | not run | not run |
+| Published form, auto height, helper/version handshake | not run | pass with QA transport | not run |
+| 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | not run |
 | Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | not run |
-| Validation, seat map, Escape/back, close restores scroll | not run | not run | not run |
-| Summary reveals submit; submission shows receipt top | not run | not run | not run |
+| Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
+| Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | not run |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
 | Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | not run | not run |
 
@@ -98,3 +100,46 @@ checkout. Do not collect browser payment details into the Wix settings panel.
 - [Harmony app compatibility](https://dev.wix.com/docs/build-apps/get-started/overview/about-wix-harmony-and-apps)
 - [Editor sandboxing and viewMode](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/site-extensions/handle-sandboxing-in-the-editor)
 - [CLI create app and its remote registration effects](https://dev.wix.com/docs/wix-cli/command-reference/project-creation/create-app)
+
+## Repeat the published checkout qualification
+
+Use the existing disposable WordPress backend on `127.0.0.1:59821`. Apply
+`tests/checkout-fixture.sql` only to container
+`supabase_db_festapp-vo-wordpress-20261023`; it adds a distinct form/products and
+preserves previous orders. Never reset existing purchases to obtain a pass.
+
+Start an empty task-owned browser using `tests/isolated-chrome.py` as the
+agent-browser executable. It requires headless mode and a temporary profile,
+blocks canonical/legacy backend DNS and preserves the full Chromium resolver
+argument on CLI versions that split commas. Use an explicit empty browser config:
+
+```sh
+mkdir -p .private
+printf '{}' > .private/qa-browser.json
+wix_qa_browser() {
+  agent-browser --config "$PWD/.private/qa-browser.json" --headed false --executable-path "$PWD/tests/isolated-chrome.py" --session wix-qa "$@"
+}
+wix_qa_browser open about:blank
+wix_qa_browser get cdp-url > .private/cdp-url
+curl --fail --silent --show-error 'https://vstupenky.online/form/country_bal_vetrkovice?embed=1' -o .private/form-template.html
+node tests/checkout-proxy.mjs .private/cdp-url "$WIX_QA_BACKEND_STATUS" .private/form-template.html .private/transport-receipt.json
+```
+
+`WIX_QA_BACKEND_STATUS` must name the existing private backend-status JSON for
+that disposable backend. Keep the transport running in its terminal. Wait for
+`READY` before opening the development site in the same owned session. The tool
+checks actual launch flags, actual DNS errors before interception, local database
+identity and completed initial Fetch setup. It forwards API requests only to the
+local backend with its anonymous key. A lost transport cannot resolve production
+backends; handled shutdown closes only the marked headless browser.
+
+The synthetic form URL is `https://vstupenky.online/form/wix-qa-20261025`. Only
+the test browser receives the production HTML template at that route and adapted
+backend/CORS responses. Its JavaScript remains the actual production asset.
+This is scoped integration evidence, not production route/CORS qualification.
+
+Before a purchase, assert no previous order exists for the chosen synthetic
+buyer. The recorded buyer `wix-qa-20261025@example.invalid` already has one order;
+do not submit it again. Other readonly checks need no new purchase. Never enter
+real payment details, submit to production stock or claim provider payments from
+an `ordered` synthetic record. Close the owned browser and transport after QA.
