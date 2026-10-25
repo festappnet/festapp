@@ -124,3 +124,11 @@ actual published Studio, including 320 px layout and a second isolated order.
 See [current qualification](evidence/published-checkout-current-20261025.json) and
 [shared service release](evidence/service-release-20261025.json). The compact settings panel now has
 its own keyboard-accessible scroll area and visible save status.
+
+Harmony now also has an actual owned free-site installation, saved settings after
+a full editor reload, Editor/Preview checkout isolation and published 320 px
+summary verification against the disposable backend, using client 0.20.404+905.
+The template required native Desktop and Mobile width adjustments. No order was
+submitted in this run. See [Harmony qualification](evidence/harmony-qualification-20261025.json).
+Wix version 1.0 is released unlisted for this owned QA installation; this is not
+Marketplace publication, billing approval or an access-private release.

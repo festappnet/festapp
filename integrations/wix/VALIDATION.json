@@ -108,5 +108,20 @@
   "checkoutHtmlTemplateVersion": "0.20.401+902",
   "galleryAssetsVerified": true,
   "galleryReceipt": "evidence/gallery-20261025.json",
-  "serviceReleaseReceipt": "evidence/service-release-20261025.json"
+  "serviceReleaseReceipt": "evidence/service-release-20261025.json",
+  "harmonyReceipt": "evidence/harmony-qualification-20261025.json",
+  "harmonyQualification": {
+    "installationAndSettingsPersistence": true,
+    "editorPreviewIsolation": true,
+    "publishedSyntheticForm": true,
+    "mobile320Summary": true,
+    "paymentReturn": false,
+    "fullyQualified": false
+  },
+  "unlistedVersion": {
+    "version": "1.0",
+    "usedOnlyForOwnedQa": true,
+    "accessPrivate": false,
+    "marketplaceSubmitted": false
+  }
 }

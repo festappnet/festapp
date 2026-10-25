@@ -64,5 +64,18 @@
     "qualificationComplete": false,
     "currentWidgetCount": 2,
     "publishedPairReceipt": "published-pair-20261025.json"
+  },
+  "unlistedVersion": "1.0",
+  "harmonyQaSite": {
+    "metaSiteId": "60fac33a-8ef8-4122-a754-2b6b98a7428b",
+    "documentId": "b4365245-01c7-4e0d-9ef5-6004d18f8cdb",
+    "editor": "Wix Harmony",
+    "url": "https://info9468674.wixsite.com/my-site-3",
+    "createdFrom": "Official https://www.wix.com/harmony > Use Template, no AI generation",
+    "freeOrdinarySite": true,
+    "premiumPlanStarted": false,
+    "published": true,
+    "receipt": "harmony-qualification-20261025.json",
+    "qualificationComplete": false
   }
 }
