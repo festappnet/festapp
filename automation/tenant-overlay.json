@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "357f943f717e6fd8260c274a152cdf71c7a195f4",
+  "release": {
+    "version": "0.20.403+904",
+    "note": "Add Czech organizer guide and seating topic pages"
+  }
+}
