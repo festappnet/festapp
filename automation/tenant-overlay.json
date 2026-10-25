@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "304a2b7e76b5b72e19efbc8820e08c670b72314f",
+  "release": {
+    "version": "0.20.395+896",
+    "note": "Fix help conditional requests and light theme"
+  }
+}
