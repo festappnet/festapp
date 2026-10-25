@@ -394,6 +394,11 @@ async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (path === "/_security/csp-report") return cspReport(request);
+    // Reserve the complete document namespace, including retired assets that
+    // can survive in an upstream asset cache after their source is removed.
+    if (path === "/organizers" || path.startsWith("/organizers/")) {
+      return Response.redirect(new URL("/",url).href,301);
+    }
 
     const marketingPage = ORGANIZERS_ENABLED ? MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path)) : null;
     const marketingRedirect = ORGANIZERS_ENABLED ? (MARKETING.redirects ?? []).find(redirect=>path === redirect.from || path === redirect.from + '/') : null;

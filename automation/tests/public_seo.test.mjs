@@ -387,6 +387,11 @@ test('registered marketing documents precede occasion redirects in ticketing-onl
     const slash=await ticketing.fetch(new Request(page.canonical+'/?utm_source=guide'),fixture);
     assert.equal(slash.status,308);assert.equal(slash.headers.get('location'),page.canonical+'?utm_source=guide');
   }
+  assets.set('/organizers/ball-ticket-sales','retired guide still present in upstream asset cache');
+  for(const path of ['/organizers','/organizers/ball-ticket-sales','/organizers/ball-ticket-sales?pwa-cache=1','/organizers/future-document','/organizers/seating-reservations']) {
+    const response=await ticketing.fetch(new Request(context.origin+path),fixture);
+    assert.equal(response.status,301);assert.equal(response.headers.get('location'),context.origin+'/');
+  }
   for (const path of ['/prodej-vstupenek-na-ples','/prodej-vstupenek-na-ples/']) {
     const response=await ticketing.fetch(new Request(context.origin+path+'?utm_source=old'),fixture);
     assert.equal(response.status,308);assert.equal(response.headers.get('location'),context.origin+'/?utm_source=old');
