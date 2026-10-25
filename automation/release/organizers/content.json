@@ -16,7 +16,6 @@
         "image": "/organizers-media/country-bal-2026.jpg",
         "dateLabel": "14. listopadu 2026",
         "date": "2026-11-14",
-        "statusLabel": "Připravovaný ples",
         "sourceImage": "https://img.festapp.net/images/32316/1772094968899-r0cg0z-1772094968608.jpg",
         "verifiedAt": "2026-10-22"
       },
@@ -32,7 +31,6 @@
         "image": "/organizers-media/ples-akh-2026.png",
         "dateLabel": "20. listopadu 2026",
         "date": "2026-11-20",
-        "statusLabel": "Připravovaný ples",
         "sourceImage": "https://img.festapp.net/images/1072585/1791309488039-ozzub5-1791309486943.png",
         "verifiedAt": "2026-10-22"
       },
@@ -102,7 +100,6 @@
       }
     ],
     "seo": {
-      "siteName": "vstupenky.online",
       "title": "Prodej vstupenek na akce | vstupenky.online",
       "description": "Prodávejte vstupenky pro Vaši akci. Vlastní plánek sálu, výběr míst, QR platby bez transakčních poplatků a odbavení telefonem.",
       "image": "/organizers-media/organizers-social.png",
@@ -120,12 +117,12 @@
       "PAGE_TICKETS": "Vstupenky",
       "PAGE_FOR_YOUR_EVENT": "pro Vaši akci.",
       "PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN": "Vlastní plánek. Vlastní vstupenka.",
-      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "QR platby bez poplatků.",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "QR převody bez transakčních poplatků.",
       "PAGE_CREATE_EVENT_10": "Založit akci",
       "PAGE_EXPLORE_THE_FEATURES": "Prohlédnout možnosti",
-      "PAGE_EVENTS_ON_FESTAPP_TICKETS": "Plesy na vstupenky.online",
-      "PAGE_FIND_YOUR_NEXT_EVENT": "Plesy, které u nás najdete.",
-      "PAGE_BROWSE_ALL_EVENTS": "Prohlédnout všechny akce",
+      "PAGE_EVENTS_ON_FESTAPP_TICKETS": "Ukázky pořadatelů",
+      "PAGE_FIND_YOUR_NEXT_EVENT": "Akce se vstupenky.online",
+      "PAGE_BROWSE_ALL_EVENTS": "Najít akci",
       "PAGE_FROM_THE_FIRST_TABLE_TO_THE_LAST_GUEST": "Od prvního stolu po posledního hosta",
       "PAGE_ONE_EVENT": "Jedna akce.",
       "PAGE_EVERYTHING_IN_ITS_PLACE": "Všechno na svém místě.",
@@ -207,6 +204,144 @@
       "PAGE_PRIVACY": "Soukromí",
       "PAGE_TERMS": "Podmínky",
       "PAGE_SUPPORT": "Podpora"
+    },
+    "locale": "cs",
+    "languageTag": "cs-CZ",
+    "ogLocale": "cs_CZ",
+    "provider": {
+      "name": "Michael Bujnovský",
+      "identifier": "06455361",
+      "identifierLabel": "IČO"
+    },
+    "cta": {
+      "href": "/login",
+      "label": "Založit akci",
+      "note": "K založení akce potřebujete účet. Pokračujte přihlášením do administrace."
+    },
+    "serviceName": "Prodej vstupenek na akce",
+    "serviceType": "Prodej vstupenek a správa akcí",
+    "ui": {
+      "play": "Přehrát",
+      "pause": "Pozastavit",
+      "retry": "Zkusit znovu",
+      "replay": "Znovu přehrát",
+      "failed": "Video se nepodařilo přehrát.",
+      "download": "Otevřít video",
+      "referenceLabel": "Ukázky akcí, posuvná galerie",
+      "previous": "Předchozí akce",
+      "next": "Další akce",
+      "position": "{first}-{last} z {count} akcí",
+      "total": "{count} akcí",
+      "imagePrefix": "Úvodní obrázek:",
+      "catalogNav": "Hlavní navigace",
+      "organizers": "Pro pořadatele",
+      "related": "Další možnosti",
+      "home": "Úvodní stránka",
+      "contactAction": "Domluvit ukázku",
+      "legalNav": "Právní a podpůrné odkazy",
+      "closing": "Připravte svou další akci.",
+      "priceNote": "Cena služby se domlouvá samostatně. Projdeme Vaši akci a konkrétní nabídku."
+    },
+    "footerLinks": [
+      {
+        "href": "/events",
+        "label": "Akce"
+      },
+      {
+        "href": "https://plesy.vstupenky.online",
+        "label": "Plesy v Česku"
+      },
+      {
+        "href": "/privacy/",
+        "label": "Soukromí"
+      },
+      {
+        "href": "/terms/",
+        "label": "Podmínky"
+      },
+      {
+        "href": "/support/",
+        "label": "Podpora"
+      }
+    ],
+    "referencesHeading": "Akce se vstupenky.online",
+    "catalogLabel": "Najít akci",
+    "pages": [
+      {
+        "id": "home",
+        "path": "/"
+      },
+      {
+        "id": "ball-ticket-sales",
+        "path": "/prodej-vstupenek-na-ples",
+        "title": "Prodej vstupenek na ples | vstupenky.online",
+        "heading": "Prodej vstupenek na ples",
+        "description": "Připravte prodej vstupenek na ples, večeře, výběr míst i odbavení hostů. Vlastní formulář a vstupenky od vstupenky.online.",
+        "intro": "Od prvních rezervací po příchod hostů. Připravte formulář, vstupenky a případně plánek sálu; hostům pak sdílejte jediný odkaz.",
+        "sections": [
+          "formular",
+          "vstupenka",
+          "odbaveni"
+        ],
+        "stepsHeading": "Co připravit před spuštěním prodeje",
+        "steps": [
+          "Doplňte název, termín, místo a podmínky plesu. Připravte ceny vstupenek a případné večeře jako samostatné položky.",
+          "Sestavte formulář a vzhled vstupenky. Pokud prodáváte konkrétní místa, připravte také rozložení stolů a židlí.",
+          "Nastavte platby a sdílejte odkaz na prodej. Před plesem si připravte telefon pro kontrolu vstupenek."
+        ],
+        "faqHeading": "Prodej a platby",
+        "faq": [
+          {
+            "question": "Lze nabídnout také večeři?",
+            "answer": "Ano, ve formuláři lze nabídnout vstupenky i další položky, například večeři. Jejich cenu a dostupnost určuje pořadatel."
+          },
+          {
+            "question": "Jak hosté zaplatí?",
+            "answer": "QR bankovním převodem přímo na účet pořadatele. Transakční poplatek za QR převod je 0 Kč; cena služby se domlouvá samostatně. Platební karty jsou dostupné po domluvě."
+          },
+          {
+            "question": "Kolik služba stojí?",
+            "answer": "Domluvte si ukázku nebo nám napište. Projdeme rozsah akce a cenu služby; příprava účtu sama není nákupem vstupenky."
+          }
+        ]
+      },
+      {
+        "id": "seating-reservations",
+        "path": "/rezervacni-system-s-planem-salu",
+        "title": "Rezervace míst s plánkem sálu | vstupenky.online",
+        "heading": "Rezervace míst s vlastním plánkem sálu",
+        "description": "Sestavte vlastní plánek sálu, rozmístěte stoly a sedadla. Hosté si při nákupu vstupenek vyberou konkrétní místo.",
+        "intro": "Rozmístěte stoly a sedadla podle skutečného sálu. Hostům nabídněte přehledný výběr konkrétních míst přímo v prodejním formuláři.",
+        "sections": [
+          "planek",
+          "vyber-mist"
+        ],
+        "stepsHeading": "Od prázdného sálu k výběru míst",
+        "steps": [
+          "Připravte uspořádání sálu včetně parketu, pódia a průchodů. Zvolte kulaté nebo hranaté stoly a rozmístění židlí.",
+          "V editoru sestavte a označte stoly a sedadla. Přizpůsobte vzhled a zkontrolujte rozložení před zveřejněním.",
+          "Propojte plánek s prodejním formulářem. Host si vybere konkrétní místo a před objednáním uvidí dostupnost i cenu."
+        ],
+        "faqHeading": "Plánek a místa",
+        "faq": [
+          {
+            "question": "Musím použít předem daný sál?",
+            "answer": "Ne. Uspořádání sestavíte podle svého prostoru; lze kombinovat různé stoly, židle, parket a pódium."
+          },
+          {
+            "question": "Vidí host konkrétní sedadlo?",
+            "answer": "Ano. U akce s plánkem host vybírá konkrétní místa a při výběru vidí jejich dostupnost a cenu."
+          },
+          {
+            "question": "Pomůžete s přípravou a cenou?",
+            "answer": "Domluvte si ukázku. Projdeme rozložení Vašeho sálu, nastavení prodeje a samostatnou cenu služby."
+          }
+        ]
+      }
+    ],
+    "helpLink": {
+      "href": "/napoveda/",
+      "label": "Nápověda"
     }
   },
   "internalSources": {

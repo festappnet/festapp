@@ -120,7 +120,7 @@ expect_failure global-capture "$(git -C "$REPO" rev-parse HEAD)" festappticketsg
 # allowlisted. Cover valid changed hashes as well as content/addition/deletion.
 git -C "$REPO" switch -qc prod/festapptickets "$BASE_SHA"
 cp "$REPO/automation/tests/fixtures/tenants/festapptickets.conf" "$REPO/automation/project.conf"
-node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replace(/^WEB_LINK=.*$/m,"WEB_LINK=https://vstupenky.online"))' "$REPO/automation/project.conf"
+node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replaceAll("tickets.example.invalid","vstupenky.online"))' "$REPO/automation/project.conf"
 (cd "$REPO" && bash automation/apply_config.sh automation/project.conf >/dev/null)
 node -e 'const fs=require("fs");fs.writeFileSync(process.argv[1],JSON.stringify({schemaVersion:1,tenantId:"festapptickets",baseMainSha:process.argv[2]},null,2)+"\n")' "$REPO/automation/tenant-overlay.json" "$BASE_SHA"
 git -C "$REPO" add -A

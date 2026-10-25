@@ -18,6 +18,9 @@ try {
   await mkdir(path.join(tempRoot, 'privacy'), { recursive: true });
   await writeFile(path.join(tempRoot, 'flutter'), '<html>flutter</html>');
   await writeFile(path.join(tempRoot, 'webclient'), '<html>web</html>');
+  await writeFile(path.join(tempRoot,'organizer-pages.json'),JSON.stringify({enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'},{id:'seating-reservations',path:'/reserved-seats',asset:'/organizers/seating-reservations'}]}));
+  await mkdir(path.join(tempRoot,'organizers'));
+  await writeFile(path.join(tempRoot,'organizers/seating-reservations'),'<html>seating topic</html>');
   await writeFile(path.join(tempRoot, 'organizers-page'), '<html>organizers</html>');
   await writeFile(path.join(tempRoot, 'main.dart.js'), 'main');
   await writeFile(path.join(tempRoot, 'main.dart.js_7.part.js'), 'deferred');
@@ -372,6 +375,9 @@ try {
   const unitAdminNavigation = new Request('https://app.test/unit/2/edit');
   Object.defineProperty(unitAdminNavigation, 'mode', { value: 'navigate' });
   assert.equal(await (await dispatchFetch(unitAdminNavigation, 'updating-tab')).text(), '<html>offline shell</html>');
+  const topicNavigation=new Request('https://app.test/reserved-seats');
+  Object.defineProperty(topicNavigation,'mode',{value:'navigate'});
+  assert.equal((await dispatchFetch(topicNavigation,'updating-tab')).type,'error','offline topic must not serve an unrelated shell');
   const privacyNavigation = new Request('https://app.test/privacy');
   Object.defineProperty(privacyNavigation, 'mode', { value: 'navigate' });
   const privacyResponse = await dispatchFetch(privacyNavigation, 'updating-tab');

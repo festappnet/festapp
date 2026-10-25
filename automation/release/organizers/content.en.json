@@ -103,7 +103,6 @@
       "PAGE_SUPPORT": "Support"
     },
     "seo": {
-      "siteName": "Festapp Tickets",
       "title": "Festapp Tickets - ticket sales and event registration",
       "description": "Create your event, design tickets and seating plans, accept card payments with Stripe and check guests in.",
       "catalogTitle": "Events and tickets | Festapp Tickets",
@@ -113,7 +112,67 @@
     },
     "cta": {
       "label": "Create event",
-      "note": "Sign in or create an account to start preparing your event."
+      "note": "Sign in or create an account to start preparing your event.",
+      "href": "/login"
+    },
+    "locale": "en",
+    "languageTag": "en",
+    "ogLocale": "en_US",
+    "serviceName": "Ticket sales and event management",
+    "serviceType": "Ticket sales and event management",
+    "referencesHeading": "Events using Festapp Tickets",
+    "catalogLabel": "Find an event",
+    "provider": {
+      "name": "Michael Bujnovský",
+      "identifier": "06455361",
+      "identifierLabel": "Business ID"
+    },
+    "footerLinks": [
+      {
+        "href": "/events",
+        "label": "Events"
+      },
+      {
+        "href": "/privacy/",
+        "label": "Privacy"
+      },
+      {
+        "href": "/terms/",
+        "label": "Terms"
+      },
+      {
+        "href": "/support/",
+        "label": "Support"
+      }
+    ],
+    "pages": [
+      {
+        "id": "home",
+        "path": "/"
+      }
+    ],
+    "ui": {
+      "play": "Play",
+      "pause": "Pause",
+      "retry": "Try again",
+      "replay": "Replay",
+      "failed": "The video could not be played.",
+      "download": "Open video",
+      "referenceLabel": "Event examples, scrolling gallery",
+      "previous": "Previous events",
+      "next": "Next events",
+      "position": "{first}-{last} of {count} events",
+      "total": "{count} events",
+      "imagePrefix": "Cover image:",
+      "catalogNav": "Main navigation",
+      "organizers": "For organizers",
+      "related": "More options",
+      "home": "Home",
+      "contactAction": "Book a demonstration",
+      "legalNav": "Legal and support links",
+      "closing": "Prepare your next event.",
+      "priceNote": "Contact us to discuss service pricing.",
+      "pending": "English recording pending."
     }
   }
 }

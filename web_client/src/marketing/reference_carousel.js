@@ -1,3 +1,4 @@
+import { marketingUI } from './ui.js';
 // Native scrolling keeps the published event links usable without JavaScript.
 export function initReferenceCarousels(root = document) {
     const win = root.defaultView ?? window;
@@ -20,9 +21,9 @@ export function initReferenceCarousels(root = document) {
             next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
             previous.hidden = previous.disabled;
             next.hidden = next.disabled;
-            position.textContent = visible.length
-                ? `${visible[0].index + 1}-${visible.at(-1).index + 1} z ${cards.length} plesů`
-                : `${cards.length} plesů`;
+            const ui = marketingUI(root);
+            if (ui) position.textContent = (visible.length ? ui.position : ui.total)
+                .replace('{first}', visible[0]?.index + 1).replace('{last}', visible.at(-1)?.index + 1).replace('{count}', cards.length);
             controls.hidden = track.scrollWidth <= track.clientWidth + 2;
         };
         const scroll = direction => {

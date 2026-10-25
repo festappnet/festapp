@@ -46,6 +46,7 @@ const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
 const IS_APP_SUPPORTED = ${JSON.stringify(isAppSupported)};
 const ORGANIZER_HOMEPAGE = ${JSON.stringify(manifest.organizerHomepage)};
+const MARKETING_ROUTES = ${JSON.stringify(manifest.marketingRoutes)};
 ${isPublicOccasionAppPath.toString()}
 ${unsupportedOccasionAppRedirect.toString()}
 ${resolveScannerRoute.toString()}
@@ -626,12 +627,12 @@ self.addEventListener('fetch', (event) => {
         target = new URL('/login' + url.search, url); target.searchParams.delete('create');
       } else if (url.pathname === '/events/' || (url.pathname === '/' && url.searchParams.has('q'))) target = new URL('/events' + url.search, url);
       if (target) { event.respondWith(Promise.resolve(Response.redirect(target.href, 308))); return; }
-      if (url.pathname === '/') {
+      if (url.pathname === '/' || MARKETING_ROUTES[url.pathname.replace(/\\/$/, '')]) {
         event.respondWith((async () => {
           const clientId = event.resultingClientId || event.clientId;
           if (clientId) { clientCacheNames.delete(clientId); await recordClientVersion(clientId, BUILD_VERSION); }
           try { return await fetch(request, {cache:'no-store'}); }
-          catch (_) { const cache = await caches.open(CACHE_NAME); return (await cache.match(WEB_CLIENT_ENTRY)) || Response.error(); }
+          catch (_) { if (url.pathname !== '/') return Response.error(); const cache = await caches.open(CACHE_NAME); return (await cache.match(WEB_CLIENT_ENTRY)) || Response.error(); }
         })());
         return;
       }
@@ -696,7 +697,7 @@ self.addEventListener('fetch', (event) => {
       const client = await self.clients.get(event.clientId);
       const page = client ? new URL(client.url) : null;
       const helpPage = page?.pathname === '/napoveda' || page?.pathname.startsWith('/napoveda/');
-      const homePage = ORGANIZER_HOMEPAGE && page?.pathname === '/' &&
+      const homePage = ORGANIZER_HOMEPAGE && (page?.pathname === '/' || Boolean(MARKETING_ROUTES[page?.pathname?.replace(/\\/$/, '')])) &&
         !page.searchParams.has('q') && !page.searchParams.has('create') && !page.hash.startsWith('#/');
       if (page?.origin === self.location.origin && (helpPage || homePage)) {
         try { return await fetch(request); }

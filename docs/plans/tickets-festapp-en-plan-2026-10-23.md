@@ -291,3 +291,6 @@ Při potížích zastavit nové Stripe pokusy tenantovou runtime policy a příp
 - Aktivace a provoz: `docs/plans/stripe-client-owned/PILOT-RUNBOOK.md`.
 - Aktuální lokální důkazy: `docs/plans/stripe-client-owned/IMPLEMENTATION-STATUS.md`.
 - Stripe API umožňuje určit Checkout `locale`; bez něj či při `auto` používá jazyk prohlížeče. Parametr `expires_at` má minimum 30 minut. [Stripe Checkout Session API](https://docs.stripe.com/api/checkout/sessions/create) (ověřeno 2026-10-23). Existující 31minutový kontrakt tímto plánem neměníme.
+
+
+Aktualizace společné hranice 25. 10. 2026: navazující search-growth zavádí explicitní `WEB_ORGANIZER_CONTENT_PROFILE`, validovaný `automation/release/organizers/context.mjs` a `page_definitions.mjs`. Používají aktuální sdílený shell, ovládání účtu, média a nápovědu; `organizer-pages.json` propojuje HTML/Worker/sitemap/CSP/PWA. Profil `festapp-en` používá již existující EN obsah a ověření nahrávek, bez aktivace jiného tenantu. Zachovává se novější produkční streaming fix PWA; tematická offline URL vrací standardní offline chybu, nikoli cizí shell. Nevytvářet druhý renderer, resolver či registr.

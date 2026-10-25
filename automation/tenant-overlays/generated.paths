@@ -63,3 +63,7 @@ web/organizers-page
 # Public Czech help and its deterministic assets/download.
 web/napoveda/**
 web_client/public/napoveda/**
+
+web/organizers/ball-ticket-sales
+web/organizers/seating-reservations
+web/organizer-pages.json

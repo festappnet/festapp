@@ -12,9 +12,10 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root, 'web_client'), { recursive: true });
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
+  cpSync(new URL('../../web/organizers-media',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
   cpSync(new URL('../../web_client/index.html', import.meta.url), join(root, 'web_client/index.html'));
   const config = join(root, 'automation/project.conf');
-  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\n');
+  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\nPRIVACY_URL=https://vstupenky.online/privacy/\nTERMS_URL=https://vstupenky.online/terms/\nSUPPORT_URL=https://vstupenky.online/support/\n');
   const render = () => {
     const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
@@ -39,7 +40,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   const graph = JSON.parse(head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
   assert.deepEqual(graph['@graph'].map(entity => entity['@type']), ['WebSite','WebPage','Service','Person']);
   assert.equal(graph['@graph'][0].url, 'https://vstupenky.online/');
-  assert.equal(graph['@graph'][0].name, 'vstupenky.online');
+  assert.equal(graph['@graph'][0].name, 'Tickets & events');
   assert.equal(graph['@graph'][1].description, seo.description);
   assert.ok(!JSON.stringify(graph).match(/aggregateRating|priceCurrency|SearchAction|FAQPage/));
   const catalog = readFileSync(join(root, 'web_client/index.html'), 'utf8');
@@ -66,6 +67,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root, 'web_client/.vite'), { recursive: true });
   writeFileSync(join(root, 'web_client/.vite/manifest.json'), JSON.stringify({'src/marketing/landing.js': {file: 'web-assets/landing-test.js'}}));
   const bundleOutput = join(root, 'bundle/organizers-page');
+  cpSync(join(root,'web/organizers-media'),join(root,'bundle/organizers-media'),{recursive:true});
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
@@ -99,12 +101,14 @@ test('actual build stamping uses configured canonical origin and the shared clas
   const worker = join(root, 'worker.js'); const config = join(root, 'project.conf');
   writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
+  writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
+  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
   const python = script.match(/python3 - build\/web\/_worker.js automation\/project.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
   const result = spawnSync('python3', ['-', worker, config], { input: python, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   const source = readFileSync(worker, 'utf8');
   assert.ok(source.includes('const CANONICAL_ORIGIN = "https://vstupenky.online";'));
-  assert.ok(source.includes('const ORGANIZERS_ENABLED = true;'));
+  assert.ok(source.includes('const MARKETING = {"schemaVersion": 1, "enabled": true'));
   assert.ok(source.includes('function classifyOccasions('));
   assert.ok(!source.includes('// SHARED_CATALOG_CLASSIFICATION'));
   for (const domain of ['other.invalid', 'plesy.vstupenky.online']) {
@@ -112,7 +116,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
     writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
     const other = spawnSync('python3', ['-', worker, config], {input:python, encoding:'utf8'});
     assert.equal(other.status,0,other.stderr);
-    assert.ok(readFileSync(worker,'utf8').includes('const ORGANIZERS_ENABLED = false;'));
+    assert.ok(readFileSync(worker,'utf8').includes('\"enabled\": false'));
   }
 });
 
@@ -124,7 +128,9 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   const python = apply.match(/<<'SITEMAP'\n([\s\S]*?)\nSITEMAP/)[1];
   const output = join(root, 'sitemap.xml');
   for (const domain of ['vstupenky.online','other.invalid']) {
-    const run = spawnSync('python3', ['-',output,domain,domain === 'vstupenky.online' ? 'true' : 'false'], {input:python,encoding:'utf8'});
+    const config=join(root,'project.conf');
+    writeFileSync(config,readFileSync(new URL('../project.conf',import.meta.url),'utf8').replace(/^DOMAIN=.*$/m,`DOMAIN=${domain}`).replace(/^WEB_LINK=.*$/m,`WEB_LINK=https://${domain}`).replace(/^WEB_ORGANIZER_LANDING_ENABLED=.*$/m,`WEB_ORGANIZER_LANDING_ENABLED=${domain==='vstupenky.online'}`));
+    const run = spawnSync('python3', ['-',output,config,process.cwd()], {input:python,encoding:'utf8'});
     assert.equal(run.status, 0, run.stderr);
     const xml = readFileSync(output, 'utf8');
     assert.ok(xml.includes(`https://${domain}/`));
@@ -148,7 +154,7 @@ test('English uses the same template, no Czech references, and requires real Eng
   for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';
   writeFileSync(mediaPath, JSON.stringify(mediaFixture));
   const config = join(root, 'project.conf');
-  writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=true\nWEB_SUPPORTED_LANGUAGES=en\nWEB_LINK=https://tickets.example.invalid\nDOMAIN=tickets.example.invalid\nAPP_NAME=Festapp Tickets\n');
+  writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=true\nWEB_SUPPORTED_LANGUAGES=en\nWEB_LINK=https://tickets.example.invalid\nDOMAIN=tickets.example.invalid\nAPP_NAME=Festapp Tickets\nWEB_ORGANIZER_CONTENT_PROFILE=festapp-en\nPRIVACY_URL=https://tickets.example.invalid/privacy/\nTERMS_URL=https://tickets.example.invalid/terms/\nSUPPORT_URL=https://tickets.example.invalid/support/\n');
   const run = (...args) => spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, ...args], { encoding: 'utf8' });
   const gated = run();
   assert.notEqual(gated.status, 0);

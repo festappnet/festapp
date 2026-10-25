@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readConfig, resolveContext } from './release/organizers/context.mjs';
+import { verifyMarketingHtml } from './release/organizers/verify.mjs';
 
 import assert from 'node:assert/strict';
 import { webProfileContract } from './lib/web_profile_contract.mjs';
@@ -57,7 +59,14 @@ async function fetchFresh(pathname) {
   });
 }
 
+const marketing = resolveContext(readConfig(configPath));
 async function verifyOnce() {
+  for (const page of marketing.pages) {
+    const response = await fetchFresh(page.path);
+    assert.equal(response.status,200,`marketing ${page.path}`);
+    verifyMarketingHtml(await response.text(),page,marketing);
+  }
+
   const [htmlResponse, manifestResponse, mainResponse, workerResponse, ...legalResponses] = await Promise.all([
     fetchFresh('/admin'),
     fetchFresh('/festapp-version.json'),
