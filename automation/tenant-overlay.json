@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "cavfotofest",
-  "baseMainSha": "be3a27ccd3fd1bfae34938ad7636f0c7f779591d",
+  "baseMainSha": "bbb21dc5a7df66727fd83196e2ce4011288f5d4b",
   "release": {
     "version": "0.20.391+892",
     "note": "Public browser analytics collector correction"
