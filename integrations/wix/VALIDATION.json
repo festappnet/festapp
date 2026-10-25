@@ -3,19 +3,19 @@
   "verifiedAt": "2026-10-25",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "PREPARED_REGISTRATION_BLOCKED_CAPTCHA",
+  "state": "REGISTERED_HOSTED_WIDGET_ON_EDITOR_CANVAS_QUALIFICATION_PENDING",
   "localTests": {
-    "count": 9,
-    "passed": 9,
+    "count": 12,
+    "passed": 12,
     "failed": 0
   },
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
   "package": {
     "path": "artifacts/vstupenky-online-wix-0.1.0.zip",
-    "sha256": "65779ee80380a0b637afa14a0df89ca0223cc5c6f4c5a0555668d3c6fc690c63",
+    "sha256": "4ec1dd457b6d4d95845a2964133b4ab1039820aea17d08bc8da8d6179c0574de",
     "type": "public-asset deployment archive, not a Wix App Store installer"
   },
-  "releaseCheck": "EXPECTED_BLOCKED: fixed fee terms, assigned Wix identity, hosting, approved billing and real site receipts missing",
+  "releaseCheck": "EXPECTED_BLOCKED: commercial approvals, documented zero-fixed-fee terms, complete real-editor/checkout receipts, store assets and approved reporting implementation remain pending",
   "browserCheck": {
     "environment": "isolated headless Chromium, file:// built settings panel",
     "viewport": "320x800",
@@ -28,14 +28,34 @@
   "wixSdkHostBoundaryVerified": false,
   "publicSubmission": false,
   "billingApprovalObtained": false,
-  "externalSupportMessageSent": false,
+  "externalSupportMessageSent": true,
   "paidSubscriptionStarted": false,
   "accountReceipt": "evidence/account-20261025.json",
   "distSha256": {
     "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
     "settings.css": "edbd872140457d528b353151d16d37aac1922f566e6372df484fc4028a7d8350",
-    "settings.html": "4310ef806761938c1a9faea3ecd234ef92e14916b2eb1e52b9e53935281d8e46",
-    "settings.js": "e4480f0d3e0e884ab5ae973fed3c5e04d3e910009e254352dd45b56844a19ae3",
-    "widget.js": "0b926d42296b880a703e20a36028f8eed157c45a3075730a3252dceb3d48dd94"
+    "settings.html": "2cf7faac0b03c2a6a63ac9372bb144a1227aeb6559501d328e64a8ad9ac06896",
+    "settings.js": "94e0802b2ae32d7bc1c68bcf411ba9c32336ff8b4586a7675ca52be586ad1581",
+    "widget.js": "eca6d468e8bdc867c9c036fb05f3fde381837271d032af821e7e329889433907"
+  },
+  "sourceHead": "84d3f8d5f",
+  "realWixWidgetOnCanvasVerified": true,
+  "registrationReceipt": "evidence/registration-20261025.json",
+  "hostingReceipt": "evidence/hosting-20261025.json",
+  "criticReceipt": "evidence/critic-20261025.json",
+  "siteAppRecordObserved": true,
+  "supportConversationStarted": true,
+  "supportCaseSubmitted": true,
+  "supportReceipt": "evidence/support-history-20261025.json",
+  "editorQualification": {
+    "editor": "Wix Editor",
+    "widgetPlacedVia": "Add Elements > App Widgets > vstupenky.online",
+    "componentId": "comp-mvo14z52",
+    "placeholderObserved": true,
+    "settingsPanelOpened": true,
+    "settingsPersistence": "Pending retest after actual asynchronous readback fix; first write reached iframe but immediate readback aborted remaining writes",
+    "syntheticFormUrl": "https://vstupenky.online/form/wix_qa_20261025",
+    "syntheticFormExists": false,
+    "checkoutSubmitted": false
   }
 }

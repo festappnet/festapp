@@ -1,7 +1,10 @@
 # Wix setup and qualification
 
-Verified against official documentation on 2026-10-24. Steps below describe the
-next operator actions; they have **not** been executed in a Wix account.
+Verified against official documentation on 2026-10-24/25. App/extension
+registration, dedicated free static hosting and the first free development site
+are now recorded in [registration evidence](evidence/registration-20261025.json).
+The steps below remain the repeatable setup procedure; the qualification matrix
+must separately record actual results rather than infer them from registration.
 
 ## Supported route
 
@@ -29,10 +32,13 @@ Do not publish a claim of verified compatibility until the matrix below passes.
      HTML, widget attributes, URLs, source maps or logs;
    - CSP allows the built scripts, the live service helper and checkout iframe.
 3. In the app dashboard open Extensions, create **Site Widget (Custom Element)**:
-   - Widget name: `Prodej vstupenek`.
+   - Widget name: `vstupenky.online` (Wix limits this field to 30 characters).
    - Tag name: `vstupenky-online-form`.
    - Script URL: the actual published HTTPS URL of built `widget.js`.
    - Settings action URL: the actual published HTTPS URL of `settings.html`.
+     On our Pages host use `https://festapp-wix.pages.dev/settings`.
+   - Enable **frontend modules from the Wix JavaScript SDK**. This adds the
+     native Site host dependency required by the self-managed SDK bootstrap.
    - Width: full-width capable, resizable, initially 100% of the containing area.
    - Height: **automatically adjusted to custom-element content**, not a fixed
      outer Wix iframe. Initial fallback content height is 800 px.

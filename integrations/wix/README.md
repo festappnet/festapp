@@ -2,17 +2,21 @@
 
 Repository entry point: [all platform integrations](../README.md).
 
-Status: **source kit prepared, not installed or submitted to Wix**. The working
-widget is buildable locally; the real Wix SDK/host boundary is not yet tested.
-No Wix account, app identifier or billing approval has been invented.
+Status 2026-10-25: **app and widget registered, public assets hosted; real Wix
+qualification in progress; not submitted to the App Market**.
 
-Updated 2026-10-25: nine tests, build and verified public-asset packaging pass.
-The built settings panel was inspected at 320 px with no horizontal overflow;
-outside Wix it correctly disables saving and explains how to open the editor.
-Account lookup for `info@festapp.net` found no existing Wix account. Signup was
-attempted but stopped at CAPTCHA; creation/login are unconfirmed. See the
-[account receipt](evidence/account-20261025.json). Complete that human step before
-registering the actual app. No paid plan or listing fee has been accepted.
+The owner completed signup/login for `info@festapp.net`. The assigned app ID is
+recorded in [wix-app.json](wix-app.json), and the widget extension ID and free
+development site are in the [registration receipt](evidence/registration-20261025.json).
+The [hosting receipt](evidence/hosting-20261025.json) records exact public asset
+hashes and URLs. No paid plan or listing fee has been accepted.
+
+Eleven tests, build and sealed public-asset packaging pass. The actual bundled
+entry now initializes the self-managed Site host using the assigned application
+ID; its regression test runs the real pinned Wix SDK against a synthetic host
+boundary. This does not replace real Wix qualification. The built settings panel
+was inspected at 320 px with no horizontal overflow and correctly disables saving
+outside the Wix editor. The earlier CAPTCHA attempt is historical account evidence.
 
 This is a self-managed **Site Widget (Custom Element)** with an editor settings
 panel. It loads the existing public checkout and service-owned `/embed.js`.
@@ -21,8 +25,9 @@ vstupenky.online service. There is no second checkout or Wix customer-data store
 
 ## What is ready
 
-- `src/widget.js` registers `<vstupenky-online-form>` and uses the official
-  `@wix/site-window` host API to confirm `Site` view mode before loading checkout.
+- `src/widget.js` registers `<vstupenky-online-form>` and initializes `@wix/site`
+  + `@wix/sdk` with the actual app ID before using `@wix/site-window` to confirm
+  `Site` view mode. Missing host context fails closed before loading checkout.
 - `src/element.js` validates the exact service origin and public form path,
   reuses the canonical helper, supports independent widget instances, and keeps
   an existing checkout alive when title or appearance changes.
@@ -30,7 +35,7 @@ vstupenky.online service. There is no second checkout or Wix customer-data store
   and persist three public properties. Writes are serial and read back before
   the next write, following Wix's documented settings-panel contract.
 - Editor and Preview show a placeholder. They do not load a live checkout,
-  helper, cookie store or reservation request. Public checkout is tested on a
+  helper, cookie store or reservation request. Public checkout must be tested on a
   published **development** site before submission.
 - The helper uses light DOM for discovery, shared protocol 1 for height/scroll,
   and an independent source/origin/instance handshake for each iframe.
@@ -51,8 +56,9 @@ pnpm run package
 pnpm run release:check
 ```
 
-The last command deliberately exits 1 with the checked-in inputs: app ID,
-hosting, billing approval and real editor receipts are missing. Copy
+The last command deliberately exits 1 with the checked-in example inputs. The
+assigned app/extension IDs and hosting are now known; billing approval, verified
+zero-fixed-fee terms and real editor receipts remain release requirements. Copy
 `release-inputs.example.json` into `.private/release-inputs.json` only when actual
 values and evidence are available. Then run:
 
@@ -71,16 +77,16 @@ Store installer or a registered CLI project.
 ## Registration and hosting
 
 Read [SETUP.md](SETUP.md) for exact dashboard configuration and test steps.
-No registration command is run automatically: the official CLI scaffolder also
-registers a remote app and assigns real app/project IDs. An unregistered fake
-`wix.config.json` would misrepresent that state, so this kit does not create one.
-Self-managed hosting is a documented first-class Wix framework and requires no
-invented CLI identity.
+The app and extension were registered through the Wix dashboard. Build/package
+commands do not register anything remotely. `wix-app.json` records the assigned
+self-managed identity; it is not a CLI project manifest. Self-managed hosting is
+a documented first-class Wix framework and requires no invented CLI identity.
 
-The built assets must be published to an approved HTTPS origin before connecting
-them in the Wix app dashboard. They are not added to Festapp's production build
-or routing by this change. Widget JS needs CORS for the Wix editor's opaque
-sandbox origin. A specific public hosting path will be assigned during setup.
+Assets are published at `https://festapp-wix.pages.dev/widget.js` and
+`https://festapp-wix.pages.dev/settings`. Pages redirects `settings.html` to the
+extensionless URL. The dedicated static project uses the existing Cloudflare
+account and free static hosting; no tenant Flutter build, DNS change or paid
+subscription is needed. Widget JS has public CORS for the editor's opaque sandbox.
 
 Public help: https://vstupenky.online/napoveda/vlozeni-na-web/.
 Wix-specific public installation instructions must be written after the real

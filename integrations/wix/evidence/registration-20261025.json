@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-25",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "widgetExtensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "widgetName": "vstupenky.online",
+  "widgetTag": "vstupenky-online-form",
+  "frontendSdkEnabled": true,
+  "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+  "settingsUrl": "https://festapp-wix.pages.dev/settings",
+  "registrationReadback": "Authenticated Wix component listing returned CUSTOM_ELEMENT_WIDGET with the assigned ID, public URLs, tag and @wix/site-site dependency",
+  "initialQaPlacement": {
+    "autoAdd": "homepage",
+    "essential": false,
+    "addElementsPanel": false,
+    "note": "Development bootstrap; final install/add-panel experience remains to qualify."
+  },
+  "devSite": {
+    "metaSiteId": "14641e99-51d9-40f8-b768-4ffc1f5d3929",
+    "documentId": "ee35a3e8-7faa-4065-a84b-d9c6a837e2de",
+    "editor": "Wix Editor",
+    "name": "Festapp Tickets - Wix Editor QA",
+    "published": false,
+    "installationVerified": false,
+    "installationEvidence": "Actual isolated browser Manage Apps page listed the app on the selected development site with Setup required / Complete Setup",
+    "widgetOnCanvasVerified": false,
+    "siteAppRecordObserved": true,
+    "note": "Manage Apps lists Setup required; this proves a site app record, not a completed widget placement or checkout qualification."
+  },
+  "paidActionTaken": false,
+  "marketplaceSubmission": false,
+  "currentWidgetConfiguration": {
+    "revision": "2",
+    "autoAdd": false,
+    "essential": false,
+    "addElementsPanel": true,
+    "description": "Vlo\u017ete prodejn\u00ed formul\u00e1\u0159 ze vstupenky.online. Akce, vstupenky i objedn\u00e1vky spravujete ve slu\u017eb\u011b.",
+    "previewImage": "Existing canonical brand icon uploaded for development; replace with a real widget screenshot before marketplace submission",
+    "previewImageUrl": "https://static.wixstatic.com/media/397be0_af584b79dd0a4dd2a5f5b59e91d18d13~mv2.png",
+    "verification": "Authenticated Wix component readback returned default-preset thumbnail URL and autoAdd=false"
+  },
+  "appInfoDraft": {
+    "name": "vstupenky.online",
+    "teaser": "Embed your vstupenky.online ticket form",
+    "saved": true,
+    "termsUrl": "https://vstupenky.online/terms/",
+    "storeIcon": "Pending 1000x1000 asset",
+    "marketplaceSubmission": false
+  }
+}

@@ -8,7 +8,7 @@ setup instructions together. Shared Festapp checkout behavior stays in
 | Platform | Products | Recorded state | Start here |
 | --- | --- | --- | --- |
 | WordPress | vstupenky.online; Festapp Tickets | Czech 1.0.0 submitted on 2026-10-24; manual review pending. Global ZIP prepared, not submitted. | [Development](wordpress/README.md), [readiness and evidence](wordpress/READINESS.md) |
-| Wix | vstupenky.online | Self-managed custom-element widget and settings panel prepared. Account registration, real installation and marketplace approval are separate pending steps. | [Development and status](wix/README.md), [setup](wix/SETUP.md), [validation receipt](wix/VALIDATION.json) |
+| Wix | vstupenky.online | App and widget registered; assets hosted on free Cloudflare Pages. Real editor/checkout qualification and marketplace commercial approval are in progress. | [Development and status](wix/README.md), [setup](wix/SETUP.md), [validation receipt](wix/VALIDATION.json) |
 
 These are recorded states, not a live marketplace monitor. Record dated external
 receipts in the platform directory when the state changes.

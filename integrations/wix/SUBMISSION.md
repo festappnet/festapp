@@ -1,6 +1,8 @@
 # Wix submission kit - vstupenky.online
 
-Preparation version 0.1.0; **not a publicly released or registered Wix app**.
+Preparation version 0.1.0; **app and widget registered; a site app record exists on a free
+development site, with widget placement and installation qualification pending; not submitted or publicly released in the App Market**.
+Exact IDs and qualification state: [registration receipt](evidence/registration-20261025.json).
 
 ## Draft listing identity
 
@@ -29,13 +31,14 @@ this wrapper does not add its own analytics.
 
 ## Remaining material before actual review
 
-1. An authorized owner workspace, assigned app ID and widget extension ID.
-   Account signup for `info@festapp.net` currently needs human CAPTCHA completion;
-   see [the account receipt](evidence/account-20261025.json).
+1. Owner access and assigned app/widget identities are recorded in
+   [the account receipt](evidence/account-20261025.json) and registration receipt.
+   Keep the public listing identity consistent with the assigned application.
 2. Approved billing model, service-fee-only revenue base and external ticket
    checkout permission, with actual reporting implemented if required.
    Confirm zero fixed publisher upfront/recurring fees with actual terms evidence.
-3. Approved HTTPS hosting with CORS/cache/CSP and live source hashes.
+3. Dedicated free HTTPS asset hosting is live with verified CORS, content types,
+   caching and source hashes: [hosting receipt](evidence/hosting-20261025.json).
 4. Real installation and published development-site receipts for Harmony,
    Editor and Studio, including authorized synthetic purchases/payment returns.
 5. Verified Wix-specific public setup guide and source-grounded screenshots of
@@ -53,16 +56,17 @@ unlisted install link is a public catalog listing.
 
 ## Validation performed locally
 
-Nine Node tests cover canonical URL validation, no live checkout in editor or
+Twelve Node tests cover canonical URL validation, no live checkout in editor or
 preview, rejected/missing SDK context, detached asynchronous completion, instance
 isolation, no checkout reload on presentation changes, settings persistence/read
-back, the zero-fixed-fee constraint, sealed package contents and the incomplete
+back, the actual bundled SDK entry and its Site host initialization, the
+zero-fixed-fee constraint, sealed package contents and the incomplete
 release gate. `pnpm run build` successfully bundles the pinned official Wix SDK
 modules; `pnpm run package` verifies their manifest and excludes private inputs.
 These checks do not prove Wix editor/runtime
 integration or grant commercial approval.
 
 The default `pnpm run release:check` is expected to fail until genuine missing
-inputs and independent real-site receipts are supplied. No submission has been
-attempted and no support/reviewer message has been sent. Signup verification
-requests are distinct from a marketplace submission.
+inputs and independent real-site receipts are supplied. No marketplace submission has been
+attempted. One custom-billing approval request was submitted through the official
+developer support intake on 2026-10-25; see the support-history receipt.

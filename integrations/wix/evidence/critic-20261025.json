@@ -1,0 +1,44 @@
+{
+  "reviewedAt": "2026-10-25",
+  "reviewer": "Independent wix_critic agent explicitly requested by owner",
+  "sourceHead": "7b9f85d478418480cdd417d4f4d1aba61c5fcdc5",
+  "localVerdict": "No remaining demonstrated local blocker for standalone static asset deployment",
+  "finding": {
+    "priority": "P1",
+    "file": "src/widget.js",
+    "problem": "Self-managed widget called site-window.viewMode without initializing the self-managed Site host",
+    "resolution": "Lazy @wix/site host + @wix/sdk client using the assigned app ID; manifest records actual app ID; bundled-entry SDK regression tests added",
+    "state": "FIXED_REVIEWED"
+  },
+  "coverage": [
+    "Canonical public-form URL validation and source/origin/instance boundary",
+    "Serialized settings writes and readback",
+    "Checkout ownership retained by canonical service",
+    "Sealed public-only archive and separate private data",
+    "Truthful distinction between preparation, registration, hosting and actual host qualification"
+  ],
+  "remainingPublicationGates": [
+    "Written applicable billing model / ticket face value exclusions / zero fixed publisher fee confirmation",
+    "Real Wix host, editor and checkout qualification",
+    "Current store identity, assets, help and required reporting implementation"
+  ],
+  "supportRequestReview": {
+    "file": "SUPPORT-REQUEST.md",
+    "verdict": "No factual blocker after adding explicit app-instance attribution, API reporting and uninstall/reinstall questions",
+    "sentAtReview": false,
+    "currentSent": true,
+    "supportReceipt": "support-history-20261025.json"
+  },
+  "finalEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking finding; site app record is explicitly distinguished from real host/widget qualification",
+    "corrections": "Historical sent flag clarified; history marked pre-submission; real checkout phrasing changed to a pending requirement"
+  },
+  "settingsPropagationFixReview": {
+    "date": "2026-10-25",
+    "verdict": "Approved bounded polling until getProp confirms each setProp; one write per property, stop before sibling write on timeout",
+    "source": "https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop",
+    "regressionTest": "Stale reads before each confirmed property; asserts next property write only after confirmation",
+    "testsPassed": 12
+  }
+}
