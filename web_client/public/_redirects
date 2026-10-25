@@ -6,7 +6,8 @@
 
 # Flutter SPA Routes (Explicit)
 # Redirect specific Flutter routes to the renamed Flutter entry point
-/login   /flutter.html  200
+/login   /index.html  200
+/login/  /index.html  200
 /admin   /flutter.html  200
 /transfer /flutter.html 200
 

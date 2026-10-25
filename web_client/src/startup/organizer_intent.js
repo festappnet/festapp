@@ -2,23 +2,39 @@ import { AppConfig } from '../app_config.js';
 import { RightsService } from '../services/rights_service.js';
 import { RouterService } from '../services/router_service.js';
 import { LocalizationService } from '../services/localization_service.js';
+import { helpActionFlutterPath } from '../services/help_action_routes.js';
 
-// Reuse the same guest registration and signed-in administration entry as UserHeader.
+// Public login links from any page or tenant use the web client.
+// Organizer creation keeps the existing tenant and registration restrictions.
 export async function handleOrganizerIntent() {
-    if (new URL(AppConfig.webLink).hostname !== 'vstupenky.online' ||
-        window.location.pathname !== '/' || new URLSearchParams(window.location.search).get('create') !== '1') return false;
+    const current = new URL(window.location.href);
+    if (/^#\/login\/?(?:\?|$)/.test(current.hash)) {
+        const legacy = new URL(current.hash.slice(1), current.origin);
+        window.history.replaceState(null, '', legacy.pathname + legacy.search);
+    }
+    const intent = new URLSearchParams(window.location.search);
+    const create = intent.get('create') === '1';
+    const loginRoute = ['/login', '/login/'].includes(window.location.pathname);
+    const login = loginRoute || intent.get('login') === '1';
+    const organizerRoute = new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
+        ['/', '/events'].includes(window.location.pathname) && (create || login);
+    if (!loginRoute && !organizerRoute) return false;
     const url = new URL(window.location.href);
     await RightsService.updateAppData();
-    url.searchParams.delete('create');
+    if (!loginRoute) url.searchParams.delete('create');
+    url.searchParams.delete('login');
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     if (RightsService.currentUser?.id) {
-        await RouterService.navigateToAdmin(RightsService.currentUnit?.id ?? RightsService.currentUser.units?.[0]?.id);
+        const unitId = RightsService.currentUnit?.id ?? RightsService.currentUser.units?.[0]?.id;
+        if (unitId) await RouterService.navigateToAdmin(unitId);
+        else await RouterService.navigateToFlutterRoute(helpActionFlutterPath('settings'));
         return 'navigated';
     }
-    if (RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
+    if (login || RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
         await import('../components/users/login_modal.js');
         const modal = document.createElement('login-modal');
-        modal.currentView = 'register';
+        modal.currentView = create && RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true
+            ? 'register' : login ? 'login' : 'register';
         document.body.appendChild(modal);
     } else {
         const notice = document.createElement('p');

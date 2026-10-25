@@ -226,7 +226,9 @@
     "amountToPay": "Kwota do zapłaty",
     "paymentNote": "Wiadomość dla odbiorcy",
     "copied": "Skopiowano",
-    "orderLabel": "Zamówienie"
+    "orderLabel": "Zamówienie",
+    "outcomeUnknownTitle": "Wynik zamówienia nie został potwierdzony",
+    "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",

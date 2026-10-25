@@ -1588,7 +1588,9 @@
     "assignStandingProduct": "Přiřadit produkt",
     "standingSetupSaveHint": "Produkty a zásoby se ukládají ihned. Přiřazení plochy a změny kapacity se použijí po uložení plánu.",
     "standingCapacityGroup": "Skupina kapacity",
-    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt a jeho kapacitu."
+    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt a jeho kapacitu.",
+    "backToGroup": "Zpět na skupinu {name}",
+    "seatLabel": "Místo"
   },
   "OccasionSettings": {
     "title": "Název",
@@ -1764,7 +1766,9 @@
     "invalidEmailAddress": "Zadaná e-mailová adresa neexistuje nebo není platná. Objednávka byla vytvořena; kontaktujte pořadatele pro opravu adresy.",
     "reservation_state_unknown": "Stav rezervace míst se nepodařilo ověřit. Zkontrolujte připojení k internetu, vraťte se na formulář a zkuste objednávku odeslat znovu. Vyplněné údaje zůstaly zachovány.",
     "reservation_expired": "Rezervace míst vypršela. Vraťte se na formulář a znovu ověřte výběr míst. Vyplněné údaje zůstaly zachovány.",
-    "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány."
+    "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány.",
+    "outcomeUnknownTitle": "Výsledek objednávky není potvrzený",
+    "outcomeUnknownHint": "Nepodařilo se ověřit, zda objednávka vznikla. Před vytvořením nové objednávky zkontrolujte e-mail. Stejný pokus můžete zopakovat návratem do formuláře bez obnovení stránky."
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Předgenerované vstupenky",
@@ -1804,8 +1808,8 @@
     "firstNameExample": "Jan",
     "lastNameExample": "Novák",
     "passwordPlaceholder": "Vaše heslo",
-    "addEvent": "Vytvořit vlastní akci",
-    "addEventShort": "+ Akce",
+    "addEvent": "Založit akci zdarma",
+    "addEventShort": "Založit zdarma",
     "myEvents": "Moje akce",
     "credentialsSent": "Přihlašovací údaje byly odeslány na",
     "passwordResetSent": "Byl odeslán e-mail pro obnovení hesla.",

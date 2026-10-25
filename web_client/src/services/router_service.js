@@ -66,11 +66,7 @@ export class RouterService {
     }
 
     static getLoginUrl() {
-        let baseUrl = AppConfig.flutterAppUrl || '';
-        if (baseUrl.endsWith('/')) {
-            baseUrl = baseUrl.slice(0, -1);
-        }
-        return `${baseUrl}/login`;
+        return '/login';
     }
 
     static getAdminUrl(unitId = null) {
@@ -140,7 +136,6 @@ export class RouterService {
         '/forgot-password',
         '/resetPassword',
         '/forgotPassword',
-        '/login',
         '/signup',
         '/settings',
         '/install',
@@ -185,6 +180,9 @@ export class RouterService {
 
         // 0. Normalize URL
         path = RouterService.normalizeUrl(fullUrl);
+
+        // Public authentication is owned by web-client startup.
+        if (path === '/login' || path === '/login/') return false;
 
         const scannerRoute = resolveScannerRoute(path);
         if (scannerRoute) {

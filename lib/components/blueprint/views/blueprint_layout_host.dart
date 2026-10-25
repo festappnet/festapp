@@ -709,10 +709,21 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _commercialName(binding != null ? node : commercialGroup ?? node,
-                name: binding?.title ?? commercialGroup?.label ?? node.label,
-                enabled: !protected,
-                style: Theme.of(context).textTheme.titleMedium),
+            Row(children: [
+              if (binding != null) ...[
+                Text(BlueprintStrings.seatLabel,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: _commercialName(
+                    binding != null ? node : commercialGroup ?? node,
+                    name:
+                        binding?.title ?? commercialGroup?.label ?? node.label,
+                    enabled: !protected,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+            ]),
             const SizedBox(height: 8),
             Text(isGroup && products.length > 1
                 ? BlueprintStrings.mixedProducts
@@ -1347,6 +1358,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     }
     final seats = _detailSeatIds;
     final tickets = _canOrder ? _ticketsForSeats(seats) : <TicketModel>[];
+    final showParentNavigation = grouped.length == 1 &&
+        _commercialSelection.length == 1 &&
+        !_commercialSelection.contains(grouped.keys.single) &&
+        tables.containsKey(grouped.keys.single);
     return Column(
       key: const ValueKey('commercial-detail-panel'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1383,10 +1398,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   label: Text(BlueprintStrings.assignSelectionProduct)),
               const SizedBox(height: 16),
             ],
-            if (grouped.length == 1 &&
-                _commercialSelection.length == 1 &&
-                !_commercialSelection.contains(grouped.keys.single) &&
-                tables.containsKey(grouped.keys.single))
+            if (showParentNavigation)
               Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
@@ -1396,9 +1408,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                           : () =>
                               _setCommercialSelection({grouped.keys.single}),
                       icon: const Icon(Icons.arrow_back, size: 18),
-                      label: Text(tables[grouped.keys.single]!.label))),
+                      label: Text(BlueprintStrings.backToGroup(
+                          tables[grouped.keys.single]!.label)))),
             for (final entry in grouped.entries) ...[
-              ...[
+              if (!showParentNavigation) ...[
                 if (tables.containsKey(entry.key) &&
                     entry.value.contains(entry.key))
                   _commercialName(tables[entry.key]!,

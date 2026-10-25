@@ -52,7 +52,7 @@ test('synthetic EN uses same renderer, empty references, own media and optional 
   p.references=[];p.referencesHeading='Events using Example Tickets';p.catalogLabel='Find an event';
   p.bookingUrl='mailto:support@example.invalid';p.serviceName='Ticket sales';p.serviceType='Event management';
   p.provider={name:'Example Operator',identifier:'123456',identifierLabel:'Business ID'};
-  p.cta={href:'/login',label:'Create event',note:'Sign in to prepare your event.'};
+  p.cta={href:'/events?create=1',label:'Create event',note:'Sign in to prepare your event.'};
   p.templateTexts=Object.fromEntries(Object.keys(p.page ?? p.templateTexts).map(key=>[key,'Example event information']));
   p.helpLink=null;p.redirects=[];
   p.templateTexts.TEXT_5='Tickets';p.templateTexts.TEXT_6='for your event.';

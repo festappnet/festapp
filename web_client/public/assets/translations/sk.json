@@ -226,7 +226,9 @@
     "amountToPay": "Suma na úhradu",
     "paymentNote": "Správa pre príjemcu",
     "copied": "Skopírované",
-    "orderLabel": "Objednávka"
+    "orderLabel": "Objednávka",
+    "outcomeUnknownTitle": "Výsledok objednávky nie je potvrdený",
+    "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
   },
   "FeatureFormSettings": {
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",

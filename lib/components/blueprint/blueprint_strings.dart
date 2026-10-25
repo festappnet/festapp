@@ -181,6 +181,9 @@ class BlueprintStrings {
   static String get fontFamily => 'FeatureBlueprint.fontFamily'.tr();
   static String get productsTitle => 'FeatureBlueprint.productsTitle'.tr();
   static String get manageSeats => 'FeatureBlueprint.manageSeats'.tr();
+  static String backToGroup(String name) =>
+      'FeatureBlueprint.backToGroup'.tr(namedArgs: {'name': name});
+  static String get seatLabel => 'FeatureBlueprint.seatLabel'.tr();
   static String get emptyGroup => 'FeatureBlueprint.emptyGroup'.tr();
   static String get inheritedProduct =>
       'FeatureBlueprint.inheritedProduct'.tr();

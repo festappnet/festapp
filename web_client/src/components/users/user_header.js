@@ -218,7 +218,7 @@ export class UserHeader extends HTMLElement {
                 addEventBtn.append(fullLabel, shortLabel);
                 addEventBtn.onclick = async () => {
                     if (this.hasAttribute('data-marketing')) {
-                        window.location.assign('/login');
+                        window.location.assign('/login?create=1');
                         return;
                     }
                     await import('./login_modal.js');

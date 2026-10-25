@@ -8,6 +8,8 @@
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },
   "FeatureBlueprint": {
+    "backToGroup": "Zurück zur Gruppe {name}",
+    "seatLabel": "Platz",
     "orderRecoveryRequired": "Prüfen Sie zuerst die ursprüngliche Bestellung im ursprünglichen Sitzplan. Wenn die Wiederherstellung fehlschlägt, wenden Sie sich vor einer neuen Bestellung an die Administration.",
     "orderBatchImmutable": "Tickets aus einem Druckstapel können nicht verschoben oder durch eine andere Bestellung ersetzt werden.",
     "orderReview": "Bestellung prüfen",
@@ -356,7 +358,9 @@
     "amountToPay": "Zu zahlender Betrag",
     "paymentNote": "Nachricht für den Empfänger",
     "copied": "Kopiert",
-    "orderLabel": "Bestellung"
+    "orderLabel": "Bestellung",
+    "outcomeUnknownTitle": "Bestellergebnis nicht bestätigt",
+    "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
     "embedAction": "Auf eigener Website einbetten",

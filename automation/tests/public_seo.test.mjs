@@ -219,7 +219,7 @@ test('marketing root stays backend independent; catalog and legacy redirects pre
   assert.match(await root.text(), /Marketing/);
   assert.equal(fetch.mock.calls.length, 0);
   for (const [source, target] of [
-    ['/?create=1&utm_source=mail', '/login?utm_source=mail'],
+    ['/?create=1&utm_source=mail', '/login?create=1&utm_source=mail'],
     ['/?q=ples', '/events?q=ples'], ['/events/?q=ples', '/events?q=ples'],
     ['/pro-poradatele?utm_source=mail', '/?utm_source=mail'],
     ['/prodej-vstupenek-na-ples?utm_source=mail','/?utm_source=mail'], ['/prodej-vstupenek-na-ples/','/'], ['/pro-poradatele/', '/'],
@@ -234,7 +234,7 @@ test('marketing root stays backend independent; catalog and legacy redirects pre
 });
 
 test('marketing tenant keeps scanner, OAuth and internal document response policies', async () => {
-  for (const path of ['/scan', '/scan/private-code', '/login-qr', '/google-auth', '/app/google-auth']) {
+  for (const path of ['/scan', '/scan/private-code', '/login-qr', '/login', '/login/', '/google-auth', '/app/google-auth']) {
     const response = await productionWorker.fetch(request(path), env);
     assert.equal(response.status, 200, path);
     assert.equal(response.headers.get('cache-control'), 'no-store, no-transform', path);

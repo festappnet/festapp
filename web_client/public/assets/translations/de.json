@@ -226,7 +226,9 @@
     "amountToPay": "Zu zahlender Betrag",
     "paymentNote": "Nachricht für den Empfänger",
     "copied": "Kopiert",
-    "orderLabel": "Bestellung"
+    "orderLabel": "Bestellung",
+    "outcomeUnknownTitle": "Bestellergebnis nicht bestätigt",
+    "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
     "labelShowBeforeStartMessage": "Informationen vor Anmeldestart anzeigen",

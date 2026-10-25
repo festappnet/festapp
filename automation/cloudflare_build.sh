@@ -123,8 +123,8 @@ const PUBLIC_WEB_ANALYTICS = null; // stamped from the public hostname registry
 // Web client SPA routes (form list handled by /form/<slug> below).
 const WEB_CLIENT_EXACT = new Set(["/", "/events"]);
 
-// Flutter SPA routes (login / admin / handover).
-const FLUTTER_PREFIXES = ["/login", "/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
+// Flutter SPA routes (admin / handover).
+const FLUTTER_PREFIXES = ["/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
 
 // auth_bridge.html alias — RouterService still posts to /auth_bridge.html.
 const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
@@ -432,7 +432,7 @@ async function routeRequest(request, env) {
     }
     if (ORGANIZERS_ENABLED) {
       if (["/", "/events", "/events/"].includes(path) && url.searchParams.get("create") === "1") {
-        const target = new URL("/login", url); target.search = url.search; target.searchParams.delete("create");
+        const target = new URL("/login", url); target.search = url.search;
         return Response.redirect(target.href, 308);
       }
       if (path === "/events/" || (path === "/" && url.searchParams.has("q"))) {
@@ -507,7 +507,7 @@ async function routeRequest(request, env) {
 
     // OAuth handoffs and account management must reach the correct adapter and never enter HTML caches.
     const stripePrivateRoute = /^\/(?:app\/)?stripe\/(?:connect\/callback|pay|return)$/.test(path);
-    if (stripePrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
+    if (path === "/login" || path === "/login/" || stripePrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
       const entry = stripePrivateRoute || path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
       // The browser retains callback parameters; the static asset fetch needs none.
       const assetUrl = new URL(request.url);

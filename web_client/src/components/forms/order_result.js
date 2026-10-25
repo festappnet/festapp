@@ -66,6 +66,11 @@ export class OrderResult {
             title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+        } else if (resultData?.errorCode === 'ORDER_OUTCOME_UNKNOWN') {
+            title = PublicOrderStrings.text('PublicOrder.outcomeUnknownTitle', tone);
+            subtitle = PublicOrderStrings.text('PublicOrder.outcomeUnknownHint', tone);
+            icon = 'info';
+            colorClass = 'error-color';
         } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
             title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
         } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {

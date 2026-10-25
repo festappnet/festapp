@@ -8,6 +8,8 @@
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
   },
   "FeatureBlueprint": {
+    "backToGroup": "Späť na skupinu {name}",
+    "seatLabel": "Miesto",
     "orderRecoveryRequired": "Najprv overte výsledok pôvodnej objednávky v pôvodnom plánku. Ak overenie zlyhá, pred vytvorením ďalšej objednávky kontaktujte správcu.",
     "orderBatchImmutable": "Vstupenky z tlačovej dávky nemožno presunúť ani nahradiť inou objednávkou.",
     "orderReview": "Skontrolovať objednávku",
@@ -376,7 +378,9 @@
     "amountToPay": "Suma na úhradu",
     "paymentNote": "Správa pre príjemcu",
     "copied": "Skopírované",
-    "orderLabel": "Objednávka"
+    "orderLabel": "Objednávka",
+    "outcomeUnknownTitle": "Výsledok objednávky nie je potvrdený",
+    "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
   },
   "FeatureFormSettings": {
     "embedAction": "Vložiť na vlastný web",

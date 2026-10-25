@@ -8,6 +8,8 @@
     "selectionOptionsRequired": "Dodaj co najmniej jedną niepustą opcję lub usuń to pole."
   },
   "FeatureBlueprint": {
+    "backToGroup": "Wróć do grupy {name}",
+    "seatLabel": "Miejsce",
     "orderRecoveryRequired": "Najpierw sprawdź pierwotne zamówienie w jego pierwotnym planie miejsc. Jeśli odzyskanie się nie powiedzie, przed utworzeniem kolejnego zamówienia skontaktuj się z administratorem.",
     "orderBatchImmutable": "Biletów z partii do druku nie można przenosić ani zastępować innym zamówieniem.",
     "orderReview": "Sprawdź zamówienie",
@@ -358,7 +360,9 @@
     "amountToPay": "Kwota do zapłaty",
     "paymentNote": "Wiadomość dla odbiorcy",
     "copied": "Skopiowano",
-    "orderLabel": "Zamówienie"
+    "orderLabel": "Zamówienie",
+    "outcomeUnknownTitle": "Wynik zamówienia nie został potwierdzony",
+    "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
     "embedAction": "Osadź na swojej stronie",
