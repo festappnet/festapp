@@ -1,10 +1,10 @@
 # Public web analytics
 
-Cloudflare Web Analytics measures public catalogue, organizer and resolved form pages only. Each link below has a fixed exact-host filter; the existing zone properties are shared storage, not separate Cloudflare site cards. Requests/server statistics remain separate.
+Cloudflare Web Analytics measures public catalogue, organizer and resolved form pages only. Each link below has a fixed exact-host filter; zone-backed sites share storage and use per-host views; Velehrad has its own manual site card. Requests/server statistics remain separate.
 
 | Host | Rollout status (2026-10-25) | Public visits and sources |
 | --- | --- | --- |
-| app.absolventskyvelehrad.cz | Web released; Cloudflare intake returns 404 | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=ca8876b7c786477fa6680a14a264eeee&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
+| app.absolventskyvelehrad.cz | Dedicated manual site configured; release pending | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=cddce39c98cd4949b882c865471ab50d&host=app.absolventskyvelehrad.cz&excludeBots=Yes) |
 | biscup.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=biscup.festapp.net&excludeBots=Yes) |
 | clovekavira.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=clovekavira.festapp.net&excludeBots=Yes) |
 | csa2024.festapp.net | Unchanged by user request | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=csa2024.festapp.net&excludeBots=Yes) |
@@ -25,14 +25,14 @@ The nine selected web releases use source `be3a27ccd3fd1bfae34938ad7636f0c7f7795
 
 Browser checks verified one beacon, `spa: false`, and successful collector POST 204 on the eight working sites. On Hvězda mořská the same public form crossed into a fresh scanner document with zero beacons, and the captured analytics payload contained no synthetic private code. Private fragments and administration were also excluded. Stored Cloudflare GraphQL data independently showed Czech visits under the exact Hvězda mořská hostname.
 
-Absolventský Velehrad remains an explicit exception: its web release passed, but the existing Cloudflare analytics setup returns 404 from the built-in collector and the external collector fails. Available credentials can deploy Pages and read analytics, but cannot manage the analytics setup. Do not call this site collection-complete until a real POST and stored data are verified.
+Velehrad follow-up: its previous zone-backed collector returned 404. A dedicated manual site for `app.absolventskyvelehrad.cz` now owns its public-page measurement, using the official external Cloudflare collector. The original parent-zone analytics setup is preserved. Deployment and real data acceptance must be verified before marking this follow-up complete.
 
 ## Collection boundary
 
 - Pages response owners insert the bootstrap only into the public catalogue, organizer landing page and resolved public forms. Flutter, scanner, authentication, payments, PWA cache shells, static legal pages and embeds have no beacon.
 - Every HTML response uses `Cache-Control: no-transform` to prevent zone-wide automatic injection. The organizer renderer never inserts a beacon into shared app shells.
 - The bootstrap rejects fragments, private query parameters, framed documents and non-public referring paths. Only origin-only external referrers and same-host public referrers are accepted. This intentionally undercounts some arrivals rather than sending private URLs.
-- Existing zone-backed properties send the official beacon to their built-in same-origin `/cdn-cgi/rum` endpoint; the manual vstupenky.online property uses the default external Cloudflare collector. Browser checks must verify a successful POST, not just beacon initialization.
+- Existing zone-backed properties send the official beacon to their built-in same-origin `/cdn-cgi/rum` endpoint; the manual vstupenky.online and app.absolventskyvelehrad.cz properties use the default external Cloudflare collector. Browser checks must verify a successful POST, not just beacon initialization.
 - A single manual Cloudflare beacon uses `spa: false`. Measured pages cross a real document boundary for pathname changes, including history API navigation. Same-path order/waitlist fragments retain normal overlay behavior. A beacon cannot follow a public page into scanner/admin paths.
 - No Do Not Track/GPC gate, analytics cookies, persistent visitor identifiers, form fields, account IDs, order IDs or custom collector are added. The provider still receives network transport information. This is a technical collection description, not a blanket claim that all website processing is anonymous.
 - Existing site tags and tokens in the registry are public embed identities, never management credentials. Preview origins and unregistered hosts cannot use this configuration.
