@@ -61,11 +61,11 @@ test('policy wrapping preserves redirect status, activation CORS and OAuth cache
   const activation = await worker.fetch(new Request(origin + '/backend-activation.json'), env);
   assertPolicy(activation);
   assert.equal(activation.headers.get('access-control-allow-origin'), '*');
-  assert.equal(activation.headers.get('cache-control'), 'no-store, max-age=0');
+  assert.equal(activation.headers.get('cache-control'), 'no-store, max-age=0, no-transform');
 
   const oauth = await worker.fetch(new Request(origin + '/google-auth?google_code=proof'), env);
   assertPolicy(oauth);
-  assert.equal(oauth.headers.get('cache-control'), 'no-store');
+  assert.equal(oauth.headers.get('cache-control'), 'no-store, no-transform');
   assert.equal(oauth.headers.get('referrer-policy'), 'no-referrer');
 });
 

@@ -1,8 +1,12 @@
+# Archived decision, superseded 2026-10-25
+
+The user replaced the server-only decision with aggregate public-web-client analytics, separately by exact hostname. Current behavior, rollout scope and the unresolved Velehrad exception are recorded in [public web analytics](../../operations/public-web-analytics.md). The following text is historical evidence and must not be executed as the current instruction.
+
 # Vstupenky.online: serverové souhrny bez lišty
 
 Pracuj v `/Users/miakh/source/festapp`. Přečti AGENTS.md, CLAUDE.md,
 `docs/architecture/ai_context.md` a aktuální část plánu
-`docs/plans/vstupenky-analytics-plan-2026-10-20.md`.
+`docs/archive/plans/vstupenky-analytics-plan-2026-10-20.md`.
 
 Poslední výslovná volba uživatele: „jen serv. bez listy“. Nahrazuje původní
 zadání browserového RUM, SPA tras a cookie opt-out. Browserový beacon se

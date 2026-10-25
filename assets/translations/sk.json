@@ -776,6 +776,8 @@
   },
   "Administration": {
     "webAnalytics": "Webová analytika",
+    "analyticsVisits": "Návštevnosť a zdroje návštev",
+    "analyticsPages": "Zobrazenia stránok",
     "openCloudflareAnalytics": "Otvoriť prehľad v Cloudflare",
     "organizationSettings": "Nastavenia organizácie",
     "copyLink": "Kopírovať odkaz",

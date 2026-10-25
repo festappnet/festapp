@@ -20,6 +20,13 @@ const validateOnly = process.argv.includes('--validate');
 const locale = (configValue('WEB_SUPPORTED_LANGUAGES') || 'cs').split(',')[0];
 const en = locale === 'en';
 const t = (cs, english) => en ? english : cs;
+const analyticsRegistry = path.join(root, 'automation/cloudflare/web-analytics-sites.json');
+const publicAnalyticsEnabled = fs.existsSync(analyticsRegistry) &&
+  Object.hasOwn(JSON.parse(fs.readFileSync(analyticsRegistry, 'utf8')), domain);
+const analyticsDisclosure = t(
+  '\n\n## Souhrnné měření veřejných stránek\n\nNa veřejném katalogu, stránkách pro pořadatele a veřejných formulářích používáme Cloudflare Web Analytics pro souhrnné počty návštěv, zobrazení a zdrojových webů. Statistiky rozdělujeme podle přesné domény. Měření nepoužívá analytické cookies, trvalý identifikátor návštěvníka ani fingerprinting a nepropojujeme je s účty, objednávkami nebo vstupenkami. Administrace, Flutter aplikace, scanner, platební a přihlašovací odkazy a vložené formuláře jsou z tohoto měření vyloučeny. Neposíláme obsah formulářů ani kódy neveřejných odkazů. Návštěvy s neveřejnou adresou v odkazujícím webu se neměří; přehled proto nemusí zahrnovat všechny návštěvy. Cloudflare při přenosu technicky přijímá IP adresu a další síťové údaje; nejde o tvrzení, že veškeré doručování webu probíhá bez osobních údajů. Blokování analytického skriptu v prohlížeči tomuto browserovému měření zabrání, nemění však serverové provozní a bezpečnostní záznamy.\n',
+  '\n\n## Aggregate measurement of public pages\n\nWe use Cloudflare Web Analytics on public catalogues, organizer pages and public forms for aggregate visits, page views and referring websites, separated by exact hostname. Measurement uses no analytics cookies, persistent visitor identifier or fingerprinting, and we do not link it to accounts, orders or tickets. Administration, the Flutter app, scanner, payment and authentication links, and embedded forms are excluded. We do not send form contents or private link codes. Visits whose referrer contains a non-public path are not measured, so totals may be incomplete. Cloudflare necessarily receives IP addresses and other network information during transport; this is not a claim that all website delivery is free of personal data. Blocking the analytics script prevents browser measurement but does not remove operational or security records on the server.\n',
+);
 const pages = [
   { key: 'PRIVACY_URL', source: 'privacy-policy.cs.md', output: 'privacy/index.html', pathname: '/privacy/', title: 'Ochrana osobních údajů', nav: 'Soukromí' },
   { key: 'PRIVACY_CHOICES_URL', source: 'privacy-choices.cs.md', output: 'privacy/choices/index.html', pathname: '/privacy/choices/', title: 'Vaše volby a práva', nav: 'Volby' },
@@ -123,7 +130,8 @@ document.querySelectorAll('[data-legal-link]').forEach((link)=>{const target=new
 
 let stale = false;
 for (const page of pages) {
-  const markdownText = fs.readFileSync(path.join(root, 'automation/release/legal', page.source), 'utf8');
+  let markdownText = fs.readFileSync(path.join(root, 'automation/release/legal', page.source), 'utf8');
+  if (publicAnalyticsEnabled && ['PRIVACY_URL', 'PRIVACY_CHOICES_URL'].includes(page.key)) markdownText += analyticsDisclosure;
   const target = path.join(root, 'web', page.output);
   const rendered = document(page.title, markdown(markdownText));
   if (checkOnly) {

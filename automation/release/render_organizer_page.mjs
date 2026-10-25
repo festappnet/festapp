@@ -39,10 +39,9 @@ if (enabled && locale === 'en' && !process.argv.includes('--preview')) {
   }
 
 }
-const analytics = contentData?.publicProjection?.analytics;
-if (analytics && (analytics.provider !== 'cloudflare' || !/^[a-f0-9]{32}$/.test(analytics.token))) throw new Error('Invalid public Cloudflare analytics identity');
-const beaconTag = analytics ? `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({token:analytics.token,spa:true})}'></script>` : '';
-const withAnalytics = html => html.replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["'][^>]*>[\s\S]*?<\/script>/gi, '').replace('</body>', () => beaconTag + '</body>');
+// Analytics belongs to the public response owner, never to a shared app shell.
+const beaconTag = '';
+const withAnalytics = html => html.replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["'][^>]*>[\s\S]*?<\/script>/gi, '');
 const jsonScript = value => JSON.stringify(value).replace(/</g, '\\u003c');
 // This network document is independent of the installed offline app shell.
 // Reporting its newer release to an older worker pins shared imports to an
