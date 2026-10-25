@@ -59,18 +59,18 @@ test('public guides render crawlable linked documents, code generator and exact 
  fs.writeFileSync(config,'WEB_LINK=https://other.invalid\nWEB_ORGANIZER_LANDING_ENABLED=false\n');run=render();assert.equal(run.status,0,run.stderr);assert.equal(fs.existsSync(target),false,'tenant switch removes Czech help and download');
 });
 
-test('phone scanner guides use only native mobile captures in both locales',()=>{
+test('phone scanner guides use only mobile webclient captures in both locales',()=>{
  const directory=path.join(root,'automation/release/help');
  const media=new Map(JSON.parse(fs.readFileSync(path.join(directory,'media.json'))).map(item=>[item.id,item]));
  for(const [locale,file] of [['cs','odbaveni.html'],['en','en/check-in.html']]){
   const html=fs.readFileSync(path.join(directory,file),'utf8');
   const figures=[...html.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
-  assert.equal(figures.length,5,'search, valid, confirmed, duplicate and unpaid need native evidence');
+  assert.ok(figures.length>=2,'include verified mobile webclient controls and result');
   for(const [,id] of figures){
    const item=media.get(id);assert.ok(item,`Missing capture ${id}`);
    assert.equal(item.locale,locale);assert.equal(item.device,'mobile');
-   assert.match(item.platform,/^native-(ios|android)$/,'mobile browser is not native app evidence');
-   assert.equal(item.physicalDevice,false,'current captures are explicitly simulator evidence');
+   assert.equal(item.platform,'web-client','the guide must show the mobile webclient, never Flutter');
+   assert.equal(item.physicalDevice,false,'mobile viewport capture does not certify physical phone hardware');
   }
  }
 });

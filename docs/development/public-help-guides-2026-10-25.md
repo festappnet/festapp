@@ -117,28 +117,13 @@ caller together. The complete `automation/test_web_startup.sh` gate passed local
 including its seven isolated Chromium access/provider-handoff cases. The new
 inline-action assertions and the 76 page/locale/viewport/theme checks also passed.
 
-## Native mobile scanner correction
+## Scanner platform correction
 
-The current CS and EN check-in articles now exclusively reference ten new captures
-from the real Flutter iOS app running in an owned iPhone 17 Pro simulator (iOS
-26.5). The former desktop and mobile Chromium scanner captures remain historical
-evidence only. The local harness changes backend, initial route and locale, not
-scanner results. Synthetic sent/ordered prerequisites were seeded locally with
-manual ticket lookup enabled; no real payments, messages or production writes.
-Native UI lookup and confirmation changed one ticket per locale to used through
-the actual scanner RPC. A different ticket was selected before checking the used
-one again, avoiding the same-code duplicate suppression. English text entry also
-verified filtering by symbol. Unpaid tickets were deliberately not confirmed.
-
-The guide now describes the actual native confirmation button and states, and
-removes web-only manual-code, group-confirmation and offline-queue instructions.
-The simulator camera error remains visible and explained in both locales. QR
-acquisition on physical hardware and Android are not certified by these captures.
-The walkthrough manifest records a separate native chapter for later video work.
-
-Validation for the scanner correction: both native simulator builds succeeded;
-the help renderer and native-media contract tests passed (2/2), and the final
-design detector had no findings. Both static previews and committed Czech
-outputs were regenerated. Local database inspection confirmed the two admitted
-tickets are used and both ordered examples remain ordered. Owned simulator was
-shut down and removed; the local backend was stopped with its volume preserved.
+The scanner guide uses the responsive webclient in a phone browser, as explicitly
+selected by the user. A native iOS capture experiment was rejected and its images
+are removed from the help assets and curated video manifest. Both CS and EN
+articles use only existing real mobile webclient captures (390 x 844 Chromium);
+no desktop scanner or Flutter images remain in those articles. Text follows the
+webclient manual-code entry, separate confirmation and conditional offline tools.
+These captures do not certify physical camera input or mobile Safari. A targeted
+media contract enforces mobile webclient evidence for both locales.
