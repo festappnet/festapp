@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "10c6d09228b7e9f208f21469b9ffb13aa447347d",
+  "release": {
+    "version": "0.20.399+900",
+    "note": "Add progressive help guide navigation"
+  }
+}
