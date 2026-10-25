@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "absolventskyvelehrad",
+  "baseMainSha": "6d6a72f79c52df9a73ab5150ef42e92f37152de0",
+  "release": {
+    "version": "0.20.392+893",
+    "note": "Dedicated public analytics site for Velehrad"
+  }
+}
