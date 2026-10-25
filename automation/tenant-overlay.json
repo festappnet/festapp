@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "b7b61caf1c568ffdb2e420c7bf200978524637c8",
+  "release": {
+    "version": "0.20.401+902",
+    "note": "Fix organizer topic route dispatch"
+  }
+}
