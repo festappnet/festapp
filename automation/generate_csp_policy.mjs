@@ -29,6 +29,10 @@ export async function generateManifest(dir, target = 'cloudflare') {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
+  try {
+    const marketing = JSON.parse(await readFile(path.join(dir,'organizer-pages.json'),'utf8'));
+    for (const page of marketing.pages.filter(page=>page.id !== 'home')) entries['organizer-' + page.id] = page.asset.slice(1);
+  } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const documents = {};
   const profiles = {};
   async function add(file, profile) {

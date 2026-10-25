@@ -74,3 +74,34 @@ not an external design service. `build_seo_preview.py` creates a server-free
 comparison of three proposed snippets at desktop/mobile widths. These previews
 are not a guarantee of what Google will display. Publish and then validate the
 real URLs/Search Console before reporting any indexing or ranking result.
+
+
+## Search growth pages
+
+`context.mjs` validates the explicit content profile and locale; `page_definitions.mjs`
+provides stable document IDs/assets. The resolved `organizer-pages.json` drives
+rendering, Worker routing, static/dynamic sitemaps, CSP and PWA navigation. Czech
+profile `vstupenky-cs` adds the ball-sales and seating-reservation pages. Existing
+shared header/footer, account controls, help, analytics and immutable application
+cache remain owned by their current implementations. Marketing documents and
+media stay outside the installed app cache; topics return the standard offline
+error rather than an unrelated Flutter/catalogue shell. This preserves the newer
+production streaming fix introduced after the original search-growth plan.
+
+`festapp-en` retains the existing English content/media and recording gate with
+explicit profile selection; no English tenant is activated. A synthetic EN fixture
+proves an optional topic and empty reference behavior. Missing profile, locale,
+media, duplicate/reserved paths or required text fail before accepting documents.
+References are dated examples, while `/events` owns current listings.
+
+Search Console coverage/crawl/canonical/performance remain unknown without a
+read-only console session or private export. Keep source exports private and use
+the latest complete 28 days, CZ/Web and separate mobile/desktop. Measure brand,
+generic `vstupenky online` and organizer topics separately. Record D0 at actual
+release, then compare D7/D14/D28 with the same filters; a CTA click is not a
+completed organizer signup. No new analytics service or schedule is introduced.
+
+The account header initializes the existing localization service with the
+rendered document locale and `persist: false`. Browser language or the saved
+application preference cannot retag a Czech marketing document as English;
+ordinary application startup still uses the saved preference.

@@ -7,7 +7,7 @@ const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanne
 const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
  .replace('// SHARED_PUBLIC_PAGE_SEO',readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url),'utf8').replaceAll('export function','function'))
  .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => `const CSP_MANIFEST = ${JSON.stringify({profiles, documents:{'privacy/index.html':{profile:'static-test'}}})};`)
- .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
+ .replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', 'const MARKETING = {enabled:true,pages:[{id:"home",path:"/",asset:"/organizers-page"}],sitemapPaths:["/","/events"]};');
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const env = {ASSETS:{fetch:async req => {
  const path = new URL(req.url).pathname;

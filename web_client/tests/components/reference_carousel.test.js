@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import { initReferenceCarousels } from '../../src/marketing/reference_carousel.js';
 
 test('reference gallery supports paging, keyboard boundaries and reduced motion without taking focus from event links', async () => {
-    const dom = new JSDOM(`<div data-reference-carousel><div data-reference-track tabindex="0">${Array.from({length:6}, (_,i)=>`<a class="reference-card" href="/event-${i}">Ples ${i}</a>`).join('')}</div><div data-reference-controls hidden><p data-reference-position></p><button data-reference-previous>Předchozí</button><button data-reference-next>Další</button></div></div>`);
+    const dom = new JSDOM(`<script type="application/json" id="marketing-ui">{"position":"{first}-{last} z {count} akcí","total":"{count} akcí"}</script><div data-reference-carousel><div data-reference-track tabindex="0">${Array.from({length:6}, (_,i)=>`<a class="reference-card" href="/event-${i}">Ples ${i}</a>`).join('')}</div><div data-reference-controls hidden><p data-reference-position></p><button data-reference-previous>Předchozí</button><button data-reference-next>Další</button></div></div>`);
     const { window: win } = dom;
     const doc = win.document;
     const track = doc.querySelector('[data-reference-track]');
@@ -37,7 +37,7 @@ test('reference gallery supports paging, keyboard boundaries and reduced motion 
     assert.equal(back.disabled,false);
     assert.equal(next.hidden,true);
     assert.equal(back.hidden,false);
-    assert.equal(doc.querySelector('[data-reference-position]').textContent,'4-6 z 6 plesů');
+    assert.equal(doc.querySelector('[data-reference-position]').textContent,'4-6 z 6 akcí');
     reduced = true;
     track.dispatchEvent(new win.KeyboardEvent('keydown',{key:'Home',bubbles:true,cancelable:true}));
     await settle();

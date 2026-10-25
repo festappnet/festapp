@@ -1,3 +1,4 @@
+import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -124,7 +125,7 @@ test('backend outages never turn an existing form or app route into a 404', asyn
 });
 
 const productionSource = workerSource.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = "https://vstupenky.online";')
-  .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
+  .replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', `const MARKETING = ${JSON.stringify(publicManifest(resolveContext(readConfig(new URL('../project.conf',import.meta.url)))))};`);
 const { default: productionWorker } = await import('data:text/javascript;base64,' + Buffer.from(productionSource).toString('base64'));
 
 test('canonical host/protocol matrix preserves form and OAuth query parameters, previews stay isolated', async t => {
@@ -349,7 +350,7 @@ test('other tenants keep their event catalogue and never serve the marketing hom
 });
 
 test('English catalog and sitemap keep each organization isolated across requests and outages', async t => {
-  const source = workerSource.replace('const DEFAULT_LANGUAGE = "cs";', 'const DEFAULT_LANGUAGE = "en";').replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
+  const source = workerSource.replace('const DEFAULT_LANGUAGE = "cs";', 'const DEFAULT_LANGUAGE = "en";').replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', `const MARKETING = ${JSON.stringify(publicManifest(resolveContext(readConfig(new URL('../project.conf',import.meta.url)))))};`);
   const { default: english } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
   t.mock.method(globalThis, 'fetch', async (_url, options) => {
     const org = JSON.parse(options.body).p_organization_id;
@@ -368,4 +369,23 @@ test('English catalog and sitemap keep each organization isolated across request
   const failure = await outage.text();
   assert.ok(failure.includes('Events could not be loaded.'));
   assert.ok(!failure.includes('Czech catalog event'));
+});
+
+test('registered marketing documents precede occasion redirects in ticketing-only production', async () => {
+  const context=resolveContext(readConfig(new URL('../project.conf',import.meta.url)));
+  const source=productionSource.replace('const IS_APP_SUPPORTED = true;', 'const IS_APP_SUPPORTED = false;')
+    .replace('// PUBLIC_OCCASION_ROUTE_POLICY',readFileSync(new URL('../../web_client/src/services/public_occasion_routes.js',import.meta.url),'utf8').replaceAll('export function ','function '));
+  const {default:ticketing}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+  const assets=new Map(context.pages.map(page=>[page.asset,`<title>${page.title}</title><link rel="canonical" href="${page.canonical}"><h1>${page.heading ?? 'Home'}</h1>`]));
+  const fixture={ASSETS:{fetch:async request=>assets.has(new URL(request.url).pathname)?new Response(assets.get(new URL(request.url).pathname)):new Response('missing',{status:404})}};
+  for(const page of context.pages.slice(1)) {
+    const response=await ticketing.fetch(new Request(page.canonical+'?utm_source=guide'),fixture);
+    assert.equal(response.status,200,page.path);
+    assert.equal(response.headers.get('location'),null);
+    const html=await response.text();assert.ok(html.includes(`<title>${page.title}</title>`));assert.ok(html.includes(`href="${page.canonical}"`));assert.ok(html.includes(page.heading));
+    const slash=await ticketing.fetch(new Request(page.canonical+'/?utm_source=guide'),fixture);
+    assert.equal(slash.status,308);assert.equal(slash.headers.get('location'),page.canonical+'?utm_source=guide');
+  }
+  const legacy=await ticketing.fetch(new Request(context.origin+'/legacy-occasion/event'),fixture);
+  assert.equal(legacy.status,302);assert.equal(legacy.headers.get('location'),context.origin+'/');
 });
