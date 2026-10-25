@@ -28,26 +28,24 @@
     "file": "cs/embed/01-generated-code.png",
     "locale": "cs",
     "capturedAt": "2026-10-25",
-    "source": "Actual production HTML generator on vstupenky.online in isolated headless Chrome, light theme; synthetic example URL, no checkout loaded. Captured the actual generated component at origin coordinates to avoid scrolling screenshot clipping.",
+    "source": "Actual standalone HTML generator in isolated headless Chrome; synthetic URL, no checkout loaded",
     "width": 740,
-    "height": 887,
+    "height": 422,
     "alt": "Generátor s ukázkovým veřejným odkazem, automatickou výškou a připraveným HTML kódem.",
     "caption": "Takto vypadá připravený kód. Ukázkový odkaz nahraďte odkazem svého uloženého formuláře.",
-    "openLabel": "Zvětšit snímek generátoru (nová karta)",
-    "sha256": "4f77a61e175b1dcfb6fbb1a0a292129ae30c65aa168750809afdbb6bcd7807ed"
+    "openLabel": "Zvětšit snímek generátoru (nová karta)"
   },
   {
     "id": "en/embed/01-generated-code",
     "file": "en/embed/01-generated-code.png",
     "locale": "en",
     "capturedAt": "2026-10-25",
-    "source": "Actual standalone English HTML generator in the self-contained local preview, isolated headless Chrome, light theme; synthetic example URL, no checkout loaded. Captured the real generated component at origin coordinates to avoid scrolling screenshot clipping.",
+    "source": "Actual standalone HTML generator in isolated headless Chrome; synthetic URL, no checkout loaded",
     "width": 740,
-    "height": 887,
+    "height": 422,
     "alt": "The generator with an example public form link, automatic height and prepared HTML code.",
     "caption": "The prepared code. Replace the example URL with your own saved public form link.",
-    "openLabel": "Enlarge the generator screenshot (new tab)",
-    "sha256": "6ecd8bde4042857e2a170f52cf4c32d300f689221119387ad0bbedfe06cb1951"
+    "openLabel": "Enlarge the generator screenshot (new tab)"
   },
   {
     "id": "cs/wordpress/01-get-started",
