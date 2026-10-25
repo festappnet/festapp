@@ -91,7 +91,9 @@
   },
   "studioLifecycleReceipt": "evidence/studio-lifecycle-20261025.json",
   "studioEditorLifecycleVerified": true,
-  "studioPublishedMultipleWidgetsVerified": false,
+  "studioPublishedMultipleWidgetsVerified": true,
   "publishedHelperOutageReceipt": "evidence/helper-outage-20261025.json",
-  "publishedHelperOutageFallbackVerified": true
+  "publishedHelperOutageFallbackVerified": true,
+  "studioPublishedMultipleWidgetsScope": "Actual native published pair with adapted disposable backend; form values, helper instances and runtime attribute isolation only",
+  "publishedPairReceipt": "evidence/published-pair-20261025.json"
 }

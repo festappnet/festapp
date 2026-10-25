@@ -36,7 +36,7 @@
     "autoAdd": false,
     "essential": false,
     "addElementsPanel": true,
-    "description": "Vlo\u017ete prodejn\u00ed formul\u00e1\u0159 ze vstupenky.online. Akce, vstupenky i objedn\u00e1vky spravujete ve slu\u017eb\u011b.",
+    "description": "Vložte prodejní formulář ze vstupenky.online. Akce, vstupenky i objednávky spravujete ve službě.",
     "previewImage": "Existing canonical brand icon uploaded for development; replace with a real widget screenshot before marketplace submission",
     "previewImageUrl": "https://static.wixstatic.com/media/397be0_af584b79dd0a4dd2a5f5b59e91d18d13~mv2.png",
     "verification": "Authenticated Wix component readback returned default-preset thumbnail URL and autoAdd=false"
@@ -59,6 +59,8 @@
     "installationVerified": true,
     "settingsPersistenceVerified": true,
     "receipt": "studio-20261025.json",
-    "qualificationComplete": false
+    "qualificationComplete": false,
+    "currentWidgetCount": 2,
+    "publishedPairReceipt": "published-pair-20261025.json"
   }
 }

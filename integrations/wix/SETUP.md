@@ -82,7 +82,7 @@ existing integration tests; never place real orders or reserve production seats.
 | Editor/Preview have no checkout iframe or helper loaded | not run | pass | pass |
 | Published form, auto height, helper/version handshake | not run | pass with QA transport | partial: live contrast fix pending |
 | 320 px mobile, keyboard/focus, light/dark host typography | not run | partial: width/focus; dark pending | partial: candidate contrast verified |
-| Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor pass; published interaction pending |
+| Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor lifecycle pass; published pair/attribute isolation pass with QA transport |
 | Validation, seat map, Escape/back, close restores scroll | not run | partial: email and summary close; map pending | not run |
 | Summary reveals submit; submission shows receipt top | not run | desktop pass; mobile summary pass | partial: geometry/focus; no new order |
 | Authorized synthetic payment redirect/return and browser storage | not run | not run | not run |
@@ -167,3 +167,9 @@ checkout/helper or scroll isolation. The test did not publish or submit orders.
 confirms a fixed-height iframe and keyboard-accessible direct link under an exact
 helper request abort. Production backend DNS remained blocked. The synthetic
 production route was absent; this check does not qualify checkout or recovery.
+
+[Published two-widget evidence](evidence/published-pair-20261025.json) records
+two natively published Studio sections, distinct helper instances, independent
+form values and first-summary/sibling isolation. Temporary runtime attribute
+changes reload only the changed URL; they do not claim native settings persistence
+on the public site. The live contrast defect and payment/browser gates remain.
