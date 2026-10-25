@@ -152,6 +152,9 @@ button text transparent. Its fix must reach canonical main and the selected
 `prod/festapptickets` service release before final live qualification/gallery.
 
 The native development-site selector currently offers Editor and Studio only.
+The [official testing guide](https://dev.wix.com/docs/build-apps/launch-your-app/app-distribution/test-your-app/test-your-app-on-a-premium-site)
+includes Harmony templates, but this owner/app still lacks that choice on a
+fresh native flow check. See [access evidence](evidence/harmony-access-20261025.json).
 Harmony through an ordinary free site has not been investigated; this does not
 establish that Harmony itself is unsupported.
 

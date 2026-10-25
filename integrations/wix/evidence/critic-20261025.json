@@ -86,5 +86,10 @@
     "date": "2026-10-25",
     "verdict": "PASS: published iframe/direct-link fallback only; absent synthetic route, untested checkout/recovery and explicit remaining gates correctly disclosed",
     "receipt": "helper-outage-20261025.json"
+  },
+  "portalFollowupReview": {
+    "date": "2026-10-25",
+    "file": "../SUPPORT-FOLLOWUP.md",
+    "verdict": "PASS: owner/app-specific Harmony selector mismatch, limited mailbox observation, no global unsupported claim, no commercial acceptance; draft not sent and existing-thread/owner-authorization guard explicit"
   }
 }

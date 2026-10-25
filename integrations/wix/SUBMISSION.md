@@ -86,3 +86,10 @@ The remaining native portal blockers are contact info, gallery images and the
 security/privacy questionnaire. Final gallery images are held until the shared
 helper contrast fix is deployed and verified. Registration/profile saves do not
 constitute Marketplace submission or commercial approval.
+
+The documented Harmony development-site flow was rechecked: this owner/app
+selector still offers Editor and Studio only. This is a portal limitation, not
+a claim of global incompatibility. See [Harmony access evidence](evidence/harmony-access-20261025.json).
+A [technical follow-up](SUPPORT-FOLLOWUP.md) covering that mismatch and the two
+CDN403 pages is prepared for owner review, not sent. Use the existing support
+conversation after authorization; do not open a duplicate billing request.
