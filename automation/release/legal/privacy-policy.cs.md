@@ -1,55 +1,24 @@
-# Ochrana osobních údajů - Vstupenky.online
+# Zásady ochrany osobních údajů – Člověk a víra
 
-Účinnost: 20. října 2026. Verze: 1.2.
+Účinnost: 28. srpna 2026. Verze: 1.0.
 
-## Kdo odpovídá za vaše údaje
+Tyto zásady popisují zpracování osobních údajů v mobilní a webové aplikaci Člověk a víra. Aplikace poskytuje program, novinky, praktické informace a podle konkrétní akce také uživatelský účet, osobní program, registrace nebo formuláře.
 
-Účet a provoz systému zajišťuje Michael Bujnovský, IČO 06455361, Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt: `info@festapp.net`.
+Správcem údajů souvisejících s činností fotografického společenství je Člověk a Víra, z. s. Správce lze kontaktovat prostřednictvím kontaktního formuláře na <https://www.clovekavira.cz/o-nas/kontaktni-formular>. Technickou podporu aplikace zajišťuje její vývojář a vydavatel Michael Bujnovský na `info@festapp.net`. U údajů zpracovávaných pro konkrétní spolupracující akci může být samostatným správcem její pořadatel; jeho údaje jsou uvedeny u dané akce nebo registrace.
 
-Za údaje účastníků konkrétní akce, rozsah přihlášky a její účel odpovídá pořadatel uvedený u nabídky nebo objednávky.
+Podle použité služby můžeme zpracovávat zejména jméno, příjmení, e-mail, telefon, identifikátor účtu, uložený program, registrace, odpovědi ve formulářích, zpětnou vazbu a komunikaci s podporou. Pro bezpečný a spolehlivý provoz mohou vznikat omezené technické, síťové a chybové záznamy. Volitelná oznámení používají technický push identifikátor. Část dat může být uložena v zařízení pro offline provoz. Poloha zařízení se používá pouze po systémovém povolení pro zobrazení polohy v mapě a není používána k reklamnímu sledování.
 
-## Jaké údaje používáme
+Údaje používáme k poskytnutí aplikace, vedení účtu, správě osobního programu a registrací, komunikaci o akci, podpoře uživatelů, zabezpečení a plnění právních povinností. Právním základem je podle konkrétní služby plnění smlouvy nebo předsmluvní kroky, právní povinnost, oprávněný zájem na bezpečném provozu nebo souhlas u nepovinné funkce.
 
-Pro účet potřebujeme jméno, příjmení a e-mail. Podle přihlášky či objednávky zpracováváme také kontaktní a fakturační údaje, odpovědi ve formuláři, údaje účastníků, vstupenky a údaje o platbě. Pořadatel může vyžadovat například datum narození či údaje dokladu. Povinné údaje jsou označené; bez nich nemusí být možné službu poskytnout.
+Pro poskytování služby mohou být využiti zejména pořadatel konkrétní akce, Michael Bujnovský jako technický dodavatel, Supabase pro databázi, autentizaci a serverové funkce, OneSignal pro volitelná push oznámení, Cloudflare a Netlify pro webovou infrastrukturu, poskytovatelé e-mailu a Apple a Google pro distribuci aplikace. Údaje jsou předávány pouze v nezbytném rozsahu a případné zpracování mimo Evropský hospodářský prostor musí být založeno na odpovídajícím právním mechanismu a ochranných opatřeních.
 
-Údaje získáváme od vás, objednavatele, zákonného zástupce, pořadatele nebo z bankovních podkladů. Pro zabezpečení vznikají technické záznamy, například IP adresa a čas požadavku.
+Údaje se uchovávají pouze po dobu potřebnou pro daný účel a zákonné povinnosti. Technické záznamy a zálohy mají omezené provozní lhůty. Údaje konkrétní akce se řídí také pravidly jejího pořadatele.
 
-## Proč údaje potřebujeme
+Smazání účtu lze zahájit v profilu aplikace. Časově omezený jednorázový odkaz zaslaný na e-mail sám nic nemaže; odstranění začne až po závěrečném potvrzení. Podrobnosti jsou na <https://clovekavira.festapp.net/privacy/choices/>.
 
-Údaje používáme pro účet, přihlášky, objednávky, platby, komunikaci a podporu. Právním základem je plnění smlouvy, předsmluvní kroky, zákonná povinnost nebo oprávněný zájem na zabezpečení a ochraně práv. Nepovinné zpracování může vyžadovat samostatný souhlas. Registrace sama není souhlasem s reklamou ani nepovinným sledováním.
+Uživatel má právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu a námitku. Žádost lze poslat správci přes jeho kontaktní formulář; technický požadavek také na `info@festapp.net`. Stížnost lze podat u Úřadu pro ochranu osobních údajů: <https://uoou.gov.cz/>.
 
-## Souhrny serverového provozu na vstupenky.online
 
-Na webu vstupenky.online používáme přehledy serverového provozu Cloudflare. Vznikají z HTTP požadavků, které Cloudflare přijímá při doručování a ochraně webu. Používáme je k přehledu o zatížení, přenesených datech, chybách a zemích původu požadavků, abychom mohli zajistit dostupnost, kapacitu a zabezpečení služby. Právním základem pro související zpracování osobních údajů je náš oprávněný zájem na těchto účelech.
+## Souhrnné měření veřejných stránek
 
-Tyto přehledy nevyžadují analytický skript ani analytické cookies v prohlížeči. Serverové přehledy nepropojujeme s účty nebo objednávkami. Samostatné měření veřejných stránek popisujeme níže.
-
-Při obsluze webu Cloudflare zpracovává také IP adresu, požadovanou cestu a technické údaje požadavku. Serverový provoz proto neoznačujeme za zcela anonymní. Počet požadavků zahrnuje také načítání souborů a automatizovaný provoz; neodpovídá počtu osob. Případná dříve nastavená cookie `festapp_analytics_optout` tyto serverové přehledy nevypíná. Pro jejich použití nyní žádnou takovou předvolbu neukládáme. Proti zpracování na základě oprávněného zájmu můžete vznést námitku na `info@festapp.net`.
-
-## E-maily
-
-Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
-
-Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
-
-## Kde údaje zpracováváme
-
-Hlavní databázi a účty provozujeme na serverech Hetzner, které sami spravujeme. Cloudflare zajišťuje web, ochranu provozu, soubory a šifrované zálohy. Údaje mají v potřebném rozsahu také pořadatel a jeho pověřené osoby.
-
-Při volitelném přihlášení přes Google získáme identifikátor účtu, ověřený e-mail a jméno. Google Fonts dodává písma a ikony; při otevření online mapy se mohou načítat podklady OpenStreetMap. Tyto služby při načítání dostávají IP adresu a údaje požadavku. Poloha v mapě vyžaduje povolení prohlížeče.
-
-Některé služby mají globální infrastrukturu. Předání mimo Evropský hospodářský prostor vyžaduje odpovídající právní záruky, například rozhodnutí Evropské komise nebo standardní smluvní doložky. Podrobnosti si můžete vyžádat na kontaktním e-mailu.
-
-## Ukládání a uchování
-
-V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace. Odstranit je můžete v jeho nastavení; tím se můžete odhlásit.
-
-Údaje účtu uchováváme po dobu používání. Přihlášky a objednávky po dobu potřebnou pro akci, vypořádání a reklamace. Déle pouze kvůli zákonným povinnostem nebo ochraně právních nároků; lhůty údajů konkrétní akce určuje pořadatel.
-
-Údaje o e-mailové komunikaci uchováváme pro doručení zpráv, řešení problémů a doložení poskytnuté služby. Smazané údaje mohou dočasně zůstat ve starších zálohách.
-
-## Vaše práva
-
-Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
-
-Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+Na veřejných stránkách tohoto webu používáme Cloudflare Web Analytics pro souhrnné počty návštěv a zobrazení. Měření nepoužívá analytické cookies ani trvalý identifikátor návštěvníka a nepropojujeme je s účty nebo registracemi. Administrace a soukromé části aplikace jsou vyloučeny. Cloudflare při přenosu technicky přijímá IP adresu a další síťové údaje.
