@@ -14,8 +14,8 @@ test('public guides render crawlable linked documents, code generator and exact 
  let run=render();assert.equal(run.status,0,run.stderr);
  const pages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.json')));
  const coreTopics=['getting-started','form','ticket-pricing','seating','ticket-design','payments','orders','check-in'];
- for(const id of coreTopics) assert.ok(pages.some(page=>page.id===id),`Missing core organizer guide: ${id}`);
- assert.deepEqual([...new Set(pages.filter(page=>page.category).map(page=>page.category))],['integrations','basics','tickets','orders','check-in','troubleshooting']);
+ for(const id of [...coreTopics,'event-settings','bank-accounts','fio-token']) assert.ok(pages.some(page=>page.id===id),`Missing core organizer guide: ${id}`);
+ assert.deepEqual([...new Set(pages.filter(page=>page.category).map(page=>page.category))],['basics','administration','tickets','banking','integrations','orders','check-in','troubleshooting']);
  const categories=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/categories.json'))).map(c=>({...c.cs,id:'category.'+c.id}));
  for(const page of [...pages,...categories]){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
@@ -31,6 +31,16 @@ test('public guides render crawlable linked documents, code generator and exact 
    assert.ok(fs.existsSync(file),`Missing guide/asset ${match[1]}`);
   }
  }
+ const home=fs.readFileSync(path.join(target,'index.html'),'utf8');
+ assert.ok(home.indexOf('href="/napoveda/zaciname-s-akci/"')<home.indexOf('href="/napoveda/integrace/"'));
+ const bank=fs.readFileSync(path.join(target,'fio-api-token/index.html'),'utf8');
+ assert.match(bank,/https:\/\/www\.youtube\.com\/watch\?v=px9MCABSQbI/);
+ assert.match(bank,/data-help-workflow="organization"/);
+ const wizard=fs.readFileSync(path.join(target,'zaciname/index.html'),'utf8');
+ assert.match(wizard,/data-help-workflow="wizard"/);
+ const existing=fs.readFileSync(path.join(target,'planek-salu/index.html'),'utf8');
+ assert.match(existing,/data-help-workflow="administration"/);
+ assert.doesNotMatch(existing,/cs-seating-saved|cs-seating-templates/,'wizard-only captures do not illustrate administration');
  const form=fs.readFileSync(path.join(target,'prodejni-formular/index.html'),'utf8');
  assert.ok(form.indexOf('class="help-step-action"')<form.indexOf('<h2 id="pole">'),'app link belongs to the opening step');
  assert.match(form,/href="\/login\?redirect=%2Fhelp-action%2Fforms" target="_blank"/);

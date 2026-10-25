@@ -541,6 +541,78 @@
       "alt": "A previously used sample ticket in the web scanner settings preview.",
       "platform": "web-client",
       "physicalDevice": false
+    },
+    {
+      "mediaId": "cs/banking/accounts",
+      "file": "cs/banking/accounts.png",
+      "sha256": "34d4c37416fe35bb4db41d07066fae14aa8a014f35d5a25e9a2fe49a14b5d86e",
+      "capturedAt": "2026-10-25T13:56:09.339434+00:00",
+      "workflow": "organization",
+      "alt": "Seznam bankovních účtů pořadatele v administraci."
+    },
+    {
+      "mediaId": "cs/banking/details",
+      "file": "cs/banking/details.png",
+      "sha256": "2deeb0d631037f8bf71c18a617277d9cd4433015bab6d6d72c57a3e233b9a4dd",
+      "capturedAt": "2026-10-25T13:56:07.958100+00:00",
+      "workflow": "organization",
+      "alt": "Karta Obecné u ukázkového Fio bankovního účtu."
+    },
+    {
+      "mediaId": "cs/banking/fio-connection",
+      "file": "cs/banking/fio-connection.png",
+      "sha256": "144a62af2bbb1bea012ac0e76fe759fed66aeba5b13dfd46871cb736f77cb8cd",
+      "capturedAt": "2026-10-25T13:55:31.074260+00:00",
+      "workflow": "organization",
+      "alt": "Propojení Fio účtu s prázdným polem API tokenu a datem platnosti."
+    },
+    {
+      "mediaId": "cs/administration/form-payments",
+      "file": "cs/administration/form-payments.png",
+      "sha256": "0fd755d953eeff409917e10b2759b32d01bb9c03fca817340c236f10d6bd0f94",
+      "capturedAt": "2026-10-25T13:59:24.735112+00:00",
+      "workflow": "administration",
+      "alt": "Platební údaje a splatnost existujícího formuláře v administraci akce."
+    },
+    {
+      "mediaId": "en/banking/accounts",
+      "file": "en/banking/accounts.png",
+      "sha256": "b0e686ec19653af547ec0de1b160ed14f53fd1f63ba0a76be7b5a00fafa5a2cb",
+      "capturedAt": "2026-10-25T13:56:24.821244+00:00",
+      "workflow": "organization",
+      "alt": "Organizer bank account list in administration."
+    },
+    {
+      "mediaId": "en/banking/details",
+      "file": "en/banking/details.png",
+      "sha256": "779ea2c9b8b6b64454bc0cfa0312ff12479fb7308388a933d299927f6d65ab5b",
+      "capturedAt": "2026-10-25T13:56:23.629612+00:00",
+      "workflow": "organization",
+      "alt": "General settings for the sample Fio bank account."
+    },
+    {
+      "mediaId": "en/banking/fio-connection",
+      "file": "en/banking/fio-connection.png",
+      "sha256": "436c159034e3e2e206bcbf638cbabea09801573153bc58c5dab91c1987b7968b",
+      "capturedAt": "2026-10-25T13:56:22.422421+00:00",
+      "workflow": "organization",
+      "alt": "Fio bank connection with an empty API token field and expiry control."
+    },
+    {
+      "mediaId": "en/administration/event-settings",
+      "file": "en/administration/event-settings.png",
+      "sha256": "6d79f552acd67c07492244fca81628212ffe82e6eb542e4d130d28f1ce111681",
+      "capturedAt": "2026-10-25T13:56:58.940410+00:00",
+      "workflow": "administration",
+      "alt": "Settings tab for an existing event in administration."
+    },
+    {
+      "mediaId": "en/administration/form-payments",
+      "file": "en/administration/form-payments.png",
+      "sha256": "58c0ceda546b5caec92c8348c9a5b9cebb668292a1316823960eb9492e52824d",
+      "capturedAt": "2026-10-25T13:58:19.071400+00:00",
+      "workflow": "administration",
+      "alt": "Payment instructions and deadline for an existing form."
     }
   ],
   "chapters": [
@@ -827,6 +899,40 @@
       ],
       "videoNote": "Record phone-browser webclient, no native Flutter footage. Show error distinction, editor-only shared settings, draft preview, save and reopening authorization. Physical QR camera and offline synchronization were not tested in this chapter.",
       "privateEvidence": ".private/help-advanced-20261025/interaction-log.jsonl"
+    },
+    {
+      "id": "organizer-bank-and-existing-event-settings",
+      "guides": [
+        "bank-accounts",
+        "fio-token",
+        "event-settings",
+        "payments"
+      ],
+      "steps": [
+        {
+          "action": "Load organizer bank list using the actual current unit-dashboard RPC, then open sample account general and connection routes in CS and EN",
+          "outcome": "Real bank UI fields and blank Fio token/expiry controls. No actual token, credential storage, bank pull, external bank verification or payment mutation."
+        },
+        {
+          "action": "Open existing event Settings and form Settings → payment details",
+          "outcome": "Actual selected administration tabs, distinct from wizard draft steps; no changes saved."
+        }
+      ],
+      "stills": [
+        "cs/banking/accounts",
+        "cs/banking/details",
+        "cs/banking/fio-connection",
+        "cs/administration/form-payments",
+        "en/banking/accounts",
+        "en/banking/details",
+        "en/banking/fio-connection",
+        "en/administration/event-settings",
+        "en/administration/form-payments"
+      ],
+      "fixture": "Added a synthetic Fio account to the owned local unit with no fetch or live credentials; normalized its new unused identity to a valid-format demo Fio IBAN before final captures. Existing account/order identity preserved. Browser locale is a fixture preference.",
+      "bootstrap": "Local activation discovery disabled; app.startApplication initialization uses installed current v219 contract instead of the legacy contract selected by the loopback marker. Real SQL authorization and UI stay active.",
+      "interactionNote": "Screens reached through actual public administration routes; generic headless pointer activation of the retained bank underlay did not open its editor, so account and tab deep links were used. This chapter does not certify bank-list pointer interaction.",
+      "privateEvidence": ".private/help-structure-20261025/interaction-log.jsonl"
     }
   ],
   "notVerified": [
@@ -913,5 +1019,27 @@
         "sha256": "c8a42091ad179542114b9e85788b624328b799b17e8e19c03943982db6556670"
       }
     ]
+  },
+  "videoReferences": [
+    {
+      "id": "fio-token",
+      "url": "https://www.youtube.com/watch?v=px9MCABSQbI",
+      "title": "Jak vytvořit Fio API token | Návod krok za krokem",
+      "channel": "vstupenky.online",
+      "verified": "Official YouTube oEmbed returned the title/channel on 2026-10-25. Prior upload session records this as corrected public v4; the older md0TdlUu0Xs is private.",
+      "locale": "cs",
+      "englishUse": "Explicitly labeled Czech-language video in English guide."
+    }
+  ],
+  "workflowReclassification": {
+    "wizardOnly": [
+      "cs/wizard/dates",
+      "cs/setup/ticket-templates",
+      "cs/seating/templates",
+      "cs/seating/saved",
+      "cs/payments/account"
+    ],
+    "existingEvent": "cs/setup/dates is the existing-event Settings capture and is now used only by that administration guide.",
+    "videoRule": "Use the workflow metadata and current article references for wizard versus administration shots; original scenario chapters remain historical receipts."
   }
 }

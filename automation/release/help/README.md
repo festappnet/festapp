@@ -2,18 +2,29 @@
 
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
 The implementation shares the homepage header/footer fragments, canonical
-organizer CSS and account-header startup. The hub contains all six agreed areas
-and twelve Czech task guides, with matching English preview articles and stable
-topic IDs. Core guides cover event creation, form publication, ticket prices and
-capacity, seating, ticket design/PDF, payments, order delivery and check-in.
+organizer CSS and account-header startup. The current outline supersedes the
+initial ordering: eight areas and fifteen task guides, with matching English
+preview routes and stable topic IDs. Start with the new-event wizard, then
+existing-event administration, tickets/seating, banking, website publication,
+order management, check-in and troubleshooting. The hub has separate entry
+choices for creating an event, editing an existing one and preparing banking.
 
-New full-app screenshots show event creation, form/pricing setup, sales opening,
-ticket settings/editor/PDF and payment prerequisites using a disposable loopback
-backend. Seating, public payment instructions, report and native mobile-check-in
-images reuse actual synthetic product recordings with explicit provenance.
-The native check-in image is labelled separately from the current web controls.
-English never substitutes Czech screenshots. English publication and full
-Webnode verification remain separately gated; video tutorials are a later phase.
+The wizard owns draft-only instructions and captures. Administration articles
+start at the relevant tab of an existing event. Organizer-level bank accounts
+are separate from selecting an account for a form. `pages*.json` marks these
+contexts with `workflow`; `ui.json` localizes the visible context note. Marked
+wizard-only screenshots are rejected in administration articles by the renderer.
+Scanner guides show only responsive mobile webclient images, never native
+Flutter screens. Bank and event administration screenshots remain actual
+Flutter organizer UI because that is the administration used by the product.
+English never substitutes Czech interface captures. English publication and
+full Webnode verification remain separately gated.
+
+`videos.json` owns localized video references. The Fio guide links the verified
+public v4 video on our YouTube channel; the earlier upload is private. English
+explicitly labels the existing video as Czech. Future English video URLs can be
+supplied independently without changing article or topic structure. New video
+production remains out of scope.
 
 Source content for `https://vstupenky.online/napoveda/`. `pages.json` owns the
 routes and SEO metadata; each route has an authored HTML body. Keep real UI
@@ -67,7 +78,7 @@ until a suitable Premium test project is available.
 
 ## Categories, global search and application links
 
-`categories.json` owns six localized category landing pages. Stable category and
+`categories.json` owns eight localized category landing pages. Stable category and
 article IDs are shared by Czech and English; titles, slugs, SEO descriptions and
 screenshot references are localized. The hub links to areas, and the sidebar
 expands only the current area. Articles and category pages expose canonical

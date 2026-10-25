@@ -4,7 +4,10 @@
       "založit akci",
       "vytvořit událost",
       "registrace pořadatele",
-      "koncept akce"
+      "koncept akce",
+      "průvodce",
+      "wizard",
+      "nastavení nové akce"
     ],
     "form": [
       "zveřejnit formulář",
@@ -87,6 +90,28 @@
       "Web note",
       "Webnout",
       "Webnot"
+    ],
+    "event-settings": [
+      "změnit termín",
+      "přejmenovat akci",
+      "nastavení hotové akce",
+      "administrace"
+    ],
+    "bank-accounts": [
+      "nastavení banky",
+      "bankovní účet",
+      "přidat účet",
+      "IBAN",
+      "bankovní spojení"
+    ],
+    "fio-token": [
+      "Fio",
+      "API token",
+      "video",
+      "Youtube",
+      "autorizace tokenu",
+      "propojení banky",
+      "automatické párování"
     ]
   },
   "en": {
@@ -170,6 +195,23 @@
     "webnode": [
       "Webnode",
       "Web note"
+    ],
+    "event-settings": [
+      "edit existing event",
+      "change date",
+      "administration"
+    ],
+    "bank-accounts": [
+      "bank account setup",
+      "IBAN",
+      "receiving account"
+    ],
+    "fio-token": [
+      "Fio API token",
+      "bank connection",
+      "video",
+      "YouTube",
+      "token authorization"
     ]
   }
 }

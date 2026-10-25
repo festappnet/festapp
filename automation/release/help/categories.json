@@ -1,5 +1,73 @@
 [
   {
+    "id": "basics",
+    "cs": {
+      "slug": "zaciname-s-akci",
+      "title": "Průvodce založením nové akce",
+      "seoTitle": "Průvodce založením akce: od konceptu po vytvoření",
+      "description": "Založte novou akci krok za krokem. Název, termín, nabídka, plánek, vzhled vstupenky a výběr platebního účtu patří do jednoho průvodce.",
+      "intro": "Tato část je určená pro novou, dosud nevytvořenou akci. Po dokončení průvodce pokračujte návody pro úpravy v administraci."
+    },
+    "en": {
+      "slug": "getting-started-with-events",
+      "title": "New event setup wizard",
+      "seoTitle": "Event setup wizard: from draft to creation",
+      "description": "Create a new event step by step: details, offer, seating, ticket design and selection of a receiving account.",
+      "intro": "Use this section before creating the event. After completing the wizard, use the administration guides for later changes."
+    }
+  },
+  {
+    "id": "administration",
+    "cs": {
+      "slug": "sprava-akce",
+      "title": "Úpravy hotové akce a formuláře",
+      "seoTitle": "Jak upravit existující akci a prodejní formulář",
+      "description": "Změňte údaje vytvořené akce, obsah formuláře a otevření prodeje v administraci. Průvodce založením zde neopakujete.",
+      "intro": "Akce už existuje? Vyberte ji v administraci a otevřete konkrétní záložku. Návody uvádějí postup pro pozdější změny a jejich uložení."
+    },
+    "en": {
+      "slug": "event-administration",
+      "title": "Edit an existing event and form",
+      "seoTitle": "Edit an existing event and ticket order form",
+      "description": "Change event details, form contents and sales availability in administration, separately from the setup wizard.",
+      "intro": "For an event that already exists, select it in administration and open the relevant tab. These guides cover later edits and saving changes."
+    }
+  },
+  {
+    "id": "tickets",
+    "cs": {
+      "slug": "vstupenky-a-planek",
+      "title": "Vstupenky a plánek: ceny, místa a PDF",
+      "seoTitle": "Správa vstupenek: ceny, kapacity, plánek sálu a PDF",
+      "description": "Připravte nabídku vstupenek, ceny a dostupnost, přiřaďte místa v sále a zkontrolujte výslednou vstupenku s QR kódem.",
+      "intro": "Tyto postupy popisují záložky a editory již vytvořené akce. Nabídku, plánek i vzhled vstupenky upravujete samostatně a ukládáte v příslušném editoru; nejde o průvodce založením."
+    },
+    "en": {
+      "slug": "tickets-and-seating",
+      "title": "Tickets and seating: prices, seats and PDF",
+      "seoTitle": "Manage tickets: prices, capacity, seating plans and PDF",
+      "description": "Prepare ticket choices, prices and availability, connect venue seats to the offer and check the finished ticket PDF and QR.",
+      "intro": "These guides describe tabs and editors for an existing event. Edit and save the offer, seating plan and ticket design separately; these are not setup-wizard instructions."
+    }
+  },
+  {
+    "id": "banking",
+    "cs": {
+      "slug": "bankovni-ucty-a-propojeni",
+      "title": "Bankovní účty a příjem plateb",
+      "seoTitle": "Bankovní účet, Fio API token a nastavení plateb za vstupenky",
+      "description": "Přidejte účet pořadatele, propojte Fio banku a nastavte platební údaje formuláře. Rozlišujte účet, propojení banky a přiřazení k prodeji.",
+      "intro": "Nejdříve připravte bankovní účet pořadatele, potom jeho propojení s bankou a použití v konkrétním formuláři. Průvodce založením pouze vybírá připravený účet."
+    },
+    "en": {
+      "slug": "bank-accounts-and-connections",
+      "title": "Bank accounts and receiving payments",
+      "seoTitle": "Bank accounts, Fio API token and ticket payment settings",
+      "description": "Prepare the receiving account, connect Fio and configure form payment instructions. Account setup, bank connection and assignment to sales are separate tasks.",
+      "intro": "Prepare the organizer account first, then its bank connection and use in a form. The event wizard selects an account that has already been prepared."
+    }
+  },
+  {
     "id": "integrations",
     "cs": {
       "slug": "integrace",
@@ -14,40 +82,6 @@
       "seoTitle": "Website ticket integration: HTML, WordPress and Webnode",
       "description": "Choose the integration for your website: general HTML, WordPress with or without a plugin, and Webnode plan requirements.",
       "intro": "If you already have a saved public form, choose your website platform below. Otherwise start by creating the event and preparing its form."
-    }
-  },
-  {
-    "id": "basics",
-    "cs": {
-      "slug": "zaciname-s-akci",
-      "title": "Začínáme: založení akce a prodejního formuláře",
-      "seoTitle": "Jak začít prodávat vstupenky: akce a veřejný formulář",
-      "description": "Od soukromého konceptu k připravené akci a veřejnému formuláři. Nastavte údaje, povinná pole a správný čas otevření prodeje.",
-      "intro": "Nejprve připravte akci a uložte její formulář. Zveřejnění akce v přehledu a otevření prodeje jsou samostatné volby, které před sdílením odkazu ověříte."
-    },
-    "en": {
-      "slug": "getting-started-with-events",
-      "title": "Getting started: your event and public order form",
-      "seoTitle": "Start selling tickets: event setup and a public form",
-      "description": "Go from a private draft to your event and public form. Prepare event details, required fields and the right sales-opening time.",
-      "intro": "First create the event and save its form. Publishing an event listing and opening ticket sales are separate choices to check before sharing the link."
-    }
-  },
-  {
-    "id": "tickets",
-    "cs": {
-      "slug": "vstupenky-a-planek",
-      "title": "Vstupenky a plánek: ceny, místa a PDF",
-      "seoTitle": "Správa vstupenek: ceny, kapacity, plánek sálu a PDF",
-      "description": "Připravte nabídku vstupenek, ceny a dostupnost, přiřaďte místa v sále a zkontrolujte výslednou vstupenku s QR kódem.",
-      "intro": "Začněte nabídkou a skutečnou kapacitou. Pro prodej konkrétních sedadel propojte místa s produkty a jejich cenami. Vzhled a čitelnost vstupenky ověřte ve skutečném PDF."
-    },
-    "en": {
-      "slug": "tickets-and-seating",
-      "title": "Tickets and seating: prices, seats and PDF",
-      "seoTitle": "Manage tickets: prices, capacity, seating plans and PDF",
-      "description": "Prepare ticket choices, prices and availability, connect venue seats to the offer and check the finished ticket PDF and QR.",
-      "intro": "Start with the offer and actual capacity. For assigned seating, connect seats to products and prices. Verify the final design and readability in the generated PDF."
     }
   },
   {

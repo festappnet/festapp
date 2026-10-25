@@ -178,3 +178,49 @@ Validation: 9 targeted help/login/settings Node tests, 2 Flutter intent tests,
 Targeted analysis reported no errors, with 11 existing informational router lints.
 The UI detector reported no findings. This change must ship with both Flutter
 administration and the generated help; it is not yet verified in production.
+
+## Organizer journey, banking and wizard separation
+
+The help now has fifteen task guides plus its overview and eight category pages
+(24 documents per locale). The shared order is setup wizard, existing-event
+administration, tickets/seating, banking, website publication, orders, admission
+and troubleshooting. The overview first offers three explicit entry choices:
+new event, existing-event edits and banking. Integrations follow sales/payment
+preparation instead of leading the directory.
+
+New guides cover existing-event settings, organizer bank-account setup and Fio
+API token authorization/connection. Workflow metadata creates a localized
+context note and the renderer rejects marked wizard captures in administration
+articles. Wizard-only account selection, seating-template/save and initial
+appearance instructions now live in the wizard guide. Existing-form payment
+settings have their own actual CS/EN administration captures and a Forms action,
+replacing the misleading event-settings action on the old banking paragraph.
+
+Nine new bank/form/event administration captures use the actual local Flutter
+organizer UI. One original wizard dates capture was newly curated to replace an
+existing-event screenshot previously shown in the wizard. The scanner continues
+to use mobile webclient screenshots exclusively. The local fixture selects the
+installed current v219 unit-dashboard contract through the existing bootstrap
+initialization seam because loopback activation otherwise selects legacy v218.
+A synthetic unused Fio account was added without credentials or fetching; no
+live token, bank connection, bank pull, order or payment was created/verified.
+Bank detail/tab routes were opened directly. Retained-underlay pointer activation
+was not qualified by this headless walkthrough; do not claim an interactive bank
+account creation or token-save E2E. The manifest preserves this limitation.
+
+The YouTube upload session of 2026-10-22 identifies corrected public v4 as
+https://www.youtube.com/watch?v=px9MCABSQbI; the older upload is private. Official
+YouTube oEmbed readback verified title and channel vstupenky.online. `videos.json`
+provides locale-specific links/copy; English explicitly identifies the video as
+Czech. Fio authorization and five-minute activation instructions were checked
+against its official API documentation linked next to those instructions.
+
+The main update was merged at a5056dd0b before this documentation change. Its only
+merge conflict was generated web/organizers-page, regenerated from the combined
+canonical renderer and shared shell. Organizer/analytics/help/login checks passed
+16 tests; the final affected help/search/public-SEO batch passed 28 tests. The
+rebuilt local Flutter fixture passed after correcting its bootstrap caller to
+startApplication. All 96 localized page/viewport/theme cases passed; a final
+four-case bank-guide check covered its last copy refinement. The design detector
+reported no findings. Private browser sessions and the owned backend were closed;
+backend data was preserved for future screenshots. English remains preview-only.

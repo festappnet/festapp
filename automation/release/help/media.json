@@ -265,7 +265,8 @@
     "sha256": "a1d93c0775db8c1ab9cfeeb598533e05111db51123310f1e3f97f316b4b9a7b8",
     "alt": "Název rozpracovaného plesu v průvodci založením.",
     "caption": "Název zadáváte v prvním kroku. Ukázková akce se jmenuje Slavnostní ples U Lípy. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/setup/dates",
@@ -291,7 +292,8 @@
     "sha256": "f4cc9a1228e8da3bab9cfc7c5cdc98e14cfff918d13ca350489bf16635fdbdfb",
     "alt": "Průvodce založením akce s výběrem vzhledu vstupenky.",
     "caption": "V průvodci vybíráte vzhled z nabízených šablon a můžete jej dále upravit. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/setup/created",
@@ -382,7 +384,8 @@
     "sha256": "f4cc9a1228e8da3bab9cfc7c5cdc98e14cfff918d13ca350489bf16635fdbdfb",
     "alt": "Volba vzhledu vstupenek v průvodci založením.",
     "caption": "Zapněte používání vstupenek, vyberte vzhled a podle potřeby otevřete Upravit vstupenku. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/tickets/editor",
@@ -447,7 +450,8 @@
     "sha256": "4bd2e082a83dc5270f139cae798ed1ab5ae26888315a00977f1f76678cfe5aef",
     "alt": "Volba ukázkového bankovního účtu v průvodci akcí.",
     "caption": "Ukázkový účet slouží pouze testu. Automatická synchronizace není nastavená; na uvedený účet neplaťte. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/payments/instructions",
@@ -499,7 +503,8 @@
     "sha256": "a62ab4873d539202e31c90c46a84174b11fa8137b436cf2e6342c604cce6724a",
     "alt": "Výběr šablon sálu včetně Ples u kulatých stolů.",
     "caption": "Při vytvoření nového plánku jsme zvolili šablonu Ples u kulatých stolů. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/seating/style",
@@ -512,7 +517,8 @@
     "sha256": "f2182caaddc54f02914d2df04f79204357aaf3b388cd3bfb7b82b49e057abb17",
     "alt": "Panel Styl plánku se styly sedadel a barevnými paletami.",
     "caption": "Styl plánku odděluje vzhled objektů od barevné palety a podlahy. Pro ukázku jsme vybrali Slavnostní sál. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/seating/table",
@@ -525,7 +531,8 @@
     "sha256": "d1b888d211a29cf049049a598ac5df0ba8155dd8f40ec9c581c554afed41bfcc",
     "alt": "Vlastnosti vybraného stolu s názvem a přidáváním židlí.",
     "caption": "Stůl jsme pojmenovali Stůl 1 - čestní hosté a přidali jednu židli. Počet jeho míst se zvýšil na devět. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/seating/position",
@@ -551,7 +558,8 @@
     "sha256": "8e6c29773543f24dc10e20d3882fd0823cb773712b35e7a602c1e8ba904fd048",
     "alt": "Uložený plánek v konceptu s počtem míst 97.",
     "caption": "Po Uložit a vrátit se do průvodce souhrn skutečně ukázal 97 míst. Kliknutím obrázek zvětšíte.",
-    "openLabel": "Zvětšit snímek (nová karta)"
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "workflow": "wizard"
   },
   {
     "id": "cs/seating/buyer",
@@ -1075,5 +1083,145 @@
     "alt": "A previously used sample ticket in the web scanner settings preview.",
     "caption": "The preview uses draft settings without admitting a guest. This sample ticket had already been used. Actual webclient at phone width; select to enlarge.",
     "openLabel": "Enlarge mobile screenshot (new tab)"
+  },
+  {
+    "id": "cs/wizard/dates",
+    "file": "cs/wizard/dates.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25",
+    "source": "Actual event setup wizard in the owned local fixture; original walkthrough step 02, not existing-event settings",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "08dd1140a7897cb43bf5a150ffa4e7d0d59ed2ca52aed9d993b70f84e27a723c",
+    "alt": "Nastavení termínu při zakládání nové akce v průvodci.",
+    "caption": "Termín v průvodci patří do rozpracovaného konceptu. Změny hotové akce se provádějí v administraci.",
+    "openLabel": "Zvětšit snímek průvodce (nová karta)",
+    "workflow": "wizard"
+  },
+  {
+    "id": "cs/banking/accounts",
+    "file": "cs/banking/accounts.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25T13:56:09.339434+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "34d4c37416fe35bb4db41d07066fae14aa8a014f35d5a25e9a2fe49a14b5d86e",
+    "alt": "Seznam bankovních účtů pořadatele v administraci.",
+    "caption": "Bankovní účty patří pořadateli. V ukázce nejsou propojené s bankou; nejde o účty určené k platbě.",
+    "openLabel": "Zvětšit snímek administrace (nová karta)"
+  },
+  {
+    "id": "cs/banking/details",
+    "file": "cs/banking/details.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25T13:56:07.958100+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "2deeb0d631037f8bf71c18a617277d9cd4433015bab6d6d72c57a3e233b9a4dd",
+    "alt": "Karta Obecné u ukázkového Fio bankovního účtu.",
+    "caption": "Číslo účtu, jeho název, podporované měny a majitele upravujete mimo průvodce založením akce.",
+    "openLabel": "Zvětšit snímek administrace (nová karta)"
+  },
+  {
+    "id": "cs/banking/fio-connection",
+    "file": "cs/banking/fio-connection.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25T13:55:31.074260+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "144a62af2bbb1bea012ac0e76fe759fed66aeba5b13dfd46871cb736f77cb8cd",
+    "alt": "Propojení Fio účtu s prázdným polem API tokenu a datem platnosti.",
+    "caption": "Fio token se vkládá u bankovního účtu. V ukázce jsme žádný token neuložili ani neověřovali skutečnou banku.",
+    "openLabel": "Zvětšit snímek administrace (nová karta)"
+  },
+  {
+    "id": "cs/administration/form-payments",
+    "file": "cs/administration/form-payments.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-25T13:59:24.735112+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "administration",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "0fd755d953eeff409917e10b2759b32d01bb9c03fca817340c236f10d6bd0f94",
+    "alt": "Platební údaje a splatnost existujícího formuláře v administraci akce.",
+    "caption": "Toto je nastavení hotového formuláře. Správa účtu pořadatele a vytvoření Fio tokenu jsou samostatné postupy.",
+    "openLabel": "Zvětšit snímek administrace (nová karta)"
+  },
+  {
+    "id": "en/banking/accounts",
+    "file": "en/banking/accounts.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25T13:56:24.821244+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "b0e686ec19653af547ec0de1b160ed14f53fd1f63ba0a76be7b5a00fafa5a2cb",
+    "alt": "Organizer bank account list in administration.",
+    "caption": "Bank accounts belong to the organizer. These sample accounts are not connected and must not be used for payments.",
+    "openLabel": "Enlarge administration screenshot (new tab)"
+  },
+  {
+    "id": "en/banking/details",
+    "file": "en/banking/details.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25T13:56:23.629612+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "779ea2c9b8b6b64454bc0cfa0312ff12479fb7308388a933d299927f6d65ab5b",
+    "alt": "General settings for the sample Fio bank account.",
+    "caption": "Edit the account identity, label, currencies and beneficiary outside the event wizard.",
+    "openLabel": "Enlarge administration screenshot (new tab)"
+  },
+  {
+    "id": "en/banking/fio-connection",
+    "file": "en/banking/fio-connection.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25T13:56:22.422421+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "organization",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "436c159034e3e2e206bcbf638cbabea09801573153bc58c5dab91c1987b7968b",
+    "alt": "Fio bank connection with an empty API token field and expiry control.",
+    "caption": "Save Fio credentials at bank-account level. No token was saved and no real bank connection was verified in this capture.",
+    "openLabel": "Enlarge administration screenshot (new tab)"
+  },
+  {
+    "id": "en/administration/event-settings",
+    "file": "en/administration/event-settings.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25T13:56:58.940410+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "administration",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "6d79f552acd67c07492244fca81628212ffe82e6eb542e4d130d28f1ce111681",
+    "alt": "Settings tab for an existing event in administration.",
+    "caption": "These are existing-event settings. Initial creation is covered separately in the wizard guide.",
+    "openLabel": "Enlarge administration screenshot (new tab)"
+  },
+  {
+    "id": "en/administration/form-payments",
+    "file": "en/administration/form-payments.png",
+    "locale": "en",
+    "capturedAt": "2026-10-25T13:58:19.071400+00:00",
+    "source": "Actual Flutter organizer administration, local synthetic tenant; current unit-dashboard RPC contract; account details and connection read-only walkthrough, no live credentials or financial mutations",
+    "workflow": "administration",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "58c0ceda546b5caec92c8348c9a5b9cebb668292a1316823960eb9492e52824d",
+    "alt": "Payment instructions and deadline for an existing form.",
+    "caption": "Existing-form payment settings are separate from organizer account management and creation of a Fio token.",
+    "openLabel": "Enlarge administration screenshot (new tab)"
   }
 ]

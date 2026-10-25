@@ -13,10 +13,12 @@
     "breadcrumb": "Drobečková navigace",
     "skip": "Přejít k obsahu",
     "categories": {
-      "integrations": "Integrace a vložení na web",
-      "basics": "Začínáme s akcí",
+      "basics": "Průvodce založením akce",
+      "administration": "Úpravy hotové akce",
       "tickets": "Vstupenky a plánek",
-      "orders": "Objednávky a platby",
+      "banking": "Bankovní účty a platby",
+      "integrations": "Vložení na web",
+      "orders": "Správa objednávek",
       "check-in": "Odbavení návštěvníků",
       "troubleshooting": "Řešení potíží"
     },
@@ -56,7 +58,12 @@
       "report": "Otevřít report v aplikaci",
       "scanner-settings": "Otevřít nastavení skeneru"
     },
-    "opensNewTab": "nová karta"
+    "opensNewTab": "nová karta",
+    "workflows": {
+      "wizard": "Průvodce založením: nová akce před dokončením.",
+      "administration": "Administrace: úpravy již vytvořené akce.",
+      "organization": "Nastavení pořadatele: bankovní účty mimo průvodce založením."
+    }
   },
   "en": {
     "languageTag": "en",
@@ -72,11 +79,13 @@
     "breadcrumb": "Breadcrumb",
     "skip": "Skip to content",
     "categories": {
-      "integrations": "Integrations and embedding",
-      "basics": "Getting started",
+      "basics": "Event setup wizard",
+      "administration": "Edit an existing event",
       "tickets": "Tickets and seating",
-      "orders": "Orders and payments",
-      "check-in": "Check-in",
+      "banking": "Bank accounts and payments",
+      "integrations": "Website integration",
+      "orders": "Order management",
+      "check-in": "Visitor check-in",
       "troubleshooting": "Troubleshooting"
     },
     "categoryGuides": "Guides in this area",
@@ -115,6 +124,11 @@
       "report": "Open the report in the app",
       "scanner-settings": "Open scanner display settings"
     },
-    "opensNewTab": "new tab"
+    "opensNewTab": "new tab",
+    "workflows": {
+      "wizard": "Setup wizard: a new event before creation.",
+      "administration": "Administration: changes to an existing event.",
+      "organization": "Organizer settings: bank accounts outside the event wizard."
+    }
   }
 }

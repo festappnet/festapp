@@ -34,6 +34,7 @@ const digest = data => createHash('sha256').update(data).digest('hex').slice(0,1
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const assets = {};
 const media = JSON.parse(read('media.json')).filter(item => item.locale === locale);
+const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
 const figures = new Map(media.map(item => {
   if (!/^[a-z0-9/-]+$/.test(item.id)) throw new Error('Invalid help media identity');
   const relative = item.sourceAsset || item.file;
@@ -90,17 +91,30 @@ if (arg('--built-index')) {
   themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).join('');
 }
 const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:helpRoot,helpLabel:ui.help,accountHeader:!!accountScript});
+const videos = JSON.parse(read('videos.json'));
+const videoLink = id => {
+  const video = videos[id]?.[locale];
+  if (!video || !/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/.test(video.url)) throw new Error(`Invalid help video: ${id}`);
+  return `<p><a href="${escape(video.url)}" target="_blank" rel="noopener">${escape(video.title)}</a> <span>${escape(video.description)}</span></p>`;
+};
 const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
     .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replace(/\{\{VIDEO:([a-z-]+)\}\}/g, (_,id) => videoLink(id))
     .replace(/\{\{APP_LINK:([a-z-]+)\}\}/g, (_,intent) => appLink(intent))
     .replace(/\{\{MEDIA:([a-z0-9/-]+)\}\}/g,(_,id) => {
+      if (page.workflow === 'administration' && mediaWorkflows.get(id) === 'wizard') throw new Error(`Wizard screenshot in administration guide: ${id}`);
       if (!figures.has(id)) throw new Error(`Missing ${locale} help screenshot: ${id}`);
       return figures.get(id);
     }).replaceAll('{{HELP_ROOT}}',helpRoot).replaceAll('{{HELP_ASSETS}}',helpRoot+'assets/').replaceAll('{{FORM_ORIGIN}}',escape(origin))
     .replaceAll('vstupenky-online-1.0.0.zip',zipName).replaceAll('vstupenky.online 1.0.0',`vstupenky.online ${product.version}`);
   if (body.includes('{{')) throw new Error(`Unresolved help content token: ${page.id}`);
+  if (page.workflow) {
+    const context = ui.workflows[page.workflow];
+    if (!context) throw new Error(`Unknown help workflow: ${page.workflow}`);
+    body = `<p class="note" data-help-workflow="${escape(page.workflow)}">${escape(context)}</p>` + body;
+  }
   bodies.set(page.id, body);
 }
 for (const category of categoryPages) bodies.set(category.id, `<p class="lead">${escape(category.description)}</p><p>${escape(category.intro)}</p><h2 id="guides">${escape(ui.categoryGuides)}</h2>${articleList(category.category)}<h2 id="related">${escape(ui.categoryRelated)}</h2><ul>${categoryPages.filter(other => other.id !== category.id).map(other => `<li><a href="${href(other)}">${escape(other.label)}</a></li>`).join('')}</ul>`);

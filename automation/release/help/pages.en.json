@@ -4,9 +4,99 @@
     "category": "",
     "slug": "",
     "title": "Help for event organizers",
-    "seoTitle": "Help: ticket sales and website integration",
-    "description": "Prepare your ticket sales and embed an order form in your own website, WordPress or Webnode.",
+    "seoTitle": "Organizer help: event setup, tickets and payments",
+    "description": "Event setup wizard, administration, bank accounts and Fio, tickets, orders, check-in and website integration.",
     "label": "All guides"
+  },
+  {
+    "id": "getting-started",
+    "category": "basics",
+    "slug": "getting-started",
+    "title": "Create an event with the setup wizard",
+    "seoTitle": "Create an event: dates, organizer and sales preparation",
+    "description": "Create your event, save a private draft, check the summary and distinguish publishing from opening sales.",
+    "label": "Event setup wizard",
+    "workflow": "wizard"
+  },
+  {
+    "id": "event-settings",
+    "category": "administration",
+    "slug": "event-settings",
+    "title": "Edit the settings of an existing event",
+    "seoTitle": "Event settings: change name, dates and publication",
+    "description": "Edit an existing event in administration: name, dates, venue, publication and features. Event settings are separate from form sales settings.",
+    "label": "Existing event settings",
+    "workflow": "administration"
+  },
+  {
+    "id": "form",
+    "category": "administration",
+    "slug": "order-form",
+    "title": "How to prepare and publish an order form",
+    "seoTitle": "Order form: fields, public link and sales availability",
+    "description": "Prepare buyer details, ticket choices, required fields, the saved public link and ordering availability.",
+    "label": "Order form",
+    "workflow": "administration"
+  },
+  {
+    "id": "ticket-pricing",
+    "category": "tickets",
+    "slug": "ticket-prices-capacity",
+    "title": "How to set ticket prices and capacity",
+    "seoTitle": "Tickets: variants, prices, capacity and availability",
+    "description": "Set ticket and extra-product choices, prices, currencies, quantities and shared capacity groups.",
+    "label": "Prices and capacity",
+    "workflow": "administration"
+  },
+  {
+    "id": "seating",
+    "category": "tickets",
+    "slug": "seating-plan",
+    "title": "How to prepare a seating plan",
+    "seoTitle": "Seating plan: seats, products, prices and buyer checks",
+    "description": "Build the venue layout, assign products to seats and verify a particular seat and its price in the form.",
+    "label": "Seating plan",
+    "workflow": "administration"
+  },
+  {
+    "id": "ticket-design",
+    "category": "tickets",
+    "slug": "ticket-design",
+    "title": "How to design tickets and check the PDF",
+    "seoTitle": "Ticket design: templates, QR and PDF preview",
+    "description": "Choose a template, adjust information and artwork and verify QR readability and the generated PDF.",
+    "label": "Ticket design and PDF",
+    "workflow": "administration"
+  },
+  {
+    "id": "bank-accounts",
+    "category": "banking",
+    "slug": "bank-account",
+    "title": "Set up the organizer receiving account",
+    "seoTitle": "Bank account setup for ticket payments",
+    "description": "Create or link the organizer bank account, check its identity and currencies, and distinguish account management from selecting it for a sales form.",
+    "label": "Bank account setup",
+    "workflow": "organization"
+  },
+  {
+    "id": "fio-token",
+    "category": "banking",
+    "slug": "fio-api-token",
+    "title": "Connect Fio using an API token",
+    "seoTitle": "Fio API token: creation, authorization and ticket payment connection",
+    "description": "Create and authorize a read-only Fio API token, save it in the bank account connection and verify synchronization status.",
+    "label": "Fio API token and connection",
+    "workflow": "organization"
+  },
+  {
+    "id": "payments",
+    "category": "banking",
+    "slug": "payments",
+    "title": "How to prepare ticket payments",
+    "seoTitle": "Ticket payments: account, QR, deadlines and matching",
+    "description": "Check the receiving account, bank connection, payment references, deadlines and buyer instructions.",
+    "label": "Payment setup",
+    "workflow": "administration"
   },
   {
     "id": "embed",
@@ -36,67 +126,14 @@
     "label": "Webnode"
   },
   {
-    "id": "getting-started",
-    "category": "basics",
-    "slug": "getting-started",
-    "title": "How to create an event",
-    "seoTitle": "Create an event: dates, organizer and sales preparation",
-    "description": "Create your event, save a private draft, check the summary and distinguish publishing from opening sales.",
-    "label": "Create an event"
-  },
-  {
-    "id": "form",
-    "category": "basics",
-    "slug": "order-form",
-    "title": "How to prepare and publish an order form",
-    "seoTitle": "Order form: fields, public link and sales availability",
-    "description": "Prepare buyer details, ticket choices, required fields, the saved public link and ordering availability.",
-    "label": "Order form"
-  },
-  {
-    "id": "ticket-pricing",
-    "category": "tickets",
-    "slug": "ticket-prices-capacity",
-    "title": "How to set ticket prices and capacity",
-    "seoTitle": "Tickets: variants, prices, capacity and availability",
-    "description": "Set ticket and extra-product choices, prices, currencies, quantities and shared capacity groups.",
-    "label": "Prices and capacity"
-  },
-  {
-    "id": "seating",
-    "category": "tickets",
-    "slug": "seating-plan",
-    "title": "How to prepare a seating plan",
-    "seoTitle": "Seating plan: seats, products, prices and buyer checks",
-    "description": "Build the venue layout, assign products to seats and verify a particular seat and its price in the form.",
-    "label": "Seating plan"
-  },
-  {
-    "id": "ticket-design",
-    "category": "tickets",
-    "slug": "ticket-design",
-    "title": "How to design tickets and check the PDF",
-    "seoTitle": "Ticket design: templates, QR and PDF preview",
-    "description": "Choose a template, adjust information and artwork and verify QR readability and the generated PDF.",
-    "label": "Ticket design and PDF"
-  },
-  {
-    "id": "payments",
-    "category": "orders",
-    "slug": "payments",
-    "title": "How to prepare ticket payments",
-    "seoTitle": "Ticket payments: account, QR, deadlines and matching",
-    "description": "Check the receiving account, bank connection, payment references, deadlines and buyer instructions.",
-    "label": "Payment setup"
-  },
-  {
     "id": "orders",
     "category": "orders",
     "slug": "orders",
     "title": "How to manage orders and ticket delivery",
     "seoTitle": "Orders: payments, email repair and ticket delivery",
     "description": "Find orders, verify payment and email delivery, fix contact details and resend the appropriate current message.",
-    "label": "Orders and delivery"
+    "label": "Orders and delivery",
+    "workflow": "administration"
   },
   {
     "id": "check-in",
