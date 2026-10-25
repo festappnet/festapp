@@ -14,7 +14,8 @@ for(const locale of ['cs','en']) test(`self-contained ${locale} preview binds th
  t.after(()=>dom.window.close());
  await new Promise(resolve=>dom.window.addEventListener('load',resolve,{once:true}));
  const form=dom.window.document.querySelector('[data-embed-generator]');
- form.querySelector('input[type=url]').value=form.dataset.formOrigin+'/form/example';
+ const input=form.querySelector('input[type=url]');
+ input.value=new dom.window.URL(input.placeholder).origin+'/form/example';
  form.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
  assert.deepEqual(errors,[]);
  assert.equal(form.querySelector('[data-embed-output]').hidden,false);
