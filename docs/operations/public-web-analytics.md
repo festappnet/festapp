@@ -20,7 +20,7 @@ Cloudflare's [same-domain restriction](https://developers.cloudflare.com/web-ana
 | live.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=live.festapp.net&excludeBots=Yes) |
 | slunovrat.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=slunovrat.festapp.net&excludeBots=Yes) |
 | tickets.festapp.net | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=3335204bc4014e9c9e8d7568920650f8&host=tickets.festapp.net&excludeBots=Yes) |
-| vstupenky.online | 0.20.391+892; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=4b64cee2415d4110b11abc4d56013278&host=vstupenky.online&excludeBots=Yes) |
+| vstupenky.online | 0.20.392+893; collector POST 204 verified | [Web Analytics](https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits?siteTag~in=4b64cee2415d4110b11abc4d56013278&host=vstupenky.online&excludeBots=Yes) |
 
 Use the Referer breakdown for source domains such as Google. Missing referrers cannot distinguish direct links from applications that hide their source. The provider does not report search terms or UTM campaigns.
 
@@ -33,6 +33,8 @@ Browser checks verified one beacon, `spa: false`, and successful collector POST 
 Velehrad follow-up: its previous zone-backed collector returned 404. A dedicated manual site for `app.absolventskyvelehrad.cz` now owns its public-page measurement, using the official external Cloudflare collector. The original parent-zone analytics setup is preserved. The Velehrad-only follow-up is deployed at `0.20.392+893` from source `6d6a72f79c52df9a73ab5150ef42e92f37152de0` (tenant `4e1f9cafb4731035b73c4b2c8e4ed8d9c23e6d21`). Its three coherent live probes passed. The unmodified deployed public form sent a successful POST 204; a real navigation to the scanner loaded zero beacons and the payload contained no synthetic private code. The dedicated property also contains stored Czech visits. The other eight production tenants were not changed in this follow-up.
 
 ## Organization Edit shortcuts
+
+The shortcuts were released only to vstupenky.online at `0.20.392+893`, tenant `1e81b5f5e40428def75df5365fe56c8378ffaab9`, from main `a5056dd0ba60c86893899b3fb9a04b6c1823a0e6`; all three coherent production probes passed.
 
 Organization 3 on vstupenky.online exposes three always-visible report groups: Plesy, vstupenky.online, and Festapp + Absolventský Velehrad. Each group has separate links to Cloudflare Visits (including referring sites) and Page views (including popular paths). The combined group selects both site tags without a hostname filter; the two ticketing reports pin their own exact hostname. Titles and action labels wrap without ellipsis on narrow screens.
 
