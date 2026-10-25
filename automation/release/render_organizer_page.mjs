@@ -60,7 +60,7 @@ const tokens = {
   HOME_LABEL: projection.ui.home, GUIDE_URL: projection.footerLinks?.find(link=>link.href.startsWith('https:'))?.href ?? '/',
   PRIVACY_URL: value('PRIVACY_URL'), TERMS_URL: value('TERMS_URL'), SUPPORT_URL: value('SUPPORT_URL'),
 };
-const template = expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8')).replace('{{DEMO_SECTIONS}}','{{DEMO_SECTIONS}}{{RELATED_LINKS}}');
+const template = expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8'));
 const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
 const primary = /^#[0-9a-f]{6}$/i.test(value('THEME_SEED_3')) ? value('THEME_SEED_3') : '#4465a6';
 const socialImage = new URL(seo.image, context.origin).href;

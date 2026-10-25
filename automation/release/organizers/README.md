@@ -108,14 +108,16 @@ ordinary application startup still uses the saved preference.
 
 ## Organizer guide and seating feature
 
-The ball-sales URL is a practical seven-chapter organizer guide, with linked
-application help and a printable pre-sale checklist. Checklist state stays in
-the current document; it does not create orders or store personal data. Print
-styles isolate the checklist. The seating URL explains the feature with real
-layout templates and existing editor/buyer clips. Native radio inputs select
-examples; without JavaScript all examples remain readable. Both compositions
-reuse the original typography, palette and vector ticket/hall geometry.
+The ball-sales URL is a concise illustrated overview with direct links to
+application help. Following user feedback, the checklist, progress counter,
+printing controls, long chapters and sidebar were removed. Four short sections
+cover seating, offer/payments, tickets/sharing and entry. Existing product
+screenshots show the actual interface.
 
-`topic_pages.mjs` owns these distinct compositions, while shared chrome and
-application help retain their existing owners. `topic_tools.js` only enhances
-the checklist and examples. The homepage remains the service overview.
+The seating URL explains the feature with real layout templates and existing
+editor/buyer clips. Native radio inputs select examples; without JavaScript
+all examples remain readable. `topic_tools.js` only enhances these examples.
+
+Both pages are linked in the shared marketing/help footer and the help index.
+The homepage's seating demonstration links directly to the feature detail.
+The homepage remains the service overview; application help owns exact steps.

@@ -18,8 +18,8 @@ export function resolvePages(pages, origin) {
       for (const key of ['heading','intro','faqHeading']) if (!page[key]?.trim()) throw new Error(`Page requires ${key}`);
       if (!page.faq?.length) throw new Error('Topic needs questions');
       if (page.guide) {
-        if (!page.guide.chapters?.length || !page.guide.checklist?.items?.length) throw new Error('Guide requires chapters and checklist');
-        const anchors = [...page.guide.chapters.map(chapter=>chapter.id),page.guide.checklist.id,'otazky'];
+        if (!page.guide.chapters?.length || !page.guide.action?.href) throw new Error('Guide requires chapters and action');
+        const anchors = [...page.guide.chapters.map(chapter=>chapter.id),'otazky'];
         if (new Set(anchors).size !== anchors.length || anchors.some(id=>!(/^[a-z]+(?:-[a-z]+)*$/).test(id))) throw new Error('Invalid guide chapter anchors');
       } else if (!page.stepsHeading || !page.steps?.length) throw new Error('Feature needs preparation steps');
     }
