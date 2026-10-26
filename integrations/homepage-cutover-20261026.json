@@ -1,0 +1,51 @@
+{
+  "state": "SOURCE_CUTOVER_VERIFIED_PACKAGES_PREPARED",
+  "canonical": "https://vstupenky.online/",
+  "tests": {
+    "passed": 48,
+    "command": "node --test automation/tests/pwa_manifest.test.mjs automation/tests/pwa_offline.test.mjs automation/tests/public_seo.test.mjs automation/tests/public_occasion_scope.test.mjs automation/tests/organizer_page.test.mjs"
+  },
+  "packages": {
+    "wordpress": {
+      "version": "1.0.2",
+      "sha256": "4ead42b6bcf5d88952ae7b0555d7cc6202b0c81a98755110c97d699ebe2482b4",
+      "changes": [
+        "vstupenky-online/blocks/ticket-form/block.json",
+        "vstupenky-online/languages/vstupenky-online-cs_CZ.mo",
+        "vstupenky-online/languages/vstupenky-online-cs_CZ.po",
+        "vstupenky-online/languages/vstupenky-online.pot",
+        "vstupenky-online/readme.txt",
+        "vstupenky-online/vstupenky-online.php"
+      ],
+      "runtime_unchanged": true,
+      "publication": "not performed; previously released 1.0.1 artifacts remain immutable until normal release gates",
+      "metadata_note": "Original1.0.1 changelog preserved;1.0.2 adds canonical homepage entry."
+    },
+    "joomla": {
+      "version": "1.0.2",
+      "sha256": "4263a7115eb62e3c4de52ffe1ee10b97ff6355270488a1128b2c16a408c8331b",
+      "changes": [
+        "language/cs-CZ/mod_vstupenky_online.ini",
+        "language/cs-CZ/mod_vstupenky_online.sys.ini",
+        "language/en-GB/mod_vstupenky_online.ini",
+        "language/en-GB/mod_vstupenky_online.sys.ini",
+        "mod_vstupenky_online.xml"
+      ],
+      "runtime_unchanged": true,
+      "publication": "not performed; previously released 1.0.1 artifacts remain immutable until normal release gates"
+    }
+  },
+  "live_redirects": [
+    {
+      "path": "/pro-poradatele",
+      "status": 308,
+      "location": "https://vstupenky.online/"
+    },
+    {
+      "path": "/pro-poradatele/?utm_source=canonical-check",
+      "status": 308,
+      "location": "https://vstupenky.online/?utm_source=canonical-check"
+    }
+  ],
+  "review": "Independent critic PASS for source publication; new package publication remains gated."
+}

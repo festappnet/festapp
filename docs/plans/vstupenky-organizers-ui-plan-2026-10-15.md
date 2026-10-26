@@ -1,3 +1,5 @@
+> Historický plán. Veřejnou prezentaci služby dnes vlastní homepage `/`; pro aktuální směrování platí `automation/release/organizers/README.md`. Tento dokument není zadání k obnově původní samostatné stránky.
+
 # Stránka pro pořadatele a dokončení katalogu
 
 Datum: 2026-10-15. Stav: implementováno lokálně, bez publikace.

@@ -1,5 +1,9 @@
 # Joomla vstupenky.online - readiness 2026-10-26
 
+## Připravená oprava kanonického odkazu 1.0.2
+
+Nový zdrojový balíček 1.0.2 používá výhradně homepage `https://vstupenky.online/`. Kontrola proti původně vydanému 1.0.1 potvrzuje změnu pouze URL a verze, nikoli runtime. Tento kandidát zatím nebyl nově publikován ani odeslán do katalogu; dřívější balíček a důkazy 1.0.1 zůstávají historicky platné. Před publikací je nutné splnit obvyklé release brány. Staré externí odkazy obsluhuje pouze přímé přesměrování na homepage.
+
 **Česká distribuce 1.0.1 je veřejně vydaná. Kritik ji schválil a všech pět CI kontrol prošlo. Podání do JED bylo přijato jako ID 17931 a čeká na redakční kontrolu.**
 Finální uživatelský soubor: [vstupenky.online.zip](dist/vstupenky.online.zip).
 Globální varianta 1.0.0 zůstává ověřovanou samostatnou distribucí, její veřejné

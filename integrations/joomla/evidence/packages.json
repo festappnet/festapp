@@ -1,8 +1,8 @@
 {
   "inputs": {
-    "products.json": "d90279a264b628350ad3e23049b59eab8f79089ff5a52cb5093c7a6b150d862c",
+    "products.json": "68f172bd55a77fa8b8bebcc61f4cfb4908046c5e85ed1d337dc11ac221c36afc",
     "translations.json": "17ac9e3021db6e7edc98c249df975805640105ec1c46078e9d8391093dfe9596",
-    "scripts/build.py": "082dfb1a40ff8fda54c5a355f1908a9dcc07d3d4cf0a172563d1dc6ed7cc20c9",
+    "scripts/build.py": "7d10d4cfb4c7d1ad75b7d1a2c135872480621f160dca2a3b6e3cc6fc567daea4",
     "scripts/package.py": "5324c4d53057ed5c70fc2c854597b650884f38f567617f984dee61a2e8956c40",
     "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
     "shared/module.xml.in": "d2dd0abd1a2bc86b27f09daf939608d5d8b224b505e2810e56b71ec7d4c9d435",
@@ -13,16 +13,16 @@
     "shared/tmpl/default.php.in": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
   },
   "packages": {
-    "mod_vstupenky_online-1.0.1.zip": {
-      "sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
-      "immutable": "artifacts/sha256/8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f/mod_vstupenky_online-1.0.1.zip",
+    "mod_vstupenky_online-1.0.2.zip": {
+      "sha256": "4263a7115eb62e3c4de52ffe1ee10b97ff6355270488a1128b2c16a408c8331b",
+      "immutable": "artifacts/sha256/4263a7115eb62e3c4de52ffe1ee10b97ff6355270488a1128b2c16a408c8331b/mod_vstupenky_online-1.0.2.zip",
       "files": {
         "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-        "language/cs-CZ/mod_vstupenky_online.ini": "f801063b2ece071a986fcaf7c6c3dd3957993b03f2ff9219d305503f66b225a9",
-        "language/cs-CZ/mod_vstupenky_online.sys.ini": "f801063b2ece071a986fcaf7c6c3dd3957993b03f2ff9219d305503f66b225a9",
-        "language/en-GB/mod_vstupenky_online.ini": "d93ccc933ed42913a2893db67c201b2ffb691a6e4d5772278b33d40665e0801c",
-        "language/en-GB/mod_vstupenky_online.sys.ini": "d93ccc933ed42913a2893db67c201b2ffb691a6e4d5772278b33d40665e0801c",
-        "mod_vstupenky_online.xml": "bda5594e693f9070c0b02a5edb8b94d2ea54732c478790e01d7ac8fb018be80a",
+        "language/cs-CZ/mod_vstupenky_online.ini": "4900ae3b7c7259e82267f2ea3f9b2505f3254cc6c6c3cdc1ce225becd6e117ea",
+        "language/cs-CZ/mod_vstupenky_online.sys.ini": "4900ae3b7c7259e82267f2ea3f9b2505f3254cc6c6c3cdc1ce225becd6e117ea",
+        "language/en-GB/mod_vstupenky_online.ini": "ad9590f994e027dd01c434baa4cd4f17e38b5a613bdcb6410e24d42560af99d9",
+        "language/en-GB/mod_vstupenky_online.sys.ini": "ad9590f994e027dd01c434baa4cd4f17e38b5a613bdcb6410e24d42560af99d9",
+        "mod_vstupenky_online.xml": "7e7e345521903b71d5ae95561f486698b507ed3850c0058036aa007fc7396301",
         "services/provider.php": "8c5c9053d2add1b6931fc05ef7d7e82886679e3ecc91ccbfcf0acbf257f5a961",
         "src/Dispatcher/Dispatcher.php": "555a9edaf64346f770c276a9797cfce1215dd0a385cab1c6024f3ccb222d56a9",
         "src/Helper/EmbedHelper.php": "5a545aa884a8dcb36442bfb286d8a01037f8e010b24d4ab5850a06d486058b91",

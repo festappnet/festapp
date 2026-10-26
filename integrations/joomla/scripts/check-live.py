@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 origin = 'https://vstupenky.online'
 agent = 'Festapp-Joomla-Release-Check/1.0 (+https://github.com/festappnet/festapp)'
-expected = {'/login':None, '/terms/':'Poskytovatel systému', '/privacy/':'Kdo odpovídá za vaše údaje', '/privacy/choices/':None, '/support/':'info@festapp.net', '/pro-poradatele':None, '/embed.js':'data-festapp-embed'}
+expected = {'/login':None, '/terms/':'Poskytovatel systému', '/privacy/':'Kdo odpovídá za vaše údaje', '/privacy/choices/':None, '/support/':'info@festapp.net', '/':None, '/embed.js':'data-festapp-embed'}
 cases = []
 for path, marker in expected.items():
     request = urllib.request.Request(origin + path, headers={'User-Agent':agent})

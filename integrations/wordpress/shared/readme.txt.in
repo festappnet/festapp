@@ -80,8 +80,7 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
-= @@VERSION@@ =
-* Clearly identify the WordPress appearance option as a local override of the app appearance.
+@@CHANGELOG@@
 
 == Upgrade Notice ==
 

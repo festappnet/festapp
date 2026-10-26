@@ -13,6 +13,8 @@ FILES={'plugin.php.in':'{slug}.php','embed.php.in':'includes/embed.php','admin.p
 
 def replace(source,p):
  values={k.upper():str(v) for k,v in p.items()}
+ values['OFFER_URL']=p['origin'].rstrip('/')+'/'
+ values['CHANGELOG']=p.get('changelog', '= '+p['version']+' =\n* Clearly identify the WordPress appearance option as a local override of the app appearance.')
  for key,value in values.items():source=source.replace('@@'+key+'@@',value)
  if re.search(r'@@[A-Z_]+@@',source):raise ValueError('Unresolved product token')
  return source

@@ -8,9 +8,9 @@
     "dev_constant": "VSTUPENKY_ONLINE_DEV_ORIGIN",
     "origin": "https://vstupenky.online",
     "login_url": "https://vstupenky.online/login",
-    "offer_url": "https://vstupenky.online/pro-poradatele",
-    "version": "1.0.1",
-    "market": "Czech"
+    "version": "1.0.2",
+    "market": "Czech",
+    "changelog": "= 1.0.2 =\n* Link the service offer directly to the canonical homepage.\n\n= 1.0.1 =\n* Clearly identify the WordPress appearance option as a local override of the app appearance."
   },
   {
     "slug": "festapp-tickets",
@@ -21,7 +21,6 @@
     "dev_constant": "FESTAPP_TICKETS_DEV_ORIGIN",
     "origin": "https://tickets.festapp.net",
     "login_url": "https://tickets.festapp.net/login",
-    "offer_url": "https://tickets.festapp.net/",
     "version": "1.0.0",
     "market": "international"
   }

@@ -4,8 +4,7 @@
     "name": "vstupenky.online",
     "namespace": "VstupenkyOnline",
     "origin": "https://vstupenky.online",
-    "offer": "https://vstupenky.online/pro-poradatele",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "update_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml"
   },
   {
@@ -13,7 +12,6 @@
     "name": "Festapp Tickets",
     "namespace": "FestappTickets",
     "origin": "https://tickets.festapp.net",
-    "offer": "https://tickets.festapp.net/",
     "version": "1.0.0"
   }
 ]

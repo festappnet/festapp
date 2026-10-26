@@ -171,7 +171,6 @@ try {
       if (url === fontUrl) return cachedFont.clone();
       if (url.includes('/flutter?pwa-cache=1')) return cachedShell.clone();
       if (url.includes('/webclient?pwa-cache=1')) return cachedWebClient.clone();
-      if (url === '/pro-poradatele') return new Response('<html>organizers</html>');
       if (url === '/privacy/') return cachedPrivacy.clone();
       if (url.includes('/assets/translation.json')) return new Response('{}');
       if (cachedMarketingModule && url.includes('/web-assets/index.js')) {

@@ -37,7 +37,12 @@ async function workerFor(supported, dir, origin = 'https://tenant.invalid') {
   const config = path.join(dir, 'project.conf');
   writeFileSync(file, template);
   writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=${new URL(origin).hostname}\nWEB_LINK=${origin}\nWEB_ORGANIZER_LANDING_ENABLED=${origin === "https://vstupenky.online"}\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\nPRIVACY_URL=${origin}/privacy/\nTERMS_URL=${origin}/terms/\nSUPPORT_URL=${origin}/support/\n`);
-  for (const page of publicManifest(resolveContext(readConfig(config))).pages) {
+  const marketing = publicManifest(resolveContext(readConfig(config)));
+  writeFileSync(path.join(dir, 'organizer-pages.json'), JSON.stringify(marketing));
+  for (const feed of marketing.feeds ?? []) {
+    writeFileSync(path.join(dir, feed.replace(/^\//, '')), JSON.stringify({schemaVersion: 1, items: []}));
+  }
+  for (const page of marketing.pages) {
     const asset = path.join(dir, page.asset.replace(/^\//,''));
     mkdirSync(path.dirname(asset), {recursive:true}); writeFileSync(asset, '<h1>Marketing fixture</h1>');
   }

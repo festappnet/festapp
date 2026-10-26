@@ -22,7 +22,7 @@ def build():
         update_servers = ''
         if product.get('update_url'):
             update_servers = '  <updateservers><server type="extension" priority="1" name="' + escape(product['name'], {'"': '&quot;'}) + '">' + escape(product['update_url']) + '</server></updateservers>\n'
-        replacements = {**product, 'key': product['element'].upper(), 'update_servers': update_servers}
+        replacements = {**product, 'offer': product['origin'].rstrip('/') + '/', 'key': product['element'].upper(), 'update_servers': update_servers}
         def expand(value):
             for key, replacement in replacements.items():
                 value = value.replace('@@' + key.upper() + '@@', replacement)

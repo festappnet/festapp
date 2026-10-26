@@ -1,5 +1,9 @@
 # vstupenky.online - kontrola publikovatelnosti
 
+## Připravená oprava kanonického odkazu 1.0.2
+
+Nový zdrojový balíček 1.0.2 používá výhradně homepage `https://vstupenky.online/`. Kontrola proti původně vydanému 1.0.1 potvrzuje změnu pouze URL, verze a changelogu, nikoli runtime. Tento kandidát zatím nebyl nově publikován ani odeslán do katalogu; dřívější balíček a důkazy 1.0.1 zůstávají historicky platné. Před publikací je nutné splnit obvyklé release brány. Staré externí odkazy obsluhuje pouze přímé přesměrování na homepage.
+
 **Podáno 2026-10-24:** vstupenky.online 1.0.0, předběžný slug
 `vstupenky-online`. Automatická kontrola WordPress.org: **Pass**.
 Ruční kontrola: **Awaiting Review**. Plugin ještě není veřejně v katalogu.

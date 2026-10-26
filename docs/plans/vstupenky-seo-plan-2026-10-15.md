@@ -1,3 +1,5 @@
+> Historický plán. Veřejnou prezentaci služby dnes vlastní homepage `/`; pro aktuální směrování platí `automation/release/organizers/README.md`. Tento dokument není zadání k obnově původní samostatné stránky.
+
 # SEO vstupenky.online: technická konsolidace a obsah pro pořadatele
 
 Datum: 2026-10-15. Stav: lokální realizace T1-T3/T5 a U1-U2 dokončena na základě následného pokynu uživatele; nic nenasazeno. Podrobnosti a omezení: [realizační záznam](vstupenky-seo-implementation-2026-10-15.md).
