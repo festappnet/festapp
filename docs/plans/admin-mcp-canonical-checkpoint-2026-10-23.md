@@ -1436,3 +1436,30 @@ Bezprostřední publication preflight znovu fetchoval main `3988bb7cb` a review
 větev #617 `859ab98ad`; oba jsou předky navrženého headu. Etapa 5 se publikuje
 fast-forward do existujícího #617, nikoli novým stacked PR. Stav main zůstává
 review-required. Zdrojová implementace a ověření se po tomto fetchi nezměnily.
+
+
+## Production rollout 2026-10-27
+
+Etapy 3-5 jsou nasazené pro **prod/festapptickets / vstupenky.online**, verze
+**0.20.427+929**. Kód main `00c1da5cef9bb1e949bf230f270f221b1b9f69d8`,
+tenant `bfbc1c3c1740efe34949b688a914808f61bb9252`. PR #617 a #618 jsou
+sloučené; #619 opravil balení sdíleného JSON kontraktu do skutečného MCP obrazu.
+Použité admin výjimky uživatel výslovně povolil jen pro tento rollout, ochrana
+main se nezměnila. Další etapa 6 nemá automatické oprávnění k admin merge ani
+produkčnímu nasazení.
+
+Proběhla čerstvá šifrovaná pgBackRest záloha, šest atomických SQL+ledger migrací
+(170000,190000,200000,210000,220000,230000 z 20261026), ověření přesných hashů,
+aktivace Edge balíčku a MCP obrazu z uvedeného main. Původní 150000 migrace
+zůstala beze změny. Katalogový ekvivalent ticket write readiness je true;
+žádná produkční testovací identita nebo obchodní operace se nevytvářela.
+MCP health/discovery=200 a neautentizované POST=401; klíče, konfigurace a
+stav připojení se zachovaly. Web se sestavil a nasadil lokálně a prošel třemi
+souvislými kontrolami verzí/assetů/právních stránek. Další tenant ani Android
+se nenasazoval. Souběžný rozpracovaný ChatGPT pilot je oddělený.
+
+[Ověřený release receipt](../operations/releases/festapptickets-2026-10-27.json)
+obsahuje přesné hashe, image, bundle a Cloudflare preview ID. Čistý main a
+vybraný prod checkout byly zachované, původní rozpracované soubory zálohované.
+Hotovo zůstává **6/11 hlavních etap, orientačně 45 % podle velikosti**.
+Následuje **6 - lidé, role, skupiny a dobrovolníci**.

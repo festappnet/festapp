@@ -1,0 +1,151 @@
+{
+  "recordedAtUtc": "2026-10-26T23:22:05.619899+00:00",
+  "status": "deployed_verified",
+  "tenantId": "festapptickets",
+  "domain": "https://vstupenky.online",
+  "version": "0.20.427+929",
+  "codeMainSha": "00c1da5cef9bb1e949bf230f270f221b1b9f69d8",
+  "tenantSha": "bfbc1c3c1740efe34949b688a914808f61bb9252",
+  "previousTenantSha": "eaea5375e6d6487fd817e8c46102f0c5f6c78df4",
+  "previousVersion": "0.20.426+928",
+  "mergedPullRequests": [
+    617,
+    618,
+    619
+  ],
+  "workspaceSnapshotCommit": "b25b125fc4d0211a58deabedf22e91be8e95b7f3",
+  "scope": {
+    "backendOrigin": "https://api.festapp.net",
+    "organizationId": 3,
+    "activationGeneration": 1,
+    "otherTenantRollouts": false,
+    "androidPublication": false,
+    "unmergedConcurrentPilotIncluded": false
+  },
+  "mainProtection": {
+    "unchanged": true,
+    "adminException": "Explicitly authorized for necessary validated fixes during this deployment only; not standing authority for future stages"
+  },
+  "backup": {
+    "systemdService": "festapp-pgbackrest-backup.service",
+    "result": "success",
+    "exitStatus": 0,
+    "label": "20261025-031939F_20261026-225803D",
+    "stopUtc": "2026-10-26T22:58:39Z",
+    "archiveCheckPassed": true,
+    "encrypted": true
+  },
+  "database": {
+    "atomicBodyAndLedger": true,
+    "postgrestSchemaReload": true,
+    "payloadSha256": "fa31986f71e9baa97f6d8e82a1ec6efe645af6c08b25aaba8a5200a175f89776",
+    "payloadPreparedFromMain": "9b1e856f7cc8dfd1507a0c696db97e5e3c4f0a04",
+    "sameSourceDigestsVerifiedAgainstFinalMain": true,
+    "migrations": [
+      {
+        "file": "20261026170000_email_template_commands.sql",
+        "version": "20261026170000",
+        "name": "email_template_commands",
+        "sha256": "3b9fdfcef665c6de24370dcee3621b591f8047bfe1d9def83b54001d96919115",
+        "statementsApplied": 44
+      },
+      {
+        "file": "20261026190000_form_authoring.sql",
+        "version": "20261026190000",
+        "name": "form_authoring",
+        "sha256": "26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa",
+        "statementsApplied": 216
+      },
+      {
+        "file": "20261026200000_form_authoring_settings.sql",
+        "version": "20261026200000",
+        "name": "form_authoring_settings",
+        "sha256": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc",
+        "statementsApplied": 23
+      },
+      {
+        "file": "20261026210000_form_administration_completion.sql",
+        "version": "20261026210000",
+        "name": "form_administration_completion",
+        "sha256": "86197e5b5a8d25ba49f60b5d54a99184734b7194e71def217e94afef2273bf62",
+        "statementsApplied": 80
+      },
+      {
+        "file": "20261026220000_occasion_unit_configuration.sql",
+        "version": "20261026220000",
+        "name": "occasion_unit_configuration",
+        "sha256": "b89786da1b5f6e78aa4e3eb3f7e15c44e1a3ff89e2d6330742abfa82e19d60df",
+        "statementsApplied": 60
+      },
+      {
+        "file": "20261026230000_notification_center_unread_snapshot.sql",
+        "version": "20261026230000",
+        "name": "notification_center_unread_snapshot",
+        "sha256": "27c74f26c8e61d53ec1ec8d51b26e58cbda6bf080990f0001ba6aa654d489b78",
+        "statementsApplied": 46
+      }
+    ],
+    "ledgerSourceHashesExact": true,
+    "catalogEquivalentTicketWriteReady": true,
+    "readinessMethod": "Exact catalog and ACL predicate from the canonical RPC, evaluated read-only without user_info or a fabricated authenticated user.",
+    "productionFixturesOrBusinessOperations": false
+  },
+  "edgeFunctions": {
+    "bundleId": "00c1da5cef9b-20261026T230423Z",
+    "sourceSha": "00c1da5cef9bb1e949bf230f270f221b1b9f69d8",
+    "archiveSha256": "31b9d57f7e63e275bf8caec92e31484e5ad280344d720f57a0787d397054949e",
+    "runtime": "healthy",
+    "unauthenticatedCanaries": 401,
+    "priorBundleRetained": true
+  },
+  "mcp": {
+    "sourceSha": "00c1da5cef9bb1e949bf230f270f221b1b9f69d8",
+    "imageDigest": "sha256:c8f7fcb2a6e29086660c632c0fb29101f752b756bd2ede29e4922c0eba18f9b8",
+    "previousImageDigest": "sha256:de6b8b6fdaec9ef695a00ba5c1bcafb7f50e34492ab892ec53c073eabda94958",
+    "actualImageIsolatedSmokePassed": true,
+    "healthy": true,
+    "publicHealthAndDiscovery": 200,
+    "unauthenticatedMcp": 401,
+    "advertisedScopes": 32,
+    "protectedConfigurationUnchanged": true,
+    "issuerKeysAndDataMountsPreserved": true,
+    "consistentEncryptedStateBackup": true,
+    "routesDnsRegistryAndGrantsChanged": false
+  },
+  "web": {
+    "project": "vstupenkyonline",
+    "deploymentPreviewId": "aaafa189",
+    "deploymentPreviewUrl": "https://aaafa189.vstupenkyonline.pages.dev",
+    "build": "local canonical automation/cloudflare_build.sh",
+    "deploy": "automation/deploy_direct.sh --skip-build --wrangler-oauth",
+    "githubHostedDeployUsed": false,
+    "liveVerification": "official verify_web_deployment, three consecutive coherent version/build/asset/legal probes",
+    "liveVersion": "0.20.427+929",
+    "buildVerificationPassed": true,
+    "pwaBudgetPassed": true,
+    "buildJsChecksPassed": 100,
+    "generatedHelpLeavesRestoredAfterUpload": true,
+    "productionCheckoutClean": true
+  },
+  "checks": {
+    "combinedWebPassed": 755,
+    "combinedWebExistingSkips": 30,
+    "combinedContractTestsPassed": 27,
+    "targetedNotificationFlutterPassed": 22,
+    "realNotificationSqlFilesPassed": 2,
+    "mcpDockerCopyTreeImportSmokePassed": true,
+    "tenantDriftPassed": true
+  },
+  "protectedRuntimeEvidenceRef": "release-00c1da5-20261027",
+  "cleanup": {
+    "originalTrackedAndUntrackedChangesPreserved": true,
+    "privateBrowserArtifactsNotCommitted": true,
+    "taskOwnedMergedWorktreesRemoved": 3,
+    "concurrentPilotWorktreeUntouched": true
+  },
+  "limits": [
+    "No authenticated ChatGPT pilot connection or real customer/order/email/payment action was exercised by this release.",
+    "Historical stage evidence remains tied to its original source commit.",
+    "This receipt is assembled from verified component executor outputs; deploy_direct itself did not emit a receipt file."
+  ]
+}
