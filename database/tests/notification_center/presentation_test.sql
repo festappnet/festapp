@@ -41,5 +41,10 @@ BEGIN
  UPDATE public.form_fields SET data='{"max_tickets":"invalid legacy metadata"}' WHERE form=f;
  PERFORM public.notification_center_order_internal(oid,'order_created','legacy-metadata',NULL);
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),3::bigint,'legacy invalid metadata never breaks order publication');
+ result:=public.open_notification_center(org,oc);
+ PERFORM assert_eq((result->>'previousReadThrough')::bigint,0::bigint,'first open returns pre-ack watermark');
+ PERFORM assert_true((result->>'readThrough')::bigint>0,'first open acknowledges the snapshot');
+ result:=public.open_notification_center(org,oc);
+ PERFORM assert_eq((result->>'previousReadThrough')::bigint,(result->>'readThrough')::bigint,'second open does not label the acknowledged snapshot new');
 END $$;
 ROLLBACK;
