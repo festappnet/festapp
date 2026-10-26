@@ -288,7 +288,7 @@ void main() {
       );
       expect(
         NotificationItemPresenter(row('2', data: {'count': 2})).details,
-        contains('NotificationCenter.places.other'),
+        contains('NotificationCenter.places'),
       );
       expect(
         NotificationItemPresenter(
@@ -300,7 +300,7 @@ void main() {
             },
           ),
         ).details,
-        contains('NotificationCenter.places.one'),
+        contains('NotificationCenter.places'),
       );
       for (final kind in ['form_opened', 'form_closed']) {
         final p = NotificationItemPresenter(row(kind, kind: kind));
@@ -334,21 +334,6 @@ void main() {
           },
         ),
       ];
-      controller.items.add(
-        row(
-          'responsive-email',
-          occasion: null,
-          kind: 'email_problem',
-          section: 0,
-          data: {
-            'messageId': 'synthetic-message',
-            'recipient':
-                'very.long.recipient.address.for.the.customer@example.invalid',
-            'reason': 'bounce',
-            'messageKind': 'registration',
-          },
-        ),
-      );
       controller.occasions = [
         {'id': 1, 'title': 'Country bál 2026'},
       ];

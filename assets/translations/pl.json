@@ -2373,12 +2373,7 @@
       "transport_unavailable": "Usługa bankowa jest tymczasowo niedostępna",
       "stale_health": "Konto bankowe nie zostało sprawdzone na czas"
     },
-    "places": {
-      "one": "{count} miejsce",
-      "few": "{count} miejsca",
-      "many": "{count} miejsc",
-      "other": "{count} miejsca"
-    },
+    "places": "Liczba miejsc: {count}",
     "capacity": "Dostępne publicznie: {remaining} / {limit}",
     "heldForWaiting": "Zarezerwowane dla listy oczekujących: {count}",
     "needsAttention": "Wymaga uwagi",
