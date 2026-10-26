@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-25T18:50:48.845905+00:00",
+  "sourceHead": "5e913fd500c163d879132234ab2645553080cf56",
+  "site": "233dc4be-35f1-4187-93dd-5a3313c00ef6",
+  "environment": "Owned isolated headless Chromium; real Wix Studio native controls; Editor mode only",
+  "nativeActions": [
+    "Select original in Layers > More Actions > Duplicate",
+    "Save distinct public URL, title and inherit-style=false through actual settings panel",
+    "Delete duplicate via native Layers menu",
+    "Add Elements > App Widgets > vstupenky.online creates fresh instance",
+    "Delete fresh instance to restore original single-widget draft"
+  ],
+  "original": {
+    "url": "https://vstupenky.online/form/wix-qa-20261025",
+    "title": "Wix Studio QA - vstupenky",
+    "inheritStyle": "true"
+  },
+  "duplicateAfterSave": {
+    "url": "https://vstupenky.online/form/wix-qa-lifecycle-20261025",
+    "title": "Wix Studio QA - second widget",
+    "inheritStyle": "false"
+  },
+  "settingsStatus": "Uloženo. Formulář ověřte na zveřejněném webu.",
+  "originalUnchangedAfterSiblingSave": true,
+  "originalSurvivedSiblingDeletion": true,
+  "readdedWidgetAttributes": {
+    "form-url": null,
+    "form-title": null,
+    "inherit-style": null
+  },
+  "bothWidgetsMode": "Editor",
+  "checkoutFramesPerWidget": 0,
+  "helperScriptsPerWidget": 0,
+  "newCheckoutSubmissions": 0,
+  "published": false,
+  "cleanup": "PASS: after task-browser restart and reopening native Studio editor, exactly the original widget remained with its original URL/title/style",
+  "screenshot": "screenshots/studio-two-widgets-settings.png",
+  "limits": [
+    "Editor lifecycle only; does not prove two published checkout frames, live helper, scroll isolation or payment behavior",
+    "Alternate URL is validation-only and was never opened or published as a sales form",
+    "Native settings toolbar initially overlapped Wix header; scrolling/clicking visible edge opened panel"
+  ],
+  "coldReopenReadback": [
+    [
+      {
+        "url": "https://vstupenky.online/form/wix-qa-20261025",
+        "title": "Wix Studio QA - vstupenky",
+        "style": "true",
+        "mode": "Editor",
+        "checkoutFrames": 0,
+        "helpers": 0
+      }
+    ]
+  ],
+  "cleanupAutosaveRace": "Initial immediate reload preceded native autosave; removed reappearing blank instance again, requested native save, then confirmed single original after restarting owned browser",
+  "independentReview": "PASS: explicit Editor-only scope and incomplete published-interaction claims reviewed by wix_critic"
+}

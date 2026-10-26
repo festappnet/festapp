@@ -1,0 +1,21 @@
+{
+  "sandbox": true,
+  "orderId": 9,
+  "amountMinor": 9876,
+  "currency": "czk",
+  "status": "succeeded",
+  "threeDSecure": {
+    "authentication_flow": "challenge",
+    "electronic_commerce_indicator": "05",
+    "exemption_indicator": null,
+    "result": "authenticated",
+    "result_reason": null,
+    "transaction_id": "fff9e6a6-4169-4af3-b73c-3fa0e3112f68",
+    "version": "2.1.0"
+  },
+  "conversion": "split",
+  "sourceWaitlistOrder": 8,
+  "remainingWaitlisted": 1,
+  "newRegularPeople": 1,
+  "sourceHadNoPayment": true
+}

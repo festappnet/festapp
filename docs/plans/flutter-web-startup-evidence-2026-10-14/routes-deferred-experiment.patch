@@ -1,0 +1,42 @@
+--- a/lib/app_router.dart
++++ b/lib/app_router.dart
+@@ -44,7 +44,7 @@
+ // Keep web routes in one executable bundle. Separate deferred JS chunks can
+ // strand an already-installed PWA on AutoRoute's loading placeholder when a
+ // deployment replaces a chunk that the older runtime has not cached yet.
+-@AutoRouterConfig(replaceInRouteName: 'Page,Route', deferredLoading: false)
++@AutoRouterConfig(replaceInRouteName: 'Page,Route', deferredLoading: true)
+ class AppRouter extends RootStackRouter {
+   @override
+   DefaultRouteParser defaultRouteParser(
+--- a/lib/components/map/map_page.dart
++++ b/lib/components/map/map_page.dart
+@@ -96,7 +96,7 @@
+   const PathMapEditorMode(this.pathGroup);
+ }
+ 
+-@RoutePage()
++@RoutePage(deferredLoading: false)
+ class PublicMapPage extends StatelessWidget {
+   static const overviewDestination = 'overview';
+ 
+@@ -168,7 +168,7 @@
+   Widget build(BuildContext context) => const SizedBox.expand();
+ }
+ 
+-@RoutePage()
++@RoutePage(deferredLoading: false)
+ class MapEditorPage extends StatelessWidget {
+   final MapEditorMode mode;
+ 
+--- a/lib/components/news/news_form_page.dart
++++ b/lib/components/news/news_form_page.dart
+@@ -23,7 +23,7 @@
+ import 'package:fstapp/components/news/news_send_confirmation_dialog.dart';
+ import 'package:fstapp/components/news/news_notification_audience_selector.dart';
+ 
+-@RoutePage()
++@RoutePage(deferredLoading: false)
+ class NewsFormPage extends StatefulWidget {
+   static const ROUTE = "newsForm";
+   final Widget? editorOverride;

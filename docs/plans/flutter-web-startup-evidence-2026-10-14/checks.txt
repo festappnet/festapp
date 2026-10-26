@@ -1,0 +1,4 @@
+Original pwa_offline.test.mjs: fails at line 530 on stale npm-ci/build source regex; preceding service-worker runtime assertions passed.
+Temporary copy: only source regex adapted to current split npm ci / npm run build; full pwa_offline.test: ok. Repository test unchanged.
+node --test automation/tests/pwa_reconcile.test.mjs automation/tests/pwa_manifest.test.mjs: 2 passed.
+Three isolated Flutter --release --dump-info builds completed. Initial global-deferred attempt failed on deferred argument types MapEditorMode and NewsSubmission; those two page libraries kept eager in measured variant.

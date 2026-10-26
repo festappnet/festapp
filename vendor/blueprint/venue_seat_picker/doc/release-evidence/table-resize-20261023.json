@@ -1,0 +1,28 @@
+{
+  "productionSource": "694f5b61d399744cbabde8c58e8314b27807bd53",
+  "mergedUpstream": "143026c6c733662d417471a3eb448dee0b0d7252",
+  "portedFixes": [
+    "a821fe92f6314a6fd7894d954eb7b9136e2651b2",
+    "143026c6c733662d417471a3eb448dee0b0d7252"
+  ],
+  "documentVersion": 2,
+  "resourceProtocol": 2,
+  "wrapperVersion": "0.3.5",
+  "coreVersion": "0.2.2",
+  "validation": {
+    "coreTests": 286,
+    "widgetSuiteInitialPass": 323,
+    "staleFixtureFailuresCorrected": 7,
+    "correctedWidgetFilesPass": 35,
+    "intentionalWidgetSkips": 1,
+    "flutterAnalyze": "No issues found"
+  },
+  "compatibility": [
+    "Keep production v2 typed surfaces, attachments, canonical resource identities and renderer.",
+    "Retain side pins on compatible surfaces; reset free poses on reshaping and preserve reserved/locked seat guards.",
+    "Grid editing retains its fixed-module path; rectangular and circular handles use anchored previews without a second reflow.",
+    "Mechanical lint fixes and explicit test crypto dependency restore the existing strict CI gate without disabling diagnostics.",
+    "Specific deprecated Flutter APIs remain intentional for the declared Flutter3.32 minimum."
+  ],
+  "archives": "Generated and verified after this source commit; artifact receipt records its exact SHA."
+}

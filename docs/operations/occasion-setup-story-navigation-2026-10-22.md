@@ -1,0 +1,11 @@
+# Story navigation and independent setup choices
+
+The user canceled event-type selection after the initial types/appearance release. The canonical workflow now asks Name, Dates, Appearance and the independent feature questions. The kind selector, context label and type-specific prerequisites are removed. Existing drafts saved at the retired kind question resume at Appearance; retired type metadata is discarded at draft normalization and finalization. No bulk event/draft rewrite is needed.
+
+Navigation displays only the active question label. Other questions collapse to status indicators. Desktop destinations remain clickable and keyboard accessible; narrow screens expose all destinations through the visible Questions menu with full-size targets. The track fits available width without horizontal scrolling. Large text uses the whole width for the active label. Completion derives from actual readiness rather than position.
+
+The requested UI/UX Pro Max skill informed the layout and accessibility decisions. A separate UI critic reviewed the implementation and mobile/desktop screenshots; its findings (menu discoverability, large-text width, numbered desktop targets and non-color status distinction) were incorporated. No material UX blockers remained.
+
+Validation: 49 targeted Flutter story/navigation/appearance/blueprint cases passed across the grouped run and focused navigation fix run. The initial navigation harness needed a descendant focus context and floating-point tolerance; production navigation had no overflow. Layout coverage includes 18 destinations at 320/375/812/1440px, keyboard activation, menu jumps, landscape and 2x text. Targeted Dart analysis has no errors. All 13 occasion_setup SQL scripts passed, including real finalization with stale regular-kind metadata while independent tickets and hall are enabled. The private type normalizer is removed by the forward migration 20261022051000; shared appearance validation and the existing authorized finalizer remain canonical.
+
+The source plan in docs/archive/plans is historical and marked as partly superseded by this decision. Existing gradient readers and PDF support remain in place; no new Edge bundle is needed for this follow-up.

@@ -1,0 +1,7 @@
+.vstupenky-online { width: 100%; }
+.vstupenky-online iframe { display: block; width: 100%; }
+.vstupenky-online a { text-underline-offset: .2em; }
+.vstupenky-online a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.vstupenky-online-editor { padding: 24px; border: 1px solid #757575; }
+.vstupenky-online-editor h3 { margin-top: 0; }
+.vstupenky-online-editor p { max-width: 70ch; }

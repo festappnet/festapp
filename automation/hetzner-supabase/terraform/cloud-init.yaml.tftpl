@@ -1,0 +1,38 @@
+#cloud-config
+hostname: ${hostname}
+manage_etc_hosts: true
+ssh_pwauth: false
+disable_root: false
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - fail2ban
+  - iproute2
+  - jq
+  - nodejs
+  - python3-yaml
+  - ripgrep
+  - unattended-upgrades
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-festapp-hardening.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin prohibit-password
+      X11Forwarding no
+  - path: /etc/sysctl.d/99-festapp-network.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      net.ipv4.conf.all.rp_filter=1
+      net.ipv4.conf.default.rp_filter=1
+      net.ipv4.tcp_syncookies=1
+runcmd:
+  - [systemctl, enable, --now, fail2ban]
+  - [systemctl, enable, --now, unattended-upgrades]
+  - [sysctl, --system]
+  - [systemctl, reload, ssh]

@@ -1,0 +1,29 @@
+{
+  "name": "festapp-image-worker",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit/ tests/integration/",
+    "test:unit": "vitest run tests/unit/",
+    "test:integration": "vitest run tests/integration/"
+  },
+  "dependencies": {
+    "aws4fetch": "^1.0.20",
+    "jose": "^6.2.13"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261024.1",
+    "@types/node": "^25.9.9",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.152.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "pnpm": "11.24.0"
+  }
+}

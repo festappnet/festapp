@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly EXPECTED_HOSTNAME="festapp-supabase-rehearsal-01"
+readonly COMPOSE_DIR="${FESTAPP_BACKUP_COMPOSE_DIR:-/opt/festapp-supabase/docker}"
+readonly CONFIG_FILE="${FESTAPP_BACKUP_CONFIG:-/etc/festapp-backup/r2.env}"
+readonly BACKUP_ROOT="${FESTAPP_BACKUP_ROOT:-/var/backups/festapp-supabase}"
+readonly EVIDENCE_ROOT="${FESTAPP_BACKUP_EVIDENCE_ROOT:-/var/lib/festapp-rehearsal-evidence}"
+readonly RETENTION_DAYS="${FESTAPP_BACKUP_RETENTION_DAYS:-14}"
+readonly WEEKLY_COPIES="${FESTAPP_BACKUP_WEEKLY_COPIES:-4}"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ASSET_FORMAT_FILE="/etc/festapp-backup/asset-format"
+
+fail() { echo "ERROR: $*" >&2; exit 1; }
+[[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
+  fail "run as root on the approved Festapp host"
+[[ -f "$CONFIG_FILE" && "$(stat -c '%U:%G' "$CONFIG_FILE")" == "root:root" &&
+   "$(stat -c '%a' "$CONFIG_FILE")" == "600" ]] || fail "backup config must be root-owned mode 0600"
+[[ "$RETENTION_DAYS" =~ ^[0-9]+$ && "$RETENTION_DAYS" -ge 7 ]] || fail "retention must be at least 7 days"
+[[ "$WEEKLY_COPIES" =~ ^[0-9]+$ && "$WEEKLY_COPIES" -ge 4 ]] || fail "retain at least four weekly copies"
+for dependency in age docker flock jq python3 rclone sha256sum tar; do
+  command -v "$dependency" >/dev/null || fail "$dependency is required"
+done
+
+# This file is root-only and contains simple generated KEY=value values.
+# shellcheck disable=SC1090
+set -a; source "$CONFIG_FILE"; set +a
+for name in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ACCOUNT_ID R2_BUCKET R2_ENDPOINT AGE_RECIPIENT; do
+  [[ -n "${!name:-}" ]] || fail "$name is missing from the backup config"
+done
+[[ "$AGE_RECIPIENT" == age1* ]] || fail "AGE_RECIPIENT is invalid"
+[[ "$R2_BUCKET" == "festapp-supabase-backups" ]] || fail "unexpected backup bucket"
+
+install -d -o root -g root -m 0700 "$BACKUP_ROOT"
+exec 9>"$BACKUP_ROOT/.lock"
+flock -n 9 || fail "another scheduled backup is active"
+readonly RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+readonly RUN_DIR="$BACKUP_ROOT/$RUN_ID"
+readonly EVIDENCE_DIR="$EVIDENCE_ROOT/scheduled-backup-$RUN_ID"
+readonly RCLONE_CONFIG="/run/festapp-backup-rclone-$RUN_ID.conf"
+[[ ! -e "$RUN_DIR" && ! -e "$EVIDENCE_DIR" ]] || fail "backup run already exists"
+install -d -o root -g root -m 0700 "$RUN_DIR" "$EVIDENCE_DIR"
+cleanup() { rm -f "$RCLONE_CONFIG"; }
+trap cleanup EXIT
+umask 077
+cat >"$RCLONE_CONFIG" <<EOF
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = $AWS_ACCESS_KEY_ID
+secret_access_key = $AWS_SECRET_ACCESS_KEY
+endpoint = $R2_ENDPOINT
+no_check_bucket = true
+EOF
+
+readonly DATABASE="$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' "$COMPOSE_DIR/.env")"
+[[ "$DATABASE" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || fail "runtime database is invalid"
+cd "$COMPOSE_DIR"
+asset_format=1
+if [[ -e "$ASSET_FORMAT_FILE" ]]; then
+  [[ "$(stat -c '%U:%G:%a' "$ASSET_FORMAT_FILE")" == "root:root:600" &&
+     "$(cat "$ASSET_FORMAT_FILE")" == "2" ]] || fail "invalid canonical asset backup activation"
+  [[ -f /etc/festapp-backup/images.env ]] || fail "canonical asset reader is required"
+  [[ "$(stat -c '%U:%G:%a' /etc/festapp-assets/orphan-custody.json)" == "root:root:600" ]] || fail "private orphan provenance is required"
+  inventory_sha="$(docker compose exec -T db psql -X -U postgres -d "$DATABASE" -Atqv ON_ERROR_STOP=1 \
+    -c 'BEGIN READ ONLY; SELECT inventory_sha256 FROM public.canonical_asset_cutover WHERE singleton; COMMIT;')"
+  # Reference preparation is committed atomically with this seal. Account
+  # cleanup stays fenced until the new backup and isolated restore succeed.
+  [[ "$inventory_sha" =~ ^[a-f0-9]{64}$ ]] || fail "canonical references are not prepared"
+  jq -e --arg sha "$inventory_sha" '.version==1 and .source_manifest_sha256==$sha and (.objects|type)=="array"' \
+    /etc/festapp-assets/orphan-custody.json >/dev/null || fail "orphan provenance belongs to another cutover"
+  asset_format=2
+fi
+database_capture_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+docker compose exec -T db pg_dump -U postgres -d "$DATABASE" -Fc |
+  age -r "$AGE_RECIPIENT" -o "$RUN_DIR/postgres.dump.age"
+database_capture_completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+docker compose exec -T db pg_dumpall -U postgres --globals-only |
+  age -r "$AGE_RECIPIENT" -o "$RUN_DIR/globals.sql.age"
+if [[ "$asset_format" == "1" ]]; then
+  COPYFILE_DISABLE=1 tar --format=pax --xattrs --xattrs-include='user.supabase.*' -C volumes/storage -cf - . |
+    age -r "$AGE_RECIPIENT" -o "$RUN_DIR/storage.tar.age"
+fi
+if [[ -f /etc/festapp-backup/images.env ]]; then
+  asset_capture_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  image_options=()
+  [[ "$asset_format" == "1" ]] || image_options+=(--asset-format)
+  python3 "$SCRIPT_DIR/create-r2-image-archive.py" --output "$RUN_DIR/r2-images.tar.age" "${image_options[@]}"
+  asset_capture_completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+fi
+bash "$SCRIPT_DIR/archive-runtime.sh" |
+  age -r "$AGE_RECIPIENT" -o "$RUN_DIR/runtime.tar.age"
+
+artifacts='{}'
+artifact_files=(postgres.dump.age globals.sql.age runtime.tar.age)
+[[ "$asset_format" != "1" ]] || artifact_files+=(storage.tar.age)
+[[ ! -f "$RUN_DIR/r2-images.tar.age" ]] || artifact_files+=(r2-images.tar.age)
+for file in "${artifact_files[@]}"; do
+  [[ -s "$RUN_DIR/$file" ]] || fail "empty encrypted artifact: $file"
+  artifacts="$(jq -c --arg name "$file" --arg sha "$(sha256sum "$RUN_DIR/$file" | awk '{print $1}')" \
+    --argjson bytes "$(stat -c %s "$RUN_DIR/$file")" '. + {($name):{sha256:$sha,bytes:$bytes}}' <<<"$artifacts")"
+done
+jq -n --arg run_id "$RUN_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg source_host "$EXPECTED_HOSTNAME" --arg source_database "$DATABASE" \
+  --arg bucket "$R2_BUCKET" --arg prefix "backups/$EXPECTED_HOSTNAME/$RUN_ID" \
+  --argjson retention_days "$RETENTION_DAYS" --argjson artifacts "$artifacts" \
+  --argjson weekly_copies "$WEEKLY_COPIES" --argjson asset_format "$asset_format" \
+  --arg db_started "$database_capture_started_at" --arg db_completed "$database_capture_completed_at" \
+  --arg assets_started "${asset_capture_started_at:-}" --arg assets_completed "${asset_capture_completed_at:-}" \
+  '{version:$asset_format,format:(if $asset_format==2 then "festapp-assets" else "legacy-storage" end),run_id:$run_id,created_at:$created_at,source_host:$source_host,
+    source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,storage_extended_attributes:($asset_format==1),
+    capture_points:{database:{started_at:$db_started,completed_at:$db_completed},assets:{started_at:$assets_started,completed_at:$assets_completed},atomic:false},
+    consistency:"online-operational-backup-not-promotion-rpo0",destination:{provider:"cloudflare-r2",
+    bucket:$bucket,prefix:$prefix,independent_failure_domain:true},retention_days:$retention_days,
+    weekly_copies:$weekly_copies,artifacts:$artifacts}' >"$RUN_DIR/manifest.json"
+
+readonly REMOTE="r2:$R2_BUCKET/backups/$EXPECTED_HOSTNAME/$RUN_ID"
+rclone --config "$RCLONE_CONFIG" copy "$RUN_DIR" "$REMOTE" --immutable --retries 3
+rclone --config "$RCLONE_CONFIG" check "$RUN_DIR" "$REMOTE" --size-only --one-way
+python3 "$SCRIPT_DIR/prune-online-backups.py" --apply --config "$CONFIG_FILE" \
+  --evidence-dir "$EVIDENCE_DIR" --daily-days "$RETENTION_DAYS" --weekly-copies "$WEEKLY_COPIES"
+jq --arg uploaded_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '. + {uploaded_at:$uploaded_at,off_host_verified:true,production_cutover_authorized:false}' \
+  "$RUN_DIR/manifest.json" >"$EVIDENCE_DIR/result.json"
+chmod 0600 "$RUN_DIR"/* "$EVIDENCE_DIR/result.json"
+find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +2 -exec rm -rf -- {} +
+echo "Encrypted online backup uploaded and verified: $RUN_ID"

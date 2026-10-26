@@ -1,0 +1,51 @@
+{
+  "inputs": {
+    "products.json": "d90279a264b628350ad3e23049b59eab8f79089ff5a52cb5093c7a6b150d862c",
+    "translations.json": "17ac9e3021db6e7edc98c249df975805640105ec1c46078e9d8391093dfe9596",
+    "scripts/build.py": "082dfb1a40ff8fda54c5a355f1908a9dcc07d3d4cf0a172563d1dc6ed7cc20c9",
+    "scripts/package.py": "5324c4d53057ed5c70fc2c854597b650884f38f567617f984dee61a2e8956c40",
+    "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+    "shared/module.xml.in": "d2dd0abd1a2bc86b27f09daf939608d5d8b224b505e2810e56b71ec7d4c9d435",
+    "shared/services/provider.php.in": "94d8d25286d8aeffb1a865000108e2edf48ca5dee93f489e78f3cc7b9be1c146",
+    "shared/src/Dispatcher/Dispatcher.php.in": "e85bc16a09d6c0b30a264aaa4ac928bac3137780f6ab42f3d90ee6ce8d7abe15",
+    "shared/src/Helper/EmbedHelper.php.in": "78807534be8a8145fce0d74260decf73fac3d713ebc612a74dcfb7fcbfa26a2f",
+    "shared/src/Rule/PublicformRule.php.in": "5228d2a44cec2dfe88dedb61bd02da5a3e2996d5b542deec5b8a31078ccf9cb1",
+    "shared/tmpl/default.php.in": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
+  },
+  "packages": {
+    "mod_vstupenky_online-1.0.1.zip": {
+      "sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+      "immutable": "artifacts/sha256/8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f/mod_vstupenky_online-1.0.1.zip",
+      "files": {
+        "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+        "language/cs-CZ/mod_vstupenky_online.ini": "f801063b2ece071a986fcaf7c6c3dd3957993b03f2ff9219d305503f66b225a9",
+        "language/cs-CZ/mod_vstupenky_online.sys.ini": "f801063b2ece071a986fcaf7c6c3dd3957993b03f2ff9219d305503f66b225a9",
+        "language/en-GB/mod_vstupenky_online.ini": "d93ccc933ed42913a2893db67c201b2ffb691a6e4d5772278b33d40665e0801c",
+        "language/en-GB/mod_vstupenky_online.sys.ini": "d93ccc933ed42913a2893db67c201b2ffb691a6e4d5772278b33d40665e0801c",
+        "mod_vstupenky_online.xml": "bda5594e693f9070c0b02a5edb8b94d2ea54732c478790e01d7ac8fb018be80a",
+        "services/provider.php": "8c5c9053d2add1b6931fc05ef7d7e82886679e3ecc91ccbfcf0acbf257f5a961",
+        "src/Dispatcher/Dispatcher.php": "555a9edaf64346f770c276a9797cfce1215dd0a385cab1c6024f3ccb222d56a9",
+        "src/Helper/EmbedHelper.php": "5a545aa884a8dcb36442bfb286d8a01037f8e010b24d4ab5850a06d486058b91",
+        "src/Rule/PublicformRule.php": "fe7d5a543cb1a4ac19a6da7d8deb4f53b53b6304b3a0536ae48e324965a5ad7d",
+        "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
+      }
+    },
+    "mod_festapp_tickets-1.0.0.zip": {
+      "sha256": "86ea2577968adc093ccba88ac7a7f41c0864925b15620bc73484cd1e0b66c266",
+      "immutable": "artifacts/sha256/86ea2577968adc093ccba88ac7a7f41c0864925b15620bc73484cd1e0b66c266/mod_festapp_tickets-1.0.0.zip",
+      "files": {
+        "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+        "language/cs-CZ/mod_festapp_tickets.ini": "b282caf55e0b54dd62a7efb32c5c4024a26bb04de41f30d5741874dc919f5ee2",
+        "language/cs-CZ/mod_festapp_tickets.sys.ini": "b282caf55e0b54dd62a7efb32c5c4024a26bb04de41f30d5741874dc919f5ee2",
+        "language/en-GB/mod_festapp_tickets.ini": "4e7c16d5e926c9fc2b29387d74c4374a35d25b9f3177e74c858606f03811e6e9",
+        "language/en-GB/mod_festapp_tickets.sys.ini": "4e7c16d5e926c9fc2b29387d74c4374a35d25b9f3177e74c858606f03811e6e9",
+        "mod_festapp_tickets.xml": "3e5b53413559c80ba3e10d837ae46de96dbf0aa9a4b28c0d1ae0da8320035a81",
+        "services/provider.php": "b70209d465a990f39c2c2845536e4f1b75c87019a37b44768396b20cec0fac25",
+        "src/Dispatcher/Dispatcher.php": "d38e852aa0746b3b5d3424b3f9658ed66147d61ade346913696047a40264276d",
+        "src/Helper/EmbedHelper.php": "cff59050837d03642f526ca75ee5cc6c3e50d941bfa3cb2a87506f8bcddfd31c",
+        "src/Rule/PublicformRule.php": "a7ea6a4be94cff894c245c59912f19636363d8f11e30503bb1584a411775dd98",
+        "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
+      }
+    }
+  }
+}

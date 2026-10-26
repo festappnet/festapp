@@ -1,0 +1,574 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
+import 'package:fstapp/components/scan/scan_strings.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/eshop/models/order_model.dart';
+import 'package:fstapp/components/eshop/models/ticket_model.dart';
+
+import 'package:fstapp/components/users/user_info_model.dart';
+import 'package:fstapp/components/users/db_users.dart';
+import 'package:fstapp/components/eshop/db_tickets.dart';
+import 'package:fstapp/services/app_logger.dart';
+import 'package:fstapp/services/dialog_helper.dart';
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:fstapp/services/vibrate_service.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/features/feature.dart';
+
+import 'scan_result_display.dart';
+import 'ticket_search_dialog.dart';
+import 'user_search_dialog.dart';
+
+enum ScanState { valid, invalid, used, nothing, ordered, notFound }
+
+@RoutePage()
+class ScanPage extends StatefulWidget {
+  static const ROUTE = "scan";
+
+  final String? scanCode;
+  ScanPage({@pathParam this.scanCode, super.key});
+
+  @override
+  _ScanPageState createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<ScanPage> {
+  static const String _defaultResetPassword = "1";
+
+  TicketModel? _scannedObject;
+  ScanState _scanState = ScanState.nothing;
+
+  // To prevent multiple scans
+  String? rightNowScanned;
+  bool _showHelpText = true;
+  String? _scanCode;
+  String? _occasionTitle;
+  Map<String, String> _fieldMappings = {};
+  List<Feature> _features = [];
+  bool _canScanTicketsManually = false;
+  bool _startingCamera = false;
+
+  // Track if we just successfully used the ticket
+  bool _justConfirmed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanCode = widget.scanCode;
+    final ticketFeature = FeatureService.getFeatureDetails(
+      FeatureConstants.ticket,
+    ) as TicketFeature?;
+    if (ticketFeature?.canScanManually == true) {
+      _canScanTicketsManually = true;
+    }
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _showHelpText = false;
+        });
+      }
+    });
+  }
+
+  final MobileScannerController _mobileScannerController =
+      MobileScannerController(
+    formats: [BarcodeFormat.qrCode],
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    autoStart: !kIsWeb,
+  );
+
+  @override
+  void dispose() {
+    _mobileScannerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Future<void> didChangeDependencies() async {
+    super.didChangeDependencies();
+    if (_scanCode == null && context.routeData.hasPendingChildren) {
+      _scanCode = context.routeData.pendingChildren[0].params.getString(
+        "scanCode",
+      );
+    }
+
+    checkForCode();
+  }
+
+  Future<void> checkForCode() async {
+    if (kIsWeb) {
+      await LaunchUrlService.openExternalUrl(
+        '${AppConfig.webLink}/scan${_scanCode == null ? "" : "/${Uri.encodeComponent(_scanCode!)}"}',
+        inCurrentWindow: true,
+      );
+      return;
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    if (_scanCode == null) {
+      String? inputScanCode = await DialogHelper.showInputDialog(
+        context: context,
+        dialogTitle: ScanStrings.enterScanCode,
+        labelText: ScanStrings.scanCode,
+      );
+      if (inputScanCode != null && inputScanCode.isNotEmpty) {
+        _scanCode = inputScanCode;
+      }
+    }
+    if (_scanCode != null) {
+      _loadOccasionTitle();
+    }
+  }
+
+  Future<void> _loadOccasionTitle() async {
+    if (_scanCode == null) return;
+    try {
+      final occasionData = await DbTickets.getOccasionByScanCode(
+        _scanCode!,
+      );
+      if (occasionData != null && mounted) {
+        setState(() {
+          _occasionTitle = occasionData['title'];
+          _fieldMappings = Map<String, String>.from(
+            occasionData['scanner_field_mappings'] ?? const <String, String>{},
+          );
+          if (occasionData['features'] != null) {
+            _features = (occasionData['features'] as List)
+                .map((f) => Feature.fromJson(f))
+                .toList();
+            final ticketFeature = FeatureService.getFeatureDetails(
+              FeatureConstants.ticket,
+              features: _features,
+            ) as TicketFeature?;
+            _canScanTicketsManually = ticketFeature?.canScanManually ?? false;
+          }
+        });
+      }
+    } catch (e) {
+      AppLogger.error("Error loading occasion title: $e");
+    }
+  }
+
+  Widget buildScannedUserDetails(Color backgroundColor) {
+    return ScanResultDisplay(
+      scannedObject: _scannedObject,
+      scanState: _scanState,
+      features: _features,
+      fieldMappings: _fieldMappings,
+      showHelpText: _showHelpText,
+      backgroundColor: backgroundColor,
+      onConfirm: _confirmTicket,
+      onResetPassword: _resetPassword,
+      onDismissHelp: () {
+        setState(() {
+          _showHelpText = false;
+        });
+      },
+    );
+  }
+
+  Future<void> _startCamera() async {
+    if (_startingCamera) return;
+    setState(() {
+      _startingCamera = true;
+    });
+    try {
+      if (_mobileScannerController.value.isRunning) {
+        await _mobileScannerController.stop();
+      }
+      await _mobileScannerController.start();
+    } finally {
+      if (mounted) {
+        setState(() => _startingCamera = false);
+      }
+    }
+  }
+
+  Widget _buildCameraAction({required String message}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _startingCamera ? null : _startCamera,
+              icon: _startingCamera
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.camera_alt),
+              label: Text(ScanStrings.startCamera),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) return const SizedBox.shrink();
+    bool canSearch = AppConfig.isAppSupported || _canScanTicketsManually;
+
+    Color backgroundColor =
+        (_scannedObject == null && _scanState == ScanState.nothing)
+            ? ThemeConfig.grey200(context)
+            : getResultColor(_scanState);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      floatingActionButton: canSearch
+          ? FloatingActionButton(
+              onPressed: _openSearchDialog,
+              tooltip: CommonStrings.search,
+              backgroundColor: ThemeConfig.appBarColor(),
+              foregroundColor: ThemeConfig.appBarColorNegative(),
+              child: const Icon(Icons.search),
+            )
+          : null,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                if (_occasionTitle != null)
+                  Container(
+                    width: double.infinity,
+                    color: ThemeConfig.whiteColor(context),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
+                    child: Text(
+                      "${OrdersStrings.scanningForOccasion} $_occasionTitle",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: ThemeConfig.blackColor(context),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                // Header
+
+                // Display scanned user details
+                buildScannedUserDetails(backgroundColor),
+                // Scanner view
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      MobileScanner(
+                        fit: BoxFit.fitWidth,
+                        controller: _mobileScannerController,
+                        errorBuilder: (context, error) => _buildCameraAction(
+                          message: ScanStrings.cameraUnavailable,
+                        ),
+                        onDetect: (capture) async {
+                          final List<Barcode> barcodes = capture.barcodes;
+                          var id = barcodes.firstOrNull;
+                          if (id == null) {
+                            return;
+                          }
+                          AppLogger.debug(id.rawValue ?? '');
+                          await setupNewId(id.rawValue.toString());
+                        },
+                      ),
+                      if (kIsWeb)
+                        Positioned.fill(
+                          child: ValueListenableBuilder<MobileScannerState>(
+                            valueListenable: _mobileScannerController,
+                            builder: (context, cameraState, child) {
+                              if (cameraState.isRunning) {
+                                return Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: IconButton.filledTonal(
+                                      onPressed: _startCamera,
+                                      tooltip: ScanStrings.restartCamera,
+                                      icon: const Icon(Icons.refresh),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return _buildCameraAction(
+                                message: cameraState.error == null
+                                    ? ScanStrings.cameraStartDescription
+                                    : ScanStrings.cameraUnavailable,
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSearchDialog() async {
+    // If both are enabled, asking user what to search?
+    // Or just search both?
+    // For simplicity, if App is Supported, we assume User Search (as per existing behavior).
+    // If NOT App Enabled but Ticket Scan Enabled, we use Ticket Search.
+    // If BOTH? Maybe a dialog with tabs?
+    // Given the prompt "similar to picking users", maybe just one flow.
+    // If I search for "John", I might find a User "John" or a Ticket holder "John".
+    // I can merge them? Or separate dialogs.
+
+    if (AppConfig.isAppSupported) {
+      await _openUserSearchDialog();
+    } else if (_canScanTicketsManually) {
+      await _openTicketSearchDialog();
+    }
+  }
+
+  Future<void> _openUserSearchDialog() async {
+    List<UserInfoModel> allUsers = await DbUsers.getAllUsersBasicsForScan(
+      _scanCode!,
+    );
+
+    if (!mounted) return;
+
+    final UserInfoModel? selectedUser = await showDialog(
+      context: context,
+      builder: (ctx) => UserSearchDialog(allUsers: allUsers),
+    );
+
+    if (selectedUser != null) {
+      await setupNewId(selectedUser.id.toString());
+    }
+  }
+
+  Future<void> _openTicketSearchDialog() async {
+    List<TicketModel> allTickets = await DbTickets.getAllTicketsForScan(
+      _scanCode!,
+    );
+
+    if (!mounted) return;
+
+    final TicketModel? selectedTicket = await showDialog(
+      context: context,
+      builder: (ctx) => TicketSearchDialog(allTickets: allTickets),
+    );
+
+    if (selectedTicket != null) {
+      // Use ticket symbol for identification
+      if (selectedTicket.ticketSymbol != null) {
+        await setupNewId(selectedTicket.ticketSymbol!);
+      }
+    }
+  }
+
+  Future<void> setupNewId(String scannedId) async {
+    if (scannedId == rightNowScanned) {
+      return;
+    }
+    rightNowScanned = scannedId;
+    _justConfirmed = false;
+
+    _scannedObject = await DbTickets.scanTicket(scannedId, _scanCode!);
+
+    if (_scannedObject != null) {
+      // 1. Valid (Paid/Sent)
+      if (_scannedObject!.state == OrderModel.sentState ||
+          _scannedObject!.state == OrderModel.paidState) {
+        _scanState = ScanState.valid;
+        VibrateService.vibrateOk();
+        setState(() {});
+        return;
+      }
+      // 2. Ordered (Valid but Unpaid)
+      else if (_scannedObject!.state == OrderModel.orderedState) {
+        _scanState = ScanState.ordered;
+        VibrateService.vibrateOk();
+        setState(() {});
+        return;
+      }
+      // 3. Invalid (Storno)
+      else if (_scannedObject!.state == OrderModel.stornoState) {
+        _scanState = ScanState.invalid;
+        VibrateService.vibrateNotOk();
+        setState(() {});
+        return;
+      }
+      // 4. Used
+      else if (_scannedObject!.state == OrderModel.usedState) {
+        _scanState = ScanState.used;
+        VibrateService.vibrateNotOk();
+        setState(() {});
+        return;
+      }
+    }
+
+    // Not found in DB or null return
+    _scannedObject = null;
+    _scanState = ScanState.notFound;
+    VibrateService.vibrateNotOk();
+    setState(() {});
+  }
+
+  Future<void> _confirmTicket() async {
+    if (_scannedObject == null) return;
+
+    bool success = await DbTickets.updateTicketToUsed(
+      _scannedObject!.id!,
+      _scanCode!,
+    );
+
+    if (success) {
+      setState(() {
+        _scannedObject!.state = OrderModel.usedState;
+        _scannedObject!.updatedAt = DateTime.now();
+        _scanState = ScanState.used;
+        _justConfirmed = true;
+      });
+      VibrateService.vibrateOk();
+    } else {
+      VibrateService.vibrateNotOk();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(OrdersStrings.confirmTicketFailed)),
+      );
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    if (_scannedObject == null) return;
+
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AppAlertDialog(
+          onClose: () => Navigator.of(context).pop(false),
+          title: Text(ScanStrings.resetPassword),
+          content: Text(
+            OrdersStrings.resetPasswordConfirmationContent(
+              _defaultResetPassword,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(CommonStrings.cancel), // Use CommonStrings
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(CommonStrings.reset), // Use CommonStrings
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final result = await DbTickets.resetPassword(
+        _scannedObject!.id!,
+        _defaultResetPassword,
+        _scanCode!,
+      );
+      final email = result.email;
+
+      if (!mounted) return;
+
+      if (email != null && email.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) => AppAlertDialog(
+            title: Text(OrdersStrings.newLoginCredentials),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  OrdersStrings.gridEmail,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(email, style: const TextStyle(fontSize: 18)),
+                const SizedBox(height: 24),
+                Text(
+                  CommonStrings.password, // Use CommonStrings
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const SelectableText(
+                  _defaultResetPassword,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(CommonStrings.ok), // Use CommonStrings
+              ),
+            ],
+          ),
+        );
+      } else if (result.failure == PasswordResetFailure.privilegedTarget) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(OrdersStrings.errorResetPasswordPrivilegedUser),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(OrdersStrings.errorEmailNotReturned)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(OrdersStrings.errorResetPassword(e.toString())),
+          ),
+        );
+      }
+    }
+  }
+
+  Color getResultColor(ScanState scannedState) {
+    switch (scannedState) {
+      case ScanState.valid:
+        return Colors.greenAccent;
+      case ScanState.ordered:
+        return Colors.orangeAccent;
+      case ScanState.used:
+        if (_justConfirmed) return Colors.blueAccent;
+        return Colors.redAccent;
+      case ScanState.invalid:
+        return Colors.redAccent;
+      case ScanState.notFound:
+        return Colors.redAccent;
+      case ScanState.nothing:
+        return ThemeConfig.backgroundColor(context);
+    }
+  }
+}

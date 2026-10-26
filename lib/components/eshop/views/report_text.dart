@@ -1,0 +1,84 @@
+import 'report_number_format.dart';
+import 'package:intl/intl.dart';
+
+import 'package:festapp_core/eshop.dart';
+import '../report_strings.dart';
+import '../ticket_batch_strings.dart';
+
+/// Localized display and export of the same report snapshot, without a new RPC.
+String formatReportText(OccasionReport report, {String? locale}) {
+  final text = StringBuffer()
+    ..writeln(report.title)
+    ..writeln(
+        DateFormat.yMd(locale).add_jm().format(report.generatedAt.toLocal()));
+  void counts(String title, ReportCounts counts) {
+    text.writeln('$title: ${counts.total}');
+    for (final entry in counts.states.entries) {
+      text.writeln('  ${ReportStrings.state(entry.key)}: ${entry.value}');
+    }
+  }
+
+  counts(ReportStrings.orders, report.orders);
+  if (ReportStrings.hasTickets) counts(ReportStrings.tickets, report.tickets);
+  text
+    ..writeln(
+        '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
+    ..writeln('${ReportStrings.free}: ${report.spotsFree}');
+  if ((report.ticketBatches['total'] ?? 0) > 0) {
+    text.writeln(
+        '${TicketBatchStrings.title}: ${report.ticketBatches['total']}');
+    text.writeln(
+        '${TicketBatchStrings.available}: ${report.ticketBatches['available']}');
+    text.writeln(
+        '${TicketBatchStrings.sold}: ${report.ticketBatches['sold_active']}');
+    text.writeln(
+        '${TicketBatchStrings.voided}: ${report.ticketBatches['voided_unsold']}');
+  }
+  for (final money in report.money) {
+    text
+      ..writeln()
+      ..writeln(money.currency);
+    for (final amount in money.amounts.entries) {
+      if (money.hasDeposits || !amount.key.contains('deposit')) {
+        text.writeln(
+            '${ReportStrings.metric(amount.key)}: ${formatReportNumber(amount.value, locale: locale)} ${money.currency}');
+      }
+    }
+  }
+  if (report.hasTicketTimeline) {
+    text
+      ..writeln()
+      ..writeln(ReportStrings.orderTimeline)
+      ..writeln(ReportStrings.orderTimelineHelp);
+    for (final day in report.ticketDays) {
+      text.writeln(
+          '${DateFormat.yMd(locale).format(day.day)} ${day.currency}: ${day.count}');
+    }
+    text
+      ..writeln()
+      ..writeln(ReportStrings.paymentTimeline)
+      ..writeln(ReportStrings.paymentTimelineHelp);
+    for (final day in report.paymentDays) {
+      text.writeln(
+          '${DateFormat.yMd(locale).format(day.day)} ${day.currency}: ${ReportStrings.received} ${formatReportNumber(day.received, locale: locale)}, ${ReportStrings.returned} ${formatReportNumber(day.returned, locale: locale)}');
+    }
+  }
+  text
+    ..writeln()
+    ..writeln(ReportStrings.products)
+    ..writeln(ReportStrings.productsHelp);
+  for (final product in report.products) {
+    text.writeln(
+        '${product.typeTitle ?? ReportStrings.noType} / ${product.title}: ${product.count}');
+  }
+  text
+    ..writeln()
+    ..writeln(ReportStrings.statesHelp)
+    ..writeln(ReportStrings.spotsHelp)
+    ..writeln(ReportStrings.moneyHelp)
+    ..writeln(ReportStrings.moneyDetails);
+  for (final warning in report.warnings.entries) {
+    text.writeln('${ReportStrings.metric(warning.key)} (${warning.value})');
+  }
+  return text.toString();
+}

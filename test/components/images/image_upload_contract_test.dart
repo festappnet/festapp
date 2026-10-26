@@ -1,0 +1,227 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/html/html_media_service.dart';
+import 'package:fstapp/components/images/db_images.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:image/image.dart' as image;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final uploads = <http.Request>[];
+  final client = MockClient((request) async {
+    uploads.add(request);
+    const url = 'https://img.festapp.net/images/12/photo.jpg';
+    final blueprint = latin1
+        .decode(request.bodyBytes)
+        .contains('\r\nblueprint-background\r\n');
+    final hash = 'a' * 64;
+    return http.Response(
+        jsonEncode({
+          'url': url,
+          if (blueprint)
+            'asset': {
+              'assetRef': 'image:$hash',
+              'hash': hash,
+              'url': url,
+              'width': 2,
+              'height': 2,
+              'mimeType': 'image/jpeg',
+              'byteLength': 100,
+              'state': 'ready',
+            },
+        }),
+        200);
+  });
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'https://fixture.invalid',
+      publishableKey: 'fixture',
+      authOptions: const FlutterAuthClientOptions(
+        autoRefreshToken: false,
+        localStorage: EmptyLocalStorage(),
+      ),
+      httpClient: client,
+    );
+    final expiry = DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600;
+    String part(Object data) =>
+        base64Url.encode(utf8.encode(jsonEncode(data))).replaceAll('=', '');
+    await Supabase.instance.client.auth.setInitialSession(
+      jsonEncode({
+        'access_token':
+            '${part({'alg': 'HS256'})}.${part({'exp': expiry})}.fixture',
+        'refresh_token': 'fixture-refresh',
+        'token_type': 'bearer',
+        'expires_in': 3600,
+        'expires_at': expiry,
+        'user': {
+          'id': '00000000-0000-0000-0000-000000000012',
+          'app_metadata': {},
+          'user_metadata': {},
+          'aud': 'authenticated',
+          'created_at': '2026-01-01T00:00:00Z',
+        },
+      }),
+    );
+  });
+  tearDownAll(() async => Supabase.instance.dispose());
+  setUp(uploads.clear);
+
+  Future<String> save(Uint8List bytes) => http.runWithClient(() async {
+        final draft = HtmlMediaDraft();
+        try {
+          const owner = HtmlMediaOwner.occasion(12);
+          final source = await draft.addBytes(bytes, owner);
+          expect(draft.previewBytes(source), bytes);
+          expect(uploads, isEmpty);
+          return await draft.prepareHtml(
+            '<p>Program</p><img src="$source">',
+            '',
+            owner,
+          );
+        } finally {
+          draft.dispose();
+        }
+      }, () => client);
+
+  test(
+    'HTML photo save leaves JPEG compression to the server defaults',
+    () async {
+      final bytes = Uint8List.fromList(
+        image.encodeJpg(image.Image(width: 2, height: 2)),
+      );
+      final html = await save(bytes);
+      expect(uploads, hasLength(1));
+      expect(uploads.single.url.path, '/upload');
+      final multipart = latin1.decode(uploads.single.bodyBytes);
+      expect(multipart, contains('name="occasionId"'));
+      expect(multipart, contains('name="profile"'));
+      expect(multipart, contains('\r\nstandard\r\n'));
+      expect(multipart, isNot(contains('name="maxBytes"')));
+      expect(multipart, isNot(contains('name="quality"')));
+      expect(html, contains('https://img.festapp.net/images/12/photo.jpg'));
+    },
+  );
+
+  for (final format in ['png', 'gif']) {
+    test(
+      'HTML $format save retains the original-format upload contract',
+      () async {
+        final pixels = image.Image(width: 2, height: 2);
+        final bytes = Uint8List.fromList(
+          format == 'png' ? image.encodePng(pixels) : image.encodeGif(pixels),
+        );
+        await save(bytes);
+        final multipart = latin1.decode(uploads.single.bodyBytes);
+        expect(multipart, isNot(contains('name="maxBytes"')));
+        expect(multipart, contains('\r\nstandard\r\n'));
+      },
+    );
+  }
+  test(
+    'ticket backgrounds upload original bytes through the shared print profile',
+    () async {
+      final bytes = Uint8List.fromList(
+        image.encodeJpg(image.Image(width: 2000, height: 1000)),
+      );
+      await http.runWithClient(
+        () => TicketLayoutService().uploadBackground(bytes, 12),
+        () => client,
+      );
+      final multipart = latin1.decode(uploads.single.bodyBytes);
+      expect(multipart, contains('\r\nticket-background\r\n'));
+      expect(multipart, isNot(contains('name="maxEdge"')));
+      expect(multipart, contains(latin1.decode(bytes)));
+    },
+  );
+  for (final profile in ImageUploadProfile.values) {
+    test(
+      'shared upload selects only server profile ${profile.wireName}',
+      () async {
+        final bytes = Uint8List.fromList(
+          image.encodePng(image.Image(width: 2, height: 2)),
+        );
+        await http.runWithClient(
+          () => DbImages.uploadImage(bytes, 12, null, profile: profile),
+          () => client,
+        );
+        final multipart = latin1.decode(uploads.single.bodyBytes);
+        expect(multipart, contains('\r\n${profile.wireName}\r\n'));
+        expect(multipart, isNot(contains('name="maxBytes"')));
+        expect(multipart, isNot(contains('name="quality"')));
+      },
+    );
+  }
+  test('invalid ticket background fails before upload', () async {
+    await http.runWithClient(() async {
+      await expectLater(
+        TicketLayoutService().uploadBackground(
+          Uint8List.fromList([1, 2, 3]),
+          12,
+        ),
+        throwsFormatException,
+      );
+    }, () => client);
+    expect(uploads, isEmpty);
+  });
+  test(
+    'large JPEG ticket background retains source bytes for server processing',
+    () async {
+      final bytes = Uint8List.fromList(
+        image.encodeJpg(image.Image(width: 2400, height: 600)),
+      );
+      await http.runWithClient(
+        () => TicketLayoutService().uploadBackground(bytes, 12),
+        () => client,
+      );
+      final body = latin1.decode(uploads.single.bodyBytes);
+      expect(body, contains(latin1.decode(bytes)));
+      expect(body, contains('\r\nticket-background\r\n'));
+      expect(body, isNot(contains('name="maxEdge"')));
+    },
+  );
+  test(
+    'landscape and portrait ticket backgrounds use the server print profile',
+    () async {
+      for (final size in [(2000, 600), (600, 2000)]) {
+        uploads.clear();
+        final bytes = Uint8List.fromList(
+          image.encodeJpg(image.Image(width: size.$1, height: size.$2)),
+        );
+        await http.runWithClient(
+          () => TicketLayoutService().uploadBackground(bytes, 12),
+          () => client,
+        );
+        final body = latin1.decode(uploads.single.bodyBytes);
+        expect(body, contains(latin1.decode(bytes)));
+        expect(body, contains('\r\nticket-background\r\n'));
+      }
+    },
+  );
+  test('suitable JPEG and transparent PNG ticket backgrounds retain original bytes', () async {
+    final transparent = image.Image(width: 20, height: 10, numChannels: 4);
+    for (final bytes in [
+      image.encodeJpg(image.Image(width: 20, height: 10)),
+      image.encodePng(transparent),
+    ]) {
+      uploads.clear();
+      await http.runWithClient(
+        () => TicketLayoutService().uploadBackground(
+          Uint8List.fromList(bytes),
+          12,
+        ),
+        () => client,
+      );
+      expect(
+        latin1.decode(uploads.single.bodyBytes),
+        contains(latin1.decode(bytes)),
+      );
+    }
+  });
+}

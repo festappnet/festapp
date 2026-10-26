@@ -1,0 +1,15 @@
+# Source/data overlay paths for the original Festapp tenant.
+# Its public application and every generated internal application link use the
+# canonical live.festapp.net origin. Vstupenky.online is a separate tenant.
+automation/project.conf
+automation/release/legal/**
+automation/release/ExportOptions.plist
+android/app/src/main/res/mipmap-*/ic_launcher.png
+ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
+web/android-chrome-*.png
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web/favicon.svg
+web/fstapplogo.png
+web/web-app-manifest-*.png

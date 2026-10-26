@@ -1,0 +1,209 @@
+{
+  "status": "COMPLETE",
+  "sourceGitSha": "c4fbf06642bb926d5fff3f5978d04e88b761c749",
+  "baseline": {
+    "sourceSha256": "5d98282c10c9cd766b2bcb5dfa69d0ce116c94bd1ae212ab4fc6d89b74e9952b",
+    "medianSeconds": 175.5026358750183,
+    "rangeSeconds": [
+      171.94223129202146,
+      198.4222053749254
+    ],
+    "laneMedianSeconds": {
+      "core": 7.370449666981585,
+      "adapters": 13.980218207929283,
+      "flutter": 161.4985980000347
+    },
+    "peakSummedRssBytes": 1764524032,
+    "warmupSeconds": 147.97091245802585,
+    "runs": [
+      {
+        "seconds": 175.5026358750183,
+        "peakSummedRssBytes": 1764524032,
+        "loadAverageStart": [
+          3.81298828125,
+          3.80908203125,
+          3.85400390625
+        ],
+        "loadAverageEnd": [
+          4.11279296875,
+          4.02294921875,
+          3.93603515625
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 62.432,
+          "bodySeconds": 95.598,
+          "frameworkSeconds": 1.383
+        }
+      },
+      {
+        "seconds": 198.4222053749254,
+        "peakSummedRssBytes": 1746829312,
+        "loadAverageStart": [
+          4.11279296875,
+          4.02294921875,
+          3.93603515625
+        ],
+        "loadAverageEnd": [
+          3.890625,
+          4.06982421875,
+          3.9697265625
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 76.36,
+          "bodySeconds": 103.086,
+          "frameworkSeconds": 1.549
+        }
+      },
+      {
+        "seconds": 171.94223129202146,
+        "peakSummedRssBytes": 1754021888,
+        "loadAverageStart": [
+          3.890625,
+          4.06982421875,
+          3.9697265625
+        ],
+        "loadAverageEnd": [
+          3.75341796875,
+          4.08642578125,
+          4.0087890625
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 63.276,
+          "bodySeconds": 90.095,
+          "frameworkSeconds": 1.21
+        }
+      }
+    ],
+    "complete": true
+  },
+  "candidate": {
+    "sourceSha256": "47013ccf4913b210a7affc700d86efc25eea96c8ee739861ac2eb7c886fd7a79",
+    "medianSeconds": 142.94692591694184,
+    "rangeSeconds": [
+      135.02777775004506,
+      163.231876582955
+    ],
+    "laneMedianSeconds": {
+      "core": 7.116410499904305,
+      "adapters": 14.083847415982746,
+      "flutter": 128.3721652920358
+    },
+    "peakSummedRssBytes": 2066710528,
+    "warmupSeconds": 124.84264108294155,
+    "runs": [
+      {
+        "seconds": 135.02777775004506,
+        "peakSummedRssBytes": 1913323520,
+        "loadAverageStart": [
+          4.7275390625,
+          4.14501953125,
+          4.0166015625
+        ],
+        "loadAverageEnd": [
+          5.52197265625,
+          4.7109375,
+          4.26416015625
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 35.875,
+          "bodySeconds": 82.49,
+          "frameworkSeconds": 0.999
+        }
+      },
+      {
+        "seconds": 163.231876582955,
+        "peakSummedRssBytes": 2066710528,
+        "loadAverageStart": [
+          5.52197265625,
+          4.7109375,
+          4.26416015625
+        ],
+        "loadAverageEnd": [
+          5.99072265625,
+          5.224609375,
+          4.54150390625
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 41.626,
+          "bodySeconds": 104.817,
+          "frameworkSeconds": 1.233
+        }
+      },
+      {
+        "seconds": 142.94692591694184,
+        "peakSummedRssBytes": 1870790656,
+        "loadAverageStart": [
+          5.99072265625,
+          5.224609375,
+          4.54150390625
+        ],
+        "loadAverageEnd": [
+          4.3681640625,
+          4.89794921875,
+          4.5146484375
+        ],
+        "flutterReporterIntervals": {
+          "loadingSeconds": 36.518,
+          "bodySeconds": 89.042,
+          "frameworkSeconds": 1.111
+        }
+      }
+    ],
+    "complete": true
+  },
+  "speedupPercent": 18.54998347788951,
+  "targetAtLeast15Percent": true,
+  "flutterRootsBefore": 72,
+  "flutterRootsAfter": 38,
+  "removedRoots": 34,
+  "semanticCases": 1904,
+  "skips": 1,
+  "fullCountersEqualAcrossAllCandidateRuns": true,
+  "orderProof": {
+    "expectedCases": 889,
+    "expectedSkips": 0,
+    "orders": {
+      "normal": {
+        "cases": 889,
+        "skips": 0,
+        "missing": [],
+        "added": [],
+        "equal": true
+      },
+      "reverse": {
+        "cases": 889,
+        "skips": 0,
+        "missing": [],
+        "added": [],
+        "equal": true
+      }
+    }
+  },
+  "sdk": {
+    "frameworkVersion": "3.47.2",
+    "channel": "stable",
+    "repositoryUrl": "https://github.com/flutter/flutter.git",
+    "frameworkRevision": "d3b14c876900e553bc736ca19295fc09e3853e8e",
+    "frameworkCommitDate": "2026-08-26 16:07:51 -0700",
+    "engineRevision": "a804b261645ef8c13eb3d5c44a5c2fb0340c5539",
+    "engineCommitDate": "2026-08-26 18:46:13.000Z",
+    "engineContentHash": "1cf1c4773fb941c4c74a7f8bb144a8837596c0f4",
+    "engineBuildDate": "2026-08-26 21:23:07.677",
+    "dartSdkVersion": "3.13.2",
+    "devToolsVersion": "2.60.0",
+    "flutterVersion": "3.47.2",
+    "flutterRoot": "/Users/miakh/fvm/versions/3.47.2"
+  },
+  "concurrency": 1,
+  "memoryMethod": "Peak sum of owned-process RSS sampled once per second; shared pages may be counted repeatedly.",
+  "artifactsPath": "/Users/miakh/source/festapp-client-test-loading-20261021/.codex-artifacts/client-test-loading-20261021",
+  "limitations": [
+    "Baseline measured spread is material; retain all measured runs and host load samples.",
+    "RSS sums shared pages and is sampled once per second.",
+    "Candidate host load averages were higher (roughly 4.4-6.0 versus 3.8-4.1 on a 10-logical-CPU host), below CPU-count saturation. No competing Flutter task ran; load and timing variance limit precision. The 18.55% figure is the observed median reduction, not a confidence bound.",
+    "Peak sampled summed RSS increased from 1.64 to 1.92 GiB; both remain below the unchanged 3,000,000,000-byte budget."
+  ],
+  "inventoryRepair": "User explicitly authorized the single renamed navigation-case revision before the passing baseline. No inventory baseline regeneration.",
+  "logicalCpus": 10,
+  "physicalMemoryBytes": 17179869184
+}

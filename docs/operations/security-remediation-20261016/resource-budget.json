@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-16",
+  "verification": "standard",
+  "host_memory_bytes": 3981275136,
+  "seven_day_host_observations": {
+    "source": "Read-only Monitoring D1 observations joined to festapp/production/festapp-host incident_groups; 0 rows written",
+    "samples_per_check": 9913,
+    "first_at": 1791556481455,
+    "last_at": 1792161244029,
+    "memory_percent": {
+      "min": 48.8,
+      "average": 74.97,
+      "max": 83.4
+    },
+    "cpu_percent": {
+      "min": 11.9,
+      "average": 13.45,
+      "max": 77.6
+    },
+    "disk_percent": {
+      "min": 60.5,
+      "average": 75.44,
+      "max": 90.9
+    }
+  },
+  "admin_limits": {
+    "studio": {
+      "mem_limit": 805306368,
+      "cpus": "1.0",
+      "pids_limit": 256
+    },
+    "meta": {
+      "mem_limit": 402653184,
+      "cpus": "0.5",
+      "pids_limit": 128
+    }
+  },
+  "admin_memory_cap_sum_bytes": 1207959552,
+  "isolated_burst_result": "application-recovery-result.json",
+  "reserve_policy": {
+    "os_headroom_target_bytes": 536870912,
+    "logical_backup_transient_target_bytes": 805306368,
+    "logical_backup_observed_cgroup_peak_bytes": 717103104,
+    "backup_memory_includes_reclaimable_cache": true,
+    "physical_backup_workers": 1,
+    "physical_backup_observed_process_rss_approximately_bytes": 41943040
+  },
+  "critical_containers": "Remain uncapped until per-container representative peak and concurrency/recovery checks; admin cap sum plus reserve is not a complete worst-case host allocation. Do not treat per-worker Edge memory as a container cap.",
+  "paid_resize_required_by_current_evidence": false,
+  "paid_resize_performed": false,
+  "whole_host_hard_cap_budget_complete": false,
+  "note": "Historic host data includes real load/backup windows; new per-container history began after reboot and does not yet cover an equivalent peak. Explicit reserve targets are planning criteria, not enforced reservations.",
+  "r2_backup_in_progress_observation": {
+    "at": 1792163744.8887193,
+    "anonymous_memory_bytes": 44752896,
+    "service_memory_current_bytes": 286588928,
+    "service_memory_peak_including_file_cache_bytes": 758284288,
+    "service_cpu_seconds_so_far": 82.18,
+    "host_available_memory_bytes": 1511591936,
+    "complete_run_measurement": false
+  },
+  "admin_limits_production_receipt": "admin-resource-budget-production-result.json",
+  "first_r2_inclusive_backup": {
+    "run_id": "20261016T150700Z",
+    "elapsed_seconds": 958,
+    "cpu_seconds": 170.48,
+    "memory_peak_including_reclaimable_cache_bytes": 758284288,
+    "off_host_verified": true,
+    "result": "r2-production-backup-result.json",
+    "note": "Entire logical/Storage/runtime/R2 backup, not just R2 overhead; nice=10, existing timer/daemon only. The earlier anon/current sample is not a maximum."
+  },
+  "capacity_observation_extension": {
+    "source_commit": "afb0a779456158a4529f5ce77c1b01aa6ec50159",
+    "production_receipt": "native-resource-production-result.json",
+    "scheduled_samples": "native-resource-scheduled-observations.json",
+    "db_counts": "Client connections, active, idle-in-transaction, long transactions; max and reserved connections; collector connection excluded",
+    "edge_counts": "Native process-wide live user isolates, including warm workers, plus cumulative received/handled requests",
+    "edge_transport": "Numeric allowlist through existing Docker logs and existing minute collector",
+    "new_public_endpoint": false,
+    "new_daemon": false,
+    "critical_caps_changed": false
+  },
+  "four_gb_feasibility_screen": {
+    "observation_receipt": "native-resource-final-observations.json",
+    "sample_count": 77,
+    "host_memory_bytes": 3981275136,
+    "enforced_admin_hard_cap_sum_bytes": 1207959552,
+    "os_reserve_target_bytes": 536870912,
+    "concurrent_logical_backup_reserve_target_bytes": 805306368,
+    "remaining_for_other_containers_bytes": 1431138304,
+    "observed_working_set_maxima_by_other_container_bytes": {
+      "/festapp-caddy": 34189312,
+      "/festapp-supabase-admin-tunnel": 37101568,
+      "/realtime-dev.supabase-realtime": 195883008,
+      "/supabase-auth": 13135872,
+      "/supabase-db": 472313856,
+      "/supabase-edge-functions": 656044032,
+      "/supabase-envoy": 40214528,
+      "/supabase-imgproxy": 42631168,
+      "/supabase-pooler": 187707392,
+      "/supabase-rest": 90644480,
+      "/supabase-storage": 191721472
+    },
+    "sum_of_nonsimultaneous_other_container_maxima_bytes": 1961586688,
+    "screening_shortfall_before_peak_safety_margin_bytes": 530448384,
+    "fits_stated_conservative_budget_criteria": false,
+    "simultaneous_peak_or_oom_proven": false,
+    "representative_peak_proven": false,
+    "physical_backup_rss_added_twice": false,
+    "new_caps_or_paid_capacity_applied": false,
+    "interpretation": "Screen only: maxima are not simultaneous and are not safe cap recommendations. Under the stated admin ceilings plus OS/backup reserve targets, the remaining allocation is smaller than the sum of already observed working sets. This does not prove production needs a RAM upgrade. A safe enforced all-service budget needs representative peak measurements and an approved capacity or service-lifecycle decision; arbitrary critical caps would not resolve that gap."
+  }
+}

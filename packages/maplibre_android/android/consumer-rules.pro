@@ -1,0 +1,3 @@
+-keep class com.google.gson.** { *; }
+-keep class io.flutter.plugin.platform.** { *; }
+-keep class org.maplibre.** { *; }

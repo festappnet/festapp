@@ -1,0 +1,1 @@
+{"source_commit": "28eb7f269", "source_sha256": "053fd2503ffb8e681836754fc777c09793a33a931918fdac0b56e95e6a2f8c9b", "same_existing_timer": true, "container_count": 13, "sample_at": 1792160330, "host": {"MemTotal": 3981275136, "MemAvailable": 1979748352, "SwapTotal": 0}, "history_bytes": 1652, "history_mode": "0o600", "no_new_daemon": true, "new_hard_caps": false}

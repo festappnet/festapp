@@ -1,0 +1,6 @@
+import { build } from 'vite';import { readFile,writeFile,mkdir,copyFile } from 'node:fs/promises';import path from 'node:path';import {execFileSync} from 'node:child_process';
+const root=path.resolve(import.meta.dirname,'..'),out=process.env.SCANNER_PWA_DIR||'/tmp/festapp-scanner-pwa-20261018';
+const fixture=await readFile(process.env.SCANNER_REUSE_FIXTURE_FILE||'/tmp/scanner-current-fixture.json','utf8'),translations=await readFile(path.join(root,'../assets/translations/cs.json'),'utf8');
+await build({root,configFile:false,logLevel:'error',build:{outDir:out,emptyOutDir:true,assetsDir:'web-assets',rollupOptions:{input:path.join(root,'tests/scan/browser.html')}},plugins:[{name:'isolated-fixture-data',transformIndexHtml:{order:'pre',handler(html){return html.replace(/await\s*\(\s*await fetch\('\/__scanner-translations'\)\s*\)\.json\(\)/g,translations).replace(/await\s*\(\s*await fetch\('\/__scanner-fixture'\)\s*\)\.json\(\)/g,fixture);}}}]});
+await copyFile(path.join(out,'tests/scan/browser.html'),path.join(out,'webclient'));await writeFile(path.join(out,'flutter'),'<html>native boundary fixture</html>');
+execFileSync(process.execPath,[path.join(root,'../automation/generate_pwa_service_worker.mjs'),out,'scanner-test-20261018']);console.log(out);

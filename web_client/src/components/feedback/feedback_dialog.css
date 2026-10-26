@@ -1,0 +1,195 @@
+/* Feedback Dialog */
+.feedback-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Above FAB */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.feedback-dialog-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.feedback-dialog {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    width: 90%;
+    max-width: 400px; /* Smaller width for instructional dialog */
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.feedback-dialog-overlay.open .feedback-dialog {
+    transform: scale(1);
+}
+
+.fd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 16px 0;
+}
+
+.feedback-dialog-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 4px;
+    border-radius: 50%;
+}
+.icon-btn:hover { background-color: rgba(0,0,0,0.05); }
+
+.feedback-dialog-subtitle {
+    font-size: 0.9rem;
+    color: var(--label-text-color, #757575);
+    margin-bottom: 8px;
+}
+
+.fd-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.primary-btn {
+    background-color: var(--primary-color, #0d47a1);
+    color: var(--btn-text-color, #fff);
+    border: none;
+    padding: 12px;
+    border-radius: 24px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.primary-btn:hover { opacity: 0.9; }
+
+.fd-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--label-text-color, #888);
+    font-size: 0.8rem;
+}
+.fd-divider .line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--input-border, #ddd);
+}
+.fd-divider .text { white-space: nowrap; }
+
+.copy-row {
+    background-color: var(--unselected-widget-fill, rgba(0,0,0,0.03));
+    border: 1px solid var(--input-border, #ddd);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+}
+
+.copy-row label {
+    font-size: 0.75rem;
+    color: var(--label-text-color, #666);
+    margin-bottom: 2px;
+}
+
+.copy-input-group {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.copy-input-group span {
+    word-break: break-all;
+    flex: 1;
+    color: var(--text-color, #000);
+}
+.copy-input-group span.multiline {
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+    color: var(--text-color, #333);
+}
+
+.feedback-dialog textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid var(--outline, #ccc);
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 1rem;
+    background: var(--card-bg);
+    color: var(--text-color);
+    box-sizing: border-box; /* details matter */
+}
+
+.feedback-dialog textarea:focus {
+    outline: 2px solid var(--primary-color);
+    border-color: transparent;
+}
+
+.feedback-dialog-actions {
+    display: none; /* Removed */
+}
+
+.feedback-btn {
+    padding: 10px 20px;
+    border-radius: 20px; /* Pillow shape for modern look */
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    font-size: 0.9rem;
+}
+
+.feedback-btn.cancel {
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.feedback-btn.cancel:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* very subtle hover */
+}
+
+.feedback-btn.send {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.feedback-btn.send:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.feedback-dialog .icon-btn:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+}

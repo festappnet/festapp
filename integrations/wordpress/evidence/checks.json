@@ -1,0 +1,59 @@
+[
+  {
+    "check": "contracts-current",
+    "status": "PASS",
+    "evidence": "39 real WordPress contract assertions; WP 7.1.3, PHP 8.5.12"
+  },
+  {
+    "check": "contracts-minimum",
+    "status": "PASS",
+    "evidence": "39 real WordPress contract assertions; WP 6.6.4, PHP 7.4.33"
+  },
+  {
+    "check": "production-gate",
+    "status": "PASS",
+    "evidence": "Production rejects local fixture"
+  },
+  {
+    "check": "permissions",
+    "status": "PASS",
+    "evidence": "Real REST publication denied"
+  },
+  {
+    "check": "qr",
+    "status": "PASS",
+    "evidence": "2 real ticket QR codes"
+  },
+  {
+    "check": "frozen-install",
+    "status": "PASS",
+    "evidence": "Already up to date"
+  },
+  {
+    "check": "WPCS 3.4.1 and PHP syntax",
+    "status": "PASS",
+    "evidence": "Final ZIP source, WordPress standard WPCS 3.4.1 and PHP syntax on both PHP 8.5.12/7.4.33; no plugin diagnostics"
+  },
+  {
+    "check": "Plugin Check 2.1.0 including runtime bootstrap",
+    "status": "PASS",
+    "errors": 0,
+    "warnings": 1,
+    "warning": "load_plugin_textdomain retained for bundled translations on sideload"
+  },
+  {
+    "check": "Native Safari 26.5 / iOS 26.5",
+    "status": "PASS",
+    "evidence": "Actual ordinary + A2 iframe orders; storage SecurityError, outage/retry same identity; canonical confirmation/PDF/QR/scanner; native PDF preview QR decoded"
+  },
+  {
+    "check": "WordPress.org account and TOTP",
+    "status": "PASS",
+    "evidence": "festappnet / info@festapp.net; fresh isolated password+TOTP login; recovery codes saved in login Keychain; add-plugin form available; no submission"
+  },
+  {
+    "check": "Additional tester pass",
+    "status": "PASS",
+    "evidence": "74 new real WP/PHP assertions; minimum Gutenberg actual publish/reload, translated controls and 320px fallback; pinned core checksum verified; disposable auto-update/DB-version setup fixed"
+  }
+]

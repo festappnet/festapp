@@ -1,0 +1,807 @@
+#!/usr/bin/env node
+
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import vm from 'node:vm';
+import { createRequire } from 'node:module';
+
+const { JSDOM } = createRequire(new URL('../../web_client/package.json', import.meta.url))('jsdom');
+
+const projectRoot = path.resolve(import.meta.dirname, '../..');
+const tempRoot = await mkdtemp(path.join(tmpdir(), 'festapp-pwa-'));
+
+try {
+  await mkdir(path.join(tempRoot, 'assets'), { recursive: true });
+  await mkdir(path.join(tempRoot, 'privacy'), { recursive: true });
+  await writeFile(path.join(tempRoot, 'flutter'), '<html>flutter</html>');
+  await writeFile(path.join(tempRoot, 'webclient'), '<html>web</html>');
+  await writeFile(path.join(tempRoot,'organizer-pages.json'),JSON.stringify({enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'},{id:'seating-reservations',path:'/reserved-seats',asset:'/organizers/seating-reservations'}]}));
+  await mkdir(path.join(tempRoot,'organizers'));
+  await writeFile(path.join(tempRoot,'organizers/seating-reservations'),'<html>seating topic</html>');
+  await writeFile(path.join(tempRoot, 'organizers-page'), '<html>organizers</html>');
+  await writeFile(path.join(tempRoot, 'main.dart.js'), 'main');
+  await writeFile(path.join(tempRoot, 'main.dart.js_7.part.js'), 'deferred');
+  await writeFile(path.join(tempRoot, 'main.dart.1.2.3-4.js'), 'duplicate');
+  await writeFile(path.join(tempRoot, 'flutter_service_worker.js'), 'obsolete');
+  await writeFile(path.join(tempRoot, '_worker.js'), 'server only');
+  await writeFile(path.join(tempRoot, 'assets', 'translation.json'), '{}');
+  await writeFile(
+    path.join(tempRoot, 'privacy', 'index.html'),
+    '<html>privacy policy</html>',
+  );
+
+  const result = spawnSync(process.execPath, [
+    path.join(projectRoot, 'automation/generate_pwa_service_worker.mjs'),
+    tempRoot,
+    '1.2.3+4',
+    'csmostrava2026',
+  ], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  const worker = (await readFile(
+    path.join(tempRoot, 'festapp_service_worker.js'),
+    'utf8',
+  )).replace(
+    'const CLIENT_VERSION_REPORT_TIMEOUT_MS = 1000;',
+    'const CLIENT_VERSION_REPORT_TIMEOUT_MS = 10;',
+  );
+  assert.match(worker, /festapp-app-shell-1\.2\.3\+4/);
+  assert.match(worker, /"\/flutter\?pwa-cache=1"/);
+  assert.match(worker, /"\/webclient\?pwa-cache=1"/);
+  assert.match(worker, /"\/main\.dart\.js"/);
+  assert.match(worker, /"\/main\.dart\.js_7\.part\.js"/);
+  assert.match(worker, /"\/assets\/translation\.json"/);
+  assert.doesNotMatch(worker, /main\.dart\.1\.2\.3-4\.js/);
+  assert.doesNotMatch(worker, /"\/flutter_service_worker\.js"/);
+  assert.doesNotMatch(worker, /"\/_worker\.js"/);
+  assert.match(worker, /request\.mode === 'navigate'/);
+  assert.match(worker, /cache\.match\(request, \{ ignoreSearch: true \}\)/);
+  assert.match(worker, /event\.data === 'SKIP_WAITING'/);
+  assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
+  assert.match(worker, /FESTAPP_SCANNER_SHELL_STATUS/);
+  assert.match(worker, /function resolveScannerRoute\(path\)/);
+  assert.match(worker, /url\.pathname === '\/festapp-version\.json'/);
+  assert.match(worker, /url\.pathname === '\/backend-activation\.json'/);
+  assert.match(worker, /url\.pathname === '\/client-sync-config\.json'/);
+  assert.match(worker, /fetch\(request, \{ cache: 'no-store' \}\)/);
+  assert.match(worker, /url\.origin === 'https:\/\/fonts\.gstatic\.com'/);
+  assert.match(worker, /url\.origin === 'https:\/\/fonts\.googleapis\.com'/);
+  assert.match(worker, /festapp-used-fonts-v1/);
+  assert.match(worker, /festapp-app-shell-0\.19\.85\+418/);
+  assert.match(worker, /event\.resultingClientId \|\| event\.clientId/);
+  assert.match(worker, /if \(emergencyCutover\)/);
+  assert.match(worker, /cache\.put\(request, response\.clone\(\)\)/);
+  const coreUrls = JSON.parse(worker.match(/const CORE_URLS = (\[[\s\S]*?\]);/)[1]);
+  const precacheUrls = JSON.parse(
+    worker.match(/const PRECACHE_URLS = (\[[\s\S]*?\]);/)[1],
+  );
+  assert.ok(!precacheUrls.includes('/backend-activation.json'),
+    'backend activation must not be part of the app-shell precache');
+  assert.ok(!precacheUrls.includes('/client-sync-config.json'),
+    'client sync runtime config must not be part of the app-shell precache');
+  assert.ok(coreUrls.includes('/main.dart.js'));
+  assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
+  assert.ok(!coreUrls.includes('/pro-poradatele'));
+  assert.match(worker,/const ORGANIZER_HOMEPAGE = true;/);
+  assert.ok(coreUrls.includes('/privacy/'),
+    'standalone documents must be available before their first navigation');
+  assert.ok(coreUrls.includes('/main.dart.js_7.part.js'),
+    'every deferred executable must be installed for offline cold-start routes');
+
+  const genericRoot = await mkdtemp(path.join(tmpdir(), 'festapp-pwa-generic-'));
+  try {
+    await writeFile(path.join(genericRoot, 'flutter'), '<html>flutter</html>');
+    await writeFile(path.join(genericRoot, 'webclient'), '<html>web</html>');
+    await writeFile(path.join(genericRoot, 'main.dart.js'), 'main');
+    const genericResult = spawnSync(process.execPath, [
+      path.join(projectRoot, 'automation/generate_pwa_service_worker.mjs'),
+      genericRoot,
+      '1.2.3+4',
+    ], { encoding: 'utf8' });
+    assert.equal(genericResult.status, 0, genericResult.stderr);
+    const genericWorker = await readFile(
+      path.join(genericRoot, 'festapp_service_worker.js'),
+      'utf8',
+    );
+  } finally {
+    await rm(genericRoot, { recursive: true, force: true });
+  }
+
+  const handlers = {};
+  const fontUrl = 'https://fonts.gstatic.com/s/notocoloremoji/test.woff2';
+  const cachedFont = new Response('cached emoji font');
+  const cachedShell = new Response('<html>offline shell</html>');
+  const cachedWebClient = new Response('<html>generic event list</html>');
+  const cachedPrivacy = new Response('<html>privacy policy</html>');
+  let networkCalls = 0;
+  let networkAvailable = false;
+  let activationNetworkCalls = 0;
+  let activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"legacy"}\n';
+  let serverVersion = '1.2.3+5';
+  let cachePutFails = false;
+  let staleHttpExecutable = false;
+  let cachedMarketingModule = false;
+  const cachedPuts = [];
+  const deletedCaches = [];
+  const openedCaches = [];
+  const persistentCaches = new Map();
+  let cacheNames = [
+    'festapp-app-shell-1.2.3+2',
+    'festapp-app-shell-1.2.3+3',
+    'festapp-app-shell-1.2.3+4',
+    'festapp-used-fonts-v1',
+  ];
+  let claimedExistingClients = 0;
+  const navigatedClients = [];
+  const clientsById = new Map([
+    ['updating-tab', {
+      id: 'updating-tab',
+      url: 'https://app.test/csmostrava2026/news',
+      navigate: async (url) => { navigatedClients.push(['updating-tab', url]); },
+      postMessage: () => {},
+    }],
+    ['older-open-tab', {
+      id: 'older-open-tab',
+      url: 'https://app.test/csmostrava2026/news',
+      navigate: async (url) => { navigatedClients.push(['older-open-tab', url]); },
+      postMessage: () => {},
+    }],
+  ]);
+  const cache = {
+    addAll: async (requests) => {
+      assert.ok(requests.length > 0);
+      for (const request of requests) {
+        assert.equal(request.cache, 'no-store',
+          'installation must bypass cached failed HTTP responses');
+      }
+    },
+    put: async (request) => {
+      if (cachePutFails) throw new Error('storage quota exceeded');
+      cachedPuts.push(String(request.url || request));
+    },
+    match: async (request) => {
+      const url = typeof request === 'string' ? request : request.url;
+      if (url === fontUrl) return cachedFont.clone();
+      if (url.includes('/flutter?pwa-cache=1')) return cachedShell.clone();
+      if (url.includes('/webclient?pwa-cache=1')) return cachedWebClient.clone();
+      if (url === '/pro-poradatele') return new Response('<html>organizers</html>');
+      if (url === '/privacy/') return cachedPrivacy.clone();
+      if (url.includes('/assets/translation.json')) return new Response('{}');
+      if (cachedMarketingModule && url.includes('/web-assets/index.js')) {
+        return new Response('offline catalogue module');
+      }
+      return undefined;
+    },
+  };
+  const context = {
+    URL,
+    Request,
+    Response,
+    Promise,
+    setTimeout,
+    clearTimeout,
+    caches: {
+      open: async (name) => {
+        openedCaches.push(name);
+        if (name.startsWith('festapp-app-shell-') || name === 'festapp-used-fonts-v1') return cache;
+        if (!persistentCaches.has(name)) persistentCaches.set(name, new Map());
+        const entries = persistentCaches.get(name);
+        return {
+          put: async (request, response) => entries.set(String(request.url || request), response.clone()),
+          match: async (request) => entries.get(String(request.url || request))?.clone(),
+          delete: async (request) => entries.delete(String(request.url || request)),
+        };
+      },
+      keys: async () => [...cacheNames],
+      delete: async (name) => {
+        deletedCaches.push(name);
+        cacheNames = cacheNames.filter((candidate) => candidate !== name);
+        return true;
+      },
+    },
+    fetch: async (request, options) => {
+      const url = String(request.url || request);
+      if (url.includes('/backend-activation.json')) {
+        activationNetworkCalls++;
+        if (!networkAvailable) throw new Error('offline');
+        return new Response(activationDocument, {
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (!networkAvailable) throw new Error('offline');
+      networkCalls++;
+      if (url === 'https://app.test/') return new Response('<html>live organizers</html>');
+      if (url.includes('/organizers-media/') || url.includes('/web-assets/landing-')) return new Response('streamed marketing');
+      if (url.includes('/settings/connections')) {
+        assert.equal(options?.cache, 'no-store');
+        return new Response('online connections');
+      }
+      if (url.includes('/settings/mcp-connect')) {
+        assert.equal(options?.cache, 'no-store');
+        return new Response('online consent');
+      }
+      if (url.includes('/festapp-version.json')) {
+        return new Response(JSON.stringify({ version: serverVersion }), {
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url.includes('/main.dart.js')) {
+        if (staleHttpExecutable && options?.cache !== 'no-store') {
+          return new Response('<html>Not found</html>', { status: 404 });
+        }
+        return new Response('recovered current executable');
+      }
+      if (url.includes('/web-assets/index.js')) {
+        return new Response('web client bundle');
+      }
+      if (url.includes('/napoveda/')) return new Response('public help from network');
+      throw new Error(`unexpected network request: ${url}`);
+    },
+    self: {
+      location: { origin: 'https://app.test' },
+      navigator: { onLine: false },
+      clients: {
+        claim: async () => { claimedExistingClients++; },
+        get: async (id) => clientsById.get(id),
+        matchAll: async () => [...clientsById.values()],
+      },
+      skipWaiting: async () => {},
+      addEventListener: (type, handler) => { handlers[type] = handler; },
+    },
+  };
+  vm.runInNewContext(worker, context);
+  await vm.runInNewContext('precacheAtomically()', context);
+
+  async function dispatchFetch(request, clientId = '', resultingClientId = '') {
+    let responsePromise;
+    handlers.fetch({
+      request,
+      clientId,
+      resultingClientId,
+      respondWith: (promise) => { responsePromise = promise; },
+    });
+    assert.ok(responsePromise, `worker did not handle ${request.url}`);
+    return responsePromise;
+  }
+
+  async function reportVersion(client, version) {
+    let pending = Promise.resolve();
+    handlers.message({
+      data: { type: 'FESTAPP_CLIENT_VERSION', version },
+      source: client,
+      waitUntil: (promise) => { pending = promise; },
+    });
+    await pending;
+  }
+
+  // The requesting tab needs controllerchange so its existing update script
+  // can reload it. Other tabs are claimed too, but must remain mapped to the
+  // cache generation from which their JavaScript is already executing.
+  handlers.message({
+    data: 'SKIP_WAITING',
+    source: {id: 'updating-tab'},
+  });
+
+  // Claim both tabs so the updating tab's next navigation cannot fall back
+  // through the old worker. Keep the other tab pinned to its original shell;
+  // both tabs share Cache Storage and it can still request deferred chunks.
+  let activation;
+  handlers.activate({ waitUntil: (promise) => { activation = promise; } });
+  await activation;
+  assert.equal(claimedExistingClients, 1);
+  assert.deepEqual(deletedCaches, []);
+
+  // A cold navigation has no clientId: the newly created page is identified
+  // by resultingClientId. Its first scripts must inherit the navigation's
+  // current shell without waiting for a report from a script that has not yet
+  // been allowed to load.
+  const freshNavigation = new Request('https://app.test/csmostrava2026/');
+  Object.defineProperty(freshNavigation, 'mode', { value: 'navigate' });
+  const freshShellResponse = await dispatchFetch(
+    freshNavigation,
+    '',
+    'fresh-tab',
+  );
+  assert.equal(await freshShellResponse.text(), '<html>offline shell</html>');
+  for (const pathname of ['/pro-poradatele', '/pro-poradatele/']) {
+    const request = new Request('https://app.test' + pathname);
+    Object.defineProperty(request, 'mode', { value: 'navigate' });
+    const response = await dispatchFetch(request, '', 'organizer-tab');
+    assert.equal(response.status,308);
+    assert.equal(response.headers.get('location'),'https://app.test/');
+  }
+  const helpRequest = new Request('https://app.test/napoveda/vlozeni-na-web/');
+  Object.defineProperty(helpRequest, 'mode', {value: 'navigate'});
+  await assert.rejects(dispatchFetch(helpRequest, '', 'help-tab'), /offline/, 'help must not fall back to an unrelated cached app');
+  await assert.rejects(dispatchFetch(new Request('https://app.test/napoveda/assets/help.js')), /offline/);
+  const freshAssetResponse = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'fresh-tab',
+  );
+  assert.equal(await freshAssetResponse.text(), '{}',
+    'a cold page must load subresources before its report script executes');
+
+  const openedBeforeUnknownFetch = openedCaches.filter(name => name.startsWith('festapp-app-shell-')).length;
+  const unknownGenerationResponse = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'older-open-tab',
+  );
+  assert.equal(unknownGenerationResponse.type, 'error');
+  assert.equal(openedCaches.filter(name => name.startsWith('festapp-app-shell-')).length, openedBeforeUnknownFetch,
+    'activation must not guess one old cache for an unreported client');
+  await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
+
+  // controllerchange runs inside the old page before its accepted reload and
+  // therefore reports the previous version to the new worker. The updating
+  // tab must stay on the new shell instead of being pinned back to the old one.
+  handlers.message({
+    data: { type: 'FESTAPP_CLIENT_VERSION', version: '1.2.3+3' },
+    source: { id: 'updating-tab' },
+    waitUntil: () => {},
+  });
+
+  const fontResponse = await dispatchFetch(new Request(fontUrl));
+  assert.equal(await fontResponse.text(), 'cached emoji font');
+  const navigation = new Request('https://app.test/csmostrava2026/');
+  Object.defineProperty(navigation, 'mode', { value: 'navigate' });
+  const shellResponse = await dispatchFetch(navigation, 'updating-tab');
+  assert.equal(await shellResponse.text(), '<html>offline shell</html>');
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+4',
+    'the tab that requested the update must navigate through the new shell');
+  const rootNavigation = new Request('https://app.test/');
+  Object.defineProperty(rootNavigation, 'mode', { value: 'navigate' });
+  const rootResponse = await dispatchFetch(rootNavigation, 'updating-tab');
+  assert.equal(await rootResponse.text(), '<html>generic event list</html>',
+    'the web client must boot at root so it can handle legacy scanner hashes');
+  for (const pathname of [
+    '/scan', '/scan/SECRET', '/scan/settings', '/scan/history',
+    '/scan/offline', '/scan/program/42', '/login-qr', '/event/check/42',
+  ]) {
+    const request = new Request('https://app.test' + pathname);
+    Object.defineProperty(request, 'mode', { value: 'navigate' });
+    assert.equal(await (await dispatchFetch(request, 'updating-tab')).text(),
+      '<html>generic event list</html>', pathname);
+  }
+  for (const pathname of ['/unit/2', '/unit/2/']) {
+    const unitNavigation = new Request('https://app.test' + pathname);
+    Object.defineProperty(unitNavigation, 'mode', { value: 'navigate' });
+    const unitResponse = await dispatchFetch(unitNavigation, 'updating-tab');
+    assert.equal(await unitResponse.text(), '<html>generic event list</html>',
+      'unit catalogues must use the web client under an active offline worker');
+  }
+  const unitAdminNavigation = new Request('https://app.test/unit/2/edit');
+  Object.defineProperty(unitAdminNavigation, 'mode', { value: 'navigate' });
+  assert.equal(await (await dispatchFetch(unitAdminNavigation, 'updating-tab')).text(), '<html>offline shell</html>');
+  const topicNavigation=new Request('https://app.test/reserved-seats');
+  Object.defineProperty(topicNavigation,'mode',{value:'navigate'});
+  assert.equal((await dispatchFetch(topicNavigation,'updating-tab')).type,'error','offline topic must not serve an unrelated shell');
+  const privacyNavigation = new Request('https://app.test/privacy');
+  Object.defineProperty(privacyNavigation, 'mode', { value: 'navigate' });
+  const privacyResponse = await dispatchFetch(privacyNavigation, 'updating-tab');
+  assert.equal(await privacyResponse.text(), '<html>privacy policy</html>',
+    'standalone documents must not fall through to the Flutter router');
+  const versionResponse = await dispatchFetch(
+    new Request('https://app.test/festapp-version.json?t=offline'),
+  );
+  assert.equal(versionResponse.type, 'error');
+  assert.equal(networkCalls, 0);
+
+  const activationRequest = new Request(
+    'https://app.test/backend-activation.json?t=first',
+  );
+  await assert.rejects(
+    dispatchFetch(activationRequest),
+    /offline/,
+    'offline activation must fail without a cached document fallback',
+  );
+  assert.equal(activationNetworkCalls, 1);
+  context.self.navigator.onLine = true;
+  networkAvailable = true;
+  const legacyActivationResponse = await dispatchFetch(activationRequest);
+  assert.match(await legacyActivationResponse.text(), /"backend":"legacy"/);
+  activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"canonical"}\n';
+  const canonicalActivationResponse = await dispatchFetch(new Request(
+    'https://app.test/backend-activation.json?t=second',
+  ));
+  assert.match(await canonicalActivationResponse.text(), /"backend":"canonical"/);
+  assert.equal(activationNetworkCalls, 3);
+  assert.ok(!cachedPuts.some((url) => url.includes('backend-activation.json')),
+    'the activation document must never enter Cache Storage');
+
+  // An incomplete/stale app-shell must never fill an executable Flutter chunk
+  // from a newer deployment. Mixing main.dart.js generations leaves the app
+  // permanently stuck on its loader; the version cutover owns recovery.
+  context.self.navigator.onLine = true;
+  const missingChunkResponse = await dispatchFetch(
+    new Request('https://app.test/main.dart.js_99.part.js'),
+  );
+  assert.equal(missingChunkResponse.type, 'error');
+  assert.equal(networkCalls, 1);
+
+  await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'older-open-tab',
+  );
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+3');
+
+  // An older open Flutter runtime cannot execute a deferred chunk from this
+  // worker's newer build. If its versioned cache never saw that route before
+  // the deployment, cut the tab over to the complete current shell instead of
+  // mixing JS generations and leaving AutoRoute on an endless spinner.
+  serverVersion = '1.2.3+4';
+  const staleChunkResponse = await dispatchFetch(
+    new Request('https://app.test/main.dart.js_7.part.js'),
+    'older-open-tab',
+  );
+  assert.equal(staleChunkResponse.type, 'error');
+  assert.deepEqual(navigatedClients, [[
+    'older-open-tab',
+    'https://app.test/csmostrava2026/news',
+  ]]);
+  assert.equal(networkCalls, 1,
+    'a stale runtime must never download an executable from the new build');
+
+  // If an old controller outlives its evicted cache while the deployment has
+  // already advanced, the entry bundle is the safe cutover boundary. Returning
+  // Response.error() here reproduces the production blank-canvas cold start.
+  serverVersion = '1.2.3+5';
+  const latestMainResponse = await dispatchFetch(
+    new Request('https://app.test/main.dart.js'),
+  );
+  assert.equal(await latestMainResponse.text(), 'recovered current executable');
+  assert.deepEqual(cachedPuts, [],
+    'a newer entry bundle must not be written into the old worker cache');
+  assert.equal(networkCalls, 3);
+
+  // If storage eviction/corruption removed an executable from this worker's
+  // own build, recover that exact build from the network instead of leaving
+  // every controlled reload permanently stuck on the Flutter loader.
+  staleHttpExecutable = true;
+  serverVersion = '1.2.3+4';
+  const recoveredMainResponse = await dispatchFetch(
+    new Request('https://app.test/main.dart.js'),
+  );
+  assert.equal(await recoveredMainResponse.text(), 'recovered current executable');
+  assert.deepEqual(cachedPuts, ['https://app.test/main.dart.js']);
+  assert.equal(networkCalls, 5);
+
+  // A full/evicted cache must not discard an already verified executable.
+  // Serving it keeps this reload alive even if persistence cannot self-heal.
+  cachePutFails = true;
+  const uncachedMainResponse = await dispatchFetch(
+    new Request('https://app.test/main.dart.js_7.part.js'),
+  );
+  assert.equal(await uncachedMainResponse.text(), 'recovered current executable');
+  assert.deepEqual(cachedPuts, ['https://app.test/main.dart.js']);
+  assert.equal(networkCalls, 7);
+
+  await reportVersion(clientsById.get('updating-tab'), '1.2.3+4');
+  await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
+  assert.deepEqual(deletedCaches, ['festapp-app-shell-1.2.3+2']);
+  assert.ok(cacheNames.includes('festapp-used-fonts-v1'));
+
+  context.self.navigator.onLine = false;
+  const currentAfterPrune = await dispatchFetch(navigation, 'updating-tab');
+  assert.equal(await currentAfterPrune.text(), '<html>offline shell</html>');
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+4');
+  const liveAfterPrune = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'older-open-tab',
+  );
+  assert.equal(await liveAfterPrune.text(), '{}');
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+3');
+
+  // Chrome can report offline while real requests still work. A missing web
+  // bundle must be fetched so the cached HTML does not become a blank page.
+  const webBundle = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'),
+  );
+  assert.equal(await webBundle.text(), 'web client bundle');
+  const liveVersion = await dispatchFetch(
+    new Request('https://app.test/festapp-version.json?t=false-offline'),
+  );
+  assert.equal((await liveVersion.json()).version, '1.2.3+4');
+
+  // A resumed mobile worker has no generation recorded for this page, and
+  // may never have seen a navigation event (e.g. the HTML came from cache).
+  // Execute the real HTML's classic bootstrap while its entry module waits.
+  const resumedId = 'resumed-web-page';
+  const resumedClient = { id: resumedId, url: 'https://app.test/events', postMessage() {} };
+  clientsById.set(resumedId, resumedClient);
+  const pendingWebModule = dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), resumedId,
+  );
+  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
+    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
+  const resumedPage = new JSDOM(bootstrapHtml, {
+    url: 'https://app.test/events',
+    runScripts: 'dangerously',
+    beforeParse(window) {
+      const serviceWorker = new window.EventTarget();
+      serviceWorker.controller = {
+        postMessage(data) {
+          handlers.message({ data, source: resumedClient, waitUntil() {} });
+        },
+      };
+      Object.defineProperty(window.navigator, 'serviceWorker', { value: serviceWorker });
+    },
+  });
+  try {
+    const resumedWebModule = await pendingWebModule;
+    assert.equal(await resumedWebModule.text(), 'web client bundle',
+      'cached HTML must unlock its entry module without first executing that module');
+  } finally {
+    resumedPage.window.close();
+  }
+
+  // Chrome may terminate a service worker after it served the HTML but
+  // before the page fetched the script which reports its build version.
+  // Restart the actual generated worker with the same durable CacheStorage.
+  cachePutFails = false;
+  const restartingNavigation = new Request('https://app.test/login');
+  Object.defineProperty(restartingNavigation, 'mode', { value: 'navigate' });
+  await dispatchFetch(restartingNavigation, '', 'restart-before-bootstrap');
+  vm.runInNewContext(worker, { ...context, self: { ...context.self } });
+  const afterRestart = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'),
+    'restart-before-bootstrap',
+  );
+  assert.equal(afterRestart.status, 200,
+    'service worker restart must not strand a cold Flutter page before its first version report');
+  assert.equal(await afterRestart.text(), '{}');
+
+  const olderRestartClient = { id: 'restart-old-tab', url: 'https://app.test/login', postMessage() {} };
+  clientsById.set(olderRestartClient.id, olderRestartClient);
+  await reportVersion(olderRestartClient, '1.2.3+3');
+  vm.runInNewContext(worker, { ...context, self: { ...context.self } });
+  const pinnedAfterRestart = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'), olderRestartClient.id,
+  );
+  assert.equal(pinnedAfterRestart.status, 200);
+  assert.equal(openedCaches.at(-1), 'festapp-app-shell-1.2.3+3',
+    'worker restart must preserve the older open tab generation, not mix current build resources');
+
+  const resumeMessages = [];
+  const resumeClient = {
+    id: 'resume-without-durable-report', url: 'https://app.test/login',
+    postMessage(message) {
+      resumeMessages.push(message.type);
+      if (message.type === 'FESTAPP_REPORT_VERSION') {
+        queueMicrotask(() => reportVersion(resumeClient, '1.2.3+3'));
+      }
+    },
+  };
+  clientsById.set(resumeClient.id, resumeClient);
+  const resumedAsset = await dispatchFetch(
+    new Request('https://app.test/assets/translation.json'), resumeClient.id,
+  );
+  assert.equal(resumedAsset.status, 200,
+    'an already loaded mobile tab must be asked for its version when the worker has no saved report');
+  assert.deepEqual(resumeMessages, ['FESTAPP_REPORT_VERSION']);
+
+  const webClientIndex = await readFile(
+    path.join(projectRoot, 'web_client/index.html'),
+    'utf8',
+  );
+  assert.match(webClientIndex, /serviceWorker\.register\('\/festapp_service_worker\.js'/);
+  assert.match(webClientIndex, /window\.__FESTAPP_BUILD_VERSION__ = "[^"]+"/);
+  assert.match(webClientIndex, /type: 'FESTAPP_CLIENT_VERSION'/);
+  assert.match(webClientIndex, /version: window\.__FESTAPP_BUILD_VERSION__/);
+  assert.match(webClientIndex, /controllerchange/);
+  assert.match(webClientIndex, /visibilitychange/);
+  assert.doesNotMatch(webClientIndex, /serviceWorker\.getRegistrations\(\)/);
+  assert.match(webClientIndex, /performance\.getEntriesByType\('resource'\)/);
+  const flutterIndex = await readFile(path.join(projectRoot, 'web/index.html'), 'utf8');
+  const ciBuild = await readFile(
+    path.join(projectRoot, 'automation/ci_build.sh'),
+    'utf8',
+  );
+  const cloudflareBuild = await readFile(
+    path.join(projectRoot, 'automation/cloudflare_build.sh'),
+    'utf8',
+  );
+  const sharedBuild = await readFile(
+    path.join(projectRoot, 'automation/build_web_bundle.sh'),
+    'utf8',
+  );
+  const flutterVersionScript = await readFile(
+    path.join(projectRoot, 'automation/flutter_version.mjs'),
+    'utf8',
+  );
+  const appConfig = await readFile(path.join(projectRoot, 'lib/app_config.dart'), 'utf8');
+  const oneSignalWorker = await readFile(
+    path.join(projectRoot, 'web/push/OneSignalSDKWorker.js'),
+    'utf8',
+  );
+  assert.match(
+    appConfig,
+    /static const bool isWebNotificationsSupported = true;/,
+    'installed PWA notifications must remain enabled for this deployment',
+  );
+  assert.match(flutterIndex, /serviceWorkerPath: "\.\/push\/OneSignalSDKWorker\.js"/);
+  assert.match(worker, /festapp-occasion-media-v1/);
+  assert.match(worker, /request\.destination === 'image'/);
+  assert.doesNotMatch(
+    flutterIndex,
+    /canvasKitForceMultiSurfaceRasterizer/,
+    'Chromium must keep Flutter’s default offscreen rasterizer; the multi-surface fallback uses multiple WebGL contexts and is reserved for Safari/Firefox',
+  );
+  assert.doesNotMatch(ciBuild, /FLUTTER_WEB_CANVASKIT_FORCE_MULTI_SURFACE_RASTERIZER/);
+  assert.doesNotMatch(
+    cloudflareBuild,
+    /FLUTTER_WEB_CANVASKIT_FORCE_MULTI_SURFACE_RASTERIZER/,
+  );
+  assert.match(ciBuild, /build_web_bundle\.sh" static/);
+  assert.match(cloudflareBuild, /build_web_bundle\.sh" cloudflare/);
+  assert.match(cloudflareBuild, /path === "\/backend-activation\.json"[\s\S]*?"no-store, max-age=0"/);
+  assert.match(
+    cloudflareBuild,
+    /path === "\/backend-activation\.json" && request\.method === "OPTIONS"[\s\S]*?activationCorsHeaders/,
+    'the public activation manifest must support cross-origin preview preflights',
+  );
+  assert.match(
+    cloudflareBuild,
+    /activationCorsHeaders[\s\S]*?access-control-allow-origin[\s\S]*?access-control-allow-headers/,
+    'activation responses must carry the public CORS contract',
+  );
+  assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile/);
+  assert.match(sharedBuild, /bash automation\/test_web_startup\.sh/);
+  assert.match(sharedBuild, /cd web_client && pnpm run build/);
+  assert.ok(sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
+    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && pnpm run build'),
+    'install dependencies, verify startup, then build the public client');
+  assert.match(sharedBuild, /apply_config\.sh/);
+  assert.match(sharedBuild, /emit_version_manifest\.sh/);
+  assert.match(sharedBuild, /verify_web_build\.mjs/);
+  assert.match(sharedBuild, /flutter_version\.mjs/);
+  assert.match(
+    flutterVersionScript,
+    /project\.conf/,
+  );
+  assert.doesNotMatch(
+    flutterVersionScript,
+    /\.fvmrc/,
+  );
+  assert.match(sharedBuild, /fvm install "\$FLUTTER_VERSION"/);
+  assert.match(sharedBuild, /flutter-\$\{FLUTTER_VERSION\}/);
+  assert.match(sharedBuild, /--strip-components=1/);
+  assert.match(flutterIndex, /serviceWorkerParam: \{ scope: "\/push\/" \}/);
+  assert.match(
+    flutterIndex,
+    /OneSignal initialization failed:[\s\S]*window\.OneSignalInitialized = false;[\s\S]*errorCallback\(error\);[\s\S]*return;/,
+    'a failed SDK initialization must remain retryable after reconnect',
+  );
+  assert.match(oneSignalWorker, /OneSignalSDK\.sw\.js/);
+  const installHandler = flutterIndex.match(
+    /window\.addEventListener\('beforeinstallprompt',[\s\S]*?\n\s*}\);/,
+  )?.[0];
+  assert.ok(installHandler);
+  assert.doesNotMatch(installHandler, /preventDefault\(/,
+    'native installation must remain available alongside the custom prompt');
+  assert.match(flutterIndex, /function promptInstall\(\)/);
+  assert.doesNotMatch(
+    flutterIndex,
+    /promptInstall\(\)[\s\S]*?await window\.festappOfflineReady/,
+    'the browser install prompt must run synchronously while user activation is valid',
+  );
+  assert.match(flutterIndex, /performance\.getEntriesByType\('resource'\)/);
+  assert.match(flutterIndex, /window\.recoverFestappStartup\('bootstrap-error'\)/);
+  assert.match(flutterIndex, /festapp-app-ready/);
+  assert.match(flutterIndex, /window\.markFestappAppReady = function/);
+  const engineStarted = flutterIndex.match(
+    /await appRunner\.runApp\(\);[\s\S]*?const loader/,
+  )?.[0] ?? '';
+  assert.doesNotMatch(
+    engineStarted,
+    /__FESTAPP_APP_READY__\s*=\s*true/,
+    'engine startup must not hide an application startup stall from PWA recovery',
+  );
+  assert.match(flutterIndex, /__FESTAPP_LOCAL_DEVELOPMENT__/);
+  assert.match(flutterIndex, /festappLocalDevelopmentReady/);
+  assert.match(flutterIndex, /serviceWorker\.getRegistrations\(\)/);
+  assert.match(flutterIndex, /festapp-app-shell-/);
+  assert.match(flutterIndex, /<img class="initial-logo"/);
+  assert.match(
+    flutterIndex,
+    /img\.initial-logo\s*\{[\s\S]*?max-width:\s*320px/,
+    'the configured tenant startup logo must keep its loading-screen sizing',
+  );
+  assert.doesNotMatch(flutterIndex, /<svg class="initial-logo"/);
+  assert.doesNotMatch(flutterIndex, /CSM Ostrava 2026/);
+  const updatePrompt = await readFile(
+    path.join(projectRoot, 'web/festapp_update_prompt.js'),
+    'utf8',
+  );
+  assert.match(updatePrompt, /function recoverStalledStartup\(reason\)/);
+  assert.match(updatePrompt, /scheduleStartupRecovery\(\)/);
+  assert.match(updatePrompt, /startupRecoveryStorageKey/);
+  assert.match(updatePrompt, /navigator\.onLine === false/);
+  assert.match(updatePrompt, /FESTAPP_CLIENT_VERSION/);
+  assert.match(updatePrompt, /serviceWorker\.ready\.then\(reportClientVersion\)/);
+  assert.match(
+    updatePrompt,
+    /if \(window\.__FESTAPP_LOCAL_DEVELOPMENT__\) return;/,
+  );
+  const networkReload = updatePrompt.match(
+    /async function prepareNetworkReload\(\) \{[\s\S]*?\n  \}/,
+  )?.[0];
+  assert.ok(networkReload);
+  assert.match(networkReload, /registration\.update\(\)/);
+  assert.doesNotMatch(networkReload, /unregister\(\)/);
+  assert.doesNotMatch(networkReload, /caches\.delete|festapp-app-shell-/);
+  const consent = new Request('https://app.test/settings/mcp-connect?request=' + 'R'.repeat(43));
+  Object.defineProperty(consent, 'mode', { value: 'navigate' });
+  networkAvailable = false;
+  await assert.rejects(dispatchFetch(consent), /offline/,
+    'consent must not fall back to a cached Flutter document');
+  networkAvailable = true;
+  assert.equal(await (await dispatchFetch(consent)).text(), 'online consent');
+  const management = new Request('https://app.test/settings/connections');
+  Object.defineProperty(management, 'mode', { value: 'navigate' });
+  networkAvailable = false;
+  await assert.rejects(dispatchFetch(management), /offline/, 'management must not fall back to a cached Flutter document');
+  networkAvailable = true;
+  assert.equal(await (await dispatchFetch(management)).text(), 'online connections');
+  assert.equal(cachedPuts.some(url => url.includes('/settings/connections')), false);
+
+  const marketingRoot = new Request('https://app.test/');
+  Object.defineProperty(marketingRoot,'mode',{value:'navigate'});
+  assert.equal(await (await dispatchFetch(marketingRoot,'','marketing-client')).text(),'<html>live organizers</html>');
+  const marketingClient = {
+    id: 'marketing-client',
+    url: 'https://app.test/',
+    postMessage: () => {},
+    navigate: async (url) => { navigatedClients.push(['marketing-client', url]); },
+  };
+  clientsById.set(marketingClient.id, marketingClient);
+  // The network homepage already belongs to the next deployment, while the
+  // installed worker still owns the previous app shell. Its shared account
+  // header imports must not send that homepage into a navigation loop.
+  await reportVersion(marketingClient, '1.2.3+5');
+  const navigationsBeforeMarketingImport = navigatedClients.length;
+  const marketingImport = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  );
+  assert.equal(navigatedClients.length, navigationsBeforeMarketingImport,
+    'a newer marketing module must not reload the network homepage');
+  assert.equal(await marketingImport.text(), 'web client bundle');
+  // A restarted worker must classify the page without an in-memory report.
+  vm.runInNewContext('clientVersions.clear(); clientCacheNames.clear();', context);
+  cachedMarketingModule = true;
+  assert.equal(await (await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  )).text(), 'web client bundle', 'online marketing must bypass cached app modules');
+  networkAvailable = false;
+  assert.equal(await (await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), marketingClient.id,
+  )).text(), 'offline catalogue module', 'the offline root catalogue keeps its cached modules');
+  cachedMarketingModule = false;
+  networkAvailable = true;
+  // Public help has no offline-app version reporter. Its entire shared graph
+  // must work even after a worker restart or with an older app installed.
+  const helpClient = {id:'help-client', url:'https://app.test/napoveda/objednavky/', postMessage:()=>{}};
+  clientsById.set(helpClient.id,helpClient);
+  const helpModule = await dispatchFetch(new Request('https://app.test/web-assets/index.js'),helpClient.id);
+  assert.equal(await helpModule.text(),'web client bundle','help imports must not wait for an app version report');
+  // Other app pages still recover a missing old-generation module normally.
+  await reportVersion(clientsById.get('older-open-tab'), '1.2.3+3');
+  const oldAppModule = await dispatchFetch(
+    new Request('https://app.test/web-assets/index.js'), 'older-open-tab',
+  );
+  assert.equal(oldAppModule.type, 'error');
+  assert.equal(navigatedClients.length, navigationsBeforeMarketingImport + 1);
+  for (const target of ['/organizers-media/demo.mp4','/web-assets/landing-proof.js']) {
+    assert.equal(await (await dispatchFetch(new Request('https://app.test'+target),'unreported-marketing-client')).text(),'streamed marketing');
+    assert.ok(!cachedPuts.some(url=>url.includes(target)));
+  }
+  const catalogue = new Request('https://app.test/events'); Object.defineProperty(catalogue,'mode',{value:'navigate'});
+  assert.equal(await (await dispatchFetch(catalogue)).text(),'<html>generic event list</html>');
+  networkAvailable=false;
+  assert.equal(await (await dispatchFetch(marketingRoot)).text(),'<html>generic event list</html>');
+  console.log('pwa_offline.test: ok');
+} finally {
+  await rm(tempRoot, { recursive: true, force: true });
+}

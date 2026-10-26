@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "db": {
+      "command": "./.agent/mcp/start-mcp-db.sh"
+    },
+    "flutter": {
+      "command": "./.agent/mcp/start-mcp-flutter.sh"
+    },
+    "puppeteer": {
+      "command": "./.agent/mcp/start-mcp-puppeteer.sh"
+    },
+    "supabase": {
+      "command": "./.agent/mcp/start-mcp-supabase.sh"
+    }
+  }
+}

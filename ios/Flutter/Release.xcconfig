@@ -1,0 +1,6 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
+#include "Generated.xcconfig"
+
+// App Store archives must select the distribution identity embedded in the
+// manually pinned provisioning profile. Debug remains automatic/development.
+CODE_SIGN_IDENTITY = Apple Distribution

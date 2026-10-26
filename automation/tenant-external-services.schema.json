@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://festapp.net/schemas/tenant-external-services-v1.json",
+  "title": "Festapp tenant external service inputs",
+  "description": "Public schema only. Production values and seed payloads are owned by FestappSeed.",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "data"],
+        "properties": {
+          "type": { "const": "AGREEMENT_PDF" },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["organizer", "paymentClause", "termsClause", "logoUrl", "fontUrl"],
+            "properties": {
+              "organizer": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "ico", "dic", "address", "email", "phone", "account"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "ico": { "type": "string", "minLength": 1 },
+                  "dic": { "type": "string", "minLength": 1 },
+                  "address": { "type": "string", "minLength": 1 },
+                  "email": { "type": "string", "minLength": 1 },
+                  "phone": { "type": "string", "minLength": 1 },
+                  "account": { "type": "string", "minLength": 1 }
+                }
+              },
+              "paymentClause": { "type": "string", "minLength": 1 },
+              "termsClause": { "type": "string", "minLength": 1 },
+              "logoUrl": { "type": "string", "format": "uri", "pattern": "^https?://" },
+              "fontUrl": { "type": "string", "format": "uri", "pattern": "^https?://" }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

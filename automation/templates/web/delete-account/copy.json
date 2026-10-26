@@ -1,0 +1,38 @@
+{
+  "cs": {
+    "delete_account": "Smazání účtu",
+    "checking": "Ověřuji jednorázový odkaz…",
+    "consequences": "Smazáním ztratíte přístup k účtu, účasti, uloženému programu a soukromým údajům. Zákonem vyžadované záznamy mohou zůstat pouze bez přímé identity.",
+    "opening_does_not_delete": "Pouhé otevření této stránky účet nemaže.",
+    "confirm": "Trvale smazat účet",
+    "details": "Jak smazání funguje",
+    "invalid": "Odkaz není platný.",
+    "expired": "Platnost odkazu vypršela.",
+    "used": "Odkaz není platný nebo už byl použit.",
+    "verification_failed": "Ověření se nezdařilo. Zkuste to později.",
+    "confirm_prompt": "Opravdu chcete nevratně smazat celý účet?",
+    "processing": "Smazání se zpracovává…",
+    "pending": "Smazání probíhá. Tuto stránku můžete později znovu načíst.",
+    "completed": "Účet byl smazán.",
+    "failed": "Smazání se nezdařilo. Zkuste to později.",
+    "valid_until": "Odkaz je platný do"
+  },
+  "en": {
+    "delete_account": "Account deletion",
+    "checking": "Checking the one-time link...",
+    "consequences": "Deleting your account removes access to your account, participation, saved program and private data. Records required by law may remain without direct identity.",
+    "opening_does_not_delete": "Opening this page does not delete your account.",
+    "confirm": "Permanently delete account",
+    "details": "How account deletion works",
+    "invalid": "This link is invalid.",
+    "expired": "This link has expired.",
+    "used": "This link is invalid or has already been used.",
+    "verification_failed": "Verification failed. Please try again later.",
+    "confirm_prompt": "Permanently delete your entire account?",
+    "processing": "Processing account deletion...",
+    "pending": "Deletion is in progress. You can reload this page later.",
+    "completed": "Your account has been deleted.",
+    "failed": "Deletion failed. Please try again later.",
+    "valid_until": "This link is valid until"
+  }
+}

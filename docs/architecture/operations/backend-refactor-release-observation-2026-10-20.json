@@ -1,0 +1,40 @@
+{
+  "status": "read_only_observation_before_release",
+  "target": {
+    "tenant": "festapptickets",
+    "webOrigin": "https://vstupenky.online",
+    "canonicalOrigin": "https://api.festapp.net",
+    "organization": 3,
+    "activationGeneration": 1
+  },
+  "activationDocumentVerified": true,
+  "sshHostRuntimeAndDatabaseAssertionsVerified": true,
+  "productionChanged": false,
+  "mainBase": "77e5987413ca9b28f1fc1fb9ee91f4bac696b03c",
+  "deployedMigrationHeadAtObservation": "20261020001500",
+  "foundationApplied": false,
+  "releaseGate": {
+    "paused": false,
+    "minimumBuild": 620
+  },
+  "selectedOrganizationOccasions": 80,
+  "observedThirtyDayClientCommits": {
+    "unreportedVersion": 497
+  },
+  "selectedLiveReceiptSummary": "All scoped server receipts returned by the observation were completed; no processing row was reported. Deleted occasion IDs and offline stores are outside this sample.",
+  "ordinaryTableWriteGrants": "Most selected relations are already fenced. Blueprint and form-field tables still expose ordinary writes before this migration; final effective ACL closure includes table, column, inherited and TRUNCATE privileges.",
+  "sharedConsumerSourceInventory": {
+    "remoteTenantRefsRead": 14,
+    "writesOrReleasesToOtherTenants": false,
+    "blueprintAndFormFieldCandidate": "One form_fields JSON serialization candidate; no direct table writer found in the scoped blueprint/forms sources. This is source evidence, not a complete installed-device inventory."
+  },
+  "installedClientInventoryComplete": false,
+  "offlinePendingIntentInventoryComplete": false,
+  "compatibilityDecision": "Keep released fixed-signature adapters on canonical domain owners and preserve receipt hashes. Two-step activity publication returns upgrade-required without mutation. Existing global release gate remains unchanged. No MCP writes granted.",
+  "remainingGates": [
+    "Seal and publish the canonical revision; stage and verify the selected tenant artifact.",
+    "Capture protected rollback evidence and apply only the exact reviewed forward SQL and migration ledger atomically.",
+    "Deploy and verify the selected tenant, normal-role denials and exact stored receipt recovery."
+  ],
+  "localEnvironmentRecovery": "Authorized restart of the actual Colima Docker runtime completed; disposable baseline and SQL checks passed."
+}

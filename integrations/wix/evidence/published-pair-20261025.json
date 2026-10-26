@@ -1,0 +1,224 @@
+{
+  "verifiedAt": "2026-10-25T19:09:03.338562+00:00",
+  "sourceHead": "91e3a0180",
+  "widgetAssetSource": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+  "site": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "nativeSetup": "Wix Studio Layers > original Section > More Actions > Duplicate; native Publish confirmed Congratulations / This site is published and live online",
+  "nativePublishedWidgets": 2,
+  "separateNativeSections": true,
+  "developmentFixtureRetained": "Two sections/widgets intentionally remain on this dedicated development site for repeatable qualification; both saved URLs are the same guarded synthetic form",
+  "transport": {
+    "backend": "http://127.0.0.1:59821",
+    "clientVersion": "0.20.394+895",
+    "helperSource": "live service",
+    "productionHtmlAdapted": true,
+    "anonymousAuthAndCorsAdapted": true,
+    "productionRouteOrCorsQualified": false,
+    "networkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "requests": 10,
+    "allAdaptedRequestsStatus200": true
+  },
+  "publishedRuntime": {
+    "widgetModes": [
+      "Site",
+      "Site"
+    ],
+    "helperScripts": 1,
+    "distinctIframeElementsAndWindows": true,
+    "instancesByFrame": {
+      "0": [
+        "f_2127f4bb-dbab-4d17-993b-bb408c285e4b"
+      ],
+      "1": [
+        "f_bbb0e05c-b226-4dac-92ad-cbb9e8d40adc"
+      ]
+    },
+    "observedMessageTypes": [
+      "price",
+      "resize"
+    ],
+    "filledValuesIndependent": true,
+    "firstSummaryVisibleSecondFormStillFilled": [
+      {
+        "email": "wix-multi-first-20261025@example.invalid",
+        "name": [
+          {
+            "type": "radio",
+            "value": "6"
+          },
+          {
+            "type": "text",
+            "value": "First"
+          },
+          {
+            "type": "text",
+            "value": "Widget"
+          },
+          {
+            "type": "text",
+            "value": ""
+          }
+        ],
+        "summary": true
+      },
+      {
+        "email": "wix-multi-second-20261025@example.invalid",
+        "name": [
+          {
+            "type": "radio",
+            "value": "6"
+          },
+          {
+            "type": "text",
+            "value": "Second"
+          },
+          {
+            "type": "text",
+            "value": "Widget"
+          },
+          {
+            "type": "text",
+            "value": ""
+          }
+        ],
+        "summary": false
+      }
+    ],
+    "bothFormsAfterFirstSummaryClosed": [
+      {
+        "email": "wix-multi-first-20261025@example.invalid",
+        "name": [
+          {
+            "type": "radio",
+            "value": "6"
+          },
+          {
+            "type": "text",
+            "value": "First"
+          },
+          {
+            "type": "text",
+            "value": "Widget"
+          },
+          {
+            "type": "text",
+            "value": ""
+          }
+        ],
+        "summary": false
+      },
+      {
+        "email": "wix-multi-second-20261025@example.invalid",
+        "name": [
+          {
+            "type": "radio",
+            "value": "6"
+          },
+          {
+            "type": "text",
+            "value": "Second"
+          },
+          {
+            "type": "text",
+            "value": "Widget"
+          },
+          {
+            "type": "text",
+            "value": ""
+          }
+        ],
+        "summary": false
+      }
+    ],
+    "heightAfterBothFilled": {
+      "frameHeights": [
+        886,
+        886
+      ],
+      "widgetAndSectionHeights": [
+        897,
+        897
+      ],
+      "secondTopMinusFirstTop": 897
+    },
+    "presentationChange": {
+      "mechanism": "Temporary DOM attributes on actual published first custom element, not native saved settings",
+      "changedFirstTitle": true,
+      "changedFirstInheritStyleToFalse": true,
+      "secondPresentationUnchanged": true,
+      "loadEventsAfterReset": [
+        0,
+        0
+      ],
+      "bothIframeElementsRetained": true
+    },
+    "urlChange": {
+      "mechanism": "Temporary DOM form-url on actual published first custom element; native published configuration unchanged",
+      "alternateUrl": "https://vstupenky.online/form/wix-qa-other-20261025",
+      "loadEvents": [
+        1,
+        0
+      ],
+      "bothIframeElementsRetained": true,
+      "secondFormState": [
+        {
+          "email": "wix-multi-second-20261025@example.invalid",
+          "name": [
+            {
+              "type": "radio",
+              "value": "6"
+            },
+            {
+              "type": "text",
+              "value": "Second"
+            },
+            {
+              "type": "text",
+              "value": "Widget"
+            },
+            {
+              "type": "text",
+              "value": ""
+            }
+          ],
+          "summary": false
+        }
+      ],
+      "restoredSyntheticUrl": true,
+      "loadEventsAfterRestore": [
+        2,
+        0
+      ],
+      "alternateFormFunctionalityVerified": false
+    },
+    "mobile": {
+      "width": 320,
+      "scrollWidth": 320,
+      "iframeWidths": [
+        320,
+        320
+      ]
+    }
+  },
+  "ordersForFixtureBefore": 1,
+  "ordersForFixtureAfter": 1,
+  "newOrdersSubmitted": 0,
+  "browserAndTransportClosed": true,
+  "fullyQualified": false,
+  "limits": [
+    "Actual published pair and runtime attribute isolation verified; native delete/re-add is recorded separately as Editor-only",
+    "Old live helper still has the known Studio transparent-text defect; no marketplace/gallery readiness claimed",
+    "One first-frame load event was observed around first summary close before the controlled attribute phase; initial document completion was not excluded, so no claim that the first frame never reloads through summary",
+    "Synthetic HTML/backend/CORS adapted; provider redirect/return, actual payments, native Safari, production route/CORS and complete lifecycle remain unqualified",
+    "No claim that the alternate non-fixture URL successfully rendered a form; it was used only to verify sibling isolation"
+  ]
+}

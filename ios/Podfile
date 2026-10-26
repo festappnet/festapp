@@ -1,0 +1,59 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '15.6'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+# The app never shares location with OneSignal. Resolve the modular SDK without
+# OneSignalLocation so App Store privacy analysis sees only our foreground map use.
+ENV['ONESIGNAL_DISABLE_LOCATION'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+target 'OneSignalNotificationServiceExtension' do
+  use_frameworks!
+  pod 'OneSignalXCFramework/OneSignal', '5.5.5'
+  pod 'OneSignalXCFramework/OneSignalInAppMessages', '5.5.5'
+end
+
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    next unless target.name == 'geolocator_apple'
+
+    target.build_configurations.each do |config|
+      definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+      definitions = [definitions] unless definitions.is_a?(Array)
+      definitions << 'BYPASS_PERMISSION_LOCATION_ALWAYS=1' unless definitions.include?('BYPASS_PERMISSION_LOCATION_ALWAYS=1')
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions
+    end
+  end
+end

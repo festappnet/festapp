@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "hero": "layout-build",
+  "clips": [
+    {
+      "id": "layout-build",
+      "label": "Build the hall",
+      "src": "/organizers-media/en/layout-build.mp4",
+      "poster": "/organizers-media/en/layout-build-start.jpg",
+      "width": 1140,
+      "height": 792,
+      "duration": 12.9,
+      "description": "Add a table beside the finished row, align it and adjust its chairs.",
+      "boundary": "Product demonstration",
+      "mobileSrc": "/organizers-media/en/layout-build-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/layout-build-mobile-start.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 12.9,
+      "captureStatus": "verified"
+    },
+    {
+      "id": "layout-refine",
+      "label": "Refine the hall",
+      "src": "/organizers-media/en/layout-refine.mp4",
+      "poster": "/organizers-media/en/layout-refine.jpg",
+      "width": 1140,
+      "height": 792,
+      "duration": 21.366667,
+      "description": "Select several tables, change their layout and edit curved seating rows.",
+      "boundary": "Product demonstration",
+      "mobileSrc": "/organizers-media/en/layout-refine-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/layout-refine-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 21.366667,
+      "captureStatus": "verified"
+    },
+    {
+      "id": "layout-style",
+      "label": "Venue templates",
+      "src": "/organizers-media/en/layout-style.mp4",
+      "poster": "/organizers-media/en/layout-style.jpg",
+      "width": 1140,
+      "height": 824,
+      "duration": 6.833,
+      "description": "Choose a hall, cinema or theatre template.",
+      "boundary": "Product demonstration",
+      "mobileSrc": "/organizers-media/en/layout-style-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/layout-style-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 824,
+      "mobileDuration": 6.833,
+      "captureStatus": "pending"
+    },
+    {
+      "id": "form-build",
+      "label": "Build the form",
+      "src": "/organizers-media/en/form-build.mp4",
+      "poster": "/organizers-media/en/form-build.webp",
+      "width": 1200,
+      "height": 804,
+      "duration": 37.6,
+      "description": "Add priced dinner choices and a note question.",
+      "mobileSrc": "/organizers-media/en/form-build-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/form-build-mobile.webp",
+      "mobileWidth": 720,
+      "mobileHeight": 638,
+      "mobileDuration": 37.6,
+      "boundary": "Product demonstration",
+      "captureStatus": "verified"
+    },
+    {
+      "id": "form-style",
+      "label": "Form questions",
+      "src": "/organizers-media/en/form-style.mp4",
+      "poster": "/organizers-media/en/form-style.jpg",
+      "width": 1200,
+      "height": 804,
+      "duration": 5.0,
+      "description": "Custom questions, choices and required guest details.",
+      "mobileSrc": "/organizers-media/en/form-style-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/form-style-mobile.jpg",
+      "mobileWidth": 720,
+      "mobileHeight": 638,
+      "mobileDuration": 5.0,
+      "boundary": "Product demonstration",
+      "captureStatus": "pending"
+    },
+    {
+      "id": "ticket-design",
+      "label": "Design the ticket",
+      "src": "/organizers-media/en/ticket-design.mp4",
+      "poster": "/organizers-media/en/ticket-design.jpg",
+      "width": 1200,
+      "height": 822,
+      "duration": 10.6,
+      "description": "Move text and the admission QR code in the ticket editor.",
+      "mobileSrc": "/organizers-media/en/ticket-design-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/ticket-design-mobile.jpg",
+      "mobileWidth": 900,
+      "mobileHeight": 720,
+      "mobileDuration": 10.6,
+      "boundary": "Product demonstration",
+      "captureStatus": "verified"
+    },
+    {
+      "id": "seat-select",
+      "label": "Choose seats",
+      "src": "/organizers-media/en/seat-select.mp4",
+      "poster": "/organizers-media/en/seat-select.jpg",
+      "width": 1200,
+      "height": 804,
+      "duration": 7.766667,
+      "description": "Choose an available seat and continue to the English order form.",
+      "mobileSrc": "/organizers-media/en/seat-select-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/seat-select-mobile.jpg",
+      "mobileDuration": 7.766667,
+      "mobileWidth": 720,
+      "mobileHeight": 900,
+      "boundary": "Product demonstration",
+      "captureStatus": "verified"
+    },
+    {
+      "id": "payment-qr",
+      "label": "Payment options",
+      "src": "/organizers-media/en/payment-qr.mp4",
+      "poster": "/organizers-media/en/payment-qr.jpg",
+      "width": 1440,
+      "height": 900,
+      "duration": 5.6,
+      "description": "Pay by card through Stripe Checkout, or explicitly choose an enabled bank transfer.",
+      "mobileSrc": "/organizers-media/en/payment-qr-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/payment-qr-mobile.jpg",
+      "mobileWidth": 390,
+      "mobileHeight": 844,
+      "mobileDuration": 5.633,
+      "boundary": "Product demonstration",
+      "captureStatus": "pending"
+    },
+    {
+      "id": "check-in",
+      "label": "Check in",
+      "src": "/organizers-media/en/check-in.mp4",
+      "poster": "/organizers-media/en/check-in.webp",
+      "width": 1200,
+      "height": 800,
+      "duration": 4.833333,
+      "description": "Scan the admission QR code and confirm entry online.",
+      "mobileSrc": "/organizers-media/en/check-in-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/check-in-mobile.webp",
+      "mobileWidth": 500,
+      "mobileHeight": 1000,
+      "mobileDuration": 4.833333,
+      "boundary": "Product demonstration",
+      "captureStatus": "verified"
+    },
+    {
+      "id": "orders-overview",
+      "label": "Orders and overview",
+      "src": "/organizers-media/en/orders-overview.mp4",
+      "poster": "/organizers-media/en/orders-overview.webp",
+      "width": 1200,
+      "height": 900,
+      "duration": 31.166667,
+      "description": "Review sales, filter orders, edit a note and export the ticket table.",
+      "mobileSrc": "/organizers-media/en/orders-overview-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/orders-overview-mobile.webp",
+      "mobileWidth": 720,
+      "mobileHeight": 900,
+      "mobileDuration": 31.166667,
+      "boundary": "Product demonstration",
+      "captureStatus": "verified"
+    },
+    {
+      "id": "layout-grid",
+      "label": "Table layout",
+      "description": "Extend a custom table outline, add chairs and choose a table style.",
+      "boundary": "Product demonstration",
+      "src": "/organizers-media/en/layout-grid.mp4",
+      "poster": "/organizers-media/en/layout-grid.jpg",
+      "width": 1140,
+      "height": 792,
+      "duration": 15.033333,
+      "mobileSrc": "/organizers-media/en/layout-grid-mobile.mp4",
+      "mobilePoster": "/organizers-media/en/layout-grid-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 15.033333,
+      "captureStatus": "verified"
+    }
+  ],
+  "sections": [
+    {
+      "id": "planek",
+      "eyebrow": "01 / Room for your evening",
+      "title": "Arrange the hall your way.",
+      "description": "Tables, chairs and a dance floor. Build a venue your guests can navigate.",
+      "detail": "Drag elements into the hall or start with a template.",
+      "tags": [
+        "Tables and chairs",
+        "Drag and drop",
+        "Templates"
+      ],
+      "clips": [
+        "layout-build",
+        "layout-refine",
+        "layout-grid"
+      ],
+      "showcase": {
+        "title": "Designs for your event",
+        "description": "Customize existing templates in the shared editor.",
+        "items": [
+          {
+            "title": "Tables and curved rows",
+            "description": "Tables, chairs and curved seating rows facing the stage.",
+            "image": "/organizers-media/en/layout-hall.jpg",
+            "alt": "Tables and curved rows in the English editor",
+            "width": 768,
+            "height": 774
+          },
+          {
+            "title": "Galaxy cinema",
+            "description": "Curved seating rows facing the screen.",
+            "image": "/organizers-media/en/layout-cinema.jpg",
+            "alt": "Galaxy cinema in the English editor",
+            "width": 768,
+            "height": 774
+          },
+          {
+            "title": "Auditorium seating",
+            "description": "Straight seating rows facing the stage.",
+            "image": "/organizers-media/en/layout-modern.jpg",
+            "alt": "Auditorium seating in the English editor",
+            "width": 768,
+            "height": 774
+          }
+        ]
+      }
+    },
+    {
+      "id": "formular",
+      "eyebrow": "02 / Everything you need to know",
+      "title": "A form for your event.",
+      "description": "Add questions, offer dinner choices and choose required details.",
+      "detail": "Collect names, email addresses, phone numbers and custom answers.",
+      "tags": [
+        "Custom questions",
+        "Dinner choices",
+        "Required details"
+      ],
+      "clips": [
+        "form-build"
+      ]
+    },
+    {
+      "id": "vstupenka",
+      "eyebrow": "03 / A first impression",
+      "title": "Tickets in your style.",
+      "description": "Move text and the admission QR code directly in the design.",
+      "detail": "Each ticket includes guest details and a QR code for admission.",
+      "tags": [
+        "Your artwork",
+        "Layout",
+        "PDF tickets"
+      ],
+      "clips": [
+        "ticket-design"
+      ],
+      "showcase": {
+        "title": "Designs for your event",
+        "description": "Customize existing templates in the shared editor.",
+        "items": [
+          {
+            "title": "Ball invitation",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-ball.jpg",
+            "alt": "Ball invitation with English event and guest details",
+            "width": 1200,
+            "height": 600
+          },
+          {
+            "title": "Concert stub",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-concert.jpg",
+            "alt": "Concert stub with English event and guest details",
+            "width": 1200,
+            "height": 432
+          },
+          {
+            "title": "Theatre programme",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-theatre.jpg",
+            "alt": "Theatre programme with English event and guest details",
+            "width": 1200,
+            "height": 1692
+          },
+          {
+            "title": "Boarding pass",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-showcase-boarding-pass.webp",
+            "alt": "Boarding pass with English event and guest details",
+            "width": 1200,
+            "height": 540
+          },
+          {
+            "title": "Cinema strip",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-showcase-cinema-strip.webp",
+            "alt": "Cinema strip with English event and guest details",
+            "width": 1200,
+            "height": 450
+          },
+          {
+            "title": "Gallery square",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-showcase-gallery-square.webp",
+            "alt": "Gallery square with English event and guest details",
+            "width": 1200,
+            "height": 1200
+          },
+          {
+            "title": "Sports arena",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-showcase-sports-arena.webp",
+            "alt": "Sports arena with English event and guest details",
+            "width": 1200,
+            "height": 506
+          },
+          {
+            "title": "Workshop card",
+            "description": "An English sample from the shared ticket designer.",
+            "image": "/organizers-media/en/ticket-showcase-workshop-card.webp",
+            "alt": "Workshop card with English event and guest details",
+            "width": 1200,
+            "height": 852
+          }
+        ]
+      }
+    },
+    {
+      "id": "vyber-mist",
+      "eyebrow": "04 / Together at one table",
+      "title": "Guests choose their own seats.",
+      "description": "Zoom in, choose seats together and see the total price.",
+      "detail": "Individual seats or a whole table, including on a phone.",
+      "tags": [
+        "Specific seats",
+        "Mobile selection"
+      ],
+      "clips": [
+        "seat-select"
+      ]
+    },
+    {
+      "id": "odbaveni",
+      "eyebrow": "05 / A smooth welcome",
+      "title": "Check tickets with your phone.",
+      "description": "Scan the admission QR code and confirm entry.",
+      "detail": "Card-paid tickets are checked online.",
+      "tags": [
+        "QR check-in",
+        "Entry status"
+      ],
+      "clips": [
+        "check-in"
+      ]
+    },
+    {
+      "id": "prehled",
+      "eyebrow": "06 / Less paperwork",
+      "title": "Orders and payments at hand.",
+      "description": "Manage orders, payments and changes in one place.",
+      "detail": "Tools to keep your event under control.",
+      "tags": [
+        "Order status",
+        "Export"
+      ],
+      "clips": [
+        "orders-overview"
+      ],
+      "features": [
+        "Payment reminders",
+        "Order changes and cancellations",
+        "Cash payment records",
+        "Waitlist when sold out",
+        "Ticket filters and export"
+      ]
+    }
+  ],
+  "locale": "en"
+}

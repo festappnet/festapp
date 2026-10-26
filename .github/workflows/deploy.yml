@@ -1,0 +1,246 @@
+name: Deploy
+
+# Manual Cloudflare deployment fallback. Production pushes may contain
+# intermediate overlay commits, so a git push must never start a build. The
+# canonical release path is automation/deploy_direct.sh; this workflow is kept
+# for an explicitly dispatched GitHub-hosted release.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tenant-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify production branch is a canonical main overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          case "$BRANCH" in
+            prod/absolventskyvelehrad) TENANT_ID=absolventskyvelehrad ;;
+            prod/aksmcz) TENANT_ID=aksmcz ;;
+            prod/cavfotofest) TENANT_ID=cavfotofest ;;
+            prod/csmostrava2026) TENANT_ID=csmostrava2026 ;;
+            prod/doobiscup) TENANT_ID=doobiscup ;;
+            prod/farnostopava) TENANT_ID=farnostopava ;;
+            prod/festapp) TENANT_ID=festapp ;;
+            prod/festapptickets) TENANT_ID=festapptickets ;;
+            prod/festivalslunovrat) TENANT_ID=festivalslunovrat ;;
+            prod/hvezdamorska) TENANT_ID=hvezdamorska ;;
+            prod/jubileum2025) TENANT_ID=jubileum2025 ;;
+            *) echo "No unified-overlay policy for $BRANCH"; exit 0 ;;
+          esac
+          BASE_MAIN_SHA=$(node -e 'const v=require("./automation/tenant-overlay.json");process.stdout.write(v.baseMainSha||"")')
+          test -n "$BASE_MAIN_SHA"
+          git fetch --no-tags origin main
+          git show "$BASE_MAIN_SHA:automation/check_tenant_branch_drift.sh" > /tmp/check-tenant-drift.sh
+          chmod +x /tmp/check-tenant-drift.sh
+          CANONICAL_MAIN_REF=origin/main /tmp/check-tenant-drift.sh "$BASE_MAIN_SHA" "$TENANT_ID" "$GITHUB_SHA"
+          MAIN_TREE=$(mktemp -d /tmp/festapp-main-policy.XXXXXX)
+          rmdir "$MAIN_TREE"
+          git worktree add --detach "$MAIN_TREE" "$BASE_MAIN_SHA"
+          trap 'git worktree remove --force "$MAIN_TREE"' EXIT
+          bash "$MAIN_TREE/automation/tests/tenant_config_matrix.test.sh"
+          git worktree remove "$MAIN_TREE"
+          trap - EXIT
+
+  legal-contract:
+    needs: tenant-drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required legal and support configuration
+        run: |
+          set -euo pipefail
+          test -f automation/project.conf || {
+            echo "::error::automation/project.conf is required on every production branch."
+            exit 1
+          }
+          node automation/release/render_legal_pages.mjs --validate
+          node automation/release/render_legal_pages.mjs --check
+
+  detect:
+    needs: [tenant-drift, legal-contract]
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.read.outputs.target }}
+      cf_project: ${{ steps.read.outputs.cf_project }}
+      branch: ${{ steps.read.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        shell: bash
+        run: |
+          set -e
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+          if [ ! -f automation/project.conf ]; then
+            echo "::error::automation/project.conf missing on ${BRANCH}."
+            exit 1
+          fi
+
+          # Source the conf so quoted values with spaces survive.
+          set -a
+          # shellcheck disable=SC1091
+          source automation/project.conf
+          set +a
+
+          TARGET="${DEPLOY_TARGET:-skip}"
+          case "$TARGET" in
+            cloudflare|skip|'') ;;
+            *) echo "::error::Unsupported DEPLOY_TARGET=${TARGET}; production hosting is Cloudflare-only."; exit 1 ;;
+          esac
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "cf_project=${CLOUDFLARE_PROJECT_NAME:-}" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved DEPLOY_TARGET=${TARGET} on branch ${BRANCH}"
+
+  cloudflare:
+    needs: detect
+    if: needs.detect.outputs.target == 'cloudflare'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium test runner
+        run: |
+          # pnpm 11 places global executables in PNPM_HOME/bin.
+          export PATH="$PNPM_HOME/bin:$PATH"
+          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
+          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
+          agent-browser install --with-deps
+      - id: flutter-version
+        name: Read canonical Flutter version
+        run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.flutter-version.outputs.version }}
+          channel: 'stable'
+
+      - name: Materialize the private tenant release manifest
+        env:
+          BRANCH: ${{ needs.detect.outputs.branch }}
+          CSM_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_CSMOSTRAVA2026 }}
+          HVEZDA_MORSKA_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_HVEZDAMORSKA }}
+          CAV_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_CAVFOTOFEST }}
+          DOOBISCUP_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_DOOBISCUP }}
+          FARNOST_OPAVA_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FARNOSTOPAVA }}
+          AV_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_ABSOLVENTSKYVELEHRAD }}
+          FESTAPP_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FESTAPP }}
+          FESTAPP_TICKETS_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FESTAPPTICKETS }}
+          SLUNOVRAT_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FESTIVALSLUNOVRAT }}
+          JUBILEUM_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_JUBILEUM2025 }}
+          AKSMCZ_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_AKSMCZ }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          source automation/project.conf
+          set +a
+          if [ -z "${BACKEND_ACTIVATION_TENANT_ID:-}" ]; then
+            echo "Backend activation is disabled; cloud release preflight needs no private manifest."
+            exit 0
+          fi
+          case "$BRANCH" in
+            prod/csmostrava2026) RELEASE_MANIFEST="$CSM_MANIFEST" ;;
+            prod/hvezdamorska) RELEASE_MANIFEST="$HVEZDA_MORSKA_MANIFEST" ;;
+            prod/cavfotofest) RELEASE_MANIFEST="$CAV_MANIFEST" ;;
+            prod/doobiscup) RELEASE_MANIFEST="$DOOBISCUP_MANIFEST" ;;
+            prod/farnostopava) RELEASE_MANIFEST="$FARNOST_OPAVA_MANIFEST" ;;
+            prod/absolventskyvelehrad) RELEASE_MANIFEST="$AV_MANIFEST" ;;
+            prod/festapp) RELEASE_MANIFEST="$FESTAPP_MANIFEST" ;;
+            prod/festapptickets) RELEASE_MANIFEST="$FESTAPP_TICKETS_MANIFEST" ;;
+            prod/festivalslunovrat) RELEASE_MANIFEST="$SLUNOVRAT_MANIFEST" ;;
+            prod/jubileum2025) RELEASE_MANIFEST="$JUBILEUM_MANIFEST" ;;
+            prod/aksmcz) RELEASE_MANIFEST="$AKSMCZ_MANIFEST" ;;
+            *) echo "::error::No private release manifest mapping for $BRANCH."; exit 1 ;;
+          esac
+          test -n "$RELEASE_MANIFEST" || {
+            echo "::error::The private release manifest secret for $BRANCH is empty."
+            exit 1
+          }
+          RELEASE_MANIFEST_PATH="$RUNNER_TEMP/festapp-release-manifest.json"
+          printf '%s' "$RELEASE_MANIFEST" > "$RELEASE_MANIFEST_PATH"
+          chmod 0600 "$RELEASE_MANIFEST_PATH"
+          jq -e '.schemaVersion and .backend' "$RELEASE_MANIFEST_PATH" >/dev/null
+          echo "FESTAPP_RELEASE_MANIFEST=$RELEASE_MANIFEST_PATH" >> "$GITHUB_ENV"
+
+      - name: Build (Flutter + Web Client) via shared script
+        run: ./automation/cloudflare_build.sh
+
+      - name: Prepare Cloudflare Pages project without changing DNS
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ needs.detect.outputs.cf_project }}
+          BRANCH: ${{ needs.detect.outputs.branch }}
+          CLOUDFLARE_MANAGE_DNS: 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CF_PROJECT}" ]; then
+            echo "::error::CLOUDFLARE_PROJECT_NAME missing in automation/project.conf on branch ${BRANCH}."
+            exit 1
+          fi
+          set -a
+          source automation/project.conf
+          set +a
+          CLOUDFLARE_MANAGE_DNS=false node automation/cloudflare/ensure-pages-project.mjs
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/web --project-name=${{ needs.detect.outputs.cf_project }} --branch=${{ needs.detect.outputs.branch }}
+
+      - name: Activate and verify Cloudflare Pages custom-domain DNS
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ needs.detect.outputs.cf_project }}
+          BRANCH: ${{ needs.detect.outputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          source automation/project.conf
+          set +a
+          node automation/cloudflare/ensure-pages-project.mjs
+
+      - name: Verify coherent release on the active deployment origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          source automation/project.conf
+          if [ "${CLOUDFLARE_MANAGE_DNS:-true}" = false ]; then
+            VERIFY_ORIGIN="https://${CLOUDFLARE_PROJECT_NAME}.pages.dev"
+            PUBLIC_ORIGIN="https://${DOMAIN}"
+            echo "External DNS remains pending; verifying the Cloudflare Pages origin ${VERIFY_ORIGIN}."
+          else
+            VERIFY_ORIGIN="https://${DOMAIN}"
+            PUBLIC_ORIGIN="${VERIFY_ORIGIN}"
+          fi
+          node automation/verify_web_deployment.mjs \
+            "${VERIFY_ORIGIN}" "${VERSION}" automation/project.conf "${PUBLIC_ORIGIN}"
+
+  skipped:
+    needs: detect
+    if: needs.detect.outputs.target == 'skip' || needs.detect.outputs.target == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Skipping deploy on ${{ needs.detect.outputs.branch }}: no DEPLOY_TARGET in automation/project.conf."

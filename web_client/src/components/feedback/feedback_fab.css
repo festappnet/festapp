@@ -1,0 +1,97 @@
+#feedback-fab {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.fab-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--fab-color, var(--primary-color));
+    color: var(--fab-text-color, white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+.fab-button:hover {
+    transform: scale(1.05);
+}
+.fab-button.open {
+    background-color: #eee;
+    color: black;
+    transform: rotate(90deg);
+}
+
+/* Menu */
+.fab-menu {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+.fab-menu.hidden {
+    display: none;
+}
+
+.fab-help-title {
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    margin-bottom: 4px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.fab-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.fab-item:hover {
+    transform: translateX(-4px);
+}
+
+.fab-label {
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.fab-mini-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.fab-button, .fab-item {
+    border: 0;
+    padding: 0;
+    font: inherit;
+}
+.fab-item { background: transparent; color: inherit; }
+.fab-button:focus-visible, .fab-item:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 4px;
+}

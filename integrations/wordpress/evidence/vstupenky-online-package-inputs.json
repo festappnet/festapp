@@ -1,0 +1,14 @@
+{
+  "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+  "blocks/ticket-form/block.json": "c346c6f1ebdbcd6094fac8affaff52d6e7f384455f04d88fc0917c53b72627f8",
+  "blocks/ticket-form/editor.js": "d6d03e27445d276328745d9c3ee27b1942dbecf98663cf64a151b721cf0a9a8d",
+  "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
+  "includes/admin.php": "380df62476ea8ec67299ab9cff535c134b2e08e054f76bfc3d532b5eb97e84e5",
+  "includes/embed.php": "0444da495d5b2aac323cf76792e643224a33169ba7dd03d264e45549f8e6dbf1",
+  "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "7acb2667c8afe4b08dd3734d22a37c6cc6ece869f0a23b04fe82a08217306869",
+  "languages/vstupenky-online-cs_CZ.mo": "6a7e89276380122983d6822ad59a193104bf5bd4ad1757bb852e7b4087fee158",
+  "languages/vstupenky-online-cs_CZ.po": "70372592992da69631899d45891e1966f3c3fc146ba85fe7dda9cddad6202dda",
+  "languages/vstupenky-online.pot": "7f1df3eda305f37673587cbbedd93ec8554762114975552301fdc6d38a985747",
+  "readme.txt": "7688a7da3d3c7a4f642f8facd20676f9d5daabd9fef0faf999617a57a4554ff2",
+  "vstupenky-online.php": "a5549f219b81869ad15b80bae57f2d4e32a9b0ed7f2f9f502e783f5f310a497c"
+}

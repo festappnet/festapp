@@ -1,0 +1,183 @@
+{
+  "reviewedAt": "2026-10-25",
+  "reviewer": "Independent wix_critic agent explicitly requested by owner",
+  "sourceHead": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+  "localVerdict": "No remaining demonstrated local blocker for standalone static asset deployment",
+  "finding": {
+    "priority": "P1",
+    "file": "src/widget.js",
+    "problem": "Self-managed widget called site-window.viewMode without initializing the self-managed Site host",
+    "resolution": "Lazy @wix/site host + @wix/sdk client using the assigned app ID; manifest records actual app ID; bundled-entry SDK regression tests added",
+    "state": "FIXED_REVIEWED"
+  },
+  "coverage": [
+    "Canonical public-form URL validation and source/origin/instance boundary",
+    "Serialized settings writes and readback",
+    "Checkout ownership retained by canonical service",
+    "Sealed public-only archive and separate private data",
+    "Truthful distinction between preparation, registration, hosting and actual host qualification"
+  ],
+  "remainingPublicationGates": [
+    "Individual billing approval, service-revenue-only basis, zero fixed publisher fee confirmation and required reporting implementation",
+    "Contact Info and Security & Privacy portal pages; both currently fail with Wix CDN HTTP 403",
+    "Native Safari, full payment/lifecycle/browser matrix including remaining Harmony cases, and clean native Editor installation; observed Add to Site warning remains"
+  ],
+  "supportRequestReview": {
+    "file": "SUPPORT-REQUEST.md",
+    "verdict": "No factual blocker after adding explicit app-instance attribution, API reporting and uninstall/reinstall questions",
+    "sentAtReview": false,
+    "currentSent": true,
+    "supportReceipt": "support-history-20261025.json"
+  },
+  "finalEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking finding; site app record is explicitly distinguished from real host/widget qualification",
+    "corrections": "Historical sent flag clarified; history marked pre-submission; real checkout phrasing changed to a pending requirement"
+  },
+  "settingsPropagationFixReview": {
+    "date": "2026-10-25",
+    "verdict": "Approved bounded polling until getProp confirms each setProp; one write per property, stop before sibling write on timeout",
+    "source": "https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop",
+    "regressionTest": "Stale reads before each confirmed property; asserts next property write only after confirmation",
+    "testsPassed": 12
+  },
+  "finalEditorEvidenceReview": {
+    "date": "2026-10-25",
+    "verdict": "No unsupported checkout/publication/readiness claims; align historical installation flags and test count with latest editor receipt",
+    "correctionsApplied": true
+  },
+  "publishedCheckoutReview": {
+    "date": "2026-10-25",
+    "verdict": "Scoped published Wix checkout with production JS/helper and disposable backend verified; not production CORS/payments/native Safari",
+    "correctionsApplied": [
+      "SQL IS DISTINCT FROM guards missing organization",
+      "Persistent DNS fencing verified before interception and after SIGKILL",
+      "Fetch setup completes before READY",
+      "Owned headless browser and exact flags verified; shutdown restricted to it"
+    ],
+    "afterKillReceipt": "published-checkout-20261025.json"
+  },
+  "studioAndPortalReview": {
+    "date": "2026-10-25",
+    "verdict": "No blocking source/evidence issue; candidate helper and simulated dark styling explicitly scoped; native portal CDN403 and unsaved phone recorded",
+    "sharedHelperTestsPassed": 21,
+    "candidateHelperOverrideReviewed": true,
+    "targetDestroyedStartupWaitReviewed": true,
+    "sourcePrReady": true,
+    "marketplaceReady": false
+  },
+  "publicGuideReview": {
+    "date": "2026-10-25",
+    "sourceHead": "4e37f9a89188b11c2da9079d9d4fd95cfb6bf46a",
+    "verdict": "No content blocker; preparation notice, Editor/Studio steps and pending commercial terms match evidence",
+    "finding": "Existing placeholder test expected the old help URL",
+    "resolution": "Assertion now imports HELP_URL; all 12 Wix tests pass",
+    "guideLinkReadback": "https://vstupenky.online/napoveda/prodejni-formular/ HTTP 200 independently verified",
+    "mobileWidth": 320,
+    "documentScrollWidth": 320
+  },
+  "studioLifecycleReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: evidence and SETUP matrix correctly prove Editor lifecycle/property isolation only; published interaction remains pending",
+    "receipt": "studio-lifecycle-20261025.json",
+    "cleanup": "Reviewer required actual reload readback before claiming persistent cleanup; final receipt includes cold-reopen original-only readback"
+  },
+  "helperOutageReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS: published iframe/direct-link fallback only; absent synthetic route, untested checkout/recovery and explicit remaining gates correctly disclosed",
+    "receipt": "helper-outage-20261025.json"
+  },
+  "portalFollowupReview": {
+    "date": "2026-10-25",
+    "file": "../SUPPORT-FOLLOWUP.md",
+    "verdict": "PASS: owner/app-specific Harmony selector mismatch, limited mailbox observation, no global unsupported claim, no commercial acceptance; draft not sent and existing-thread/owner-authorization guard explicit"
+  },
+  "publishedPairReview": {
+    "date": "2026-10-25",
+    "receipt": "published-pair-20261025.json",
+    "verdict": "PASS: actual native published pair, independent values/helper instances and temporary runtime attribute isolation correctly scoped; no native saved-public-settings, alternate URL success or complete lifecycle claim",
+    "knownLimits": "First load near summary close disclosed; live contrast defect and complete checkout/payment/browser gates remain pending"
+  },
+  "editorUninstallReinstallReview": {
+    "date": "2026-10-25",
+    "receipt": "uninstall-reinstall-20261025.json",
+    "verdict": "PASS: native removal/restoration/fresh settings correctly separated from checkout; persistent native setup warning and workaround disclosed; clean install remains unqualified"
+  },
+  "finalCurrentReleaseAndGalleryReview": {
+    "reviewedAt": "2026-10-25T20:58:42.533752+00:00",
+    "widgetAssetSource": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+    "verdict": "No remaining demonstrated blocker to source publication and the standalone Wix asset release; Marketplace submission remains gated",
+    "scope": [
+      "Fallback link presentation and guarded local gallery fixture diff",
+      "Current published Studio checkout evidence with live helper and unmodified production frontend assets; HTML/auth/backend/CORS adapted to disposable backend",
+      "Runtime 0.20.402+903 explicitly distinguished from HTML template 0.20.401+902",
+      "Additional isolated order 8, fixture total 2; no production order/payment claim",
+      "Shared SQL/Edge release receipt, preserved old function contracts/ACLs and stated compatibility limits",
+      "Both actual 1200x900 gallery images visually inspected; sample form/fictional buyer, no real payment receipt or customer data",
+      "Draft gallery/thumbnail save-and-reload receipts; support case 3000345850 acknowledgement distinguished from approval"
+    ],
+    "correctionsApplied": [
+      "Updated stale Studio matrix entry from no new order to desktop order/receipt pass with QA transport; mobile summary only"
+    ],
+    "validation": "Existing 12-test/build/package PASS supplied by primary; source checks were not rerun for this evidence review",
+    "marketplaceReady": false,
+    "externalMessagesSentByReviewer": false,
+    "productionOperationsByReviewer": false
+  },
+  "harmonyQualificationReview": {
+    "reviewedAt": "2026-10-25T21:38:46.945032+00:00",
+    "receipt": "harmony-qualification-20261025.json",
+    "verdict": "No blocking evidence or scope finding; actual ordinary free Harmony site installation and scoped published summary verification are distinguished from the still-unavailable premium dev-site route",
+    "reviewedScope": [
+      "Unlisted 1.0 release and owner-site install; no access-private, Marketplace or commercial approval claim",
+      "Settings persistence after full editor reload and Editor/Preview checkout isolation",
+      "Live published helper and unmodified production client 0.20.404+905 with adapted synthetic HTML/backend/auth/CORS",
+      "Native per-breakpoint widget width adjustments explicitly required; no source DOM/CSS override claim",
+      "320px screenshot visually inspected: summary submit button visible; no submission and fixture order count remains 2",
+      "Support follow-up remains unsent and restricted to existing authorized conversation"
+    ],
+    "correctionsApplied": [
+      "Support follow-up now distinguishes two blocking portal pages from the nonblocking Harmony premium dev-site discrepancy",
+      "Submission introduction reflects installation in all three editors while keeping the full matrix and commercial gates pending"
+    ],
+    "fullyQualified": false,
+    "externalMessagesSentByReviewer": false,
+    "productionOperationsByReviewer": false
+  },
+  "finalCheckoutAndInfrastructureReview": {
+    "date": "2026-10-25",
+    "verdict": "PASS after correcting stale follow-up paragraph in SUBMISSION.md",
+    "scope": [
+      "Dedicated current-schema backend guards and preserved volume restart",
+      "Seat and separate bank fixture isolation",
+      "Native Chrome blocked storage and lost successful response retry",
+      "Truthful Harmony906/907 test evidence and bank QR versus real payments",
+      "Bounded native Editor installation A/B, delayed warning, restored draft",
+      "SMTP rejection and existing read-only case, no duplicate intake"
+    ],
+    "sourceHelperSyntax": "PASS",
+    "runtimeUnitTests": {
+      "passed": 12,
+      "failed": 0
+    },
+    "newReceipts": [
+      "final-checkout-qualification-20261025.json",
+      "editor-install-ab-20261025.json"
+    ],
+    "marketplaceReady": false
+  },
+  "recoveryFixesReview": {
+    "reviewedAt": "2026-10-26",
+    "sourceHead": "7db5e258bae06e39051b4acaae18fad8e4471589",
+    "verdict": "PASS after initialization aria-busy correction and two documentation metadata corrections",
+    "unitTests": {
+      "passed": 14,
+      "failed": 0
+    },
+    "preFixRegressionTestsFailed": 2,
+    "liveDeploymentHashesMatched": true,
+    "nativePublishedEditorRetryPreservedFrame": true,
+    "receipt": "recovery-fixes-20261026.json",
+    "marketplaceReady": false
+  }
+}

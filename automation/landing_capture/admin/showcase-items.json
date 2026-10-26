@@ -1,0 +1,38 @@
+[
+  {
+    "id": "boarding_pass",
+    "title": "Palubní vstupenka",
+    "alt": "Zelenobílá vstupenka s oddělenými údaji a QR kódem.",
+    "src": "organizers-media/ticket-showcase-boarding-pass.webp",
+    "width": 1200,
+    "height": 540,
+    "preset": "boarding_pass"
+  },
+  {
+    "id": "cinema_strip",
+    "title": "Filmový pás",
+    "alt": "Černozlatá vstupenka s filmovou perforací a QR kódem.",
+    "src": "organizers-media/ticket-showcase-cinema-strip.webp",
+    "width": 1200,
+    "height": 450,
+    "preset": "cinema_strip"
+  },
+  {
+    "id": "gallery_square",
+    "title": "Galerijní vstupenka",
+    "alt": "Čtvercová bílá vstupenka s červenou typografií a QR kódem.",
+    "src": "organizers-media/ticket-showcase-gallery-square.webp",
+    "width": 1200,
+    "height": 1200,
+    "preset": "gallery_square"
+  },
+  {
+    "id": "sports_arena",
+    "title": "Sportovní aréna",
+    "alt": "Tmavomodrá vstupenka s oranžovým pruhem a časem začátku.",
+    "src": "organizers-media/ticket-showcase-sports-arena.webp",
+    "width": 1200,
+    "height": 505,
+    "preset": "sports_arena"
+  }
+]

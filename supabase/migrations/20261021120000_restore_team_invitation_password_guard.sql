@@ -1,0 +1,2 @@
+-- Restore the team-invitation password boundary superseded by the operations foundation.
+-- Source: database/functions/emails/email_domain.sql

@@ -1,0 +1,10 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import fs from 'node:fs';
+const args = process.argv.slice(2);
+fs.mkdirSync('.private/docker', {recursive: true});
+fs.writeFileSync('.private/docker/config.json', JSON.stringify({cliPluginsExtraDirs:['/opt/homebrew/lib/docker/cli-plugins']}));
+const endpoint = spawnSync('docker', ['context','inspect','--format','{{.Endpoints.docker.Host}}'], {encoding:'utf8'}).stdout.trim();
+const env = {...process.env, DOCKER_CONFIG:path.resolve('.private/docker'), DOCKER_HOST:endpoint, NODE_OPTIONS: `--require=${path.resolve('scripts/loopback.cjs')}`, WP_ENV_HOME: path.resolve('.private/wp-env')};
+const result = spawnSync('pnpm', ['exec','wp-env', ...args], {stdio:'inherit', env});
+process.exit(result.status ?? 1);

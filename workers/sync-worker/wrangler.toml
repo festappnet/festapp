@@ -1,0 +1,25 @@
+name = "festapp-sync-worker"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+workers_dev = false
+
+[[r2_buckets]]
+binding = "PUBLIC_SYNC"
+bucket_name = "festapp-public"
+
+[[routes]]
+pattern = "sync.festapp.net"
+custom_domain = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[placement]
+mode = "smart"
+
+# Network protection owner: sync-worker. Per-location best effort, not provider quota.
+[[ratelimits]]
+name = "SYNC_MISS_BUDGET"
+namespace_id = "2026101601"
+simple = { limit = 5000, period = 60 }

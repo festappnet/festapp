@@ -1,0 +1,490 @@
+import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import '../unit_occasion_dashboard.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/components/navigation/administration_loading_shell.dart';
+import 'package:fstapp/components/navigation/route_visibility.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
+import 'package:fstapp/components/_shared/app_panel_helper.dart';
+import 'package:fstapp/components/_shared/red_strip_widget.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/unit_strings.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/unit/views/occasions_screen.dart';
+import 'package:fstapp/components/navigation/unit_administration_access.dart';
+import 'package:fstapp/components/unit/views/quotes_tab.dart';
+import 'package:fstapp/components/unit/views/unit_users_screen.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:fstapp/components/unit/views/unit_settings_screen.dart';
+import 'package:fstapp/components/email_templates/views/email_templates_tab.dart';
+import '../../occasion/occasion_model.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+
+@RoutePage()
+class UnitAdminPage extends StatefulWidget {
+  final int? id;
+  final UnitAdministrationAccess? access;
+  static const double contentMaxWidth = 1000;
+  const UnitAdminPage({super.key, @pathParam required this.id, this.access});
+  @override
+  State<UnitAdminPage> createState() => _UnitAdminPageState();
+}
+
+class _UnitAdminPageState extends State<UnitAdminPage> {
+  UnitAdministrationAccess get _access =>
+      widget.access ?? const RightsUnitAdministrationAccess();
+  UnitModel? _unit;
+  List<OccasionModel>? _occasions;
+  UnitOccasionDashboard? _dashboard;
+  bool _failed = false;
+  int _generation = 0;
+  bool _loading = false;
+  bool _loadFailed = false;
+  StackRouter? _root;
+  @override
+  void initState() {
+    super.initState();
+    _access.changes.addListener(_contextChanged);
+    _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ModalRoute.of(
+        context); // Reload retained context when native Back reveals it.
+    Localizations.localeOf(context);
+    context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
+    final root = context.router.root;
+    if (_root != root) {
+      _root?.removeListener(_contextChanged);
+      _root = root;
+      root.addListener(_contextChanged);
+    }
+    _contextChanged();
+  }
+
+  void _contextChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _loading ||
+          _loadFailed ||
+          !isVisibleRouteInstance(context)) return;
+      if (_access.currentUnit?.id != widget.id || _access.hasOccasion)
+        _load(force: true);
+      else if (!_access.isSignedIn)
+        _load();
+      else {
+        final failed = !_access.canAccess;
+        if (_failed != failed) setState(() => _failed = failed);
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  void dispose() {
+    ++_generation;
+    _root?.removeListener(_contextChanged);
+    _access.changes.removeListener(_contextChanged);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(UnitAdminPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) {
+      _unit = null;
+      _occasions = null;
+      _load();
+    }
+  }
+
+  Future<void> _load({bool force = false}) async {
+    final generation = ++_generation;
+    _loading = true;
+    _loadFailed = false;
+    final id = widget.id;
+    if (id == null) {
+      setState(() => _failed = true);
+      _loading = false;
+      return;
+    }
+    if (!_access.isSignedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted)
+          context.router.root.replace(LoginRoute(
+              redirect: context.router.root.urlState.uri.toString()));
+      });
+      return;
+    }
+    try {
+      await _access.load(id, force: force || _access.hasOccasion);
+      if (!mounted || generation != _generation) return;
+      final unit = _access.currentUnit;
+      if (unit?.id != id || !_access.canAccess) {
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
+        return;
+      }
+      final occasions = await _access.occasions(id);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _unit = unit;
+        _occasions = occasions;
+        _dashboard = _access.dashboard;
+        _failed = false;
+      });
+    } catch (_) {
+      if (mounted && generation == _generation)
+        setState(() {
+          _failed = true;
+          _loadFailed = true;
+        });
+    } finally {
+      if (generation == _generation) _loading = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final failure = Scaffold(
+        body: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(UnitStrings.loadUnitFailed),
+      TextButton(
+          onPressed: () => _load(force: true), child: Text(CommonStrings.retry))
+    ])));
+    if (_failed && _unit == null) return failure;
+    if (_unit == null) return const AdministrationLoadingShell(unit: true);
+    final waiting = _access.currentUnit?.id != widget.id || _access.hasOccasion;
+    final denied = _failed || !_access.canAccess;
+    return Stack(fit: StackFit.expand, children: [
+      Offstage(
+          offstage: denied || waiting,
+          child: TickerMode(
+              enabled: !denied && !waiting,
+              child: UnitAdministrationScope(
+                  unit: _unit!,
+                  occasions: _occasions,
+                  dashboard: _dashboard,
+                  onUpdated: () => _load(force: true),
+                  // Initial nested routes are installed after the first frame.
+                  child: AutoRouter(
+                      placeholder: (_) =>
+                          const AdministrationLoadingShell(unit: true))))),
+      if (denied)
+        failure
+      else if (waiting)
+        const AdministrationLoadingShell(unit: true),
+    ]);
+  }
+}
+
+class UnitAdministrationScope extends InheritedWidget {
+  final UnitModel unit;
+  final List<OccasionModel>? occasions;
+  final UnitOccasionDashboard? dashboard;
+  final VoidCallback onUpdated;
+  const UnitAdministrationScope(
+      {super.key,
+      required this.unit,
+      required this.occasions,
+      this.dashboard,
+      required this.onUpdated,
+      required super.child});
+  static UnitAdministrationScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<UnitAdministrationScope>()!;
+  @override
+  bool updateShouldNotify(UnitAdministrationScope oldWidget) =>
+      oldWidget.unit != unit ||
+      oldWidget.occasions != occasions ||
+      oldWidget.dashboard != dashboard;
+}
+
+class UnitAdministrationBody extends StatelessWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  final Widget child;
+  const UnitAdministrationBody({
+    super.key,
+    required this.tabs,
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: SideMenu.collapsedWidth),
+            child: child,
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: SideMenu(tabs: tabs, controller: controller),
+          ),
+        ],
+      );
+}
+
+class SideMenu extends StatefulWidget {
+  final List<RoutedTabDefinition> tabs;
+  final TabController controller;
+  static const double collapsedWidth = 56;
+  static const double expandedWidth = 220;
+  const SideMenu({super.key, required this.tabs, required this.controller});
+  @override
+  State<SideMenu> createState() => _SideMenuState();
+}
+
+class _SideMenuState extends State<SideMenu> {
+  bool _isExpanded = false;
+  String? _hoveredLabel;
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+      onEnter: (_) => setState(() => _isExpanded = true),
+      onExit: (_) => setState(() => _isExpanded = false),
+      child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: _isExpanded ? SideMenu.expandedWidth : SideMenu.collapsedWidth,
+          color: Theme.of(context).canvasColor,
+          child: AnimatedBuilder(
+              animation: widget.controller,
+              builder: (context, _) =>
+                  ListView(padding: EdgeInsets.zero, children: [
+                    for (var i = 0; i < widget.tabs.length; i++)
+                      _buildMenuItem(
+                          context: context,
+                          icon: widget.tabs[i].icon,
+                          label: widget.tabs[i].label,
+                          isSelected: widget.controller.index == i,
+                          isExpanded: _isExpanded,
+                          isHovered: _hoveredLabel == widget.tabs[i].label,
+                          onHover: (label) =>
+                              setState(() => _hoveredLabel = label),
+                          onTap: () {
+                            if (widget.controller.index != i)
+                              widget.controller.index = i;
+                          })
+                  ]))));
+  Widget _buildMenuItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required bool isExpanded,
+    required bool isHovered,
+    required VoidCallback onTap,
+    required Function(String?) onHover,
+  }) {
+    final bool isHighlighted = isSelected || isHovered;
+
+    final Color highlightColor;
+    if (Theme.of(context).brightness == Brightness.dark) {
+      highlightColor = Colors.white.withOpacity(0.15);
+    } else {
+      highlightColor = Theme.of(context).splashColor;
+    }
+
+    const double horizontalMargin = 4.0;
+    const double iconSize = 22.0;
+    final double iconHorizontalPadding =
+        (SideMenu.collapsedWidth - (horizontalMargin * 2) - iconSize) / 2;
+
+    return MouseRegion(
+      onEnter: (_) => onHover(label),
+      onExit: (_) => onHover(null),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+              horizontal: horizontalMargin, vertical: 2.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          decoration: BoxDecoration(
+            color: isHighlighted ? highlightColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: iconHorizontalPadding),
+                child: Icon(icon, size: iconSize),
+              ),
+              Expanded(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 100),
+                  opacity: isExpanded ? 1.0 : 0.0,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    softWrap: false,
+                    overflow: TextOverflow.clip,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+@RoutePage()
+class UnitOccasionsPage extends StatelessWidget {
+  const UnitOccasionsPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return Center(
+        child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: UnitAdminPage.contentMaxWidth),
+            child: OccasionsScreen(
+                unit: scope.unit,
+                initialOccasions: scope.occasions,
+                initialDashboard: scope.dashboard)));
+  }
+}
+
+@RoutePage()
+class UnitUsersPage extends StatelessWidget {
+  const UnitUsersPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return UnitUsersScreen(unit: scope.unit);
+  }
+}
+
+@RoutePage()
+class UnitEmailTemplatesPage extends StatelessWidget {
+  const UnitEmailTemplatesPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return EmailTemplatesTab(unitId: scope.unit.id!);
+  }
+}
+
+@RoutePage()
+class UnitSettingsPage extends StatelessWidget {
+  const UnitSettingsPage({super.key});
+  @override
+  Widget build(BuildContext context) => const AutoRouter();
+}
+
+@RoutePage(name: 'UnitSettingsContentRoute')
+class UnitSettingsContentPage extends StatelessWidget {
+  const UnitSettingsContentPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return UnitSettingsScreen(unit: scope.unit, onUnitUpdated: scope.onUpdated);
+  }
+}
+
+@RoutePage()
+class UnitQuotesPage extends StatelessWidget {
+  const UnitQuotesPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scope = UnitAdministrationScope.of(context);
+    return QuotesTab(unitId: scope.unit.id!);
+  }
+}
+
+@RoutePage()
+class UnitAdministrationTabsPage extends StatelessWidget {
+  const UnitAdministrationTabsPage({super.key});
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+      listenable: RightsService.occasionLinkModelNotifier,
+      builder: (context, _) => _build(context));
+  Widget _build(BuildContext context) {
+    Localizations.localeOf(context);
+    context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
+    final scope = UnitAdministrationScope.of(context);
+    final tabs = <RoutedTabDefinition>[
+      RoutedTabDefinition(
+          slug: NavigationPaths.occasions,
+          route: const UnitOccasionsRoute(),
+          label: CommonStrings.events,
+          icon: Icons.calendar_month),
+      if (RightsService.canSeeUnitUsers()) ...[
+        RoutedTabDefinition(
+            slug: NavigationPaths.users,
+            route: const UnitUsersRoute(),
+            label: CommonStrings.users,
+            icon: Icons.people),
+        RoutedTabDefinition(
+            slug: NavigationPaths.emailTemplates,
+            route: const UnitEmailTemplatesRoute(),
+            label: UnitStrings.emailTemplates,
+            icon: Icons.email),
+        RoutedTabDefinition(
+            slug: NavigationPaths.settings,
+            route: const UnitSettingsRoute(),
+            label: CommonStrings.settings,
+            icon: Icons.settings)
+      ],
+      if (FeatureService.isFeatureEnabled(FeatureConstants.quotes,
+          features: scope.unit.features))
+        RoutedTabDefinition(
+            slug: NavigationPaths.quotes,
+            route: const UnitQuotesRoute(),
+            label: UnitStrings.quotes,
+            icon: Icons.format_quote),
+      if (RightsService.hasCapability(
+          AuthorizationCapabilities.bankAccountsUnitManage))
+        RoutedTabDefinition(
+            slug: NavigationPaths.bankAccounts,
+            route: const UnitBankAccountsNavigationRoute(),
+            label: BankAccountStrings.bankAccountsTitle,
+            icon: Icons.account_balance),
+      if (StripeFeature.visible && StripeFeature.canManage)
+        RoutedTabDefinition(slug: NavigationPaths.cardPayments,
+            route: const UnitCardPaymentsRoute(),
+            label: StripeConnectionStrings.title, icon: Icons.credit_card),
+    ];
+    return RoutedTabScaffold(
+        key: ValueKey(scope.unit.id),
+        tabs: tabs,
+        builder: (context, child, controller) => Column(children: [
+              const SafeArea(bottom: false, child: RedStripWidget()),
+              Expanded(
+                  child: Scaffold(
+                      appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context),
+                      body: UnitAdministrationBody(
+                          tabs: tabs, controller: controller, child: child),
+                      floatingActionButton: FloatingActionButton(
+                          onPressed: () => LaunchUrlService.openExternalUrl(
+                              Uri.parse(AppConfig.webLink)
+                                  .replace(
+                                      path: '/unit/${scope.unit.id}',
+                                      query: '',
+                                      fragment: '')
+                                  .toString()),
+                          child: const Icon(Icons.remove_red_eye_rounded))))
+            ]));
+  }
+}

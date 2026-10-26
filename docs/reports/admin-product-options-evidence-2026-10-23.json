@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-23",
+  "migration": "20261023210000_product_authoring_options.sql",
+  "migrationSha256": "b629872cc7a0319160d673fa356c93644e898ccac79d55ab87510ef74c68ea4c",
+  "state": "Locally verified, not deployed",
+  "interpretation": "UI already retained complete authoring choices. New bounded MCP choices reuse its projection owners; no additional UI request.",
+  "limits": {
+    "rowsPerPage": 100,
+    "jsonBytesPerPage": 1048576,
+    "pagination": "ID keyset, not a frozen collection snapshot"
+  },
+  "fixtures": {
+    "unusedTypes": 125,
+    "unusedContexts": 125,
+    "products": 0,
+    "physicalSpots": 1000,
+    "pageSizes": [
+      50,
+      50,
+      25
+    ]
+  },
+  "sampleSqlJsonBytes": {
+    "typePages": [
+      2504,
+      2520,
+      1343
+    ],
+    "contextPages": [
+      6550,
+      6575,
+      3371
+    ],
+    "qualification": "Actual serialized SQL results on the marked local fixture; not HTTP traffic or production latency."
+  },
+  "checks": {
+    "targetedPostgresMcpRemotePassed": 27,
+    "consentUiPassed": 26,
+    "fullMcpSuite": {
+      "passed": 109,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 58102.522791
+    }
+  },
+  "scopeChecks": [
+    "Explicit new consent in persisted grant and OAuth token",
+    "Actual org/unit/occasion and parent-pool context projection",
+    "Live revocation during both choice kinds with two connections",
+    "Mismatched foreign product occasion excluded despite a local type",
+    "Private helper ACL and source parity"
+  ],
+  "dependencies": "No full product catalog/sales aggregates/raw spot payload. Full owner deliberately fails in fixture and choices still succeed."
+}

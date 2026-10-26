@@ -1,0 +1,94 @@
+{
+  "observed_at": 1792172883.0814686,
+  "first_at": 1792168022,
+  "last_at": 1792172864,
+  "samples": 77,
+  "min_host_available_memory_bytes": 1266249728,
+  "valid_database_samples": 77,
+  "valid_edge_samples": 77,
+  "max_sampled_database_connections": 46,
+  "max_sampled_active_database_connections": 3,
+  "max_sampled_live_edge_workers": 4,
+  "container_maxima": {
+    "/festapp-caddy": {
+      "samples": 77,
+      "max_working_set_bytes": 34189312,
+      "max_memory_bytes": 44486656,
+      "max_pids": 9
+    },
+    "/festapp-supabase-admin-tunnel": {
+      "samples": 77,
+      "max_working_set_bytes": 37101568,
+      "max_memory_bytes": 38789120,
+      "max_pids": 10
+    },
+    "/realtime-dev.supabase-realtime": {
+      "samples": 77,
+      "max_working_set_bytes": 195883008,
+      "max_memory_bytes": 207261696,
+      "max_pids": 28
+    },
+    "/supabase-auth": {
+      "samples": 77,
+      "max_working_set_bytes": 13135872,
+      "max_memory_bytes": 19468288,
+      "max_pids": 10
+    },
+    "/supabase-db": {
+      "samples": 77,
+      "max_working_set_bytes": 472313856,
+      "max_memory_bytes": 617836544,
+      "max_pids": 55
+    },
+    "/supabase-edge-functions": {
+      "samples": 77,
+      "max_working_set_bytes": 656044032,
+      "max_memory_bytes": 730923008,
+      "max_pids": 20
+    },
+    "/supabase-envoy": {
+      "samples": 77,
+      "max_working_set_bytes": 40214528,
+      "max_memory_bytes": 60354560,
+      "max_pids": 10
+    },
+    "/supabase-imgproxy": {
+      "samples": 77,
+      "max_working_set_bytes": 42631168,
+      "max_memory_bytes": 105701376,
+      "max_pids": 17
+    },
+    "/supabase-meta": {
+      "samples": 77,
+      "max_working_set_bytes": 137199616,
+      "max_memory_bytes": 140173312,
+      "max_pids": 24
+    },
+    "/supabase-pooler": {
+      "samples": 77,
+      "max_working_set_bytes": 187707392,
+      "max_memory_bytes": 201916416,
+      "max_pids": 30
+    },
+    "/supabase-rest": {
+      "samples": 77,
+      "max_working_set_bytes": 90644480,
+      "max_memory_bytes": 130912256,
+      "max_pids": 19
+    },
+    "/supabase-storage": {
+      "samples": 77,
+      "max_working_set_bytes": 191721472,
+      "max_memory_bytes": 215908352,
+      "max_pids": 12
+    },
+    "/supabase-studio": {
+      "samples": 77,
+      "max_working_set_bytes": 243355648,
+      "max_memory_bytes": 255000576,
+      "max_pids": 20
+    }
+  },
+  "representative_business_peak_proven": false,
+  "note": "Minute observations; not continuous maxima. Controlled host-notification drill paused collection for about five minutes."
+}

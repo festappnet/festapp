@@ -1,0 +1,190 @@
+{
+  "date_local": "2026-10-18",
+  "observed_at": "2026-10-17T22:12:15.516153+00:00",
+  "verification": "read-only",
+  "reviewed_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "target_assertions_matched": true,
+  "tenant_activation": {
+    "tenant": "festapp",
+    "generation": 1,
+    "backend": "canonical",
+    "organization": 1
+  },
+  "supabase_storage_still_used": true,
+  "image_registry": [
+    {
+      "organization": 3,
+      "storage_image_records": 4
+    },
+    {
+      "organization": 19,
+      "storage_image_records": 224
+    }
+  ],
+  "application_reference_rows": [
+    {
+      "table": "eshop.external_services",
+      "storage_reference_rows": 1
+    },
+    {
+      "table": "public.external_occasions_cache",
+      "storage_reference_rows": 1
+    },
+    {
+      "table": "public.information",
+      "storage_reference_rows": 14
+    },
+    {
+      "table": "public.occasions",
+      "storage_reference_rows": 14
+    },
+    {
+      "table": "public.events",
+      "storage_reference_rows": 234
+    },
+    {
+      "table": "eshop.blueprints",
+      "storage_reference_rows": 6
+    },
+    {
+      "table": "public.places",
+      "storage_reference_rows": 1
+    },
+    {
+      "table": "eshop.products",
+      "storage_reference_rows": 24
+    },
+    {
+      "table": "eshop.product_types",
+      "storage_reference_rows": 4
+    },
+    {
+      "table": "public.inventory_pools",
+      "storage_reference_rows": 4
+    },
+    {
+      "table": "public.news",
+      "storage_reference_rows": 1
+    },
+    {
+      "table": "public.email_templates",
+      "storage_reference_rows": 1
+    }
+  ],
+  "storage_objects": [
+    {
+      "bucket": "akhweb",
+      "objects": 476,
+      "latest_created_at": "2026-08-28T07:25:44.583819+00:00",
+      "latest_updated_at": "2026-08-28T07:25:44.583819+00:00",
+      "metadata_bytes": 211550482,
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "text/plain"
+      ]
+    },
+    {
+      "bucket": "custom-files",
+      "objects": 2,
+      "latest_created_at": "2025-10-05T15:18:29.16906+00:00",
+      "latest_updated_at": "2025-10-05T15:18:41.528844+00:00",
+      "metadata_bytes": 138651,
+      "mime_types": [
+        "application/octet-stream",
+        "image/png"
+      ]
+    },
+    {
+      "bucket": "editor-files",
+      "objects": 6,
+      "latest_created_at": "2025-10-05T15:03:13.744761+00:00",
+      "latest_updated_at": "2025-10-05T15:03:13.744761+00:00",
+      "metadata_bytes": 878682,
+      "mime_types": [
+        "image/jpeg",
+        "image/png"
+      ]
+    },
+    {
+      "bucket": "images-temp",
+      "objects": 15,
+      "latest_created_at": "2025-03-27T23:52:29.147381+00:00",
+      "latest_updated_at": "2025-08-25T02:06:40.143607+00:00",
+      "metadata_bytes": 1026374,
+      "mime_types": [
+        "application/geo+json",
+        "application/json"
+      ]
+    },
+    {
+      "bucket": "public-files",
+      "objects": 967,
+      "latest_created_at": "2026-06-17T20:02:53.847227+00:00",
+      "latest_updated_at": "2026-09-10T13:39:29.301076+00:00",
+      "metadata_bytes": 999813749,
+      "mime_types": [
+        "application/json",
+        "application/pdf",
+        "binary/octet-stream",
+        "image/jpeg",
+        "image/png"
+      ]
+    },
+    {
+      "bucket": "ticket-fonts",
+      "objects": 13,
+      "latest_created_at": "2026-10-17T01:02:48.425516+00:00",
+      "latest_updated_at": "2026-10-17T01:02:48.425516+00:00",
+      "metadata_bytes": 2170816,
+      "mime_types": [
+        "application/octet-stream"
+      ]
+    }
+  ],
+  "nonempty_buckets": 6,
+  "object_count": 1479,
+  "code_dependencies": {
+    "new_ordinary_image_uploads": "ImageControlClient -> R2 Worker",
+    "historical_image_deletion": "Supabase Storage remains in DbImages removal paths",
+    "ticket_fonts": "ticketFontStore.read/create -> ticket-fonts bucket; used by ticket generation and preview",
+    "account_deletion": "Storage remove path remains"
+  },
+  "deployed_ticket_font_source_matches_main": true,
+  "ticket_font_source_sha256": "f2a2cdf8facc787060c6a6d0eec0df034e2998a732355827140d3de5d817612d",
+  "sample_reads": [
+    {
+      "status": 206,
+      "range_honored": true,
+      "host": "api.festapp.net"
+    },
+    {
+      "status": 206,
+      "range_honored": true,
+      "host": "api.festapp.net"
+    },
+    {
+      "status": 206,
+      "range_honored": true,
+      "host": "api.festapp.net"
+    }
+  ],
+  "writes_performed": false,
+  "limits": "URL reference counts establish persisted dependencies, not per-object current browser traffic. Cached ticket font binaries are a separate Storage dependency; no claim that every retained Storage object remains in use.",
+  "resource_readback": {
+    "at": "2026-10-17T22:16:47.951691+00:00",
+    "local_storage_disk_bytes": 1300670039,
+    "metadata_bytes_total": 1215578754,
+    "docker_stats_memory_mib": {
+      "supabase-storage": 181.1,
+      "supabase-imgproxy": 23.89
+    },
+    "note": "Single current working-set sample, not guaranteed saved memory. imgproxy retirement requires proving no remaining consumer; historical individual working-set maxima were 251150336 and 96964608 bytes."
+  },
+  "owner_decision": {
+    "legacy_storage_urls_need_to_work": false,
+    "previously_sent_message_link_breakage_accepted": true,
+    "migration_required": "Remaining content and font dependencies, including HTML/nested JSON fields; no legacy Storage URL compatibility route."
+  }
+}

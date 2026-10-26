@@ -1,0 +1,87 @@
+{
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		timeouts {
+			read_header 10s
+			read_body 30s
+			idle 1m
+		}
+		max_header_size 32KB
+		trusted_proxies_strict
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+(festapp_supabase_proxy) {
+	encode zstd gzip
+	header -Server
+	reverse_proxy 127.0.0.1:8000 {
+		# Replace attacker-supplied values using Caddy trusted-proxy resolution.
+		header_up X-Festapp-Client-IP {client_ip}
+		header_up X-Forwarded-For {client_ip}
+		header_up X-Real-IP {client_ip}
+		header_up -Forwarded
+	}
+}
+
+{$FESTAPP_SUPABASE_SITE_ADDRESSES} {
+	# Direct origin requests cannot skip the public proxy boundary. Loopback is
+	# reserved for existing protected operational checks, not public clients.
+	@untrusted not remote_ip 127.0.0.1/32 ::1/128 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+	handle @untrusted {
+		respond "Forbidden" 403
+	}
+	@auth path /auth/v1 /auth/v1/*
+	handle @auth {
+		request_body {
+			max_size 64KB
+		}
+		import festapp_supabase_proxy
+	}
+	# Retired file service: historical URLs intentionally no longer resolve.
+	@storage path /storage/v1 /storage/v1/*
+	handle @storage {
+		respond "Gone" 410
+	}
+	@public_api path \
+ /.well-known/* \
+ /auth/v1 /auth/v1/* \
+ /functions/v1 /functions/v1/* \
+ /graphql/v1 /graphql/v1/* \
+ /realtime/v1 /realtime/v1/* \
+ /rest/v1 /rest/v1/*
+
+	handle @public_api {
+		request_body {
+			max_size 32MB
+		}
+		import festapp_supabase_proxy
+	}
+
+	handle {
+		header -Server
+		respond "Not Found" 404
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+http://{$FESTAPP_SUPABASE_ADMIN_HOSTNAME:supabase.festapp.net}:8999 {
+	bind 127.0.0.1
+	request_header Authorization "Basic {$FESTAPP_SUPABASE_ADMIN_BASIC_AUTH}"
+	import festapp_supabase_proxy
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+	log {
+		output stdout
+		format json
+	}
+}

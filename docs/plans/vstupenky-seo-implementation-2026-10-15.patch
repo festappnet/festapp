@@ -1,0 +1,1231 @@
+diff --git a/automation/cloudflare_build.sh b/automation/cloudflare_build.sh
+--- a/automation/cloudflare_build.sh
++++ b/automation/cloudflare_build.sh
+@@ -48,6 +48,8 @@
+ const FLUTTER_ENTRY = "/flutter";
+ const AUTH_BRIDGE = "/auth_bridge";
+ const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
++const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
++const ORGANIZERS_ENABLED = false; // stamped from tenant domain
+ const SITE_NAME = "Festapp"; // replaced from project.conf after generation
+ 
+ // Web client SPA routes (form list handled by /form/<slug> below).
+@@ -62,7 +64,7 @@
+ // Internal asset names (extension-less HTML entry points). Cloudflare serves
+ // these as application/octet-stream to direct hits, which triggers a browser
+ // download. They must never be reachable as a user-facing URL — redirect to /.
+-const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient"]);
++const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-page"]);
+ 
+ // Flutter's entry/runtime files use stable, unversioned names that change on
+ // every deploy (main.dart.js, its main.dart.js_<n>.part.js deferred chunks,
+@@ -108,7 +110,7 @@
+ }
+ 
+ async function publicOccasions(env) {
+-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return [];
++  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
+   const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
+     method: "POST",
+     headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
+@@ -118,21 +120,37 @@
+   });
+   if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
+   const data = await rpc.json();
+-  return Array.isArray(data) ? data : data?.occasions || data?.data?.occasions || [];
+-}
++  return extractPublicOccasions(data);
++}
++
++// SHARED_CATALOG_CLASSIFICATION
+ 
+ async function handleHome(request, env) {
+   const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
+   let html = await base.text();
+   try {
+     const occasions = await publicOccasions(env);
+-    const links = occasions.map(occasion => {
+-      const href = occasionHref(occasion);
+-      return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a></li>` : "";
+-    }).join("");
+-    if (links) html = html.replace('<div id="events-grid"></div>', `<div id="events-grid"><ul>${links}</ul></div>`);
++    const groups = classifyOccasions(occasions);
++    const date = value => {
++      if (!value || !Number.isFinite(new Date(value).getTime())) return "";
++      return `<time datetime="${escapeHtml(new Date(value).toISOString())}">${escapeHtml(new Date(value).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }))}</time>`;
++    };
++    const section = (title, list, archive = false) => {
++      if (!list.length) return "";
++      const links = list.map(occasion => {
++        const href = occasionHref(occasion);
++        return href ? `<li><a href="${escapeHtml(href)}">${escapeHtml(occasion.title)}</a> ${date(occasion.start_time)}</li>` : "";
++      }).join("");
++      return archive
++        ? `<details class="catalog-archive"><summary>${title} (${list.length})</summary><ul>${links}</ul></details>`
++        : `<section><h2>${title}</h2><ul>${links}</ul></section>`;
++    };
++    const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
++      section("Další akce", groups.undated) + section("Minulé akce", groups.past, true);
++    html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || '<p>Zatím zde nejsou žádné akce.</p>'}</div>`);
+   } catch (error) {
+     console.error("Public catalog HTML unavailable", error.message);
++    html = html.replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="unavailable"><p role="status">Akce se nepodařilo načíst. Zkuste stránku znovu načíst.</p></div>');
+   }
+   return htmlResponse(html, base.headers);
+ }
+@@ -166,15 +184,17 @@
+ // ---------------------------------------------------------------------------
+ async function handleSitemap(request, env) {
+   const url = new URL(request.url);
+-  const baseUrl = url.origin;
++  const baseUrl = CANONICAL_ORIGIN || url.origin;
+   const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
+ 
++  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/pro-poradatele</loc></url>` : "";
+   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
+ <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+     <loc>${baseUrl}/</loc>
+     <priority>1.0</priority>
+   </url>
++${organizerEntry}
+ </urlset>`;
+ 
+   try {
+@@ -183,10 +203,17 @@
+ 
+     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+     xml += `  <url>\n    <loc>${escapeHtml(baseUrl)}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
++    xml += organizerEntry;
++    const seen = new Set();
+     for (const occ of occasions) {
+       const href = occasionHref(occ);
+-      if (!href || !href.startsWith("/")) continue;
+-      xml += `  <url>\n    <loc>${escapeHtml(baseUrl + href)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
++      if (!href) continue;
++      const destination = new URL(href, baseUrl);
++      if (destination.origin !== baseUrl) continue;
++      const canonical = baseUrl + destination.pathname;
++      if (seen.has(canonical)) continue;
++      seen.add(canonical);
++      xml += `  <url>\n    <loc>${escapeHtml(canonical)}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
+     }
+     xml += `</urlset>`;
+     return new Response(xml, { headers: xmlHeaders });
+@@ -237,9 +264,9 @@
+     let imageUrl;
+     if (imagePath && /^https?:\/\//i.test(imagePath)) imageUrl = imagePath;
+     else if (imagePath) imageUrl = `https://img.festapp.net/${imagePath}`;
+-    else imageUrl = `${url.origin}/android-chrome-512x512.png`;
++    else imageUrl = `${CANONICAL_ORIGIN || url.origin}/android-chrome-512x512.png`;
+     const fullTitle = `${title} - ${orgTitle}`;
+-    const canonicalUrl = new URL(url.pathname, url.origin).href;
++    const canonicalUrl = new URL(url.pathname, CANONICAL_ORIGIN || url.origin).href;
+ 
+     let page = baseHtml;
+     page = page.replace(/<title[^>]*>.*?<\/title>/i, () => `<title>${escapeHtml(fullTitle)}</title>`);
+@@ -278,8 +305,7 @@
+ // ---------------------------------------------------------------------------
+ // Entry-point
+ // ---------------------------------------------------------------------------
+-export default {
+-  async fetch(request, env) {
++async function routeRequest(request, env) {
+     const url = new URL(request.url);
+     const path = url.pathname;
+ 
+@@ -288,6 +314,13 @@
+         status: 204,
+         headers: activationCorsHeaders(),
+       });
++    }
++
++    if (path === "/pro-poradatele" || path === "/pro-poradatele/") {
++      if (!ORGANIZERS_ENABLED) return notFound();
++      if (path.endsWith("/")) return Response.redirect(new URL("/pro-poradatele" + url.search, url).href, 308);
++      const res = await serveAsset(env, request, "/organizers-page");
++      return res.ok ? htmlResponse(res.body, res.headers) : notFound();
+     }
+ 
+     if (path === "/sitemap.xml") return handleSitemap(request, env);
+@@ -384,6 +417,28 @@
+     }
+     const fallback = await serveAsset(env, request, FLUTTER_ENTRY);
+     return htmlResponse(fallback.body, fallback.headers);
++}
++
++export default {
++  async fetch(request, env) {
++    const url = new URL(request.url);
++    const production = CANONICAL_ORIGIN && [new URL(CANONICAL_ORIGIN).hostname, "www." + new URL(CANONICAL_ORIGIN).hostname].includes(url.hostname);
++    let response;
++    if (production && (url.origin !== CANONICAL_ORIGIN)) {
++      const target = new URL(CANONICAL_ORIGIN);
++      target.pathname = url.pathname;
++      target.search = url.search;
++      response = Response.redirect(target.href, 308);
++    } else {
++      try { response = await routeRequest(request, env); }
++      catch (error) {
++        console.error("Public route unavailable", error.message);
++        response = new Response("Service temporarily unavailable", { status: 503 });
++      }
++    }
++    const headers = new Headers(response.headers);
++    if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
++    return new Response(request.method === "HEAD" ? null : response.body, { status: response.status, statusText: response.statusText, headers });
+   },
+ };
+ WORKER
+@@ -396,11 +451,21 @@
+ 
+ worker_path, config_path = sys.argv[1:]
+ source = pathlib.Path(worker_path).read_text(encoding="utf-8")
++catalog = pathlib.Path("web_client/src/components/occasion/catalog.js").read_text(encoding="utf-8").replace("export function", "function")
++source = source.replace("// SHARED_CATALOG_CLASSIFICATION", catalog)
+ config = pathlib.Path(config_path).read_text(encoding="utf-8")
+ match = re.search(r"^FORCE_OCCASION_LINK=(.*)$", config, re.MULTILINE)
+ occasion_link = match.group(1).strip().strip('"').strip("'") if match else ""
+ occasion_link = occasion_link.strip().strip("/")
+ replacement = json.dumps(f"/{occasion_link}/event" if occasion_link else None)
++web_link_match = re.search(r'^WEB_LINK=(.*)$', config, re.MULTILINE)
++web_link = web_link_match.group(1).strip().strip('"').strip("'").rstrip('/') if web_link_match else ''
++from urllib.parse import urlparse
++canonical = urlparse(web_link)
++if canonical.scheme != 'https' or not canonical.hostname or canonical.path or canonical.query or canonical.fragment or canonical.username or canonical.port:
++    raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
++source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
++source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + ('true' if canonical.hostname == 'vstupenky.online' else 'false') + ';', 1)
+ name_match = re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
+ site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
+ source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)
+diff --git a/automation/apply_config.sh b/automation/apply_config.sh
+--- a/automation/apply_config.sh
++++ b/automation/apply_config.sh
+@@ -932,6 +932,7 @@
+ # Legal and support pages are deterministic generated leaves. Their URLs and
+ # tenant identity come from the same project.conf used for the application.
+ node "$LEGAL_RENDERER" --config "$CONFIG_FILE"
++node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
+ 
+ echo "Project configuration applied successfully."
+ 
+diff --git a/automation/build_web_bundle.sh b/automation/build_web_bundle.sh
+--- a/automation/build_web_bundle.sh
++++ b/automation/build_web_bundle.sh
+@@ -80,6 +80,8 @@
+ bash automation/test_web_startup.sh
+ (cd web_client && npm run build)
+ cp -R web_client/dist/. build/web/
++# The standalone organizer document shares the compiled tenant theme and fonts.
++node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
+ 
+ if [ "$TARGET" = cloudflare ]; then
+     mv build/web/index.html build/web/webclient
+diff --git a/automation/tenant-overlays/generated.paths b/automation/tenant-overlays/generated.paths
+--- a/automation/tenant-overlays/generated.paths
++++ b/automation/tenant-overlays/generated.paths
+@@ -58,3 +58,5 @@
+ web_client/public/.well-known/apple-app-site-association
+ web_client/public/apple-app-site-association
+ web_client/public/_headers
++
++web/organizers-page
+diff --git a/automation/tests/public_seo.test.mjs b/automation/tests/public_seo.test.mjs
+--- a/automation/tests/public_seo.test.mjs
++++ b/automation/tests/public_seo.test.mjs
+@@ -5,6 +5,7 @@
+ 
+ const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
+ const workerSource = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
++  .replace('// SHARED_CATALOG_CLASSIFICATION', readFileSync(new URL('../../web_client/src/components/occasion/catalog.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
+   .replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = "vstupenky.online";');
+ const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(workerSource).toString('base64'));
+ const shell = readFileSync(new URL('../../web_client/index.html', import.meta.url), 'utf8');
+@@ -90,3 +91,76 @@
+     assert.equal((await worker.fetch(request(path), env)).status, 200);
+   }
+ });
++
++const productionSource = workerSource.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = "https://vstupenky.online";')
++  .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
++const { default: productionWorker } = await import('data:text/javascript;base64,' + Buffer.from(productionSource).toString('base64'));
++
++test('canonical host/protocol matrix preserves form and OAuth query parameters, previews stay isolated', async t => {
++  t.mock.method(globalThis, 'fetch', async () => Response.json({ title: 'Public form' }));
++  for (const path of ['/', '/form/live?utm_source=seo-check&code=a%2Bb&state=x%2Fy', '/google-auth?google_code=proof&google_attempt=fixture']) {
++    for (const origin of ['http://vstupenky.online', 'https://www.vstupenky.online', 'http://www.vstupenky.online']) {
++      const response = await productionWorker.fetch(new Request(origin + path), env);
++      assert.equal(response.status, 308);
++      assert.equal(response.headers.get('location'), 'https://vstupenky.online' + path);
++    }
++    assert.equal((await productionWorker.fetch(new Request('https://vstupenky.online' + path), env)).status, 200);
++  }
++  const preview = await productionWorker.fetch(new Request('https://preview.pages.dev/'), env);
++  assert.equal(preview.status, 200);
++  assert.equal(preview.headers.get('location'), null);
++  assert.equal(preview.headers.get('strict-transport-security'), null);
++});
++
++test('HSTS covers HTML, XML, missing assets, redirects and thrown asset failures, including HEAD', async t => {
++  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [] }));
++  for (const path of ['/', '/missing.png', '/sitemap.xml', '/webclient']) {
++    for (const method of ['GET', 'HEAD']) {
++      const response = await productionWorker.fetch(new Request('https://vstupenky.online' + path, { method }), env);
++      assert.equal(response.headers.get('strict-transport-security'), 'max-age=300');
++      if (method === 'HEAD') assert.equal(await response.text(), '');
++    }
++  }
++  const response = await productionWorker.fetch(new Request('https://vstupenky.online/'), {
++    ASSETS: { fetch: async () => { throw new Error('asset outage'); } },
++  });
++  assert.equal(response.status, 503);
++  assert.equal(response.headers.get('strict-transport-security'), 'max-age=300');
++});
++
++test('organizer route serves its own HTML, uses apex in sitemap and deduplicates internal links', async t => {
++  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [...occasions, occasions[0]] }));
++  const pageEnv = { ...env, ASSETS: { fetch: async request => new URL(request.url).pathname === '/organizers-page'
++    ? new Response('<h1>Prodej vstupenek a registrace na akce</h1>') : env.ASSETS.fetch(request) } };
++  const response = await productionWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
++  assert.equal(response.status, 200);
++  assert.match(await response.text(), /Prodej vstupenek/);
++  assert.equal((await worker.fetch(request('/pro-poradatele'), env)).status, 404);
++  const xml = await (await productionWorker.fetch(new Request('https://preview.pages.dev/sitemap.xml'), pageEnv)).text();
++  assert.ok(xml.includes('https://vstupenky.online/pro-poradatele'));
++  assert.equal((xml.match(/<loc>https:\/\/vstupenky.online\/form\/camp-registration<\/loc>/g) || []).length, 1);
++  assert.ok(!xml.includes('preview.pages.dev'));
++});
++
++test('server catalogue preserves undated records and orders present, upcoming and collapsed archive', async t => {
++  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [
++    { title: 'Archive (Copy)', link: 'archive', start_time: '2020-01-01', end_time: '2020-01-02' },
++    { title: 'Next', link: 'next', start_time: '2099-01-01', end_time: '2099-01-02' },
++    { title: 'Current', link: 'current', start_time: '2000-01-01', end_time: '2099-01-02' },
++    { title: 'No date', link: 'undated' },
++  ] }));
++  const html = await (await worker.fetch(request('/'), env)).text();
++  assert.ok(html.indexOf('Current</a>') < html.indexOf('Next</a>'));
++  assert.ok(html.indexOf('Next</a>') < html.indexOf('Archive (Copy)</a>'));
++  assert.match(html, /<details class="catalog-archive"><summary>Minulé akce \(1\)<\/summary>/);
++  assert.ok(html.includes('No date</a>'));
++  assert.ok(html.includes('data-server-catalog="ready"'));
++});
++
++
++test('malformed catalogue payload is unavailable rather than an empty catalogue', async t => {
++  t.mock.method(globalThis, 'fetch', async () => Response.json({ error: 'unexpected payload' }));
++  const html = await (await worker.fetch(request('/'), env)).text();
++  assert.ok(html.includes('data-server-catalog="unavailable"'));
++  assert.ok(!html.includes('Zatím zde nejsou žádné akce.'));
++});
+diff --git a/automation/tests/apply_config.test.sh b/automation/tests/apply_config.test.sh
+--- a/automation/tests/apply_config.test.sh
++++ b/automation/tests/apply_config.test.sh
+@@ -65,6 +65,8 @@
+ cp "$PROJECT_ROOT/automation/release/generate_backend_activation_manifest.mjs" "$TMP_ROOT/automation/release/generate_backend_activation_manifest.mjs"
+ cp "$PROJECT_ROOT/automation/release/generate_backend_profile_fingerprint.mjs" "$TMP_ROOT/automation/release/generate_backend_profile_fingerprint.mjs"
+ cp "$PROJECT_ROOT/automation/release/render_legal_pages.mjs" "$TMP_ROOT/automation/release/render_legal_pages.mjs"
++cp "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" "$TMP_ROOT/automation/release/render_organizer_page.mjs"
++cp -R "$PROJECT_ROOT/automation/release/organizers" "$TMP_ROOT/automation/release/organizers"
+ cp "$PROJECT_ROOT"/automation/release/legal/*.md "$TMP_ROOT/automation/release/legal/"
+ cp "$PROJECT_ROOT/automation/templates/web/delete-account/index.html" "$TMP_ROOT/automation/templates/web/delete-account/index.html"
+ cp "$FIXTURE_CONF" "$TMP_ROOT/automation/project.conf"
+diff --git a/web_client/index.html b/web_client/index.html
+--- a/web_client/index.html
++++ b/web_client/index.html
+@@ -180,11 +180,14 @@
+                 <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">vstupenky.online</h1>
+                 <p style="margin:0;line-height:1.6">Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.</p>
+             </section>
++            <!-- ORGANIZERS_NAV_START -->
++            <nav class="catalog-navigation" aria-label="Pro pořadatele"><a href="/pro-poradatele">Pro pořadatele</a></nav>
++            <!-- ORGANIZERS_NAV_END -->
+             <!-- Search -->
+             <div id="search-container" class="search-container">
+                 <i class="material-icons search-icon">search</i>
+-                <input type="text" id="event-search" class="search-input" placeholder="Hledat události...">
+-                <i class="material-icons clear-icon" id="clear-search">close</i>
++                <input type="search" aria-label="Hledat akce" id="event-search" class="search-input" placeholder="Hledat události...">
++                <button type="button" class="material-icons clear-icon" id="clear-search" aria-label="Vymazat hledání" style="border:0;background:transparent;min-width:44px;min-height:44px">close</button>
+             </div>
+ 
+             <!-- Content -->
+@@ -203,6 +206,14 @@
+              <div class="sp-loader"></div>
+         </div>
+     </div>
++    <script>
++        if (location.pathname === '/' && document.querySelector('#events-grid[data-server-catalog]')) {
++            document.getElementById('app').style.display = 'flex';
++            const startup = document.getElementById('web-client-startup');
++            startup.style.cssText = 'position:relative;padding:12px;text-align:center;font:inherit';
++            document.querySelector('#app main').prepend(startup);
++        }
++    </script>
+     <noscript><style>#web-client-startup{display:none!important}#app{display:flex!important}</style></noscript>
+ 
+     <div id="form-page-container" style="display: none;"></div>
+diff --git a/web_client/src/main.js b/web_client/src/main.js
+--- a/web_client/src/main.js
++++ b/web_client/src/main.js
+@@ -1,3 +1,4 @@
++import { handleOrganizerIntent } from './startup/organizer_intent.js';
+ import { GoogleAuthService } from './services/google_auth_service.js';
+ import { LoginModal } from './components/users/login_modal.js';
+ const googleCallback = GoogleAuthService.takeCallback();
+@@ -35,8 +36,14 @@
+                 catch (error) { modal.googleError = error.message; modal._setView('login'); }
+             }
+ 
++            const organizerIntent = await handleOrganizerIntent();
++            if (organizerIntent === 'navigated') {
++                window.markFestappAppReady?.();
++                return;
++            }
++
+             // 2. Check Routing (SPA Support)
+-            if (await RouterService.handleInitialLoad()) {
++            if (!organizerIntent && await RouterService.handleInitialLoad()) {
+                  RouterService.initPopStateListener();
+                  window.markFestappAppReady?.();
+                  return; 
+@@ -51,7 +58,7 @@
+             // 4. Initial Fetch
+             await unitPage.loadOccasions(AppConfig.organization);
+ 
+-            // Reveal the home only after cards replace the server-rendered SEO list.
++            // Complete startup after the catalogue update settles; SSR stays usable while pending.
+             const app = document.getElementById('app');
+             if (app) app.style.display = 'flex';
+             
+diff --git a/web_client/src/services/seo_service.js b/web_client/src/services/seo_service.js
+--- a/web_client/src/services/seo_service.js
++++ b/web_client/src/services/seo_service.js
+@@ -45,6 +45,11 @@
+         
+         if (currentUrl) {
+             const canonicalUrl = new URL(currentUrl, window.location.origin);
++            const tenant = new URL(AppConfig.webLink);
++            if ([tenant.hostname, 'www.' + tenant.hostname].includes(canonicalUrl.hostname)) {
++                canonicalUrl.protocol = tenant.protocol;
++                canonicalUrl.host = tenant.host;
++            }
+             canonicalUrl.search = '';
+             canonicalUrl.hash = '';
+             let canonical = document.querySelector('link[rel="canonical"]');
+diff --git a/web_client/src/components/unit/unit_page.js b/web_client/src/components/unit/unit_page.js
+--- a/web_client/src/components/unit/unit_page.js
++++ b/web_client/src/components/unit/unit_page.js
+@@ -1,113 +1,130 @@
+ import { Component } from '../base/component.js';
+ import { DbOccasions } from '../occasion/db_occasions.js';
+-import { LocalizationService } from '../../services/localization_service.js';
+ import { OccasionCard } from '../occasion/occasion_card.js';
++import { classifyOccasions } from '../occasion/catalog.js';
+ import { UnitStrings } from './unit_strings.js';
++import './unit_page.css';
+ 
+ export class UnitPage extends Component {
+     constructor(hostId) {
+         super(hostId);
+         this.allOccasions = [];
+         this.searchInput = null;
++        this.hasLoaded = false;
++        this.requestId = 0;
+     }
+ 
+     init(searchId) {
+         this.searchInput = document.getElementById(searchId);
+-
+-        if (this.searchInput) {
+-            this.searchInput.placeholder = UnitStrings.search + '...';
+-            this.searchInput.addEventListener('input', (e) => {
+-                this.filter(e.target.value);
+-            });
+-            const clearBtn = document.getElementById('clear-search');
+-            if (clearBtn) {
+-                 clearBtn.onclick = () => {
+-                     this.searchInput.value = '';
+-                     this.filter('');
+-                 };
+-            }
++        if (!this.searchInput) return;
++        this.searchInput.placeholder = UnitStrings.search + '...';
++        this.searchInput.setAttribute('aria-label', UnitStrings.search);
++        this.onSearch = (e) => this.filter(e.target.value);
++        this.searchInput.addEventListener('input', this.onSearch);
++        const clearBtn = document.getElementById('clear-search');
++        if (clearBtn) {
++            clearBtn.setAttribute('aria-label', UnitStrings.clearSearch);
++            clearBtn.onclick = () => this.clearSearch();
+         }
+     }
+ 
++    clearSearch() {
++        if (this.searchInput) this.searchInput.value = '';
++        this.filter('');
++        this.searchInput?.focus();
++    }
++
++    showStatus(message, retry = false) {
++        this.host.querySelector('[data-catalog-status]')?.remove();
++        const status = document.createElement('div');
++        status.dataset.catalogStatus = '';
++        status.className = 'catalog-status';
++        const text = document.createElement('p');
++        text.setAttribute('role', 'status');
++        text.textContent = message;
++        status.appendChild(text);
++        if (retry) {
++            const button = document.createElement('button');
++            button.type = 'button';
++            button.textContent = UnitStrings.retry;
++            button.onclick = () => this.loadOccasions(this.orgId);
++            status.appendChild(button);
++        }
++        this.host.prepend(status);
++    }
++
+     async loadOccasions(orgId) {
++        this.orgId = orgId;
++        const requestId = ++this.requestId;
++        this.showStatus(UnitStrings.loading);
+         try {
+             const occasions = await DbOccasions.getPublicOccasions(orgId);
++            if (requestId !== this.requestId || !this.host.isConnected) return;
+             this.allOccasions = occasions || [];
+-            this.render(this.allOccasions);
++            this.hasLoaded = true;
++            const query = new URLSearchParams(window.location.search).get('q');
++            if (query && this.searchInput && !this.searchInput.value) this.searchInput.value = query;
++            this.filter(this.searchInput?.value || '');
++        } catch (e) {
++            if (requestId !== this.requestId || !this.host.isConnected) return;
++            console.error('UnitPage.loadOccasions failed:', e);
++            this.showStatus(this.host.querySelector('a') ? UnitStrings.refreshFailed : UnitStrings.loadFailed, true);
++        }
++    }
+ 
+-            // Check for search query param (?q=...)
+-            const params = new URLSearchParams(window.location.search);
+-            const query = params.get('q');
+-            if (query && this.searchInput) {
+-                this.searchInput.value = query;
+-                this.filter(query);
+-            }
+-        } catch (e) {
+-            console.error("UnitPage.loadOccasions failed:", e);
+-            if (this.host) {
+-                this.host.innerHTML = `<p style="text-align:center; color:red">Failed to load events: ${e.message}</p>`;
+-            }
+-        }
++    // Called when leaving this route, so pending requests cannot overwrite another page.
++    clear() {
++        ++this.requestId;
++        if (this.searchInput && this.onSearch) this.searchInput.removeEventListener('input', this.onSearch);
++        const clearBtn = document.getElementById('clear-search');
++        if (clearBtn) clearBtn.onclick = null;
++        super.clear();
+     }
+ 
+     filter(term) {
+         const clearBtn = document.getElementById('clear-search');
+         if (clearBtn) clearBtn.style.display = term ? 'block' : 'none';
+-        
+-        if (!term) {
+-            this.render(this.allOccasions);
+-            return;
+-        }
+-        
+-        const norm = str => str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+-        const q = norm(term);
+-        
+-        const filtered = this.allOccasions.filter(o => norm(o.title).includes(q));
+-        this.render(filtered, true);
++        // The server-rendered catalogue remains usable until the first successful refresh.
++        if (!this.hasLoaded) return;
++        const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
++        const query = norm(term).trim();
++        const filtered = query ? this.allOccasions.filter(o => norm(o.title).includes(query)) : this.allOccasions;
++        this.render(filtered, Boolean(query));
+     }
+ 
+     render(occasions, isSearch = false) {
+-        this.clear();
+-
+-        if (!occasions || occasions.length === 0) {
+-            const noEvents = document.createElement('div');
+-            noEvents.style.textAlign = 'center';
+-            noEvents.style.padding = '20px';
+-            noEvents.textContent = UnitStrings.noEventsFound;
+-            this.host.appendChild(noEvents);
++        // Rendering is not disposal: keep search handlers and request generation intact.
++        super.clear();
++        if (!occasions?.length) {
++            this.showStatus(isSearch ? UnitStrings.noSearchResults : UnitStrings.emptyCatalogue);
++            if (isSearch) {
++                const button = document.createElement('button');
++                button.type = 'button';
++                button.textContent = UnitStrings.clearSearch;
++                button.onclick = () => this.clearSearch();
++                this.host.querySelector('[data-catalog-status]').appendChild(button);
++            }
+             return;
+         }
+-
+-        const now = new Date();
+-        const present = occasions.filter(o => new Date(o.start_time) <= now && new Date(o.end_time) >= now);
+-        const upcoming = occasions.filter(o => new Date(o.start_time) > now).sort((a,b) => new Date(a.start_time) - new Date(b.start_time));
+-        const past = occasions.filter(o => new Date(o.end_time) < now).sort((a,b) => new Date(b.end_time) - new Date(a.end_time));
+-
++        const { present, upcoming, past, undated } = classifyOccasions(occasions);
++        if (!present.length && !upcoming.length && !undated.length && !isSearch) this.showStatus(UnitStrings.onlyArchive);
+         if (present.length) this.renderSection(UnitStrings.happeningNow, present, true);
+         if (upcoming.length) this.renderSection(UnitStrings.upcomingEvents, upcoming);
+-        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true);
++        if (undated.length) this.renderSection(UnitStrings.otherEvents, undated);
++        if (past.length) this.renderSection(UnitStrings.pastEvents, past, false, true, isSearch);
+     }
+ 
+-    renderSection(title, list, isPresent = false, isPast = false) {
+-        const section = document.createElement('div');
+-        
+-        const titleEl = document.createElement('h2');
++    renderSection(title, list, isPresent = false, isPast = false, open = false) {
++        const section = document.createElement(isPast ? 'details' : 'section');
++        section.className = isPast ? 'catalog-archive' : 'catalog-section';
++        const titleEl = document.createElement(isPast ? 'summary' : 'h2');
+         titleEl.className = 'section-title';
+-        titleEl.style.fontSize = '24px';
+-        titleEl.style.fontWeight = 'bold';
+-        titleEl.style.margin = '24px 0 16px';
+-        titleEl.textContent = title;
++        titleEl.textContent = isPast ? `${title} (${list.length})` : title;
++        if (isPast) section.open = open;
+         section.appendChild(titleEl);
+-        
+         const grid = document.createElement('div');
+-        grid.style.display = 'grid';
+-        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+-        grid.style.gap = '16px';
+-        
+-        list.forEach(oc => {
+-            grid.appendChild(OccasionCard.create(oc, isPresent, isPast));
+-        });
+-        
++        grid.className = 'catalog-grid';
++        list.forEach(oc => grid.appendChild(OccasionCard.create(oc, isPresent, isPast)));
+         section.appendChild(grid);
+         this.host.appendChild(section);
+     }
+diff --git a/web_client/src/components/unit/unit_strings.js b/web_client/src/components/unit/unit_strings.js
+--- a/web_client/src/components/unit/unit_strings.js
++++ b/web_client/src/components/unit/unit_strings.js
+@@ -2,6 +2,17 @@
+ import { LocalizationService } from '../../services/localization_service.js';
+ 
+ export class UnitStrings {
++    static copy(key, cs, en) { return LocalizationService.tr(`Catalogue.${key}`, {}, LocalizationService.currentLocale === 'cs' || LocalizationService.currentLocale === 'sk' ? cs : en); }
++    static get clearSearch() { return this.copy('clearSearch', 'Vymazat hledání', 'Clear search'); }
++    static get retry() { return this.copy('retry', 'Zkusit znovu', 'Try again'); }
++    static get loading() { return this.copy('loading', 'Aktualizujeme seznam akcí…', 'Updating events…'); }
++    static get loadFailed() { return this.copy('loadFailed', 'Akce se nepodařilo načíst. Zkuste to znovu.', 'Events could not be loaded. Please try again.'); }
++    static get refreshFailed() { return this.copy('refreshFailed', 'Seznam se nepodařilo aktualizovat. Zobrazené odkazy na akce můžete dál použít.', 'The list could not be updated. You can still use the event links below.'); }
++    static get noSearchResults() { return this.copy('noSearchResults', 'Pro tento výraz jsme nenašli žádnou akci.', 'No events match your search.'); }
++    static get emptyCatalogue() { return this.copy('emptyCatalogue', 'Zatím zde nejsou žádné akce.', 'There are no events here yet.'); }
++    static get onlyArchive() { return this.copy('onlyArchive', 'Momentálně nejsou zveřejněné žádné aktuální ani nadcházející akce. Starší akce najdete v archivu.', 'There are no current or upcoming events. Earlier events are available in the archive.'); }
++    static get otherEvents() { return this.copy('otherEvents', 'Další akce', 'Other events'); }
++
+     static get search() { return LocalizationService.tr('Common.search'); }
+     static get noEventsFound() { return LocalizationService.tr('Common.noEventsFound'); }
+     static get happeningNow() { return LocalizationService.tr('Common.happeningNow'); }
+diff --git a/web_client/src/components/occasion/db_occasions.js b/web_client/src/components/occasion/db_occasions.js
+--- a/web_client/src/components/occasion/db_occasions.js
++++ b/web_client/src/components/occasion/db_occasions.js
+@@ -1,4 +1,5 @@
+ import { SupabaseService } from '../../services/supabase_service.js';
++import { extractPublicOccasions } from './catalog.js';
+ import { OccasionModel } from './occasion_model.js';
+ 
+ export class DbOccasions {
+@@ -17,24 +18,6 @@
+             throw error;
+         }
+         
+-        // Robust Extraction:
+-        // Case A: data.occasions (common wrapper)
+-        // Case B: data IS the array (direct return)
+-        // Case C: data.data.occasions (nested wrapper)
+-        
+-        let rawOccasions = [];
+-        if (Array.isArray(data)) {
+-            rawOccasions = data;
+-        } else if (data && Array.isArray(data.occasions)) {
+-            rawOccasions = data.occasions;
+-        } else if (data && data.data && Array.isArray(data.data.occasions)) {
+-            rawOccasions = data.data.occasions;
+-        } else {
+-             console.warn("DbOccasions: Unexpected data structure", data);
+-             return [];
+-        }
+-
+-        return rawOccasions
+-            .map(json => OccasionModel.fromJson(json));
++        return extractPublicOccasions(data).map(json => OccasionModel.fromJson(json));
+     }
+ }
+diff --git a/web_client/src/components/occasion/occasion_card.js b/web_client/src/components/occasion/occasion_card.js
+--- a/web_client/src/components/occasion/occasion_card.js
++++ b/web_client/src/components/occasion/occasion_card.js
+@@ -65,8 +65,11 @@
+         const header = document.createElement('div');
+         header.className = 'oc-header';
+         
+-        // Date String (Simplified for now, assumes TimeHelper exists and works)
+-        const dateStr = TimeHelper.getMinimalisticDateRange(new Date(occasion.start_time), new Date(occasion.end_time), LocalizationService.currentLocale);
++        // Missing or invalid dates must not hide an otherwise public event.
++        const start = occasion.start_time ? new Date(occasion.start_time) : null;
++        const end = occasion.end_time ? new Date(occasion.end_time) : null;
++        const dateStr = start && end && Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())
++            ? TimeHelper.getMinimalisticDateRange(start, end, LocalizationService.currentLocale) : '';
+         
+         const infoRow = document.createElement('div');
+         infoRow.className = 'oc-info-row';
+@@ -85,7 +88,7 @@
+         titleDiv.className = 'oc-title';
+         titleDiv.textContent = occasion.title || '';
+ 
+-        infoDiv.appendChild(dateDiv);
++        if (dateStr) infoDiv.appendChild(dateDiv);
+         infoDiv.appendChild(titleDiv);
+         infoRow.appendChild(infoDiv);
+ 
+diff --git a/web_client/src/components/occasion/occasion_card.css b/web_client/src/components/occasion/occasion_card.css
+--- a/web_client/src/components/occasion/occasion_card.css
++++ b/web_client/src/components/occasion/occasion_card.css
+@@ -21,18 +21,19 @@
+     border: 4px solid var(--accent-color);
+     box-shadow: 0 0 20px 4px rgba(128, 189, 242, 0.4);
+ }
+-.oc-bg { width: 100%; height: 100%; object-fit: cover; }
++.oc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+ .oc-overlay-past { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+ 
+ .oc-header {
+-    position: absolute; top: 0; left: 0; right: 0;
+-    background: rgba(0,0,0,0.4);
++    position: relative;
++    background: rgba(0,0,0,0.65);
+     backdrop-filter: blur(5px);
+     padding: 8px;
+     color: white; /* Always white text on image overlay */
+ }
+ .oc-date { font-size: 14px; margin-bottom: 4px; }
+-.oc-title { font-size: 18px; font-weight: bold; }
++.oc-info { min-width: 0; }
++.oc-title { font-size: 18px; font-weight: bold; overflow-wrap: anywhere; }
+ 
+ .oc-price-badge {
+     background: rgba(0,0,0,0.6);
+diff --git a/web_client/tests/components/occasion_card_links.test.js b/web_client/tests/components/occasion_card_links.test.js
+--- a/web_client/tests/components/occasion_card_links.test.js
++++ b/web_client/tests/components/occasion_card_links.test.js
+@@ -1,3 +1,5 @@
++import { register } from 'node:module';
++register('../css_loader.mjs', import.meta.url);
+ import test, { before } from 'node:test';
+ import assert from 'node:assert/strict';
+ import { JSDOM } from 'jsdom';
+@@ -55,3 +57,13 @@
+     assert.equal(OccasionCard.create({ ...occasion, features: feature('javascript:alert(1)') }).getAttribute('href'), '/form/registration');
+     assert.equal(OccasionCard.create({ ...occasion, features: feature('https://organizer.invalid/register') }).href, 'https://organizer.invalid/register');
+ });
++
++
++test('public cards with missing or invalid dates remain usable without invented dates', () => {
++    for (const dates of [{}, { start_time: null, end_time: null }, { start_time: 'invalid', end_time: 'invalid' }]) {
++        const card = OccasionCard.create({ ...occasion, start_time: undefined, end_time: undefined, ...dates });
++        assert.equal(card.getAttribute('href'), '/form/registration');
++        assert.equal(card.querySelector('.oc-date'), null);
++        assert.ok(card.textContent.includes(occasion.title));
++    }
++});
+diff --git a/web_client/tests/core/home_startup.test.js b/web_client/tests/core/home_startup.test.js
+--- a/web_client/tests/core/home_startup.test.js
++++ b/web_client/tests/core/home_startup.test.js
+@@ -1,11 +1,13 @@
++import { register } from 'node:module';
++register('../css_loader.mjs', import.meta.url);
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+ import { readFileSync } from 'node:fs';
+ import { runInNewContext } from 'node:vm';
+ import { JSDOM } from 'jsdom';
+ 
+-test('home stays covered until the SEO text list has been replaced with cards', async t => {
+-    const dom = new JSDOM('<div id="web-client-startup"></div><div id="app" style="display:none"><div id="events-grid"><ul><li>SEO event</li></ul></div></div>', { url: 'https://tickets.invalid/' });
++test('server catalogue remains visible while cards load, then startup completes', async t => {
++    const dom = new JSDOM('<div id="web-client-startup"></div><div id="app" style="display:flex"><div id="events-grid"><ul><li>SEO event</li></ul></div></div>', { url: 'https://tickets.invalid/' });
+     for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) {
+         globalThis[key] = key === 'window' ? dom.window : dom.window[key];
+     }
+@@ -37,14 +39,16 @@
+         window, document, console, UnitPage,
+         GoogleAuthService: { takeCallback: () => null },
+         initializeCoreServices: async () => {},
++        handleOrganizerIntent: async () => false,
+         LocalizationService: {}, SupabaseService: {}, RightsService: {},
+         AppConfig: { organization: 3 },
+         ThemeService: noop, ImageLoader: noop, FeedbackFab: noop,
+         RouterService: { handleInitialLoad: async () => false, initPopStateListener() {} },
+     });
+     await new Promise(resolve => setImmediate(resolve));
+-    assert.equal(ready, false, 'startup overlay must remain while events are loading');
+-    assert.equal(document.getElementById('app').style.display, 'none');
++    assert.equal(ready, false, 'loading cards does not prematurely mark application ready');
++    assert.ok(document.querySelector('#events-grid ul'), 'server links remain usable while loading');
++    assert.equal(document.getElementById('app').style.display, 'flex');
+     deliver([{ title: 'Card event', start_time: '2099-01-01', end_time: '2099-01-02' }]);
+     await startup;
+     assert.equal(ready, true);
+@@ -52,3 +56,17 @@
+     assert.equal(document.querySelector('#events-grid ul'), null);
+     assert.equal(document.querySelector('.occasion-card').textContent, 'Card event');
+ });
++
++
++test('actual server catalogue shell reveals links while startup is pending and retains failure recovery', () => {
++    const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
++        .replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="ready"><a href="/form/live">Public event</a></div>');
++    const dom = new JSDOM(html, { url: 'https://vstupenky.online/', runScripts: 'outside-only' });
++    const reveal = [...dom.window.document.scripts].find(script => script.textContent.includes("document.querySelector('#events-grid[data-server-catalog]')"));
++    dom.window.eval(reveal.textContent);
++    assert.equal(dom.window.document.querySelector('#app').style.display, 'flex');
++    assert.equal(dom.window.document.querySelector('#web-client-startup').style.position, 'relative');
++    assert.equal(dom.window.document.querySelector('#site-introduction').hidden, true);
++    assert.ok(dom.window.document.querySelector('a[href="/form/live"]'));
++    dom.window.close();
++});
+diff --git a/web_client/tests/services/seo_service.test.js b/web_client/tests/services/seo_service.test.js
+--- a/web_client/tests/services/seo_service.test.js
++++ b/web_client/tests/services/seo_service.test.js
+@@ -25,3 +25,15 @@
+     assert.equal(document.querySelector('meta[property="og:image:width"]'), null);
+     assert.equal(document.querySelector('meta[property="og:image:height"]'), null);
+ });
++
++
++test('tenant www URL canonicalizes to configured HTTPS apex without tracking or fragment', () => {
++    const dom = new JSDOM('<!doctype html><head></head>', { url: 'https://www.vstupenky.online/' });
++    globalThis.window = dom.window; globalThis.document = dom.window.document; globalThis.DOMParser = dom.window.DOMParser;
++    const previous = AppConfig.webLink; AppConfig.webLink = 'https://vstupenky.online';
++    try {
++        SeoService.updateMetaTags({ title: 'Apex form' }, 'https://www.vstupenky.online/form/live?utm_source=mail#section');
++        assert.equal(document.querySelector('link[rel=canonical]').href, 'https://vstupenky.online/form/live');
++        assert.equal(document.querySelector('meta[property="og:url"]').content, 'https://vstupenky.online/form/live');
++    } finally { AppConfig.webLink = previous; dom.window.close(); }
++});
+diff --git a/docs/plans/vstupenky-seo-plan-2026-10-15.md b/docs/plans/vstupenky-seo-plan-2026-10-15.md
+--- a/docs/plans/vstupenky-seo-plan-2026-10-15.md
++++ b/docs/plans/vstupenky-seo-plan-2026-10-15.md
+@@ -1,6 +1,6 @@
+ # SEO vstupenky.online: technická konsolidace a obsah pro pořadatele
+ 
+-Datum: 2026-10-15. Stav: plán připravený pro následnou realizaci, UX/UI přidělené Astra Medium; nic nenasazeno.
++Datum: 2026-10-15. Stav: lokální realizace T1-T3/T5 a U1-U2 dokončena na základě následného pokynu uživatele; nic nenasazeno. Podrobnosti a omezení: [realizační záznam](vstupenky-seo-implementation-2026-10-15.md).
+ Ověřování při implementaci: standard pro veřejné routování a bezpečnostní hlavičky; cílené ověření obsahu. Plán vznikl jedním průzkumem bez buildů a testů.
+ 
+ ## Cíl a rozsah
+@@ -165,3 +165,14 @@
+ - [Google: Core Web Vitals](https://developers.google.com/search/docs/appearance/core-web-vitals): hodnotit skutečnou zkušenost, včetně INP; převzatý audit měří převážně laboratorní načtení a zobrazuje loader jako LCP.
+ 
+ AI Visibility 62/100 bez zveřejněných promptů, vzorku, trhu a metody bereme jako neověřený údaj poskytovatele. Prioritou je užitečný veřejný obsah, jasná identita a skutečné reference, nikoliv příslib ovlivnění konkrétních chatbotů.
++
++
++## Aktualizace při realizaci 2026-10-15
++
++Následný uživatelský pokyn autorizoval implementaci, nikoliv publikaci. Rozsah a výsledky ověření jsou v [realizačním záznamu](vstupenky-seo-implementation-2026-10-15.md), vzhled v [statickém náhledu](vstupenky-seo-preview-2026-10-15.html).
++
++Upřesněné předpoklady s důkazem: produkční `origin/prod/festapptickets:automation/project.conf` má organizaci 3 a canonical aktivaci; živý aktivační dokument potvrdil tenant festapptickets/generaci 1/canonical. Místní konfigurace má organizaci 1 a nesmí se vydávat jako produkční profil. Kontakt a identita provozovatele již existují v `automation/release/legal/support.cs.md` a `terms.cs.md`; není nutné je vymýšlet ani považovat za chybějící podklad. Veřejný ceník/reference doloženy nejsou, stránka nabízí dotaz na cenu bez čísel a bez referencí.
++
++Katalog zachovává i položky bez platného termínu v samostatné sekci; původní datumové filtry je mohly ztrácet a karta mohla při neplatném datu spadnout. Opravu pokrývá cílený test reálné karty. Nevalidní katalogový payload je chyba dostupnosti, nikoliv potvrzená nula akcí. SQL/RPC pravidla zveřejnění ani položky `(Copy)` nebyly změněny.
++
++Fontová optimalizace T4 se neprovádí bez srovnatelného měření. Lokální technické a UI ověření nenahrazuje O1: www stále před vydáním vrací 200; živé jednohopové přesměrování a HSTS vyžadují autorizované nasazení a ověření vnějších Cloudflare pravidel. O2 a M1 zůstávají samostatnými provozními závislostmi.
+diff --git a/automation/release/render_organizer_page.mjs b/automation/release/render_organizer_page.mjs
+new file mode 100644
+--- /dev/null
++++ b/automation/release/render_organizer_page.mjs
+@@ -0,0 +1,51 @@
++import fs from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++
++const configArg = process.argv.indexOf('--config');
++const configPath = path.resolve(configArg < 0 ? 'automation/project.conf' : process.argv[configArg + 1]);
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
++const config = fs.readFileSync(configPath, 'utf8');
++const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '').trim().replace(/^(['"])(.*)\1$/, '$2');
++const enabled = value('DOMAIN') === 'vstupenky.online';
++const outputArg = process.argv.indexOf('--output');
++const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
++const index = path.join(root, 'web_client/index.html');
++if (fs.existsSync(index)) {
++  const html = fs.readFileSync(index, 'utf8');
++  const nav = enabled ? '\n            <nav class="catalog-navigation" aria-label="Pro pořadatele"><a href="/pro-poradatele">Pro pořadatele</a></nav>\n            ' : '\n            ';
++  fs.writeFileSync(index, html.replace(/(<!-- ORGANIZERS_NAV_START -->)[\s\S]*?(<!-- ORGANIZERS_NAV_END -->)/, (_, start, end) => start + nav + end));
++}
++if (!enabled) {
++  fs.rmSync(target, { force: true });
++  console.log('Organizer page disabled for this tenant.');
++  process.exit(0);
++}
++const origin = new URL(value('WEB_LINK'));
++if (origin.href !== 'https://vstupenky.online/') throw new Error('Organizer page requires the vstupenky.online HTTPS apex');
++const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
++const tokens = {
++  APP_NAME: value('APP_NAME'), CONTACT_EMAIL: 'info@festapp.net', PROVIDER_NAME: 'Michael Bujnovský',
++  CTA_HREF: '/?create=1', CTA_LABEL: 'Založit akci',
++  CTA_NOTE: 'K založení akce potřebujete účet. Dostupnost registrace ověříme po otevření aplikace.',
++};
++const content = fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8').replace(/{{([A-Z_]+)}}/g, (_, key) => {
++  if (!(key in tokens)) throw new Error(`Unknown organizer token ${key}`);
++  return escape(tokens[key]);
++});
++const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
++const primary = /^#[0-9a-f]{6}$/i.test(value('THEME_SEED_3')) ? value('THEME_SEED_3') : '#4465a6';
++const title = 'Prodej vstupenek a registrace na akce | ' + tokens.APP_NAME;
++const description = 'Informace pro pořadatele: založení akce, správa objednávek, vstupenky a odbavení. Jak začít se službou vstupenky.online a kde zjistit cenu.';
++const builtIndexArg = process.argv.indexOf('--built-index');
++let themeLinks = '';
++if (builtIndexArg >= 0) {
++  const builtIndex = fs.readFileSync(path.resolve(process.argv[builtIndexArg + 1]), 'utf8');
++  themeLinks = (builtIndex.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [])
++    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag)).join('');
++  if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
++}
++const html = `<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${escape(title)}</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${origin.origin}/pro-poradatele"><meta property="og:type" content="website"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${origin.origin}/pro-poradatele"><meta property="og:image" content="${origin.origin}/android-chrome-512x512.png"><meta property="twitter:card" content="summary_large_image"><meta property="twitter:title" content="${escape(title)}"><meta property="twitter:description" content="${escape(description)}"><meta property="twitter:url" content="${origin.origin}/pro-poradatele"><meta property="twitter:image" content="${origin.origin}/android-chrome-512x512.png"><link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}</body></html>\n`;
++fs.mkdirSync(path.dirname(target), { recursive: true });
++fs.writeFileSync(target, html);
++console.log('Rendered organizer page for vstupenky.online.');
+diff --git a/automation/release/organizers/page.html b/automation/release/organizers/page.html
+new file mode 100644
+--- /dev/null
++++ b/automation/release/organizers/page.html
+@@ -0,0 +1,19 @@
++<header class="organizer-header"><a href="/" aria-label="{{APP_NAME}} - úvodní stránka"><img src="/brand-logo.svg" alt="{{APP_NAME}}" width="152" height="56"></a><a href="/">Zpět na akce</a></header>
++<main class="organizer-main">
++<p class="organizer-eyebrow">Pro pořadatele</p>
++<h1>Prodej vstupenek a registrace na akce</h1>
++<p class="organizer-lead">Připravujete kulturní akci, tábor, kurz nebo setkání? Na Vstupenky.online můžete zveřejnit nabídku, přijímat přihlášky a objednávky a spravovat vstupenky.</p>
++<a class="organizer-cta" href="{{CTA_HREF}}">{{CTA_LABEL}}</a><p class="organizer-note">{{CTA_NOTE}}</p>
++<section aria-labelledby="steps-title"><h2 id="steps-title">Od založení akce po odbavení</h2>
++<ol class="organizer-steps"><li><h3>Připravte akci</h3><p>Vyplňte informace o akci a nastavte přihlášku nebo nabídku vstupenek.</p></li><li><h3>Spravujte objednávky</h3><p>Sledujte přihlášky, objednávky a platby na jednom místě.</p></li><li><h3>Odbavte účastníky</h3><p>Při vstupu zkontrolujte vstupenky pomocí jejich QR kódů.</p></li></ol></section>
++<section aria-labelledby="features-title"><h2 id="features-title">Co můžete v systému připravit</h2><ul class="organizer-features"><li>Přihlášky a registrační formuláře pro účastníky.</li><li>Nabídku vstupenek a přehled objednávek.</li><li>E-mailové informace k objednávkám a vstupenkám.</li><li>Organizační zprávy pro účastníky akce.</li></ul></section>
++<section aria-labelledby="price-title"><h2 id="price-title">Cena služby</h2><p>Pro informace o ceně služby nás kontaktujte na <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>. Napište nám, jakou akci připravujete.</p></section>
++<section class="organizer-faq" aria-labelledby="faq-title"><h2 id="faq-title">Časté otázky</h2>
++<details><summary>Pro jaké akce se systém hodí?</summary><p>Pro kulturní akce, tábory, kurzy, setkání i další jednorázové nebo opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivec.</p></details>
++<details><summary>Potřebuji k založení akce účet?</summary><p>Ano. Odkaz „Založit akci“ vás zavede k registraci nebo do správy akcí, pokud už jste přihlášení. Vytvoření účtu samo o sobě není objednávkou vstupenky.</p></details>
++<details><summary>Mohu přijímat přihlášky i prodávat vstupenky?</summary><p>Ano. Systém umožňuje spravovat přihlášky a objednávky a prodávat vstupenky nebo účast na akci.</p></details>
++<details><summary>Kdo určuje podmínky konkrétní akce?</summary><p>Pořadatel určuje cenu, podmínky účasti a platby. Zajišťuje také program a vyřizuje dotazy nebo reklamace ke své akci.</p></details>
++<details><summary>Kam se obrátit s technickým dotazem?</summary><p>Napište na <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>. Dotazy k programu, platbě nebo vstupence na konkrétní akci řešte přímo s jejím pořadatelem.</p></details></section>
++<section aria-labelledby="contact-title"><h2 id="contact-title">Kontakt a provozovatel</h2><p>Poskytovatelem systému je {{PROVIDER_NAME}}, IČO 06455361.<br><a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></p><a class="organizer-cta" href="{{CTA_HREF}}">{{CTA_LABEL}}</a></section>
++<footer class="organizer-footer"><a href="/">Zpět na akce</a><a href="/privacy/">Soukromí</a><a href="/terms/">Podmínky</a><a href="/support/">Podpora</a></footer>
++</main>
+diff --git a/automation/release/organizers/page.css b/automation/release/organizers/page.css
+new file mode 100644
+--- /dev/null
++++ b/automation/release/organizers/page.css
+@@ -0,0 +1,3 @@
++/* Uses the public tenant theme; no alternate brand or font. */
++*{box-sizing:border-box}body{margin:0;background:var(--background-color,#ebf1f6);color:var(--text-color,#000);font-family:var(--organizer-font,'Futura',sans-serif);font-size:18px;line-height:1.55}a{color:var(--primary-color,#4465a6);text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible,summary:focus-visible{outline:3px solid var(--primary-color,#4465a6);outline-offset:4px}p{max-width:65ch;margin:0 0 16px}h1,h2,h3{line-height:1.2;overflow-wrap:anywhere}h1{font-size:clamp(32px,5vw,48px);max-width:22ch;margin:0 0 24px}h2{font-size:28px;margin:0 0 24px}h3{font-size:21px;margin:0 0 12px}.organizer-header{max-width:1200px;margin:auto;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:24px}.organizer-header a{display:inline-flex;align-items:center;min-height:44px}.organizer-header img{display:block;max-width:100%;object-fit:contain}.organizer-main{max-width:1000px;margin:24px auto 0;padding:24px 24px 32px}.organizer-eyebrow{font-weight:500;color:var(--primary-color,#4465a6);margin-bottom:16px}.organizer-lead{font-size:21px;margin-bottom:24px}.organizer-cta{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 24px;background:var(--primary-color,#4465a6);color:var(--organizer-on-primary,#fff);font-weight:700;text-decoration:none;border-radius:var(--radius-sm,10px)}.organizer-cta:hover{text-decoration:underline}.organizer-note{margin-top:12px;font-size:16px}.organizer-main section{margin-top:48px}.organizer-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;padding-left:24px}.organizer-steps li{padding-inline-start:4px}.organizer-steps li::marker{color:var(--primary-color,#4465a6);font-weight:700}.organizer-features{padding-left:24px}.organizer-features li{margin-block:8px}.organizer-faq details{border-top:1px solid var(--primary-color,#4465a6);padding-block:8px}.organizer-faq summary{cursor:pointer;padding-block:12px;font-weight:500;min-height:48px}.organizer-faq details p{padding:8px 0 16px}.organizer-footer{display:flex;flex-wrap:wrap;gap:8px 24px;border-top:1px solid var(--primary-color,#4465a6);margin-top:48px;padding-top:24px}.organizer-footer a{display:inline-flex;align-items:center;min-height:44px}@media(max-width:600px){.organizer-main{margin-top:8px;padding:24px 16px}.organizer-header{gap:16px}.organizer-header img{width:120px;height:48px}.organizer-steps{grid-template-columns:1fr;gap:16px}.organizer-main section{margin-top:40px}h2{font-size:26px}}@media(prefers-color-scheme:dark){body:not(.light-mode){--background-color:#232529;--surface-color:#2b2d31;--text-color:#bdbdbd;--primary-color:#80bdf2;--organizer-on-primary:#0d0d0d}}body.dark-mode{--organizer-on-primary:#0d0d0d}
++.organizer-main p a{text-decoration:underline}
+diff --git a/automation/tests/organizer_page.test.mjs b/automation/tests/organizer_page.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/automation/tests/organizer_page.test.mjs
+@@ -0,0 +1,63 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { spawnSync } from 'node:child_process';
++
++test('tenant generator produces truthful standalone HTML and removes page/nav on tenant switch', t => {
++  const root = mkdtempSync(join(tmpdir(), 'festapp-seo-generator-'));
++  t.after(() => rmSync(root, { recursive: true, force: true }));
++  mkdirSync(join(root, 'automation/release'), { recursive: true });
++  mkdirSync(join(root, 'web_client'), { recursive: true });
++  cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
++  cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
++  cpSync(new URL('../../web_client/index.html', import.meta.url), join(root, 'web_client/index.html'));
++  const config = join(root, 'automation/project.conf');
++  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nTHEME_SEED_3=#4465a6\n');
++  const render = () => {
++    const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
++    assert.equal(run.status, 0, run.stderr);
++  };
++  render();
++  const output = join(root, 'web/organizers-page');
++  const html = readFileSync(output, 'utf8');
++  assert.ok(html.includes('Tickets &amp; events'));
++  assert.ok(html.includes('href="https://vstupenky.online/pro-poradatele"'));
++  assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
++  assert.ok(html.includes('href="/?create=1"'));
++  assert.ok(html.includes('info@festapp.net'));
++  assert.ok(!html.includes('{{'));
++  assert.ok(!html.includes('fonts.googleapis.com'));
++  render(); assert.equal(readFileSync(output, 'utf8'), html);
++  const builtIndex = join(root, 'web_client/built.html');
++  writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css">');
++  const bundleOutput = join(root, 'bundle/organizers-page');
++  const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
++  assert.equal(build.status, 0, build.stderr);
++  const bundled = readFileSync(bundleOutput, 'utf8');
++  assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
++  assert.ok(!bundled.includes('fonts.googleapis.com'));
++  assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
++
++  writeFileSync(config, 'DOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
++  render(); assert.equal(existsSync(output), false);
++  assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
++});
++
++test('actual build stamping uses configured canonical origin and the shared classifier', t => {
++  const root = mkdtempSync(join(tmpdir(), 'festapp-worker-stamp-'));
++  t.after(() => rmSync(root, { recursive: true, force: true }));
++  const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
++  const worker = join(root, 'worker.js'); const config = join(root, 'project.conf');
++  writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
++  writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nAPP_NAME=Tickets\nFORCE_OCCASION_LINK=\n');
++  const python = script.match(/python3 - build\/web\/_worker.js automation\/project.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
++  const result = spawnSync('python3', ['-', worker, config], { input: python, encoding: 'utf8' });
++  assert.equal(result.status, 0, result.stderr);
++  const source = readFileSync(worker, 'utf8');
++  assert.ok(source.includes('const CANONICAL_ORIGIN = "https://vstupenky.online";'));
++  assert.ok(source.includes('const ORGANIZERS_ENABLED = true;'));
++  assert.ok(source.includes('function classifyOccasions('));
++  assert.ok(!source.includes('// SHARED_CATALOG_CLASSIFICATION'));
++});
+diff --git a/web_client/src/components/occasion/catalog.js b/web_client/src/components/occasion/catalog.js
+new file mode 100644
+--- /dev/null
++++ b/web_client/src/components/occasion/catalog.js
+@@ -0,0 +1,23 @@
++// Shared by the browser and the generated edge worker. Missing dates remain visible.
++export function classifyOccasions(occasions, now = Date.now()) {
++    const groups = { present: [], upcoming: [], past: [], undated: [] };
++    const time = value => value == null || value === '' ? NaN : new Date(value).getTime();
++    for (const occasion of occasions) {
++        const start = time(occasion.start_time);
++        const end = time(occasion.end_time);
++        if (Number.isFinite(end) && end < now) groups.past.push(occasion);
++        else if (Number.isFinite(start) && start > now) groups.upcoming.push(occasion);
++        else if (Number.isFinite(start) && Number.isFinite(end) && start <= now && end >= now) groups.present.push(occasion);
++        else groups.undated.push(occasion);
++    }
++    groups.upcoming.sort((a, b) => time(a.start_time) - time(b.start_time));
++    groups.past.sort((a, b) => time(b.end_time) - time(a.end_time));
++    return groups;
++}
++
++// An invalid response is an unavailable catalogue, never a confirmed empty list.
++export function extractPublicOccasions(data) {
++    const occasions = Array.isArray(data) ? data : data?.occasions ?? data?.data?.occasions;
++    if (!Array.isArray(occasions)) throw new Error('Invalid public catalogue response');
++    return occasions;
++}
+diff --git a/web_client/src/components/unit/unit_page.css b/web_client/src/components/unit/unit_page.css
+new file mode 100644
+--- /dev/null
++++ b/web_client/src/components/unit/unit_page.css
+@@ -0,0 +1 @@
++.catalog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:16px}.catalog-section .section-title,.catalog-archive .section-title{font-size:24px;font-weight:700;margin:24px 0 16px;overflow-wrap:anywhere}.catalog-archive{margin-top:24px;border-top:1px solid var(--primary-color)}.catalog-archive summary{cursor:pointer;min-height:44px;padding-block:8px}.catalog-archive summary:focus-visible,.catalog-status button:focus-visible{outline:3px solid var(--primary-color);outline-offset:4px}.catalog-status{padding:16px 0}.catalog-status p{margin:0 0 8px;line-height:1.5}.catalog-status button{font:inherit;min-height:44px;padding:8px 16px;border:1px solid var(--primary-color);border-radius:var(--radius-sm,10px);background:var(--surface-color);color:var(--primary-color);cursor:pointer}.catalog-navigation{display:flex;justify-content:flex-end;margin-bottom:16px}.catalog-navigation a{display:inline-flex;align-items:center;min-height:44px}.catalog-navigation a:focus-visible{outline:3px solid var(--primary-color);outline-offset:4px}
+diff --git a/web_client/src/startup/organizer_intent.js b/web_client/src/startup/organizer_intent.js
+new file mode 100644
+--- /dev/null
++++ b/web_client/src/startup/organizer_intent.js
+@@ -0,0 +1,32 @@
++import { AppConfig } from '../app_config.js';
++import { RightsService } from '../services/rights_service.js';
++import { RouterService } from '../services/router_service.js';
++import { LocalizationService } from '../services/localization_service.js';
++
++// Reuse the same guest registration and signed-in administration entry as UserHeader.
++export async function handleOrganizerIntent() {
++    if (new URL(AppConfig.webLink).hostname !== 'vstupenky.online' ||
++        window.location.pathname !== '/' || new URLSearchParams(window.location.search).get('create') !== '1') return false;
++    const url = new URL(window.location.href);
++    await RightsService.updateAppData();
++    url.searchParams.delete('create');
++    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
++    if (RightsService.currentUser?.id) {
++        await RouterService.navigateToAdmin(RightsService.currentUnit?.id ?? RightsService.currentUser.units?.[0]?.id);
++        return 'navigated';
++    }
++    if (RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
++        await import('../components/users/login_modal.js');
++        const modal = document.createElement('login-modal');
++        modal.currentView = 'register';
++        document.body.appendChild(modal);
++    } else {
++        const notice = document.createElement('p');
++        notice.setAttribute('role', 'status');
++        notice.textContent = LocalizationService.currentLocale === 'en'
++            ? 'Registration is currently unavailable. To create an event, contact info@festapp.net.'
++            : 'Registrace nyní není dostupná. Pro založení akce kontaktujte info@festapp.net.';
++        document.querySelector('#app main')?.prepend(notice);
++    }
++    return 'catalog';
++}
+diff --git a/web_client/tests/components/catalog.test.js b/web_client/tests/components/catalog.test.js
+new file mode 100644
+--- /dev/null
++++ b/web_client/tests/components/catalog.test.js
+@@ -0,0 +1,76 @@
++import { register } from 'node:module';
++register('../css_loader.mjs', import.meta.url);
++import test, { before } from 'node:test';
++import assert from 'node:assert/strict';
++import { JSDOM } from 'jsdom';
++import { classifyOccasions, extractPublicOccasions } from '../../src/components/occasion/catalog.js';
++let UnitPage, DbOccasions, OccasionCard, LocalizationService;
++before(async () => {
++    const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://vstupenky.online/' });
++    for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) globalThis[key] = key === 'window' ? dom.window : dom.window[key];
++    globalThis.localStorage = dom.window.localStorage;
++    ({ UnitPage } = await import('../../src/components/unit/unit_page.js'));
++    ({ DbOccasions } = await import('../../src/components/occasion/db_occasions.js'));
++    ({ OccasionCard } = await import('../../src/components/occasion/occasion_card.js'));
++    ({ LocalizationService } = await import('../../src/services/localization_service.js'));
++});
++function fixture() {
++    document.body.innerHTML = '<input id="search"><button id="clear-search"></button><div id="catalog"><a href="/form/server">Server event</a></div>';
++    const page = new UnitPage('catalog'); page.init('search'); return page;
++}
++test('shared classification keeps boundary times, null/invalid dates and copies visible', () => {
++    const now = Date.parse('2026-10-15T12:00:00Z');
++    const groups = classifyOccasions([
++        { title: 'Current', start_time: new Date(now), end_time: new Date(now) },
++        { title: 'Upcoming', start_time: '2026-11-01', end_time: '2026-11-02' },
++        { title: 'Past (Copy)', start_time: '2020-01-01', end_time: '2020-01-02' },
++        { title: 'Null', start_time: null, end_time: null }, { title: 'Invalid', start_time: 'invalid' },
++    ], now);
++    assert.equal(groups.present[0].title, 'Current');
++    assert.equal(groups.upcoming[0].title, 'Upcoming');
++    assert.equal(groups.past[0].title, 'Past (Copy)');
++    assert.deepEqual(groups.undated.map(o => o.title), ['Null', 'Invalid']);
++});
++test('failed refresh preserves SSR links, safely renders error and retry updates catalogue', async t => {
++    LocalizationService.currentLocale = 'cs';
++    const page = fixture();
++    let fail = true;
++    t.mock.method(DbOccasions, 'getPublicOccasions', async () => { if (fail) throw new Error('<img src=x onerror=alert(1)>'); return []; });
++    await page.loadOccasions(3);
++    assert.ok(document.querySelector('a[href="/form/server"]'));
++    assert.equal(document.querySelector('img'), null);
++    assert.match(document.querySelector('[role=status]').textContent, /aktualizovat/);
++    fail = false;
++    document.querySelector('[data-catalog-status] button').click();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(document.querySelector('a[href="/form/server"]'), null);
++    assert.match(document.querySelector('[role=status]').textContent, /žádné akce/);
++});
++test('archive search expands historical matches and empty search differs from empty catalogue in both locales', async t => {
++    t.mock.method(OccasionCard, 'create', occasion => { const a = document.createElement('a'); a.href = '/form/' + occasion.link; a.textContent = occasion.title; return a; });
++    for (const locale of ['cs', 'en']) {
++        LocalizationService.currentLocale = locale;
++        const page = fixture();
++        t.mock.method(DbOccasions, 'getPublicOccasions', async () => [{ title: 'Historická akce', link: 'past', start_time: '2020-01-01', end_time: '2020-01-02' }]);
++        await page.loadOccasions(3);
++        assert.equal(document.querySelector('details').open, false);
++        page.filter('historicka');
++        assert.equal(document.querySelector('details').open, true);
++        page.filter('missing');
++        assert.match(document.querySelector('[role=status]').textContent, locale === 'cs' ? /tento výraz/ : /match your search/);
++        document.querySelector('[data-catalog-status] button').click();
++        assert.equal(document.querySelector('details').open, false);
++    }
++});
++test('disposed catalogue ignores a late response', async t => {
++    const page = fixture(); let resolve;
++    t.mock.method(DbOccasions, 'getPublicOccasions', () => new Promise(done => { resolve = done; }));
++    const pending = page.loadOccasions(3); page.clear(); resolve([]); await pending;
++    assert.equal(document.querySelector('#catalog').children.length, 0);
++});
++
++
++test('public catalogue response contract distinguishes an empty result from invalid payloads', () => {
++    for (const valid of [[], { occasions: [] }, { data: { occasions: [] } }]) assert.deepEqual(extractPublicOccasions(valid), []);
++    for (const invalid of [null, {}, { occasions: 'bad' }, { error: 'unavailable' }]) assert.throws(() => extractPublicOccasions(invalid));
++});
+diff --git a/web_client/tests/core/organizer_intent.test.js b/web_client/tests/core/organizer_intent.test.js
+new file mode 100644
+--- /dev/null
++++ b/web_client/tests/core/organizer_intent.test.js
+@@ -0,0 +1,36 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { register } from 'node:module';
++import { JSDOM } from 'jsdom';
++register('../css_loader.mjs', import.meta.url);
++
++test('organizer intent uses current rights, existing registration and signed-in admin, preserving auth fragment', async t => {
++    const dom = new JSDOM('<!doctype html><div id="app"><main></main></div>', { url: 'https://vstupenky.online/?create=1&utm_source=organizers#auth-fragment' });
++    for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) globalThis[key] = key === 'window' ? dom.window : dom.window[key];
++    globalThis.localStorage = dom.window.localStorage;
++    t.after(() => dom.window.close());
++    const { handleOrganizerIntent } = await import('../../src/startup/organizer_intent.js');
++    const { RightsService } = await import('../../src/services/rights_service.js');
++    const { RouterService } = await import('../../src/services/router_service.js');
++    const { AppConfig } = await import('../../src/app_config.js');
++    AppConfig.webLink = 'https://vstupenky.online';
++    let context = { organization: { IS_REGISTRATION_ENABLED: false } };
++    t.mock.method(RightsService, 'updateAppData', async () => { RightsService._context = context; return true; });
++    const admin = t.mock.method(RouterService, 'navigateToAdmin', async () => {});
++    assert.equal(await handleOrganizerIntent(), 'catalog');
++    assert.match(document.querySelector('[role=status]').textContent, /info@festapp.net/);
++    assert.equal(locationHash(), '#auth-fragment');
++    assert.equal(window.location.search, '?utm_source=organizers');
++    context = { user_info: { id: 'user', units: [{ id: 27 }] }, organization: { IS_REGISTRATION_ENABLED: true } };
++    window.history.replaceState(null, '', '/?create=1');
++    assert.equal(await handleOrganizerIntent(), 'navigated');
++    assert.deepEqual(admin.mock.calls[0].arguments, [27]);
++    context = { organization: { IS_REGISTRATION_ENABLED: true } };
++    window.history.replaceState(null, '', '/?create=1');
++    assert.equal(await handleOrganizerIntent(), 'catalog');
++    assert.equal(document.querySelector('login-modal').currentView, 'register');
++    AppConfig.webLink = 'https://another.invalid';
++    window.history.replaceState(null, '', '/?create=1');
++    assert.equal(await handleOrganizerIntent(), false);
++    function locationHash() { return window.location.hash; }
++});
+diff --git a/web/organizers-page b/web/organizers-page
+new file mode 100644
+--- /dev/null
++++ b/web/organizers-page
+@@ -0,0 +1,23 @@
++<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Prodej vstupenek a registrace na akce | vstupenky.online</title><meta name="description" content="Informace pro pořadatele: založení akce, správa objednávek, vstupenky a odbavení. Jak začít se službou vstupenky.online a kde zjistit cenu."><link rel="canonical" href="https://vstupenky.online/pro-poradatele"><meta property="og:type" content="website"><meta property="og:title" content="Prodej vstupenek a registrace na akce | vstupenky.online"><meta property="og:description" content="Informace pro pořadatele: založení akce, správa objednávek, vstupenky a odbavení. Jak začít se službou vstupenky.online a kde zjistit cenu."><meta property="og:url" content="https://vstupenky.online/pro-poradatele"><meta property="og:image" content="https://vstupenky.online/android-chrome-512x512.png"><meta property="twitter:card" content="summary_large_image"><meta property="twitter:title" content="Prodej vstupenek a registrace na akce | vstupenky.online"><meta property="twitter:description" content="Informace pro pořadatele: založení akce, správa objednávek, vstupenky a odbavení. Jak začít se službou vstupenky.online a kde zjistit cenu."><meta property="twitter:url" content="https://vstupenky.online/pro-poradatele"><meta property="twitter:image" content="https://vstupenky.online/android-chrome-512x512.png"><link rel="icon" href="/favicon.ico"><style>:root{--primary-color:#4465A6}/* Uses the public tenant theme; no alternate brand or font. */
++*{box-sizing:border-box}body{margin:0;background:var(--background-color,#ebf1f6);color:var(--text-color,#000);font-family:var(--organizer-font,'Futura',sans-serif);font-size:18px;line-height:1.55}a{color:var(--primary-color,#4465a6);text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible,summary:focus-visible{outline:3px solid var(--primary-color,#4465a6);outline-offset:4px}p{max-width:65ch;margin:0 0 16px}h1,h2,h3{line-height:1.2;overflow-wrap:anywhere}h1{font-size:clamp(32px,5vw,48px);max-width:22ch;margin:0 0 24px}h2{font-size:28px;margin:0 0 24px}h3{font-size:21px;margin:0 0 12px}.organizer-header{max-width:1200px;margin:auto;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:24px}.organizer-header a{display:inline-flex;align-items:center;min-height:44px}.organizer-header img{display:block;max-width:100%;object-fit:contain}.organizer-main{max-width:1000px;margin:24px auto 0;padding:24px 24px 32px}.organizer-eyebrow{font-weight:500;color:var(--primary-color,#4465a6);margin-bottom:16px}.organizer-lead{font-size:21px;margin-bottom:24px}.organizer-cta{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 24px;background:var(--primary-color,#4465a6);color:var(--organizer-on-primary,#fff);font-weight:700;text-decoration:none;border-radius:var(--radius-sm,10px)}.organizer-cta:hover{text-decoration:underline}.organizer-note{margin-top:12px;font-size:16px}.organizer-main section{margin-top:48px}.organizer-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;padding-left:24px}.organizer-steps li{padding-inline-start:4px}.organizer-steps li::marker{color:var(--primary-color,#4465a6);font-weight:700}.organizer-features{padding-left:24px}.organizer-features li{margin-block:8px}.organizer-faq details{border-top:1px solid var(--primary-color,#4465a6);padding-block:8px}.organizer-faq summary{cursor:pointer;padding-block:12px;font-weight:500;min-height:48px}.organizer-faq details p{padding:8px 0 16px}.organizer-footer{display:flex;flex-wrap:wrap;gap:8px 24px;border-top:1px solid var(--primary-color,#4465a6);margin-top:48px;padding-top:24px}.organizer-footer a{display:inline-flex;align-items:center;min-height:44px}@media(max-width:600px){.organizer-main{margin-top:8px;padding:24px 16px}.organizer-header{gap:16px}.organizer-header img{width:120px;height:48px}.organizer-steps{grid-template-columns:1fr;gap:16px}.organizer-main section{margin-top:40px}h2{font-size:26px}}@media(prefers-color-scheme:dark){body:not(.light-mode){--background-color:#232529;--surface-color:#2b2d31;--text-color:#bdbdbd;--primary-color:#80bdf2;--organizer-on-primary:#0d0d0d}}body.dark-mode{--organizer-on-primary:#0d0d0d}
++.organizer-main p a{text-decoration:underline}
++</style></head><body><header class="organizer-header"><a href="/" aria-label="vstupenky.online - úvodní stránka"><img src="/brand-logo.svg" alt="vstupenky.online" width="152" height="56"></a><a href="/">Zpět na akce</a></header>
++<main class="organizer-main">
++<p class="organizer-eyebrow">Pro pořadatele</p>
++<h1>Prodej vstupenek a registrace na akce</h1>
++<p class="organizer-lead">Připravujete kulturní akci, tábor, kurz nebo setkání? Na Vstupenky.online můžete zveřejnit nabídku, přijímat přihlášky a objednávky a spravovat vstupenky.</p>
++<a class="organizer-cta" href="/?create=1">Založit akci</a><p class="organizer-note">K založení akce potřebujete účet. Dostupnost registrace ověříme po otevření aplikace.</p>
++<section aria-labelledby="steps-title"><h2 id="steps-title">Od založení akce po odbavení</h2>
++<ol class="organizer-steps"><li><h3>Připravte akci</h3><p>Vyplňte informace o akci a nastavte přihlášku nebo nabídku vstupenek.</p></li><li><h3>Spravujte objednávky</h3><p>Sledujte přihlášky, objednávky a platby na jednom místě.</p></li><li><h3>Odbavte účastníky</h3><p>Při vstupu zkontrolujte vstupenky pomocí jejich QR kódů.</p></li></ol></section>
++<section aria-labelledby="features-title"><h2 id="features-title">Co můžete v systému připravit</h2><ul class="organizer-features"><li>Přihlášky a registrační formuláře pro účastníky.</li><li>Nabídku vstupenek a přehled objednávek.</li><li>E-mailové informace k objednávkám a vstupenkám.</li><li>Organizační zprávy pro účastníky akce.</li></ul></section>
++<section aria-labelledby="price-title"><h2 id="price-title">Cena služby</h2><p>Pro informace o ceně služby nás kontaktujte na <a href="mailto:info@festapp.net">info@festapp.net</a>. Napište nám, jakou akci připravujete.</p></section>
++<section class="organizer-faq" aria-labelledby="faq-title"><h2 id="faq-title">Časté otázky</h2>
++<details><summary>Pro jaké akce se systém hodí?</summary><p>Pro kulturní akce, tábory, kurzy, setkání i další jednorázové nebo opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivec.</p></details>
++<details><summary>Potřebuji k založení akce účet?</summary><p>Ano. Odkaz „Založit akci“ vás zavede k registraci nebo do správy akcí, pokud už jste přihlášení. Vytvoření účtu samo o sobě není objednávkou vstupenky.</p></details>
++<details><summary>Mohu přijímat přihlášky i prodávat vstupenky?</summary><p>Ano. Systém umožňuje spravovat přihlášky a objednávky a prodávat vstupenky nebo účast na akci.</p></details>
++<details><summary>Kdo určuje podmínky konkrétní akce?</summary><p>Pořadatel určuje cenu, podmínky účasti a platby. Zajišťuje také program a vyřizuje dotazy nebo reklamace ke své akci.</p></details>
++<details><summary>Kam se obrátit s technickým dotazem?</summary><p>Napište na <a href="mailto:info@festapp.net">info@festapp.net</a>. Dotazy k programu, platbě nebo vstupence na konkrétní akci řešte přímo s jejím pořadatelem.</p></details></section>
++<section aria-labelledby="contact-title"><h2 id="contact-title">Kontakt a provozovatel</h2><p>Poskytovatelem systému je Michael Bujnovský, IČO 06455361.<br><a href="mailto:info@festapp.net">info@festapp.net</a></p><a class="organizer-cta" href="/?create=1">Založit akci</a></section>
++<footer class="organizer-footer"><a href="/">Zpět na akce</a><a href="/privacy/">Soukromí</a><a href="/terms/">Podmínky</a><a href="/support/">Podpora</a></footer>
++</main>
++</body></html>

@@ -1,0 +1,241 @@
+# Wix setup and qualification
+
+Verified against official documentation on 2026-10-24/25. App/extension
+registration, dedicated free static hosting and the first free development site
+are now recorded in [registration evidence](evidence/registration-20261025.json).
+The steps below remain the repeatable setup procedure; the qualification matrix
+must separately record actual results rather than infer them from registration.
+
+## Supported route
+
+Use a self-managed **Site Widget (Custom Element)**. Wix lists self-managed site
+extensions as supported in Harmony, Wix Editor and Wix Studio. Legacy iframe
+widgets have partial Harmony support; Blocks widgets are not supported there.
+Do not publish a claim of verified compatibility until the matrix below passes.
+
+1. Select the authorized Wix owner workspace, create a self-managed app, and
+   record the assigned app ID. Account/contract acceptance is an operator action.
+   Check for an existing account before creating one. Do not buy a publisher
+   subscription, pay a listing charge or start a trial that converts to a paid
+   plan. Development sites are free; record actual zero-fixed-fee terms before
+   commercial submission.
+2. Publish the built assets at an approved HTTPS location. Verify:
+   - deploy the verified archive's contents, including dependency legal notices;
+     `_headers` targets a dedicated Cloudflare Pages/static-assets root. When
+     hosting under a path prefix, scope the rules to that prefix explicitly;
+   - widget and settings JS return JavaScript, not the Flutter/marketing fallback;
+   - settings HTML returns HTML, with its sibling CSS and JS available;
+   - widget JS allows public CORS (`Access-Control-Allow-Origin: *`) because the
+     editor sandbox can have origin `null`; these are public assets, not an
+     authenticated API;
+   - script URLs revalidate after a release; no API key or credentials appear in
+     HTML, widget attributes, URLs, source maps or logs;
+   - CSP allows the built scripts, the live service helper and checkout iframe.
+3. In the app dashboard open Extensions, create **Site Widget (Custom Element)**:
+   - Widget name: `vstupenky.online` (Wix limits this field to 30 characters).
+   - Tag name: `vstupenky-online-form`.
+   - Script URL: the actual published HTTPS URL of built `widget.js`.
+   - Settings action URL: the actual published HTTPS URL of `settings.html`.
+     On our Pages host use `https://festapp-wix.pages.dev/settings`.
+   - Enable **frontend modules from the Wix JavaScript SDK**. This adds the
+     native Site host dependency required by the self-managed SDK bootstrap.
+   - Width: full-width capable, resizable, initially 100% of the containing area.
+   - Height: **automatically adjusted to custom-element content**, not a fixed
+     outer Wix iframe. Initial fallback content height is 800 px.
+   - Placement: a user-chosen page; do not insert a live sales form on every page.
+   - Non-essential widget; provide a thumbnail so it is available in Add Elements.
+4. Save and record the generated widget extension ID. Define these public
+   string attributes/properties where the dashboard requests them:
+
+   | Property | Initial value | Meaning |
+   | --- | --- | --- |
+   | `form-url` | empty | Canonical public service form URL |
+   | `form-title` | `Prodej vstupenek - vstupenky.online` | Accessible iframe title |
+   | `inherit-style` | `true` | Opt into host typography/colors |
+
+   Wix widget properties bind to custom-element attributes. Use the settings
+   panel for subsequent changes; no credentials or hidden order state are stored.
+5. Use **Test App -> Test on dev site** to choose/create a free Premium
+   development site for each supported editor. Do not install into an unrelated
+   user's site or use production ticket inventory as a fixture.
+6. Add the widget, open Settings, save an authorized synthetic public form URL,
+   close/reopen the panel and verify persistence. Publish the development site
+   to run actual checkout qualification. Editor/Preview intentionally show the
+   placeholder to avoid opaque-origin/storage/payment behavior being mistaken
+   for the published visitor experience.
+7. Store the actual IDs and receipt references in the ignored release inputs.
+   Do not use the example's nulls or invented UUIDs as a registered Wix identity.
+
+## Required real-site matrix
+
+Wix Editor installation, settings and a published synthetic checkout passed with
+an adapted disposable-backend transport. See [editor evidence](evidence/editor-20261025.json)
+and [published checkout evidence](evidence/published-checkout-20261025.json).
+These results do not qualify the production form route/CORS, actual payment
+provider, native Safari or other editors. Partial rows retain their missing cases.
+The parent checkout must use the same disposable backend and synthetic stock as
+existing integration tests; never place real orders or reserve production seats.
+
+| Area | Harmony | Wix Editor | Wix Studio |
+| --- | --- | --- | --- |
+| Install, add widget, settings persist after editor reload | pass on owned ordinary free site | pass | pass |
+| Editor/Preview have no checkout iframe or helper loaded | pass on owned ordinary free site | pass | pass |
+| Published form, auto height, helper/version handshake | pass with QA transport | pass with QA transport | pass with QA transport; live helper fixed |
+| 320 px mobile, keyboard/focus, light/dark host typography | partial: 320 px, map/summary keyboard-focus pass; dark pending | partial: width/focus; dark pending | partial: live contrast/320 px verified |
+| Two widgets, changing one URL, deleting/re-adding one widget | not run | not run | Editor lifecycle pass; published pair/attribute isolation pass with QA transport |
+| Validation, seat map, Escape/back, close restores scroll | seat map, zoom/fit, Escape/back, focus and scroll pass with QA transport | partial: email and summary close; map pending | not run |
+| Summary reveals submit; submission shows receipt top | mobile seat retry and bank receipt pass with QA transport | desktop pass; mobile summary pass | desktop order/receipt pass with QA transport; mobile summary pass |
+| Bank instructions/QR and native blocked storage with lost-response retry | pass with QA transport; QR decoded, orders 0 -> 1 -> 1 | not run | not run |
+| Uninstall/reinstall, latest helper, CSP/CORS and helper outage | not run | uninstall/reinstall warning/workaround; published helper retry after blocked request pass; other cases pending | helper outage fallback pass; other cases pending |
+
+[Final checkout evidence](evidence/final-checkout-qualification-20261025.json) records the
+Harmony seat-map, blocked-storage/idempotency and bank QR checks. The dedicated
+current-schema backend procedure is in [tests/README.md](tests/README.md); the
+older WordPress fixture below is only for its earlier basic scenarios.
+[Installation A/B evidence](evidence/editor-install-ab-20261025.json) records that
+both released manual setup and draft homepage auto-add retain the Wix warning.
+The draft was restored; no new app version was released.
+
+Provider redirect/return is conditional on offering such a provider. The current
+bank transfer flow was checked through its instructions and decoded QR without
+activating Stripe or transferring funds. Native Safari bank instructions/QR later passed on the local fixture; external provider redirect/return remains unqualified.
+Payment-return qualification must cover supported browsers and mobile Safari;
+third-party iframe storage and payment-provider redirects cannot be established
+by DOM unit tests. Preserve duplicate-order/idempotency checks from the canonical
+checkout. Do not collect browser payment details into the Wix settings panel.
+
+## Official sources
+
+- [Self-managed custom-element widgets](https://dev.wix.com/docs/build-apps/develop-your-app/develop-a-self-managed-app/supported-extensions/site-extensions/site-widgets-and-plugins/add-self-managed-site-widget-extensions-with-custom-elements)
+- [Settings panel and serial property writes](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/site-extensions/create-a-settings-panel-for-a-site-widget-or-plugin-wix-cli-and-self-hosting)
+- [Harmony app compatibility](https://dev.wix.com/docs/build-apps/get-started/overview/about-wix-harmony-and-apps)
+- [Editor sandboxing and viewMode](https://dev.wix.com/docs/build-apps/develop-your-app/extensions/site-extensions/handle-sandboxing-in-the-editor)
+- [CLI create app and its remote registration effects](https://dev.wix.com/docs/wix-cli/command-reference/project-creation/create-app)
+
+## Repeat the published checkout qualification
+
+Use the existing disposable WordPress backend on `127.0.0.1:59821`. Apply
+`tests/checkout-fixture.sql` only to container
+`supabase_db_festapp-vo-wordpress-20261023`; it adds a distinct form/products and
+preserves previous orders. Never reset existing purchases to obtain a pass.
+
+Start an empty task-owned browser using `tests/isolated-chrome.py` as the
+agent-browser executable. It requires headless mode and a temporary profile,
+blocks canonical/legacy backend DNS and preserves the full Chromium resolver
+argument on CLI versions that split commas. Use an explicit empty browser config:
+
+```sh
+mkdir -p .private
+printf '{}' > .private/qa-browser.json
+wix_qa_browser() {
+  agent-browser --config "$PWD/.private/qa-browser.json" --headed false --executable-path "$PWD/tests/isolated-chrome.py" --session wix-qa "$@"
+}
+wix_qa_browser open about:blank
+wix_qa_browser get cdp-url > .private/cdp-url
+curl --fail --silent --show-error 'https://vstupenky.online/form/country_bal_vetrkovice?embed=1' -o .private/form-template.html
+node tests/checkout-proxy.mjs .private/cdp-url "$WIX_QA_BACKEND_STATUS" .private/form-template.html .private/transport-receipt.json
+```
+
+`WIX_QA_BACKEND_STATUS` must name the existing private backend-status JSON for
+that disposable backend. Keep the transport running in its terminal. Wait for
+`READY` before opening the development site in the same owned session. The tool
+checks actual launch flags, actual DNS errors before interception, local database
+identity and completed initial Fetch setup. It forwards API requests only to the
+local backend with its anonymous key. A lost transport cannot resolve production
+backends; handled shutdown closes only the marked headless browser.
+
+The synthetic form URL is `https://vstupenky.online/form/wix-qa-20261025`. Only
+the test browser receives the production HTML template at that route and adapted
+backend/CORS responses. Its JavaScript remains the actual production asset.
+This is scoped integration evidence, not production route/CORS qualification.
+
+Before a purchase, assert no previous order exists for the chosen synthetic
+buyer. The recorded buyer `wix-qa-20261025@example.invalid` already has one order;
+do not submit it again. The final buyer
+`wix-final-903-20261025@example.invalid` also already has order 8. Other readonly checks need no new purchase. Never enter
+real payment details, submit to production stock or claim provider payments from
+an `ordered` synthetic record. Close the owned browser and transport after QA.
+
+For a shared-helper fix, append `--local-helper` to the transport command. This
+serves only the repository's canonical `web_client/public/embed.js` candidate and
+records its SHA-256. Such a run proves candidate behavior, not live deployment.
+The Studio check found transparent white section backgrounds turning checkout
+button text transparent. The fix is now on canonical main and the selected
+`prod/festapptickets` release 0.20.402+903. Actual published Studio contrast,
+320 px layout and one additional isolated order passed; see
+[current evidence](evidence/published-checkout-current-20261025.json).
+Real provider payments and the remaining browser/editor matrix stay unqualified.
+
+The native development-site selector currently offers Editor and Studio only.
+The [official testing guide](https://dev.wix.com/docs/build-apps/launch-your-app/app-distribution/test-your-app/test-your-app-on-a-premium-site)
+includes Harmony templates, but this owner/app still lacks that choice on a
+fresh native flow check. See [access evidence](evidence/harmony-access-20261025.json).
+The ordinary free-site alternative now works: use a template from
+https://www.wix.com/harmony, then install the reviewed unlisted version through
+Distribute App > Install on a site. In Harmony, insert via Add > Elements > More
+> Installed Apps, then open the native settings action. The template placed the
+widget too narrowly; resize it independently on Desktop and Mobile before
+publishing. See [actual qualification](evidence/harmony-qualification-20261025.json).
+No install link was shared. The ordinary-site result does not establish that the
+premium development-site selector is fixed.
+
+Native Studio duplicate/settings/delete/re-add checks are recorded in
+[evidence/studio-lifecycle-20261025.json](evidence/studio-lifecycle-20261025.json).
+They prove Editor property isolation and fresh re-added properties, not published
+checkout/helper or scroll isolation. The test did not publish or submit orders.
+
+[Published helper-outage evidence](evidence/helper-outage-20261025.json)
+confirms a fixed-height iframe and keyboard-accessible direct link under an exact
+helper request abort. Production backend DNS remained blocked. The synthetic
+production route was absent; this check does not qualify checkout or recovery.
+
+[Published two-widget evidence](evidence/published-pair-20261025.json) records
+two natively published Studio sections, distinct helper instances, independent
+form values and first-summary/sibling isolation. Temporary runtime attribute
+changes reload only the changed URL; they do not claim native settings persistence
+on the public site. The live contrast defect was fixed in the service release; payment/browser gates remain.
+
+[Editor uninstall/reinstall evidence](evidence/uninstall-reinstall-20261025.json)
+records native app counts 1 -> 0 -> 1 and public widget removal/restoration.
+The native Add to Site action still shows a recoverable technical warning;
+manual Save/Add Widgets recovered it. Clean native setup remains unqualified.
+
+[Recovery verification, 26 October](evidence/recovery-fixes-20261026.json)
+records a deliberately blocked helper request on the published Editor QA site.
+After network recovery, a presentation attribute update loaded exactly one
+helper while preserving the iframe. The change was temporary and original
+settings were verified after reload; no checkout was submitted.
+
+
+[Completion verification](evidence/completion-20261026.json) adds a real production
+public form/API read inside published Harmony with original auth/CORS and a
+strict readonly relay. The iframe rendered at281px inside a320px host without
+overflow. This qualifies the read boundary only, never production purchases.
+The candidate blocked-storage reload case retained exactly one committed order
+and displayed the new unconfirmed-outcome message. It does not promise draft or
+receipt retention after a full reload with storage denied.
+
+Real MobileSafari26.5/iOS26.5 passed production rendering and native HID text entry
+in published Wix, plus summary/Back/Escape with retained inputs in a local
+cross-site checkout. All interactions stayed in the background. WebDriver typing
+failed its standalone control, but installed AXe native HID succeeded. Full software-keyboard geometry subsequently passed at402px in the owned Wix
+site; native320px, provider redirect/return and physical iPhone remain unqualified. The temporarily saved QA URL was restored and republished.
+
+Follow-up [MobileSafari storage/bank evidence](evidence/safari-storage-bank-20261026.json)
+proves native Block All Cookies storage denial inside the actual local checkout,
+one new local bank order233, decoded QR matching SQL and no resubmit after fresh navigation.
+Occupied-seat rendering/tap also passed. The local receipt showed literal icon
+names and overflow; a later minimized-renderer SVG fix removed the font dependency
+and is now live. The original Safari cold-load trigger remains unproven.
+No production purchase, real transfer or external email was performed.
+
+[Actual Wix software-keyboard evidence](evidence/software-keyboard-20261026.json)
+now qualifies the402px simulator case: full native onscreen keys, direct field
+changes, content scrolling and Done with retained text. Simulator.app ran hidden
+with zero visible Mac windows. Native320px, current cached build identity and
+physical iPhone are not covered. The owned QA URL was restored and republished.
+
+[Live receipt verification](evidence/live-receipt-icons-20261026.json) confirms the
+reviewed SVG fix in the actual0.20.415+916 production form module. Canonical
+build/legal verification passed three probes. Native Wix clean setup, portal
+Contact/Security pages and written commercial approval remain separate gates.

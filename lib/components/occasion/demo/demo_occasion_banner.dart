@@ -1,0 +1,190 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/unit/unit_creation_helper.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/occasion/db_occasions.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
+import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
+import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/components/unit/unit_strings.dart';
+import 'package:uuid/uuid.dart';
+import 'demo_occasion_navigation.dart';
+
+/// Float over the full page while keeping nested footer controls visible.
+class DemoOccasionOverlay extends StatelessWidget {
+  final Widget child;
+  const DemoOccasionOverlay({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
+        child,
+        const Positioned(
+            left: 0, right: 0, bottom: 48, child: DemoOccasionBanner()),
+      ]);
+}
+
+class DemoOccasionBanner extends StatefulWidget {
+  const DemoOccasionBanner({super.key});
+  @override
+  State<DemoOccasionBanner> createState() => _DemoOccasionBannerState();
+}
+
+class _DemoOccasionBannerState extends State<DemoOccasionBanner> {
+  bool _busy = false;
+  int? _source;
+  String? _command;
+  String? _copyLocale;
+  UnitModel? _target;
+  Future<void> _copy() async {
+    if (_busy) return;
+    final source = RightsService.currentOccasionId();
+    if (source == null || !RightsService.isDemoReadOnly) return;
+    final intentLocale = context.locale.languageCode;
+    setState(() => _busy = true);
+    try {
+      if (_source != source) {
+        _source = source;
+        _target = null;
+        _command = null;
+        _copyLocale = null;
+      }
+      if (_target == null) {
+        var targets = await DbUnits.getOccasionCopyUnits(source);
+        if (!mounted) return;
+        if (targets.isEmpty &&
+            RightsService
+                    .occasionLinkModel?.organization?.isUnitCreationEnabled ==
+                true) {
+          final unit = await UnitCreationHelper.createNewUnit(context);
+          if (unit == null || !mounted) return;
+          targets = await DbUnits.getOccasionCopyUnits(source);
+          if (!mounted) return;
+        }
+        if (targets.isEmpty) {
+          ToastHelper.Show(context, DemoOccasionStrings.noTarget);
+          return;
+        }
+        _target = await showOccasionCopyTargetDialog(context, targets,
+            hint: DemoOccasionStrings.copyHint);
+        if (_target == null || !mounted) return;
+        _command = const Uuid().v4();
+        _copyLocale = intentLocale;
+      }
+      final result = await DbOccasions.duplicateDemoOccasion(source,
+          targetUnitId: _target!.id!, commandId: _command!, locale: _copyLocale!);
+      if (!mounted) return;
+      if (!result.mediaCopied)
+        ToastHelper.Show(context, UnitStrings.createCopyMediaFailed);
+      final copy = await DbOccasions.getOccasion(result.occasionId);
+      if (!mounted) return;
+      ToastHelper.Show(context, DemoOccasionStrings.copyHint);
+      await RouterService.navigate(
+          context, '/${copy.link}/reservations/settings');
+    } catch (_) {
+      if (mounted) ToastHelper.Show(context, UnitStrings.createCopyFailed);
+      // The same target and command survive a timeout; Retry replays its receipt.
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final title =
+        '${RightsService.currentOccasion()?.title ?? ''} (${DemoOccasionStrings.badge})';
+    return LayoutBuilder(builder: (context, constraints) {
+      final compact = constraints.maxWidth < 600;
+      final copyProgress = const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2));
+      return SafeArea(
+          top: false,
+          child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  compact ? 12 : 20, 8, compact ? 12 : 20, 16),
+              child: Align(
+                  heightFactor: 1,
+                  alignment: Alignment.bottomCenter,
+                  child: Material(
+                      elevation: 12,
+                      shadowColor: colors.shadow.withValues(alpha: .4),
+                      surfaceTintColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          side: BorderSide(
+                              color: colors.outline.withValues(alpha: .6))),
+                      clipBehavior: Clip.antiAlias,
+                      color: colors.surfaceContainerHighest,
+                      child: Padding(
+                          padding: compact
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 4)
+                              : const EdgeInsets.all(12),
+                          child: compact
+                              ? Row(children: [
+                                  IconButton(
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                              width: 48, height: 48),
+                                      tooltip: DemoOccasionStrings.back,
+                                      onPressed: () =>
+                                          DemoOccasionNavigation.back(context),
+                                      icon: const Icon(Icons.arrow_back)),
+                                  Expanded(
+                                      child: Tooltip(
+                                          message: title,
+                                          child: Text(title,
+                                              textAlign: TextAlign.center,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  color: colors.onSurface)))),
+                                  PopupMenuButton<String>(
+                                      enabled: !_busy,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 200, maxWidth: 280),
+                                      tooltip: CommonStrings.moreOptions,
+                                      icon: _busy
+                                          ? copyProgress
+                                          : const Icon(Icons.more_horiz),
+                                      style: IconButton.styleFrom(
+                                          minimumSize: const Size(48, 48)),
+                                      onSelected: (_) => _copy(),
+                                      itemBuilder: (_) => [
+                                            PopupMenuItem(
+                                                value: 'copy',
+                                                child: Text(
+                                                    DemoOccasionStrings.copy))
+                                          ]),
+                                ])
+                              : Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 16,
+                                  runSpacing: 8,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                      TextButton.icon(
+                                          onPressed: () =>
+                                              DemoOccasionNavigation.back(
+                                                  context),
+                                          icon: const Icon(Icons.arrow_back),
+                                          label:
+                                              Text(DemoOccasionStrings.back)),
+                                      Text(title,
+                                          style: TextStyle(
+                                              color: colors.onSurface)),
+                                      FilledButton(
+                                          onPressed: _busy ? null : _copy,
+                                          child: _busy
+                                              ? copyProgress
+                                              : Text(DemoOccasionStrings.copy)),
+                                    ]))))));
+    });
+  }
+}

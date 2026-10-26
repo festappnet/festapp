@@ -1,0 +1,7 @@
+.festapp-tickets { width: 100%; }
+.festapp-tickets iframe { display: block; width: 100%; }
+.festapp-tickets a { text-underline-offset: .2em; }
+.festapp-tickets a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.festapp-tickets-editor { padding: 24px; border: 1px solid #757575; }
+.festapp-tickets-editor h3 { margin-top: 0; }
+.festapp-tickets-editor p { max-width: 70ch; }

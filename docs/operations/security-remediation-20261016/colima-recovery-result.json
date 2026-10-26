@@ -1,0 +1,10 @@
+{
+  "at": 1792164983.9236999,
+  "authorized_restart": "Colima VM, Docker runtime",
+  "image_inspect_restored": true,
+  "preexisting_container_identities_preserved": true,
+  "preexisting_containers_started_to_restore_running_state": [],
+  "task_orphan_removed": true,
+  "data_or_images_pruned": false,
+  "guest_unused_blocks_trimmed": true
+}

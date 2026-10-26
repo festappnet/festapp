@@ -1,0 +1,32 @@
+{
+  "browser": "isolated local headless agent-browser, waitlist-js-e2e",
+  "frontend": "http://127.0.0.1:56981",
+  "backend": "http://127.0.0.1:56521",
+  "network_allowlist": [
+    "127.0.0.1",
+    "localhost"
+  ],
+  "config": "private Vite transform of existing AppConfig, repo config unchanged",
+  "observed": [
+    "anonymous offer prefills Waiting One and Waiting Two with email",
+    "deselect first person preserves second personal answers",
+    "partial acceptance Waiting Two -> child5M8Y2Q1L7P,100CZK,remaining1",
+    "physical reload scoped URL restores remaining Waiting One",
+    "full remaining acceptance -> original1Y8W8U1Q3F,100CZK,terminalAccepted",
+    "original management capability after completion shows invalid/no-longer-active with no personal fields",
+    "public waitlist registration7X8Y7P5W7M (Manage Person) with explicit no-payment confirmation -> Queued",
+    "active original confirmation management capability reads Manage Person Waiting",
+    "withdraw UI confirmation -> Manage Person No longer waiting, disabled checkbox"
+  ],
+  "fixes": [
+    "preserve capability fragment while preview/result overlay lives; overlay name only in history.state",
+    "partial success copy no longer appends no-payment waitlist explanation"
+  ],
+  "tests": {
+    "router": 40,
+    "waitlist": 8,
+    "order_result": 6
+  },
+  "build": "npm run build PASS483ms",
+  "automation_limit": "Same-document navigation via agent-browser open invalidates CDP network-control session during deliberate capability reload: Fetch.enable Session with given id not found. Cold capability load and physical reload passed; in-tab scope changes covered by deterministic router regression."
+}

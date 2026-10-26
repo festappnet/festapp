@@ -1,0 +1,8 @@
+enableGlobalVirtualStore: false
+
+allowBuilds:
+  esbuild: true
+  workerd: true
+
+overrides:
+  "rollup": "^4.62.4"

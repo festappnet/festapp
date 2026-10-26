@@ -1,0 +1,41 @@
+{
+  "verified_at": "2026-10-24T20:09:47.098634+00:00",
+  "main_sha": "db6db44d52cae944086d4acd2b90e41c35778127",
+  "tenant_sha": "fa0de1bd2bca8a2f997fab2899e9510abe989083",
+  "version": "0.20.389+889",
+  "deployment": "https://5b30ca8c.vstupenkyonline.pages.dev",
+  "live_origin": "https://vstupenky.online",
+  "coherent_version_probes": 3,
+  "embed_sha256": "f7051b56a8f14856fdad7bad02fb86cfb1df62ccd4529ca97d633252afa342d1",
+  "embed_bytes": 15654,
+  "production_parity": true,
+  "cross_origin_smoke": {
+    "host": "http://localhost:59812/production-parity-20261024/",
+    "service_form": "https://vstupenky.online/form/country_bal_vetrkovice?embed=1",
+    "installed_zip_sha256": "66c9f35ac38210bb0ca18c35011200976c92236200801626bb3e3a86fc8901c4",
+    "loaded": true,
+    "auto_height": true,
+    "host_price_layer": true,
+    "seat_map_open_and_escape": true,
+    "scroll_saved": 885,
+    "scroll_restored": 885,
+    "orders_submitted": 0,
+    "seats_reserved": 0
+  },
+  "backend": {
+    "migrations": [
+      "20261024233000",
+      "20261024234000"
+    ],
+    "function_bodies_verified": 12,
+    "register_normalization_activated": true,
+    "runtime_containers_healthy": 11,
+    "register_options_status": 200
+  },
+  "cache_observation": {
+    "pages_preview": "no-cache, must-revalidate",
+    "custom_domain": "max-age=14400, must-revalidate",
+    "mixed_version_compatibility_test_passed": true,
+    "note": "Custom-domain cache override under investigation; existing helper instances use negotiated scrolling fallback."
+  }
+}

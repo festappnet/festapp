@@ -1,0 +1,686 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
+import '../ticket_layout/ticket_layout_saver.dart';
+import 'dart:async';
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'dart:typed_data';
+
+import 'package:auto_route/auto_route.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/app_router.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/database_tables/tb.dart';
+import 'package:fstapp/components/occasion/db_occasions.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
+import 'package:fstapp/services/dialog_helper.dart';
+import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/styles/styles_config.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/widgets/help_widget.dart';
+import 'package:fstapp/components/images/image_area.dart';
+import 'package:fstapp/components/unit/views/occasion_card.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
+import 'package:fstapp/components/images/db_images.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:timezone/timezone.dart' as tz;
+
+import '../_shared/common_strings.dart';
+import 'occasion_advanced_settings.dart';
+import 'occasion_features_section.dart';
+import 'occasion_save_state.dart';
+import 'occasion_settings_strings.dart';
+
+class OccasionSettingsTab extends StatefulWidget {
+  final Future<OccasionModel> Function(String) loadOccasion;
+  const OccasionSettingsTab(
+      {super.key, this.loadOccasion = DbOccasions.getOccasionByLink});
+
+  @override
+  _OccasionSettingsTabState createState() => _OccasionSettingsTabState();
+}
+
+class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
+  final _htmlSave = HtmlSaveCoordinator();
+  final _snapshot = EditorSnapshot();
+  final _draftRevision = ValueNotifier<int>(0);
+  Object get _draft => [
+        _title,
+        _placeName,
+        _linkController.text,
+        _replyToEmailController.text,
+        _from?.toIso8601String(),
+        _to?.toIso8601String(),
+        _description,
+        _isOpen,
+        _isHidden,
+        _isPromoted,
+        occasion?.data?[Tb.occasions.data_image],
+        _selectedTimezone,
+        occasion?.features.map((f) => f.toJson()).toList()
+      ];
+  void _draftChanged() => scheduleMicrotask(() {
+        if (!mounted || _isLoading) return;
+        _formKey.currentState?.save();
+        _draftRevision.value++;
+      });
+  @override
+  Widget build(BuildContext context) => HtmlEditingScope(
+      coordinator: _htmlSave,
+      child: EditorDraftScope(
+          onChanged: _draftChanged, child: _buildHtmlParent(context)));
+
+  final _formKey = GlobalKey<FormState>();
+
+  // Data
+  OccasionModel? occasion;
+  String? occasionLink;
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  // Form fields state
+  late String? _title;
+  String? _placeName;
+  late String? _linkValue;
+  String? _savedLink;
+  DateTime? _from;
+  DateTime? _to;
+  late TextEditingController _linkController;
+  late TextEditingController _replyToEmailController;
+  String? _description;
+  bool _isOpen = true;
+  bool _isHidden = false;
+  bool _isPromoted = false;
+  String? _selectedTimezone;
+  List<String> _allTimezones = [];
+  bool _advancedSettingsExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkController = TextEditingController();
+    _replyToEmailController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final link = context.routeData.inheritedPathParams
+        .optString(AppRouter.linkFormatted);
+    if (link != null && link != occasionLink) {
+      occasionLink = link;
+      _loadData();
+    }
+  }
+
+  @override
+  void dispose() {
+    _draftRevision.dispose();
+    _htmlSave.dispose();
+    _linkController.dispose();
+    _replyToEmailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    if (occasionLink == null) return;
+    setState(() {
+      _isLoading = occasion == null;
+    });
+
+    final identity = occasionLink!;
+    final fetchedOccasion = await widget.loadOccasion(identity);
+
+    if (mounted && occasionLink == identity) {
+      setState(() {
+        occasion = fetchedOccasion;
+        _initializeFormState();
+        _snapshot.accept(_draft);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !identical(occasion, fetchedOccasion)) return;
+          _formKey.currentState?.save();
+          _snapshot.accept(_draft);
+          _draftRevision.value++;
+        });
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _initializeFormState() {
+    if (occasion == null) return;
+
+    _title = occasion!.title;
+    _placeName = occasion!.data?[Tb.occasions.data_place_name] as String?;
+    _linkValue = occasion!.link;
+    _savedLink = occasion!.link;
+    _linkController.text = _linkValue ?? "";
+    _from = occasion!.startTime;
+    _to = occasion!.endTime;
+    _description = occasion!.description ?? "";
+    _isOpen = occasion!.isOpen;
+    _isHidden = occasion!.isHidden;
+    _isPromoted = occasion!.isPromoted;
+
+    // Initialize reply-to email
+    _replyToEmailController.text =
+        occasion!.data?[Tb.occasions.data_reply_to] as String? ?? '';
+
+    // Initialize timezone
+    _allTimezones = TimeHelper.getAvailableTimezoneNames();
+    _selectedTimezone =
+        occasion!.data?[Tb.occasions.data_timezone] as String? ?? tz.local.name;
+
+    if (!_allTimezones.contains(_selectedTimezone) &&
+        _allTimezones.isNotEmpty) {
+      _selectedTimezone = _allTimezones.contains("Europe/Prague")
+          ? "Europe/Prague"
+          : _allTimezones.first;
+    }
+
+    final defaultFeatures = FeatureService.getDefaultFeatures();
+    for (var defaultFeature in defaultFeatures) {
+      bool exists =
+          occasion!.features.any((f) => f.code == defaultFeature.code);
+      if (!exists) {
+        occasion!.features.add(defaultFeature);
+      }
+    }
+
+    occasion!.features.sort((a, b) {
+      final aIndex = defaultFeatures
+          .indexWhere((defaultFeature) => defaultFeature.code == a.code);
+      final bIndex = defaultFeatures
+          .indexWhere((defaultFeature) => defaultFeature.code == b.code);
+      return aIndex.compareTo(bIndex);
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    await ExceptionHandler.guardVoid(context,
+        futureFunction: () =>
+            _htmlSave.save(() => _performHtmlSave(), context: context));
+  }
+
+  Future<void> _performHtmlSave() async {
+    // 1. Validate the form. If it's not valid, do nothing.
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    try {
+      await runOccasionSaveAction(
+        setSaving: (isSaving) {
+          if (mounted) {
+            setState(() {
+              _isSaving = isSaving;
+            });
+          }
+        },
+        action: () async {
+          // 3. Save the form fields to update the local state variables.
+          _formKey.currentState!.save();
+
+          // 4. Update the occasion model with the new values from the form.
+          occasion!.title = _title;
+          occasion!.link = _linkValue;
+          occasion!.startTime = _from;
+          occasion!.endTime = _to;
+          _description = await _htmlSave.prepare(
+              _description ?? '', HtmlMediaOwner.occasion(occasion!.id));
+          occasion!.description = _description;
+          occasion!.isOpen = _isOpen;
+          occasion!.isHidden = _isHidden;
+          occasion!.isPromoted = _isPromoted;
+
+          final imageUrl = occasion!.data?[Tb.occasions.data_image];
+          final bool hasImage = (imageUrl as String?)?.isNotEmpty ?? false;
+          if (_isPromoted && !hasImage) {
+            occasion!.isPromoted = false;
+          }
+
+          occasion!.data ??= {};
+
+          final placeName = _placeName?.trim() ?? '';
+          if (placeName.isEmpty) {
+            occasion!.data!.remove(Tb.occasions.data_place_name);
+          } else {
+            occasion!.data![Tb.occasions.data_place_name] = placeName;
+          }
+
+          // Save Reply-To Email
+          final trimmedEmail = _replyToEmailController.text.trim();
+          if (trimmedEmail.isEmpty) {
+            occasion!.data!.remove(Tb.occasions.data_reply_to);
+          } else {
+            occasion!.data![Tb.occasions.data_reply_to] = trimmedEmail;
+          }
+
+          // Save Timezone
+          occasion!.data![Tb.occasions.data_timezone] = _selectedTimezone;
+
+          // 5. Persist the changes to the database.
+          await DbOccasions.updateOccasion(occasion!);
+          if (mounted)
+            setState(() {
+              _savedLink = occasion!.link;
+              _linkValue = occasion!.link;
+              _linkController.text = occasion!.link ?? "";
+            });
+          _htmlSave.markSaved();
+          _snapshot.accept(_draft);
+
+          // 6. Check if the component is still mounted and the new link is valid.
+          if (mounted && occasion!.link != null) {
+            // Show a success message.
+            ToastHelper.Show(
+                context, "${CommonStrings.saved}: ${occasion!.title!}");
+
+            await refreshSavedOccasion(
+              router: context.router,
+              previousLink: occasionLink!,
+              savedLink: occasion!.link!,
+              refresh: (link) async {
+                await RightsService.updateAppData(
+                    link: link, force: true, refreshOffline: false);
+              },
+            );
+          }
+        },
+      );
+    } catch (error) {
+      occasion?.link = _savedLink;
+      final tickets = occasion!.features.whereType<TicketFeature>().toList();
+      final layoutConflict =
+          error.toString().contains('ticket_layout_conflict') ||
+              (error.toString().contains('changed by another editor') &&
+                  tickets.any((t) => t.layoutChange != null));
+      if (mounted && layoutConflict) {
+        final reload = await showDialog<bool>(
+            context: context,
+            builder: (c) => AppAlertDialog(
+                    onClose: () => Navigator.pop(c, false),
+                    content: Text(TicketLayoutStrings.conflict),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(c, false),
+                          child: Text(TicketLayoutStrings.cancel)),
+                      FilledButton(
+                          onPressed: () => Navigator.pop(c, true),
+                          child: Text(TicketLayoutStrings.reloadSaved)),
+                    ]));
+        if (reload == true && mounted) {
+          await ExceptionHandler.guard(context, futureFunction: () async {
+            var fresh = await DbOccasions.getOccasion(occasion!.id!);
+            fresh = await DbOccasions.getOccasionByLink(fresh.link!);
+            if (!mounted) return;
+            final current =
+                fresh.features.whereType<TicketFeature>().firstOrNull;
+            setState(() {
+              for (final ticket in tickets) {
+                ticket.loadSavedLayout(current?.layout);
+              }
+              occasion!.aggregateVersion = fresh.aggregateVersion;
+            });
+          });
+        }
+        return;
+      }
+      if (mounted) {
+        ToastHelper.Show(context, error.toString());
+      }
+    }
+  }
+
+  Future<void> _deleteOccasion() async {
+    final deletedOccasion = occasion!;
+    final unitId = deletedOccasion.unit;
+    if (unitId == null) {
+      ToastHelper.Show(context, CommonStrings.unexpectedError);
+      return;
+    }
+    try {
+      await DbOccasions.deleteOccasion(deletedOccasion.id!);
+    } catch (e) {
+      if (mounted) ToastHelper.Show(context, e.toString());
+      return;
+    }
+    if (!mounted) return;
+    ToastHelper.Show(
+        context, "${CommonStrings.deleted}: ${deletedOccasion.title!}");
+    try {
+      await RouterService.replaceWithUnitAdmin(context, unitId);
+    } catch (e) {
+      if (mounted) ToastHelper.Show(context, e.toString());
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(false),
+        insetPadding: const EdgeInsets.all(16.0),
+        title: Text(OccasionSettingsStrings.deleteEvent),
+        content: Text(OccasionSettingsStrings.deleteEventConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(CommonStrings.storno),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(CommonStrings.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await _deleteOccasion();
+    }
+  }
+
+  Future<void> _removeImage() async {
+    if (!RightsService.canEditOccasion()) return;
+    final imageUrl = occasion!.data?[Tb.occasions.data_image];
+    if (imageUrl == null) return;
+    final confirmation = await DialogHelper.showConfirmationDialog(
+      context,
+      OccasionSettingsStrings.confirmRemoval,
+      OccasionSettingsStrings.deleteImageConfirmation,
+    );
+    if (!mounted || !confirmation || !RightsService.canEditOccasion()) return;
+    // Detach only in the draft. Deleting the object here breaks the saved
+    // cover when the user discards changes or leaves this occasion.
+    setState(() {
+      occasion!.data ??= {};
+      occasion!.data![Tb.occasions.data_image] = null;
+      _isPromoted = false;
+    });
+  }
+
+  Widget _buildHtmlParent(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final bool isEditingEnabled = RightsService.canEditOccasion();
+    final imageUrl = occasion!.data?[Tb.occasions.data_image];
+
+    // <-- MODIFIED (Added) -->
+    // Check if a valid image URL exists.
+    final bool hasImage = (imageUrl as String?)?.isNotEmpty ?? false;
+    // Determine if the promotion switch can be changed.
+    // It can be changed if:
+    // 1. It's already promoted (to allow turning it OFF).
+    // 2. It's not promoted, but it HAS an image (to allow turning it ON).
+    final bool canChangePromotion = _isPromoted || hasImage;
+    // <-- END MODIFICATION -->
+
+    final bool hasOrders = occasion?.hasOrders ?? false;
+    final bool canDelete = !hasOrders;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints:
+              const BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              onChanged: _draftChanged,
+              child: Column(
+                key: ObjectKey(occasion),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    initialValue: _title,
+                    enabled: isEditingEnabled,
+                    decoration: InputDecoration(
+                      labelText: OccasionSettingsStrings.title,
+                    ),
+                    validator: FormBuilderValidators.compose([
+                      FormBuilderValidators.required(
+                          errorText: OccasionSettingsStrings.titleIsRequired),
+                    ]),
+                    onSaved: (val) {
+                      _title = val;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TimeDateRangePicker(
+                    start: _from,
+                    end: _to,
+                    enabled: isEditingEnabled,
+                    onStartChanged: (dateTime) {
+                      setState(() {
+                        _from = dateTime;
+                      });
+                    },
+                    onEndChanged: (dateTime) {
+                      setState(() {
+                        _to = dateTime;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: _placeName,
+                    enabled: isEditingEnabled,
+                    decoration: InputDecoration(
+                      labelText: OccasionSettingsStrings.placeName,
+                      helperText: OccasionSettingsStrings.placeNameHelp,
+                      helperMaxLines: 3,
+                    ),
+                    onSaved: (value) => _placeName = value,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(OccasionSettingsStrings.introImage),
+                  const SizedBox(height: 8),
+                  ImageArea(
+                    enabled: isEditingEnabled,
+                    hint: "(${OccasionSettingsStrings.imageRatioHint(
+                      OccasionCard.kCardWidth.toString(),
+                      OccasionCard.kCardHeight.toString(),
+                    )})",
+                    imageUrl: imageUrl,
+                    onFileSelected: (file) async {
+                      Uint8List imageData = await file.readAsBytes();
+                      try {
+                        final publicUrl = await DbImages.uploadImage(
+                            imageData, occasion!.id, null,
+                            profile: ImageUploadProfile.banner);
+                        setState(() {
+                          occasion!.data ??= {};
+                          occasion!.data![Tb.occasions.data_image] = publicUrl;
+                        });
+                        ToastHelper.Show(context,
+                            OccasionSettingsStrings.fileUploadedSuccess);
+                      } catch (e) {
+                        ToastHelper.Show(context,
+                            OccasionSettingsStrings.failedToUploadImage);
+                      }
+                      return null;
+                    },
+                    onRemove: _removeImage,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(OccasionSettingsStrings.description),
+                  const SizedBox(height: 8),
+                  EditableHtmlField(
+                      html: _description,
+                      enabled: isEditingEnabled,
+                      coordinator: _htmlSave,
+                      owner: HtmlMediaOwner.occasion(occasion!.id),
+                      onChanged: (html) => setState(() => _description = html)),
+                  const SizedBox(height: 16),
+                  if (AppConfig.isAppSupported)
+                    SwitchListTile(
+                      title: Row(
+                        children: [
+                          Expanded(child: Text(OccasionSettingsStrings.public)),
+                          HelpWidget(
+                              title: OccasionSettingsStrings.public,
+                              content: OccasionSettingsStrings.publicHelp)
+                        ],
+                      ),
+                      value: _isOpen,
+                      onChanged: isEditingEnabled
+                          ? (value) {
+                              setState(() {
+                                _isOpen = value;
+                              });
+                            }
+                          : null,
+                    ),
+                  if (AppConfig.isAppSupported) const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(OccasionSettingsStrings.hide)),
+                        HelpWidget(
+                          title: OccasionSettingsStrings.hide,
+                          content: OccasionSettingsStrings.hideHelp,
+                        ),
+                      ],
+                    ),
+                    value: _isHidden,
+                    onChanged: isEditingEnabled
+                        ? (value) {
+                            setState(() {
+                              _isHidden = value;
+                            });
+                          }
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  SwitchListTile(
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(OccasionSettingsStrings.promoted)),
+                        HelpWidget(
+                          title: OccasionSettingsStrings.promoted,
+                          content: OccasionSettingsStrings.promotedHelp,
+                        ),
+                      ],
+                    ),
+                    value: _isPromoted,
+                    // <-- MODIFIED (Updated onChanged logic) -->
+                    // Only allow changing the switch if:
+                    // 1. Editing is enabled AND
+                    // 2. canChangePromotion is true (meaning it's already ON, or it's OFF but has an image)
+                    onChanged: isEditingEnabled && canChangePromotion
+                        ? (value) {
+                            setState(() {
+                              _isPromoted = value;
+                            });
+                          }
+                        : null,
+                    // <-- END MODIFICATION -->
+                  ),
+
+                  const SizedBox(height: 16),
+                  OccasionAdvancedSettings(
+                    linkController: _linkController,
+                    savedLink: _savedLink,
+                    replyToEmailController: _replyToEmailController,
+                    selectedTimezone: _selectedTimezone,
+                    allTimezones: _allTimezones,
+                    isEditingEnabled: isEditingEnabled,
+                    initiallyExpanded: _advancedSettingsExpanded,
+                    onExpansionChanged: (expanded) {
+                      setState(() => _advancedSettingsExpanded = expanded);
+                    },
+                    onTimezoneSelected: (selection) {
+                      setState(() {
+                        _selectedTimezone =
+                            selection.isEmpty ? null : selection;
+                      });
+                    },
+                    onLinkChanged: (fixed) {
+                      setState(() {
+                        _linkValue = fixed;
+                      });
+                    },
+                    onLinkSaved: (val) {
+                      _linkValue = val;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  OccasionFeaturesSection(
+                    features: occasion!.features,
+                    isEditingEnabled: isEditingEnabled,
+                    occasionId: occasion!.id!,
+                    onSaveTicket: (draft) =>
+                        TicketLayoutSaver().save(occasion!, draft),
+                  ),
+                  const SizedBox(height: 24),
+                  if (RightsService.hasCapability(
+                      AuthorizationCapabilities.occasionsDelete))
+                    Center(
+                      child: Tooltip(
+                        message: hasOrders
+                            ? OccasionSettingsStrings.cannotDeleteWithOrders
+                            : "",
+                        child: TextButton(
+                          onPressed: RightsService.hasCapability(
+                                  AuthorizationCapabilities.occasionsDelete)
+                              ? () {
+                                  if (hasOrders) {
+                                    ToastHelper.Show(
+                                        context,
+                                        OccasionSettingsStrings
+                                            .cannotDeleteWithOrders,
+                                        severity: ToastSeverity.NotOk);
+                                    return;
+                                  }
+                                  _confirmDelete();
+                                }
+                              : null,
+                          child: Text(
+                            OccasionSettingsStrings.deleteEvent,
+                            style: TextStyle(
+                                color: isEditingEnabled
+                                    ? (canDelete
+                                        ? ThemeConfig.redColor(context)
+                                        : Colors.grey)
+                                    : Colors.grey),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 80), // Padding for bottom nav bar
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: Listenable.merge([_htmlSave, _draftRevision]),
+        builder: (context, _) => EditorActionBar(
+          hasChanges: !_isLoading &&
+              occasion != null &&
+              (_snapshot.differs(_draft) || _htmlSave.hasActiveDraft),
+          enabled: !_isSaving && isEditingEnabled,
+          onSave: _saveSettings,
+          onDiscard: () async {
+            await _loadData();
+            if (mounted) _htmlSave.markSaved();
+          },
+        ),
+      ),
+    );
+  }
+}

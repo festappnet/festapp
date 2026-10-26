@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "tenant_id": "aksmcz",
+      "site_id": "387035b7-2c9a-4930-aff8-cbdc81b4161a",
+      "legacy_origin": "https://aksmcz.netlify.app",
+      "canonical_origin": "https://csa2024.festapp.net"
+    },
+    {
+      "tenant_id": "jubileum2025",
+      "site_id": "25df3a91-7001-451f-9510-a3a56afe108b",
+      "legacy_origin": "https://jubileum2025.netlify.app",
+      "canonical_origin": "https://jubileum2025.festapp.net"
+    },
+    {
+      "tenant_id": "farnostopava-public",
+      "site_id": "8ba707cb-375a-4cd3-8dad-dc5b5281e2b8",
+      "legacy_origin": "https://rezervace.farnostopava.cz",
+      "canonical_origin": "https://farnostopava.festapp.net"
+    },
+    {
+      "tenant_id": "slunovrat-legacy",
+      "site_id": "740e0e70-3726-40d4-861d-4f4aa2abfcb8",
+      "legacy_origin": "https://slunovrat.netlify.app",
+      "canonical_origin": "https://app.festivalslunovrat.cz"
+    },
+    {
+      "tenant_id": "festivalslunovrat-public",
+      "site_id": "44c018fa-feae-4aa7-b865-bd98954f3106",
+      "legacy_origin": "https://app.festivalslunovrat.cz",
+      "canonical_origin": "https://slunovrat.festapp.net"
+    },
+    {
+      "tenant_id": "ticketonline",
+      "site_id": "2d708348-0bf7-478e-8578-6b799adde2bb",
+      "legacy_origin": "https://vstupenka.online",
+      "canonical_origin": "https://vstupenky.online"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Web-only tenant overlay paths. Mobile/store assets are intentionally absent.
+automation/project.conf
+netlify.toml
+web_client/public/netlify-retire-worker.js
+assets/icons/fstappicon.png
+assets/icons/fstapplogo.dark.svg
+assets/icons/fstapplogo.png
+assets/icons/fstapplogo.svg
+fonts/Gill Sans Bold.otf
+web_client/src/assets/fonts/GillSansBold.otf
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web/favicon.svg
+web/fstapplogo.png
+web/web-app-manifest-*.png
+automation/release/legal/**

@@ -1,0 +1,73 @@
+{
+  "policy_version": 1,
+  "source_project": "a",
+  "selection_contract": "ClientSyncRuntime.isV1Selected",
+  "legacy_adapters": [
+    {
+      "path": "lib/components/groups/db_groups.dart",
+      "command_modules": ["lib/components/groups/group_commands.dart"]
+    },
+    {
+      "path": "lib/components/icons/db_icons.dart",
+      "command_modules": ["lib/components/icons/icon_commands.dart"]
+    },
+    {
+      "path": "lib/components/icons/db_place_types.dart",
+      "canonical_only": true,
+      "command_modules": ["lib/components/map/map_commands.dart"]
+    },
+    {
+      "path": "lib/components/information/db_information.dart",
+      "canonical_only": true,
+      "command_modules": ["lib/components/information/information_commands.dart"]
+    },
+    {
+      "path": "lib/components/map/db_places.dart",
+      "command_modules": ["lib/components/map/map_commands.dart"]
+    },
+    {
+      "path": "lib/components/news/db_news.dart",
+      "command_modules": ["lib/components/news/news_commands.dart"]
+    },
+    {
+      "path": "lib/components/occasion/db_occasions.dart",
+      "command_modules": ["lib/components/occasion/occasion_commands.dart"]
+    },
+    {
+      "path": "lib/components/schedule/db_events.dart",
+      "command_modules": [
+        "lib/components/schedule/attendance_commands.dart",
+        "lib/components/schedule/supabase_event_commands.dart",
+        "lib/components/schedule/exclusive_group_commands.dart",
+        "lib/components/schedule/saved_program_commands.dart"
+      ]
+    },
+    {
+      "path": "lib/components/users/db_users.dart",
+      "canonical_only": true,
+      "command_modules": [
+        "lib/components/unit/unit_commands.dart",
+        "lib/components/users/profile_commands.dart"
+      ]
+    }
+  ],
+  "direct_dml_tables": [
+    "events",
+    "exclusive_events",
+    "exclusive_groups",
+    "icons",
+    "information",
+    "information_hidden",
+    "news",
+    "occasion_users",
+    "occasions",
+    "path_groups",
+    "place_types",
+    "places",
+    "unit_users",
+    "user_group_info",
+    "user_groups",
+    "user_info",
+    "user_news"
+  ]
+}

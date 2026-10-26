@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "publicProjection": {
+    "bookingUrl": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+    "contact": "info@vstupenky.online",
+    "references": [
+      {
+        "id": "country-bal-2026",
+        "name": "Country bál 2026",
+        "publicUrl": "https://vstupenky.online/form/country_bal_vetrkovice",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/country-bal-2026.jpg",
+        "dateLabel": "14. listopadu 2026",
+        "date": "2026-11-14",
+        "sourceImage": "https://img.festapp.net/images/32316/1772094968899-r0cg0z-1772094968608.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "ples-akh-2026",
+        "name": "Ples AKH 2026",
+        "publicUrl": "https://vstupenky.online/form/4aa0bcbb7d114ceb9f07762cc8660c1b",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-akh-2026.png",
+        "dateLabel": "20. listopadu 2026",
+        "date": "2026-11-20",
+        "sourceImage": "https://img.festapp.net/images/1072585/1791309488039-ozzub5-1791309486943.png",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "skautsky-ples-2026",
+        "name": "Skautský ples 2026",
+        "publicUrl": "https://vstupenky.online/form/ples2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/skautsky-ples-2026.jpg",
+        "dateLabel": "14. února 2026",
+        "date": "2026-02-14",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1763720153077.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "sportovni-ples-2026",
+        "name": "Sportovní ples Větřkovice 2026",
+        "publicUrl": "https://vstupenky.online/form/sportovni_ples_2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/sportovni-ples-2026.jpg",
+        "dateLabel": "13. února 2026",
+        "date": "2026-02-13",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1768234882028.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "ples-obce-vetrkovice-2026",
+        "name": "Ples obce Větřkovice",
+        "publicUrl": "https://vstupenky.online/form/5a71dbd201cb44faaf471d938315b8f0",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-obce-vetrkovice-2026.jpg",
+        "dateLabel": "23. ledna 2026",
+        "date": "2026-01-23",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1767629085704.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "farni-ples-2026",
+        "name": "Farní ples",
+        "publicUrl": "https://vstupenky.online/form/farni-ples-2026-cernobily",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/farni-ples-2026.jpg",
+        "dateLabel": "17. ledna 2026",
+        "date": "2026-01-17",
+        "statusLabel": "Archiv",
+        "sourceImage": "https://img.festapp.net/images/1763253346916.jpg",
+        "verifiedAt": "2026-10-22"
+      }
+    ],
+    "seo": {
+      "title": "Prodej vstupenek na akce | vstupenky.online",
+      "description": "Prodávejte vstupenky pro Vaši akci. Vlastní plánek sálu, výběr míst, QR platby bez transakčních poplatků a odbavení telefonem.",
+      "image": "/organizers-media/organizers-social.png",
+      "imageAlt": "Vstupenky pro Vaši akci - vlastní plánek, vlastní vstupenka a QR platby bez transakčních poplatků.",
+      "catalogTitle": "Akce a plesy - vstupenky online | vstupenky.online",
+      "catalogDescription": "Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa."
+    },
+    "page": {
+      "PAGE_SKIP_TO_CONTENT": "Přejít k obsahu",
+      "PAGE_APP_NAME_HOME": "{{APP_NAME}} - úvodní stránka",
+      "PAGE_MAIN_NAVIGATION": "Hlavní navigace",
+      "PAGE_CREATE_YOUR_OWN_EVENT": "Založit akci zdarma",
+      "PAGE_CREATE_EVENT": "Založit zdarma",
+      "PAGE_SIGN_IN": "Přihlásit se",
+      "PAGE_TICKETS": "Vstupenky",
+      "PAGE_FOR_YOUR_EVENT": "pro Vaši akci.",
+      "PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN": "Vlastní plánek. Vlastní vstupenka.",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "QR převody bez transakčních poplatků.",
+      "PAGE_CREATE_EVENT_10": "Založit akci zdarma",
+      "PAGE_EXPLORE_THE_FEATURES": "Domluvit ukázku",
+      "PAGE_EVENTS_ON_FESTAPP_TICKETS": "Ukázky pořadatelů",
+      "PAGE_FIND_YOUR_NEXT_EVENT": "Akce se vstupenky.online",
+      "PAGE_BROWSE_ALL_EVENTS": "Najít akci",
+      "PAGE_FROM_THE_FIRST_TABLE_TO_THE_LAST_GUEST": "Od prvního stolu po posledního hosta",
+      "PAGE_ONE_EVENT": "Jedna akce.",
+      "PAGE_EVERYTHING_IN_ITS_PLACE": "Všechno na svém místě.",
+      "PAGE_PRODUCT_FEATURES": "Ukázky funkcí",
+      "PAGE_01_SEATING_PLAN": "Plánek sálu",
+      "PAGE_02_FORM": "Prodej a vstupenky",
+      "PAGE_03_TICKET": "03 Vstupenka",
+      "PAGE_04_CHOOSE_SEATS": "04 Výběr míst",
+      "PAGE_05_CHECK_IN": "05 Odbavení",
+      "PAGE_06_OVERVIEW": "Správa a odbavení",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE_25": "QR platba přímo do Vaší banky",
+      "PAGE_FROM_YOUR_GUEST": "Od hosta.",
+      "PAGE_TO_YOUR_STRIPE_ACCOUNT": "Přímo na Váš účet.",
+      "PAGE_GUESTS_PAY_BY_CARD_THROUGH_STRIPE_CHECKOUT_THE_P": "Host načte QR kód ve své bankovní aplikaci. Peníze posílá přímo Vám, bez platební brány a bez prostředníka.",
+      "PAGE_CONNECT_AND_VERIFY_YOUR_STRIPE_ACCOUNT_BEFORE_OP": "Okamžitým převodem, pokud jej obě banky podporují.",
+      "PAGE_WANT_TO_OFFER_BANK_TRANSFERS_TOO": "Chcete přijímat i platební karty?",
+      "PAGE_CONTACT_US": "Napište nám",
+      "PAGE_CARD_PAYMENT_FROM_GUEST_TO_THE_ORGANIZER_S_STRIP": "Přímý bankovní převod od hosta na účet pořadatele",
+      "PAGE_GUEST": "Host",
+      "PAGE_STRIPE_CHECKOUT": "Jeho bankovní aplikace",
+      "PAGE_YOUR_ACCOUNT": "Váš účet",
+      "PAGE_YOUR_CONNECTED_STRIPE_ACCOUNT": "Přímo ve Vaší bance",
+      "PAGE_STRIPE": "0 Kč",
+      "PAGE_PROVIDER_PROCESSING_FEES_APPLY": "transakční poplatek za QR převod",
+      "PAGE_CONTACT_US_ABOUT_SERVICE_PRICING_STRIPE_FEES_DEP": "Cena služby se domlouvá samostatně. Platební karty jsou dostupné po domluvě.",
+      "PAGE_PREPARE_SELL_APPLAUSE": "Příprava. Prodej. Potlesk.",
+      "PAGE_YOU_PREPARE_THE_EVENT": "Vy připravujete akci.",
+      "PAGE_WE_HELP_WITH_THE_TICKETS": "My pomůžeme se vstupenkami.",
+      "PAGE_PREPARE_YOUR_EVENT": "Připravte akci",
+      "PAGE_EVENT_DETAILS_FORMS_AND_TICKETS_IN_ONE_PLACE_ARR": "Informace, formulář a vstupenky na jednom místě. Prostor uspořádáte podle svého sálu.",
+      "PAGE_OPEN_TICKET_SALES": "Otevřete prodej",
+      "PAGE_SHARE_YOUR_LINK_GUESTS_FILL_IN_THE_FORM_AND_CHOO": "Sdílejte odkaz. Hosté vyplní formulář a vyberou si vstupenky.",
+      "PAGE_WELCOME_YOUR_GUESTS": "Přivítejte hosty",
+      "PAGE_KEEP_TRACK_OF_ORDERS_CHECK_TICKETS_AT_THE_DOOR_U": "Objednávky máte v přehledu. U dveří ověříte vstupenky pomocí QR kódu.",
+      "PAGE_PRICING_AND_SUPPORT": "Cena a podpora",
+      "PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT": "Nastavíme vstupenky pro Vaši akci.",
+      "PAGE_BOOK_A_30_MINUTE_WALKTHROUGH_OF_THE_SERVICE_AND_": "Za 30 minut Vám ukážeme, jak služba funguje, a můžeme rovnou nastavit vstupenky pro Vaši akci.",
+      "PAGE_BOOK_A_DEMO": "Domluvit ukázku",
+      "PAGE_ONLINE_VIA_GOOGLE_MEET_WE_WILL_ALSO_DISCUSS_SERV": "Online přes Google Meet. Projdeme i cenu služby.",
+      "PAGE_YOU_CONTROL_YOUR_EVENT": "Máte nad akcí plnou kontrolu.",
+      "PAGE_YOU_SET_PRICES_SEAT_AVAILABILITY_AND_SALES_TERMS": "Vy určujete ceny, dostupná místa i podmínky prodeje. Objednávky, platby a vstupenky máte na jednom místě.",
+      "PAGE_MORE_TO_KNOW": "Ještě vás zajímá",
+      "PAGE_GOOD_QUESTIONS": "Dobré otázky.",
+      "PAGE_CLEAR_ANSWERS": "Jasné odpovědi.",
+      "PAGE_DO_I_NEED_AN_ACCOUNT_TO_CREATE_AN_EVENT": "Potřebuji k založení akce účet?",
+      "PAGE_YES_CREATE_EVENT_OPENS_REGISTRATION_OR_EVENT_MAN": "Ano. Tlačítko Založit akci zdarma otevře registraci, nebo správu akcí, pokud už jste přihlášení. Vytvoření účtu není objednávkou vstupenky.",
+      "PAGE_CAN_GUESTS_CHOOSE_SPECIFIC_SEATS": "Mohou si hosté vybrat konkrétní místa?",
+      "PAGE_YES_FOR_EVENTS_WITH_A_SEATING_PLAN_GUESTS_CHOOSE": "Ano, u akce s plánkem vyberou místa v sále. Dostupnost a cenu vidí při výběru.",
+      "PAGE_WHAT_CAN_I_CUSTOMIZE": "Co si mohu přizpůsobit?",
+      "PAGE_YOUR_FORM_S_CONTENT_AND_APPEARANCE_TICKET_TEMPLA": "Obsah a vzhled formuláře, šablonu vstupenky i uspořádání sálu. Ukázky výše představují jednotlivá ovládání a výsledky.",
+      "PAGE_HOW_DO_PAYMENTS_AND_TICKET_DELIVERY_WORK": "Jak fungují platby a doručení vstupenek?",
+      "PAGE_GUESTS_PAY_BY_CARD_THROUGH_STRIPE_CHECKOUT_AFTER": "Host zaplatí bankovním převodem pomocí QR kódu bez transakčního poplatku. Platební karty zpřístupníme po domluvě. Informace k objednávce a vstupenkám dostane zákazník e-mailem.",
+      "PAGE_HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR": "Jak ověřím vstupenku u dveří?",
+      "PAGE_USE_A_PHONE_WITH_A_CAMERA_TO_SCAN_THE_ADMISSION_": "Stačí Váš vlastní telefon s fotoaparátem. Načtete QR kód a potvrdíte vstup. Žádné speciální čtečky. U již použité vstupenky uvidíte upozornění.",
+      "PAGE_HOW_MUCH_DOES_THE_SERVICE_COST": "Kolik služba stojí?",
+      "PAGE_WRITE_TO": "Napište na",
+      "PAGE_OR_BOOK_A_DEMO_WE_WILL_DISCUSS_YOUR_EVENT_AND_A_": "nebo si rezervujte ukázku. Projdeme konkrétní akci a nabídku služby.",
+      "PAGE_FOR_TECHNICAL_TEAMS": "Pro technické týmy",
+      "PAGE_OPEN_CODE_YOUR_POSSIBILITIES": "Otevřený kód. Vlastní možnosti.",
+      "PAGE_ALONGSIDE_OUR_SERVICE_YOU_CAN_USE_THE_OPEN_FESTA": "Vedle naší služby můžete využít i otevřenou platformu Festapp a přizpůsobit ji svému týmu.",
+      "PAGE_OPEN_SOURCE": "Open source",
+      "PAGE_THE_SOURCE_IS_PUBLIC_UNDER_THE_MIT_LICENSE_EXPLO": "Zdrojový kód je veřejný pod licencí MIT. Prohlédněte si, jak platforma funguje, nebo se zapojte do vývoje.",
+      "PAGE_SOURCE_CODE_ON_GITHUB": "Zdrojový kód na GitHubu",
+      "PAGE_SELF_HOSTING": "Vlastní hosting",
+      "PAGE_RUN_FESTAPP_ON_YOUR_OWN_INFRASTRUCTURE_THE_DOCUM": "Festapp můžete provozovat na vlastní infrastruktuře. Dokumentace popisuje nastavení aplikace i backendu.",
+      "PAGE_SELF_HOSTING_GUIDE": "Návod k vlastnímu provozu",
+      "PAGE_CONNECT_YOUR_AI_AGENT": "Propojení s AI agentem",
+      "PAGE_THROUGH_MCP_YOUR_AGENT_CAN_USE_SUPPORTED_PLATFOR": "Přes MCP může Váš agent pracovat s podporovanými funkcemi platformy podle oprávnění Vašeho účtu.",
+      "PAGE_SET_UP_MCP_ACCESS": "Jak nastavit propojení přes MCP",
+      "PAGE_YOUR_EVENT_UNDER_YOUR_CONTROL": "Vaše akce. Pod Vaší kontrolou.",
+      "PAGE_PREPARE_YOUR": "Připravte svou",
+      "PAGE_NEXT": "další",
+      "PAGE_EVENT": "akci.",
+      "PAGE_FESTAPP_FESTAPP_NET": "Festapp - festapp.net",
+      "PAGE_PROVIDER_NAME_REGISTRATION_NO_06455361": "{{PROVIDER_NAME}}, IČO 06455361",
+      "PAGE_LEGAL_AND_SUPPORT_LINKS": "Právní a podpůrné odkazy",
+      "PAGE_EVENTS": "Akce",
+      "PAGE_BROWSE_EVENTS": "Plesy v Česku",
+      "PAGE_PRIVACY": "Soukromí",
+      "PAGE_TERMS": "Podmínky",
+      "PAGE_SUPPORT": "Podpora"
+    },
+    "locale": "cs",
+    "languageTag": "cs-CZ",
+    "ogLocale": "cs_CZ",
+    "provider": {
+      "name": "Michael Bujnovský",
+      "identifier": "06455361",
+      "identifierLabel": "IČO"
+    },
+    "cta": {
+      "href": "/events?create=1",
+      "label": "Založit akci zdarma",
+      "note": "K založení akce potřebujete účet. Pokračujte přihlášením do administrace."
+    },
+    "serviceName": "Prodej vstupenek na akce",
+    "serviceType": "Prodej vstupenek a správa akcí",
+    "ui": {
+      "play": "Přehrát",
+      "pause": "Pozastavit",
+      "retry": "Zkusit znovu",
+      "replay": "Znovu přehrát",
+      "failed": "Video se nepodařilo přehrát.",
+      "download": "Otevřít video",
+      "referenceLabel": "Ukázky akcí, posuvná galerie",
+      "previous": "Předchozí akce",
+      "next": "Další akce",
+      "position": "{first}-{last} z {count} akcí",
+      "total": "{count} akcí",
+      "imagePrefix": "Úvodní obrázek:",
+      "catalogNav": "Hlavní navigace",
+      "organizers": "Pro pořadatele",
+      "related": "Další možnosti",
+      "home": "Úvodní stránka",
+      "contactAction": "Domluvit ukázku",
+      "legalNav": "Právní a podpůrné odkazy",
+      "closing": "Připravte svou další akci.",
+      "priceNote": "Cena služby se domlouvá samostatně. Projdeme Vaši akci a konkrétní nabídku.",
+      "breadcrumbs": "Umístění na webu"
+    },
+    "footerLinks": [
+      {
+        "href": "/events",
+        "label": "Akce"
+      },
+      {
+        "href": "https://plesy.vstupenky.online",
+        "label": "Plesy v Česku"
+      },
+      {
+        "href": "/privacy/",
+        "label": "Soukromí"
+      },
+      {
+        "href": "/terms/",
+        "label": "Podmínky"
+      },
+      {
+        "href": "/support/",
+        "label": "Podpora"
+      }
+    ],
+    "referencesHeading": "Akce se vstupenky.online",
+    "catalogLabel": "Najít akci",
+    "pages": [
+      {
+        "id": "home",
+        "path": "/"
+      },
+      {
+        "id": "seating-reservations",
+        "path": "/rezervacni-system-s-planem-salu",
+        "title": "Rezervační systém s vlastním plánkem sálu | vstupenky.online",
+        "heading": "Rezervace míst podle Vašeho sálu",
+        "description": "Vlastní stoly, sedadla, řady i parket. Prohlédněte možnosti plánku, skutečné ukázky editoru a výběru míst a zjistěte, co připravit před prodejem.",
+        "intro": "Sestavte skutečné rozmístění stolů a židlí. Hostům nabídněte výběr konkrétního místa přímo ve formuláři, s označením sedadla a cenou před objednáním.",
+        "highlight": "Vašeho sálu",
+        "linkLabel": "Vlastní plánek sálu",
+        "heroImage": "/organizers-media/layout-modern.jpg",
+        "heroImageAlt": "Produktová ukázka sálu s kulatými i obdélníkovými stoly",
+        "heroCaption": "Skutečná šablona z editoru. Uspořádání přizpůsobíte vlastní akci.",
+        "feature": {
+          "contentsLabel": "Možnosti plánku",
+          "introTitle": "Jeden editor. Různé způsoby sezení.",
+          "introText": "Plesový sál se stoly potřebuje jiné rozložení než řady před pódiem. Vycházejte z prostoru a nechte plánek vysvětlit hostovi, kde bude sedět.",
+          "layoutLegend": "Prohlédněte si uspořádání",
+          "layouts": [
+            {
+              "label": "Stoly a parket",
+              "image": "/organizers-media/layout-sal-s-parketem-wood.svg",
+              "alt": "Plesový sál se stoly, židlemi a parketem",
+              "title": "Večer, ve kterém má své místo i tanec",
+              "text": "Rozmístěte stoly kolem parketu, oddělte části sálu a ponechte průchody. Host pozná označení místa i jeho polohu vůči pódiu.",
+              "width": 2868,
+              "height": 2660
+            },
+            {
+              "label": "Řady sedadel",
+              "image": "/organizers-media/layout-cinema.jpg",
+              "alt": "Ukázka kinového uspořádání v editoru",
+              "title": "Přehledné řady a uličky",
+              "text": "Prostor může být uspořádaný do řad. U konkrétního místa je důležité čitelné označení a orientace vůči pódiu nebo plátnu.",
+              "width": 820,
+              "height": 760
+            },
+            {
+              "label": "Kombinace stolů",
+              "image": "/organizers-media/layout-modern.jpg",
+              "alt": "Ukázka sálu s kulatými a obdélníkovými stoly",
+              "title": "Kulaté i hranaté stoly v jednom sále",
+              "text": "Kombinujte tvary stolů a upravte židle podle dispozice. Vzhled pomáhá orientaci; prodejní stav a nabídku ověřte samostatně.",
+              "width": 894,
+              "height": 716
+            }
+          ],
+          "editor": {
+            "id": "navrh-salu",
+            "title": "Sál sestavíte tak, jak ho opravdu chystáte",
+            "text": "Upravte stoly, židle, pódium i parket podle skutečného sálu. Polohu, velikost a natočení měníte přímo v editoru.",
+            "clips": [
+              "layout-build",
+              "layout-refine"
+            ],
+            "helpHref": "/napoveda/planek-salu/",
+            "helpLabel": "Podrobný návod k editoru plánku"
+          },
+          "buyer": {
+            "id": "vyber-hosta",
+            "title": "Host vybírá místo, ne číslo z dlouhého seznamu",
+            "text": "Host si přiblíží sál, vybere konkrétní sedadla a před objednáním vidí jejich označení i cenu.",
+            "clips": [
+              "seat-select"
+            ],
+            "helpHref": "/napoveda/prodejni-formular/",
+            "helpLabel": "Jak propojit výběr s formulářem"
+          },
+          "ending": {
+            "title": "Projděme společně Váš sál",
+            "text": "Přineste rozložení, počet míst a představu o nabídce. Na ukázce projdeme vhodný postup i cenu služby.",
+            "primary": "Domluvit ukázku",
+            "secondary": "Připravit vlastní akci"
+          },
+          "zoomLabel": "Otevřít plánek v plné velikosti"
+        },
+        "heroWidth": 894,
+        "heroHeight": 716
+      }
+    ],
+    "helpLink": {
+      "href": "/napoveda/",
+      "label": "Nápověda"
+    },
+    "redirects": [
+      {
+        "from": "/prodej-vstupenek-na-ples",
+        "to": "/"
+      }
+    ]
+  },
+  "internalSources": {
+    "liveOrganizerPage": {
+      "url": "https://vstupenky.online/pro-poradatele",
+      "observedAt": "2026-10-22",
+      "verifiedClaims": [
+        "The service supports registration forms and ticket sales.",
+        "Organizers can review orders and payments.",
+        "Tickets use QR codes for entry check-in.",
+        "The organizer determines event prices and participation/payment terms.",
+        "A product demonstration can be booked as a 30-minute Google Meet meeting.",
+        "The provider is Michael Bujnovský, IČO 06455361."
+      ],
+      "contact": "info@vstupenky.online",
+      "pricing": "Contact for service pricing; no numeric price is published."
+    },
+    "localTemplate": "automation/release/organizers/page.html",
+    "localTemplateDifferences": [
+      "The template describes general event publishing and organizer management.",
+      "It contains a contact-for-price section but no demo booking section.",
+      "The live page has a dedicated 30-minute Google Meet booking section."
+    ],
+    "evidenceLimit": "Public event listings and pages verify named events and public URLs only. No organizer testimonial, quote, sales total, or client outcome metric has been verified.",
+    "qrPaymentClaim": {
+      "source": "User instruction 2026-10-22",
+      "claim": "Bankovní převod pomocí QR platby bez transakčních poplatků; karty dostupné po kontaktování vstupenky.online. Cena samotné služby je samostatná."
+    }
+  }
+}

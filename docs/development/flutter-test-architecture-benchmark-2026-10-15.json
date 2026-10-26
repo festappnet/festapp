@@ -1,0 +1,234 @@
+{
+  "sourceSha256": "9a5e67e03d503e018e9ab326f43e93c1e452710a04a0203bb1f8c2b2c5d48c48",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logicalCpus": 10,
+  "physicalMemoryBytes": 17179869184,
+  "concurrency": "SDK defaults",
+  "memoryMethod": "Peak sum of owned-process RSS sampled once per second; shared pages may be counted repeatedly.",
+  "coldRun": null,
+  "complete": true,
+  "medianSeconds": 93.33499199996004,
+  "laneMedianSeconds": {
+    "core": 3.0244466669973917,
+    "adapters": 2.9883370409952477,
+    "flutter": 89.42768825002713
+  },
+  "targets": {
+    "wholeUnder40s": false,
+    "coreUnder5s": true
+  },
+  "sdk": {
+    "frameworkVersion": "3.47.2",
+    "dartSdkVersion": "3.13.2",
+    "frameworkRevision": "d3b14c876900e553bc736ca19295fc09e3853e8e"
+  },
+  "effectiveDefaultWorkersPerLane": 5,
+  "baseline": {
+    "seconds": 83.927,
+    "flutterSuites": 137,
+    "cases": 1249,
+    "passed": 1247,
+    "skipped": 1,
+    "failed": 1,
+    "kind": "single checkpoint, not repeated same-input comparison"
+  },
+  "baselineCasesAccountedFor": 1249,
+  "addedCases": 47,
+  "documentedContractRevisions": 2,
+  "warmup": {
+    "seconds": 83.57183637499111,
+    "peakSummedRssBytes": 3183689728,
+    "loadAverageStart": [
+      3.99169921875,
+      3.61962890625,
+      4.1806640625
+    ],
+    "loadAverageEnd": [
+      5.0625,
+      4.146484375,
+      4.3310546875
+    ],
+    "inputsUnchanged": true,
+    "success": true,
+    "inventorySuccess": true,
+    "lanes": {
+      "core": {
+        "seconds": 2.0517376250354573,
+        "cases": 145,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 32,
+        "success": true
+      },
+      "adapters": {
+        "seconds": 2.871949082997162,
+        "cases": 78,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25,
+        "success": true
+      },
+      "flutter": {
+        "seconds": 79.94233587500639,
+        "cases": 1073,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 113,
+        "success": true
+      }
+    }
+  },
+  "runs": [
+    {
+      "seconds": 88.11883504199795,
+      "peakSummedRssBytes": 3100508160,
+      "loadAverageStart": [
+        5.0625,
+        4.146484375,
+        4.3310546875
+      ],
+      "loadAverageEnd": [
+        7.2080078125,
+        5.08984375,
+        4.6708984375
+      ],
+      "inputsUnchanged": true,
+      "success": true,
+      "inventorySuccess": true,
+      "lanes": {
+        "core": {
+          "seconds": 2.2529038329957984,
+          "cases": 145,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32,
+          "success": true
+        },
+        "adapters": {
+          "seconds": 2.8302185829961672,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25,
+          "success": true
+        },
+        "flutter": {
+          "seconds": 84.37107020895928,
+          "cases": 1073,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 113,
+          "success": true
+        }
+      }
+    },
+    {
+      "seconds": 93.33499199996004,
+      "peakSummedRssBytes": 3167715328,
+      "loadAverageStart": [
+        7.2080078125,
+        5.08984375,
+        4.6708984375
+      ],
+      "loadAverageEnd": [
+        6.14404296875,
+        5.3154296875,
+        4.80029296875
+      ],
+      "inputsUnchanged": true,
+      "success": true,
+      "inventorySuccess": true,
+      "lanes": {
+        "core": {
+          "seconds": 3.0244466669973917,
+          "cases": 145,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32,
+          "success": true
+        },
+        "adapters": {
+          "seconds": 2.9883370409952477,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25,
+          "success": true
+        },
+        "flutter": {
+          "seconds": 89.42768825002713,
+          "cases": 1073,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 113,
+          "success": true
+        }
+      }
+    },
+    {
+      "seconds": 105.80970245797653,
+      "peakSummedRssBytes": 3060056064,
+      "loadAverageStart": [
+        6.14404296875,
+        5.3154296875,
+        4.80029296875
+      ],
+      "loadAverageEnd": [
+        6.5546875,
+        5.93603515625,
+        5.115234375
+      ],
+      "inputsUnchanged": true,
+      "success": true,
+      "inventorySuccess": true,
+      "lanes": {
+        "core": {
+          "seconds": 4.358471791027114,
+          "cases": 145,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 32,
+          "success": true
+        },
+        "adapters": {
+          "seconds": 4.625721707998309,
+          "cases": 78,
+          "skipped": 1,
+          "failed": 0,
+          "suites": 25,
+          "success": true
+        },
+        "flutter": {
+          "seconds": 100.81401370797539,
+          "cases": 1073,
+          "skipped": 0,
+          "failed": 0,
+          "suites": 113,
+          "success": true
+        }
+      }
+    }
+  ],
+  "flutterConcurrency10Diagnostic": {
+    "command": "fvm flutter test --no-pub --reporter=json --concurrency=10",
+    "exitCode": 0,
+    "seconds": 66.94974854198517,
+    "sourceSha256": "9a5e67e03d503e018e9ab326f43e93c1e452710a04a0203bb1f8c2b2c5d48c48",
+    "inputsUnchanged": true,
+    "peakSummedRssBytes": 3802480640,
+    "loadAverageStart": [
+      4.5078125,
+      5.30859375,
+      4.93603515625
+    ],
+    "loadAverageEnd": [
+      6.4658203125,
+      5.6689453125,
+      5.09228515625
+    ],
+    "scope": "Flutter lane diagnostic, single run; not complete-client median",
+    "semanticCases": 1073,
+    "sameExecutedInventoryAsDefaultRun": true
+  }
+}

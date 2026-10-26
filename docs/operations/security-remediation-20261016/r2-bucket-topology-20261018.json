@@ -1,0 +1,76 @@
+{
+  "observed_at": "2026-10-17T22:21:27.398116+00:00",
+  "method": "Read-only Wrangler list/info/dev-url get/domain list; 24 successful control-plane reads",
+  "festapp_related_bucket_count": 8,
+  "total_account_bucket_count": 20,
+  "buckets": [
+    {
+      "name": "festapp-images",
+      "role": "Festapp public image delivery through Worker",
+      "objects": 410,
+      "size_display": "154 MB",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-images-a",
+      "role": "Festapp public image delivery through Worker, historical a asset space",
+      "objects": 664,
+      "size_display": "187 MB",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-images-akhweb",
+      "role": "Separate AKH application; outside Festapp cutover",
+      "objects": 516,
+      "size_display": "224 MB",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-images-private",
+      "role": "Festapp private assets",
+      "objects": 0,
+      "size_display": "0 B",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-images-a-private",
+      "role": "Festapp private assets, historical a asset space",
+      "objects": 0,
+      "size_display": "0 B",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-images-temp",
+      "role": "Empty staging bucket; no image-worker binding",
+      "objects": 0,
+      "size_display": "0 B",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    },
+    {
+      "name": "festapp-public",
+      "role": "Public client-sync artifacts, direct assets.festapp.net domain",
+      "objects": 47123,
+      "size_display": "3.86 GB",
+      "r2_dev_enabled": false,
+      "custom_domains": [
+        "assets.festapp.net"
+      ]
+    },
+    {
+      "name": "festapp-supabase-backups",
+      "role": "Private encrypted backups, WAL, logs, recovery escrow",
+      "objects": 24303,
+      "size_display": "42.8 GB",
+      "r2_dev_enabled": false,
+      "custom_domains": []
+    }
+  ],
+  "mutations": false,
+  "interpretation": "Public image bucket means public bytes served by the configured Worker; all eight r2.dev endpoints are disabled. Only festapp-public has a direct bucket custom domain. Bucket names alone are not privacy proof."
+}

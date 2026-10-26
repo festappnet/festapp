@@ -1,0 +1,648 @@
+import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:intl/intl.dart' show Intl;
+import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
+import 'package:venue_seat_picker/venue_seat_picker.dart'
+    show VenueLayoutLocalizations;
+import 'package:fstapp/startup/startup_language.dart';
+import 'package:fstapp/services/bounded_database_opener.dart';
+import 'package:fstapp/startup/startup_failure_screen.dart';
+import 'package:fstapp/components/navigation/retained_draft_guard.dart';
+import 'package:fstapp/services/google_auth_service.dart';
+import 'package:fstapp/services/auth_session_storage.dart';
+import 'dart:async';
+
+import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/config/url_strategy_noop.dart'
+    if (dart.library.html) 'package:fstapp/config/url_strategy_web.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/data_services/auth_service.dart';
+import 'package:fstapp/data_services/offline_data_service.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/data_services/synchro_service.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
+import 'package:fstapp/data_services/client_sync/client_sync_endpoint_service.dart';
+import 'package:fstapp/services/connectivity_service.dart';
+import 'package:fstapp/services/health_tracking_http_client.dart';
+import 'package:fstapp/services/platform_helper.dart';
+import 'package:fstapp/services/notification_helper.dart';
+import 'package:fstapp/services/installation_cutover_service.dart';
+import 'package:fstapp/startup/startup_failure_policy.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/search/global_search_dialog.dart';
+import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/services/web_styles_helper.dart';
+import 'package:fstapp/services/web_bootstrap_bridge.dart';
+import 'package:fstapp/services/app_logger.dart';
+import 'package:fstapp/services/backend_activation_service.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/widgets/time_travel_widget.dart';
+import 'package:fstapp/widgets/app_text_selection.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:pwa_install/pwa_install.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+Future<void> main() => startApplication();
+
+/// Local integration fixtures supply the same bootstrap with their schema adapter.
+Future<void> startApplication({Future<void> Function()? initialize}) async {
+  debugProfileBuildsEnabled = true;
+  configureUrlStrategy();
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await GoogleAuthService.initializeLinks()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // A missing native link/storage plugin must not block existing sign-in.
+  }
+  try {
+    await StripePaymentLinkService.initialize()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // Missing native link support must not block startup. Never log link data.
+  }
+  final initialRoute = StripePaymentLinkService.inbox.pendingRoute ??
+      (GoogleAuthService.hasCallback
+          ? "/login"
+          : kIsWeb
+              ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+              : nativeInitialRoute(
+                  WidgetsBinding.instance.platformDispatcher.defaultRouteName));
+  runApp(FestappBootstrap(
+    initialRoute: initialRoute,
+    initialize: initialize ?? initializeEverything,
+    buildReadyApp: () => EasyLocalization(
+      supportedLocales:
+          AppConfig.availableLanguages().map((e) => e.locale).toList(),
+      path: "assets/translations",
+      fallbackLocale: AppConfig.availableLanguages().map((e) => e.locale).first,
+      useOnlyLangCode: true,
+      saveLocale: true,
+      child: MyApp(initialRoute: initialRoute),
+    ),
+  ));
+}
+
+NotificationReconnectCoordinator? _notificationReconnectCoordinator;
+
+String nativeInitialRoute(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null) return '/';
+  final stripeRoute = StripePaymentLinkInbox.routeForPath(uri.path);
+  if (stripeRoute != null) return stripeRoute;
+  return value;
+}
+
+String initialRouteForUri(Uri uri) {
+  if (uri.path == '/app/google-auth') return '/login';
+  final path = uri.path == '/' && AppConfig.forceOccasionLink != null
+      ? '/${AppConfig.forceOccasionLink}'
+      : uri.path;
+  // Public aliases retain their fragment during cold startup as well as later
+  // canonical replacements. Standalone auth/settings routes keep their contract.
+  final segments = Uri.parse(path).pathSegments;
+  final publicPath = path.startsWith('/form/') ||
+      (segments.isNotEmpty &&
+          !AppRouter.getRootLinks().contains(segments.first));
+  final fragment = publicPath && uri.hasFragment ? '#${uri.fragment}' : '';
+  return '$path${uri.hasQuery ? '?${uri.query}' : ''}$fragment';
+}
+
+bool isUnitAdminStartupRoute(Uri uri) {
+  if (StripePaymentLinkInbox.routeForPath(uri.path) != null ||
+      uri.path == '/stripe/connect/callback' ||
+      uri.path == '/app/stripe/connect/callback') return true;
+  if (RegExp(r'^/organizationEdit(?:/[1-9][0-9]*)?/?$').hasMatch(uri.path)) {
+    return true;
+  }
+  final segments = uri.pathSegments;
+  return segments.length >= 3 &&
+      segments[0] == 'unit' &&
+      int.tryParse(segments[1]) != null &&
+      segments[2] == 'edit';
+}
+
+/// Paints immediately on PWA, Android and iOS while startup restores the local
+/// context and probes online services. A slow or unreachable backend therefore
+/// cannot leave the process sitting on an OS/browser splash with no Flutter UI.
+class FestappBootstrap extends StatefulWidget {
+  static const loadingKey = Key('festapp-startup-loading');
+  static const failureKey = Key('festapp-startup-failed');
+
+  final String initialRoute;
+  final Future<void> Function() initialize;
+  final Widget Function() buildReadyApp;
+  final Duration initializationTimeout;
+  final VoidCallback? onRetry;
+
+  const FestappBootstrap({
+    this.initialRoute = '/',
+    required this.initialize,
+    required this.buildReadyApp,
+    this.initializationTimeout = const Duration(seconds: 45),
+    this.onRetry,
+    super.key,
+  });
+
+  @override
+  State<FestappBootstrap> createState() => _FestappBootstrapState();
+}
+
+class _FestappBootstrapState extends State<FestappBootstrap> {
+  late final String _initialRoute = widget.initialRoute;
+  bool _isReady = false;
+  bool _startupFailed = false;
+  bool _storageOpenFailed = false;
+  late final Future<String> _startupLanguage;
+  String? _failureLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    _startupLanguage = resolveStartupLanguage();
+    unawaited(_initialize());
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await widget.initialize().timeout(widget.initializationTimeout);
+    } on TimeoutException catch (error) {
+      // Do not launch a second initializer or the app beside a pending storage
+      // migration. A retry starts a new document; it never clears user data.
+      AppLogger.error('Startup timed out: $error');
+      final language = await _startupLanguage;
+      if (!mounted) return;
+      setState(() {
+        _startupFailed = true;
+        _failureLanguage = language;
+        _storageOpenFailed = error is StorageOpenTimeoutException;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) WebBootstrapBridge.markAppReady();
+      });
+      return;
+    } catch (error) {
+      // initializeEverything isolates its individual steps already. This final
+      // boundary still guarantees a usable app shell after an unexpected error.
+      AppLogger.error('Unexpected startup failure: $error');
+    }
+    if (!mounted) return;
+    WebBootstrapBridge.markStartupPhase('S12');
+    setState(() => _isReady = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        WebBootstrapBridge.markStartupPhase('S13');
+        WebBootstrapBridge.markAppReady();
+      }
+    });
+  }
+
+  MaterialPageRoute<void> _loadingRoute(RouteSettings settings) =>
+      MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => const Scaffold(
+          key: FestappBootstrap.loadingKey,
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isReady) return widget.buildReadyApp();
+    final baseTheme = ThemeConfig.theme();
+    if (_startupFailed) {
+      return MaterialApp(builder: DependencyMaterialBridge.builder,
+        theme: baseTheme,
+        darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
+        debugShowCheckedModeBanner: false,
+        home: StartupFailureScreen(
+          key: FestappBootstrap.failureKey,
+          phase: WebBootstrapBridge.startupPhase,
+          language: _failureLanguage!,
+          storageOpenFailed: _storageOpenFailed,
+          onRetry: widget.onRetry ??
+              (kIsWeb ? WebBootstrapBridge.retryStartup : null),
+        ),
+      );
+    }
+    return MaterialApp(builder: DependencyMaterialBridge.builder,
+      theme: baseTheme,
+      darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
+      key: const ValueKey('festapp-startup-material-app'),
+      debugShowCheckedModeBanner: false,
+      initialRoute: _initialRoute,
+      onGenerateRoute: _loadingRoute,
+      onGenerateInitialRoutes: (initialRoute) => [
+        _loadingRoute(RouteSettings(name: initialRoute)),
+      ],
+    );
+  }
+}
+
+Future<void> initializeEverything() async {
+  WebBootstrapBridge.markStartupPhase('S04');
+  AppLogger.debug('Initialization started');
+
+  // Unit editors and Google returns own their context. A default occasion
+  // fetch can outlive startup and block their work in the serialized queue.
+  final skipInitialOccasion = kIsWeb &&
+      (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
+          RouterService.getCurrentBrowserUri().path == '/app/google-auth');
+
+  WidgetsFlutterBinding.ensureInitialized();
+  AppLogger.debug('Widgets binding initialized');
+
+  WebBootstrapBridge.markStartupPhase('S05');
+  final resolvedBackend = await BackendActivationService().resolve();
+  AppConfig.organization = resolvedBackend.organizationId;
+  ConnectivityService.configureBackendOrigin(resolvedBackend.supabaseUrl);
+  AppLogger.debug(
+    'Backend selected: ${resolvedBackend.isCanonical ? 'canonical' : 'legacy'} '
+    'for organization ${resolvedBackend.organizationId} '
+    '(profile ${resolvedBackend.profileSha256.isEmpty ? 'legacy' : resolvedBackend.profileSha256.substring(0, 12)})',
+  );
+
+  WebBootstrapBridge.markStartupPhase('S06');
+  var allowPersistedOccasionData = false;
+  try {
+    await InstallationCutoverService(
+      generation: resolvedBackend.installationGeneration(
+        AppConfig.effectivePushAppGeneration,
+      ),
+    ).run();
+    allowPersistedOccasionData = true;
+    AppLogger.debug('Installation generation is current');
+  } catch (e) {
+    // Fail closed: startup may continue online, but no pre-cutover occasion
+    // cache is read until the idempotent migration succeeds.
+    AppLogger.error('Installation cutover failed: $e');
+  }
+
+  SynchroService.configure(
+    isLoggedIn: AuthService.isLoggedIn,
+    getFullUserInfo: AuthService.getFullUserInfo,
+    getCurrentOccasionId: RightsService.currentOccasionId,
+    useLegacyAppConfig: !resolvedBackend.isCanonical,
+  );
+
+  try {
+    PWAInstall().setup();
+    AppLogger.debug('PWA setup completed');
+  } catch (e) {
+    AppLogger.error('PWA setup failed: $e');
+  }
+
+  WebBootstrapBridge.markStartupPhase('S07');
+  try {
+    await ConnectivityService.initialize();
+    AppLogger.debug('Connectivity service initialized');
+  } catch (e) {
+    AppLogger.error('Connectivity service initialization failed: $e');
+  }
+  final startOffline = ConnectivityService.isOfflineNotifier.value;
+  var effectiveOffline = startOffline;
+  var hasCachedOccasionSettings = false;
+
+  try {
+    await initializeDateFormatting();
+    AppLogger.debug('Date formatting initialized');
+  } catch (e) {
+    AppLogger.error('Date formatting initialization failed: $e');
+  }
+
+  WebBootstrapBridge.markStartupPhase('S08');
+  try {
+    await EasyLocalization.ensureInitialized();
+    AppLogger.debug('EasyLocalization initialized');
+  } catch (e) {
+    AppLogger.error('EasyLocalization initialization failed: $e');
+  }
+
+  WebBootstrapBridge.markStartupPhase('S09');
+  var supabaseInitialized = false;
+  try {
+    final requestHeaders = await PlatformHelper.getBackendRequestHeaders();
+    await Supabase.initialize(
+      url: resolvedBackend.supabaseUrl,
+      publishableKey: resolvedBackend.anonKey,
+      headers: requestHeaders,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: AuthSessionStorage(
+          persistSessionKey: AppConfig.supabaseAuthStorageKey,
+        ),
+      ),
+      // Observe every backend request's outcome so ConnectivityService can tell
+      // when the server is unreachable (weak signal / outage), not just when the
+      // network interface is down.
+      httpClient: HealthTrackingHttpClient(),
+    ).timeout(const Duration(seconds: 2));
+    supabaseInitialized = true;
+    AppLogger.debug('Supabase initialized');
+  } catch (e) {
+    effectiveOffline = true;
+    AppLogger.error('Supabase initialization failed: $e');
+  }
+
+  // Supabase exposes its client before asynchronous session recovery finishes.
+  // Configure the canonical sync owner even when that recovery times out, so
+  // an offline cold start can still activate the persisted public generation.
+  try {
+    final syncEndpoints = await ClientSyncEndpointService().resolve();
+    ClientSyncRuntime.configure(
+      Supabase.instance.client,
+      onLastSuccess: OfflineDataService.saveLastSyncedAt,
+      publicHeadOrigin: syncEndpoints.headOrigin,
+      publicAssetOrigin: syncEndpoints.assetOrigin,
+    );
+    if (supabaseInitialized && !effectiveOffline) {
+      if (AuthService.isLoggedIn()) {
+        await AuthService.refreshSession().timeout(const Duration(seconds: 2));
+        AppLogger.debug('Session refreshed');
+      } else {
+        await AuthService.tryAuthUser().timeout(const Duration(seconds: 2));
+        AppLogger.debug('Stored session recovery completed');
+      }
+      if (AuthService.isLoggedIn()) {
+        await AuthService.validateCurrentOrganization()
+            .timeout(const Duration(seconds: 2));
+      }
+    } else {
+      AppLogger.debug('Offline start: skipped remote session validation');
+    }
+  } catch (e) {
+    effectiveOffline = shouldEnterOfflineAfterSessionInitializationFailure(
+      wasAlreadyOffline: effectiveOffline,
+      supabaseInitialized: supabaseInitialized,
+    );
+    AppLogger.error('Client sync initialization failed: $e');
+  }
+
+  try {
+    await TimeHelper.initializeTimeZone().timeout(const Duration(seconds: 2));
+    AppLogger.debug('Tz setup completed');
+  } catch (e) {
+    AppLogger.error('Tz setup failed: $e');
+  }
+
+  WebBootstrapBridge.markStartupPhase('S10');
+  try {
+    final cachedSyncModel = allowPersistedOccasionData && !skipInitialOccasion
+        ? await ClientSyncRuntime.restoreLastContext()
+        : null;
+    if (cachedSyncModel != null) {
+      AppLogger.debug('Restored cached client sync context');
+    }
+    var settings = allowPersistedOccasionData
+        ? await OfflineDataService.getGlobalSettings()
+        : null;
+    if (settings != null) {
+      hasCachedOccasionSettings = true;
+      SynchroService.globalSettingsModel = settings;
+      final cachedUser = AuthService.isLoggedIn()
+          ? await OfflineDataService.getUserInfo()
+          : null;
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          code: 200,
+          clientSyncV1: cachedSyncModel != null,
+          userInfo: cachedUser,
+          occasionUser: cachedUser?.occasionUser,
+          occasion: OccasionModel(
+              id: cachedSyncModel?.occasion?.id,
+              link: cachedSyncModel?.occasion?.link,
+              organization: cachedSyncModel?.occasion?.organization,
+              features: settings.features,
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              data: settings.data,
+              services: settings.services));
+      TimeHelper.setTimeZoneLocation(
+          RightsService.currentOccasion()?.data?["timezone"]);
+      final cachedLink =
+          AppConfig.forceOccasionLink ?? cachedSyncModel?.occasion?.link;
+      if (cachedLink != null) {
+        RightsService.currentLink = cachedLink;
+        RouterService.currentOccasionLink = cachedLink;
+      }
+      AppLogger.debug('Global settings loaded');
+    }
+  } catch (e) {
+    AppLogger.error('Offline data helper initialization failed: $e');
+  }
+
+  WebBootstrapBridge.markStartupPhase('S11');
+  try {
+    // Tabs own their existing online/cache refresh flow. Blocking first paint
+    // on a serial refresh of every offline bundle leaves the app blank when
+    // any backend endpoint is slow.
+    if (effectiveOffline) {
+      RightsService.useOfflineVersion = true;
+      AppLogger.debug('Offline start: using cached occasion data');
+    } else if (!skipInitialOccasion) {
+      await RightsService.updateAppData(force: true, refreshOffline: false)
+          .timeout(occasionLoadTimeout(
+        hasCachedSettings: hasCachedOccasionSettings,
+      ));
+      AppLogger.debug('Occasion loaded');
+      if (AuthService.isLoggedIn() && !ClientSyncRuntime.isV1Selected) {
+        unawaited(SynchroService.refreshUserOfflineData().then((_) {
+          AppLogger.debug('Private offline snapshot refreshed');
+        }, onError: (Object error) {
+          AppLogger.error('Private offline snapshot refresh failed: $error');
+        }));
+      }
+    } else {
+      AppLogger.debug('Unit admin route: occasion preload skipped');
+    }
+  } catch (e) {
+    AppLogger.error('Occasion loading failed: $e');
+    RightsService.useOfflineVersion = true;
+  }
+
+  AppLogger.debug('Notification helper initializing');
+
+  if (_notificationReconnectCoordinator == null) {
+    final reconnect = NotificationReconnectCoordinator(
+      startsOffline: effectiveOffline,
+      initialize: NotificationHelper.initialize,
+    );
+    _notificationReconnectCoordinator = reconnect;
+    ConnectivityService.isOfflineNotifier.addListener(() {
+      unawaited(reconnect
+          .connectivityChanged(ConnectivityService.isOfflineNotifier.value)
+          .catchError((Object error) {
+        AppLogger.error('Notification reconnect initialization failed: $error');
+      }));
+    });
+  }
+  NotificationHelper.initialize().then((_) {
+    AppLogger.debug('Notification helper initialized');
+  }, onError: (Object error) {
+    AppLogger.error('Notification helper initialization failed: $error');
+  });
+
+  AppLogger.debug('Initialization completed');
+
+  WebStylesHelper.setBodyBackgroundColor(ThemeConfig.appBarColor());
+  WebStylesHelper.setMetaThemeColor(ThemeConfig.seed1);
+}
+
+class MyApp extends StatefulWidget {
+  final String initialRoute;
+  bool isTimeTravelVisible = false;
+
+  MyApp({required this.initialRoute, super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Offset _offset = Offset.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      StripePaymentLinkService.attachNavigator((path) async {
+        if (!mounted || RouterService.router.currentPath == path) return;
+        if (await RetainedDraftGuard.instance
+            .confirmPath(RouterService.router, Uri.parse(path))) {
+          await RouterService.router.pushPath(path);
+        }
+      }, widget.initialRoute);
+    });
+  }
+
+  @override
+  void dispose() {
+    StripePaymentLinkService.detachNavigator();
+    super.dispose();
+  }
+
+  Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
+    if (StripePaymentLinkService.isNativeMobile) {
+      final stripeRoute =
+          StripePaymentLinkInbox.routeForPath(platformDeepLink.uri.path);
+      if (stripeRoute != null) {
+        StripePaymentLinkService.capture(platformDeepLink.uri);
+        if (!platformDeepLink.initial &&
+            RouterService.router.currentPath == stripeRoute) {
+          return DeepLink.none;
+        }
+        if (!platformDeepLink.initial &&
+            !await RetainedDraftGuard.instance
+                .confirmPath(RouterService.router, Uri.parse(stripeRoute))) {
+          return DeepLink.none;
+        }
+        return DeepLink.path(stripeRoute, includePrefixMatches: false);
+      }
+    }
+    if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
+      return DeepLink.path('/login', includePrefixMatches: false);
+    }
+    if (platformDeepLink.initial) {
+      final canonical =
+          RouterService.consumeCanonicalInitialPath(widget.initialRoute);
+      if (canonical != widget.initialRoute)
+        RouterService.router.markUrlStateForReplace();
+      return DeepLink.path(
+        canonical,
+        includePrefixMatches: false,
+      );
+    }
+    if (!await RetainedDraftGuard.instance
+        .confirmPath(RouterService.router, platformDeepLink.uri)) {
+      RouterService.router.markUrlStateForReplace();
+      RouterService.router.notifyAll(forceUrlRebuild: true);
+      return DeepLink.none;
+    }
+    return platformDeepLink;
+  }
+
+  /// Ctrl+F opens Global Search when the feature is enabled. Uses the root
+  /// navigator's context because the shortcut lives above the Navigator.
+  void _openGlobalSearch() {
+    if (!FeatureService.isFeatureEnabled(FeatureConstants.globalSearch)) {
+      return;
+    }
+    final context = RouterService.router.navigatorKey.currentContext;
+    if (context == null) return;
+    GlobalSearchDialog.show(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    TimeHelper.toggleTimeTravel = () {
+      setState(() {
+        widget.isTimeTravelVisible = !widget.isTimeTravelVisible;
+      });
+    };
+
+    Intl.defaultLocale = context.locale.toString();
+    var baseTheme = ThemeConfig.theme();
+    return AdaptiveTheme(
+      light: baseTheme,
+      dark: ThemeConfig.theme(brightness: Brightness.dark),
+      initial: ThemeConfig.defaultThemeMode,
+      builder: (theme, darkTheme) => MaterialApp.router(
+        routerConfig: RouterService.router.config(
+          deepLinkBuilder: _resolveDeepLink,
+          navigatorObservers: () => [RoutingObserver()],
+        ),
+        debugShowCheckedModeBanner: false,
+        builder: DependencyMaterialBridge.wrapBuilder((context, child) {
+          return CallbackShortcuts(
+            bindings: {
+              // Ctrl+F on Windows/Linux, Cmd+F on macOS (Command maps to meta,
+              // not control) — bind both so global search opens on every OS.
+              const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+                  _openGlobalSearch,
+              const SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+                  _openGlobalSearch,
+            },
+            child: Stack(
+              children: [
+                AppTextSelection(child: child!),
+                Positioned(
+                  left: _offset.dx,
+                  top: _offset.dy,
+                  child: GestureDetector(
+                    onPanUpdate: (d) => setState(
+                        () => _offset += Offset(d.delta.dx, d.delta.dy)),
+                    child: Visibility(
+                      visible: widget.isTimeTravelVisible,
+                      child: TimeTravelWidget(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        localizationsDelegates: [
+          ...context.localizationDelegates,
+          ...GlobalMaterialLocalizations.delegates,
+          FormBuilderLocalizations.delegate,
+          VenueLayoutLocalizations.delegate,
+        ],
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        title: AppConfig.appName,
+        theme: theme,
+        darkTheme: darkTheme,
+      ),
+    );
+  }
+}

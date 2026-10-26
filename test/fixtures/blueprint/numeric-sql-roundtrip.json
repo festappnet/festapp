@@ -1,0 +1,1426 @@
+{
+  "copy": {
+    "document": {
+      "nodes": [
+        {
+          "id": "6012f3cc-6563-4ef8-9f18-d2b6e1dfed11",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "900bd751-07b8-4ad7-aabe-04b0f66ab4cf",
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "00897619-1f55-4064-b84d-f4ce036da095",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "900bd751-07b8-4ad7-aabe-04b0f66ab4cf",
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "9f030ab6-1dc3-476d-a471-4f1739cdd18d",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "e8510c33-ca5d-46d3-a503-bd9896dd1aef",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "900bd751-07b8-4ad7-aabe-04b0f66ab4cf",
+          "kind": "furniture",
+          "width": 200,
+          "height": 100,
+          "transform": {
+            "x": 300,
+            "y": 300,
+            "rotation": 0
+          }
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [
+        {
+          "id": "f51ed49f-5876-46d2-8e61-85626472718b",
+          "kind": "atomic",
+          "nodeIds": [
+            "6012f3cc-6563-4ef8-9f18-d2b6e1dfed11",
+            "00897619-1f55-4064-b84d-f4ce036da095"
+          ]
+        }
+      ],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06": {
+          "id": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "0": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "1": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "2": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "3": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "4": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "5": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "6": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "7": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "8": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "9": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "×": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "admin": {
+    "document": {
+      "nodes": [
+        {
+          "id": "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "e867f4f2-fbce-406a-b5f4-610f3fd70f27",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "98c6eac8-ba3c-4f87-ac34-c01bf19c5ec3",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "1ff9fcb2-8463-4467-b450-51a71021216f",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "kind": "furniture",
+          "width": 200,
+          "height": 100,
+          "transform": {
+            "x": 300,
+            "y": 300,
+            "rotation": 0
+          }
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [
+        {
+          "id": "901af4c5-93d0-4512-94e2-f8faf643fdba",
+          "kind": "atomic",
+          "nodeIds": [
+            "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+            "e867f4f2-fbce-406a-b5f4-610f3fd70f27"
+          ]
+        }
+      ],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06": {
+          "id": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "0": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "1": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "2": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "3": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "4": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "5": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "6": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "7": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "8": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "9": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "×": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "setup": {
+    "document": {
+      "nodes": [
+        {
+          "id": "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "e867f4f2-fbce-406a-b5f4-610f3fd70f27",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "98c6eac8-ba3c-4f87-ac34-c01bf19c5ec3",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "1ff9fcb2-8463-4467-b450-51a71021216f",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "kind": "furniture",
+          "width": 200,
+          "height": 100,
+          "transform": {
+            "x": 300,
+            "y": 300,
+            "rotation": 0
+          }
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [
+        {
+          "id": "901af4c5-93d0-4512-94e2-f8faf643fdba",
+          "kind": "atomic",
+          "nodeIds": [
+            "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+            "e867f4f2-fbce-406a-b5f4-610f3fd70f27"
+          ]
+        }
+      ],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06": {
+          "id": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "0": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "1": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "2": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "3": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "4": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "5": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "6": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "7": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "8": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "9": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "×": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "public": {
+    "document": {
+      "nodes": [
+        {
+          "id": "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "e867f4f2-fbce-406a-b5f4-610f3fd70f27",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "parentId": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "98c6eac8-ba3c-4f87-ac34-c01bf19c5ec3",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "1ff9fcb2-8463-4467-b450-51a71021216f",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "da1d446e-50fa-4393-beb4-84da46488a13",
+          "kind": "furniture",
+          "width": 200,
+          "height": 100,
+          "transform": {
+            "x": 300,
+            "y": 300,
+            "rotation": 0
+          }
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [
+        {
+          "id": "901af4c5-93d0-4512-94e2-f8faf643fdba",
+          "kind": "atomic",
+          "nodeIds": [
+            "3fc6fdcd-3fce-4aaf-b971-149980daab91",
+            "e867f4f2-fbce-406a-b5f4-610f3fd70f27"
+          ]
+        }
+      ],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06": {
+          "id": "gf:69387c2cf6a7070578a6d61ab379663e2e235ff22c3f71ce552d807f48e9ce06",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "0": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "1": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "2": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "3": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "4": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "5": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "6": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "7": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "8": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "9": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            },
+            "×": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  }
+}

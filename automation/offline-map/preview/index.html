@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline map preview</title>
+    <link rel="stylesheet" href="/assets/lib/maplibre-gl/maplibre-gl.css" />
+    <script src="/assets/lib/maplibre-gl/maplibre-gl.js"></script>
+    <style>
+      html, body, #map { height: 100%; margin: 0; }
+      .preview-label {
+        position: absolute;
+        z-index: 2;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+        font: 14px/1.25 system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-label" id="preview-label">Offline map preview</div>
+    <div id="map"></div>
+    <script src="/preview-config.js"></script>
+    <script>
+      const preview = window.FESTAPP_OFFLINE_MAP_PREVIEW;
+      document.title = preview.title;
+      document.getElementById('preview-label').textContent = preview.title;
+      const map = new maplibregl.Map({
+        container: 'map',
+        style: '/preview-style.json?contract=local-bundle-v2',
+        center: preview.center,
+        zoom: preview.zoom,
+        maxZoom: 18,
+      });
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,291 @@
+{
+  "locale": "en",
+  "clips": [
+    {
+      "clip": "layout-build",
+      "variant": "src",
+      "sha256": "9c82f680a507cc2854357b58f099b10296ff495de1b8c8ad9402553fd575a98f",
+      "bytes": 183915,
+      "fullDecode": "pass",
+      "width": 1140,
+      "height": 792,
+      "duration": "12.900000"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "mobileSrc",
+      "sha256": "8d1578f38ed8a0ddb0564d41d119bc214698cb841b49212a876bfd1e714617e2",
+      "bytes": 129328,
+      "fullDecode": "pass",
+      "width": 820,
+      "height": 792,
+      "duration": "12.900000"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "src",
+      "sha256": "9df81ff24935e9e0a147e1f4f6bdf27dbd91b1663a2bfdf8020c22f3d17c3a7d",
+      "bytes": 432221,
+      "fullDecode": "pass",
+      "width": 1140,
+      "height": 792,
+      "duration": "21.366667"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "mobileSrc",
+      "sha256": "ce2960432e3f949301de29995a1a3ba71abd9c05b56765f8236c31fd35f41324",
+      "bytes": 296335,
+      "fullDecode": "pass",
+      "width": 820,
+      "height": 792,
+      "duration": "21.366667"
+    },
+    {
+      "clip": "form-build",
+      "variant": "src",
+      "sha256": "c4a2337f95b57a871cfdb08d51494d5819a70612b0fa5f57728ccd349ab8a2f9",
+      "bytes": 712897,
+      "fullDecode": "pass",
+      "width": 1200,
+      "height": 804,
+      "duration": "37.600000"
+    },
+    {
+      "clip": "form-build",
+      "variant": "mobileSrc",
+      "sha256": "9372fda31d0965f33c4362298483e3f379a57b85cf296ea0a0a8ac3644aa5e83",
+      "bytes": 334957,
+      "fullDecode": "pass",
+      "width": 720,
+      "height": 638,
+      "duration": "37.600000"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "src",
+      "sha256": "93adc73c1726e8c18b5c443a4efd879cf102166835d8f65c585e7d80ab3ed3c8",
+      "bytes": 455226,
+      "fullDecode": "pass",
+      "width": 1200,
+      "height": 822,
+      "duration": "10.600000"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "mobileSrc",
+      "sha256": "b069a10129093c425281fcf23325b50e41679907d3195191d854f2a44e273ce0",
+      "bytes": 295809,
+      "fullDecode": "pass",
+      "width": 900,
+      "height": 720,
+      "duration": "10.600000"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "src",
+      "sha256": "14c8845ef0196765f7373ebd6fac94fc7a6c9f48d2591ddb1c2a219e1b217127",
+      "bytes": 51221,
+      "fullDecode": "pass",
+      "width": 1200,
+      "height": 804,
+      "duration": "7.766667"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "mobileSrc",
+      "sha256": "b5d0ad45f892a8b977c4c785d0fac6516e70c82afdd62b1d2ae72a5aa22aca7f",
+      "bytes": 32949,
+      "fullDecode": "pass",
+      "width": 720,
+      "height": 900,
+      "duration": "7.766667"
+    },
+    {
+      "clip": "check-in",
+      "variant": "src",
+      "sha256": "57e2bea6c05de04989a94e841c8938d1d28069615ff64aea9d0805f9ad3253ce",
+      "bytes": 41767,
+      "fullDecode": "pass",
+      "width": 1200,
+      "height": 800,
+      "duration": "4.833333"
+    },
+    {
+      "clip": "check-in",
+      "variant": "mobileSrc",
+      "sha256": "fdacd0260a9241640ae0d48439d2ccb4088984c11ccf0bf9663b7dd83365a515",
+      "bytes": 18601,
+      "fullDecode": "pass",
+      "width": 500,
+      "height": 1000,
+      "duration": "4.833333"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "src",
+      "sha256": "4a8e3e427759bd386d326b56ec2a305f24fdf45e72abd74121371e4672163760",
+      "bytes": 469406,
+      "fullDecode": "pass",
+      "width": 1200,
+      "height": 900,
+      "duration": "31.166667"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "mobileSrc",
+      "sha256": "94095e15fc69da7730209481851720c7adec34a5f1d78aeb34cc9dd87023f0a2",
+      "bytes": 266855,
+      "fullDecode": "pass",
+      "width": 720,
+      "height": 900,
+      "duration": "31.166667"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "src",
+      "sha256": "1c852af5d11d87e42af740afc79b63eba568a8d5543766efb406882bb281cd90",
+      "bytes": 197773,
+      "fullDecode": "pass",
+      "width": 1140,
+      "height": 792,
+      "duration": "15.033333"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "mobileSrc",
+      "sha256": "036c061c7981fa964b98f94ddf0db958eff5f5ffd184774db47de2527d3a049a",
+      "bytes": 143322,
+      "fullDecode": "pass",
+      "width": 820,
+      "height": 792,
+      "duration": "15.033333"
+    }
+  ],
+  "postersAndStills": [
+    {
+      "clip": "layout-build",
+      "variant": "poster",
+      "sha256": "aa9115101a2ba6831a419bc79589d23110efe341cc405e1b6031d8dec63f2921"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "mobilePoster",
+      "sha256": "3e9c1decbf45d0c5b0892ac432b05743b8a2d94fa4cb68193acb981911997666"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "poster",
+      "sha256": "e8322a8f9a9c68c3af5aebe3dda4ba78cc3ba7365ed7c3225e58caa7683fae7b"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "mobilePoster",
+      "sha256": "b7ead7c5222e455b482057776cd0418d0589d4d29969bc8ea442a6dcc2844ad3"
+    },
+    {
+      "clip": "form-build",
+      "variant": "poster",
+      "sha256": "e1bb3a3e36d43c22daec8ee3fc042a1cdabef9bfabcedffebf3c752d465f008c"
+    },
+    {
+      "clip": "form-build",
+      "variant": "mobilePoster",
+      "sha256": "cf4eae99db132e3de97d36a0bb677ab9715ad1bac31f6fbb11d74c73c30484a2"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "poster",
+      "sha256": "4bfff16bb78aa7fe9bc8725b0454ecb7fd8beffa469101689f809dfa3bb81977"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "mobilePoster",
+      "sha256": "421c7c0f0d90e8ba2ffb952d5c1166d1041707f56e1e7be68ab5caa0156b83d4"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "poster",
+      "sha256": "09205259dba1984654647d94d300a248124a901d570251b634d882a47a23e7d6"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "mobilePoster",
+      "sha256": "02b6755bc062941e306c50b79f4c68d6ac4d4ad335ffaaaf99948f36150ce676"
+    },
+    {
+      "clip": "check-in",
+      "variant": "poster",
+      "sha256": "ffc8006cafbfc798077e85f0e2354196ff97013b276fe1d93173ede5c808a6e5"
+    },
+    {
+      "clip": "check-in",
+      "variant": "mobilePoster",
+      "sha256": "82c28406bfe8efa312d570ed01beb1cb2ff8e6fce776e866b8ef8aabb32d78e5"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "poster",
+      "sha256": "480c4e3e0c7dea11a16ab85ed7bbeae9c681b5e4d7aeae83cb176daf2aa700ed"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "mobilePoster",
+      "sha256": "12d72036c11bcca21c11b971f9f44ba428df23f22bfc8ee4fc1c447e252604cc"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "poster",
+      "sha256": "9508edb36ba48440d3c19000526a951410221427b8e15c29bbba9388b5ee4b0c"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "mobilePoster",
+      "sha256": "67bcc6a00827486dfa77d0717eff78919e41574c0251eaecb71417c326dedf28"
+    },
+    {
+      "showcase": "Tables and curved rows",
+      "sha256": "918bea8720afa47b1cfd4baf80e499a31ab3e346ddfd7e37c5ca8a5346a1637c"
+    },
+    {
+      "showcase": "Galaxy cinema",
+      "sha256": "75b1fa9e344808822ff90f80e972fcc243f8c090ecca6292840a21b9cb80691d"
+    },
+    {
+      "showcase": "Auditorium seating",
+      "sha256": "a2945405faa8bb1a221d04853f883b57833b6146b5dee8229604f141871471ec"
+    },
+    {
+      "showcase": "Ball invitation",
+      "sha256": "559385226aec535efec0223f02b5486c2bd77c131a22855d618e642b9aa3daea"
+    },
+    {
+      "showcase": "Concert stub",
+      "sha256": "2b43cf8ec7ec806ae8de3d981f73a5994243d092139ea6aaf80ddb24693e43e1"
+    },
+    {
+      "showcase": "Theatre programme",
+      "sha256": "4eec0e7771106346d4321400cd7950de171ae8a17549e66639b9ad72ccfffd59"
+    },
+    {
+      "showcase": "Boarding pass",
+      "sha256": "195d6acc399ef76518c42ffe9334426f79adf7f3e1e2edd6cf957c0820dae875"
+    },
+    {
+      "showcase": "Cinema strip",
+      "sha256": "60bc35db41057a7a339a2906ca3002f8fb75fb7b183a718d414a8e5b44b58920"
+    },
+    {
+      "showcase": "Gallery square",
+      "sha256": "97b6c12ab9d8c1db5b948dfd7bad60c87d64f959bb4c623f0a3ab72b5b93073e"
+    },
+    {
+      "showcase": "Sports arena",
+      "sha256": "71058dd09279e4ab1aa7c95fbea675e14f328bf5428112cba3ee6b2328d456fd"
+    },
+    {
+      "showcase": "Workshop card",
+      "sha256": "23c4f02a26fc814638fb918926e8b4352796cb0e9114d6ee48fd5dce0dbba548"
+    }
+  ]
+}

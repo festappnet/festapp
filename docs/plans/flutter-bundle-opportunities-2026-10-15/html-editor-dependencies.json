@@ -1,0 +1,944 @@
+[
+  {
+    "uri": "package:fstapp/components/html/editable_html_field.dart",
+    "libraryBytes": 706,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/editable_html_field_runtime.dart",
+    "libraryBytes": 6206,
+    "units": [
+      "outputUnit/1"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_document_codec.dart",
+    "libraryBytes": 6061,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_editor_document.dart",
+    "libraryBytes": 18020,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_helper.dart",
+    "libraryBytes": 581,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_image_preview.dart",
+    "libraryBytes": 200,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_media_service.dart",
+    "libraryBytes": 9749,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_strings.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/3",
+      "outputUnit/7",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_text_style.dart",
+    "libraryBytes": 193,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/html_view.dart",
+    "libraryBytes": 3047,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/rich_html_editor.dart",
+    "libraryBytes": 18330,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/rich_html_editor_controller.dart",
+    "libraryBytes": 6712,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/rich_html_editor_controller_runtime.dart",
+    "libraryBytes": 8021,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/rich_html_editor_dialog.dart",
+    "libraryBytes": 321,
+    "units": [
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:fstapp/components/html/rich_html_editor_dialog_runtime.dart",
+    "libraryBytes": 6258,
+    "units": [
+      "outputUnit/1",
+      "outputUnit/3",
+      "outputUnit/5"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/chat/attachments/attachment_list_editing.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/chat/attachments/attachment_list_node.dart",
+    "libraryBytes": 4449,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document.dart",
+    "libraryBytes": 1730,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document_composer.dart",
+    "libraryBytes": 4082,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document_debug_paint.dart",
+    "libraryBytes": 43,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document_interaction.dart",
+    "libraryBytes": 104,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document_layout.dart",
+    "libraryBytes": 2018,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/document_selection.dart",
+    "libraryBytes": 2309,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/edit_context.dart",
+    "libraryBytes": 96,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/editor.dart",
+    "libraryBytes": 9981,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/core/styles.dart",
+    "libraryBytes": 1534,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/attributions.dart",
+    "libraryBytes": 769,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/blockquote.dart",
+    "libraryBytes": 3952,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/box_component.dart",
+    "libraryBytes": 3315,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/common_editor_operations.dart",
+    "libraryBytes": 20931,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/composer/composer_reactions.dart",
+    "libraryBytes": 2553,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/debug_visualization.dart",
+    "libraryBytes": 236,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/default_document_editor.dart",
+    "libraryBytes": 8743,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/default_document_editor_reactions.dart",
+    "libraryBytes": 11118,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_caret_overlay.dart",
+    "libraryBytes": 2369,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_focus_and_selection_policies.dart",
+    "libraryBytes": 2437,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_gestures_mouse.dart",
+    "libraryBytes": 9262,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_gestures_touch_android.dart",
+    "libraryBytes": 19824,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_gestures_touch_ios.dart",
+    "libraryBytes": 19340,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_hardware_keyboard/document_keyboard_actions.dart",
+    "libraryBytes": 16700,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_hardware_keyboard/document_physical_keyboard.dart",
+    "libraryBytes": 663,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/document_delta_editing.dart",
+    "libraryBytes": 8822,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/document_ime_communication.dart",
+    "libraryBytes": 3885,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/document_ime_interaction_policies.dart",
+    "libraryBytes": 5642,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/document_serialization.dart",
+    "libraryBytes": 7159,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/ime_decoration.dart",
+    "libraryBytes": 754,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/ime_keyboard_control.dart",
+    "libraryBytes": 760,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/shared_ime.dart",
+    "libraryBytes": 1651,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_ime/supereditor_ime_interactor.dart",
+    "libraryBytes": 7670,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/document_scrollable.dart",
+    "libraryBytes": 4344,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/horizontal_rule.dart",
+    "libraryBytes": 2055,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/image.dart",
+    "libraryBytes": 5737,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_layout.dart",
+    "libraryBytes": 9998,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_presenter.dart",
+    "libraryBytes": 4708,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_styler_composing_region.dart",
+    "libraryBytes": 2446,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_styler_per_component.dart",
+    "libraryBytes": 770,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_styler_shylesheet.dart",
+    "libraryBytes": 857,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/_styler_user_selection.dart",
+    "libraryBytes": 3208,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/layout_single_column/selection_aware_viewmodel.dart",
+    "libraryBytes": 43,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/list_items.dart",
+    "libraryBytes": 14084,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/multi_node_editing.dart",
+    "libraryBytes": 13643,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/paragraph.dart",
+    "libraryBytes": 16319,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/selection_upstream_downstream.dart",
+    "libraryBytes": 672,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/super_editor.dart",
+    "libraryBytes": 13357,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/tables/table_block.dart",
+    "libraryBytes": 1533,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/tap_handlers/tap_handlers.dart",
+    "libraryBytes": 988,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/tasks.dart",
+    "libraryBytes": 7508,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/text.dart",
+    "libraryBytes": 20904,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/text/custom_underlines.dart",
+    "libraryBytes": 633,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/text_ai.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/text_tools.dart",
+    "libraryBytes": 1127,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/default_editor/unknown_component.dart",
+    "libraryBytes": 487,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/document_operations/selection_operations.dart",
+    "libraryBytes": 98,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/_logging.dart",
+    "libraryBytes": 903,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/_scrolling.dart",
+    "libraryBytes": 1286,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/actions.dart",
+    "libraryBytes": 847,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/attributed_text_styles.dart",
+    "libraryBytes": 1021,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/blinking_caret.dart",
+    "libraryBytes": 1183,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/composable_text.dart",
+    "libraryBytes": 143,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/content_layers.dart",
+    "libraryBytes": 6754,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/content_layers_for_slivers.dart",
+    "libraryBytes": 3549,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/document_gestures.dart",
+    "libraryBytes": 306,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/document_gestures_interaction_overrides.dart",
+    "libraryBytes": 280,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/documents/document_layers.dart",
+    "libraryBytes": 284,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/documents/document_scaffold.dart",
+    "libraryBytes": 706,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/documents/document_scroller.dart",
+    "libraryBytes": 260,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/documents/document_selection.dart",
+    "libraryBytes": 686,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/documents/selection_leader_document_layer.dart",
+    "libraryBytes": 1880,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/android_toolbar.dart",
+    "libraryBytes": 7150,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/build_context.dart",
+    "libraryBytes": 239,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/cupertino_scrollbar.dart",
+    "libraryBytes": 1512,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/eager_pan_gesture_recognizer.dart",
+    "libraryBytes": 808,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/empty_box.dart",
+    "libraryBytes": 330,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/flutter_scheduler.dart",
+    "libraryBytes": 1173,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/geometry.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/material_scrollbar.dart",
+    "libraryBytes": 4740,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/monodrag.dart",
+    "libraryBytes": 4077,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/flutter/scrollbar.dart",
+    "libraryBytes": 14588,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/keyboard.dart",
+    "libraryBytes": 105,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/links.dart",
+    "libraryBytes": 53,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/multi_listenable_builder.dart",
+    "libraryBytes": 675,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/multi_tap_gesture.dart",
+    "libraryBytes": 4189,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/pausable_value_notifier.dart",
+    "libraryBytes": 254,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/android_document_controls.dart",
+    "libraryBytes": 3789,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/drag_handle_selection.dart",
+    "libraryBytes": 1232,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/long_press_selection.dart",
+    "libraryBytes": 7309,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/magnifier.dart",
+    "libraryBytes": 266,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/selection_handles.dart",
+    "libraryBytes": 709,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/android/toolbar.dart",
+    "libraryBytes": 1375,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/ios_document_controls.dart",
+    "libraryBytes": 6267,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/ios_system_context_menu.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/long_press_selection.dart",
+    "libraryBytes": 841,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/magnifier.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/selection_handles.dart",
+    "libraryBytes": 658,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/selection_heuristics.dart",
+    "libraryBytes": 252,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/ios/toolbar.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/mobile_documents.dart",
+    "libraryBytes": 1168,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/platforms/platform.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/popovers.dart",
+    "libraryBytes": 180,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/render_sliver_ext.dart",
+    "libraryBytes": 92,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/scrolling_diagnostics/_scrolling_minimap.dart",
+    "libraryBytes": 0,
+    "units": [
+      "outputUnit/2",
+      "outputUnit/main"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/serialization/markdown/image_syntax.dart",
+    "libraryBytes": 4844,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/serialization/markdown/markdown_inline_parser.dart",
+    "libraryBytes": 1642,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/serialization/markdown/markdown_to_document_parsing.dart",
+    "libraryBytes": 7514,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/serialization/markdown/super_editor_syntax.dart",
+    "libraryBytes": 99,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/serialization/markdown/table.dart",
+    "libraryBytes": 1621,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/signal_notifier.dart",
+    "libraryBytes": 100,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/sliver_hybrid_stack.dart",
+    "libraryBytes": 2804,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/strings.dart",
+    "libraryBytes": 1254,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/infrastructure/touch_controls.dart",
+    "libraryBytes": 95,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/super_textfield/infrastructure/magnifier.dart",
+    "libraryBytes": 270,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/super_textfield/infrastructure/outer_box_shadow.dart",
+    "libraryBytes": 185,
+    "units": [
+      "outputUnit/2"
+    ]
+  },
+  {
+    "uri": "package:super_editor/src/undo_redo.dart",
+    "libraryBytes": 1311,
+    "units": [
+      "outputUnit/2"
+    ]
+  }
+]

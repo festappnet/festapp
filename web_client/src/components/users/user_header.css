@@ -1,0 +1,448 @@
+/* The custom element itself */
+user-header {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition: transform 0.3s ease-in-out;
+}
+
+user-header.header-hidden {
+    transform: translateY(-100%);
+}
+
+.user-header-container {
+/* ... existing styles ... */
+    height: var(--header-height);
+    background-color: #19243b; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: white;
+}
+
+/* ... skip to mobile part ... */
+
+/* Mobile: Show Sign In as just icon */
+
+
+
+.header-home-link { display: block; min-width: 0; line-height: 0; }
+.header-home-link:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 4px; }
+.header-logo { 
+    height: 56px; 
+    width: auto;
+    max-width: min(52vw, 294px);
+    cursor: pointer;
+    display: block; /* img should be block or inline-block */
+    object-fit: contain;
+}
+/* Removed .logo img as we apply class directly to img now or verify structure */
+
+.header-actions { display: flex; align-items: center; gap: var(--spacing-md); }
+.header-wordmark {
+    display: block;
+    color: white;
+    font-family: Futura, 'Century Gothic', sans-serif;
+    font-size: clamp(16px, 4.4vw, 24px);
+    font-weight: 600;
+    letter-spacing: -.045em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+
+.btn-sign-in, .btn-admin, .btn-add-event {
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 20px;
+    border-radius: 28px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 15px; /* Unified font size */
+    height: 40px; /* Force consistent height */
+    box-sizing: border-box;
+}
+
+.btn-admin {
+    gap: 8px;
+}
+
+.btn-sign-in:hover, .btn-admin:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.settings-icon-btn {
+    cursor: pointer;
+    font-size: 24px;
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.settings-icon-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.avatar-circle {
+    width: 38px; height: 38px;
+    min-width: 38px; min-height: 38px; /* Prevent shrinking */
+    flex-shrink: 0; /* Important */
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 18px; cursor: pointer;
+    border: 2px solid var(--accent-color);
+}
+.settings-icon { cursor: pointer; font-size: 28px; }
+
+/* Popover */
+/* Popover */
+/* Popover */
+/* Popover */
+/* Backdrop */
+.popover-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5); /* Dimming */
+    backdrop-filter: blur(4px); /* Blur effect */
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 101; /* Above header (100) */
+    cursor: default;
+}
+
+.user-popover {
+    position: absolute;
+    width: 340px;
+    background: var(--bg-color, #ffffff); /* Solid white like modal */
+    color: var(--text-color, #000000); 
+    border-radius: 12px; /* Matches modal */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); /* Matches modal shadow */
+    padding: 24px;
+    display: flex; flex-direction: column;
+    z-index: 200; /* Above backdrop */
+    box-sizing: border-box;
+    font-family: inherit;
+    /* No border, no backdrop filter on the card itself */
+}
+/* Ensure dark mode override via body class if vars are not enough or if we want specific dark look */
+body.dark-mode .user-popover {
+    background: #1e1e1e; /* Matches modal dark mode */
+    color: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    border: none; /* Ensure no residual border */
+}
+
+.user-popover.hidden { display: none; }
+
+/* Close Button */
+.popover-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: var(--text-color);
+    opacity: 0.5;
+    cursor: pointer;
+    font-size: 24px;
+}
+.popover-close-btn:hover { opacity: 1; }
+
+/* Header Section */
+.popover-header-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.popover-avatar-large {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background-color: var(--primary-color, #5c9aff); 
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+}
+
+.popover-user-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.popover-user-email {
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+/* Divider */
+.popover-divider {
+    height: 1px;
+    background-color: var(--text-color);
+    opacity: 0.1;
+    margin: 16px 0;
+    width: 100%;
+}
+/* Dark mode divider */
+body.dark-mode .popover-divider {
+    background-color: rgba(255,255,255,0.1);
+    opacity: 1;
+}
+
+/* Settings Container */
+.popover-settings-container {
+    color: var(--text-color);
+}
+body.dark-mode .popover-settings-container {
+    color: white;
+}
+
+/* Logout Row */
+.popover-logout-row {
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+    padding: 8px 0;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.popover-logout-row:hover {
+    opacity: 1;
+}
+body.dark-mode .popover-logout-row {
+    color: white;
+}
+body.dark-mode .popover-logout-row:hover {
+    color: white;
+}
+.popover-account-action {
+    text-decoration: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+}
+.popover-account-action .material-icons {
+    flex: 0 0 24px;
+    text-align: center;
+}
+.popover-account-action:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+    opacity: 1;
+}
+.popover-account-action:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+.logout-icon {
+    transform: rotate(180deg); /* If using 'logout' icon, usually points out. Check visuals. */
+    /* Screenshot has arrow pointing right from bracket. 'logout' icon does this. */
+}
+
+.user-info-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 28px;
+    transition: background 0.2s;
+}
+.user-info-container:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* Hide name on small screens */
+@media (max-width: 600px) {
+    .user-name-display {
+        display: none;
+    }
+    
+    /* Mobile: Show Sign In as just icon */
+    .sign-in-text {
+        display: none;
+    }
+    .btn-sign-in {
+        padding: 0;
+        border-radius: 50%; /* Circle */
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+        /* Retain desktop background/border/blur automatically via cascade or explicit re-declare if needed. 
+           Since desktop rule is above, we just need to NOT override them with 'none'. 
+           We actually want to keep them. */
+    }
+    .btn-sign-in .material-icons {
+        margin: 0;
+        font-size: 24px; /* Standard icon size */
+    }
+
+    .btn-admin {
+        padding: 0;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+        gap: 0;
+    }
+    .admin-text {
+        display: none;
+    }
+}
+
+/* Desktop default for sign-in icon */
+.btn-sign-in .material-icons {
+    font-size: 28px;
+}
+
+.btn-add-event {
+    background: #82bff2;
+    color: #19243b;
+    border-color: transparent;
+    white-space: nowrap;
+}
+
+.btn-add-event:hover {
+    background: #a3d2f7;
+}
+
+.btn-add-event:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .header-actions { gap: 8px; }
+    .btn-add-event { padding: 8px 12px; }
+}
+
+@media (max-width: 380px) {
+    .user-header-container { padding: 0 8px; }
+    .header-logo { max-width: 80px; }
+    .header-actions { gap: 4px; }
+    .btn-add-event { padding: 8px; font-size: 14px; }
+}
+
+.add-event-short { display: none; }
+
+@media (max-width: 600px) {
+    .add-event-full { display: none; }
+    .add-event-short { display: inline; }
+    .btn-add-event { flex-shrink: 0; white-space: nowrap; }
+}
+
+/* Native buttons keep the existing icon layout and expose keyboard focus. */
+.settings-icon-btn, .popover-close-btn, button.user-info-container {
+    border: 0;
+    background: transparent;
+    font: inherit;
+}
+.settings-icon-btn, .popover-close-btn {
+    font-family: 'Material Icons';
+    font-size: 24px;
+    min-width: 40px;
+    min-height: 40px;
+}
+button.user-info-container { padding: 0; color: white; }
+.settings-icon-btn:focus-visible, button.user-info-container:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 3px;
+}
+.popover-close-btn:focus-visible {
+    opacity: 1;
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+}
+
+/* Public site navigation stays separate from account actions. */
+.has-public-navigation { column-gap: 24px; }
+.header-public-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+.header-public-navigation a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 10px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: 4px;
+}
+.header-public-navigation a:hover { background: rgba(255,255,255,.1); }
+.header-public-navigation a:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+.has-public-navigation .header-actions {
+    border-left: 1px solid rgba(255,255,255,.24);
+    padding-left: 24px;
+}
+@media (max-width: 900px) {
+    .user-header-container.has-public-navigation {
+        height: auto;
+        min-height: var(--header-height);
+        display: grid;
+        grid-template-columns: minmax(0,1fr) auto;
+        column-gap: 12px;
+    }
+    .has-public-navigation .header-home-link,
+    .has-public-navigation .header-actions {
+        min-height: var(--header-height);
+        display: flex;
+        align-items: center;
+    }
+    .has-public-navigation .header-actions {
+        grid-column: 2;
+        grid-row: 1;
+        border-left: 0;
+        padding-left: 0;
+    }
+    .header-public-navigation {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-content: flex-end;
+        margin: 0;
+        border-top: 1px solid rgba(255,255,255,.16);
+        padding: 2px 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .has-public-navigation.has-header-settings { position: relative; }
+    .has-public-navigation.has-header-settings .header-public-navigation { padding-right: 60px; }
+    .has-public-navigation.has-header-settings .header-actions > .settings-icon-btn {
+        position: absolute;
+        right: 8px;
+        bottom: 2px;
+        width: 44px;
+        height: 44px;
+    }
+}

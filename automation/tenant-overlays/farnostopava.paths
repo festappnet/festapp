@@ -1,0 +1,6 @@
+# Web-only tenant overlay paths. Shared historical mobile identities do not
+# create a Farnost Opava store release lane.
+automation/project.conf
+netlify.toml
+web_client/public/netlify-retire-worker.js
+automation/release/legal/**

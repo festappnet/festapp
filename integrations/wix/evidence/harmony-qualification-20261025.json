@@ -1,0 +1,141 @@
+{
+  "verifiedAt": "2026-10-25T21:36:22Z",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "extensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "site": {
+    "metaSiteId": "60fac33a-8ef8-4122-a754-2b6b98a7428b",
+    "documentId": "b4365245-01c7-4e0d-9ef5-6004d18f8cdb",
+    "editor": "Wix Harmony",
+    "url": "https://info9468674.wixsite.com/my-site-3",
+    "createdFrom": "Official https://www.wix.com/harmony > Use Template, no AI generation",
+    "freeOrdinarySite": true,
+    "premiumPlanStarted": false,
+    "published": true
+  },
+  "installation": {
+    "route": "Distribute App > Install on a site > Release Version & Continue > select only owned My Site 3 > Continue > Agree & Add",
+    "version": "1.0",
+    "distribution": "Unlisted released version used only on owned QA site; not access-private",
+    "additionalInstallLinkShared": false,
+    "marketplaceSubmitted": false,
+    "nativeInstalledAppsReadback": "vstupenky.online - Open in Editor",
+    "finishSetupObserved": true,
+    "nativeAddToSiteClickedOnce": true,
+    "nativeTechnicalIssueObserved": false,
+    "widgetPlacement": "Add > Elements > More > Installed Apps > vstupenky.online Default Preset",
+    "componentId": "comp-mvoc1uhp",
+    "settingsOpenedVia": "Native settings action",
+    "sourceHead": "a8e5cfd6566ab3dc412492c7a78d9318644e5c08",
+    "widgetSha256": "909666e08e16a89d40e425896c6885a5c04a42cc1df76570dd538e167df81d04",
+    "baselineNativeConsent": "Read site, business and owner login email details; no additional app permissions were added",
+    "commercialApprovalObtained": false
+  },
+  "settings": {
+    "form-url": "https://vstupenky.online/form/wix-qa-20261025",
+    "form-title": "Wix Harmony QA - prodej vstupenek",
+    "inherit-style": "false",
+    "saveStatus": "Uloženo. Formulář ověřte na zveřejněném webu.",
+    "fullEditorReloadReadbackVerified": true
+  },
+  "hostModes": {
+    "Editor": {
+      "observed": true,
+      "checkoutIframes": 0,
+      "embedHelperLoaded": false
+    },
+    "Preview": {
+      "observed": true,
+      "checkoutIframes": 0,
+      "embedHelperLoaded": false
+    },
+    "Site": {
+      "observed": true,
+      "checkoutIframes": 1,
+      "canonicalHelperLoaded": true
+    }
+  },
+  "transport": {
+    "backend": "http://127.0.0.1:59821",
+    "clientVersion": "0.20.404+905",
+    "templateSha256": "71ab6f26e3febd8a0cecfcbd4bd9d27561a8ea8c0d4f36c8e86782eb71b9eb24",
+    "helperSource": "live service",
+    "networkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ]
+  },
+  "productionHtmlAndBackendAuthCorsAdapted": true,
+  "productionFrontendJavascriptModified": false,
+  "allRecordedTransportStatuses": [
+    200
+  ],
+  "layout": {
+    "initialProblem": "Template placed widget at approximately 145 desktop / 119 mobile CSS px, narrower than the form; iframe content overflowed",
+    "resolution": "Resize the selected widget with native editor handles independently on Desktop and Mobile, then publish. No source CSS or DOM override",
+    "desktop": {
+      "viewport": 1280,
+      "documentScrollWidth": 1280,
+      "widgetWidth": 642.296875,
+      "iframeWidth": 642,
+      "iframeScrollWidth": 642,
+      "iframeHeightAfterSummaryClosed": 691
+    },
+    "mobile": {
+      "viewport": 320,
+      "documentScrollWidth": 320,
+      "widgetX": 19.6875,
+      "widgetWidth": 280.625,
+      "iframeWidth": 281,
+      "iframeScrollWidth": 281,
+      "summaryIframeHeight": 740,
+      "summarySubmitTop": 619.671875,
+      "summarySubmitBottom": 671.453125,
+      "fallbackTargetHeight": 44
+    }
+  },
+  "interaction": {
+    "syntheticBuyer": "wix-harmony-qa-20261025@example.invalid",
+    "fictionalName": "Jana Nováková",
+    "ticketSelected": true,
+    "nativeEmailTypoWarningAcknowledged": true,
+    "summaryOpened": true,
+    "summarySubmitVisible": true,
+    "summaryClosed": true,
+    "visibleDialogsAfterClose": 0,
+    "valuesPreservedAfterClose": true,
+    "submitOrderClicks": 0,
+    "fixtureOrdersAfter": 2,
+    "priorKnownFixtureOrders": 2,
+    "realPaymentMade": false
+  },
+  "screenshot": {
+    "path": "screenshots/harmony-published-mobile.png",
+    "sha256": "842b52741f5e3670ca20d3cb83eabe7a90f30b59e01c1a0bf67625260372a327",
+    "nativeUnedited": true
+  },
+  "cleanup": {
+    "browserAndTransportClosed": true,
+    "unusedClassicOnboardingSite": "My Site 1 / 9e1f3107-d01c-4e5e-9e10-b21b74f56e0b moved to reversible Trash and disappearance verified",
+    "noFeedbackOrAdditionalSupportSent": true
+  },
+  "fullyQualified": false,
+  "remaining": [
+    "Provider redirect/return and native Safari",
+    "Seat map and full multi-widget/lifecycle matrix in Harmony",
+    "Native clean Add to Site warning remains unresolved for the earlier Editor development-site flow",
+    "Two developer portal pages and commercial approval/reporting gates"
+  ],
+  "limits": [
+    "Ordinary free Harmony site, not the unavailable Harmony premium dev-site route",
+    "Adapted synthetic HTML/backend/auth/CORS; no production purchase, payment return or production CORS qualification",
+    "No new order; summary rendering and close only",
+    "Template-specific native width adjustment is required; no claim that arbitrary templates produce correct defaults",
+    "A successful unlisted release does not approve billing, Marketplace listing or access-private distribution"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "version": "2026-08-30.1",
+  "status": "rehearsal-validated-cutover-blocking",
+  "rules": [
+    { "table": "public.organizations", "path": "data.DEFAULT_UNIT", "reference": "public.units.id", "mapping": "units", "nullable": true, "transform": "numeric-id", "validator": "mapped-or-null" },
+    { "table": "public.organizations", "path": "data.REPRESENTATIVE_OCCASION", "reference": "public.occasions.id", "mapping": "occasions", "nullable": true, "transform": "numeric-id", "validator": "mapped-or-null" },
+    { "table": "public.organizations", "path": "data.DEFAULT_OCCASION", "reference": "public.occasions.id", "mapping": "occasions", "nullable": true, "transform": "numeric-id", "validator": "mapped-or-null" },
+    { "table": "public.external_sync_sources", "path": "supabase_url", "reference": "endpoint", "mapping": "canonical-endpoint", "nullable": true, "transform": "exact-url", "validator": "canonical-or-approved-external" },
+    { "table": "public.external_sync_maps", "path": "*", "reference": "external-sync", "mapping": "reachability-decision", "nullable": false, "transform": "explicit-policy", "validator": "approved-external-or-deletion-ledger" },
+    { "table": "public.events", "path": "occasion", "reference": "public.occasions.id", "mapping": "occasions", "nullable": false, "transform": "numeric-id", "validator": "mapped" },
+    { "table": "public.email_templates", "path": "unit", "reference": "public.units.id", "mapping": "units", "nullable": true, "transform": "numeric-id", "validator": "mapped-or-null" },
+    { "table": "public.log_app_config", "path": "organization", "reference": "public.organizations.id", "mapping": "organizations", "nullable": false, "transform": "numeric-id", "validator": "mapped" },
+    { "table": "public.role_info", "path": "occasion", "reference": "public.occasions.id", "mapping": "occasions", "nullable": false, "transform": "numeric-id", "validator": "mapped" },
+    { "table": "eshop.planned_changes", "path": "subject_id", "reference": "polymorphic:change_type", "mapping": "forms when change_type starts forms.", "nullable": false, "transform": "registered-polymorphic-id", "validator": "registered-type-and-mapped" },
+    { "table": "eshop.blueprints", "path": "objects[].id when type=spot", "reference": "eshop.spots.id", "mapping": "spots", "nullable": false, "transform": "numeric-id", "validator": "mapped" },
+    { "table": "eshop.orders", "path": "data.tickets[].id", "reference": "eshop.tickets.id", "mapping": "tickets", "nullable": false, "transform": "numeric-id", "validator": "mapped-when-live-snapshot-otherwise" },
+    { "table": "eshop.orders", "path": "data.tickets[].products[].id", "reference": "eshop.products.id", "mapping": "products", "nullable": false, "transform": "numeric-id", "validator": "mapped-when-live-snapshot-otherwise" },
+    { "table": "eshop.orders_history", "path": "data and data.input_data internal ids", "reference": "tickets/products/spots/product_types/form_fields", "mapping": "registered-snapshot-ids", "nullable": true, "transform": "mapped-when-live", "validator": "exact-transformed-payload" },
+    { "table": "public.occasion_users", "path": "user", "reference": "auth.users.id", "mapping": "approved-identity-merge", "nullable": false, "transform": "uuid", "validator": "auth-user-exists" },
+    { "table": "public.user_news", "path": "user", "reference": "auth.users.id", "mapping": "approved-identity-merge", "nullable": false, "transform": "uuid", "validator": "auth-user-exists" },
+    { "table": "public.log_notifications", "path": "user_id", "reference": "auth.users.id", "mapping": "approved-identity-merge", "nullable": true, "transform": "uuid", "validator": "auth-user-exists-or-null" },
+    { "table": "eshop.transaction_pairing_events", "path": "transaction_snapshot_id", "reference": "eshop.transactions.id-or-deleted-audit-snapshot", "mapping": "transactions when live", "nullable": false, "transform": "mapped-when-live", "validator": "mapped-or-retained-snapshot" },
+    { "table": "public.external_sync_sources", "path": "vstupenky_remote", "reference": "retired-inter-project-sync", "mapping": "preserve-inert", "nullable": false, "transform": "revoke-runtime-entrypoints", "validator": "no-cron-and-no-service-role-execute" },
+    { "table": "public.images", "path": "link", "reference": "storage-or-r2-object", "mapping": "preserve-r2; rewrite-all-registered-legacy-storage-links-at-canonical-hostname-cutover", "nullable": false, "transform": "registered-url", "validator": "object-exists-and-approved-host" }
+    ,{ "table": "public.organizations", "path": "data.ONESIGNAL_REST_API_KEY", "reference": "server-only-notification-credential", "mapping": "organization_notification_secrets by mapped organization id", "nullable": true, "transform": "extract-and-remove", "validator": "service-role-rpc-only" }
+  ],
+  "requiredInventoryFamilies": [
+    "occasion-and-form-payloads",
+    "ticket-order-spot-product-payloads",
+    "transaction-bank-payloads",
+    "client-sync-heads-and-urls",
+    "cron-webhook-urls",
+    "storage-object-references"
+  ],
+  "cutoverGates": [
+    "rewrite-all-registered-legacy-storage-links-to-api.festapp.net",
+    "fresh-source-export-and-repeatable-import",
+    "compatible-web-android-ios-releases",
+    "production-hostname-and-origin-health"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "festapp-supabase-legacy-keepalive",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "pnpm": "11.24.0"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-25",
+  "ownerInstruction": "Do not send duplicate Wix support requests; reconcile earlier communication first",
+  "newMessageSent": true,
+  "connectedMailbox": {
+    "sentSearch": "in:sent (wix OR \"Partner Billed\" OR \"publisher fee\" OR \"revenue sharing\")",
+    "matchingSentMessages": 0,
+    "wixCorrespondenceSince": "2026-10-20",
+    "results": "Pre-submission search found no prior request. Later broad incoming search found the acknowledgement of this single submission; no expert reply observed."
+  },
+  "wixWorkspaceHistory": {
+    "url": "https://manage.wix.com/studio/partner-tickets",
+    "accountWorkspace": "info9468674",
+    "visibleState": "No support tickets yet / No results found"
+  },
+  "scopeLimit": "This does not prove absence of requests from another mailbox, account or developer-specific support channel",
+  "action": "SUBMITTED ONCE through official Request Custom Billing developer intake; do not resend",
+  "ownerConditionalAuthorization": "Send once only if no previous request is found and public documentation cannot resolve it",
+  "submission": {
+    "confirmedAt": "2026-10-25T16:10:11.619323+00:00",
+    "title": "Custom billing approval - vstupenky.online",
+    "messageSha256": "1fb9017962f6e9bbc19069cfd17ee338572a979c61c6314277b771ce952ab1c9",
+    "channel": "https://www.wix.com/support-chatbot?nodeId=25a57397-ccf7-4376-8b74-48d51edf7159&referral=devRels",
+    "confirmation": "Request submitted! All requests related to app development and the App Market are currently handled via email. One of our Experts will reply to you within 72 hours.",
+    "caseId": "3000345850",
+    "emailReceiptObserved": true,
+    "fixedChargesAccepted": false,
+    "reasonContactNecessary": "Both custom billing and usage-based billing access require individual approval in live Pricing UI; public documentation cannot grant it.",
+    "acknowledgedAt": "2026-10-25T16:09:49Z",
+    "approvalObtained": false
+  },
+  "additionalMessagesSent": true,
+  "technicalFollowup": {
+    "authorizedByOwner": true,
+    "caseId": "3000345850",
+    "sentOnce": true,
+    "replyToOriginalAcknowledgement": true,
+    "sameThreadReadbackVerified": true,
+    "sentLabelReadbackVerified": true,
+    "scope": [
+      "Contact Info module HTTP403",
+      "Security & Privacy module HTTP403"
+    ],
+    "newCaseRequested": false,
+    "billingTermsAccepted": false,
+    "wixTechnicalReplyObserved": false,
+    "delivered": false,
+    "smtpFailure": "550 5.7.1: new support requests cannot be submitted through emails to this address",
+    "deliveryFailureObserved": true,
+    "nativeCaseCount": 1,
+    "nativeCaseStatus": "Open",
+    "nativeCaseReadbackVerified": true,
+    "nativeTicketViewerReplyAllowed": false,
+    "newChatIntakeSubmitted": false,
+    "nextAction": "Use the actual Expert reply channel when Wix responds; do not create a duplicate case"
+  }
+}

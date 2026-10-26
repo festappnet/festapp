@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "publicHosts": ["img.festapp.net", "a.img.festapp.net"],
+  "sourcePathPrefix": "/images/",
+  "widths": [300, 600, 1200],
+  "options": [
+    "width=300,fit=scale-down,format=auto,quality=75,onerror=redirect",
+    "width=600,fit=scale-down,format=auto,quality=75,onerror=redirect",
+    "width=1200,fit=scale-down,format=auto,quality=75,onerror=redirect"
+  ]
+}

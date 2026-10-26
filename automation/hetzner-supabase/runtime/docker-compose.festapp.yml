@@ -1,0 +1,144 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
+services:
+  caddy:
+    image: caddy:2.11.4@sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba
+    container_name: festapp-caddy
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      FESTAPP_SUPABASE_HOSTNAME: ${FESTAPP_SUPABASE_HOSTNAME:-rehearsal-api.festapp.net}
+      FESTAPP_SUPABASE_SITE_ADDRESSES: ${FESTAPP_SUPABASE_SITE_ADDRESSES:-rehearsal-api.festapp.net}
+      FESTAPP_SUPABASE_ADMIN_SITE: ${FESTAPP_SUPABASE_ADMIN_SITE:-http://127.0.0.1:8999}
+      FESTAPP_SUPABASE_ADMIN_HOSTNAME: ${FESTAPP_SUPABASE_ADMIN_HOSTNAME:-supabase.festapp.net}
+      FESTAPP_SUPABASE_ADMIN_BASIC_AUTH: ${FESTAPP_SUPABASE_ADMIN_BASIC_AUTH:?configure the internal administrator origin credential}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+  admin-tunnel:
+    profiles:
+      - admin-dashboard
+    image: cloudflare/cloudflared:2026.9.0@sha256:5f72bbdac390ffa27f1275218b39f658ff39b259d278f295386af36da4d3632b
+    container_name: festapp-supabase-admin-tunnel
+    restart: unless-stopped
+    network_mode: host
+    # Compose implements file-backed secrets as bind mounts and therefore
+    # preserves the root-only 0600 host permissions. Run as root inside this
+    # capability-free, read-only container so the token never needs weaker
+    # host permissions.
+    user: "0:0"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --metrics
+      - 127.0.0.1:20241
+      - run
+      - --token-file
+      - /run/secrets/admin_tunnel_token
+    secrets:
+      - admin_tunnel_token
+    logging: *logging
+  studio:
+    image: supabase/studio:2026.08.03-sha-022b374@sha256:cb20b9a2b8fbb4f47a616c959dfdbde75668603c38d5ddd018e3f25a9f009937
+    entrypoint:
+      - /bin/sh
+      - /opt/festapp-studio/entrypoint.sh
+    command:
+      - node
+      - apps/studio/server.js
+    volumes:
+      - ./studio-customization/entrypoint.sh:/opt/festapp-studio/entrypoint.sh:ro
+      - ./studio-customization/install-logout.mjs:/opt/festapp-studio/install-logout.mjs:ro
+      - ./studio-customization/logout.js:/opt/festapp-studio/logout.js:ro
+    logging: *logging
+  api-gw:
+    image: envoyproxy/envoy:v1.39.0@sha256:5edd669228659835ac243e3ffa5c08a65e92bb267d56da5c28317dbcf5a70292
+    ports: !override
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8443:8443"
+    logging: *logging
+  auth:
+    environment:
+      GOTRUE_RATE_LIMIT_HEADER: X-Festapp-Client-IP
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED: "true"
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI: pg-functions://postgres/public/password_verification_attempt_v1
+    image: supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7
+    logging: *logging
+  rest:
+    image: postgrest/postgrest:v14.12@sha256:844785450d6b046ee97f1c67ea37e3ff6b4ed7ee3570b1b91c03f66f032c4805
+    logging: *logging
+  realtime:
+    image: supabase/realtime:v2.102.3@sha256:11651eb260639365adfd8d886ac1bfba9b069440cf92cc29f400f3b4a6554cb9
+    logging: *logging
+  meta:
+    image: supabase/postgres-meta:v0.96.6@sha256:abbb468e4e5a14b5b4edd29caf1fa1d98ee606da89fed3bfc653a6f85985401a
+    logging: *logging
+  functions:
+    image: supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7
+    environment:
+      FESTAPP_MCP_TENANTS_JSON: ${FESTAPP_MCP_TENANTS_JSON:-[]}
+      FESTAPP_TRUSTED_IP_HEADER: X-Festapp-Client-IP
+      GOOGLE_AUTH_TRUSTED_IP_HEADER: X-Festapp-Client-IP
+      FESTAPP_ALLOWED_WEB_ORIGINS: ${FESTAPP_ALLOWED_WEB_ORIGINS:-https://festapp-rehearsal.invalid}
+      GOOGLE_OIDC_CLIENT_ID: ${GOOGLE_OIDC_CLIENT_ID:-}
+      GOOGLE_OIDC_CLIENT_SECRET: ${GOOGLE_OIDC_CLIENT_SECRET:-}
+      GOOGLE_OIDC_CALLBACK_URL: ${GOOGLE_OIDC_CALLBACK_URL:-}
+      GOOGLE_AUTH_ENCRYPTION_KEY: ${GOOGLE_AUTH_ENCRYPTION_KEY:-}
+      GOOGLE_AUTH_MAILBOX_HMAC_KEY: ${GOOGLE_AUTH_MAILBOX_HMAC_KEY:-}
+      BANKSYNC_INSTANCE_ID: ${BANKSYNC_INSTANCE_ID:-}
+      BANKSYNC_API_URL: ${BANKSYNC_API_URL:-}
+      BANKSYNC_TENANT_ADMIN_KEY: ${BANKSYNC_TENANT_ADMIN_KEY:-}
+      BANKSYNC_WEBHOOK_SECRET: ${BANKSYNC_WEBHOOK_SECRET:-}
+      BANKSYNC_CONTROL_KEY_VERSION: ${BANKSYNC_CONTROL_KEY_VERSION:-1}
+      BANKSYNC_CONTROL_KEY_1: ${BANKSYNC_CONTROL_KEY_1:-}
+      # Empty by default; provision only for an explicitly enabled Stripe preview.
+      STRIPE_MODE: ${STRIPE_MODE:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PLATFORM_ACCOUNT_ID: ${STRIPE_PLATFORM_ACCOUNT_ID:-}
+      STRIPE_API_VERSION: ${STRIPE_API_VERSION:-}
+      STRIPE_ALLOWED_ORIGINS: ${STRIPE_ALLOWED_ORIGINS:-[]}
+      STRIPE_CONNECT_CLIENT_ID: ${STRIPE_CONNECT_CLIENT_ID:-}
+      STRIPE_CONNECT_CALLBACK_URL: ${STRIPE_CONNECT_CALLBACK_URL:-}
+      STRIPE_WEBHOOK_SECRETS: ${STRIPE_WEBHOOK_SECRETS:-[]}
+      DEFAULT_EMAIL: ${SMTP_ADMIN_EMAIL}
+      PROJECT_URL: http://api-gw:8000
+      QR_RATE_SALT: ${QR_RATE_SALT:?configure QR_RATE_SALT before starting Edge Functions}
+      AWS_SNS_TOPIC_ARN: ${AWS_SNS_TOPIC_ARN:?configure the exact AWS SNS topic ARN}
+      NOTIFY_WEBHOOK_TOKEN: ${NOTIFY_WEBHOOK_TOKEN:?configure the notification webhook token}
+      TICKET_BATCH_SERVICE_SECRET: ${TICKET_BATCH_SERVICE_SECRET:?configure the dedicated Worker batch capability}
+      TICKET_FONT_SERVICE_SECRET: ${TICKET_FONT_SERVICE_SECRET:?configure the dedicated Worker font capability}
+      ASSET_CLEANUP_SERVICE_SECRET: ${ASSET_CLEANUP_SERVICE_SECRET:?configure the dedicated account asset cleanup capability}
+    logging: *logging
+  db:
+    image: supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a
+    logging: *logging
+  supavisor:
+    image: supabase/supavisor:2.9.5@sha256:1dd306835b0215909cf76371a7a20be71268bbc97619f7133b882c5e9a7392e8
+    ports: !reset []
+    logging: *logging
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+secrets:
+  admin_tunnel_token:
+    file: ${FESTAPP_ADMIN_TUNNEL_TOKEN_FILE:-/etc/festapp-cloudflared/admin-tunnel.token}

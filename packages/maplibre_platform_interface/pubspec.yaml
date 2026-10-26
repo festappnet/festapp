@@ -1,0 +1,21 @@
+name: maplibre_platform_interface
+description: "Shared interfaces for the Flutter MapLibre plugin."
+version: 0.3.7
+repository: https://github.com/josxha/flutter-maplibre
+issue_tracker: https://github.com/josxha/flutter-maplibre/issues
+homepage: https://flutter-maplibre.pages.dev
+documentation: https://flutter-maplibre.pages.dev/docs/
+
+platforms: { android: ,ios: , linux: , macos: , web: , windows: }
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter: { sdk: flutter }
+  geobase: ^1.5.0
+  plugin_platform_interface: ^2.1.8
+
+dev_dependencies:
+  very_good_analysis: ^10.0.0

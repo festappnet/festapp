@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Festapp · Self-hosted Supabase status</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07120f;
+      --panel: #0d1d18;
+      --panel-2: #11251e;
+      --line: #214238;
+      --text: #ecfff7;
+      --muted: #9db9ae;
+      --green: #65e6ad;
+      --green-2: #26b77d;
+      --amber: #ffca70;
+      --red: #ff8f85;
+      --blue: #7cc8ff;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(38, 183, 125, .17), transparent 32rem),
+        radial-gradient(circle at 100% 20%, rgba(124, 200, 255, .09), transparent 34rem),
+        var(--bg);
+    }
+
+    a { color: inherit; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 28px 0 14px; }
+    .brand { display: flex; align-items: center; gap: 11px; color: var(--muted); font-size: 14px; }
+    .brand-mark { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, var(--green), #177456); box-shadow: 0 0 24px rgba(101, 230, 173, .28); }
+
+    .hero {
+      margin-top: 28px;
+      padding: clamp(28px, 5vw, 56px);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(17, 37, 30, .97), rgba(9, 23, 18, .94));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after { content: ""; position: absolute; inset: auto -90px -120px auto; width: 330px; height: 330px; border-radius: 50%; border: 58px solid rgba(101, 230, 173, .06); }
+    .eyebrow { color: var(--green); font-weight: 750; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    h1 { margin: 12px 0 12px; max-width: 850px; font-size: clamp(38px, 6vw, 74px); line-height: .98; letter-spacing: -.055em; }
+    .lead { max-width: 780px; margin: 0; color: var(--muted); font-size: clamp(17px, 2vw, 21px); line-height: 1.55; }
+    .answer { color: var(--green); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .pill { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(7, 18, 15, .6); color: var(--muted); font-size: 13px; }
+    .pill strong { color: var(--text); }
+
+    .section { margin: 44px 0; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: clamp(25px, 3vw, 36px); letter-spacing: -.035em; }
+    .section-note { margin: 6px 0 0; color: var(--muted); line-height: 1.5; }
+    .tag { flex: none; color: var(--amber); font-size: 13px; font-weight: 700; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card { border: 1px solid var(--line); background: rgba(13, 29, 24, .86); border-radius: 20px; padding: 22px; }
+    .card h3 { margin: 0 0 8px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .card .big { margin-bottom: 7px; font-size: 34px; font-weight: 800; letter-spacing: -.04em; }
+    .card .big.green { color: var(--green); }
+    .card .big.amber { color: var(--amber); }
+    .card .big.red { color: var(--red); }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+
+    .flow { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: stretch; gap: 12px; }
+    .flow-panel { padding: 24px; border: 1px solid var(--line); border-radius: 22px; background: var(--panel); }
+    .flow-panel.future { border-style: dashed; opacity: .72; }
+    .flow-title { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .flow-title h3 { margin: 0; font-size: 20px; }
+    .state { border-radius: 99px; padding: 5px 9px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .state.live { color: var(--green); background: rgba(101, 230, 173, .09); }
+    .state.future { color: var(--muted); background: rgba(157, 185, 174, .08); }
+    .nodes { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .node { padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); font-size: 13px; }
+    .arrow { color: var(--muted); }
+    .flow-mid { display: grid; place-items: center; color: var(--amber); font-weight: 800; text-align: center; font-size: 12px; }
+    .flow-mid span { transform: rotate(-90deg); white-space: nowrap; }
+
+    .timeline { position: relative; display: grid; gap: 12px; }
+    .step { display: grid; grid-template-columns: 34px 150px 1fr auto; gap: 15px; align-items: center; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(13, 29, 24, .72); }
+    .dot { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; font-size: 13px; }
+    .done .dot { background: var(--green); color: #062418; }
+    .active .dot { background: var(--amber); color: #332207; box-shadow: 0 0 0 5px rgba(255, 202, 112, .08); }
+    .todo .dot { border: 1px solid var(--line); color: var(--muted); }
+    .step-name { font-weight: 800; }
+    .step-desc { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .step-status { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .done .step-status { color: var(--green); }
+    .active .step-status { color: var(--amber); }
+    .todo .step-status { color: var(--muted); }
+
+    .blocker { display: flex; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .blocker:last-child { border-bottom: 0; padding-bottom: 0; }
+    .num { flex: none; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--amber); background: rgba(255, 202, 112, .08); font-weight: 800; }
+    .blocker strong { display: block; margin-bottom: 3px; }
+    .blocker span { color: var(--muted); line-height: 1.45; font-size: 14px; }
+
+    .callout { padding: 24px; border-left: 4px solid var(--amber); border-radius: 4px 18px 18px 4px; background: rgba(255, 202, 112, .07); }
+    .callout strong { color: var(--amber); }
+    .callout p { margin: 7px 0 0; color: var(--muted); line-height: 1.6; }
+
+    .links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .links a { text-decoration: none; padding: 10px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); color: var(--muted); }
+    .links a:hover { border-color: var(--green-2); color: var(--text); }
+    footer { padding: 18px 0 40px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 850px) {
+      .span-3, .span-4, .span-6 { grid-column: span 12; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-mid { min-height: 38px; }
+      .flow-mid span { transform: none; }
+      .step { grid-template-columns: 34px 1fr auto; }
+      .step-desc { grid-column: 2 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Festapp infrastructure · stav k 28. 8. 2026</div>
+    <section class="hero">
+      <div class="eyebrow">Krátká odpověď</div>
+      <h1>Rehearsal Supabase <span class="answer">už běží.</span></h1>
+      <p class="lead">Na skutečném Hetzner CAX11 v účtu Mendelio běží chráněný ARM64 stack se všemi 11 službami healthy. V izolovaném rehearsalu je ověřená sloučená kopie obou cloudů; produkční write owner ani DNS se zatím nezměnily.</p>
+      <div class="hero-meta">
+        <span class="pill"><strong>Produkce:</strong> beze změny</span>
+        <span class="pill"><strong>Mazání:</strong> žádné</span>
+        <span class="pill"><strong>Cena:</strong> €7,8529 / měsíc s DPH</span>
+        <span class="pill"><strong>Storage:</strong> zatím Supabase</span>
+      </div>
+    </section>
+  </header>
+
+  <main class="wrap">
+    <section class="section">
+      <div class="section-head"><div><h2>Kde jsme právě teď</h2><p class="section-note">Rehearsal infrastruktura je reálná a online; produkční cutover zůstává uzavřený.</p></div><div class="tag">REHEARSAL · ONLINE</div></div>
+      <div class="grid">
+        <article class="card span-3"><div class="big green">4</div><h3>Šifrované snapshoty</h3><p>Aplikační i Auth/Storage exporty obou cloudů mají ověřené manifesty a SHA-256.</p></article>
+        <article class="card span-3"><div class="big green">41</div><h3>RPC kontraktů</h3><p>Hardening je připravený, ale záměrně nenasazený.</p></article>
+        <article class="card span-3"><div class="big green">2</div><h3>Zachované legacy řádky</h3><p>Dvě companion vazby bez společné occasion jsou přesně zachované v privátní karanténě; žádná falešná vazba nebyla vytvořena.</p></article>
+        <article class="card span-3"><div class="big green">1</div><h3>Self-hosted server</h3><p>CAX11 ARM v NBG1; 11/11 Supabase služeb healthy, Caddy běží a databáze je neveřejná.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Dnešní provoz vs. cíl</h2><p class="section-note">Cloudflare nebude rozhodovat relační zápisy; bude front door, WAF a vrstva pro existující R2 image delivery.</p></div></div>
+      <div class="flow">
+        <article class="flow-panel">
+          <div class="flow-title"><h3>Dnes</h3><span class="state live">běží</span></div>
+          <div class="nodes"><span class="node">Aplikace</span><span class="arrow">→</span><span class="node">Supabase default</span><span class="node">Supabase a</span><span class="node">Supabase Slunovrat</span></div>
+        </article>
+        <div class="flow-mid"><span>řízený cutover</span></div>
+        <article class="flow-panel">
+          <div class="flow-title"><h3>Rehearsal cíl</h3><span class="state live">online / izolovaný</span></div>
+          <div class="nodes"><span class="node">Cloudflare Strict</span><span class="arrow">→</span><span class="node">Caddy</span><span class="arrow">→</span><span class="node">loopback gateway</span><span class="arrow">→</span><span class="node">Hetzner Supabase</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Mapa celé migrace</h2><p class="section-note">Oba kompletní merge rehearsaly jsou validované. Aktivní je příprava klientských releasů a finálních cutover gateů.</p></div></div>
+      <div class="timeline">
+        <div class="step done"><span class="dot">✓</span><span class="step-name">Wave 0 · Evidence</span><span class="step-desc">Schéma, kolize, ID mapy, Auth, Storage a transformační pravidla jsou doložené.</span><span class="step-status">hotovo</span></div>
+        <div class="step done"><span class="dot">✓</span><span class="step-name">Architektura</span><span class="step-desc">PG17, pinned Supabase bundle, journalované RPC, Cloudflare mimo DB write path.</span><span class="step-status">rozhodnuto</span></div>
+        <div class="step done"><span class="dot">✓</span><span class="step-name">Rehearsal základ</span><span class="step-desc">Terraform, chráněný Hetzner CAX11, hardened host a pinned Supabase stack.</span><span class="step-status">online</span></div>
+        <div class="step done"><span class="dot">✓</span><span class="step-name">Rehearsal ×2</span><span class="step-desc">Dvě sloučení z nezávislých snapshotů, reference opravy, Storage payloady, endpoint canary a izolované restore drilly prošly. Runtime běží na druhém čerstvém cíli.</span><span class="step-status">2 / 2</span></div>
+        <div class="step todo"><span class="dot">5</span><span class="step-name">Cutover</span><span class="step-desc">Freeze, import, nulový lag, DNS/config přepnutí a otevření cílových zápisů.</span><span class="step-status">nezačalo</span></div>
+        <div class="step todo"><span class="dot">6</span><span class="step-name">Stabilizace</span><span class="step-desc">Cloudy zůstanou read-only po retenční dobu; odstranění až po novém schválení.</span><span class="step-status">nezačalo</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Co teď konkrétně blokuje postup</h2></div></div>
+      <div class="grid">
+        <article class="card span-6">
+          <div class="blocker"><span class="num">1</span><div><strong>Podepsaný Android AAB</strong><span>Historické příkazy 1029/1030 nemají výsledek a míří na překonaný overlay. Nový build-only příkaz vznikne až z finální větve; Android zůstává odložený na Windows builder.</span></div></div>
+          <div class="blocker"><span class="num">2</span><div><strong>Finální full freeze</strong><span>Hybridní journal není autorizovaný bez 100% globálního pokrytí. Produkční cesta proto používá úplné uzavření všech zapisovatelů ještě před snapshotem.</span></div></div>
+          <div class="blocker"><span class="num">3</span><div><strong>Finální marker</strong><span>Čerstvé exporty všech tří registrovaných zdrojů, nulové mutující sessions a finální source markery mohou vzniknout až v reálném produkčním freeze okně.</span></div></div>
+        </article>
+        <article class="card span-6">
+          <div class="blocker"><span class="num">4</span><div><strong>Finální hostname a 228 Storage URL</strong><span>Všech 228 legacy URL ze tří zdrojů má hashově ověřený lokální objekt. Přepis na produkční <code>api.festapp.net</code> proběhne až při finálním gate.</span></div></div>
+          <div class="blocker"><span class="num">5</span><div><strong>Produkční klientská adopce</strong><span>CSM web i nový podepsaný iOS org-12 kandidát prošly s rotovaným anon credentialem včetně Auth/rights/write canary. Po AAB zbývá store schválení a adopce finálního <code>api.festapp.net</code> manifestu.</span></div></div>
+          <div class="blocker"><span class="num">6</span><div><strong>OneSignal rotace</strong><span>REST credential je už v kódu přesunutý mimo klientský DTO/RPC do server-only úložiště. Před produkcí se musí autorizovaně nahradit, ověřit canary a starý klíč musí prokazatelně selhat.</span></div></div>
+          <div class="blocker"><span class="num">7</span><div><strong>Kapacita rehearsal hostu</strong><span>Historický stav 304 MB je uzavřený: kontrola 30. 8. ukazuje přibližně 19 GB volných. Před freeze se kapacita a recovery bod ověří znovu.</span></div></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Co už je bezpečně připravené</h2></div></div>
+      <div class="grid">
+        <article class="card span-4"><h3>Runtime pinning</h3><p>Supabase <code>self-hosted/v0.8.0</code>, PG 17.6 a kontejnery připnuté digesty. Před provisioningem se znovu ověří nejnovější stabilní bundle.</p></article>
+        <article class="card span-4"><h3>Data a identity</h3><p>Všechny tři zdroje jsou <code>validated</code>. Slunovrat byl importován jako legacy read-only zdroj bez replaye chybějících migrací; 5 kolizních identit a všechny reference jsou deterministicky přemapované.</p></article>
+        <article class="card span-4"><h3>Storage hranice</h3><p>1 453 metadata objektů / 1 211 456 042 B je ve sloučeném self-hosted Storage a 1 717 fyzických souborů / 1 296 547 327 B prošlo clean restore. R2 image delivery zůstává oddělené a merge do něj nic nezapisoval.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="callout"><strong>Nejbližší správný krok</strong><p>Dokončit aktuální tenantní overlaye a privátní release manifesty; teprve potom vydat nový Windows build-only příkaz. Samotný cutover smí začít až úplným write/Auth/Storage/Functions freeze před exporty všech tří zdrojů a skončit validovanými source markery.</p></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><h2>Zdrojové dokumenty</h2></div></div>
+      <nav class="links" aria-label="Zdrojové dokumenty">
+        <a href="wave-0-gate-2026-08-27.md">Wave 0 gate</a>
+        <a href="architecture.md">Architektura</a>
+        <a href="merge-runbook.md">Merge runbook</a>
+        <a href="cutover-runbook.md">Cutover runbook</a>
+        <a href="version-policy.md">Version policy</a>
+        <a href="storage-authority.md">Storage authority</a>
+        <a href="deletion-ledger.md">Deletion ledger</a>
+        <a href="rehearsal-host-2026-08-27.md">Rehearsal host</a>
+        <a href="rehearsal-origin-2026-08-28.md">Rehearsal origin</a>
+        <a href="canonical-schema-rehearsal-2026-08-27.md">Canonical schema rehearsal</a>
+      </nav>
+    </section>
+  </main>
+
+  <footer class="wrap">Statický lokální dashboard · nevykonává žádné síťové ani produkční operace.</footer>
+</body>
+</html>

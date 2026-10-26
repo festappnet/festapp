@@ -1,0 +1,40 @@
+{
+  "observed_at": "2026-10-16T17:57:36.714110+00:00",
+  "verification": "Read-only final handoff checks after user requested a clean finish",
+  "live_probes": {
+    "/auth/v1/health": 200,
+    "/rest/v1/": 403,
+    "/storage/v1/status": 200,
+    "external_sync_sources": {
+      "status": 401,
+      "denied": true
+    },
+    "external_sync_maps": {
+      "status": 401,
+      "denied": true
+    },
+    "external_occasions_cache": {
+      "status": 401,
+      "denied": true
+    },
+    "websocket": 101,
+    "bounded_operational_health": {
+      "status": 200,
+      "ok": true,
+      "alerts": []
+    }
+  },
+  "wal_archiver": {
+    "archive_mode": "on",
+    "archive_timeout": "5min",
+    "last_archived_at": "2026-10-16T17:54:28.356671+00:00",
+    "last_failed_at": null,
+    "archived_count": 60,
+    "failed_count": 0,
+    "age_seconds_at_observation": 188
+  },
+  "host_and_database_identity_verified": true,
+  "database_running_without_oom": true,
+  "production_changes": false,
+  "full_service_cutover_rto_claimed": false
+}

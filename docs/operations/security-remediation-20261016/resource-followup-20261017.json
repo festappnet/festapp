@@ -1,0 +1,131 @@
+{
+  "first_at": 1792160330,
+  "last_at": 1792273484,
+  "samples": 1855,
+  "span_seconds": 113154,
+  "largest_sample_gap_seconds": 358,
+  "incomplete_container_samples": 0,
+  "host_memory_bytes": 3981275136,
+  "min_host_available_memory_bytes": 960163840,
+  "max_simultaneously_sampled_container_memory_bytes": 2923532288,
+  "valid_database_samples": 1728,
+  "valid_edge_samples": 1728,
+  "max_sampled_database_connections": 46,
+  "max_sampled_active_database_connections": 7,
+  "max_sampled_live_edge_workers": 6,
+  "container_maxima": {
+    "/festapp-caddy": {
+      "samples": 1855,
+      "max_memory_bytes": 56758272,
+      "max_working_set_bytes": 54067200,
+      "max_pids": 10
+    },
+    "/festapp-supabase-admin-tunnel": {
+      "samples": 1855,
+      "max_memory_bytes": 59293696,
+      "max_working_set_bytes": 53075968,
+      "max_pids": 10
+    },
+    "/realtime-dev.supabase-realtime": {
+      "samples": 1855,
+      "max_memory_bytes": 241459200,
+      "max_working_set_bytes": 213561344,
+      "max_pids": 34
+    },
+    "/supabase-auth": {
+      "samples": 1855,
+      "max_memory_bytes": 42958848,
+      "max_working_set_bytes": 31911936,
+      "max_pids": 16
+    },
+    "/supabase-db": {
+      "samples": 1855,
+      "max_memory_bytes": 767336448,
+      "max_working_set_bytes": 495349760,
+      "max_pids": 55
+    },
+    "/supabase-edge-functions": {
+      "samples": 1855,
+      "max_memory_bytes": 974888960,
+      "max_working_set_bytes": 910983168,
+      "max_pids": 26
+    },
+    "/supabase-envoy": {
+      "samples": 1855,
+      "max_memory_bytes": 89993216,
+      "max_working_set_bytes": 86773760,
+      "max_pids": 16
+    },
+    "/supabase-imgproxy": {
+      "samples": 1855,
+      "max_memory_bytes": 105701376,
+      "max_working_set_bytes": 96964608,
+      "max_pids": 17
+    },
+    "/supabase-meta": {
+      "samples": 1855,
+      "max_memory_bytes": 181362688,
+      "max_working_set_bytes": 169918464,
+      "max_pids": 24
+    },
+    "/supabase-pooler": {
+      "samples": 1855,
+      "max_memory_bytes": 340500480,
+      "max_working_set_bytes": 207208448,
+      "max_pids": 35
+    },
+    "/supabase-rest": {
+      "samples": 1855,
+      "max_memory_bytes": 160563200,
+      "max_working_set_bytes": 149749760,
+      "max_pids": 22
+    },
+    "/supabase-storage": {
+      "samples": 1855,
+      "max_memory_bytes": 347156480,
+      "max_working_set_bytes": 251150336,
+      "max_pids": 18
+    },
+    "/supabase-studio": {
+      "samples": 1855,
+      "max_memory_bytes": 351010816,
+      "max_working_set_bytes": 303890432,
+      "max_pids": 23
+    }
+  },
+  "feasibility_screen": {
+    "admin_hard_cap_sum_bytes": 1207959552,
+    "os_reserve_target_bytes": 536870912,
+    "logical_backup_reserve_target_bytes": 805306368,
+    "remaining_for_other_containers_bytes": 1431138304,
+    "sum_nonsimultaneous_other_working_set_maxima_bytes": 2550796288,
+    "shortfall_before_safety_margin_bytes": 1119657984,
+    "fits_conservative_criteria": false
+  },
+  "representative_business_peak_proven": false,
+  "whole_host_hard_cap_budget_complete": false,
+  "note": "Minute samples miss transient peaks. Working sets exclude inactive file cache; hard memory caps include it. Nonsimultaneous maxima and reserve targets are a feasibility screen, not cap recommendations or proof that paid resize is required.",
+  "reviewed_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "history_sha256": "014d76b065befa14248451735114157db3a2130523776baa0aec12b693e0fdeb",
+  "history_source": "Existing protected host minute collector, read-only SSH; no payloads or environment exported",
+  "production_mutations": false,
+  "readback": {
+    "all_13_containers_running": true,
+    "current_oom_flags": false,
+    "auth_restart_counter": 2,
+    "other_restart_counters": 0,
+    "long_transactions": 0,
+    "pitr_enabled": true,
+    "pitr_failed": false,
+    "pending_wal_seconds": 0,
+    "logical_backup_last_exit": 0,
+    "physical_backup_last_exit": 0,
+    "logical_backup_at": 1792205595,
+    "physical_backup_at": 1792207061,
+    "root_disk_used_percent": 70,
+    "logical_backup_run_id": "20261017T024223Z",
+    "logical_backup_uploaded_at": "2026-10-17T02:53:15Z",
+    "logical_backup_off_host_verified": true,
+    "host_monitor_at": 1792273484663.8196
+  }
+}

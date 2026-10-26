@@ -1,0 +1,27 @@
+{
+  "verified_at": "2026-10-24T16:01:47.131260+00:00",
+  "zip_sha256": {
+    "vstupenky-online": "aa56f66feae4c28e54df03a94fcc6d0cb5cfbbd91acea3641934f2ebffb858be",
+    "festapp-tickets": "0a5d151683a800f1520bf1aff8d1abb448c25dfc5108f4bd02a6860e977b9482"
+  },
+  "verification": {
+    "matrices": [
+      "WP 7.1.3 / PHP 8.5.12",
+      "WP 6.6.4 / PHP 7.4.33"
+    ],
+    "wordpress_assertions": 206,
+    "real_gettext_catalogs": "PASS both matrices and products",
+    "wpcs": {
+      "errors": 0,
+      "warnings": 6,
+      "scope": "existing embed.php assignment alignment; admin PHP clean"
+    },
+    "browser": "isolated headless Chrome, Czech WordPress, actual inserter and publish controls",
+    "editor_service_frames": 0,
+    "published_post": 33,
+    "published_url": "http://localhost:59811/ukazka-vlozeni-formulare-z-pluginu/",
+    "anonymous_form_visible": true
+  },
+  "preview": "preview/onboarding/index.html",
+  "public_release": false
+}

@@ -1,0 +1,349 @@
+{
+  "capturedAt": "2026-10-07T12:14:06.953Z",
+  "readOnly": true,
+  "officialSupportedReleasePolicyKnown": false,
+  "enforcedMinimumWriteBuildKnown": false,
+  "enabledOccasions": [
+    {
+      "link": "biscup2025",
+      "dataKeys": [
+        "font",
+        "link",
+        "logo",
+        "reply_to",
+        "timezone",
+        "place_name",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 5
+    },
+    {
+      "link": "r48vetrkovice2026",
+      "dataKeys": [
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 3
+    },
+    {
+      "link": "posezeni2026",
+      "dataKeys": [
+        "image",
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 11
+    },
+    {
+      "link": "csa2024",
+      "dataKeys": [
+        "map_layer",
+        "client_sync_v1",
+        "defaultMapZoom",
+        "tooSoonMessage",
+        "defaultMapLocation"
+      ],
+      "features": null,
+      "organization": 4
+    },
+    {
+      "link": "reholni2026",
+      "dataKeys": [
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 7
+    },
+    {
+      "link": "csmostrava2026",
+      "dataKeys": [
+        "timezone",
+        "email_banner",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 12
+    },
+    {
+      "link": "fotofest2025",
+      "dataKeys": [
+        "reply_to",
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 6
+    },
+    {
+      "link": "2025-copy-98cf835a",
+      "dataKeys": [
+        "image",
+        "timezone",
+        "client_sync_v1",
+        "defaultMapZoom",
+        "max_companions",
+        "defaultMapLocation",
+        "is_enabled_entry_code",
+        "events_registration_start"
+      ],
+      "features": null,
+      "organization": 19
+    },
+    {
+      "link": "jm2025",
+      "dataKeys": [
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 9
+    },
+    {
+      "link": "av2025",
+      "dataKeys": [
+        "font",
+        "link",
+        "logo",
+        "image",
+        "timezone",
+        "place_name",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 8
+    },
+    {
+      "link": "festapp2025",
+      "dataKeys": [
+        "timezone",
+        "client_sync_v1"
+      ],
+      "features": null,
+      "organization": 1
+    }
+  ],
+  "bootstrapPlatforms": [
+    {
+      "version": "0.20.14",
+      "platform": "droid",
+      "requests": 347,
+      "last_seen": "2026-10-07T11:32:20.575675+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-09-10T12:58:10.257405+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.19.95",
+      "platform": "ios",
+      "requests": 80,
+      "last_seen": "2026-10-06T16:43:24.838911+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-09-07T16:20:47.233078+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.14",
+      "platform": "ios",
+      "requests": 214,
+      "last_seen": "2026-10-07T08:57:46.720837+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-09-10T07:45:27.261772+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.134",
+      "platform": "pwa",
+      "requests": 1,
+      "last_seen": "2026-10-07T11:39:46.649819+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-10-07T11:39:46.649819+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.19",
+      "platform": "pwa",
+      "requests": 26,
+      "last_seen": "2026-10-03T23:45:54.518189+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-09-24T11:04:19.610933+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.83",
+      "platform": "pwa",
+      "requests": 7,
+      "last_seen": "2026-10-07T08:13:04.575311+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-10-04T14:47:45.769958+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.19",
+      "platform": "web",
+      "requests": 88,
+      "last_seen": "2026-10-05T17:35:13.914829+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-09-24T09:36:03.283554+00:00",
+      "organization": 12
+    },
+    {
+      "version": "0.20.83",
+      "platform": "web",
+      "requests": 18,
+      "last_seen": "2026-10-07T06:48:05.948368+00:00",
+      "build_mode": "release",
+      "first_seen": "2026-10-04T10:22:44.373773+00:00",
+      "organization": 12
+    }
+  ],
+  "configuredConsumers": [
+    {
+      "branch": "origin/prod/absolventskyvelehrad",
+      "head": "7373786044f79f4d532c590d017cf5d3a62be9be",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "absolventskyvelehrad",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "8",
+      "WEB_LINK": "https://app.absolventskyvelehrad.cz",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/aksmcz",
+      "head": "ec0d87374ca6b936edd11295ae1696175990f84a",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "aksmcz",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "4",
+      "WEB_LINK": "https://csa2024.festapp.net",
+      "FORCE_OCCASION_LINK": "csa2024",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/avapp",
+      "missingConfig": true
+    },
+    {
+      "branch": "origin/prod/cavfotofest",
+      "head": "86904bc2d3f8ad3c5e16b7e374de2472529cdea9",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "cavfotofest",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "6",
+      "WEB_LINK": "https://clovekavira.festapp.net",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/csmostrava2026",
+      "head": "e9d49e409b013757b67e3adaf03de141c02046a6",
+      "VERSION": "0.20.135+619",
+      "BACKEND_ACTIVATION_TENANT_ID": "csmostrava2026",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "12",
+      "WEB_LINK": "https://csmostrava.festapp.net",
+      "FORCE_OCCASION_LINK": "csmostrava2026",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/doobiscup",
+      "head": "82b932c72be5667d1b496b928db977ba59e70e52",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "doobiscup",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "5",
+      "WEB_LINK": "https://biscup.festapp.net",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/farnostopava",
+      "head": "123c97f9fea45cced93d6cc2dc018a1180da204f",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "farnostopava",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "11",
+      "WEB_LINK": "https://farnostopava.festapp.net",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/festapp",
+      "head": "eac931bf46a453af280003152b43f02b5f391204",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "festapp",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "1",
+      "WEB_LINK": "https://live.festapp.net",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/festapptickets",
+      "head": "1a9d14feb69f9af0dec8f5e4823757091d441d7f",
+      "VERSION": "0.20.133+617",
+      "BACKEND_ACTIVATION_TENANT_ID": "festapptickets",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "3",
+      "WEB_LINK": "https://vstupenky.online",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.133+617",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/festivalslunovrat",
+      "head": "bbbd97ca851255fb3f3d87f87e3e523e45540397",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "festivalslunovrat",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "19",
+      "WEB_LINK": "https://slunovrat.festapp.net",
+      "FORCE_OCCASION_LINK": "2025-copy-98cf835a",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/hvezdamorska",
+      "head": "bfbcfbaee737f55183eeb1ea55ef7764b5f043a4",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "hvezdamorska",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "7",
+      "WEB_LINK": "https://hvezdamorska.festapp.net",
+      "FORCE_OCCASION_LINK": "",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/jubileum2025",
+      "head": "628b078f42f93f5cbc83929440f5cf1b2204b8de",
+      "VERSION": "0.20.134+618",
+      "BACKEND_ACTIVATION_TENANT_ID": "jubileum2025",
+      "BACKEND_ACTIVATION_PHASE": "canonical",
+      "BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID": "9",
+      "WEB_LINK": "https://jubileum2025.festapp.net",
+      "FORCE_OCCASION_LINK": "jm2025",
+      "liveVersion": "0.20.134+618",
+      "httpStatus": 200
+    },
+    {
+      "branch": "origin/prod/slunovratopava",
+      "missingConfig": true
+    },
+    {
+      "branch": "origin/prod/ticketonline",
+      "missingConfig": true
+    }
+  ]
+}

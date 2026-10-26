@@ -1,0 +1,42 @@
+{
+  "applinks": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festapp"
+    ],
+    "details": [
+      {
+        "appIDs": [
+          "8WKBB6L8LT.festapp.festapp"
+        ],
+        "components": [
+          {
+            "/": "/stripe/pay"
+          },
+          {
+            "/": "/stripe/return"
+          },
+          {
+            "/": "/app/stripe/pay"
+          },
+          {
+            "/": "/app/stripe/return"
+          },
+          {
+            "/": "/app/google-auth"
+          },
+          {
+            "/": "/delete-account*"
+          },
+          {
+            "/": "/*"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "8WKBB6L8LT.festapp.festapp"
+    ]
+  }
+}

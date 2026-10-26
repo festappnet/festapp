@@ -1,0 +1,19 @@
+{
+  "name": "festapp-self-hosted-monitor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "dependencies": {
+    "@festapp/monitoring": "file:vendor/festapp-monitoring-0.1.1.tgz"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "pnpm": "11.24.0"
+  }
+}

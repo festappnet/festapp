@@ -1,0 +1,18 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+
+@RoutePage()
+class OrdersEmailHistoryPage extends StatelessWidget {
+  const OrdersEmailHistoryPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => EmailDeliveryHistory(
+        occasionId: RightsService.currentOccasion()?.id,
+        messageId: context.routeData.queryParams.optString('messageId'),
+        ordersOnly:
+            context.routeData.queryParams.optString('messageId') == null,
+        embedded: true,
+      );
+}

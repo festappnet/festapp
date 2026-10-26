@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-21",
+  "environment": "isolated local Supabase + Stripe test connected account",
+  "productionChanges": false,
+  "liveMoney": false,
+  "platform": "acct_1USva6KFDUB0JGj3",
+  "organizer": "acct_1USvmwGTldKlAm7L",
+  "connectionSetup": "Initial purchase fixtures used a synthetic local binding to the authorized sandbox organizer; subsequent full Festapp OAuth and Stripe Google authorization reconnected that same existing account. See full-app-oauth-sandbox.json.",
+  "orders": [
+    {
+      "orderId": 1,
+      "orderSymbol": "5V9L2M4J9N",
+      "sandbox": true,
+      "attemptId": "d0b54604-1d9e-4858-a231-4bfeb32f3476",
+      "sessionId": "cs_test_a14dlc2dQ4qeoggsjjHtsfyhSkJKU7nT9RWV8zONpyWRLbiS6CzjWwyD1R",
+      "paymentIntentId": "pi_3USzf6GTldKlAm7L1iFSwce9",
+      "attemptState": "paid",
+      "orderState": "storno",
+      "amountMinor": 12345,
+      "paid": 123.45,
+      "refunded": 123.45,
+      "paymentMethod": "stripe",
+      "admissionState": "hold",
+      "paymentStatus": "refunded"
+    },
+    {
+      "orderId": 2,
+      "orderSymbol": "8J1N7I5F1J",
+      "sandbox": true,
+      "attemptId": "04ab330c-c2c5-4342-a67d-e17396c59cb0",
+      "sessionId": "cs_test_a11k9ScQEdLS3yZGsVGIescA3jkCRsGRoJTVZ8O2FGTa2SVR5vL8WED9W8",
+      "paymentIntentId": "pi_3UT0GrGTldKlAm7L3MBTzmIH",
+      "attemptState": "paid",
+      "orderState": "sent",
+      "amountMinor": 12345,
+      "paid": 123.45,
+      "refunded": 23.45,
+      "paymentMethod": "stripe",
+      "admissionState": "valid",
+      "paymentStatus": "partially_refunded"
+    },
+    {
+      "orderId": 3,
+      "orderSymbol": "6Q9R9Y3N6J",
+      "sandbox": true,
+      "attemptId": "a7d8b316-fdb6-4183-b36e-982ddde2ad2c",
+      "sessionId": "cs_test_a1fEqZ2eQQYd7qEg3RznjHTxvbreAzxet591WEQrOYvQtdhFYquBBwBuhX",
+      "paymentIntentId": null,
+      "attemptState": "expired",
+      "orderState": "expired",
+      "amountMinor": 12345,
+      "paid": 0.0,
+      "refunded": 0.0,
+      "paymentMethod": "stripe",
+      "admissionState": "pending",
+      "paymentStatus": "expired"
+    }
+  ],
+  "signedWebhookInboxEvents": 9,
+  "badSignatureHttpStatus": 400,
+  "badSignatureWroteNoFacts": true,
+  "jsFlow": "actual form -> test Checkout -> signed webhook -> Flutter read-only return -> partial/full refund",
+  "flutterFlow": "actual form -> test Checkout -> signed webhook -> read-only return -> local captured ticket PDF -> partial refund -> audited keep admission in actual admin UI",
+  "iframeFlow": {
+    "crossSiteParent": "https://localhost:56585",
+    "child": "https://127.0.0.1:56580",
+    "instances": [
+      "auto-height",
+      "fixed-height"
+    ],
+    "parentNavigation": false,
+    "protocolFields": [
+      "namespace",
+      "protocol",
+      "type",
+      "instance",
+      "height",
+      "y"
+    ],
+    "handoff": "single use, explicit new tab, fragment cleared, consumed replay read-only",
+    "providerSessionBeforeExplicitHandoff": false
+  },
+  "emailTransport": "local file capture only, no external recipient delivery",
+  "preparedPdfCount": 2,
+  "refundAfterTicketPreparation": {
+    "orderId": 1,
+    "queueState": "cancelled",
+    "sendPermit": false,
+    "scannerAdmission": false
+  },
+  "priceRefresh": {
+    "initial": "145.67",
+    "fresh": "156.78",
+    "emailAndNamesPreserved": true,
+    "oldQuoteRejected": true,
+    "automaticNewOrder": false
+  },
+  "recoveryWhileNewSalesDisabled": {
+    "results": [
+      {
+        "connectionId": "c4d4390e-74b4-4329-9c64-34be767f84ae",
+        "state": "completed"
+      },
+      {
+        "attemptId": "04ab330c-c2c5-4342-a67d-e17396c59cb0",
+        "state": "completed"
+      },
+      {
+        "attemptId": "a7d8b316-fdb6-4183-b36e-982ddde2ad2c",
+        "state": "completed"
+      },
+      {
+        "attemptId": "d0b54604-1d9e-4858-a231-4bfeb32f3476",
+        "state": "completed"
+      }
+    ]
+  },
+  "remaining": [
+    "existing merchant + Google login/full app OAuth",
+    "native device restart and system-browser return",
+    "browser/tenant/accessibility matrix and actual waitlist offer checkout",
+    "blocked storage/popup and complete return UI after cancellation",
+    "external email delivery and deployed runtime/scheduler"
+  ],
+  "declineAndCancel": {
+    "orderId": 3,
+    "declineVisibleInHostedCheckout": true,
+    "financialMovements": 0,
+    "cancelReachedProtectedReturn": true,
+    "returnHttpStatus": 200,
+    "returnPaymentState": "open",
+    "allowedActions": [
+      "refresh"
+    ],
+    "newOrderCreated": false,
+    "returnUiAfterCancel": "not rendered: owned Flutter test server already stopped"
+  },
+  "expiry": {
+    "orderId": 3,
+    "testCheckoutStatus": "expired",
+    "orderState": "expired",
+    "financialMovements": 0,
+    "signedWebhookObserved": true
+  },
+  "fullRefundRecoveryRegression": {
+    "fixed": true,
+    "repeatedProviderObservationRetains": "refunded",
+    "noFalseLatePaymentDecision": true,
+    "localFixtureRepair": "Removed only the false late decision from the earlier local probe; provider facts preserved."
+  },
+  "freshMigrationReplay": {
+    "through": "20261021190000",
+    "cronLaunchActiveJobs": "off",
+    "result": "baseline + every forward migration succeeded; final ingest/refunded-recovery and public recipient-rejection corrections subsequently refreshed from canonical sources and separately tested",
+    "migrationSha256": {
+      "20261021160000_stripe_foundation.sql": "6dfdc13e397d924defb63eaf5f93517496abfc023706611af618972f5ddacff3",
+      "20261021170000_stripe_connections.sql": "96da7bab47f2e3dfd0e3aa96ce5d425e40a7de53b022d4efe526496341492a26",
+      "20261021180000_stripe_checkout_ingest.sql": "530cdea95195d806924959e6e290bcaf038dd538068491495b6f4fb26ff21da0"
+    },
+    "postReplaySources": [
+      "database/functions/eshop_stripe/ingest.sql",
+      "database/functions/eshop/finalize_ticket_order.sql"
+    ]
+  },
+  "localFinalPolicy": {
+    "newPaymentsEnabled": false,
+    "supportedSurfaces": [
+      "web"
+    ]
+  },
+  "cleanup": {
+    "ownedBrowserAndListenerStopped": true,
+    "ownedHttpHttpsServersStopped": true,
+    "isolatedSupabaseStoppedWithLocalBackup": true,
+    "disposableReplayDatabaseRemoved": true,
+    "remainingSandboxBalanceIsTestOnly": true
+  }
+}

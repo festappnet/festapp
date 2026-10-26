@@ -1,0 +1,536 @@
+diff --git a/automation/bootstrap_local_db.sh b/automation/bootstrap_local_db.sh
+index b7f3a79c6..fe380ee8d 100755
+--- a/automation/bootstrap_local_db.sh
++++ b/automation/bootstrap_local_db.sh
+@@ -90,6 +90,10 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+ # forward migrations are executed here.
+ supabase migration up --db-url "$DATABASE_URL" --include-all >/dev/null
+ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
++# Demo contract tests use the same versioned synthetic fixtures as the application.
++# This bootstrap is pinned to the disposable localhost database above.
++psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -v demo_organization=1 \
++  -f "$PROJECT_ROOT/automation/seed_demo_occasions.sql" >/dev/null
+ 
+ # Persist the disposable identity for guarded mutation/concurrency test runners.
+ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -v disposable_project="$LOCAL_PROJECT_ID" <<'SQL' >/dev/null
+diff --git a/automation/test_all.sh b/automation/test_all.sh
+index 2db87e22c..e01383fdc 100755
+--- a/automation/test_all.sh
++++ b/automation/test_all.sh
+@@ -110,6 +110,8 @@ else
+     done
+ fi
+ 
++failed_suites=0
++
+ # Function to run command with timeout (Mac compatible)
+ run_with_timeout() {
+     local timeout=$1
+@@ -153,6 +155,7 @@ if [ "$RUN_WEB" = true ]; then
+         
+         if [ $res -ne 0 ]; then
+             echo "⚠️  WARNING: Web Client Tests Failed or Timed Out."
++            failed_suites=$((failed_suites + 1))
+         fi
+     else
+         echo "Error: web_client directory not found at $WEB_CLIENT_DIR"
+@@ -199,6 +202,7 @@ if [ "$RUN_FLUTTER" = true ]; then
+     
+     if [ $res -ne 0 ]; then
+         echo "⚠️  WARNING: Flutter Tests Failed."
++        failed_suites=$((failed_suites + 1))
+     fi
+ fi
+ 
+@@ -250,12 +254,17 @@ if [ "$RUN_INTEGRATION" = true ]; then
+         echo "Running Integration Tests (Vitest)..."
+         cd "$WORKER_TEST_DIR"
+         set +e
+-        npx vitest run tests/integration/ 2>&1
++        if [ ! -x node_modules/.bin/vitest ]; then
++            echo "ERROR: image-worker test dependencies are missing; run npm ci --prefix workers/image-worker."
++            exit 1
++        fi
++        npm run test:integration 2>&1
+         res=$?
+         set -e
+         cd "$PROJECT_ROOT"
+         if [ $res -ne 0 ]; then
+             echo "⚠️  WARNING: Integration Tests Failed."
++            failed_suites=$((failed_suites + 1))
+         fi
+     else
+         echo "⚠️  SKIPPING Integration Tests: Missing DATABASE_URL."
+@@ -287,6 +296,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
+ 
+     echo "Running canonical PWA storage and recovery contract tests..."
+     node --test \
++      "$SCRIPT_DIR/tests/test_all_status.test.mjs" \
+       "$SCRIPT_DIR/tests/image_service_preflight.test.mjs" \
+       "$SCRIPT_DIR/tests/pwa_manifest.test.mjs" \
+       "$SCRIPT_DIR/tests/pwa_reconcile.test.mjs" \
+@@ -309,5 +319,9 @@ fi
+ 
+ echo ""
+ echo "=================================================="
++if [ "$failed_suites" -gt 0 ]; then
++    echo "FAILED: $failed_suites test suite(s)."
++    exit 1
++fi
+ echo "Done."
+ echo "=================================================="
+diff --git a/automation/tests/update_prompt.test.sh b/automation/tests/update_prompt.test.sh
+index b6869e0e9..42d41aa7e 100755
+--- a/automation/tests/update_prompt.test.sh
++++ b/automation/tests/update_prompt.test.sh
+@@ -192,9 +192,10 @@ printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script>
+ for script in festapp_update_prompt.js festapp_flutter_bootstrap_guard.js festapp_pwa_bridge.js; do
+   printf '<script src="%s?v=1.2.3%%2B456" defer></script>\n' "${script%.js}.1.2.3-456.js" >> "$BUILD_DIR/flutter"
+ done
+-printf 'const BUILD_VERSION = "1.2.3+456"; const FORCED_OCCASION_PATH = "/test-occasion"; // FESTAPP_QUERY_BUILD_VERSION\n' > "$BUILD_DIR/festapp_service_worker.js"
++CONFIG_APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' "$PROJECT_ROOT/automation/project.conf")"
++printf 'const IS_APP_SUPPORTED = %s; const BUILD_VERSION = "1.2.3+456"; const FORCED_OCCASION_PATH = "/test-occasion"; // FESTAPP_QUERY_BUILD_VERSION\n' "$CONFIG_APP_SUPPORTED" > "$BUILD_DIR/festapp_service_worker.js"
+ printf '{"start_url":"/test-occasion/"}\n' > "$BUILD_DIR/site.webmanifest"
+-printf 'const FORCED_OCCASION_PATH = "/test-occasion";\n' > "$BUILD_DIR/_worker.js"
++printf 'const IS_APP_SUPPORTED = %s; const FORCED_OCCASION_PATH = "/test-occasion";\n' "$CONFIG_APP_SUPPORTED" > "$BUILD_DIR/_worker.js"
+ CONFIG_APP_NAME="$(sed -n 's/^APP_NAME=//p' "$PROJECT_ROOT/automation/project.conf")"
+ CONFIG_APP_NAME="${CONFIG_APP_NAME#\"}"
+ CONFIG_APP_NAME="${CONFIG_APP_NAME%\"}"
+diff --git a/database/tests/demo_ball_prices_test.sql b/database/tests/demo_ball_prices_test.sql
+index c756610f3..b1ffea7e4 100644
+--- a/database/tests/demo_ball_prices_test.sql
++++ b/database/tests/demo_ball_prices_test.sql
+@@ -1,3 +1,6 @@
++-- test-setup: database/fixtures/demo_occasions/reference.sql
++-- test-setup: database/fixtures/demo_occasions/seed.sql
++-- test-setup: database/fixtures/demo_occasions/ball-prices.sql
+ BEGIN;
+ DO $$
+ DECLARE ball bigint; before_state jsonb; after_state jsonb;
+diff --git a/database/tests/eshop/ticket_order_limit_test.sql b/database/tests/eshop/ticket_order_limit_test.sql
+index ec63f8ee7..490839186 100644
+--- a/database/tests/eshop/ticket_order_limit_test.sql
++++ b/database/tests/eshop/ticket_order_limit_test.sql
+@@ -1,18 +1,29 @@
+ DO $$
+-DECLARE result jsonb;
++DECLARE result jsonb; org bigint; unit_id bigint; occasion_id bigint;
++    form_key uuid := gen_random_uuid();
+ BEGIN
++    INSERT INTO public.organizations(title) VALUES ('Ticket cap checkout fixture') RETURNING id INTO org;
++    INSERT INTO public.units(organization,title) VALUES (org,'Ticket cap fixture') RETURNING id INTO unit_id;
++    INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
++        VALUES (org,unit_id,'Ticket cap fixture','ticket-cap-'||form_key,now(),now()+interval '1 day') RETURNING id INTO occasion_id;
++    INSERT INTO public.forms(key,occasion,link,is_open)
++        VALUES (form_key,occasion_id,'ticket-cap-'||form_key,true);
+     IF public.ticket_order_limit() < 1 THEN
+         RAISE EXCEPTION 'Global ticket cap must be positive';
+     END IF;
+     result := public.create_ticket_order_internal_v1(jsonb_build_object(
+-        'form', '00000000-0000-0000-0000-000000000000',
++        'form', form_key,
+         'ticket', (SELECT jsonb_agg('{}'::jsonb)
+             FROM generate_series(1, public.ticket_order_limit() + 1))));
+     IF result->>'code' <> '1023' THEN
+         RAISE EXCEPTION 'Oversized order must fail before writing tickets: %', result;
+     END IF;
++    IF EXISTS (SELECT 1 FROM eshop.orders WHERE occasion=occasion_id)
++       OR EXISTS (SELECT 1 FROM eshop.tickets WHERE occasion=occasion_id) THEN
++        RAISE EXCEPTION 'Oversized checkout left an order or tickets behind';
++    END IF;
+     result := public.create_ticket_order_internal_v1(jsonb_build_object(
+-        'form', '00000000-0000-0000-0000-000000000000',
++        'form', form_key,
+         'ticket', (SELECT jsonb_agg('{}'::jsonb)
+             FROM generate_series(1, public.ticket_order_limit()))));
+     IF result->>'code' = '1023' THEN
+diff --git a/lib/components/event_feedback/event_feedback_widget.dart b/lib/components/event_feedback/event_feedback_widget.dart
+index bc93e35df..6a39ab7cf 100644
+--- a/lib/components/event_feedback/event_feedback_widget.dart
++++ b/lib/components/event_feedback/event_feedback_widget.dart
+@@ -45,6 +45,11 @@ class EventFeedbackWidget extends StatefulWidget {
+   final Future<Map<String, dynamic>?> Function(int eventId)?
+       loadCachedFeedbackOverride;
+ 
++  /// Matches the cache read seam without requiring platform storage in UI tests.
++  @visibleForTesting
++  final Future<void> Function(int eventId, Map<String, dynamic>? feedback)?
++      saveCachedFeedbackOverride;
++
+   /// Keeps a stale connectivity signal or a wedged request from leaving the
+   /// feedback section in an endless loading state.
+   final Duration loadTimeout;
+@@ -59,6 +64,7 @@ class EventFeedbackWidget extends StatefulWidget {
+     this.loadFeedbackOverride,
+     this.isOfflineOverride,
+     this.loadCachedFeedbackOverride,
++    this.saveCachedFeedbackOverride,
+     this.loadTimeout = const Duration(seconds: 12),
+   });
+ 
+@@ -113,9 +119,10 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
+       // Keep the offline "already sent" cache in sync with the live answer
+       // (null clears a stale entry after a deletion elsewhere). Fire-and-
+       // forget: a cache write must never block or break the UI.
+-      unawaited(
+-          OfflineDataService.saveMyEventFeedback(widget.eventId, fb?.toJson())
+-              .catchError((_) {}));
++      unawaited((widget.saveCachedFeedbackOverride ??
++                  OfflineDataService.saveMyEventFeedback)(
++              widget.eventId, fb?.toJson())
++          .catchError((_) {}));
+       if (!mounted) return;
+       setState(() {
+         _existing = fb;
+diff --git a/lib/components/offline/offline_banner.dart b/lib/components/offline/offline_banner.dart
+index 7bce2a7ee..cd790bb4d 100644
+--- a/lib/components/offline/offline_banner.dart
++++ b/lib/components/offline/offline_banner.dart
+@@ -11,7 +11,12 @@ import 'package:fstapp/theme_config.dart';
+ /// when one is stored. Online it renders nothing. Pages outside the occasion
+ /// shell (login, unit) knowingly have none.
+ class OfflineBanner extends StatelessWidget {
+-  const OfflineBanner({super.key});
++  final Future<DateTime?> Function() loadLastSyncedAt;
++
++  const OfflineBanner(
++      {super.key, Future<DateTime?> Function()? loadLastSyncedAt})
++      : loadLastSyncedAt =
++            loadLastSyncedAt ?? OfflineDataService.getLastSyncedAt;
+ 
+   @override
+   Widget build(BuildContext context) {
+@@ -22,7 +27,7 @@ class OfflineBanner extends StatelessWidget {
+         return Material(
+           color: ThemeConfig.grey300(context),
+           child: FutureBuilder<DateTime?>(
+-            future: OfflineDataService.getLastSyncedAt(),
++            future: loadLastSyncedAt(),
+             builder: (context, snapshot) {
+               final last = snapshot.data;
+               return Padding(
+diff --git a/lib/components/search/global_search_dialog.dart b/lib/components/search/global_search_dialog.dart
+index 8bed33634..c4c1898cc 100644
+--- a/lib/components/search/global_search_dialog.dart
++++ b/lib/components/search/global_search_dialog.dart
+@@ -29,13 +29,16 @@ import 'package:fstapp/theme_config.dart';
+ class GlobalSearchDialog extends StatefulWidget {
+   final Future<List<SearchResultModel>> Function(String query) search;
+   final Future<SpeakersBundle?> Function() loadSpeakers;
++  final Future<List<EventModel>> Function() loadEvents;
+ 
+   const GlobalSearchDialog({
+     super.key,
+     Future<List<SearchResultModel>> Function(String query)? search,
+     Future<SpeakersBundle?> Function()? loadSpeakers,
++    Future<List<EventModel>> Function()? loadEvents,
+   })  : search = search ?? DbSearch.search,
+-        loadSpeakers = loadSpeakers ?? OfflineDataService.getSpeakers;
++        loadSpeakers = loadSpeakers ?? OfflineDataService.getSpeakers,
++        loadEvents = loadEvents ?? OfflineDataService.getAllEvents;
+ 
+   /// Guards against stacking dialogs when opened repeatedly (e.g. Ctrl+F
+   /// pressed while the search is already showing).
+@@ -96,7 +99,7 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
+ 
+   Future<void> _loadEvents() async {
+     try {
+-      final events = await OfflineDataService.getAllEvents();
++      final events = await widget.loadEvents();
+       if (!mounted) return;
+       setState(() {
+         _eventsById
+diff --git a/test/components/eshop/waitlist_history_test.dart b/test/components/eshop/waitlist_history_test.dart
+index 81bd75e98..29bcb38d0 100644
+--- a/test/components/eshop/waitlist_history_test.dart
++++ b/test/components/eshop/waitlist_history_test.dart
+@@ -92,7 +92,7 @@ void main() {
+     expect(history.state,'waitlisted');
+   });
+ 
+-  testWidgets('history arrow renders lifecycle colors and full target tooltip at 280px', (tester) async {
++  testWidgets('history arrow renders lifecycle colors and target label without redundant tooltip at 280px', (tester) async {
+     for (final action in ['waitlist_withdraw', 'offer_sent', 'waitlist_accept']) {
+       final history = OrderHistoryModel(state: 'paid', data: {'action': action, 'ticketIds': [1], 'count': 1});
+       final formatted = history.waitlistHistoryState!;
+@@ -104,7 +104,8 @@ void main() {
+       final expectedColor = action == 'offer_sent' ? OrderModel.singleDataGridStateToColor('waitlisted') : action == 'waitlist_accept' ? OrderModel.singleDataGridStateToColor('paid') : Colors.grey.shade500.withValues(alpha:0.6);
+       expect((tags.last.decoration as BoxDecoration).color,expectedColor);
+       final target = OrderModel.statesDataGridToUpper(formatted.split(';').last);
+-      expect(find.byTooltip(target), findsOneWidget);
++      expect(find.text(target), findsOneWidget);
++      expect(find.byType(Tooltip), findsNothing);
+       expect(tester.takeException(), isNull);
+     }
+   });
+diff --git a/test/components/event_feedback/event_feedback_widget_test.dart b/test/components/event_feedback/event_feedback_widget_test.dart
+index c0e3a7216..183026c28 100644
+--- a/test/components/event_feedback/event_feedback_widget_test.dart
++++ b/test/components/event_feedback/event_feedback_widget_test.dart
+@@ -20,6 +20,7 @@ Future<void> _pump(
+   Future<EventFeedbackModel?> Function(int eventId)? loadFeedback,
+   Future<bool> Function()? isOffline,
+   Future<Map<String, dynamic>?> Function(int eventId)? loadCachedFeedback,
++  Future<void> Function(int, Map<String, dynamic>?)? saveCachedFeedback,
+   Duration loadTimeout = const Duration(seconds: 12),
+   bool settle = true,
+ }) async {
+@@ -36,6 +37,7 @@ Future<void> _pump(
+           isOfflineOverride: isOffline,
+           loadCachedFeedbackOverride: loadCachedFeedback,
+           loadTimeout: loadTimeout,
++          saveCachedFeedbackOverride: saveCachedFeedback ?? (_, __) async {},
+         ),
+       ),
+     ),
+@@ -54,6 +56,28 @@ FilledButton _submitButton(WidgetTester tester) =>
+     tester.widget<FilledButton>(find.byType(FilledButton));
+ 
+ void main() {
++  testWidgets('remote feedback refresh updates the offline cache',
++      (tester) async {
++    final writes = <Map<String, dynamic>?>[];
++    await _pump(tester, isOpen: true, existing: _rated('positive'),
++        saveCachedFeedback: (eventId, feedback) async {
++      expect(eventId, 1);
++      writes.add(feedback);
++    });
++    expect(writes.single?['rating'], 'positive');
++    expect(find.text('EventFeedback.updateFeedback'), findsOneWidget);
++  });
++
++  testWidgets('cache failure does not break a successful live feedback load',
++      (tester) async {
++    await _pump(tester, isOpen: true, saveCachedFeedback: (_, __) async {
++      throw StateError('cache unavailable');
++    });
++    expect(find.byType(CircularProgressIndicator), findsNothing);
++    expect(find.byIcon(Icons.sentiment_neutral), findsOneWidget);
++    expect(tester.takeException(), isNull);
++  });
++
+   testWidgets('known offline state never waits on the remote feedback request',
+       (tester) async {
+     final neverCompletes = Completer<EventFeedbackModel?>();
+diff --git a/test/components/forms/form_payment_defaults_test.dart b/test/components/forms/form_payment_defaults_test.dart
+index 66d52bef8..ee87508a7 100644
+--- a/test/components/forms/form_payment_defaults_test.dart
++++ b/test/components/forms/form_payment_defaults_test.dart
+@@ -1,4 +1,5 @@
+ import 'dart:convert';
++import 'package:fstapp/components/users/occasion_user_model.dart';
+ import 'package:fstapp/theme_config.dart';
+ import 'dart:io';
+ import 'dart:ui' as ui;
+@@ -43,17 +44,18 @@ void main() {
+         addTearDown(tester.view.resetPhysicalSize);
+         addTearDown(tester.view.resetDevicePixelRatio);
+         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
++            occasionUser: OccasionUserModel(isEditor: true),
+             occasion: OccasionModel(
+                 isOpen: true,
+                 isHidden: false,
+                 isPromoted: false,
+                 features: [
+-              FormFeature(
+-                  code: 'form',
+-                  reminderIsEnabled: defaultEnabled,
+-                  reminderIntervalSeconds: 86400,
+-                  deadlineDurationSeconds: 604800)
+-            ]));
++                  FormFeature(
++                      code: 'form',
++                      reminderIsEnabled: defaultEnabled,
++                      reminderIntervalSeconds: 86400,
++                      deadlineDurationSeconds: 604800)
++                ]));
+         addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+         final form = FormModel(link: 'test', title: 'Original', data: {
+           if (override != null) FormModel.metaIsReminderEnabled: override,
+diff --git a/test/components/offline/offline_banner_layout_test.dart b/test/components/offline/offline_banner_layout_test.dart
+index ec9b7f33d..650665d1f 100644
+--- a/test/components/offline/offline_banner_layout_test.dart
++++ b/test/components/offline/offline_banner_layout_test.dart
+@@ -12,19 +12,21 @@ void main() {
+     ConnectivityService.debugSetInterfaceOffline(true);
+ 
+     await tester.pumpWidget(
+-      const MaterialApp(
++      MaterialApp(
+         home: MediaQuery(
+           data: MediaQueryData(
+             size: Size(390, 844),
+             padding: EdgeInsets.only(top: 47),
+           ),
+           child: Scaffold(
+-            body: Column(children: [OfflineBanner()]),
++            body: Column(
++                children: [OfflineBanner(loadLastSyncedAt: () async => null)]),
+           ),
+         ),
+       ),
+     );
+ 
++    await tester.pumpAndSettle(const Duration(milliseconds: 1));
+     expect(tester.getSize(find.byType(OfflineBanner)).height, lessThan(40));
+   });
+ }
+diff --git a/test/components/search/global_search_dialog_test.dart b/test/components/search/global_search_dialog_test.dart
+index 4ba615e0c..6553c6eb7 100644
+--- a/test/components/search/global_search_dialog_test.dart
++++ b/test/components/search/global_search_dialog_test.dart
+@@ -1,3 +1,9 @@
++import 'dart:io';
++import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
++import 'package:cached_network_image/cached_network_image.dart';
++// Uses the public cache interface behind cached_network_image in this fixture.
++// ignore: depend_on_referenced_packages
++import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+ import 'dart:async';
+ 
+ import 'package:flutter/material.dart';
+@@ -10,15 +16,35 @@ import 'package:fstapp/components/speakers/speakers_bundle.dart';
+ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
+ 
+ void main() {
++  setUpAll(() async {
++    final directory =
++        await Directory.systemTemp.createTemp('festapp-search-images-');
++    final previousProvider = PathProviderPlatform.instance;
++    PathProviderPlatform.instance = _ImagePathProvider(directory.path);
++    final cache = CacheManager(
++        Config('search-test-images', repo: NonStoringObjectProvider()));
++    CachedNetworkImageProvider.defaultCacheManager = cache;
++    addTearDown(() async {
++      await cache.dispose();
++      PathProviderPlatform.instance = previousProvider;
++      await directory.delete(recursive: true);
++    });
++    await cache.getFileFromCache('_test_cache_ready');
++  });
+   testWidgets('open search refreshes when a new projection is activated',
+       (tester) async {
+     var title = 'Původní program';
++    var eventLoads = 0;
+     await tester.pumpWidget(MaterialApp(
+       home: Builder(builder: (context) {
+         return TextButton(
+           onPressed: () => showDialog<void>(
+             context: context,
+             builder: (_) => GlobalSearchDialog(
++              loadEvents: () async {
++                eventLoads++;
++                return [];
++              },
+               search: (_) async => [
+                 SearchResultModel(
+                   entityType: 'info',
+@@ -40,6 +66,7 @@ void main() {
+     await tester.pump(const Duration(milliseconds: 300));
+     await tester.pumpAndSettle();
+     expect(find.text('Původní program'), findsOneWidget);
++    expect(eventLoads, 1);
+ 
+     title = 'Nově synchronizovaný program';
+     ClientSyncRuntime.projectionEpoch.value++;
+@@ -47,6 +74,7 @@ void main() {
+ 
+     expect(find.text('Původní program'), findsNothing);
+     expect(find.text('Nově synchronizovaný program'), findsOneWidget);
++    expect(eventLoads, 2);
+   });
+ 
+   testWidgets('speaker without an event still opens a profile', (tester) async {
+@@ -57,6 +85,7 @@ void main() {
+           onPressed: () => showDialog<void>(
+             context: context,
+             builder: (_) => GlobalSearchDialog(
++              loadEvents: () async => [],
+               search: (_) async => [
+                 SearchResultModel(
+                   entityType: 'speaker',
+@@ -115,3 +144,11 @@ void main() {
+     );
+   });
+ }
++
++class _ImagePathProvider extends PathProviderPlatform {
++  final String directory;
++  _ImagePathProvider(this.directory);
++
++  @override
++  Future<String?> getTemporaryPath() async => directory;
++}
+diff --git a/web_client/scripts/run_db_tests.js b/web_client/scripts/run_db_tests.js
+index 61658b82d..0b085f8ad 100644
+--- a/web_client/scripts/run_db_tests.js
++++ b/web_client/scripts/run_db_tests.js
+@@ -84,6 +84,15 @@ async function runTest(file) {
+ 
+     // Read and Execute Test File
+     const testSql = fs.readFileSync(file, 'utf8');
++    // Operational maintenance helpers may deliberately live in pg_temp. Load
++    // their canonical source in this same connection, within the test rollback.
++    for (const [, source] of testSql.matchAll(/^-- test-setup: (database\/[\w./-]+\.sql)$/gm)) {
++      const setupPath = path.resolve(PROJECT_ROOT, source);
++      if (!setupPath.startsWith(path.join(PROJECT_ROOT, 'database') + path.sep)) {
++        throw new Error('SQL test setup must stay inside the repository database directory');
++      }
++      await client.query(fs.readFileSync(setupPath, 'utf8'));
++    }
+     await client.query(testSql);
+ 
+     // Rollback (Always clean up)
+diff --git a/web_client/tests/core/festapp_update_prompt.test.js b/web_client/tests/core/festapp_update_prompt.test.js
+index a509236da..cfdcdaf20 100644
+--- a/web_client/tests/core/festapp_update_prompt.test.js
++++ b/web_client/tests/core/festapp_update_prompt.test.js
+@@ -158,7 +158,7 @@ const flush = async () => {
+ };
+ 
+ const banner = (window) => window.document.getElementById(BANNER_ID);
+-const messageText = (window) => banner(window)?.firstChild?.textContent;
++const messageText = (window) => banner(window)?.firstChild?.firstChild?.textContent;
+ const button = (window, action) =>
+     window.document.querySelector(`[data-festapp-update-action="${action}"]`);
+ 
+@@ -220,6 +220,8 @@ describe('festapp_update_prompt.js', () => {
+         }));
+ 
+         assert.strictEqual(messageText(window), 'Aplikace je připravená k obnovení.');
++        assert.strictEqual(window.document.querySelector('[data-festapp-startup-diagnostic]').textContent,
++            'Kód pro podporu: 1.0.0+1 / S00');
+         assert.strictEqual(button(window, 'reload').textContent, 'Obnovit');
+     });
+ 
+diff --git a/automation/tests/test_all_status.test.mjs b/automation/tests/test_all_status.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/automation/tests/test_all_status.test.mjs
+@@ -0,0 +1,26 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { spawnSync } from 'node:child_process';
++
++// Run the actual orchestrator against simulated suite executables. A failed
++// child must never become a green release gate after a later successful suite.
++for (const [web, flutter, expected] of [[0, 0, 0], [17, 0, 1], [0, 23, 1]]) {
++  test(`test_all propagates web=${web}, flutter=${flutter} to status ${expected}`, t => {
++    const root = mkdtempSync(join(tmpdir(), 'festapp-test-status-'));
++    t.after(() => rmSync(root, { recursive: true, force: true }));
++    for (const name of ['automation', 'web_client', 'bin']) mkdirSync(join(root, name));
++    copyFileSync(new URL('../test_all.sh', import.meta.url), join(root, 'automation/test_all.sh'));
++    for (const [name, code] of [['npm', web], ['fvm', flutter], ['pg_isready', 1]]) {
++      writeFileSync(join(root, 'bin', name), `#!/bin/sh\necho 'fixture ${name} executed'\nexit ${code}\n`, { mode: 0o755 });
++    }
++    const run = spawnSync('bash', [join(root, 'automation/test_all.sh'), 'web', 'flutter'], {
++      encoding: 'utf8', timeout: 15_000,
++      env: { ...process.env, DATABASE_URL: '', SUPABASE_URL: '', PATH: join(root, 'bin') + ':' + process.env.PATH },
++    });
++    assert.equal(run.status, expected, run.stdout + run.stderr);
++    assert.match(run.stdout, /fixture fvm executed/, 'later suites still run after web failure');
++  });
++}

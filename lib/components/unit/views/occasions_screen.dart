@@ -1,0 +1,631 @@
+import 'package:fstapp/components/occasion/occasion_creation_notice.dart';
+import 'dart:async';
+import 'occasion_created_highlight.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'occasion_setup_draft_card.dart';
+import 'package:fstapp/components/occasion/occasion_creation_button.dart';
+import 'package:fstapp/components/occasion/past_occasion_years.dart';
+import 'package:fstapp/components/unit/app_landing.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_strings.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/_shared/admin_strings.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/components/unit/unit_strings.dart';
+import '../db_units.dart';
+import '../unit_occasion_dashboard.dart';
+import '../../occasion/demo/demo_catalog.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
+import 'package:fstapp/services/toast_helper.dart';
+import 'package:fstapp/services/utilities_all.dart';
+import 'package:fstapp/styles/styles_config.dart';
+import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
+
+class OccasionsScreen extends StatefulWidget {
+  final UnitModel unit;
+  final List<OccasionModel>? initialOccasions;
+  final UnitOccasionDashboard? initialDashboard;
+  const OccasionsScreen(
+      {super.key,
+      required this.unit,
+      this.initialOccasions,
+      this.initialDashboard});
+
+  @override
+  _OccasionsScreenState createState() => _OccasionsScreenState();
+}
+
+class _OccasionsScreenState extends State<OccasionsScreen> {
+  DemoCatalog? _demoCatalog;
+  Future<void>? _dashboardLoad;
+  bool _dashboardFailed = false;
+  void _acceptDashboard(UnitOccasionDashboard dashboard) {
+    if (dashboard.unitId != widget.unit.id)
+      throw StateError('Unit dashboard scope mismatch');
+    _allOccasions = dashboard.occasions;
+    _filteredOccasions = dashboard.occasions;
+    _drafts = _canEditDrafts ? dashboard.drafts : [];
+    _draftError = null;
+    _landing = dashboard.landing;
+    _landingFailed = false;
+    _demoCatalog = dashboard.demos;
+    _dashboardFailed = false;
+    _isLoading = false;
+  }
+
+  final _scrollController = ScrollController();
+  final _createdGridKey = GlobalKey();
+  int? _createdOccasionId;
+  Timer? _highlightTimer;
+  void _highlight(OccasionModel occasion) {
+    if (!mounted || occasion.unit != widget.unit.id) return;
+    _highlightTimer?.cancel();
+    // Creation returns to the new card, including when the old list was filtered.
+    _searchController.clear();
+    setState(() => _createdOccasionId = occasion.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _createdOccasionId != occasion.id) return;
+      await OccasionCreatedHighlight.reveal(
+          gridKey: _createdGridKey,
+          controller: _scrollController,
+          index: _createdGridIndex,
+          animate: !MediaQuery.disableAnimationsOf(context));
+      if (!mounted || _createdOccasionId != occasion.id) return;
+      _highlightTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _createdOccasionId = null);
+      });
+    });
+  }
+
+  int _createdGridIndex = 0;
+
+  List<OccasionModel> _allOccasions = [];
+  List<OccasionModel> _filteredOccasions = [];
+  bool _isLoading = true;
+  List<OccasionSetupDraft> _drafts = [];
+  String? _draftError;
+  bool get _canEditDrafts =>
+      AppConfig.occasionSetupEnabled &&
+      RightsService.currentUnit()?.id == widget.unit.id &&
+      RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate);
+
+  List<OccasionSetupDraft> get _filteredDrafts {
+    final query =
+        Utilities.removeDiacritics(_searchController.text.toLowerCase());
+    return _drafts
+        .where((d) => Utilities.removeDiacritics(
+                (d.title.isEmpty ? OccasionSetupStrings.untitled : d.title)
+                    .toLowerCase())
+            .contains(query))
+        .toList();
+  }
+
+  Future<void> _loadDrafts() => _loadOccasions();
+
+  Future<void> _resumeDraft(OccasionSetupDraft draft) async {
+    await OccasionSetupPage.open(context, draft);
+    if (mounted) await _loadOccasions();
+  }
+
+  Future<void> _deleteDraft(OccasionSetupDraft draft) async {
+    if (!_canEditDrafts || widget.unit.id != draft.unit) return;
+    try {
+      await OccasionSetupDrafts(Supabase.instance.client).delete(draft);
+    } on PostgrestException {
+      // A stale revision needs fresh data, never a silent destructive retry.
+      if (mounted) await _loadOccasions();
+      rethrow;
+    }
+    if (mounted && widget.unit.id == draft.unit) {
+      setState(() => _drafts.removeWhere((item) => item.id == draft.id));
+    }
+  }
+
+  AppLanding? _landing;
+  bool _landingFailed = false;
+  bool _savingLanding = false;
+  int _landingGeneration = 0;
+
+  Future<void> _loadLanding() => _loadOccasions();
+
+  Future<void> _setLanding(int? occasionId) async {
+    final landing = _landing;
+    if (landing == null || !landing.canManage || _savingLanding) return;
+    final unitId = widget.unit.id!;
+    final generation = ++_landingGeneration;
+    setState(() => _savingLanding = true);
+    final saved = await ExceptionHandler.guard(context,
+        futureFunction: () => landing.save(unitId, occasionId));
+    if (!mounted || generation != _landingGeneration) return;
+    setState(() {
+      _savingLanding = false;
+      if (saved != null) _landing = saved;
+    });
+    if (saved == null) await _loadLanding();
+  }
+
+  Widget _buildLandingStatus() {
+    if (_landingFailed) {
+      return TextButton.icon(
+          onPressed: _loadLanding,
+          icon: const Icon(Icons.refresh),
+          label: Text(UnitStrings.landingLoadFailed));
+    }
+    return const SizedBox.shrink();
+  }
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_onRightsChanged);
+    _initializeOccasions();
+    _searchController.addListener(_filterOccasions);
+    _searchFocusNode.addListener(_onSearchFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant OccasionsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.unit.id != oldWidget.unit.id ||
+        widget.initialDashboard != oldWidget.initialDashboard ||
+        widget.initialOccasions != oldWidget.initialOccasions) {
+      _dashboardLoad = null;
+      _initializeOccasions();
+    }
+  }
+
+  void _onRightsChanged() {
+    if (!mounted) return;
+    // Context refresh already contains the private unit snapshot. Never start
+    // a competing request from a capabilities-notifier callback.
+    setState(() {
+      if (!_canEditDrafts) _drafts = [];
+    });
+  }
+
+  void _consumeCreationNotice() {
+    final id = OccasionCreationNotice.take(widget.unit.id!);
+    if (id == null) return;
+    final occasion = _allOccasions.where((o) => o.id == id).firstOrNull;
+    if (occasion != null) _highlight(occasion);
+  }
+
+  void _initializeOccasions() {
+    final dashboard = widget.initialDashboard;
+    if (dashboard != null) {
+      _acceptDashboard(dashboard);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _filterOccasions();
+          _consumeCreationNotice();
+        }
+      });
+    } else if (widget.initialOccasions != null) {
+      _allOccasions = widget.initialOccasions!;
+      _filteredOccasions = widget.initialOccasions!;
+      _isLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _consumeCreationNotice();
+      });
+      // Re-apply filter if search was active
+      if (_searchController.text.isNotEmpty) {
+        _filterOccasions();
+      }
+    } else {
+      _loadOccasions();
+    }
+  }
+
+  @override
+  void dispose() {
+    _highlightTimer?.cancel();
+    _scrollController.dispose();
+    RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
+    _searchController.removeListener(_filterOccasions);
+    _searchFocusNode.removeListener(_onSearchFocusChange);
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isSearching = _searchFocusNode.hasFocus;
+      });
+    }
+  }
+
+  Future<void> _loadOccasions() {
+    final pending = _dashboardLoad;
+    if (pending != null) return pending;
+    final request = _fetchDashboard();
+    _dashboardLoad = request;
+    request.whenComplete(() {
+      if (identical(_dashboardLoad, request)) _dashboardLoad = null;
+    });
+    return request;
+  }
+
+  Future<void> _fetchDashboard() async {
+    final unitId = widget.unit.id!;
+    if (!_isLoading) setState(() => _isLoading = true);
+    try {
+      final dashboard = await DbUnits.getOccasionDashboard(unitId);
+      if (!mounted || widget.unit.id != unitId) return;
+      setState(() => _acceptDashboard(dashboard));
+      _filterOccasions();
+      _consumeCreationNotice();
+    } catch (_) {
+      if (!mounted || widget.unit.id != unitId) return;
+      setState(() {
+        _dashboardFailed = true;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _filterOccasions() {
+    final query = _searchController.text;
+    if (query.isEmpty) {
+      setState(() {
+        _filteredOccasions = _allOccasions;
+      });
+      return;
+    }
+    final normalizedQuery = Utilities.removeDiacritics(query.toLowerCase());
+    setState(() {
+      _filteredOccasions = _allOccasions.where((occasion) {
+        final normalizedTitle =
+            Utilities.removeDiacritics(occasion.title?.toLowerCase() ?? "");
+        return normalizedTitle.contains(normalizedQuery);
+      }).toList();
+    });
+  }
+
+  Future<void> _addNewEvent({bool withoutWizard = false}) async {
+    final created = await OccasionCreationHelper.createNewOccasion(
+        context, widget.unit, _allOccasions,
+        withoutWizard: withoutWizard);
+
+    if (mounted) {
+      await _loadOccasions();
+      if (created != null) _highlight(created);
+    }
+  }
+
+  Future<void> _handleView(OccasionModel occasion) async {
+    try {
+      if (occasion.link == null) return;
+      await RouterService.navigateToOccasionAdministration(context,
+          occasion: occasion);
+    } catch (e) {
+      ToastHelper.Show(context, UnitStrings.loadEventFailed);
+    }
+  }
+
+  Future<void> _handleCreateCopy(OccasionModel occasion) async {
+    final sourceUnitId = widget.unit.id;
+    OccasionModel? created;
+    final target = await OccasionCreationHelper.createCopy(context, occasion,
+        sourceUnitId: sourceUnitId,
+        existingOccasions: _allOccasions,
+        onCreated: (value) => created = value);
+    if (!mounted || widget.unit.id != sourceUnitId) return;
+    if (target == null) {
+      await _loadOccasions();
+      return;
+    }
+    if (AppConfig.occasionSetupEnabled) {
+      if (target.id != widget.unit.id && created != null) {
+        await RouterService.navigateToUnitAdmin(context, target);
+        return;
+      }
+      await _loadOccasions();
+      if (created != null) _highlight(created!);
+    } else if (target.id == widget.unit.id) {
+      await _loadOccasions();
+    } else {
+      await RouterService.navigateToUnitAdmin(context, target);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final presentEvents = _filteredOccasions
+        .where((o) => o.startTime!.isBefore(now) && o.endTime!.isAfter(now))
+        .toList();
+    final upcomingEvents =
+        _filteredOccasions.where((o) => o.startTime!.isAfter(now)).toList();
+    upcomingEvents.sort((a, b) => a.startTime!.compareTo(b.startTime!));
+    final pastEvents =
+        _filteredOccasions.where((o) => o.endTime!.isBefore(now)).toList();
+    pastEvents.sort((a, b) => b.endTime!.compareTo(a.endTime!));
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: () async {
+                  await _loadOccasions();
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildHeaderControls()),
+                    if (_dashboardFailed)
+                      SliverToBoxAdapter(
+                          child: TextButton.icon(
+                              onPressed: _loadOccasions,
+                              icon: const Icon(Icons.refresh),
+                              label: Text(
+                                  '${UnitStrings.loadUnitFailed} - ${CommonStrings.retry}'))),
+                    if (_demoCatalog != null)
+                      SliverToBoxAdapter(
+                          child: DemoOccasionsSection(
+                              initialCatalog: _demoCatalog,
+                              load: () async => _demoCatalog!,
+                              hasOwnOccasions: _allOccasions.isNotEmpty,
+                              onCreateCopy: (item) =>
+                                  _handleCreateCopy(item.occasion))),
+                    if (_canEditDrafts && _draftError != null)
+                      SliverToBoxAdapter(
+                          child: TextButton(
+                              onPressed: _loadDrafts,
+                              child: Text(
+                                  '${_draftError!} - ${OccasionSetupStrings.retry}'))),
+                    if (_canEditDrafts && _filteredDrafts.isNotEmpty) ...[
+                      _buildSectionHeader(context, OccasionSetupStrings.drafts),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            final columns = (constraints.maxWidth / 420)
+                                .ceil()
+                                .clamp(1, 100);
+                            final width =
+                                (constraints.maxWidth - 16 * (columns - 1)) /
+                                    columns;
+                            return Wrap(spacing: 16, runSpacing: 16, children: [
+                              for (final draft in _filteredDrafts)
+                                SizedBox(
+                                    width: width,
+                                    height: 110,
+                                    child: OccasionSetupDraftCard(
+                                        key: ValueKey(draft.id),
+                                        draft: draft,
+                                        onResume: () => _resumeDraft(draft),
+                                        onDelete: () => _deleteDraft(draft))),
+                            ]);
+                          }),
+                        ),
+                      ),
+                    ],
+                    if (_filteredOccasions.isEmpty &&
+                        _filteredDrafts.isEmpty &&
+                        _searchController.text.isNotEmpty)
+                      SliverFillRemaining(
+                          child: Center(child: Text(UnitStrings.noEventsFound)))
+                    else ...[
+                      if (presentEvents.isNotEmpty) ...[
+                        _buildSectionHeader(
+                            context, CommonStrings.happeningNow),
+                        _buildGrid(presentEvents, isPresent: true),
+                      ],
+                      if (upcomingEvents.isNotEmpty) ...[
+                        _buildSectionHeader(
+                            context, CommonStrings.upcomingEvents),
+                        _buildGrid(upcomingEvents),
+                      ],
+                      if (pastEvents.isNotEmpty) ...[
+                        _buildSectionHeader(context, CommonStrings.pastEvents),
+                        ..._buildPastEvents(pastEvents),
+                      ],
+                    ],
+                    const SliverToBoxAdapter(child: SizedBox(height: 64)),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderControls() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            CommonStrings.events,
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16.0),
+          if (_landingFailed) ...[
+            _buildLandingStatus(),
+            const SizedBox(height: 16),
+          ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const double buttonWidthThreshold = 550.0;
+              bool showButton = true;
+              if (constraints.maxWidth < buttonWidthThreshold) {
+                showButton = !_isSearching;
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: _buildSearchField()),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, animation) => SizeTransition(
+                        sizeFactor: animation,
+                        axis: Axis.horizontal,
+                        child: child),
+                    child: showButton &&
+                            RightsService.currentUnit()?.id == widget.unit.id &&
+                            RightsService.hasCapability(
+                                AuthorizationCapabilities.occasionsCreate)
+                        ? Row(
+                            key: const ValueKey('add-button'),
+                            children: [
+                              const SizedBox(width: 16),
+                              OccasionCreationButton(
+                                showChoices: AppConfig.occasionSetupEnabled,
+                                onGuided: _addNewEvent,
+                                onQuick: () =>
+                                    _addNewEvent(withoutWizard: true),
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(key: ValueKey('empty-box')),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    final theme = Theme.of(context);
+    return TextField(
+      controller: _searchController,
+      focusNode: _searchFocusNode,
+      decoration: InputDecoration(
+        hintText: AdministrationStrings.findOccasionHint,
+        prefixIcon: Icon(Icons.search, size: 20, color: theme.hintColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+          borderSide: BorderSide(color: theme.dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+          borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+          borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
+        ),
+        isDense: true,
+        // Reduced vertical padding to make the search field smaller.
+        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                // By removing padding and constraints, the IconButton won't add extra vertical space.
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: () => _searchController.clear(),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+        child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+      ),
+    );
+  }
+
+  List<Widget> _buildPastEvents(List<OccasionModel> occasions) {
+    final byYear = groupPastOccasionsByYear(occasions);
+    if (byYear.isEmpty) return [_buildGrid(occasions)];
+    final years = byYear.keys.toList();
+
+    return [
+      for (final year in years) ...[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding:
+                EdgeInsets.fromLTRB(16, year == years.first ? 0 : 24, 16, 12),
+            child: Semantics(
+              header: true,
+              child: Row(
+                children: [
+                  Text('$year', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(width: 16),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _buildGrid(byYear[year]!),
+      ],
+    ];
+  }
+
+  Widget _buildGrid(List<OccasionModel> occasions, {bool isPresent = false}) {
+    final createdIndex =
+        occasions.indexWhere((o) => o.id == _createdOccasionId);
+    if (createdIndex >= 0) _createdGridIndex = createdIndex;
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      sliver: SliverGrid(
+        key: createdIndex >= 0 ? _createdGridKey : null,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 420,
+          mainAxisExtent: 110 +
+              (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(0, 100) *
+                  4,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final occasion = occasions[index];
+            final card = OccasionEditCard(
+              key: ValueKey(occasion.id),
+              occasion: occasion,
+              onTap: () => _handleView(occasion),
+              onCreateCopy: () => _handleCreateCopy(occasion),
+              isPresent: isPresent,
+              isAppLanding: _landing?.enabled == true &&
+                  _landing?.occasionId == occasion.id,
+              onSetAppLanding: _landing?.enabled == true &&
+                      _landing?.canManage == true &&
+                      !_savingLanding &&
+                      AppConfig.forceOccasionLink == null &&
+                      (occasion.isOpen == true ||
+                          _landing?.occasionId == occasion.id)
+                  ? () => _setLanding(
+                      _landing?.occasionId == occasion.id ? null : occasion.id)
+                  : null,
+            );
+            return occasion.id == _createdOccasionId
+                ? OccasionCreatedHighlight(
+                    key: ValueKey('created-${occasion.id}'), child: card)
+                : card;
+          },
+          childCount: occasions.length,
+        ),
+      ),
+    );
+  }
+}

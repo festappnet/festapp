@@ -1,0 +1,31 @@
+# Copy to ignored wrangler.toml only after the final canonical occasion IDs are
+# fixed by fresh merge evidence. Never deploy this placeholder contract.
+name = "festapp-sync-publisher"
+main = "src/worker.ts"
+compatibility_date = "2026-08-01"
+workers_dev = false
+routes = [
+  { pattern = "sync-publisher.festapp.net", custom_domain = true }
+]
+
+[vars]
+SUPABASE_URL = "https://api.festapp.net"
+SYNC_ASSET_ORIGIN = "https://assets.festapp.net"
+SYNC_SCOPE_IDS = "REPLACE_WITH_FINAL_CANONICAL_OCCASION_IDS"
+SYNC_RETENTION_APPLY = "false"
+SYNC_ARTIFACT_RETENTION_DAYS = "7"
+SYNC_RECEIPT_RETENTION_DAYS = "30"
+
+[[r2_buckets]]
+binding = "PUBLIC_SYNC"
+bucket_name = "festapp-public"
+
+[triggers]
+crons = [ "* * * * *", "17 3 * * *" ]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[placement]
+mode = "smart"

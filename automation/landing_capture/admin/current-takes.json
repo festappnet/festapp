@@ -1,0 +1,38 @@
+{
+  "locale": "cs",
+  "source_head": "eb23047248d59bf86345b9e0b79db4a988275231",
+  "source_state": "dirty preexisting tree preserved",
+  "backend": "disposable loopback56831",
+  "fixture": {
+    "occasion": 6,
+    "form": 7,
+    "blueprint": 3
+  },
+  "native_ticket_gestures": [
+    [
+      590,
+      540,
+      590,
+      505
+    ],
+    [
+      435,
+      650,
+      435,
+      620
+    ],
+    [
+      1002,
+      551,
+      1032,
+      520
+    ]
+  ],
+  "ticket_take": "ticket-drag-cs-1792669135",
+  "ticket_saved": false,
+  "ticket_save_boundary": "42501 background ownership guard after capture",
+  "form_saved": true,
+  "scanner_source": "routing-capture/check-in-mobile-frames, real430x900 UI with synthetic camera, jsQR and canonical RPC",
+  "orders_locale_audit": "retained source Czech UI and synthetic names, source recipe orders.md",
+  "verification": "8 MP4s decode fully; final screenshot/posters inspected; PythonAST+Node syntax pass"
+}

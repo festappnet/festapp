@@ -1,0 +1,22 @@
+# Explicit runtime database override for isolated rehearsal/cutover drills.
+# The database container is intentionally not overridden. Invoke this file only
+# with a validated FESTAPP_RUNTIME_DATABASE. Files are owned by the R2 Worker.
+services:
+  auth:
+    environment:
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}
+  rest:
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}
+  realtime:
+    environment:
+      DB_NAME: ${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}
+  meta:
+    environment:
+      PG_META_DB_NAME: ${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}
+  functions:
+    environment:
+      SUPABASE_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}
+  studio:
+    environment:
+      POSTGRES_DB: ${FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE}

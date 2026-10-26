@@ -1,0 +1,9 @@
+project_id = "festapp-db-tests-pg15"
+
+[db]
+port = 55432
+shadow_port = 55430
+major_version = 15
+
+[db.seed]
+enabled = false

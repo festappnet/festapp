@@ -1,0 +1,100 @@
+{
+  "scope": "disposable local fixture DB only",
+  "configurations": 3,
+  "unresolved": 0,
+  "schema": 3,
+  "rows": [
+    {
+      "id": 2267,
+      "version": 1,
+      "digest": "1420037459bbf867ee5ca2f7adf508ad0e33ef89065c40443f98c5652a2f7443",
+      "templates": [
+        "wide",
+        "named"
+      ]
+    },
+    {
+      "id": 2268,
+      "version": 1,
+      "digest": "7e091067fda6d306e203521bfa6c1c05957d8b18e95ca8a16761ec3fb7478ac1",
+      "templates": [
+        "wide",
+        "named"
+      ]
+    },
+    {
+      "id": 2269,
+      "version": 1,
+      "digest": "2e28fee1945100b1a514cc06140adb4f73461ccebfdc058fe880623da33d9714",
+      "templates": [
+        "wide",
+        "named"
+      ]
+    }
+  ],
+  "replay": "versions and audit unchanged",
+  "conflict": "all layouts, versions and audit rolled back",
+  "catalog_drift": "rejected before writes",
+  "migration_ledger": "only 20261013160000 recorded in the disposable DB",
+  "runtime_import_graph": {
+    "modules": 44,
+    "legacy_selector_or_importer_reachable": false
+  },
+  "browser": {
+    "provider": "isolated local headless Chromium",
+    "desktop": [
+      1400,
+      1000
+    ],
+    "mobile": [
+      320,
+      800
+    ],
+    "long_group_name": true,
+    "picker_filter_and_escape": true,
+    "auto_properties_tab": true,
+    "implicit_preview_requests": 0,
+    "explicit_pdf_requests": 1,
+    "pdf_request": {
+      "schemaVersion": 3,
+      "product_fields": [
+        {
+          "productTypeId": 123,
+          "label": "Večeře"
+        },
+        {
+          "productTypeId": 124,
+          "label": "Můj odvoz"
+        }
+      ]
+    },
+    "javascript_errors": 0,
+    "horizontal_overflow": false
+  },
+  "verification": {
+    "deno_cutover": 28,
+    "deno_layout": 17,
+    "deno_fonts": 9,
+    "flutter_editor": 87,
+    "flutter_320px_200percent_and_escape": "passed",
+    "shared_formatter": "passed",
+    "sql_files": [
+      "ticket_layout_settings_test.sql",
+      "ticket_product_type_cutover_test.sql",
+      "duplicate_occasion_target_unit_test.sql"
+    ],
+    "dart_analysis": "no errors or warnings; style infos remain",
+    "flutter_final_picker": 8,
+    "flutter_price_parity": 3,
+    "flutter_byte_budget": "passed",
+    "offline_dynamic_geometry": "passed; rounding tolerance 1e-9"
+  },
+  "production_operations_performed": false,
+  "migration_sha256": "4f1947ad83d2dfb99c2c5a3459675914e61e79c1b32523d1970a72ef57a9e426",
+  "cleanup": {
+    "headless_browser": "closed",
+    "fixture_server": "stopped",
+    "disposable_database": "dropped",
+    "existing_local_database": "unchanged"
+  }
+}

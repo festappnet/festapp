@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "note": "Real owned-environment checks, preserved separately from portable rollback SQL tests. Not counted as PASS by the ordinary SQL suite.",
+  "checks": [
+    {
+      "path": "database/acceptance/blueprint/reviewed_demo_legacy_migration_check.sql",
+      "originalPath": "database/tests/blueprint/reviewed_demo_legacy_migration_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/native_business_group_binding_check.sql",
+      "originalPath": "database/tests/blueprint/native_business_group_binding_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/public_hold_availability_check.sql",
+      "originalPath": "database/tests/blueprint/public_hold_availability_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/image_resources_check.sql",
+      "originalPath": "database/tests/blueprint/image_resources_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/reviewed_legacy_migration_check.sql",
+      "originalPath": "database/tests/blueprint/reviewed_legacy_migration_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/setup_draft_integration_check.sql",
+      "originalPath": "database/tests/blueprint/setup_draft_integration_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/canonical_layout_cutover_check.sql",
+      "originalPath": "database/tests/blueprint/canonical_layout_cutover_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/admin_private_order_note_check.sql",
+      "originalPath": "database/tests/blueprint/admin_private_order_note_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/setup_named_slot_copy_check.sql",
+      "originalPath": "database/tests/blueprint/setup_named_slot_copy_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/setup_active_feature_choices_check.sql",
+      "originalPath": "database/tests/blueprint/setup_active_feature_choices_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    },
+    {
+      "path": "database/acceptance/blueprint/addressed_hold_context_admission_check.sql",
+      "originalPath": "database/tests/blueprint/addressed_hold_context_admission_test.sql",
+      "requires": "Owned full-backend blueprint fixture; psql fixture_form variable, and real processed image asset where declared."
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Appended to the existing COMPOSE_FILE list by the guarded installer.
+services:
+  db:
+    image: ${FESTAPP_PGBACKREST_DB_IMAGE:?install and seal the pgBackRest derivative first}
+    command: !override
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=300s
+      - -c
+      - archive_command=pgbackrest --stanza=festapp archive-push %p
+    volumes:
+      - /etc/festapp-pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - /var/lib/festapp-pgbackrest:/var/lib/pgbackrest

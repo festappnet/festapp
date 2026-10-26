@@ -1,0 +1,39 @@
+# Ruční ověřování pořadatelů
+
+Právní profil patří Unit. Manager jej spravuje na samostatné stránce z nastavení pořadatele; tenant Organization určuje schvalovací autoritu. Profil se ukládá online samostatně, mimo běžný save Unit a offline sync. Veřejný formulář zobrazuje pouze schválenou aktuální identitu. Ověření není garancí kvality akce ani dodání vstupenek.
+
+## Ověřovací standard první verze
+
+1. Žadatel uloží právní název, zemi, registrační číslo, strukturované sídlo a veřejný kontaktní e-mail. DIČ, telefon a HTTPS web jsou volitelné. Samotný platný kontrolní součet českého IČO není ověřením.
+2. Manager výslovně odešle uloženou revizi k ověření. Před odesláním vidí, že údaje budou veřejné u všech formulářů Unit.
+3. Správce příslušné platformy otevře **Ověření pořadatelů** v administraci platformy. Porovná právní název, registrační číslo a sídlo s autoritativním veřejným rejstříkem dané země. Ověří také oprávnění žadatele subjekt zastupovat: doložená role ve veřejném rejstříku nebo potvrzení z nezávisle zjištěného oficiálního kontaktu subjektu. Shoda e-mailové domény sama nestačí.
+4. Do zdroje ověření zaznamená odkaz/název rejstříku, datum kontroly a způsob ověření zastoupení. Interní poznámka nesmí obsahovat osobní doklady nebo zbytečné osobní údaje. Schválí přesně zobrazenou pending revizi. Při nedostatečných podkladech žádost zamítne se srozumitelným feedbackem žadateli.
+5. Při zjištěném problému vyhledá profil ve filtru **Ověřené** a odebere ověření s důvodem. Nové načtení veřejného formuláře již patičku nezobrazí; otevřená stránka je snapshot do svého dalšího refresh.
+
+Manager vidí feedback, nikoli interní poznámku ani zdroj. Profil a audit nejsou přímo čitelné přes tabulkové API. Každá změna veřejných údajů ruší pending/verified stav a vyžaduje novou žádost. Nezměněné normalizované údaje nic nezapisují. Každý skutečný save nebo přechod zvyšuje revizi a atomicky zapisuje audit.
+
+## Konflikt, timeout a provoz
+
+Po konfliktu se zastaralé rozhodnutí neopakuje. Načtěte aktuální profil a znovu posuďte konkrétní revizi. Po timeoutu klient obnoví potvrzený stav a ponechá rozepsaná pole; neprohlašuje neznámý výsledek za úspěch. Před vědomým načtením serverových údajů do editoru si zachovejte potřebný koncept.
+
+Přesun celé Unit mezi tenanty není součást této funkce. Privilegovaná migrace musí ještě před přesunem v téže transakci zrušit ověření, zvýšit revizi a zaznamenat audit; samotná změna FK není podporovaný workflow. Kontrola aktuálního tenanta veřejnou projekci při nesouladu skryje, ale nenahrazuje tuto podmínku (zejména při přesunu zpět).
+
+Kanonické SQL: `database/functions/organization_verification/`. Migraci sestavuje `python3 automation/assemble-organization-verification-migration.py`; zachycuje i příslušné autorizované čtecí projekce. Produkční migrace a klientské nasazení vyžadují samostatné zadání pro jeden tenant podle AGENTS.md.
+
+## Úprava údajů a ARES
+
+V nastavení pořadatele otevřete položku **Právní údaje a ověření**. Detail má
+vlastní adresu `/unit/:id/edit/settings/legal-profile`; návrat do nastavení
+chrání rozepsané změny. Údaje jsou seskupené na organizaci, sídlo a kontakt.
+
+Pro české subjekty lze výslovně načíst veřejné údaje podle IČO z
+[oficiálního ARES](https://ares.gov.cz/swagger-ui/). Načtení doplní pouze název,
+IČO, DIČ a sídlo do upravitelného konceptu. Kontakty nepřepisuje; existující
+právní údaje nahradí až po potvrzení. Neprovádí uložení, odeslání žádosti ani
+schválení. Při chybě nebo nedostupnosti ARES lze údaje vyplnit ručně.
+
+## Oznámení žádosti
+
+Přechod na `pending` atomicky zařadí zprávu `UNIT_VERIFICATION_REQUEST` do centrální fronty `email_messages` pro aktuální administrátory platformy (`organization_users.is_admin`). Příjemci se určují na serveru přes `get_user_delivery_email`; veřejný kontakt pořadatele není příjemcem oznámení správci. Klíč jednotka/revize/příjemce zabraňuje duplicitám. Zpráva odkazuje na `/organizationEdit/<organization>` a nepoužívá sledování otevření. Před odesláním se znovu ověřuje stav žádosti, revize i správcovské oprávnění příjemce.
+
+Forward migraci sestavuje `python3 automation/assemble-organization-verification-notifications.py`; původní instalovaná migrace se nepřepisuje. Nejprve musí být dostupný renderer `unitVerificationEmail.ts` v procesu `process-email-queue`, potom lze aktivovat SQL producenta. Oprava starší žádosti může použít interní `enqueue_unit_verification_request(unit_id)` pouze pro explicitně vybranou stále čekající žádost; neprovádí se hromadný backfill.

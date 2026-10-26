@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Inherit the hosting Referrer-Policy: maps identify their origin to tile
+       providers, while sensitive auth callbacks retain no-referrer. -->
+  <script>
+    // Capture the short-lived Connect code before bootstrap or any analytics.
+    // It stays in memory only; the same Festapp user must finalize it server-side.
+    (function () {
+      let target = new URL(window.location.href);
+      const redirect = target.searchParams.get('redirect');
+      if (redirect) {
+        const restored = new URL(redirect, target.origin);
+        if (restored.origin === target.origin) target = restored;
+      }
+      if (target.pathname.endsWith('/stripe/pay') || target.pathname.endsWith('/stripe/return')) {
+        const isReturn = target.pathname.endsWith('/stripe/return');
+        const fragment = new URLSearchParams(target.hash.slice(1));
+        const saved = window.history.state && window.history.state.festappStripePayment;
+        const handoff = !isReturn && fragment.get('handoff');
+        const token = isReturn ? target.searchParams.get('return_handle') : handoff || fragment.get('pay') ||
+          (saved && saved.kind === 'pay' ? saved.token : null);
+        if (typeof token === 'string' && /^[a-f0-9]{64}$/.test(token)) {
+          window.__festappStripePaymentLink = JSON.stringify({kind:isReturn?'return':handoff?'handoff':'pay',token});
+        }
+        for (const key of ['return_handle','pay','handoff']) target.searchParams.delete(key);
+        target.hash = '';
+        window.history.replaceState(window.history.state, '', target.pathname + target.search);
+        return;
+      }
+      if (!target.pathname.endsWith('/stripe/connect/callback')) return;
+      const callback = {};
+      for (const key of ['code', 'state', 'error']) {
+        if (target.searchParams.has(key)) callback[key] = target.searchParams.get(key);
+      }
+      if (!Object.keys(callback).length) return;
+      window.__festappStripeConnectCallback = JSON.stringify(callback);
+      for (const key of ['code', 'state', 'error', 'error_description']) target.searchParams.delete(key);
+      window.history.replaceState(null, '', target.pathname + target.search + target.hash);
+    })();
+  </script>
+  <!--
+    Passkeys Web SDK shim. supabase_flutter pulls passkeys_web, whose
+    registerWith() calls PasskeyAuthenticator.init() at startup and throws when
+    the real SDK (bundle.js) is absent — aborting main() before runApp(). This
+    no-op stub installs only when the real SDK is missing (|| guard).
+  -->
+  <script>
+    window.PasskeyAuthenticator = window.PasskeyAuthenticator || {
+      init: function () {},
+      isConditionalMediationAvailable: function () { return Promise.resolve(false); }
+    };
+  </script>
+  <script>
+    // mobile_scanner's web reader calls play() on a camera video without
+    // setting muted/inline playback. Older mobile browsers reject that call
+    // after getUserMedia's async permission flow loses the original tap.
+    (function () {
+      const originalPlay = HTMLVideoElement.prototype.play;
+      HTMLVideoElement.prototype.play = function () {
+        if (typeof MediaStream !== 'undefined' && this.srcObject instanceof MediaStream) {
+          this.muted = true;
+          this.autoplay = true;
+          this.playsInline = true;
+          this.setAttribute('muted', '');
+          this.setAttribute('playsinline', '');
+        }
+        return originalPlay.apply(this, arguments);
+      };
+    })();
+  </script>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+
+<!--    old hash compatibility-->
+    <script>
+        // Check for redirect query param (Clean URL Logic)
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        // Login owns its redirect query until authentication finishes.
+        if (redirect && !['/login', '/app/login'].includes(window.location.pathname)) {
+            // Immediately restore the original path
+            // This hides 'flutter.html' and tells Flutter to load this route
+            console.log('Restoring clean URL via redirect param:', redirect);
+            window.history.replaceState(null, '', redirect);
+        }
+
+        if (window.location.hash) {
+          var hash = window.location.hash;
+
+          // Only run if the hash looks like a Flutter Route ("#/")
+          if (hash.startsWith('#/')) {
+
+            // Remove the '#' symbol (substring(1) drops the first character)
+            // "#/events" becomes "/events"
+            var newPath = hash.substring(1);
+
+            // Replace the current history state
+            window.history.replaceState(null, null, newPath);
+          }
+        }
+    </script>
+
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Application for events.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+  <link rel="manifest" href="site.webmanifest" />
+  <!-- Match browser chrome to the loading surface before Flutter starts. -->
+  <meta name="theme-color" content="#242424">
+  <meta name="color-scheme" content="dark">
+  <style>html, body { background-color: #242424; }</style>
+
+  <title>vstupenky.online</title>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    const oneSignalWebAppId = "73f77f22-961a-4ded-9647-e33a7ac14f90";
+
+   let oneSignalSdkPromise;
+   function loadOneSignalSdk() {
+       if (window.OneSignal) return Promise.resolve();
+       if (oneSignalSdkPromise) return oneSignalSdkPromise;
+       oneSignalSdkPromise = new Promise(function(resolve, reject) {
+           const script = document.createElement('script');
+           script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+           script.async = true;
+           script.onload = resolve;
+           script.onerror = function() {
+             oneSignalSdkPromise = null;
+             reject(new Error('OneSignal SDK could not be loaded'));
+           };
+           document.head.appendChild(script);
+       });
+       return oneSignalSdkPromise;
+   }
+
+   async function initializeOneSignal(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       if (!window.OneSignalInitialized) {
+           window.OneSignalInitialized = true;
+           OneSignalDeferred.push(async function(OneSignal) {
+               try {
+                 await OneSignal.init({
+                       appId: oneSignalWebAppId,
+                       safari_web_id: "web.onesignal.auto.34cabfa2-ddd9-46d0-b8b2-6fad793020e0",
+                       allowLocalhostAsSecureOrigin: true,
+                       persistNotification: false,
+                       welcomeNotification: {
+                         title: "Notifikace",
+                         message: "Děkujeme za povolení notifikací.",
+                       },
+                       serviceWorkerParam: { scope: "/push/" },
+                       serviceWorkerPath: "./push/OneSignalSDKWorker.js",
+                   });
+
+                   OneSignal.Notifications.addEventListener('foregroundWillDisplay', function(event) {
+                       console.log("Received notification: ", event.notification.title, event.notification.body);
+                   });
+               } catch (error) {
+                 console.log("OneSignal initialization failed:", error);
+                 window.OneSignalInitialized = false;
+                 if (errorCallback) errorCallback(error);
+                 return;
+               }
+
+               if (callback) callback(null);
+           });
+           try {
+             await loadOneSignalSdk();
+           } catch (error) {
+             window.OneSignalInitialized = false;
+             if (errorCallback) errorCallback(error);
+             throw error;
+           }
+       }
+   }
+
+   async function requestNotificationPermission(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(false);
+           return;
+       }
+       try {
+           await OneSignal.Notifications.requestPermission()
+           console.log("Notification permission request sent.");
+           if (callback) callback(getNotificationPermission());
+       } catch (error) {
+           console.error("Notification permission request failed:", error);
+           if (errorCallback) errorCallback(error);
+       }
+   }
+
+   async function logout(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       OneSignalDeferred.push(async function(OneSignal) {
+           try {
+             await OneSignal.logout();
+             if (callback) callback(null);
+           } catch (error) {
+             if (errorCallback) errorCallback(error);
+           }
+       });
+   }
+
+   async function login(externalId, callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       OneSignalDeferred.push(async function(OneSignal) {
+           try {
+             await OneSignal.login(externalId);
+             if (callback) callback(null);
+           } catch (error) {
+             if (errorCallback) errorCallback(error);
+           }
+       });
+   }
+
+   async function tagCurrentSubscription(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       OneSignalDeferred.push(async function(OneSignal) {
+           try {
+             await OneSignal.User.addTags({
+               app_generation: '',
+               occasion: ''
+             });
+             if (callback) callback(null);
+           } catch (error) {
+             if (errorCallback) errorCallback(error);
+           }
+       });
+   }
+
+   function getNotificationPermission() {
+    if (!oneSignalWebAppId) return false;
+
+    // Check if the Notification API is supported
+    if (!("Notification" in window)) {
+      console.error("This browser does not support desktop notifications.");
+      return false;
+    }
+
+    // Check if the site is served over HTTPS or is running on localhost
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      console.error("Notifications require a secure context (HTTPS).");
+      return false;
+    }
+
+    // Return the permission status
+    return OneSignal.Notifications.permission;
+  }
+
+   async function optIn(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       try {
+           await OneSignal.User.PushSubscription.optIn();
+           console.log("User has opted in for notifications.");
+       } catch (error) {
+           console.error("Opt-in for notifications failed:", error);
+       }
+       if (callback) callback(null);
+   }
+
+   async function optOut(callback, errorCallback) {
+       if (!oneSignalWebAppId) {
+           if (callback) callback(null);
+           return;
+       }
+       try {
+           await OneSignal.User.PushSubscription.optOut();
+           console.log("User has opted out of notifications.");
+       } catch (error) {
+           console.error("Opt-out of notifications failed:", error);
+       }
+       if (callback) callback(null);
+   }
+  </script>
+  <script>
+    function setMetaThemeColor(color) {
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", color);
+      }
+    function setBodyBackgroundColor(color) {
+      document.body.style.backgroundColor = color;
+    }
+  </script>
+  <!--
+    Automatic update prompt. The build stamps the deployed version into
+    window.__FESTAPP_BUILD_VERSION__ (via automation/configure_version.js) and
+    emits /festapp-version.json (via automation/cloudflare_build.sh). The
+    festapp_update_prompt.js script polls that file and offers a reload banner
+    when a newer build is live, AND performs a "deep refresh" on load: if a
+    stale pre-PWA Flutter service worker / cache is evicted once. Current builds
+    use festapp_service_worker.js, which keeps a complete versioned app shell for
+    atomic updates and offline cold starts.
+  -->
+  <script>
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_LOCAL_DEVELOPMENT__ =
+      ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  </script>
+  <script src="festapp_flutter_bootstrap_guard.js" defer></script>
+  <script src="festapp_pwa_bridge.js" defer></script>
+  <script src="festapp_update_prompt.js" defer></script>
+<noscript><style>#loader-content{display:none!important}</style></noscript></head>
+<body>
+
+<script>
+  // Suppress browser swipe navigation on the root scrolling element as well.
+  document.documentElement.style.overscrollBehaviorX = "none";
+  // Disable swipe back gesture globally
+  document.body.style.overscrollBehaviorX = "none";
+  document.body.style.overscrollBehaviorY = "none";
+
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Retain the event without suppressing the browser's native installation affordance.
+    deferredPrompt = e;
+    if (typeof hasPrompt === 'function') hasPrompt();
+  });
+
+  function promptInstall(){
+     if (!deferredPrompt) return;
+     // Open synchronously from the click. Waiting here can consume the browser's
+     // transient user activation and make the prompt silently fail on Android.
+     deferredPrompt.prompt();
+  }
+
+  // Listen for app install event
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    appInstalled();
+  });
+
+  // Track how PWA was launched (either from browser or as PWA)
+  function getLaunchMode() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if(deferredPrompt) hasPrompt();
+    if (document.referrer.startsWith('android-app://')) {
+      appLaunchedAsTWA();
+    } else if (navigator.standalone || isStandalone) {
+      appLaunchedAsPWA();
+    } else {
+      window.appLaunchedInBrowser();
+    }
+  }
+</script>
+
+<script>
+  async function persistUsedFontResources() {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) {
+      await new Promise(function(resolve) {
+        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+      });
+    }
+    if (document.readyState !== 'complete') {
+      await new Promise(function(resolve) {
+        window.addEventListener('load', resolve, { once: true });
+      });
+    }
+    const fontUrls = performance.getEntriesByType('resource')
+      .map(function(entry) { return entry.name; })
+      .filter(function(resourceUrl) {
+        const origin = new URL(resourceUrl).origin;
+        return origin === 'https://fonts.googleapis.com' ||
+          origin === 'https://fonts.gstatic.com';
+      });
+    await Promise.allSettled([...new Set(fontUrls)].map(function(resourceUrl) {
+      // Re-fetch through the now-active worker. This also persists Flutter's
+      // demand-loaded Noto Color Emoji shards, but no unused font catalog.
+      return fetch(resourceUrl, { mode: 'cors', cache: 'force-cache' });
+    }));
+  }
+
+  // Development-only boundary. Production cannot enter because the build-time
+  // hostname guard above accepts only loopback hosts.
+  async function prepareFestappLocalDevelopment() {
+    if (!('serviceWorker' in navigator)) return;
+
+    const resetKey = 'festappLocalDevelopmentServiceWorkerReset';
+    const hadAppShellController =
+      navigator.serviceWorker.controller?.scriptURL.includes('festapp_service_worker.js') ||
+      navigator.serviceWorker.controller?.scriptURL.includes('flutter_service_worker.js');
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations
+      .filter(function(registration) {
+        const scriptUrl = registration.active?.scriptURL ||
+          registration.waiting?.scriptURL ||
+          registration.installing?.scriptURL ||
+          '';
+        return scriptUrl.includes('festapp_service_worker.js') ||
+          scriptUrl.includes('flutter_service_worker.js');
+      })
+      .map(function(registration) { return registration.unregister(); }));
+
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames
+        .filter(function(cacheName) {
+          return cacheName.startsWith('festapp-app-shell-') ||
+            cacheName.startsWith('flutter-app-cache');
+        })
+        .map(function(cacheName) { return caches.delete(cacheName); }));
+    }
+
+    // An unregistered worker keeps controlling the current page until the next
+    // navigation. Reload once so debug assets can no longer come from its old
+    // production cache.
+    if (hadAppShellController && sessionStorage.getItem(resetKey) !== '1') {
+      sessionStorage.setItem(resetKey, '1');
+      window.location.reload();
+      return new Promise(function() {});
+    }
+    sessionStorage.removeItem(resetKey);
+  }
+
+  // Production builds install the offline shell. Local Flutter development
+  // instead removes stale production workers before booting the debug bundle.
+  if (window.__FESTAPP_LOCAL_DEVELOPMENT__) {
+    window.festappLocalDevelopmentReady =
+      prepareFestappLocalDevelopment().catch(function(error) {
+        console.warn('Festapp localhost service worker cleanup failed:', error);
+      });
+  } else if ('serviceWorker' in navigator) {
+    window.festappOfflineReady = navigator.serviceWorker.register('/festapp_service_worker.js', {
+      scope: '/',
+      updateViaCache: 'none'
+    }).then(persistUsedFontResources).catch(function(error) {
+      console.warn('Festapp offline service worker registration failed:', error);
+    });
+  }
+</script>
+
+<script>
+  // The Flutter engine starting is not enough to call the application ready:
+  // Dart can still be restoring the offline context or loading the occasion.
+  // FestappBootstrap calls this only after the first usable app frame.
+  window.markFestappAppReady = function() {
+    if (window.__FESTAPP_APP_READY__ === true) return;
+    window.__FESTAPP_APP_READY__ = true;
+    document.getElementById('public-seo-summary')?.remove();
+    const loader = document.getElementById('loader-content');
+    if (loader) {
+      loader.style.opacity = '0';
+      loader.style.pointerEvents = 'none';
+      setTimeout(function() { loader.remove(); }, 400);
+    }
+    window.dispatchEvent(new Event('festapp-app-ready'));
+  };
+
+  window.addEventListener('load', async function(ev) {
+      try {
+        if (window.festappLocalDevelopmentReady) {
+          await window.festappLocalDevelopmentReady;
+        }
+        window.prepareFestappFlutterBootstrap();
+        {{flutter_js}}
+        {{flutter_build_config}}
+
+        window.setFestappStartupPhase?.('S01');
+        _flutter.loader.load({
+          onEntrypointLoaded: async function(engineInitializer) {
+            try {
+              window.setFestappStartupPhase?.('S02');
+              const appRunner = await engineInitializer.initializeEngine({
+                useColorEmoji: true,
+                assetBase: new URL(".", document.baseURI).href
+              });
+              window.setFestappStartupPhase?.('S03');
+              await appRunner.runApp();
+            } catch (error) {
+              console.error('Festapp Flutter startup failed:', error);
+              if (window.recoverFestappStartup) {
+                window.recoverFestappStartup('bootstrap-error');
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Festapp Flutter bootstrap guard failed:', error);
+        if (window.recoverFestappStartup) {
+          window.recoverFestappStartup('bootstrap-guard-error');
+        }
+      }
+    });
+</script>
+
+<style>
+    body {
+      height: 100vh;
+      width: 100vw;
+      margin: 0px;
+    }
+    .main-content {
+      --festapp-loading-accent: #80BDF2;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #242424;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease-out;
+    }
+
+  img.initial-logo {
+    display: block;
+    width: calc(100vw - 48px);
+    max-width: 320px;
+    max-height: 120px;
+    height: auto;
+    object-fit: contain;
+  }
+
+  /* HTML: <div class="loader"></div> */
+  .loader {
+    height: 50px;
+    width: 50px;
+    aspect-ratio: 1;
+    display: grid;
+    border: 4px solid #0000;
+    border-radius: 50%;
+    border-color: #ccc #0000;
+    animation: l16 1s infinite linear;
+  }
+  .loader::before,
+  .loader::after {
+    content: "";
+    grid-area: 1/1;
+    margin: 2px;
+    border: inherit;
+    border-radius: 50%;
+  }
+  .loader::before {
+    border-color: var(--festapp-loading-accent) #0000;
+    animation: inherit;
+    animation-duration: .5s;
+    animation-direction: reverse;
+  }
+  .loader::after {
+    margin: 8px;
+  }
+  @keyframes l16 {
+    100%{transform: rotate(1turn)}
+  }
+</style>
+
+  <div class="main-content" id="loader-content">
+    <img class="initial-logo" src="loading-logo.svg" alt="">
+    <div class="loader" role="status" aria-label="Načítání aplikace"></div>
+  </div>
+</body>
+</html>

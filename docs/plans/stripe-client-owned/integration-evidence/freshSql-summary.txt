@@ -1,0 +1,1 @@
+31 SQL files selected on the final fresh catalog. 30 passed in the batch; snapshot_test.sql failed because its legacy fixture chose an unrelated seeded occasion. After using scanner_test_fixture(2), its focused rerun passed (1/1). No production SQL changed for this fixture repair. Zero skips.

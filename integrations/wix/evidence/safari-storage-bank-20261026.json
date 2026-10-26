@@ -1,0 +1,101 @@
+{
+  "verifiedAt": "2026-10-26T01:01:19.007882+00:00",
+  "source": "2e701e4de0b05000f2447a1c9de2e37147be9fc0 plus fixture storage probe",
+  "status": "PASS_LOCAL_SAFARI_STORAGE_DENIAL_BANK_ORDER_QR_WITH_LAYOUT_LIMIT",
+  "device": {
+    "name": "Festapp Wix QA 20261026",
+    "udid": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+    "runtime": "iOS26.5/MobileSafari26.5",
+    "physicalDevice": false
+  },
+  "boundary": {
+    "parent": "http://localhost:59802/tests/fixtures/embedded-checkout/host.html",
+    "childOrigin": "http://127.0.0.1:59802",
+    "backend": "http://127.0.0.1:59921",
+    "project": "festapp-wix-qa-20261025",
+    "actualWixHost": false,
+    "productionOrderOrHold": false,
+    "realMoneyTransfer": false,
+    "externalEmailDelivery": false,
+    "providerRedirectQualified": false
+  },
+  "storage": {
+    "nativeSettingsBlockAllCookies": "OFF -> ON, confirmed Block All -> OFF, visually verified restored",
+    "probe": "Native get/set/get/remove inside actual checkout iframe; parent accepts exact origin and own frame source; no API substitution",
+    "localStorage": "SecurityError",
+    "sessionStorage": "SecurityError",
+    "nativeEmailNameSurnameEntry": true,
+    "summary150Czk": true,
+    "freshParentNavigation": "Blank form, no automatic resubmit, original local order retained",
+    "draftOrReceiptRetentionAfterReload": false,
+    "afterRestoringBlockAllCookies": "Cross-site child still reports both SecurityError; no restored storage availability claim"
+  },
+  "order": {
+    "formId": 35,
+    "buyer": "wix-safari-storage-20261026@example.invalid",
+    "countForBuyerBefore": 0,
+    "countForBuyerAfter": 1,
+    "formOrderCountBefore": 1,
+    "formOrderCountAfterSubmitAndNavigation": 2,
+    "orderId": 233,
+    "state": "ordered",
+    "amount": 150,
+    "currency": "CZK",
+    "orderSymbol": "6L3W6Q1P4V",
+    "variableSymbol": "4412",
+    "nativeSubmitClicks": 1,
+    "confirmationRendered": true,
+    "bankInstructionsExpanded": true,
+    "qrDecodedBy": "Apple Vision VNDetectBarcodesRequest on real simulator screenshot",
+    "qrPayload": "SPD*1.0*ACC:CZ7001000000000000123457*AM:150.00*CC:CZK*X-VS:4412",
+    "qrMatchesSqlPayment": true,
+    "download": "Native Safari download confirmation displayed and accepted; downloaded file contents not independently verified",
+    "emailCapacityPaused": true,
+    "emailWorkerUrlNull": true
+  },
+  "seatMap": {
+    "formId": 34,
+    "occupiedA1Rendered": true,
+    "nativeTapOccupiedSeat": true,
+    "newSelectionObserved": false,
+    "escapePressed": true,
+    "secretNull": true,
+    "secretExpirationNull": true,
+    "soldTicketPresent": true,
+    "availableSeatHoldFlowQualified": false
+  },
+  "limits": {
+    "softwareKeyboardGeometryQualified": false,
+    "keyboardObservation": "Focused field with accessory bar; AX key q begins at y898, return y1060, below 874px logical display. Native preferences API setting false did not show full keyboard.",
+    "bankReceiptLayoutQualified": false,
+    "iconObservation": "Initial bank receipt displayed literal check_circle/content_copy, with overflow. Later diagnostic found CSS sheet present, computed Material Icons family, explicit document.fonts.load succeeded. Original cause remains unproven; no layout fix claimed. Diagnostic is saved privately and is not part of the storage probe.",
+    "stripeRedirectReturnQualified": false,
+    "physicalIphoneQualified": false
+  },
+  "cleanup": {
+    "simulatorActiveDuringTest": false,
+    "visibleSimulatorWindows": 0,
+    "taskDeviceShutdown": true,
+    "nativeBlockAllCookiesRestoredOff": true,
+    "taskKeyboardPreferenceRestoredThroughPreferencesApi": true,
+    "ownViteAndEdgeStopped": true,
+    "localBackendStoppedWithBackup": true,
+    "preservedOrderIds": [
+      166,
+      167,
+      200,
+      233
+    ],
+    "productionSettingsChanged": false,
+    "newSupportCase": false,
+    "paidCommitment": false
+  },
+  "screenshots": {
+    "integrations/wix/evidence/screenshots/safari-block-all-enabled.png": "e7edd9089d63121aa77f006fedccf2a01deeef8dae79c1ff24f69811c39e6a52",
+    "integrations/wix/evidence/screenshots/safari-storage-proof.png": "6dbd71ea97ab32e375375e7f41315594b1ffb6b0f08170a64dd3a7e178225ada",
+    "integrations/wix/evidence/screenshots/safari-storage-summary.png": "15171a08eeb41f0ed21ed51418b085979336ce6d8363fd414070f3178cedc3b8",
+    "integrations/wix/evidence/screenshots/safari-storage-bank-instructions.png": "89ac8882ff774489a141a698c93f8bde07ddfe5b0458e2189c8a4cb26e369198",
+    "integrations/wix/evidence/screenshots/safari-storage-after-reload.png": "33ced8263740550c1d2b5eff1d9ad3ae5751bad350f138aad17d85f602eee1f3",
+    "integrations/wix/evidence/screenshots/safari-seat-map-occupied-tap.png": "67538587a44b1c7f4013d71db6c08c4dd7d97640099c1aeee9cca3c21cadbf6a"
+  }
+}

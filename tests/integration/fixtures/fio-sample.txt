@@ -1,0 +1,9 @@
+From: info@fio.cz
+Subject: Pohyb na účtu
+
+Částka: 150,00 CZK
+Protiúčet: 12345678/0100
+VS: 999888777
+Zpráva pro příjemce: Test Payment Fio
+ID pokynu: 1122334455
+Datum: 24.01.2026

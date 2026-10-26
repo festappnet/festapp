@@ -1,0 +1,4 @@
+#include? "Pods/Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.release.xcconfig"
+#include "Generated.xcconfig"
+
+CODE_SIGN_IDENTITY = Apple Distribution

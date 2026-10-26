@@ -1,0 +1,39 @@
+<?php
+/**
+ * Plugin Name: @@NAME@@
+ * Plugin URI: @@ORIGIN@@/
+ * Description: Embed a saved @@NAME@@ ticket form with a block or shortcode.
+ * Version: @@VERSION@@
+ * Requires at least: 6.6.4
+ * Requires PHP: 7.4.33
+ * Author: Festapp
+ * Author URI: https://festapp.net/
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: @@SLUG@@
+ * Domain Path: /languages
+ *
+ * @package @@NAMESPACE@@
+ */
+
+namespace @@NAMESPACE@@;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+require_once __DIR__ . '/includes/embed.php';
+require_once __DIR__ . '/includes/admin.php';
+
+/** Register the block and shortcode backed by one renderer. */
+function register() {
+	load_plugin_textdomain( '@@SLUG@@', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	wp_register_script( '@@SLUG@@-editor', plugins_url( 'blocks/ticket-form/editor.js', __FILE__ ), array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ), '@@VERSION@@', true );
+	wp_localize_script( '@@SLUG@@-editor', '@@EDITOR_GLOBAL@@', array( 'origins' => allowed_origins() ) );
+	wp_set_script_translations( '@@SLUG@@-editor', '@@SLUG@@', __DIR__ . '/languages' );
+	wp_register_style( '@@SLUG@@', plugins_url( 'blocks/ticket-form/style.css', __FILE__ ), array(), '@@VERSION@@' );
+	register_block_type( __DIR__ . '/blocks/ticket-form', array( 'render_callback' => __NAMESPACE__ . '\render' ) );
+	add_shortcode( '@@SHORTCODE@@', __NAMESPACE__ . '\shortcode' );
+}
+add_action( 'init', __NAMESPACE__ . '\register' );
+add_action( 'admin_menu', __NAMESPACE__ . '\admin_menu' );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), __NAMESPACE__ . '\plugin_action_links' );

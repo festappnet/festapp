@@ -1,0 +1,454 @@
+import 'blueprint_command_rejection.dart';
+import 'package:http/http.dart' as http;
+import 'package:easy_localization/easy_localization.dart';
+import '../images/image_control_client.dart';
+import 'package:venue_seat_picker/venue_seat_picker.dart'
+    show GraphicImportFailure;
+
+class BlueprintStrings {
+  static String get standingNoAdmissionType =>
+      'FeatureBlueprint.standingNoAdmissionType'.tr();
+
+  static String get areaProduct => 'FeatureBlueprint.areaProduct'.tr();
+  static String get areaProductAssigned =>
+      'FeatureBlueprint.areaProductAssigned'.tr();
+
+  static String get assignStandingProduct =>
+      'FeatureBlueprint.assignStandingProduct'.tr();
+  static String get standingSetupSaveHint =>
+      'FeatureBlueprint.standingSetupSaveHint'.tr();
+  static String get standingCapacityGroup =>
+      'FeatureBlueprint.standingCapacityGroup'.tr();
+
+  static String get reservationExpired =>
+      'FeatureBlueprint.reservationExpired'.tr();
+  static String get releaseTemporaryReservation =>
+      'FeatureBlueprint.releaseTemporaryReservation'.tr();
+  static String get releaseTemporaryReservationConfirm =>
+      'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
+  static String releaseTemporaryReservationPreview(int held, int total) =>
+      'FeatureBlueprint.releaseTemporaryReservationPreview'
+          .tr(namedArgs: {'held': '$held', 'total': '$total'});
+  static String get standingUnavailable =>
+      'FeatureBlueprint.viewer.standingUnavailable'.tr();
+  static String get standingRequiresProduct =>
+      'FeatureBlueprint.standingRequiresProduct'.tr();
+  static String get standingCapacity =>
+      'FeatureBlueprint.standingCapacity'.tr();
+  static String get capacitySaveHint =>
+      'FeatureBlueprint.capacitySaveHint'.tr();
+  static String get invalidStandingCapacity =>
+      'FeatureBlueprint.invalidStandingCapacity'.tr();
+  static String standingAvailability(int available, int capacity) =>
+      'FeatureBlueprint.standingAvailability'
+          .tr(namedArgs: {'available': '$available', 'capacity': '$capacity'});
+  static String get blockSeats => 'FeatureBlueprint.blockSeats'.tr();
+  static String get unblockSeats => 'FeatureBlueprint.unblockSeats'.tr();
+  static String get cancelReservation =>
+      'FeatureBlueprint.cancelReservation'.tr();
+  static String get assignSelectionProduct =>
+      'FeatureBlueprint.assignSelectionProduct'.tr();
+
+  static String get blockSeat => 'FeatureBlueprint.blockSeat'.tr();
+  static String get blockSeatHint => 'FeatureBlueprint.blockSeatHint'.tr();
+  static String get placementInvalid =>
+      'FeatureBlueprint.placementInvalid'.tr();
+  static String get seatProductRequired =>
+      'FeatureBlueprint.seatProductRequired'.tr();
+  static String layoutErrorMessage(Object error) {
+    if (error is http.ClientException &&
+        (error.message ==
+                'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND' ||
+            error.message == 'LEGACY_ORDER_RECOVERY_PENDING')) {
+      return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+    }
+    if (error is BlueprintCommandRejection) {
+      if (error.reason == 'BATCH_TICKET_PRINT_IMMUTABLE') {
+        return 'FeatureBlueprint.orderBatchImmutable'.tr();
+      }
+      if (error.reason.startsWith('BLUEPRINT_ORDER_')) {
+        if (error.reason == 'BLUEPRINT_ORDER_RECOVERY_REQUIRED') {
+          return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+        }
+        return error.reason == 'BLUEPRINT_ORDER_CHANGED'
+            ? 'FeatureBlueprint.swapChanged'.tr()
+            : analysisFailed;
+      }
+      final swapMessage = const {
+        'BLUEPRINT_SWAP_CHANGED': 'swapChanged',
+        'BLUEPRINT_SWAP_REJECTED': 'swapRejected',
+        'BLUEPRINT_SWAP_MONEY_UNAVAILABLE': 'swapMoneyUnavailable',
+        'BLUEPRINT_SWAP_RECOVERY_REQUIRED': 'swapRecoveryRequired',
+        'BLUEPRINT_UNIT_SIZE_MISMATCH': 'swapGroupSize',
+        'BLUEPRINT_SELECTION_UNIT_USED': 'swapUsedGroup',
+        'BLUEPRINT_CURRENCY_MISMATCH': 'swapCurrencyMismatch',
+        'STRIPE_ORDER_PRICE_IMMUTABLE': 'swapStripePriceImmutable',
+        'BLUEPRINT_SEAT_PROTECTED': 'swapSeatProtected',
+        'SPOT_HELD': 'swapSeatProtected',
+      }[error.reason];
+      if (swapMessage != null) return 'FeatureBlueprint.$swapMessage'.tr();
+      if (error.reason == 'BLUEPRINT_HOLDS_CHANGED' ||
+          error.reason == 'BLUEPRINT_SELECTION_CHANGED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationChanged'.tr();
+      }
+      if (error.reason == 'BLUEPRINT_SEAT_ORDERED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationProtected'.tr();
+      }
+    }
+    if (error is ImageUploadOutcomeUnknown)
+      return 'FeatureBlueprint.imageUploadUncertain'.tr();
+    if (error is ImageUploadRejected) return toastImageUploadFail;
+    if (error is GraphicImportFailure) {
+      final reason = error.reason;
+      final key = reason.endsWith('_limit')
+          ? 'svgImportLimit'
+          : switch (reason) {
+              'svg_external_resource' => 'svgExternalDependency',
+              'svg_executable_content' => 'svgInteractiveContent',
+              'svg_document_type_unsupported' => 'svgDocumentType',
+              'svg_invalid_xml' || 'svg_root_required' => 'svgInvalid',
+              'svg_embedded_image_unsupported' => 'svgEmbeddedBitmap',
+              'svg_text_attribute_unsupported' ||
+              'svg_text_direction_unsupported' ||
+              'svg_text_length_unsupported' ||
+              'svg_text_position_unsupported' ||
+              'svg_text_spacing_unsupported' ||
+              'svg_text_stylesheet_unsupported' ||
+              'svg_mixed_text_unsupported' =>
+                'svgComplexText',
+              'svg_blend_unsupported' ||
+              'svg_element_unsupported' ||
+              'svg_gradient_unsupported' ||
+              'svg_layer_unsupported' ||
+              'svg_operation_unsupported' ||
+              'svg_path_unsupported' ||
+              'svg_paint_attribute_unsupported' =>
+                'svgUnsupportedEffect',
+              _ => 'svgConversionFailed',
+            };
+      return 'FeatureBlueprint.$key'.tr();
+    }
+    if (error is StateError) {
+      switch (error.message) {
+        case 'layout_placement_invalid':
+          return placementInvalid;
+        case 'seat_product_required':
+          return seatProductRequired;
+      }
+    }
+    return error.toString();
+  }
+
+  static String get editAreaProduct => 'FeatureBlueprint.editAreaProduct'.tr();
+  static String get tablesTitle => 'FeatureBlueprint.tablesTitle'.tr();
+  static String get standingAreas => 'FeatureBlueprint.standingAreas'.tr();
+  static String get tableSelectionHint =>
+      'FeatureBlueprint.tableSelectionHint'.tr();
+  static String get noTables => 'FeatureBlueprint.noTables'.tr();
+  static String get selectTableOrSeat =>
+      'FeatureBlueprint.selectTableOrSeat'.tr();
+  static String get useTableDefault => 'FeatureBlueprint.useTableDefault'.tr();
+  static String get defaultProductHint =>
+      'FeatureBlueprint.defaultProductHint'.tr();
+
+  static String get unsavedPlanShort =>
+      'FeatureBlueprint.unsavedPlanShort'.tr();
+  static String get orderAction => 'FeatureBlueprint.orderAction'.tr();
+  static String get editPlan => 'FeatureBlueprint.editPlan'.tr();
+  static String get reservationsAndOrders =>
+      'FeatureBlueprint.reservationsAndOrders'.tr();
+  static String get unsavedPlan => 'FeatureBlueprint.unsavedPlan'.tr();
+  static String get operationNetworkError =>
+      'FeatureBlueprint.operationNetworkError'.tr();
+  static String get tryLayoutDemo => 'FeatureBlueprint.tryLayoutDemo'.tr();
+  static String get layoutConversionRequired =>
+      'FeatureBlueprint.layoutConversionRequired'.tr();
+  static String areaCount(int count) =>
+      'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
+  static String get draftGeometryNotice =>
+      'FeatureBlueprint.draftGeometryNotice'.tr();
+  static String seatStateDescription(String state) =>
+      'FeatureBlueprint.seatStateDescriptions.$state'.tr();
+
+  static String seatState(String state) =>
+      'FeatureBlueprint.seatStates.$state'.tr();
+  static String get demoGeometryNotice =>
+      'FeatureBlueprint.demoGeometryNotice'.tr();
+  static String get groupDefault => 'FeatureBlueprint.groupDefault'.tr();
+  static String get backgroundUnavailable =>
+      'FeatureBlueprint.backgroundUnavailable'.tr();
+  static String get draftChanged => 'FeatureBlueprint.draftChanged'.tr();
+  static String get fontFamily => 'FeatureBlueprint.fontFamily'.tr();
+  static String get productsTitle => 'FeatureBlueprint.productsTitle'.tr();
+  static String get manageSeats => 'FeatureBlueprint.manageSeats'.tr();
+  static String backToGroup(String name) =>
+      'FeatureBlueprint.backToGroup'.tr(namedArgs: {'name': name});
+  static String get seatLabel => 'FeatureBlueprint.seatLabel'.tr();
+  static String get emptyGroup => 'FeatureBlueprint.emptyGroup'.tr();
+  static String get inheritedProduct =>
+      'FeatureBlueprint.inheritedProduct'.tr();
+  static String get productOverride => 'FeatureBlueprint.productOverride'.tr();
+  static String get onlyFreeSeats => 'FeatureBlueprint.onlyFreeSeats'.tr();
+  static String get individualAssignments =>
+      'FeatureBlueprint.individualAssignments'.tr();
+  static String get clearSelection => 'FeatureBlueprint.clearSelection'.tr();
+  static String get saveConflict => 'FeatureBlueprint.saveConflict'.tr();
+  static String get copyDraft => 'FeatureBlueprint.copyDraft'.tr();
+  static String get reloadSaved => 'FeatureBlueprint.reloadSaved'.tr();
+  static String get swapSourceSeats => 'FeatureBlueprint.swapSourceSeats'.tr();
+  static String get swapTargetSeats => 'FeatureBlueprint.swapTargetSeats'.tr();
+  static String get swapServerNotice =>
+      'FeatureBlueprint.swapServerNotice'.tr();
+  static String get layoutUnavailable =>
+      'FeatureBlueprint.layoutUnavailable'.tr();
+  static String get orderLabel => 'FeatureBlueprint.orderLabel'.tr();
+  static String get ticketLabel => 'FeatureBlueprint.ticketLabel'.tr();
+  static String seatCount(int count) =>
+      'FeatureBlueprint.seatCount'.tr(namedArgs: {'count': '$count'});
+  static String protectedCount(int count) =>
+      'FeatureBlueprint.protectedCount'.tr(namedArgs: {'count': '$count'});
+  static String selectedCount(int count) =>
+      'FeatureBlueprint.selectedCount'.tr(namedArgs: {'count': '$count'});
+  static String get analysisFailed => 'FeatureBlueprint.analysisFailed'.tr();
+
+  static String get assignmentSaveNotice =>
+      'FeatureBlueprint.assignmentSaveNotice'.tr();
+  static String get catalogSaveNotice =>
+      'FeatureBlueprint.catalogSaveNotice'.tr();
+  static String catalogAffectedSeats(int count) =>
+      'FeatureBlueprint.catalogAffectedSeats'
+          .tr(namedArgs: {'count': '$count'});
+
+  // --- BlueprintTab (General) ---
+  static String get changeTitle =>
+      'FeatureBlueprint.changeTitle'.tr(); // "Change title"
+
+  // --- Left Panel (Legend) ---
+  static String get legendInstruction => 'FeatureBlueprint.legendInstruction'
+      .tr(); // "Click an option in the legend to add seats."
+  static String get legendBlackArea =>
+      'FeatureBlueprint.legendBlackArea'.tr(); // "Black area"
+  static String get legendAvailable =>
+      'FeatureBlueprint.legendAvailable'.tr(); // "Available"
+  static String get legendEmpty =>
+      'FeatureBlueprint.legendEmpty'.tr(); // "Empty"
+  static String get legendUsed => 'FeatureBlueprint.legendUsed'.tr(); // "Used"
+  static String get legendOccupied =>
+      'FeatureBlueprint.legendOccupied'.tr(); // "Occupied"
+  static String get legendSelected =>
+      'FeatureBlueprint.legendSelected'.tr(); // "Selected"
+  static String get legendSwapSeats =>
+      'FeatureBlueprint.legendSwapSeats'.tr(); // "Swap Seats"
+
+  // --- Main Content (Dimension & Background Controls) ---
+  static String get width => 'FeatureBlueprint.width'.tr(); // "Width"
+  static String get height => 'FeatureBlueprint.height'.tr(); // "Height"
+  static String get insertGraphic => 'FeatureBlueprint.insertGraphic'.tr();
+  static String get background =>
+      'FeatureBlueprint.background'.tr(); // "Background"
+  static String get changeBackground =>
+      'FeatureBlueprint.changeBackground'.tr(); // "Change background"
+  static String get uploadSVG =>
+      'FeatureBlueprint.uploadSVG'.tr(); // "Upload SVG"
+  static String get uploadImage =>
+      'FeatureBlueprint.uploadImage'.tr(); // "Upload Image (PNG recommended)"
+  static String get removeBackground =>
+      'FeatureBlueprint.removeBackground'.tr(); // "Remove background"
+
+  // --- Right Panel (Groups) ---
+  static String get groupsTitle =>
+      'FeatureBlueprint.groupsTitle'.tr(); // "Groups (Tables):"
+  static String get assignProductToGroup =>
+      'FeatureBlueprint.assignProductToGroup'.tr(); // "Assign product to group"
+  static String get noProductAssigned =>
+      'FeatureBlueprint.noProductAssigned'.tr(); // "No Product Assigned"
+
+  // --- Dialogs ---
+  static String get dialogGroupNumber =>
+      'FeatureBlueprint.dialogGroupNumber'.tr(); // "Group number"
+  static String get dialogTitle =>
+      'FeatureBlueprint.dialogTitle'.tr(); // "Title"
+  static String get dialogImportSvgTitle =>
+      'FeatureBlueprint.dialogImportSvgTitle'.tr(); // "Import SVG background"
+  static String get dialogImportImageTitle =>
+      'FeatureBlueprint.dialogImportImageTitle'
+          .tr(); // "Import image background"
+  static String get dialogConfirmRemoveBackgroundTitle =>
+      'FeatureBlueprint.dialogConfirmRemoveBackgroundTitle'
+          .tr(); // "Remove background"
+  static String get dialogConfirmRemoveBackgroundContent =>
+      'FeatureBlueprint.dialogConfirmRemoveBackgroundContent'
+          .tr(); // "Are you sure you want to remove the background?"
+
+  // --- Toasts & Messages ---
+  static String get toastOccupiedCannotBeChanged =>
+      'FeatureBlueprint.toastOccupiedCannotBeChanged'
+          .tr(); // "Places that are occupied cannot be changed."
+  static String get toastSelectGroupFirst =>
+      'FeatureBlueprint.toastSelectGroupFirst'
+          .tr(); // "First, select or create a group to add a spot (on the right)."
+  static String get toastSpotAdded =>
+      'FeatureBlueprint.toastSpotAdded'.tr(); // "Spot added:"
+  static String get toastAreaRemoved =>
+      'FeatureBlueprint.toastAreaRemoved'.tr(); // "Area removed."
+  static String get toastSpotRemoved =>
+      'FeatureBlueprint.toastSpotRemoved'.tr(); // "Spot removed."
+  static String get toastInvalidSvg => 'FeatureBlueprint.toastInvalidSvg'
+      .tr(); // "The selected file is not a valid SVG."
+  static String get toastSvgUploadSuccess =>
+      'FeatureBlueprint.toastSvgUploadSuccess'
+          .tr(); // "SVG background uploaded successfully."
+  static String get toastSvgReadFail =>
+      'FeatureBlueprint.toastSvgReadFail'.tr(); // "Failed to read SVG file."
+  static String get toastImageUploadSuccess =>
+      'FeatureBlueprint.toastImageUploadSuccess'
+          .tr(); // "Image background uploaded successfully."
+  static String get toastImageUploadFail =>
+      'FeatureBlueprint.toastImageUploadFail'.tr(); // "Failed to upload image."
+  static String get toastBackgroundRemoved =>
+      'FeatureBlueprint.toastBackgroundRemoved'.tr(); // "Background removed."
+  static String get toastMaxTicketsReached =>
+      'FeatureBlueprint.toastMaxTicketsReached'
+          .tr(); // "It is not possible to select more tickets."
+
+  // --- Swap Seats Feature ---
+  static String get swapHelpIntro => 'FeatureBlueprint.swapHelpIntro'
+      .tr(); // "SWAP MODE: Select two seats to exchange their orders."
+  static String get swapHelpSelectFirst =>
+      'FeatureBlueprint.swapHelpSelectFirst'
+          .tr(); // "Select the first seat to swap."
+  static String swapHelpSelectSecond(String seatName) =>
+      'FeatureBlueprint.swapHelpSelectSecond'.tr(namedArgs: {
+        'seatName': seatName
+      }); // "Seat {seatName} selected. Select the second seat to swap."
+  static String get swapConfirmTitle =>
+      'FeatureBlueprint.swapConfirmTitle'.tr(); // "Confirm Seat Swap"
+  static String swapConfirmMessage(
+          String summary1, String seat1, String summary2, String seat2) =>
+      'FeatureBlueprint.swapConfirmMessage'
+          .tr(); // "Are you sure you want to swap these seats?"
+  static String get swapErrorEmpty => 'FeatureBlueprint.swapErrorEmpty'
+      .tr(); // "Cannot swap empty or blocked areas."
+  static String get swapSuccess =>
+      'FeatureBlueprint.swapSuccess'.tr(); // "Seats swapped successfully."
+
+  // --- Swap Summary Strings (used in BlueprintObjectModel) ---
+  static String swapSummaryCustomer(String ticketSymbol, String customerName) =>
+      'FeatureBlueprint.swapSummaryCustomer'.tr(namedArgs: {
+        'ticketSymbol': ticketSymbol,
+        'customerName': customerName
+      }); // "Order: {ticketSymbol} ({customerName})"
+  static String get swapSummaryOccupied =>
+      'FeatureBlueprint.swapSummaryOccupied'.tr(); // "Occupied Seat"
+  static String get swapSummaryAvailable =>
+      'FeatureBlueprint.swapSummaryAvailable'.tr(); // "Available Seat"
+  static String get swapSummaryBlack =>
+      'FeatureBlueprint.swapSummaryBlack'.tr(); // "Blocked Area"
+  static String get swapSummaryUsed =>
+      'FeatureBlueprint.swapSummaryUsed'.tr(); // "Used Seat"
+  static String get swapSummarySelected =>
+      'FeatureBlueprint.swapSummarySelected'.tr(); // "Selected Seat"
+  static String get swapSummaryEmpty =>
+      'FeatureBlueprint.swapSummaryEmpty'.tr(); // "Empty Area"
+
+  // --- Object Model (New) ---
+  static String objectModelToString(String groupTitle, String seatTitle) =>
+      'FeatureBlueprint.objectModelToString'.tr(namedArgs: {
+        'groupTitle': groupTitle,
+        'seatTitle': seatTitle
+      }); // "Table {groupTitle}, Seat {seatTitle}"
+
+  // --- Product Management (New) ---
+  static String get editProduct =>
+      'FeatureBlueprint.editProduct'.tr(); // "Edit Product"
+  static String get createProduct =>
+      'FeatureBlueprint.createProduct'.tr(); // "Create New Product"
+  static String get selectProduct =>
+      'FeatureBlueprint.selectProduct'.tr(); // "Select Product"
+  static String get noSpotProducts => 'FeatureBlueprint.noSpotProducts'
+      .tr(); // "No spot products are defined. You can create them in the product manager."
+  static String get productAssigned => 'FeatureBlueprint.productAssigned'
+      .tr(); // "Product assigned to all spots in the group."
+  static String get productCreated =>
+      'FeatureBlueprint.productCreated'.tr(); // "Product created."
+  static String get productUpdated =>
+      'FeatureBlueprint.productUpdated'.tr(); // "Product updated."
+
+  // --- Create New Order Feature ---
+  static String get legendCreateOrder =>
+      'FeatureBlueprint.legendCreateOrder'.tr(); // "Create Order"
+  static String get createOrderHelp => 'FeatureBlueprint.createOrderHelp'
+      .tr(); // "Select seats to create a new order."
+  static String get btnCreateOrder =>
+      'FeatureBlueprint.btnCreateOrder'.tr(); // "Create Order"
+  static String get confirmOrder =>
+      'FeatureBlueprint.confirmOrder'.tr(); // "Confirm Order"
+  static String get orderCreatedSuccess =>
+      'FeatureBlueprint.orderCreatedSuccess'
+          .tr(); // "Order created successfully."
+
+// --- Group/Product Manager Dialog ---
+  static String get manageGroupProducts =>
+      'FeatureBlueprint.manageGroupProducts'.tr(); // "Manage Group Products"
+  static String get groupDefaultProduct =>
+      'FeatureBlueprint.groupDefaultProduct'.tr(); // "Group Product"
+  static String get individualSeats =>
+      'FeatureBlueprint.individualSeats'.tr(); // "Individual Seats"
+  static String get customizeIndividualSeats =>
+      'FeatureBlueprint.customizeIndividualSeats'
+          .tr(); // "Customize individual seats"
+  static String get occupiedWarningInline =>
+      'FeatureBlueprint.occupiedWarningInline'
+          .tr(); // "Note: Changing products here will NOT update prices for seats that are already ordered."
+  static String get customProductLabel =>
+      'FeatureBlueprint.customProductLabel'.tr(); // "Custom"
+  static String get productAssignedToAll =>
+      'FeatureBlueprint.productAssignedToAll'
+          .tr(); // "Product assigned to all seats."
+
+  // Status descriptions
+  static String get statusUniform =>
+      'FeatureBlueprint.statusUniform'.tr(); // "Applied to all seats"
+  static String get statusMixed =>
+      'FeatureBlueprint.statusMixed'.tr(); // "Mixed products"
+  static String get currentProductPrefix =>
+      'FeatureBlueprint.currentProductPrefix'.tr(); // "Current: "
+  static String get mixedProducts =>
+      'FeatureBlueprint.mixedProducts'.tr(); // "Mixed / Various"
+  static String get toastNoTemplateProduct =>
+      'FeatureBlueprint.toastNoTemplateProduct'
+          .tr(); // "Cannot create product..."
+  static String get uniformViewHelp => 'FeatureBlueprint.uniformViewHelp'
+      .tr(); // "All seats share the same product..."
+  static String get warningNoCancellationEmail =>
+      'FeatureBlueprint.warningNoCancellationEmail'
+          .tr(); // "Note: Users will NOT receive cancellation emails for these changes."
+  static String get helpTitle => 'FeatureBlueprint.helpTitle'.tr();
+  static String get helpClick => 'FeatureBlueprint.helpClick'.tr();
+  static String get helpSelect => 'FeatureBlueprint.helpSelect'.tr();
+  static String get helpShiftClick => 'FeatureBlueprint.helpShiftClick'.tr();
+  static String get helpAddSelection =>
+      'FeatureBlueprint.helpAddSelection'.tr();
+  static String get helpDrag => 'FeatureBlueprint.helpDrag'.tr();
+  static String get helpPan => 'FeatureBlueprint.helpPan'.tr();
+  static String get helpWheel => 'FeatureBlueprint.helpWheel'.tr();
+  static String get helpZoom => 'FeatureBlueprint.helpZoom'.tr();
+  static String get helpEnterEditKeys =>
+      'FeatureBlueprint.helpEnterEditKeys'.tr();
+  static String get helpEnterEdit => 'FeatureBlueprint.helpEnterEdit'.tr();
+  static String get helpAltClick => 'FeatureBlueprint.helpAltClick'.tr();
+  static String get helpIndividual => 'FeatureBlueprint.helpIndividual'.tr();
+  static String get helpArrows => 'FeatureBlueprint.helpArrows'.tr();
+  static String get helpMove => 'FeatureBlueprint.helpMove'.tr();
+  static String get helpUndo => 'FeatureBlueprint.helpUndo'.tr();
+  static String get helpRedo => 'FeatureBlueprint.helpRedo'.tr();
+  static String get helpDuplicate => 'FeatureBlueprint.helpDuplicate'.tr();
+  static String get helpCopyPaste => 'FeatureBlueprint.helpCopyPaste'.tr();
+  static String get helpDelete => 'FeatureBlueprint.helpDelete'.tr();
+  static String get helpGrid => 'FeatureBlueprint.helpGrid'.tr();
+  static String get helpEscapeEdit => 'FeatureBlueprint.helpEscapeEdit'.tr();
+  static String get helpEscapeView => 'FeatureBlueprint.helpEscapeView'.tr();
+  static String get helpSeatStates => 'FeatureBlueprint.helpSeatStates'.tr();
+  static String get orderSelectionTitle =>
+      'FeatureBlueprint.orderSelectionTitle'.tr();
+}

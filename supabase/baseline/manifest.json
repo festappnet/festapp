@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "coveredThrough": "20260906140000",
+  "schema": {
+    "path": "supabase/baseline/20260906140000_schema.sql",
+    "sha256": "346fb4f7d036e5677eaed92c198de4d8c1dc806948629f7828270999f0d9368a"
+  },
+  "bootstrap": {
+    "path": "supabase/baseline/bootstrap.sql",
+    "sha256": "0281cbc2b562984754a06c3c9d16e6a4e18c6bdcf194e1b7e6fe67c4d11b30e2"
+  },
+  "referenceSeed": {
+    "path": "supabase/baseline/20260906140000_reference_seed.sql",
+    "sha256": "151d2df3d27ee86c52bed8cf6f947afb25e43b2ba267e524eed0f766b9d6c4f6"
+  },
+  "historicalSources": {
+    "path": "automation/historical-sql-manifest.json",
+    "sha256": "8cb30d5f5d2bc1e2d73b2e9252d47a5820c4b3513febcbc3892d9ff085757915"
+  },
+  "referenceTables": [
+    "public.client_sync_component_sources"
+  ],
+  "supportedUpgradeFrom": "20260805230000",
+  "providerContract": "Supabase PG15/PG17 provider roles and managed schemas; provider default ACL remains provider-owned.",
+  "upgradeStages": [
+    {
+      "beforeVersion": "20261006131000",
+      "backfill": {
+        "path": "automation/order-symbol/backfill.sql",
+        "sha256": "e0a30a2303c17adf890746374d3c7c2c0d83ef7658f4512bf5c956049ffc0e8e"
+      },
+      "remainingQuery": "SELECT count(*) FROM eshop.orders WHERE order_symbol IS NULL"
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "hero": "layout-build",
+  "clips": [
+    {
+      "id": "layout-build",
+      "label": "Sestavení",
+      "src": "/organizers-media/layout-build.mp4?v=eb11698aa0a0",
+      "poster": "/organizers-media/layout-build-start.jpg?v=1e108cf1247f",
+      "width": 1140,
+      "height": 792,
+      "duration": 12.266667,
+      "description": "K hotové řadě přidejte další stůl, zarovnejte ho a upravte počet židlí.",
+      "boundary": "Ukázka editoru",
+      "mobileSrc": "/organizers-media/layout-build-mobile.mp4?v=22569911d7bf",
+      "mobilePoster": "/organizers-media/layout-build-mobile-start.jpg?v=a6d64f43a6e8",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 12.266667
+    },
+    {
+      "id": "layout-refine",
+      "label": "Úpravy sálu",
+      "src": "/organizers-media/layout-refine.mp4",
+      "poster": "/organizers-media/layout-refine.jpg",
+      "width": 1140,
+      "height": 792,
+      "duration": 14.0,
+      "description": "Vyberte více stolů, změňte uspořádání, přidejte židle a upravte obloukové řady.",
+      "boundary": "Ukázka editoru",
+      "mobileSrc": "/organizers-media/layout-refine-mobile.mp4",
+      "mobilePoster": "/organizers-media/layout-refine-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 14.0
+    },
+    {
+      "id": "layout-style",
+      "label": "Různé sály",
+      "src": "/organizers-media/layout-style.mp4",
+      "poster": "/organizers-media/layout-style.jpg",
+      "width": 1140,
+      "height": 824,
+      "duration": 6.833,
+      "description": "Plesový sál, kino i divadlo: vyberte si z existujících šablon.",
+      "boundary": "Ukázka editoru",
+      "mobileSrc": "/organizers-media/layout-style-mobile.mp4",
+      "mobilePoster": "/organizers-media/layout-style-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 824,
+      "mobileDuration": 6.833
+    },
+    {
+      "id": "form-build",
+      "label": "Pole",
+      "src": "/organizers-media/form-build.mp4?v=1953040e4041",
+      "poster": "/organizers-media/form-build.webp?v=fa74a8f1c7e2",
+      "width": 1200,
+      "height": 804,
+      "duration": 31.433333,
+      "description": "Nastavte tři večeře s cenami a přidejte pole pro poznámku.",
+      "mobileSrc": "/organizers-media/form-build-mobile.mp4?v=081003290ea3",
+      "mobilePoster": "/organizers-media/form-build-mobile.webp?v=96d52532f6e4",
+      "mobileWidth": 720,
+      "mobileHeight": 638,
+      "mobileDuration": 31.433333
+    },
+    {
+      "id": "form-style",
+      "label": "Hotový formulář",
+      "src": "/organizers-media/form-style.mp4",
+      "poster": "/organizers-media/form-style.jpg",
+      "width": 1200,
+      "height": 804,
+      "duration": 5.0,
+      "description": "Vlastní otázky, výběr možností a povinné údaje v hotovém formuláři.",
+      "mobileSrc": "/organizers-media/form-style-mobile.mp4",
+      "mobilePoster": "/organizers-media/form-style-mobile.jpg",
+      "mobileWidth": 720,
+      "mobileHeight": 638,
+      "mobileDuration": 5.0
+    },
+    {
+      "id": "ticket-design",
+      "label": "Vlastní vstupenka",
+      "src": "/organizers-media/ticket-design.mp4",
+      "poster": "/organizers-media/ticket-design.jpg",
+      "width": 1200,
+      "height": 822,
+      "duration": 8.833,
+      "description": "Přesuňte texty a QR kód přímo na vstupence a sestavte vlastní rozložení.",
+      "mobileSrc": "/organizers-media/ticket-design-mobile.mp4",
+      "mobilePoster": "/organizers-media/ticket-design-mobile.jpg",
+      "mobileWidth": 900,
+      "mobileHeight": 720,
+      "mobileDuration": 8.833
+    },
+    {
+      "id": "seat-select",
+      "label": "Výběr míst",
+      "src": "/organizers-media/seat-select.mp4",
+      "poster": "/organizers-media/seat-select.jpg",
+      "width": 426,
+      "height": 900,
+      "duration": 10.566667,
+      "description": "Přibližte si sál a vyberte všechna místa u jednoho stolu.",
+      "mobileSrc": "/organizers-media/seat-select-mobile.mp4",
+      "mobilePoster": "/organizers-media/seat-select-mobile.jpg",
+      "mobileDuration": 10.566667,
+      "mobileWidth": 426,
+      "mobileHeight": 900
+    },
+    {
+      "id": "payment-qr",
+      "label": "Platba QR kódem",
+      "src": "/organizers-media/payment-qr.mp4",
+      "poster": "/organizers-media/payment-qr.jpg",
+      "width": 1440,
+      "height": 900,
+      "duration": 5.6,
+      "description": "Platební údaje a QR kód pro pohodlný bankovní převod.",
+      "mobileSrc": "/organizers-media/payment-qr-mobile.mp4",
+      "mobilePoster": "/organizers-media/payment-qr-mobile.jpg",
+      "mobileWidth": 390,
+      "mobileHeight": 844,
+      "mobileDuration": 5.633
+    },
+    {
+      "id": "check-in",
+      "label": "Odbavení",
+      "src": "/organizers-media/check-in.mp4",
+      "poster": "/organizers-media/check-in.webp",
+      "width": 1200,
+      "height": 800,
+      "duration": 8.5,
+      "description": "Načtěte QR kód telefonem a potvrďte vstup. Úspěšné odbavení se ihned zobrazí.",
+      "mobileSrc": "/organizers-media/check-in-mobile.mp4",
+      "mobilePoster": "/organizers-media/check-in-mobile.webp",
+      "mobileWidth": 500,
+      "mobileHeight": 1000,
+      "mobileDuration": 8.5
+    },
+    {
+      "id": "orders-overview",
+      "label": "Report a objednávky",
+      "src": "/organizers-media/orders-overview.mp4",
+      "poster": "/organizers-media/orders-overview.webp",
+      "width": 1200,
+      "height": 760,
+      "duration": 19.1,
+      "description": "Přehled příjmů a prodeje, filtrování objednávek, úprava poznámky a export tabulky vstupenek.",
+      "mobileSrc": "/organizers-media/orders-overview-mobile.mp4",
+      "mobilePoster": "/organizers-media/orders-overview-mobile.webp",
+      "mobileWidth": 720,
+      "mobileHeight": 900,
+      "mobileDuration": 19.1
+    },
+    {
+      "id": "layout-grid",
+      "label": "Stůl na míru",
+      "description": "Upravte obrys stolu, využijte kapacitu židlí a sjednoťte vzhled všech stolů.",
+      "boundary": "Ukázka editoru",
+      "src": "/organizers-media/layout-grid.mp4",
+      "poster": "/organizers-media/layout-grid.jpg",
+      "width": 1140,
+      "height": 792,
+      "duration": 45.866016,
+      "mobileSrc": "/organizers-media/layout-grid-mobile.mp4",
+      "mobilePoster": "/organizers-media/layout-grid-mobile.jpg",
+      "mobileWidth": 820,
+      "mobileHeight": 792,
+      "mobileDuration": 45.866667
+    }
+  ],
+  "sections": [
+    {
+      "id": "planek",
+      "eyebrow": "01 / Prostor pro Váš večer",
+      "title": "Váš sál. Jejich místo.",
+      "description": "Sestavte rozmístění stolů a židlí. Hosté si vyberou konkrétní sedadla přímo při objednávce.",
+      "detail": "",
+      "tags": [
+        "Stoly a židle",
+        "Přetažení do sálu",
+        "Hotové šablony"
+      ],
+      "clips": [
+        "layout-build"
+      ],
+      "links": [
+        {
+          "href": "/rezervacni-system-s-planem-salu",
+          "label": "Prohlédnout možnosti plánku"
+        }
+      ]
+    },
+    {
+      "id": "formular",
+      "eyebrow": "02 / Všechno, co potřebujete vědět",
+      "title": "Od nabídky po vstupenku.",
+      "description": "Nabídněte vstupné i varianty večeře. Upravte potřebné údaje a vzhled vstupenky.",
+      "detail": "Počet míst a počet porcí nastavíte odděleně. Cenové varianty vstupenky mohou čerpat ze společné kapacity.",
+      "tags": [
+        "Vlastní otázky",
+        "Výběr večeře",
+        "Povinné údaje"
+      ],
+      "clips": [
+        "form-build"
+      ],
+      "composition": "offer",
+      "links": [
+        {
+          "href": "/napoveda/prodejni-formular/",
+          "label": "Nastavení prodeje"
+        },
+        {
+          "href": "/napoveda/vzhled-vstupenky/",
+          "label": "Vzhled vstupenky"
+        }
+      ],
+      "companion": {
+        "image": "/organizers-media/ticket-ball.jpg",
+        "width": 525,
+        "height": 1200,
+        "alt": "Zeleno-zlatá ukázková vstupenka s údaji hosta a QR kódem.",
+        "caption": "Vlastní vzhled vstupenky s QR kódem."
+      }
+    },
+    {
+      "id": "prehled",
+      "eyebrow": "06 / Méně tabulek, více přehledu",
+      "title": "Přehled během prodeje. Kontrola u vstupu.",
+      "description": "Sledujte objednávky a platby, vyhledejte konkrétní vstupenku nebo exportujte tabulku vstupenek.",
+      "detail": "U vstupu načtěte QR kód telefonem, ověřte stav vstupenky a potvrďte vstup.",
+      "tags": [
+        "Stavy objednávek",
+        "Export"
+      ],
+      "clips": [
+        "orders-overview"
+      ],
+      "composition": "operations",
+      "secondaryClips": [
+        "check-in"
+      ],
+      "primaryLabel": "Správa objednávek",
+      "secondaryLabel": "Odbavení telefonem",
+      "links": [
+        {
+          "href": "/napoveda/objednavky/",
+          "label": "Správa objednávek"
+        },
+        {
+          "href": "/napoveda/odbaveni/",
+          "label": "Odbavení hostů"
+        }
+      ]
+    }
+  ]
+}

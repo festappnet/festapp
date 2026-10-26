@@ -1,0 +1,6 @@
+# Ignore Apple API private key
+AuthKey_*.p8
+/fastlane/report.xml
+/fastlane/Appfile
+/signing/
+/play-service-account*.json

@@ -1,0 +1,5 @@
+[
+ {"currency":"CZK","symbol":"Kč","amount":50,"expected":"Cena: 50 Kč"},
+ {"currency":"EUR","symbol":"€","amount":50,"expected":"Cena: 50 €"},
+ {"currency":"USD","symbol":"US$","amount":50,"expected":"Cena: 50 US$"}
+]

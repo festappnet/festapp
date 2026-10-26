@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "apply": false,
+  "expectedSupabaseProjectRef": "lwfpdjxsdmkfyrzqbrlk",
+  "tenants": {
+    "csmostrava2026": {
+      "requiredOccasionLink": "csmostrava2026"
+    },
+    "hvezdamorska": {
+      "requiredOrganizationId": 4,
+      "requiredOccasionLink": null
+    }
+  },
+  "migrationsInOrder": [
+    "20260803120000_csm_account_deletion.sql",
+    "20260806110000_csm_app_links_email.sql",
+    "20260806111000_harden_app_links_delivery.sql",
+    "20260806194000_account_deletion_completion_email.sql",
+    "20260807120000_add_private_client_activity_overview.sql",
+    "20260807121000_fix_client_activity_daily_contract.sql",
+    "20260807150000_allow_admin_feedback_deletion.sql",
+    "20260807153000_add_occasion_media_to_client_sync.sql",
+    "20260807160000_harden_csv_import_validation.sql",
+    "20260808100000_canonical_invitation_delivery_status.sql",
+    "20260808120000_admin_reception_participant_qr.sql",
+    "20260808130000_fix_cleaning_resolve_audit_operation.sql",
+    "20260808140000_restore_enabled_client_sync_readiness.sql",
+    "20260808141000_close_occasion_media_legacy_dml.sql",
+    "20260808210000_allow_occasion_managers_reception_participants.sql",
+    "20260809090000_cascade_cleaning_reports_on_place_delete.sql",
+    "20260813160000_allow_unit_editor_occasion_save.sql",
+    "20260813163000_allow_unit_editor_occasion_domain_save.sql",
+    "20260813170000_use_internal_public_materializer_in_mutations.sql",
+    "20260813171500_align_public_materializer_editor_roles.sql",
+    "20260814103000_guard_single_counseling_slot_deletion.sql",
+    "20260823120000_reconcile_reception_manual_login_code.sql",
+    "20260823130000_harden_canonical_function_boundaries.sql"
+  ],
+  "notes": [
+    "This manifest is preparation only; no production connection or write is authorized.",
+    "CSM and HM share this project, so the shared migration deployment is performed once after target preflight.",
+    "20260823120000 reconciles the independently-created 20260806142000 reception migration without rewriting either applied history.",
+    "20260823130000 aligns active SECURITY DEFINER search paths and requires approved occasion membership for cleaning reports without rewriting applied history.",
+    "Tenant AGREEMENT_PDF values and other operational seed payloads must use the located FestappSeed contract; concrete payload population and every external write remain separately authorized."
+  ]
+}

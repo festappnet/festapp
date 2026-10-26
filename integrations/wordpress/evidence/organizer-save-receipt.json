@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "method": "real authenticated canonical RPC; UI login and saved-form opening separately observed",
+  "form_id": 1,
+  "saved_slug": "embedded-synthetic",
+  "aggregate_version": 1,
+  "idempotent_save_replay": true
+}

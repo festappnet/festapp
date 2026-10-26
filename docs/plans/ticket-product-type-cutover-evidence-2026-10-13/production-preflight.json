@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-13",
+  "tenant": "festapptickets",
+  "organization": 3,
+  "live_version": "0.20.160+644",
+  "activation": {
+    "schemaVersion": 1,
+    "tenantId": "festapptickets",
+    "generation": 1,
+    "backend": "canonical"
+  },
+  "source_main_sha": "ed18e864696a0e1db9e41e9d4fa9bc53f4193ca4",
+  "production_branch_sha": "c7c725519fb2d172ef297f843fd665efc9ff8005",
+  "configurations": 73,
+  "converted": 69,
+  "unresolved": [
+    {
+      "id": 13,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 19,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 25,
+      "error": "Error: upstream_404"
+    },
+    {
+      "id": 27,
+      "error": "Error: upstream_404"
+    }
+  ],
+  "other_organizations": 11,
+  "other_legacy_configurations": 60,
+  "scope_approval": "requested; no answer received",
+  "production_writes": false,
+  "deployment": false
+}

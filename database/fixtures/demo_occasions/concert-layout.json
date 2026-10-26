@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 3,
+  "templates": {
+    "wide": {
+      "canvasColor": "FAF5EB",
+      "canvasOpacity": 1,
+      "pageFit": "ticket",
+      "pageMargin": 8.5,
+      "page": {
+        "width": 337.0,
+        "height": 497.0
+      },
+      "ticketArea": {
+        "x": 8.5,
+        "y": 8.5,
+        "width": 320,
+        "height": 480
+      },
+      "qrAppearance": {
+        "background": "FFFFFF",
+        "opacity": 1,
+        "margin": 4
+      },
+      "elements": [
+        {
+          "id": "occasionTitle",
+          "binding": "occasionTitle",
+          "box": {
+            "x": 24,
+            "y": 168,
+            "width": 272,
+            "height": 55
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 25,
+            "minFontSize": 23,
+            "maxLines": 2,
+            "color": "101F26",
+            "align": "left",
+            "bold": true
+          }
+        },
+        {
+          "id": "occasionDatePlace",
+          "binding": "occasionDatePlace",
+          "box": {
+            "x": 24,
+            "y": 229,
+            "width": 272,
+            "height": 32
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 11,
+            "minFontSize": 9,
+            "maxLines": 2,
+            "color": "101F26",
+            "align": "left",
+            "bold": false
+          }
+        },
+        {
+          "id": "orderName",
+          "binding": "orderName",
+          "box": {
+            "x": 24,
+            "y": 273,
+            "width": 272,
+            "height": 25
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 16,
+            "minFontSize": 14,
+            "maxLines": 1,
+            "color": "101F26",
+            "align": "left",
+            "bold": true
+          }
+        },
+        {
+          "id": "productType",
+          "binding": "productType",
+          "box": {
+            "x": 24,
+            "y": 311,
+            "width": 144,
+            "height": 33
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 10,
+            "maxLines": 2,
+            "color": "101F26",
+            "align": "left",
+            "bold": false
+          },
+          "productTypeId": 1,
+          "label": "Vstupné"
+        },
+        {
+          "id": "price",
+          "binding": "price",
+          "box": {
+            "x": 24,
+            "y": 353,
+            "width": 144,
+            "height": 23
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 13,
+            "minFontSize": 11,
+            "maxLines": 1,
+            "color": "101F26",
+            "align": "left",
+            "bold": false
+          }
+        },
+        {
+          "id": "note",
+          "binding": "note",
+          "box": {
+            "x": 24,
+            "y": 385,
+            "width": 144,
+            "height": 39
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 8,
+            "maxLines": 3,
+            "color": "101F26",
+            "align": "left",
+            "bold": false
+          }
+        },
+        {
+          "id": "qr",
+          "binding": "qr",
+          "box": {
+            "x": 188,
+            "y": 311,
+            "width": 108,
+            "height": 108
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 12,
+            "minFontSize": 10,
+            "maxLines": 1,
+            "color": "000000",
+            "align": "left",
+            "bold": false
+          }
+        },
+        {
+          "id": "ticketSymbol",
+          "binding": "ticketSymbol",
+          "box": {
+            "x": 174,
+            "y": 426,
+            "width": 124,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 10,
+            "minFontSize": 8,
+            "maxLines": 1,
+            "color": "101F26",
+            "align": "center",
+            "bold": true
+          }
+        },
+        {
+          "id": "footer",
+          "binding": "footer",
+          "box": {
+            "x": 24,
+            "y": 455,
+            "width": 272,
+            "height": 20
+          },
+          "visible": true,
+          "locked": false,
+          "style": {
+            "fontSize": 8,
+            "minFontSize": 6,
+            "maxLines": 2,
+            "color": "101F26",
+            "align": "left",
+            "bold": false
+          }
+        }
+      ]
+    }
+  }
+}

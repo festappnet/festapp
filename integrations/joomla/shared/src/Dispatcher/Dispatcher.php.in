@@ -1,0 +1,31 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+namespace Festapp\Module\@@NAMESPACE@@\Site\Dispatcher;
+
+use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
+use Festapp\Module\@@NAMESPACE@@\Site\Helper\EmbedHelper;
+
+defined('_JEXEC') or die;
+
+final class Dispatcher extends AbstractModuleDispatcher
+{
+    protected function getLayoutData()
+    {
+        $data = parent::getLayoutData();
+        // Never load remote assets in administrator previews.
+        $data['embed'] = '';
+        if ($this->getApplication()->isClient('site')) {
+            $settings = EmbedHelper::settings($data['params']->toArray());
+            if ($settings !== null && $settings['helper']) {
+                $assets = $this->getApplication()->getDocument()->getWebAssetManager();
+                $handle = '@@ELEMENT@@.embed';
+                if (!$assets->assetExists('script', $handle)) {
+                    $assets->registerScript($handle, '@@ORIGIN@@/embed.js', ['version' => false], ['defer' => true]);
+                }
+                $assets->useScript($handle);
+            }
+            $data['embed'] = EmbedHelper::render($data['params']->toArray());
+        }
+        return $data;
+    }
+}

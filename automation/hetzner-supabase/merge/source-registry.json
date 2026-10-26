@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "alias": "default",
+      "project_ref": "kjdpmixlnhntmxjedpxh",
+      "role": "canonical-base",
+      "tenant_ids": ["festapp", "festapptickets"]
+    },
+    {
+      "alias": "a",
+      "project_ref": "lwfpdjxsdmkfyrzqbrlk",
+      "role": "merge-source",
+      "tenant_ids": ["absolventskyvelehrad", "aksmcz", "cavfotofest", "csmostrava2026", "doobiscup", "farnostopava", "hvezdamorska", "jubileum2025"]
+    },
+    {
+      "alias": "slunovrat",
+      "project_ref": "hvtsoseaywurkmhywdbd",
+      "role": "merge-source",
+      "tenant_ids": ["festivalslunovrat"]
+    }
+  ]
+}

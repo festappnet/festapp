@@ -1,0 +1,35 @@
+{
+  "runtime": "canonical local Supabase + real Flutter web",
+  "sourceSelection": "searched duplicate title; selected ID2; grouped dates visible",
+  "copiedPlan": {
+    "sourceId": 2,
+    "draftSavedWidth": 1300,
+    "sourceWidthAfterSave": 1200,
+    "finalizedSeats": 180,
+    "hiddenAfterCreate": true,
+    "openAfterCreate": false,
+    "listingIntent": true,
+    "afterExplicitPublish": {
+      "hidden": false,
+      "open": true,
+      "formOpen": false
+    }
+  },
+  "newPlan": {
+    "mode": "new",
+    "savedSeatBindings": 72,
+    "finalizedSeats": 72,
+    "listingIntent": false,
+    "afterExplicitPublish": {
+      "hidden": true,
+      "open": true,
+      "formOpen": false
+    }
+  },
+  "visualChecks": [
+    "1440px light",
+    "390px dark"
+  ],
+  "theme": "dark preference selected through isolated localStorage; browser media alone does not override explicit preference",
+  "fontBoundary": "local immutable vendored Roboto bytes over TicketFontR2 transport; real resolver hash checks and shaping; production R2/Worker access not exercised"
+}

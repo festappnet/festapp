@@ -1,0 +1,41 @@
+import 'package:easy_localization/easy_localization.dart';
+
+/// Localized strings for the unit component.
+/// Keys live under the "Unit" namespace in assets/translations/*.json.
+class UnitStrings {
+  static String get unit => 'Unit.unit'.tr(); // "Unit"
+  static String get quotes => 'Unit.quotes'.tr(); // "Quotes"
+  static String get emailTemplates =>
+      'Unit.emailTemplates'.tr(); // "Email Templates"
+  static String get loadUnitFailed =>
+      'Unit.loadUnitFailed'.tr(); // "Failed to load unit data."
+
+  static String get appLanding => 'Unit.appLanding'.tr();
+  static String get setAppLanding => 'Unit.setAppLanding'.tr();
+  static String get clearAppLanding => 'Unit.clearAppLanding'.tr();
+  static String get landingOverview => 'Unit.landingOverview'.tr();
+  static String landingSelected(String title) =>
+      'Unit.landingSelected'.tr(args: [title]);
+  static String get landingScope => 'Unit.landingScope'.tr();
+  static String get landingAdminOnly => 'Unit.landingAdminOnly'.tr();
+  static String get landingLoadFailed => 'Unit.landingLoadFailed'.tr();
+  static String get landingForced => 'Unit.landingForced'.tr();
+
+  // Occasions screen
+  static String get addNewEvent => 'Unit.addNewEvent'.tr(); // "Add New Event"
+  static String get noEventsFound =>
+      'Unit.noEventsFound'.tr(); // "No events found."
+  static String get loadEventFailed =>
+      'Unit.loadEventFailed'.tr(); // "Could not load event. Please try again."
+  static String get createCopy => 'Unit.createCopy'.tr(); // "Create Copy"
+  static String get createCopyConfirm => 'Unit.createCopyConfirm'
+      .tr(); // "Do you want to create copy of this event?"
+  static String get copyTargetUnit => 'Unit.copyTargetUnit'.tr();
+  static String get changeCopyTargetUnit => 'Unit.changeCopyTargetUnit'.tr();
+  static String get copyTargetHint => 'Unit.copyTargetHint'.tr();
+  static String get createCopySuccess =>
+      'Unit.createCopySuccess'.tr(); // "Event copy created successfully."
+  static String get createCopyFailed =>
+      'Unit.createCopyFailed'.tr(); // "Failed to create event copy."
+  static String get createCopyMediaFailed => 'Unit.createCopyMediaFailed'.tr();
+}

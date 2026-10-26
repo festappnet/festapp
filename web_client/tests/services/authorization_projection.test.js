@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+const dom=new JSDOM('',{url:'https://tickets.invalid/'});
+globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.localStorage=dom.window.localStorage;
+const {RightsService}=await import('../../src/services/rights_service.js');
+const {SupabaseService}=await import('../../src/services/supabase_service.js');
+const {LocalizationService}=await import('../../src/services/localization_service.js');
+const {AppConfig}=await import('../../src/app_config.js');
+test.after(()=>dom.window.close());
+test('reservation UI consumes SQL projection, and unknown/malformed/missing capabilities deny',()=>{
+    RightsService._context={occasion_user:{is_editor_order_view:true},unit_user:{is_editor_view:true}};
+    assert.equal(RightsService.canSeeReservations(),false);
+    RightsService._context={capabilities:{'orders.read':true,'navigation.admin_web':true}};
+    assert.equal(RightsService.canSeeReservations(),true);
+    assert.equal(RightsService.canSeeAdmin(),true);
+    assert.equal(RightsService.hasCapability('unknown'),false);
+    RightsService._context={capabilities:{'orders.read':'true'}};
+    assert.equal(RightsService.canSeeReservations(),false);
+    RightsService.clearCapabilities();assert.equal(RightsService.canSeeReservations(),false);assert.equal(RightsService.canSeeAdmin(),false);
+});
+test('a later context request wins and logout discards an outstanding private projection',async t=>{
+    const replies=[];
+    t.mock.method(SupabaseService,'getClient',()=>({rpc:()=>new Promise(resolve=>replies.push(resolve))}));
+    t.mock.method(LocalizationService,'init',async()=>{});
+    const old=RightsService.updateAppData({link:'old'});
+    const current=RightsService.updateAppData({link:'current'});
+    replies[1]({data:{occasion:{link:'current'},capabilities:{'orders.read':true}},error:null});
+    assert.equal(await current,true);
+    replies[0]({data:{occasion:{link:'old'},capabilities:{'orders.read':false}},error:null});
+    assert.equal(await old,false);assert.equal(RightsService.currentLink,'current');
+    const pending=RightsService.updateAppData({link:'pending'});
+    RightsService.clearCapabilities();
+    replies[2]({data:{capabilities:{'orders.read':true}},error:null});
+    assert.equal(await pending,false);assert.equal(RightsService.canSeeReservations(),false);
+});

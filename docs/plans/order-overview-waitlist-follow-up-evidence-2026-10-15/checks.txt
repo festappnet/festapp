@@ -1,0 +1,17 @@
+Verification: standard. Local-only, 2026-10-15.
+Owned disposable database: festapp-order-overview-20261015, 127.0.0.1:59152.
+SQL explicit overview/access/capabilities/lifecycle/Fakturoid/recovery/email suites: 7 passed, 0 failed.
+Affected ended-waiting/bootstrap/reissue/send-gate regression after final resolver guard: 1 passed, 0 failed.
+JS overview/waitlist_flow/order_result/router: 69 passed, 0 failed.
+Affected final overview focus test suite: 5 passed, 0 failed.
+Flutter overview/finish/waitlist runtime+models/startup+deep links: 29 passed, 0 failed.
+Deno customerOrderAccess/orderOverviewEmail/waitlistEmail/waitlistEmailRenderer: 13 passed, 0 failed.
+Deno check customer-order-access + waitlist-commands: passed.
+Targeted Dart analyze: no errors; existing warnings/style infos retained.
+Standalone npm build: passed.
+Scoped migration assembler --check: passed.
+Translation namespace equivalence cs/en/sk/de/pl/uk: passed.
+Actual headless JS + Flutter and local SQL/Edge smoke: passed for recorded registration, concurrent bootstrap, partial/full acceptance, view reload, cross-view in-tab hashchange, payment and usage refresh. See implementation evidence for exact boundaries.
+Outbound email provider calls: none. Queue paused; provider send starts: 0.
+Supplemental runtime inventory: blocked by unrelated unclassified exchange-sign-in-code. Task's customer-order-access and waitlist-commands are classified. Not a passing full-repository/release gate.
+No commit, push, production migration or deploy.

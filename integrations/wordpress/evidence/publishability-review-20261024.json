@@ -1,0 +1,82 @@
+{
+  "verified_at": "2026-10-24T20:09:47.098634+00:00",
+  "scope": [
+    "vstupenky-online"
+  ],
+  "zip_sha256": "66c9f35ac38210bb0ca18c35011200976c92236200801626bb3e3a86fc8901c4",
+  "independent_critic": "wordpress_plugin_critic, independent read-only audit",
+  "official_sources": [
+    "https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/",
+    "https://developer.wordpress.org/plugins/wordpress-org/common-issues/",
+    "https://developer.wordpress.org/plugins/wordpress-org/plugin-developer-faq/"
+  ],
+  "conclusion": "Documented SaaS integration is ready for submission after canonical production deployment and real cross-origin WordPress smoke. Directory approval remains manual.",
+  "findings": [
+    {
+      "severity": "P1",
+      "issue": "Production differs from tested local service",
+      "status": "FIXED: canonical service deployed and cross-origin WordPress smoke passed",
+      "live_embed_bytes": 15654,
+      "live_embed_sha256": "f7051b56a8f14856fdad7bad02fb86cfb1df62ccd4529ca97d633252afa342d1",
+      "missing_capabilities": []
+    },
+    {
+      "severity": "P1",
+      "issue": "Stale ZIP/approval/SVN binding",
+      "status": "FIXED: selected stage rebuilt, verification command added"
+    },
+    {
+      "severity": "P2",
+      "issue": "Privacy wording did not distinguish service tracking or displayed price projection",
+      "status": "FIXED"
+    },
+    {
+      "severity": "P2",
+      "issue": "Potential duplicate second distribution",
+      "status": "EXCLUDED from this submission"
+    },
+    {
+      "severity": "P2",
+      "issue": "WPCS assignment alignment",
+      "status": "FIXED"
+    },
+    {
+      "severity": "P1",
+      "issue": "Mixed new child / legacy protocol-1 host scroll alignment",
+      "status": "FIXED: explicit scrollAlignment capability plus native fallback; 20 embed tests passed"
+    }
+  ],
+  "checks": {
+    "wordpress_assertions": 280,
+    "matrices": [
+      "WP 7.1.3 / PHP 8.5.12",
+      "WP 6.6.4 / PHP 7.4.33"
+    ],
+    "contracts": "Original, tester, onboarding, coexistence and actual gettext catalogs passed in both matrices",
+    "runtime_code": "Unchanged in final readme-only repack; final ZIP reinstalled and Plugin Check repeated in both matrices",
+    "plugin_check_version": "2.1.0, verified current via official WordPress.org API",
+    "plugin_check_current": {
+      "errors": 0,
+      "warnings": 1,
+      "reason": "load_plugin_textdomain retained for bundled sideload translations"
+    },
+    "plugin_check_minimum": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "wpcs_selected": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "production_origin_gate": "PASS, restored to local",
+    "service_links": "Login, privacy, terms, choices, support, helper HTTP 200; critic verified meaningful legal and support content"
+  },
+  "canonical_source": {
+    "branch": "feat/occasion-setup-wizard-20261007",
+    "origin_main": "2b7f1b9b2d6a18844999cbfae4e2d11b04c43f69",
+    "integration": "OPEN: current forms/router differ materially from newer canonical main; no wholesale deployment attempted"
+  },
+  "public_submission": false,
+  "public_release": false,
+  "production_release_evidence": "production-release-20261024.json"
+}

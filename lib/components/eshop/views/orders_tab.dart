@@ -1,0 +1,57 @@
+import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'package:fstapp/components/eshop/views/orders_history_content.dart';
+import 'package:fstapp/components/eshop/views/orders_content.dart';
+import '../orders_strings.dart';
+import '../ticket_batch_strings.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
+
+@RoutePage(name: 'OrdersTabsRoute')
+class OrdersTab extends StatelessWidget {
+  const OrdersTab({super.key});
+  @override
+  Widget build(BuildContext context) {
+    Localizations.localeOf(context);
+    return RoutedTabScaffold(tabs: [
+      RoutedTabDefinition(
+          slug: NavigationPaths.current,
+          route: const OrdersCurrentRoute(),
+          label: OrdersStrings.ordersTab,
+          icon: Icons.shopping_cart),
+      if (FeatureService.isTicketPregenerationEnabled())
+        RoutedTabDefinition(
+            slug: NavigationPaths.pregenerated,
+            route: const TicketBatchesRoute(),
+            label: TicketBatchStrings.title,
+            icon: Icons.confirmation_number_outlined),
+      RoutedTabDefinition(
+          slug: NavigationPaths.history,
+          route: const OrdersHistoryRoute(),
+          label: OrdersStrings.ordersHistoryTab,
+          icon: Icons.history),
+      RoutedTabDefinition(
+          slug: NavigationPaths.emailHistory,
+          route: const OrdersEmailHistoryRoute(),
+          label: EmailDeliveryStrings.history,
+          icon: Icons.mail_outline),
+    ]);
+  }
+}
+
+@RoutePage()
+class OrdersCurrentPage extends StatelessWidget {
+  const OrdersCurrentPage({super.key});
+  @override
+  Widget build(BuildContext context) => OrdersContent();
+}
+
+@RoutePage()
+class OrdersHistoryPage extends StatelessWidget {
+  const OrdersHistoryPage({super.key});
+  @override
+  Widget build(BuildContext context) => OrdersHistoryContent();
+}

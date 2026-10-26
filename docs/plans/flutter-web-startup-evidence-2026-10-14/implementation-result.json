@@ -1,0 +1,40 @@
+{
+  "executables": [
+    {
+      "name": "main.dart.js",
+      "raw": 11191958,
+      "gzip": 3038248,
+      "brotli": 2537204
+    },
+    {
+      "name": "main.dart.js_1.part.js",
+      "raw": 10111259,
+      "gzip": 730002,
+      "brotli": 543430
+    }
+  ],
+  "registeredFamilies": [
+    "MaterialIcons",
+    "Futura",
+    "packages/shadcn_ui/Geist",
+    "packages/shadcn_ui/GeistMono",
+    "packages/lucide_icons_flutter/Lucide",
+    "packages/cupertino_icons/CupertinoIcons",
+    "Roboto"
+  ],
+  "removedFamilies": [
+    "packages/lucide_icons_flutter/Lucide100",
+    "packages/lucide_icons_flutter/Lucide200",
+    "packages/lucide_icons_flutter/Lucide300",
+    "packages/lucide_icons_flutter/Lucide400",
+    "packages/lucide_icons_flutter/Lucide500",
+    "packages/lucide_icons_flutter/Lucide600",
+    "packages/golden_toolkit/Roboto"
+  ],
+  "fontStartupSavings": {
+    "raw": 2718732,
+    "gzip": 1268718,
+    "brotli": 1105688
+  },
+  "removedAssetsRetained": true
+}

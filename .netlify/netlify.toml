@@ -1,0 +1,120 @@
+redirectsOrigin = "config"
+plugins = []
+headers = []
+
+[build]
+edge_functions = "/Users/miakh/source/festapp/netlify/edge-functions"
+publish = "/Users/miakh/source/festapp/build/web"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "cd web_client && npm run build && cp -r dist/* ../build/web/"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[edge_functions]]
+path = "/form/*"
+function = "inject-og"
+
+[[edge_functions]]
+path = "/sitemap.xml"
+function = "sitemap"
+
+[functions]
+
+[functions."*"]
+
+[[redirects]]
+from = "/form/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/login"
+to = "/flutter.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/admin"
+to = "/flutter.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/transfer"
+to = "/flutter.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/*"
+to = "/flutter.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

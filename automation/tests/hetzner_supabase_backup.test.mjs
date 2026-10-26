@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const backup = path.join(root, 'automation/hetzner-supabase/backup');
+
+test('retention preserves daily and weekly recovery points and refuses unsafe selections', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_backup_retention.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('restored Storage references require matching object versions and sizes', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_storage_restore_consistency.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('application restore refuses production names and network or host-mount exposure', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_restore_service_isolation.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('R2 image backup streams objects and fails on changed bytes or unsafe paths', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_r2_image_archive.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('Edge recovery exports only public sources and refuses wrong hosts or caches', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_edge_restore.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('gateway restore accepts only bounded public proxy configuration files', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_gateway_restore.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('runtime recovery archive includes bootstrap dependencies without copying live PGDATA', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_runtime_backup_archive.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('scheduled backup is encrypted, bounded, off-host and never authorizes cutover', () => {
+  const create = fs.readFileSync(path.join(backup, 'create-online-encrypted-backup.sh'), 'utf8');
+  assert.match(create, /plaintext_artifacts_written:false/);
+  assert.match(create, /online-operational-backup-not-promotion-rpo0/);
+  assert.match(create, /production_cutover_authorized:false/);
+  assert.match(create, /festapp-supabase-backups/);
+  assert.match(create, /rclone.+--immutable/);
+  assert.match(create, /rclone.+check/);
+  assert.match(create, /no_check_bucket = true/);
+  assert.match(create, /prune-online-backups\.py/);
+  assert.match(create, /"\$BACKUP_ROOT\/\.lock"/);
+  assert.doesNotMatch(create, /docker compose (?:stop|down|restart|up)/);
+  assert.doesNotMatch(create, /ALTER |DELETE FROM|DROP DATABASE/);
+});
+
+test('backup shell and systemd contracts are syntactically valid', () => {
+  for (const name of [
+    'create-online-encrypted-backup.sh', 'archive-runtime.sh', 'upload-encrypted-runtime-logs.sh',
+    'install-online-backup.sh',
+  ]) {
+    const result = spawnSync('bash', ['-n', path.join(backup, name)], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  }
+  const service = fs.readFileSync(path.join(backup, 'festapp-supabase-backup.service'), 'utf8');
+  const timer = fs.readFileSync(path.join(backup, 'festapp-supabase-backup.timer'), 'utf8');
+  assert.match(service, /ProtectSystem=strict/);
+  assert.match(service, /ReadWritePaths=\/var\/backups\/festapp-supabase/);
+  assert.match(timer, /Persistent=true/);
+  const installer = fs.readFileSync(path.join(backup, 'install-online-backup.sh'), 'utf8');
+  assert.match(installer, /\/var\/backups\/festapp-supabase-logs/);
+});
+
+test('runtime logs are encrypted before leaving the host and retained off-host', () => {
+  const upload = fs.readFileSync(path.join(backup, 'upload-encrypted-runtime-logs.sh'), 'utf8');
+  assert.match(upload, /docker logs --timestamps --since 70m/);
+  assert.match(upload, /\| age -r "\$AGE_RECIPIENT"/);
+  assert.match(upload, /logs\/\$EXPECTED_HOSTNAME/);
+  assert.match(upload, /off_host_verified:true/);
+  assert.match(upload, /no_check_bucket = true/);
+  assert.match(upload, /production_cutover_authorized:false/);
+  assert.doesNotMatch(upload, /docker compose (?:stop|down|restart|up)/);
+});
+
+test('pgBackRest secret config has the required explicit protected mode', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_pgbackrest_install.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('pgBackRest derivative follows the canonical database image without changing PostgreSQL', () => {
+  const dockerfile = fs.readFileSync(path.join(backup, 'pgbackrest/Dockerfile'), 'utf8');
+  const runtime = fs.readFileSync(path.join(root, 'automation/hetzner-supabase/runtime/docker-compose.festapp.yml'), 'utf8');
+  const base = runtime.match(/^  db:\n    image: (.+)$/m)?.[1];
+  assert.ok(base);
+  assert.equal(dockerfile.match(/^FROM (.+)$/m)?.[1], base, 'Update/rebuild the derivative alongside the canonical database image.');
+});

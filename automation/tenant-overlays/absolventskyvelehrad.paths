@@ -1,0 +1,13 @@
+# Source/data overlay paths. Shell globs are matched against complete repo paths.
+automation/project.conf
+assets/icons/droidicon.png
+assets/icons/fstappicon.png
+android/app/src/main/res/mipmap-*/ic_launcher.png
+ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web/favicon.svg
+web/web-app-manifest-*.png
+automation/release/legal/**
+automation/release/ExportOptions.plist

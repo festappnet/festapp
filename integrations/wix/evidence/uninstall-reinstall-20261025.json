@@ -1,0 +1,58 @@
+{
+  "verifiedAt": "2026-10-25T19:46:48.666863+00:00",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "siteId": "14641e99-51d9-40f8-b768-4ffc1f5d3929",
+  "editor": "Wix Editor",
+  "environment": "Owned isolated headless Chrome; production backend DNS blocked; no user browser attached",
+  "uninstall": {
+    "nativePath": "Site Dashboard > Apps > Manage Apps > More app actions > Delete app > Go to Editor > Manage Apps > Delete app",
+    "reason": "I just wanted to try it out",
+    "optionalFeedbackSent": false,
+    "nativeAppCountBefore": 1,
+    "nativeAppCountAfter": 0,
+    "publicSiteAfterSavePublish": {
+      "documentReady": "complete",
+      "siteRootPresent": true,
+      "widgets": 0,
+      "checkoutFrames": 0,
+      "helperScripts": 0
+    }
+  },
+  "reinstall": {
+    "nativePath": "App dashboard > Test App > Test on dev site > existing Wix Editor QA site > Test App",
+    "addToSiteClickedOnce": true,
+    "nativeWarning": "There was a technical issue",
+    "warningWorkaround": "Dismissed once, native Save, then Add Elements > App Widgets > vstupenky.online; did not repeat Add to Site",
+    "freshWidgetBeforeSettings": {
+      "mode": "Editor",
+      "form-url": null,
+      "form-title": null,
+      "checkoutFrames": 0
+    },
+    "settingsSavedStatus": "Uloženo. Formulář ověřte na zveřejněném webu.",
+    "nativeAppCountAfter": 1,
+    "newComponentId": "comp-mvo8fey9",
+    "publicSiteAfterSavePublish": {
+      "mode": "Site",
+      "widgets": 1,
+      "form-url": "https://vstupenky.online/form/wix-qa-20261025",
+      "form-title": "Wix Editor QA - obnovená instalace",
+      "inherit-style": "false",
+      "checkoutFrames": 1,
+      "helperScripts": 1,
+      "helperLoaded": true
+    }
+  },
+  "ordersForFixtureBefore": 1,
+  "ordersForFixtureAfter": 1,
+  "newOrders": 0,
+  "browserClosed": true,
+  "nativeCleanSetupQualified": false,
+  "fullyQualified": false,
+  "limits": [
+    "Recoverable native Add to Site warning remains a portal issue; no fully clean setup flow is claimed",
+    "Public synthetic form route is absent without disposable transport, so this run does not qualify checkout, real payments, provider returns or production API/CORS",
+    "Billing attribution/reporting and uninstall/reinstall accounting are not implemented or approved by this wrapper",
+    "Studio published pair was preserved; only original Editor QA site installation changed"
+  ]
+}

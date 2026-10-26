@@ -1,0 +1,215 @@
+# Miscellaneous
+*.class
+*.lock
+!/pubspec.lock
+!/automation/release/fastlane/Gemfile.lock
+**/.bundle/
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Visual Studio Code related
+.classpath
+.project
+.settings/
+.vscode/*
+
+# Flutter repo-specific
+/bin/cache/
+/bin/internal/bootstrap.bat
+/bin/internal/bootstrap.sh
+/bin/mingit/
+/dev/benchmarks/mega_gallery/
+/dev/bots/.recipe_deps
+/dev/bots/android_tools/
+/dev/devicelab/ABresults*.json
+/dev/docs/doc/
+/dev/docs/flutter.docs.zip
+/dev/docs/lib/
+/dev/docs/pubspec.yaml
+/dev/integration_tests/**/xcuserdata
+/dev/integration_tests/**/Pods
+/packages/flutter/coverage/
+version
+analysis_benchmark.json
+
+# packages file containing multi-root paths
+.packages.generated
+
+# Flutter/Dart/Pub related
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/generated_plugin_registrant.dart
+.packages
+.pub-preload-cache/
+.pub/
+build/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+
+# Android related
+.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.mobileprovision
+
+# Release credentials are provisioned from FestappSeed and must stay outside
+# this repository. Runtime release tooling rejects in-repository key paths too.
+*.p8
+**/service-account*.json
+**/play-service-account*.json
+**/google-play-service-account*.json
+
+# iOS/XCode related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+**/Flutter/ephemeral/
+**/Pods/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral
+**/xcuserdata/
+
+# Windows
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# Linux
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# Coverage
+coverage/
+
+# Symbols
+app.*.symbols
+
+# Exceptions to above rules.
+!**/ios/**/default.mode1v3
+!**/ios/**/default.mode2v3
+!**/ios/**/default.pbxuser
+!**/ios/**/default.perspectivev3
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+!/dev/ci/**/Gemfile.lock
+!.vscode/settings.json
+!.vscode/launch.json
+
+#supabase
+supabase/.env
+
+# FVM Version Cache
+.fvm/
+# Local Netlify folder
+.netlify
+
+# Local Env Files
+**/.env.local
+# Canonical publisher scope IDs are fixed from private final-merge evidence.
+workers/sync-publisher/wrangler.toml
+# Local development environment (generated from supabase status)
+.env.development
+
+# Agent Skills
+.agent/skills/skills/*
+!.agent/skills/skills/project-workflows/
+
+# Broader Agent Skills Ignore
+.agent/skills/*
+!.agent/skills/skills/
+.agent/skills/skills/*
+!.agent/skills/skills/project-workflows/
+.set_appstore_env.sh
+.agent/workflows/
+
+# Migration scripts
+automation/image-migration/.env
+automation/image-migration/node_modules/
+automation/image-migration/.private-cutover-ledger.jsonl
+
+# Generated offline map packages and preview artifacts
+automation/offline-map/out/
+
+# Local Codex diagnostics, screenshots, and tool environments
+.codex-local/
+
+# GSD Planning
+.planning/
+
+# Kickoff prompts (scratch task briefs, not shared docs)
+docs/plans/*_kickoff.md
+
+# Workers
+workers/*/node_modules/
+**/.wrangler/
+
+# Project-root tool caches (wrangler, vitest)
+/node_modules/
+
+# Production build backups (mirrored CF Pages deployments — large binaries).
+# NOTE: gitignored, so `git clean -xfd` WOULD delete these. Keep a copy elsewhere too.
+/backups/
+
+# Serena MCP (local code-navigation cache/config)
+.serena/
+
+# Local operational evidence and backups
+.codex-artifacts/
+
+# Reviewed dependency graph for production Edge Functions.
+!/supabase/functions/deno.lock
+
+# Workstation-only runtime state.
+/.private/
+/.artifacts/
+/output/

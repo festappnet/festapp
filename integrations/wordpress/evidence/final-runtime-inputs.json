@@ -1,0 +1,19 @@
+{
+  "git_head": "353394511e7f3fae1efa52c8cc806ee459c5b4cf",
+  "checkout": "dirty; unrelated work preserved, no commit/push",
+  "owned_service_sources_sha256": {
+    "supabase/functions/register/index.ts": "439d26afed6f6ca7d5dd42f95dc67751f70889cd3f5463ffcd5bf9297d13d262",
+    "web_client/src/services/auth_service.js": "2d460a53b1e8276bdd38f6cfc63bed3f2a3874436874b3834c7f454ee5a28ac1",
+    "web_client/src/components/users/login_modal.js": "e40cf2f8e8cc50dd4402b59eb6fc43aaf65db19effc36c4ca8e333541eb103b6",
+    "database/functions/users/set_user_password_token.sql": "1dbc6e11c9089d51ab6188cd94838743c4ef84a1fe3fc40b7ba27ad5e0b62a2b",
+    "supabase/migrations/20261024004000_password_reset_retry_validation.sql": "f4a247abac6c3fdfdd7e1e0fff17914e6a525d5a292d281f043d9a8a9ac2afc1",
+    "web_client/tests/core/registration_response.test.js": "764b2b60d6044e32327c532db4982ab4c6422eebccf8c2e55f015574baff8492",
+    "database/tests/users/password_reset_retry_validation_test.sql": "f9bf12e6ae73dc53996ef5db7ea9fb9b109a84fd0f671c8c5423f2ac7268f7c4"
+  },
+  "edge_runtime_snapshot_sha256": "6d11789b4a702e2617b145b8afd0d37440f57a617d4bf67b53c21d4d2f5730a0",
+  "zip_sha256": {
+    "vstupenky-online": "947668353092d4d7d25d630a380959a679234196e1893a3240263f45b7356a6b",
+    "festapp-tickets": "38aa92a84fddd0fd8a4cc0db5beeac78c9303b66b29e9e695da46fd65cd75663"
+  },
+  "schema_sha256": "a5ff752c50e5f9fe38411b2518896d1188b4fb969fba996488cfd39460affcc7"
+}

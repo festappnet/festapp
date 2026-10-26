@@ -1,0 +1,8 @@
+From: info@airbank.cz
+Subject: Platba
+
+AirBank Payment
+Amount: 200,00 CZK
+Account: 987654321/3030
+VS: 111222333
+Message: Test Payment AirBank

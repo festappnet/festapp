@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "browser": "Native Mobile Safari26.5 / iOS26.5, owned iPhone17Pro simulator",
+  "interaction": "native Apple W3C WebDriver; DOM input/change/click and real TouchEvent in actual Safari, no order mock",
+  "ordinary_order": 3,
+  "seat_order": 4,
+  "seat": "A4",
+  "outage": {
+    "actual_owned_gateway_stopped": true,
+    "no_order_while_down": true,
+    "statuses": [
+      0,
+      200
+    ],
+    "same_command_and_client": true,
+    "preserved_fields": true
+  },
+  "storage": "both getters throw SecurityError before ordinary form entry",
+  "confirmation": "canonical manual transaction, no real transfer",
+  "email": "canonical queue/renderer, capture_only_no_provider_send",
+  "pdfs": [
+    {
+      "order": 3,
+      "file": "global-safari-order-3.pdf",
+      "bytes": 49241,
+      "sha256": "32dd4272c9a022b3e54c10b5ca2eb84b3cd3cff8d246a7151f2b0e1cd70a03e1"
+    },
+    {
+      "order": 4,
+      "file": "global-safari-order-4.pdf",
+      "bytes": 49247,
+      "sha256": "1812d5dfa2936dbf1cb0d75b5394a1bd28bdd0330a92805e1d2f9ee9bdcb28bb"
+    }
+  ],
+  "native_pdf_preview": {
+    "path": "/ticket.pdf",
+    "status": 200,
+    "bytes": 49241,
+    "sha256": "dd6047a30f29d759260724ed968fce33272a689c57e22f669d9e608e0ae99157",
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "qr_decoded_from_actual_safari_screenshot": true
+  },
+  "admissions": [
+    {
+      "order": 3,
+      "accepted": true,
+      "replay": true,
+      "second_entry": "already_used"
+    },
+    {
+      "order": 4,
+      "accepted": true,
+      "replay": true,
+      "second_entry": "already_used"
+    }
+  ],
+  "zip_sha256": {
+    "vstupenky-online": "947668353092d4d7d25d630a380959a679234196e1893a3240263f45b7356a6b",
+    "festapp-tickets": "38aa92a84fddd0fd8a4cc0db5beeac78c9303b66b29e9e695da46fd65cd75663"
+  },
+  "simulator": "session released; owned device deleted; driver stopped",
+  "all_pdf_qrs_verified": true,
+  "fixture_backend": "Same disposable canonical synthetic organization1; no production global tenant or real card charge",
+  "verification_date": "2026-10-23T18:40:45.572102+00:00",
+  "pdf_qr_validation": "2 native-order PDFs rasterized; both issued symbols matched. Native Safari preview screenshot also decoded."
+}

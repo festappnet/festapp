@@ -1,0 +1,36 @@
+{
+  "fixture": "Dart 3.13.2 dart2js -O4 deferred class; repository-generated service worker; isolated headless Chromium",
+  "tests": [
+    {
+      "scenario": "First feature invocation after offline reload, server stopped",
+      "result": [
+        "feature-v1",
+        "network-unavailable"
+      ],
+      "pass": true
+    },
+    {
+      "scenario": "Other tab accepts v2 update; v1 tab has not invoked deferred feature; server stopped",
+      "pageVersion": "1.0.0+1",
+      "result": [
+        "feature-v1",
+        "network-unavailable"
+      ],
+      "pass": true
+    },
+    {
+      "scenario": "v2 tab reloads offline and invokes feature, server stopped",
+      "pageVersion": "2.0.0+2",
+      "result": [
+        "feature-v2",
+        "network-unavailable"
+      ],
+      "pass": true
+    }
+  ],
+  "limitations": [
+    "Not a full authenticated Flutter administration E2E test",
+    "Activating tab must reload after SKIP_WAITING, as production update flow requires",
+    "Browser storage eviction, quota pressure and iOS standalone mode not browser-tested"
+  ]
+}

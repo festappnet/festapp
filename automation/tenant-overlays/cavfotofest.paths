@@ -1,0 +1,24 @@
+# Source/data overlay paths. Shell globs are matched against complete repo paths.
+automation/project.conf
+netlify.toml
+web_client/public/netlify-retire-worker.js
+assets/icons/droidicon.png
+assets/icons/fstappicon.png
+assets/icons/fstappicon.svg
+assets/icons/fstapplogo.dark.svg
+assets/icons/fstapplogo.svg
+fonts/Futura PT Book.ttf
+fonts/Futura PT Medium.ttf
+web_client/src/assets/fonts/FuturaPTBook.ttf
+web_client/src/assets/fonts/FuturaPTMedium.ttf
+android/app/src/main/res/mipmap-*/ic_launcher.png
+ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
+web/android-chrome-*.png
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web/favicon.svg
+web/fstapplogo.png
+web/web-app-manifest-*.png
+automation/release/legal/**
+automation/release/ExportOptions.plist

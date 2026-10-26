@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "method": "CoreGraphics PDF rasterization, native Apple Vision QR detection",
+  "pdf_pages": 2,
+  "decoded_ticket_symbols": 2,
+  "matched_canonical_issued_symbols": true,
+  "log": "PASS: 2 PDF pages rasterized; 2 real ticket QR codes match canonical issued symbols"
+}

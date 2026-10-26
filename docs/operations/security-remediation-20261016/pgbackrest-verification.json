@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "full_backup": true,
+  "differential_restore": true,
+  "time_target_excludes_later_commit": true,
+  "archive_failure_retains_wal": true,
+  "network": "none",
+  "host_mounts": false,
+  "pgbackrest": "2.57.0",
+  "test_source_sha256": "e90a4a6174863b71bc76f226f6a89e513ec05cd94b9654ccbe6def7723936788",
+  "base_image": "supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a",
+  "other_targeted_checks": {
+    "existing_monitor_metrics_and_pitr_failure_cases": true,
+    "backup_retention_and_shell_contracts": true,
+    "config_permissions_under_root_umask": true,
+    "base_database_image_compatibility": true,
+    "security_migration_and_definer_contract_parity": true,
+    "root_observer_sanitization": true
+  },
+  "limits": "Synthetic full/differential/time-target and failure test in network-none container; production deployment and real differential PITR are recorded separately, never inferred from this test."
+}

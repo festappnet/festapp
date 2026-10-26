@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "@@SLUG@@/ticket-form",
+  "version": "@@VERSION@@",
+  "title": "@@NAME@@",
+  "category": "embed",
+  "icon": "tickets-alt",
+  "description": "Sell tickets using a saved public @@NAME@@ form.",
+  "textdomain": "@@SLUG@@",
+  "attributes": {
+    "url": {
+      "type": "string",
+      "default": ""
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "fixed"
+      ],
+      "default": "auto"
+    },
+    "inheritStyle": {
+      "type": "boolean",
+      "default": true
+    },
+    "height": {
+      "type": "number",
+      "default": 800
+    }
+  },
+  "supports": {
+    "html": false
+  },
+  "editorScript": "@@SLUG@@-editor",
+  "style": "@@SLUG@@"
+}

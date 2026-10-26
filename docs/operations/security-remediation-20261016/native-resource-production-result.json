@@ -1,0 +1,131 @@
+{
+  "source_commit": "afb0a779456158a4529f5ce77c1b01aa6ec50159",
+  "at": 1792168022.6104224,
+  "main_before_sha256": "9e4f605c9a8bb9ec4b424c23e851e2ec1469b6ae47cee8e6ea1fc3f952afff65",
+  "main_after_sha256": "96cbbece02c6d0935af32f3223590a66475b537557489dba7a08ae3ffe63d2ce",
+  "collector_sha256": "cdbbbbe4f2227f7c66f09ccddafeb14f76b1e14b62a4962ab40db9f155663f04",
+  "only_functions_recreated": true,
+  "all_containers_healthy": true,
+  "original_email_pause_restored": true,
+  "unknown_email_outcomes_unchanged": 2,
+  "new_public_endpoint": false,
+  "new_daemon": false,
+  "sample": {
+    "at": 1792168022,
+    "host": {
+      "MemTotal": 3981275136,
+      "MemAvailable": 1998655488,
+      "SwapTotal": 0
+    },
+    "containers": [
+      {
+        "name": "/festapp-caddy",
+        "memory_bytes": 38350848,
+        "working_set_bytes": 26066944,
+        "cpu_usage_usec": 5969438,
+        "pids": 9
+      },
+      {
+        "name": "/festapp-supabase-admin-tunnel",
+        "memory_bytes": 38752256,
+        "working_set_bytes": 37040128,
+        "cpu_usage_usec": 98911751,
+        "pids": 10
+      },
+      {
+        "name": "/realtime-dev.supabase-realtime",
+        "memory_bytes": 205938688,
+        "working_set_bytes": 194560000,
+        "cpu_usage_usec": 52932289,
+        "pids": 28
+      },
+      {
+        "name": "/supabase-auth",
+        "memory_bytes": 18235392,
+        "working_set_bytes": 10756096,
+        "cpu_usage_usec": 34273114,
+        "pids": 9
+      },
+      {
+        "name": "/supabase-db",
+        "memory_bytes": 429793280,
+        "working_set_bytes": 288137216,
+        "cpu_usage_usec": 289601706,
+        "pids": 27
+      },
+      {
+        "name": "/supabase-edge-functions",
+        "memory_bytes": 36282368,
+        "working_set_bytes": 35667968,
+        "cpu_usage_usec": 188221,
+        "pids": 15
+      },
+      {
+        "name": "/supabase-envoy",
+        "memory_bytes": 58171392,
+        "working_set_bytes": 32563200,
+        "cpu_usage_usec": 48381402,
+        "pids": 10
+      },
+      {
+        "name": "/supabase-imgproxy",
+        "memory_bytes": 88514560,
+        "working_set_bytes": 20516864,
+        "cpu_usage_usec": 112126507,
+        "pids": 10
+      },
+      {
+        "name": "/supabase-meta",
+        "memory_bytes": 102690816,
+        "working_set_bytes": 98762752,
+        "cpu_usage_usec": 340053853,
+        "pids": 19
+      },
+      {
+        "name": "/supabase-pooler",
+        "memory_bytes": 199401472,
+        "working_set_bytes": 184270848,
+        "cpu_usage_usec": 50552679,
+        "pids": 29
+      },
+      {
+        "name": "/supabase-rest",
+        "memory_bytes": 115851264,
+        "working_set_bytes": 75583488,
+        "cpu_usage_usec": 162745653,
+        "pids": 12
+      },
+      {
+        "name": "/supabase-storage",
+        "memory_bytes": 211255296,
+        "working_set_bytes": 186122240,
+        "cpu_usage_usec": 43960285,
+        "pids": 12
+      },
+      {
+        "name": "/supabase-studio",
+        "memory_bytes": 239132672,
+        "working_set_bytes": 227487744,
+        "cpu_usage_usec": 162704961,
+        "pids": 11
+      }
+    ],
+    "edge": {
+      "version": 1,
+      "at": 1792168014990,
+      "activeUserWorkersCount": 0,
+      "retiredUserWorkersCount": 0,
+      "receivedRequestsCount": 0,
+      "handledRequestsCount": 0
+    },
+    "database": {
+      "connections": 18,
+      "active": 0,
+      "idle_in_transaction": 0,
+      "long_transactions": 0,
+      "max_connections": 100,
+      "reserved_connections": 3
+    }
+  },
+  "source_tar_sha256": "62762cd7a61b04ee67438a6b4e7244d9fad2dc6d8d9eeeb4389b1b6608794976"
+}

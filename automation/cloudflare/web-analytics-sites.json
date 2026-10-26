@@ -1,0 +1,60 @@
+{
+  "app.absolventskyvelehrad.cz": {
+    "siteTag": "cddce39c98cd4949b882c865471ab50d",
+    "token": "3ffabaf469d44ad89a844ceaaf1b5090"
+  },
+  "biscup.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "clovekavira.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "csa2024.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "csmostrava.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "farnostopava.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "hvezdamorska.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "jubileum2025.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "live.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "slunovrat.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "tickets.festapp.net": {
+    "siteTag": "3335204bc4014e9c9e8d7568920650f8",
+    "token": "3111c14924d2485c8093540d1dcfe62e",
+    "collector": "/cdn-cgi/rum"
+  },
+  "vstupenky.online": {
+    "siteTag": "4b64cee2415d4110b11abc4d56013278",
+    "token": "e2b62eb2e6824423b457214e0b286f0a"
+  }
+}
