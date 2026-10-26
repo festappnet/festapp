@@ -1,0 +1,42 @@
+{
+  "en-GB": {
+    "XML_DESCRIPTION": "Publish ticket sales from @@NAME@@ using a saved public form. A separate organizer account is required.",
+    "START": "Start with @@NAME@@",
+    "ONBOARDING": "<ol><li>Create your organizer account at <a href='@@ORIGIN@@/login' target='_blank' rel='noopener noreferrer'>@@NAME@@</a>. This is separate from Joomla.</li><li>Create an event and save its public form. Complete service and payment setup for paid sales.</li><li>Copy the saved @@ORIGIN@@/form/slug link below. Set this module to Published, select a template position and assign menu items. For an article use Joomla's Load Modules plugin with {loadmoduleid ID}, replacing ID with this module's ID.</li></ol>",
+    "URL": "Saved public form URL",
+    "URL_HELP": "Use exactly @@ORIGIN@@/form/slug without query parameters or fragments. Encode Unicode characters as in the copied public link.",
+    "INVALID_URL": "The form is not configured. Enter a saved public @@ORIGIN@@/form/ URL without extra parameters.",
+    "TITLE": "Accessible iframe title",
+    "TITLE_HELP": "Describe the form for screen reader users. Leave empty to use the default ticket sales title.",
+    "DEFAULT_TITLE": "Ticket sales - @@NAME@@",
+    "MODE": "Height mode",
+    "AUTO": "Automatic (service helper)",
+    "FIXED": "Fixed",
+    "HEIGHT": "Initial or fixed height in pixels (240-4000)",
+    "INHERIT": "Use website appearance",
+    "FALLBACK": "Open the form in a new tab",
+    "SERVICE": "External service and privacy",
+    "DISCLOSURE": "Only visitors to a public page load the external form; this administrator page does not. Orders, payments, emails and admission remain in @@NAME@@. Joomla stores the public URL and appearance settings, without service credentials or buyer orders. Appearance sharing may load website fonts inside the iframe. Review your website privacy notice and CSP. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Service offer</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Terms</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Privacy</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Support</a>",
+    "CACHE": "Module output caching is disabled so Joomla always registers the service helper. Fixed height with website appearance disabled needs no helper. The public link also works if the helper is blocked."
+  },
+  "cs-CZ": {
+    "XML_DESCRIPTION": "Zveřejněte prodej vstupenek přes uložený veřejný formulář @@NAME@@. Vyžaduje samostatný účet pořadatele.",
+    "START": "Začínáme s @@NAME@@",
+    "ONBOARDING": "<ol><li>Vytvořte účet pořadatele na <a href='@@ORIGIN@@/login' target='_blank' rel='noopener noreferrer'>@@NAME@@</a>. Je samostatný od účtu Joomly.</li><li>Vytvořte akci a uložte veřejný formulář. Pro placený prodej dokončete obchodní a platební nastavení služby.</li><li>Níže vložte uložený odkaz @@ORIGIN@@/form/slug. Modul nastavte jako Zveřejněný, vyberte pozici šablony a přiřaďte položky menu. Do článku vložte pomocí standardního pluginu Joomla Načítání modulů kód {loadmoduleid ID}; ID nahraďte číslem tohoto modulu.</li></ol>",
+    "URL": "Uložený veřejný odkaz na formulář",
+    "URL_HELP": "Použijte přesně @@ORIGIN@@/form/slug bez parametrů a fragmentu. Diakritiku ponechte zakódovanou jako ve zkopírovaném veřejném odkazu.",
+    "INVALID_URL": "Formulář není nastaven. Vložte uložený veřejný odkaz @@ORIGIN@@/form/ bez dalších parametrů.",
+    "TITLE": "Přístupný název iframe",
+    "TITLE_HELP": "Popište formulář pro uživatele čteček. Prázdná hodnota použije výchozí název prodeje vstupenek.",
+    "DEFAULT_TITLE": "Prodej vstupenek - @@NAME@@",
+    "MODE": "Režim výšky",
+    "AUTO": "Automatická (skript služby)",
+    "FIXED": "Pevná",
+    "HEIGHT": "Počáteční nebo pevná výška v pixelech (240-4000)",
+    "INHERIT": "Převzít vzhled webu",
+    "FALLBACK": "Otevřít formulář v nové záložce",
+    "SERVICE": "Externí služba a soukromí",
+    "DISCLOSURE": "Externí formulář načítají jen návštěvníci veřejné stránky; tato administrace jej nenačítá. Objednávky, platby, e-maily a odbavení zůstávají v @@NAME@@. Joomla ukládá veřejnou URL a vzhled, nikoli přihlašovací údaje služby či objednávky kupujících. Převzetí vzhledu může načíst fonty webu uvnitř iframe. Zohledněte službu v informacích o soukromí a CSP webu. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Nabídka služby</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Podmínky</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Soukromí</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Podpora</a>",
+    "CACHE": "Cache výstupu modulu je vypnutá, aby Joomla vždy zaregistrovala skript služby. Pevná výška bez převzetí vzhledu skript nepotřebuje. Veřejný odkaz funguje i při blokovaném skriptu."
+  }
+}

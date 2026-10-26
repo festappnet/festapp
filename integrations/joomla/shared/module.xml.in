@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2026 Festapp. GNU GPL version 2 or later; see LICENSE.txt -->
+<extension type="module" client="site" method="upgrade">
+  <name>@@ELEMENT@@</name>
+  <author>Festapp</author>
+  <creationDate>2026-10</creationDate>
+  <copyright>Copyright (C) 2026 Festapp</copyright>
+  <license>GNU GPL version 2 or later</license>
+  <version>@@VERSION@@</version>
+  <description>@@KEY@@_XML_DESCRIPTION</description>
+  <namespace path="src">Festapp\Module\@@NAMESPACE@@</namespace>
+  <files>
+    <folder module="@@ELEMENT@@">services</folder>
+    <folder>src</folder><folder>tmpl</folder><folder>language</folder><filename>LICENSE.txt</filename>
+  </files>
+  <languages>
+    <language tag="en-GB">language/en-GB/@@ELEMENT@@.ini</language>
+    <language tag="en-GB">language/en-GB/@@ELEMENT@@.sys.ini</language>
+    <language tag="cs-CZ">language/cs-CZ/@@ELEMENT@@.ini</language>
+    <language tag="cs-CZ">language/cs-CZ/@@ELEMENT@@.sys.ini</language>
+  </languages>
+@@UPDATE_SERVERS@@  <config>
+    <fields name="params">
+      <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule">
+        <field name="onboarding" type="note" label="@@KEY@@_START" description="@@KEY@@_ONBOARDING" />
+        <field name="url" type="text" required="true" filter="raw" validate="publicform" label="@@KEY@@_URL" description="@@KEY@@_URL_HELP" message="@@KEY@@_INVALID_URL" />
+        <field name="iframe_title" type="text" filter="string" label="@@KEY@@_TITLE" description="@@KEY@@_TITLE_HELP" />
+        <field name="mode" type="list" default="auto" validate="options" label="@@KEY@@_MODE">
+          <option value="auto">@@KEY@@_AUTO</option><option value="fixed">@@KEY@@_FIXED</option>
+        </field>
+        <field name="height" type="number" default="800" min="240" max="4000" filter="integer" validate="number" label="@@KEY@@_HEIGHT" />
+        <field name="inherit_style" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer" validate="options" label="@@KEY@@_INHERIT">
+          <option value="0">JNO</option><option value="1">JYES</option>
+        </field>
+        <field name="external" type="note" label="@@KEY@@_SERVICE" description="@@KEY@@_DISCLOSURE" />
+      </fieldset>
+      <fieldset name="advanced">
+        <field name="cache" type="hidden" default="0" filter="integer" />
+        <field name="cache_note" type="note" description="@@KEY@@_CACHE" />
+      </fieldset>
+    </fields>
+  </config>
+</extension>

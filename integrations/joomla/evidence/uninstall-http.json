@@ -1,0 +1,12 @@
+[
+  {
+    "major": 5,
+    "remaining_product_renders": true,
+    "cache_purge": "com_content/com_modules/_system after uninstall"
+  },
+  {
+    "major": 6,
+    "remaining_product_renders": true,
+    "cache_purge": "com_content/com_modules/_system after uninstall"
+  }
+]

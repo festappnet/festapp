@@ -1,0 +1,17 @@
+{
+  "task_containers_removed": true,
+  "task_network_removed": true,
+  "stopped_own_processes": [
+    {
+      "pid": 95619,
+      "port": 59803
+    }
+  ],
+  "browser_sessions_closed": [
+    "festapp-joomla-20261026",
+    "festapp-joomla-live-20261026"
+  ],
+  "preexisting_wordpress_and_supabase_preserved": true,
+  "production_mutations": false,
+  "service_fixture_reseeded": false
+}

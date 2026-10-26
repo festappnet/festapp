@@ -1,0 +1,21 @@
+{
+  "boundary": "vstupenky.online DNS routed only in isolated browser to existing disposable HTTPS fixture on 59803 and backend on 59821; international remote requests blocked; no purchase submitted",
+  "cases": [
+    {
+      "case": "320px, real form, article/position auto height, one helper",
+      "heights": [
+        1672,
+        1672
+      ],
+      "helpers": 1,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    {
+      "case": "real seat selector opens and closes with Escape"
+    },
+    {
+      "case": "blocked helper preserves 800px iframe and keyboard new-tab fallback"
+    }
+  ]
+}

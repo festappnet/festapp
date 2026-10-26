@@ -1,0 +1,59 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+namespace Festapp\Module\@@NAMESPACE@@\Site\Helper;
+
+use Joomla\CMS\Language\Text;
+
+defined('_JEXEC') or die;
+
+final class EmbedHelper
+{
+    public static function validateUrl($input): bool
+    {
+        $prefix = '@@ORIGIN@@/form/';
+        if (!is_string($input) || strlen($input) > 2048 || !str_starts_with($input, $prefix)) {
+            return false;
+        }
+        $slug = substr($input, strlen($prefix));
+        $decoded = rawurldecode($slug);
+        return preg_match('/\A[\p{L}\p{N}_-]+\z/uD', $decoded) === 1 && rawurlencode($decoded) === $slug;
+    }
+
+    public static function settings(array $params): ?array
+    {
+        if (!self::validateUrl($params['url'] ?? null)) {
+            return null;
+        }
+        $height = is_scalar($params['height'] ?? null) ? filter_var($params['height'], FILTER_VALIDATE_INT) : false;
+        $height = $height !== false && $height >= 240 && $height <= 4000 ? $height : 800;
+        $auto = ($params['mode'] ?? 'auto') !== 'fixed';
+        $inherit = in_array($params['inherit_style'] ?? 1, [1, '1', true], true);
+        $title = is_string($params['iframe_title'] ?? null) ? trim($params['iframe_title']) : '';
+        return [
+            'url' => $params['url'], 'height' => $height, 'auto' => $auto, 'inherit' => $inherit,
+            'helper' => $auto || $inherit,
+            'title' => $title !== '' ? $title : Text::_('@@KEY@@_DEFAULT_TITLE'),
+        ];
+    }
+
+    public static function render(array $params): string
+    {
+        $s = self::settings($params);
+        if ($s === null) {
+            return '<p class="@@ELEMENT@@-error">' . self::escape(Text::_('@@KEY@@_INVALID_URL')) . '</p>';
+        }
+        return sprintf(
+            '<div class="@@ELEMENT@@" data-festapp-embed-host><iframe%s src="%s" title="%s" width="100%%" height="%d" style="border:0;max-width:100%%" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+            ($s['helper'] ? ' data-festapp-embed' : '')
+                . (!$s['auto'] && $s['inherit'] ? ' data-festapp-height="fixed"' : '')
+                . ($s['inherit'] ? ' data-festapp-style="inherit"' : ''),
+            self::escape($s['url'] . '?embed=1'), self::escape($s['title']), $s['height'],
+            self::escape($s['url']), self::escape(Text::_('@@KEY@@_FALLBACK'))
+        );
+    }
+
+    private static function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
