@@ -150,7 +150,7 @@ try {
         // The selection marker covers the seat group after selection. Dispatch
         // a real pointer gesture at its center, as a buyer would tap it.
         const point = (await browser('eval', `(() => {const r=document.querySelector(${JSON.stringify(seatSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`)).result;
-        await browser('mouse', 'move', String(point.x), String(point.y));
+        await browser('mouse', 'move', String(Math.round(point.x)), String(Math.round(point.y)));
         await browser('mouse', 'down');
         await browser('mouse', 'up');
         await browser('wait', '--fn', "!document.querySelector('.blueprint-btn-confirm').disabled");
@@ -161,6 +161,7 @@ try {
     await browser('click', '.blueprint-btn-confirm');
     await browser('wait', '--fn', '!document.querySelector(".blueprint-modal-container")');
     await browser('snapshot', '-i');
+    await browser('scrollintoview', '#dynamic-form .btn-submit');
     await browser('click', '#dynamic-form .btn-submit');
     await browser('wait', '.btn-submit-order');
     await browser('snapshot', '-i');

@@ -21,6 +21,7 @@ on:
       - 'web_client/tests/core/embed.test.js'
       - 'web_client/tests/core/browser_storage.test.js'
       - 'web_client/tests/forms/reservation_capability_store.test.js'
+      - 'automation/ci/**'
       - '.github/workflows/wix-checkout-compatibility.yml'
   pull_request:
     branches: [main]
@@ -43,11 +44,6 @@ jobs:
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
       - name: Install pinned Wix and checkout dependencies
-        run: |
-          pnpm --dir integrations/wix install --frozen-lockfile
-          pnpm --dir web_client install --frozen-lockfile
+        run: python3 automation/ci/run.py step wix-install
       - name: Verify wrapper and shared embed/storage contracts
-        run: |
-          pnpm --dir integrations/wix test
-          pnpm --dir integrations/wix build
-          node --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js
+        run: python3 automation/ci/run.py step wix-contract

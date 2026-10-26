@@ -10,6 +10,7 @@ on:
       - 'test/components/schedule/**'
       - 'test/components/breadcrumb_row_cases.dart'
       - 'test/support/navigation_fixture.dart'
+      - 'automation/ci/**'
       - '.github/workflows/navigation-interactions.yml'
   push:
     branches: [main]
@@ -19,6 +20,7 @@ on:
       - 'lib/components/schedule/**'
       - 'lib/components/timeline/**'
       - 'test/components/navigation/**'
+      - 'automation/ci/**'
       - '.github/workflows/navigation-interactions.yml'
 permissions:
   contents: read
@@ -41,11 +43,5 @@ jobs:
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
-      - run: fvm flutter pub get
-      - run: >-
-          fvm flutter test --no-pub --concurrency=2
-          test/components/navigation/routed_tab_navigation_cases.dart
-          test/components/navigation/admin_breadcrumb_navigation_test.dart
-          test/components/schedule/light_timeline_initial_day_cases.dart
-          test/components/schedule/schedule_initial_day_cases.dart
-          test/components/breadcrumb_row_cases.dart
+      - run: python3 automation/ci/run.py step navigation-install
+      - run: python3 automation/ci/run.py step navigation-contract
