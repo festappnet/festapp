@@ -949,6 +949,13 @@
     "standing": "Stehplatz"
   },
   "Scanner": {
+    "entry_intro": "Verbinden Sie dieses Gerät mit einer Veranstaltung, um Tickets zu kontrollieren.",
+    "entry_code_hint": "Den Code erhalten Sie vom Veranstalter.",
+    "entry_code_retry": "Prüfen Sie den Code oder bitten Sie den Veranstalter um einen neuen.",
+    "entry_device_hint": "Zum Beispiel „Haupteingang“. Ticketkontrollen werden unter diesem Namen erfasst.",
+    "entry_offline": "Zum Verbinden mit einer neuen Veranstaltung benötigen Sie Internet.",
+    "entry_opening": "Verbindung wird hergestellt…",
+    "entry_saved_hint": "Setzen Sie eine in diesem Browser gespeicherte Veranstaltung fort.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",

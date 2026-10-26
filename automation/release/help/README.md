@@ -33,17 +33,14 @@ added only after its actual installation flow is qualified.
 
 `render_help_pages.mjs` generates `web/napoveda/` and
 `web_client/public/napoveda/` only for the vstupenky.online organizer site.
-The build ships the same static HTML, hashed assets and plugin download.
+The build ships the same static HTML, hashed assets without unpublished integration packages.
 Cloudflare binds each guide to its generated CSP profile and includes it in the
 sitemap. Help documents/assets are network content, outside the installed app
 cache. No checkout is loaded by the HTML code generator.
 
-The downloadable WordPress ZIP is built through its canonical packager and
-must match the reviewed digest in `download.json`. When releasing a new plugin
-version or receiving directory approval, update this manifest and the factual
-installation/status copy in `wordpress.html` together. Do not describe a
-pending submission as an installable directory listing. The current ZIP was
-submitted 2026-10-24; automated scanning passed, manual review is pending.
+Public guides currently support HTML embeds only, including WordPress Custom HTML.
+Keep unpublished plugins, their setup screenshots and ZIP downloads out of the help
+until they are actually published.
 
 Generate a disposable static preview without a server:
 

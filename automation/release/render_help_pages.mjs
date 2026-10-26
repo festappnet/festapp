@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
 import {articleSections} from './help/search_index.mjs';
 import {renderSiteShell, publicThemeHead, publicThemeBody} from './organizers/site_shell.mjs';
 
@@ -34,7 +33,7 @@ const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'
 const digest = data => createHash('sha256').update(data).digest('hex').slice(0,12);
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const assets = {};
-const media = JSON.parse(read('media.json')).filter(item => item.locale === locale);
+const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id));
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
 const previewImages = new Map();
 const figures = new Map(media.map(item => {
@@ -61,13 +60,6 @@ for (const [file,weight] of [['FuturaPTBook.ttf',400],['FuturaPTMedium.ttf',500]
 const css = fontFaces + fs.readFileSync(path.join(root,'automation/release/organizers/page.css'),'utf8') + '\n' + read('help.css');
 const cssName = `help.${digest(css)}.css`; assets[cssName] = css;
 const script = read('help.js'); const jsName = `help.${digest(script)}.js`; assets[jsName] = script;
-const product = JSON.parse(fs.readFileSync(path.join(root,'integrations/wordpress/products.json'),'utf8')).find(p => p.slug === 'vstupenky-online');
-const zipName = `${product.slug}-${product.version}.zip`;
-const packaged = spawnSync('python3',[path.join(root,'integrations/wordpress/scripts/package.py'),'--product',product.slug],{encoding:'utf8'});
-if (packaged.status !== 0) throw new Error(packaged.stderr || packaged.stdout || 'WordPress package failed');
-assets[zipName] = fs.readFileSync(path.join(root,'integrations/wordpress/dist',zipName));
-const download = JSON.parse(read('download.json'));
-if (download.plugin !== product.slug || download.version !== product.version || createHash('sha256').update(assets[zipName]).digest('hex') !== download.sha256) throw new Error('Public plugin download differs from its reviewed release');
 const generator = fs.readFileSync(path.join(source,'embed-generator.html'),'utf8');
 const href = page => helpRoot + (page.slug ? page.slug + '/' : '');
 const categoryPages = JSON.parse(read('categories.json')).map(category => ({...category[locale], id:'category.'+category.id, category:category.id, label:ui.categories[category.id], collection:true}));
@@ -135,8 +127,7 @@ for (const page of pages) {
       if (page.workflow === 'administration' && mediaWorkflows.get(id) === 'wizard') throw new Error(`Wizard screenshot in administration guide: ${id}`);
       if (!figures.has(id)) throw new Error(`Missing ${locale} help screenshot: ${id}`);
       return figures.get(id);
-    }).replaceAll('{{HELP_ROOT}}',helpRoot).replaceAll('{{HELP_ASSETS}}',helpRoot+'assets/').replaceAll('{{FORM_ORIGIN}}',escape(origin))
-    .replaceAll('vstupenky-online-1.0.0.zip',zipName).replaceAll('vstupenky.online 1.0.0',`vstupenky.online ${product.version}`);
+    }).replaceAll('{{HELP_ROOT}}',helpRoot).replaceAll('{{HELP_ASSETS}}',helpRoot+'assets/').replaceAll('{{FORM_ORIGIN}}',escape(origin));
   if (body.includes('{{')) throw new Error(`Unresolved help content token: ${page.id}`);
   if (page.workflow) {
     const context = ui.workflows[page.workflow];
@@ -173,7 +164,7 @@ for (const page of allPages) {
   for (const target of targets) {const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);}
 }
 for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}}
-console.log(`Rendered ${allPages.length} ${locale} help pages and verified WordPress download.`);
+console.log(`Rendered ${allPages.length} ${locale} help pages.`);
 if (!arg('--output')) {
   const sitemap = path.join(root,'web_client/public/sitemap.xml');
   if (fs.existsSync(sitemap)) {

@@ -81,17 +81,17 @@
       "slug": "integrace",
       "title": "Integrace a vložení prodeje vstupenek na web",
       "seoTitle": "Prodej vstupenek na vlastním webu: HTML, WordPress a Webnode",
-      "description": "Vyberte způsob vložení podle svého webu. Najdete tu obecný HTML kód, WordPress s doplňkem i bez něj a požadavky Webnode.",
+      "description": "Vyberte způsob vložení podle svého webu. Najdete tu obecný HTML kód, WordPress přes Vlastní HTML a požadavky Webnode.",
       "intro": "Máte už uložený prodejní formulář? Pokračujte podle systému, ve kterém upravujete svůj web. Pokud jej teprve připravujete, začněte založením akce a formuláře.",
-      "preview": "cs/wordpress/02-block-editor"
+      "preview": "cs/embed/01-generated-code"
     },
     "en": {
       "slug": "integrations",
       "title": "Integrate ticket sales with your website",
       "seoTitle": "Website ticket integration: HTML, WordPress and Webnode",
-      "description": "Choose the integration for your website: general HTML, WordPress with or without a plugin, and Webnode plan requirements.",
+      "description": "Choose the integration for your website: general HTML, WordPress Custom HTML, and Webnode plan requirements.",
       "intro": "If you already have a saved public form, choose your website platform below. Otherwise start by creating the event and preparing its form.",
-      "preview": "en/wordpress/02-block-editor"
+      "preview": "en/embed/01-generated-code"
     }
   },
   {
