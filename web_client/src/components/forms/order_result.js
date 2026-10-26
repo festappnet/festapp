@@ -7,6 +7,7 @@ import { PublicOrderStrings } from './public_order_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { renderCardPaymentStatus } from './card_payment_status.js';
 import { paymentMethodText } from './payment_method_strings.js';
+import { orderIcon } from './order_icons.js';
 
 export class OrderResult {
     static render(container, success, resultData, formModel, onClose, paymentActions = {}) {
@@ -102,7 +103,7 @@ export class OrderResult {
         container.innerHTML = `
             <div class="result-container">
                 <div class="result-icon-wrapper ${colorClass}">
-                    <i class="material-icons result-icon">${icon}</i>
+                    <span class="result-icon" aria-hidden="true">${orderIcon(icon)}</span>
                 </div>
                 <p class="result-occasion-title"></p>
                 <h2 class="result-title ${colorClass}"></h2>
@@ -156,7 +157,9 @@ export class OrderResult {
                     color: white;
                 }
                 .result-icon {
-                    font-size: 30px;
+                    display: block;
+                    width: 30px;
+                    height: 30px;
                 }
                 .result-title {
                     font-size: 1.4rem;

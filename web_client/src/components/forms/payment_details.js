@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { PublicOrderStrings } from './public_order_strings.js';
+import { orderIcon } from './order_icons.js';
 
 // Shared by the checkout confirmation and the persistent order overview.
 export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '', orderSymbol, expanded = false } = {}) {
@@ -19,7 +20,7 @@ export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '
                 .result-payment-value { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
                 .result-copy { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; box-sizing: border-box; border: 0; border-radius: 50%; background: transparent; color: var(--primary-color); cursor: pointer; padding: 0; }
                 .result-copy:hover { background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
-                .result-copy .material-icons { display: block; width: 18px; height: 18px; font-size: 18px; line-height: 18px; }
+                .result-copy-icon { display: block; width: 18px; height: 18px; }
                 .result-copy-tooltip { position: absolute; z-index: 1; inset-inline-end: 0; bottom: calc(100% + 6px); border-radius: 4px; padding: 6px 10px; background: #333; color: #fff; font: 12px/1.4 system-ui, sans-serif; white-space: nowrap; pointer-events: none; visibility: hidden; }
                 .result-copy:hover .result-copy-tooltip, .result-copy:focus-visible .result-copy-tooltip, .result-copy.is-copied .result-copy-tooltip { visibility: visible; }
                 .result-copy:focus-visible, .result-download:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
@@ -112,10 +113,10 @@ export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '
                 const copy = document.createElement('button');
                 copy.type = 'button';
                 copy.className = 'result-copy';
-                const copyIcon = document.createElement('i');
-                copyIcon.className = 'material-icons';
+                const copyIcon = document.createElement('span');
+                copyIcon.className = 'result-copy-icon';
                 copyIcon.setAttribute('aria-hidden', 'true');
-                copyIcon.textContent = 'content_copy';
+                copyIcon.innerHTML = orderIcon('copy');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'result-copy-tooltip';
                 tooltip.setAttribute('aria-hidden', 'true');
@@ -128,12 +129,12 @@ export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '
                     try {
                         await navigator.clipboard.writeText(String(value));
                         clearTimeout(resetTimer);
-                        copyIcon.textContent = 'check';
+                        copyIcon.innerHTML = orderIcon('check');
                         tooltip.textContent = PublicOrderStrings.copied;
                         copy.classList.add('is-copied');
                         copy.setAttribute('aria-label', `${PublicOrderStrings.copied}: ${label}`);
                         resetTimer = setTimeout(() => {
-                            copyIcon.textContent = 'content_copy';
+                            copyIcon.innerHTML = orderIcon('copy');
                             tooltip.textContent = PublicOrderStrings.copy;
                             copy.classList.remove('is-copied');
                             copy.setAttribute('aria-label', copyLabel);

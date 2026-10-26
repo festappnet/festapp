@@ -161,6 +161,9 @@
     "localNativeStorageDenialQualified": true,
     "localBankOrderAndDecodedQrQualified": true,
     "localOccupiedSeatMapQualified": true,
-    "bankReceiptLayoutQualified": false
+    "bankReceiptLayoutQualified": false,
+    "receiptIconFontIndependenceLocallyVerified": true,
+    "receiptIconFixReceipt": "evidence/receipt-icons-20261026.json",
+    "receiptIconFixLive": false
   }
 }
