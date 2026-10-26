@@ -1,0 +1,40 @@
+{
+  "name": "notification-center-feed-2026-10-26",
+  "output": "supabase/migrations/20261026120000_notification_center_feed.sql",
+  "prerequisites": [
+    "20261021100000_canonical_authorization.sql",
+    "20261024010000_organization_notification_center.sql",
+    "20261024025000_notification_email_recipient.sql",
+    "20261024120000_order_email_recovery.sql",
+    "20261024220000_cancelled_order_email_alerts.sql",
+    "20261024235000_notification_center_canonical_availability.sql"
+  ],
+  "sources": [
+    "notification_center/feed_schema_delta.sql",
+    "eshop_forms/form_availability.sql",
+    "eshop_waitlist/form_capacity.sql",
+    "notification_center/core.sql",
+    "notification_center/orders.sql",
+    "notification_center/capacity.sql",
+    "notification_center/form_availability.sql",
+    "notification_center/maintenance.sql",
+    "eshop_forms/update_form.sql",
+    "eshop_forms/form_creation_domain.sql",
+    "eshop_forms/duplicate_form_to_occasion.sql",
+    "others/duplicate_occasion.sql",
+    "eshop_forms/delete_form_internal_v1.sql",
+    "others/delete_occasion.sql",
+    "eshop_forms/update_form_client_sync_v1.sql",
+    "eshop_forms/delete_form_client_sync_v1.sql",
+    "others/save_occasion_domain_command_internal_v1.sql",
+    "notification_center/feed_baseline.sql"
+  ],
+  "prerequisiteSha256": {
+    "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
+    "20261024010000_organization_notification_center.sql": "f1355669fb2c78d30501d349e3a4f171e338ebb48a3b757da1049f93e05c3567",
+    "20261024025000_notification_email_recipient.sql": "c932bbb950f7aa1a78938d0c577702243488fc3f58b5d8b0f2268a046db734e7",
+    "20261024120000_order_email_recovery.sql": "45fe719f65daa8eeb91c91d13eda1704f1f876a1bf7218d7652724885f0e1410",
+    "20261024220000_cancelled_order_email_alerts.sql": "c1543158170e03123b72eee89a88b2905bd3309afab612204acb97c7a7887e62",
+    "20261024235000_notification_center_canonical_availability.sql": "b3b2271a66c463063aaf858afb8135ea100b8ef6dc17fe95dc8ae38dfb5a1c59"
+  }
+}

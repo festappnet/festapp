@@ -3,7 +3,6 @@ import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';

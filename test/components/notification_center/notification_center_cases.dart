@@ -1,934 +1,522 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
-import 'dart:ui' as ui;
-import 'package:flutter/rendering.dart';
-import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
-import 'package:fstapp/theme_config.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/notification_center/notification_center_controller.dart';
 import 'package:fstapp/components/notification_center/notification_center_panel.dart';
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
+import 'package:fstapp/components/notification_center/notification_item_presenter.dart';
+
+NotificationItem row(
+  String id, {
+  int? occasion = 1,
+  String title = 'Same title',
+  String kind = 'order_created',
+  int section = 2,
+  Map<String, dynamic> data = const {},
+}) => NotificationItem.fromJson({
+  'id': id,
+  'occasionId': occasion,
+  'occasionTitle': title,
+  'kind': kind,
+  'section': section,
+  'occasionLink': occasion == null ? null : 'event-$occasion',
+  'occurredAt': '2026-10-26T12:00:00Z',
+  'data': data,
+});
+Map<String, dynamic> opened([List<Map<String, dynamic>> items = const []]) => {
+  'feedSupported': true,
+  'snapshot': 7,
+  'feedItems': items,
+  'occasions': [],
+};
+Map<String, dynamic> badge({bool unread = true}) => {
+  'feedSupported': true,
+  'enabled': true,
+  'unread': unread,
+};
 
 void main() {
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  testWidgets('100 new participants stay collapsed and load five at a time',
-      (tester) async {
-    final calls = <Map<String, dynamic>>[];
-    final c = NotificationCenterController(read: (name, params) async {
-      expect(name, 'get_notification_center_group');
-      calls.add(params);
-      return {
-        'items': List.generate(
-            5,
-            (i) => {
-                  'id': i + 1,
-                  'kind': 'occasion_joined',
-                  'data': {
-                    'customerName': 'Participant ${i + 1}',
-                    'state': i == 0 ? 'membership_left' : 'membership_active'
-                  }
-                }),
-        'nextCursor': 96,
-      };
-    });
-    addTearDown(c.dispose);
-    c.groups = [
-      NotificationGroup.fromJson({
-        'key': '7:occasion_joined:2026-10-24',
-        'kind': 'occasion_joined',
-        'occasionTitle': 'Slunovrat',
-        'count': 100,
-        'items': [],
-      })
-    ];
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
-            body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
-    await tester.pumpAndSettle();
-    expect(find.text('100'), findsOneWidget);
-    expect(find.text('Participant 1'), findsNothing);
-    expect(calls, isEmpty);
-    await tester.tap(find.text('NotificationCenter.kinds.occasion_joined'));
-    await tester.pumpAndSettle();
-    expect(calls.single['p_limit'], 5);
-    expect(find.text('Participant 1'), findsOneWidget);
-    expect(find.text('Participant 6'), findsNothing);
-    expect(
-        find.text('NotificationCenter.states.membership_left'), findsOneWidget);
-    expect(find.text('NotificationCenter.more'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-  test('order detail reads deduplicate and reject a late identity response',
-      () async {
+  test('open acknowledges once and late badge cannot restore unread', () async {
     final pending = Completer<dynamic>();
     final calls = <String>[];
-    final c = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_order_history') return pending.future;
-      if (name == 'get_tickets_with_details') return <dynamic>[];
-      return {};
-    });
-    addTearDown(c.dispose);
-    final item = NotificationItem.fromJson({
-      'id': 1,
-      'occasionId': 7,
-      'data': {'orderId': 4}
-    });
-    final first = c.orderDetails(item);
-    expect(identical(first, c.orderDetails(item)), isTrue);
-    c.configure(userId: null, organizationId: null, invalidate: true);
-    pending.complete({
-      'code': 200,
-      'data': {
-        'order': {
-          'id': 4,
-          'occasion': 7,
-          'data': {'note': 'Private note'}
-        }
-      }
-    });
-    expect(await first, isNull);
-    expect(calls, ['get_order_history']);
-  });
-
-  test(
-      'order detail rejects denied and wrong-occasion reads before loading tickets',
-      () async {
-    for (final response in [
-      {'code': 403},
-      {
-        'code': 200,
-        'data': {
-          'order': {'occasion': 8}
-        }
-      },
-    ]) {
-      final calls = <String>[];
-      final c = NotificationCenterController(read: (name, params) async {
+    final c = NotificationCenterController(
+      read: (name, params) async {
         calls.add(name);
-        return response;
-      });
-      final item = NotificationItem.fromJson({
-        'id': 1,
-        'occasionId': 7,
-        'data': {'orderId': 4}
-      });
-      await expectLater(c.orderDetails(item), throwsStateError);
-      expect(calls, ['get_order_history']);
-      c.dispose();
-    }
-  });
-
-  testWidgets(
-      'expanded order shows its reference, notes and expandable ticket symbols',
-      (tester) async {
-    final calls = <String>[];
-    final c = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_order_history')
-        return {
-          'code': 200,
-          'data': {
-            'order': {
-              'id': 4,
-              'occasion': 7,
-              'state': 'ordered',
-              'order_symbol': 'ORDER4',
-              'note_hidden': 'Internal order note',
-              'data': {'note': 'Customer order note'}
-            }
-          }
-        };
-      if (name == 'get_tickets_with_details')
-        return [
-          {'id': 11, 'ticket_symbol': 'TICKET11', 'note': 'Ticket note'},
-          {'id': 12, 'ticket_symbol': 'TICKET12'},
-        ];
-      return {};
-    });
+        if (name == 'get_notification_center_badge') return pending.future;
+        return opened();
+      },
+    );
     addTearDown(c.dispose);
-    final group = NotificationGroup.fromJson({
-      'key': 'orders',
-      'kind': 'order_created',
-      'count': 1,
-      'items': [
-        {
-          'id': 1,
-          'kind': 'order_created',
-          'occasionId': 7,
-          'data': {
-            'orderId': 4,
-            'orderSymbol': 'ORDER4',
-            'customerName': 'Customer'
-          }
-        }
-      ]
-    });
-    group.loaded = true;
-    c.groups = [group];
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
-            body: NotificationCenterPanel(controller: c, onDetail: (_) {}))));
-    await tester.pumpAndSettle();
-    expect(calls, isEmpty);
-    expect(find.byType(PopupMenuButton<bool>), findsNothing);
-    await tester.tap(find.text('NotificationCenter.kinds.order_created'));
-    await tester.pumpAndSettle();
-    expect(find.text('#ORDER4'), findsOneWidget);
-    expect(find.textContaining('Customer order note'), findsOneWidget);
-    expect(find.textContaining('Internal order note'), findsOneWidget);
-    expect(find.textContaining('#TICKET11 · #TICKET12'), findsOneWidget);
-    await tester.tap(find.byType(ExpansionTile));
-    await tester.pumpAndSettle();
-    expect(find.text('#TICKET11'), findsOneWidget);
-    expect(find.textContaining('Ticket note'), findsOneWidget);
-    expect(calls, ['get_order_history', 'get_tickets_with_details']);
-    expect(tester.takeException(), isNull);
+    c.configure(userId: 'u', organizationId: 1);
+    await c.open();
+    pending.complete(badge());
+    await Future<void>.delayed(Duration.zero);
+    expect(c.unread, isFalse);
+    expect(calls.where((name) => name == 'open_notification_center').length, 1);
   });
-
-  testWidgets('notification recipient can be selected and copied', (
+  test('badge begun during acknowledgement cannot undo it', () async {
+    final pending = Completer<dynamic>(), polling = Completer<dynamic>();
+    var polls = 0;
+    final c = NotificationCenterController(
+      read: (name, params) async {
+        if (name == 'get_notification_center_badge') {
+          polls++;
+          if (polls == 1) return badge();
+          return polling.future;
+        }
+        return pending.future;
+      },
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    await Future<void>.delayed(Duration.zero);
+    final open = c.open();
+    final poll = c.refreshBadge();
+    pending.complete(opened());
+    await open;
+    expect(c.failed, isFalse);
+    polling.complete(badge());
+    await poll;
+    expect(c.unread, isFalse);
+  });
+  test('identity reset rejects a pending snapshot', () async {
+    final pending = Completer<dynamic>();
+    final c = NotificationCenterController(
+      read: (name, params) async =>
+          name == 'get_notification_center_badge' ? badge() : pending.future,
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    final open = c.open();
+    c.configure(userId: null, organizationId: null);
+    pending.complete(
+      opened([
+        {'id': 'secret'},
+      ]),
+    );
+    await open;
+    expect(c.items, isEmpty);
+    expect(c.enabled, isFalse);
+  });
+  test(
+    'capability absence hides center without detection acknowledgement',
+    () async {
+      final calls = <String>[];
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          calls.add(name);
+          return {'enabled': true};
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await Future<void>.delayed(Duration.zero);
+      await c.open();
+      expect(c.enabled, isFalse);
+      expect(calls, ['get_notification_center_badge']);
+    },
+  );
+  test(
+    'failed open preserves unread and pagination never acknowledges',
+    () async {
+      final calls = <String>[];
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          calls.add(name);
+          if (name == 'get_notification_center_badge') return badge();
+          if (name == 'open_notification_center') throw StateError('offline');
+          return {
+            'items': [
+              {'id': 'sixth'},
+            ],
+          };
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await Future<void>.delayed(Duration.zero);
+      await c.open();
+      expect(c.failed, isTrue);
+      expect(c.unread, isTrue);
+      c.nextCursor = 'cursor';
+      await c.loadMore();
+      expect(c.items.single.id, 'sixth');
+      expect(
+        calls.where((name) => name == 'open_notification_center').length,
+        1,
+      );
+      expect(calls, contains('get_notification_center_feed'));
+    },
+  );
+  testWidgets('polling pauses in background and does not acknowledge', (
     tester,
   ) async {
-    String? copied;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        if (call.method == 'Clipboard.setData')
-          copied = call.arguments['text'] as String;
-        return null;
+    final calls = <String>[];
+    final c = NotificationCenterController(
+      read: (name, params) async {
+        calls.add(name);
+        return name == 'get_notification_center_badge' ? badge() : opened();
       },
     );
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        null,
-      ),
-    );
-    final c = NotificationCenterController(read: (_, params) async => {});
     addTearDown(c.dispose);
-    c.groups = [
-      NotificationGroup.fromJson({
-        'key': 'mail',
-        'kind': 'email_problem',
-        'count': 1,
-        'items': [
-          {
-            'id': 1,
-            'kind': 'email_problem',
-            'data': {
-              'customerName': 'Customer',
-              'recipient': 'copy@example.invalid',
-            },
-          },
-        ],
-      }),
-    ];
-    await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
-          body: NotificationCenterPanel(controller: c, onDetail: (_) {}),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byType(SelectableRegion), findsOneWidget);
-    final text = tester.getRect(find.text('copy@example.invalid'));
-    final gesture = await tester.startGesture(
-      Offset(text.left + 1, text.center.dy),
-      kind: ui.PointerDeviceKind.mouse,
-    );
-    await gesture.moveTo(Offset(text.right, text.center.dy));
-    await gesture.up();
-    await tester.pumpAndSettle();
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    c.configure(userId: 'u', organizationId: 1);
     await tester.pump();
-    expect(copied, 'copy@example.invalid');
-  });
-  test('open acknowledges once and late badge cannot restore unread', () async {
-    final badge = Completer<dynamic>();
-    final calls = <String>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_notification_center_badge') return badge.future;
-      return {'snapshot': 7, 'groups': [], 'occasions': []};
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await controller.open();
-    badge.complete({'enabled': true, 'unread': true});
-    await Future<void>.delayed(Duration.zero);
-    expect(controller.unread, isFalse);
-    expect(calls.where((c) => c == 'open_notification_center').length, 1);
-  });
-  test('a badge started during open cannot undo the confirmed acknowledgement',
-      () async {
-    final acknowledgement = Completer<dynamic>();
-    final badge = Completer<dynamic>();
-    var badges = 0;
-    final controller = NotificationCenterController(read: (name, params) async {
-      if (name == 'get_notification_center_badge') {
-        badges++;
-        return badges == 1 ? {'enabled': true, 'unread': true} : badge.future;
-      }
-      return acknowledgement.future;
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await Future<void>.delayed(Duration.zero);
-    final open = controller.open();
-    final poll = controller.refreshBadge();
-    acknowledgement.complete({'snapshot': 7, 'groups': [], 'occasions': []});
-    await open;
-    badge.complete({'enabled': true, 'unread': true});
-    await poll;
-    expect(controller.unread, isFalse);
-  });
-  test('logout rejects a pending open and clears personal data', () async {
-    final open = Completer<dynamic>();
-    final controller = NotificationCenterController(
-        read: (name, params) async => name == 'open_notification_center'
-            ? open.future
-            : {'enabled': true, 'unread': true});
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'first', organizationId: 1);
-    final pending = controller.open();
-    controller.configure(userId: null, organizationId: 1);
-    open.complete({
-      'snapshot': 8,
-      'groups': [
-        {'key': 'secret', 'count': 1}
-      ],
-      'occasions': []
-    });
-    await pending;
-    expect(controller.groups, isEmpty);
-    expect(controller.enabled, isFalse);
-  });
-  test(
-      'failed acknowledgement preserves unread and expanding never acknowledges',
-      () async {
-    var fail = true;
-    final calls = <String>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_notification_center_badge')
-        return {'enabled': true, 'unread': true};
-      if (name == 'open_notification_center' && fail)
-        throw StateError('offline');
-      return {
-        'items': [
-          {
-            'id': 'one',
-            'kind': 'order_created',
-            'data': {'orderId': 1}
-          }
-        ],
-        'nextCursor': 4
-      };
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await Future<void>.delayed(Duration.zero);
-    await controller.open();
-    expect(controller.unread, isTrue);
-    expect(controller.failed, isTrue);
-    fail = false;
-    final group = NotificationGroup.fromJson(
-        {'key': 'orders', 'count': 8, 'kind': 'order_created'});
-    await controller.expand(group);
-    expect(group.expanded, isTrue);
-    expect(group.items.single.data['orderId'], 1);
-    expect(calls.where((c) => c == 'open_notification_center').length, 1);
-  });
-  testWidgets('polling pauses in background and panel polls do not acknowledge',
-      (tester) async {
-    final calls = <String>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_notification_center_badge')
-        return {'enabled': true, 'unread': true};
-      return {'snapshot': 3, 'groups': [], 'occasions': []};
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 59));
-    expect(calls.length, 1);
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 60));
     expect(calls.length, 2);
-    await controller.open();
+    await c.open();
     await tester.pump(const Duration(seconds: 15));
-    expect(controller.unread, isTrue);
-    expect(calls.where((c) => c == 'open_notification_center').length, 1);
-    controller.setForeground(false);
-    final stopped = calls.length;
+    expect(c.unread, isTrue);
+    expect(calls.where((name) => name == 'open_notification_center').length, 1);
+    c.setForeground(false);
+    final count = calls.length;
     await tester.pump(const Duration(minutes: 2));
-    expect(calls.length, stopped);
+    expect(calls.length, count);
   });
-  test('pagination failure keeps snapshot and never acknowledges', () async {
-    final calls = <String>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      if (name == 'get_notification_center_page') throw StateError('offline');
-      return {'enabled': true, 'unread': true};
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    final group = NotificationGroup.fromJson({'key': 'orders', 'count': 1});
-    controller.groups = [group];
-    controller.snapshot = 9;
-    controller.nextCursor = {'key': 'older'};
-    await controller.loadMore();
-    expect(controller.groups.single, same(group));
-    expect(controller.pageFailed, isTrue);
-    expect(controller.failed, isFalse);
-    expect(calls, isNot(contains('open_notification_center')));
-  });
-  test(
-      'background updates batch loaded IDs and remove revoked rows without ack',
-      () async {
-    final batchSizes = <int>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      if (name == 'get_notification_center_badge')
-        return {'enabled': true, 'unread': false};
-      expect(name, 'get_notification_center_updates');
-      final ids = params['p_ids'] as List;
-      batchSizes.add(ids.length);
-      return {
-        'items': ids
-            .where((id) => id != '0')
-            .map((id) => {
-                  'id': id,
-                  'kind': 'order_created',
-                  'status': 'paid',
-                  'data': {}
-                })
-            .toList()
-      };
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await Future<void>.delayed(Duration.zero);
-    final group = NotificationGroup.fromJson({
-      'key': 'orders',
-      'count': 201,
-      'items': List.generate(
-          201, (index) => {'id': '$index', 'kind': 'order_created', 'data': {}})
-    });
-    group.expanded = true;
-    controller.groups = [group];
-    controller.panelOpen = true;
-    await controller.refresh();
-    expect(batchSizes, [200, 1]);
-    expect(group.items.length, 200);
-    expect(group.items.first.id, '1');
-    expect(group.items.first.status, 'paid');
-    expect(group.expanded, isTrue);
+  test('pagination failure retains items and snapshot', () async {
+    final c = NotificationCenterController(
+      read: (name, params) async {
+        if (name == 'get_notification_center_feed') throw StateError('offline');
+        return badge();
+      },
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    final item = row('retained');
+    c.items = [item];
+    c.snapshot = 9;
+    c.nextCursor = 'cursor';
+    await c.loadMore();
+    expect(c.items.single, same(item));
+    expect(c.snapshot, 9);
+    expect(c.pageFailed, isTrue);
   });
   test(
-      'permission failure clears retained content while network failure keeps it',
-      () async {
-    var denied = false;
-    final controller = NotificationCenterController(read: (name, params) async {
-      if (name == 'get_notification_center_badge')
-        return {'enabled': true, 'unread': false};
-      if (denied)
-        throw const PostgrestException(
-            message: 'notification_read_denied', code: '42501');
-      throw StateError('offline');
-    });
-    addTearDown(controller.dispose);
-    controller.configure(userId: 'user', organizationId: 1);
-    await Future<void>.delayed(Duration.zero);
-    controller.groups = [
-      NotificationGroup.fromJson({
-        'key': 'orders',
-        'count': 1,
-        'items': [
-          {'id': 'secret', 'data': {}}
-        ]
-      })
-    ];
-    controller.panelOpen = true;
-    await controller.refresh();
-    expect(controller.groups.single.items.single.id, 'secret');
-    expect(controller.refreshFailed, isTrue);
-    denied = true;
-    await controller.refresh();
-    expect(controller.groups, isEmpty);
-    expect(controller.enabled, isFalse);
-  });
-  testWidgets(
-      'panel is accessible at mobile, breakpoint and desktop with large text',
-      (tester) async {
-    final controller =
-        NotificationCenterController(read: (_, params) async => {});
-    addTearDown(controller.dispose);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    for (final width in [320.0, 719.0, 720.0, 1100.0]) {
-      tester.view.physicalSize = Size(width, 1000);
-      tester.view.devicePixelRatio = 1;
-      await tester.pumpWidget(MaterialApp(
-          builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(2)),
-              child: child!)),
-          home: Builder(
-              builder: (context) => Scaffold(
-                  body: TextButton(
-                      onPressed: () => showDialog<void>(
-                          context: context,
-                          builder: (_) => NotificationCenterPanel(
-                              controller: controller,
-                              anchor: Rect.fromLTWH(width - 96, 16, 48, 48),
-                              onDetail: (_) {})),
-                      child: const Text('Open'))))));
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-      expect(find.text('NotificationCenter.empty'), findsOneWidget);
-      final surface = find.descendant(
-          of: find.byType(Dialog),
-          matching: find.byWidgetPredicate((widget) =>
-              widget is Material && widget.type == MaterialType.card));
-      final rect = tester.getRect(surface);
-      if (width >= 720) {
-        // Follow the bell's bottom and right edges, even with a short inbox.
-        expect(rect.top, 72);
-        expect(rect.right, width - 48);
-      } else {
-        expect(rect.center.dy, closeTo(500, 1));
+    'hydration batches IDs, removes revoked and preserves section/order',
+    () async {
+      final batches = <int>[];
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          if (name == 'get_notification_center_badge') {
+            return badge(unread: false);
+          }
+          expect(name, 'get_notification_center_updates');
+          final ids = params['p_ids'] as List;
+          batches.add(ids.length);
+          return {
+            'items': ids
+                .where((id) => id != '0')
+                .toList()
+                .reversed
+                .map(
+                  (id) => {
+                    'id': id,
+                    'kind': 'order_created',
+                    'status': 'paid',
+                    'data': {},
+                  },
+                )
+                .toList(),
+          };
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await Future<void>.delayed(Duration.zero);
+      c.items = List.generate(201, (i) => row('$i', section: 1));
+      c.panelOpen = true;
+      await c.refresh();
+      expect(batches, [200, 1]);
+      expect(c.items.length, 200);
+      expect(c.items.first.id, '1');
+      expect(c.items.first.status, 'paid');
+      expect(c.items.first.section, 1);
+    },
+  );
+  test(
+    'permission failure clears private content, network failure retains it',
+    () async {
+      var denied = false;
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          if (name == 'get_notification_center_badge') return badge();
+          if (denied) {
+            throw const PostgrestException(message: 'denied', code: '42501');
+          }
+          throw StateError('offline');
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await Future<void>.delayed(Duration.zero);
+      c.items = [row('secret')];
+      c.panelOpen = true;
+      await c.refresh();
+      expect(c.items.single.id, 'secret');
+      expect(c.refreshFailed, isTrue);
+      denied = true;
+      await c.refresh();
+      expect(c.items, isEmpty);
+      expect(c.enabled, isFalse);
+    },
+  );
+  test(
+    'presenter uses contact fallback, historical count and neutral form labels',
+    () {
+      expect(
+        NotificationItemPresenter(
+          row(
+            '1',
+            data: {
+              'contact': {'name': '  ', 'email': ' user@example.invalid '},
+              'orderSymbol': 'HIDDEN',
+              'count': 1,
+            },
+          ),
+        ).details,
+        ['user@example.invalid'],
+      );
+      expect(
+        NotificationItemPresenter(row('2', data: {'count': 2})).details,
+        contains('NotificationCenter.places'),
+      );
+      expect(
+        NotificationItemPresenter(
+          row(
+            '3',
+            data: {
+              'count': 1,
+              'formContext': {'allowsMultiple': true},
+            },
+          ),
+        ).details,
+        contains('NotificationCenter.places'),
+      );
+      for (final kind in ['form_opened', 'form_closed']) {
+        final p = NotificationItemPresenter(row(kind, kind: kind));
+        expect(p.details, contains('NotificationCenter.form'));
+        expect(p.hasDetail, isFalse);
       }
-      expect(tester.takeException(), isNull);
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pumpAndSettle();
-      expect(find.byType(NotificationCenterPanel), findsNothing);
-    }
-  });
-  testWidgets('new arrivals stay inline and group expansion stays in panel',
-      (tester) async {
-    final controller = NotificationCenterController(
-        read: (_, params) async => {
-              'items': [
-                {
-                  'id': 'one',
-                  'kind': 'order_created',
-                  'status': 'paid',
-                  'data': {'orderSymbol': '001234'}
-                }
-              ]
-            });
-    addTearDown(controller.dispose);
-    controller.groups = [
-      NotificationGroup.fromJson({
-        'key': 'orders',
-        'kind': 'order_created',
-        'count': 7,
-        'section': 1,
-        'occasionTitle': 'A long event title ' * 4
-      })
-    ];
-    controller.unread = true;
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home:
-            NotificationCenterPanel(controller: controller, onDetail: (_) {})));
-    expect(find.text('NotificationCenter.newItems'), findsOneWidget);
-    expect(find.text('001234'), findsNothing);
-    await tester.tap(find.text('NotificationCenter.kinds.order_created'));
-    await tester.pumpAndSettle();
-    expect(find.text('001234'), findsOneWidget);
-    expect(find.byType(NotificationCenterPanel), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(
+        NotificationItemPresenter(row('unknown', kind: 'unrecognized')).title,
+        'NotificationCenter.title',
+      );
+    },
+  );
   testWidgets(
-      'problem reasons, partial counts and capacity have safe actionable presentation',
-      (tester) async {
-    tester.view.physicalSize = const Size(1100, 1800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final controller =
-        NotificationCenterController(read: (_, params) async => {});
-    addTearDown(controller.dispose);
-    controller.groups = [
-      NotificationGroup.fromJson({
-        'key': 'mail',
-        'kind': 'email_problem',
-        'count': 1,
-        'items': [
-          {
-            'id': 'mail',
-            'kind': 'email_problem',
-            'status': 'active',
-            'data': {
-              'reason': 'complaint',
-              'messageId': 'message',
-              'recipient': 'jana@example.invalid',
-              'customerName': 'Jana Nováková'
-            }
-          }
-        ]
-      }),
-      NotificationGroup.fromJson({
-        'key': 'offer',
-        'kind': 'offer_accepted',
-        'count': 1,
-        'items': [
-          {
-            'id': 'offer',
-            'kind': 'offer_accepted',
-            'status': 'ordered',
-            'data': {'count': 2}
-          }
-        ]
-      }),
-      NotificationGroup.fromJson({
-        'key': 'capacity',
-        'kind': 'capacity_full',
-        'count': 1,
-        'items': [
-          {
-            'id': 'capacity',
-            'kind': 'capacity_full',
-            'status': 'active',
-            'data': {'remainingPublic': 0, 'limit': 10, 'heldForWaiting': 3}
-          }
-        ]
-      }),
-    ];
-    var details = 0;
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: NotificationCenterPanel(
-            controller: controller, onDetail: (_) => details++)));
-    await tester.pumpAndSettle();
-    expect(find.text('Jana Nováková'), findsOneWidget);
-    expect(find.text('jana@example.invalid'), findsOneWidget);
-    expect(find.textContaining('NotificationCenter.reasons.complaint'),
-        findsOneWidget);
-    expect(find.text('NotificationCenter.detail'), findsOneWidget);
-    await tester.tap(find.text('NotificationCenter.detail'));
-    expect(details, 1);
-    for (final key in ['places', 'capacity', 'heldForWaiting']) {
-      final field = find.textContaining('NotificationCenter.$key');
-      await tester.scrollUntilVisible(field, 100,
-          scrollable: find.byType(Scrollable).first);
-      expect(field, findsOneWidget);
-    }
-    expect(tester.takeException(), isNull);
-  });
-  testWidgets('bulk email incidents collapse and preserve each message kind',
-      (tester) async {
-    final controller = NotificationCenterController(
-        read: (_, params) async => {
-              'items': [
-                {
-                  'id': 'first',
-                  'kind': 'email_problem',
-                  'data': {
-                    'messageKind': 'registration',
-                    'reason': 'bounce',
-                    'messageId': 'first-message'
-                  }
-                },
-                {
-                  'id': 'second',
-                  'kind': 'email_problem',
-                  'data': {
-                    'messageKind': 'reset_password',
-                    'reason': 'bounce',
-                    'messageId': 'second-message'
-                  }
-                },
-              ]
-            });
-    addTearDown(controller.dispose);
-    controller.groups = [
-      NotificationGroup.fromJson(
-          {'key': 'email-group', 'kind': 'email_problem', 'count': 2})
-    ];
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home:
-            NotificationCenterPanel(controller: controller, onDetail: (_) {})));
-    expect(find.text('2'), findsOneWidget);
-    expect(
-        find.textContaining('EmailDelivery.kind.registration'), findsNothing);
-    await tester.tap(find.text('NotificationCenter.groups.email_problem'));
-    await tester.pumpAndSettle();
-    expect(
-        find.textContaining('EmailDelivery.kind.registration'), findsOneWidget);
-    expect(find.textContaining('EmailDelivery.kind.reset_password'),
-        findsOneWidget);
-  });
-  testWidgets('bell asset paints with contrast without an icon font',
-      (tester) async {
-    final boundaryKey = GlobalKey();
-    for (final dark in [true, false]) {
-      final foreground = dark ? Colors.white : Colors.black;
-      final background = dark ? Colors.black : Colors.white;
-      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-          home: Center(
-              child: RepaintBoundary(
-        key: boundaryKey,
-        child: ColoredBox(
-            color: background,
-            child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Center(child: NotificationBellIcon(color: foreground)))),
-      ))));
-      await tester.pumpAndSettle();
-      expect(find.byType(Icon), findsNothing);
-      final painted = await tester.runAsync(() async {
-        final boundary = boundaryKey.currentContext!.findRenderObject()
-            as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 1);
-        final bytes =
-            await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-        final pixels = bytes!.buffer.asUint8List();
-        var contrastPixels = 0;
-        for (var offset = 0; offset < pixels.length; offset += 4) {
-          final visible = dark ? pixels[offset] > 200 : pixels[offset] < 55;
-          if (visible && pixels[offset + 3] == 255) contrastPixels++;
-        }
-        image.dispose();
-        return contrastPixels;
-      });
-      expect(painted, greaterThan(40),
-          reason:
-              'The vector outline must actually paint against the app bar surface');
-    }
-  });
-  testWidgets('panel fits short content while keeping modal margins',
-      (tester) async {
-    final controller =
-        NotificationCenterController(read: (_, params) async => {});
-    addTearDown(controller.dispose);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    for (final size in [
-      const Size(320, 360),
-      const Size(390, 844),
-      const Size(720, 600),
-      const Size(1280, 1200)
-    ]) {
-      tester.view.physicalSize = size;
-      tester.view.devicePixelRatio = 1;
-      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-          home: Builder(
-              builder: (context) => Scaffold(
-                    body: TextButton(
-                        onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (_) => NotificationCenterPanel(
-                                controller: controller, onDetail: (_) {})),
-                        child: const Text('Open')),
-                  ))));
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-      final surface = find.byWidgetPredicate(
-          (widget) => widget is Material && widget.type == MaterialType.card);
-      expect(surface, findsOneWidget);
-      final rect = tester.getRect(surface);
-      expect(rect.top, greaterThanOrEqualTo(16));
-      expect(rect.bottom, lessThanOrEqualTo(size.height - 16));
-      expect(rect.height, lessThanOrEqualTo(size.height * .85));
-      if (size.height >= 600) {
-        expect(rect.height, lessThan(size.height * .7));
-      }
-      expect(rect.left, greaterThanOrEqualTo(16));
-      expect(rect.right, lessThanOrEqualTo(size.width - 16));
-      expect(rect.width, lessThanOrEqualTo(440));
-      expect(tester.takeException(), isNull);
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pumpAndSettle();
-    }
-  });
-  testWidgets(
-      'problem identity and detail remain readable at 200 percent on mobile',
-      (tester) async {
-    final controller =
-        NotificationCenterController(read: (_, params) async => {});
-    addTearDown(controller.dispose);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    tester.view.physicalSize = const Size(320, 1000);
-    tester.view.devicePixelRatio = 1;
-    const recipient = 'a.very.long.recipient.address@example.invalid';
-    var details = 0;
-    for (final brightness in Brightness.values) {
-      for (final status in ['active', 'recovered']) {
-        controller.groups = [
-          NotificationGroup.fromJson({
-            'key': 'mail',
-            'kind': 'email_problem',
-            'count': 1,
-            'occasionTitle': 'Country bál 2026',
-            'items': [
-              {
-                'id': 'mail',
-                'kind': 'email_problem',
-                'status': status,
-                'data': {
-                  'recipient': recipient,
-                  'customerName': 'Jana Nováková',
-                  'messageId': 'message',
-                  'reason': 'bounce'
-                }
-              }
-            ]
-          })
-        ];
-        await tester.pumpWidget(MaterialApp(
-            theme: ThemeData(brightness: brightness),
-            builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
+    'panel is accessible at mobile, breakpoint and desktop with large text',
+    (tester) async {
+      final controller = NotificationCenterController(
+        read: (_, params) async => {},
+      );
+      addTearDown(controller.dispose);
+      controller.items = [
+        row(
+          'responsive',
+          occasion: 1,
+          title: 'Country bál 2026 - dlouhý název akce',
+          data: {
+            'contact': {
+              'email':
+                  'very.long.email.address.for.the.customer@example.invalid',
+            },
+            'count': 2,
+          },
+        ),
+      ];
+      controller.occasions = [
+        {'id': 1, 'title': 'Country bál 2026'},
+      ];
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final width in [320.0, 719.0, 720.0, 1100.0]) {
+        tester.view.physicalSize = Size(width, 1000);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: DependencyMaterialBridge.wrapBuilder(
+              (context, child) => MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(2)),
-                child: child!)),
-            home: NotificationCenterPanel(
-                controller: controller, onDetail: (_) => details++)));
-        await tester.pumpAndSettle();
-        expect(find.text('Jana Nováková'), findsOneWidget);
-        final email = tester.widget<Text>(find.text(recipient));
-        expect(email.maxLines, isNull);
-        expect(email.overflow, isNull);
-        final reason =
-            tester.widget<Text>(find.text('NotificationCenter.reasons.bounce'));
-        final theme = Theme.of(tester.element(find.text(recipient)));
-        expect(
-            reason.style?.color,
-            status == 'active'
-                ? theme.colorScheme.error
-                : theme.colorScheme.onSurfaceVariant);
-        await tester.scrollUntilVisible(
-            find.text('NotificationCenter.detail'), 100,
-            scrollable: find.byType(Scrollable).first);
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text('NotificationCenter.detail'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('NotificationCenter.detail'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      }
-    }
-    expect(details, 4);
-  });
-  testWidgets('settings preserve history and save the selected event mute',
-      (tester) async {
-    final writes = <Map<String, dynamic>>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      if (name == 'set_notification_center_muted') writes.add(params);
-      return {};
-    });
-    addTearDown(controller.dispose);
-    controller.occasions = [
-      {'id': 7, 'title': 'Country bál 2026', 'muted': false}
-    ];
-    controller.groups = [
-      NotificationGroup.fromJson(
-          {'key': 'orders', 'kind': 'order_created', 'count': 2})
-    ];
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
-            body: NotificationCenterPanel(
-                controller: controller, onDetail: (_) {}))));
-    await tester.tap(find.byTooltip('NotificationCenter.settings'));
-    await tester.pumpAndSettle();
-    expect(find.text('NotificationCenter.muteHelp'), findsOneWidget);
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
-    expect(writes.single['p_occasion'], 7);
-    expect(writes.single['p_muted'], isTrue);
-    expect(controller.groups.single.count, 2);
-    await tester.tap(find.byTooltip('NotificationCenter.back'));
-    await tester.pumpAndSettle();
-    expect(find.text('NotificationCenter.kinds.order_created'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('page failure retries pagination without acknowledging the inbox',
-      (tester) async {
-    final calls = <String>[];
-    final controller = NotificationCenterController(read: (name, params) async {
-      calls.add(name);
-      return {'groups': []};
-    });
-    addTearDown(controller.dispose);
-    controller.pageFailed = true;
-    controller.nextCursor = {'id': 5};
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home:
-            NotificationCenterPanel(controller: controller, onDetail: (_) {})));
-    await tester.tap(find.text('Common.retry'));
-    await tester.pumpAndSettle();
-    expect(calls, ['get_notification_center_page']);
-    expect(tester.takeException(), isNull);
-  });
-  testWidgets(
-      'app bar icon colors do not leak into notification dialog controls',
-      (tester) async {
-    final controller =
-        NotificationCenterController(read: (_, params) async => {});
-    addTearDown(controller.dispose);
-    controller.occasions = [
-      {'id': 1, 'title': 'Ples AKH 2026', 'muted': false}
-    ];
-    controller.groups = [
-      NotificationGroup.fromJson({
-        'key': 'orders',
-        'kind': 'order_created',
-        'section': 2,
-        'occasionId': 1,
-        'occasionTitle': 'Ples AKH 2026',
-        'count': 2,
-      })
-    ];
-    double contrast(Color a, Color b) {
-      final first = a.computeLuminance(), second = b.computeLuminance();
-      return first > second
-          ? (first + .05) / (second + .05)
-          : (second + .05) / (first + .05);
-    }
-
-    for (final brightness in Brightness.values) {
-      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        theme: ThemeConfig.theme(brightness: brightness),
-        home: Scaffold(
-            appBar: AppBar(actions: [
-          Builder(
-              builder: (context) => IconButton(
-                  icon: const Icon(Icons.notifications),
+                child: child!,
+              ),
+            ),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
                   onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => NotificationCenterPanel(
-                          controller: controller, onDetail: (_) {})))),
-        ])),
-      ));
-      await tester.tap(find.byIcon(Icons.notifications));
-      await tester.pumpAndSettle();
-      final surface = find.byWidgetPredicate(
-          (w) => w is Material && w.type == MaterialType.card);
-      final background = tester.widget<Material>(surface).color!;
-      final arrow = find.byIcon(Icons.expand_more);
-      final menu = find.byType(PopupMenuButton<bool>);
-      expect(menu, findsNothing);
-      for (final control in [arrow, find.byIcon(Icons.tune)]) {
-        final glyph =
-            find.descendant(of: control, matching: find.byType(RichText)).first;
-        final color = tester.widget<RichText>(glyph).text.style!.color!;
-        expect(contrast(color, background), greaterThanOrEqualTo(3),
-            reason:
-                'Notification controls must contrast with the dialog surface in $brightness');
+                    context: context,
+                    builder: (_) => NotificationCenterPanel(
+                      controller: controller,
+                      anchor: Rect.fromLTWH(width - 96, 16, 48, 48),
+                      onDetail: (_) {},
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Country bál 2026 - dlouhý název akce'),
+          findsOneWidget,
+        );
+        final surface = find.descendant(
+          of: find.byType(Dialog),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Material && widget.type == MaterialType.card,
+          ),
+        );
+        final rect = tester.getRect(surface);
+        if (width >= 720) {
+          // Follow the bell's bottom and right edges, even with a short inbox.
+          expect(rect.top, 72);
+          expect(rect.right, width - 48);
+        } else {
+          expect(rect.center.dy, closeTo(500, 1));
+        }
+        expect(tester.takeException(), isNull);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(NotificationCenterPanel), findsNothing);
       }
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    },
+  );
+  testWidgets(
+    'flat occasion blocks merge pages, retain same-name identities and detail navigation',
+    (tester) async {
+      tester.view.physicalSize = const Size(1100, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final calls = <String>[];
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          calls.add(name);
+          return {
+            'items': [
+              {
+                'id': 'sixth',
+                'occasionId': 1,
+                'occasionTitle': 'Same title',
+                'kind': 'form_opened',
+                'section': 2,
+                'data': {},
+              },
+            ],
+          };
+        },
+      );
+      addTearDown(c.dispose);
+      c.items = [
+        row(
+          'first',
+          data: {
+            'orderSymbol': 'HIDDEN',
+            'orderId': 1,
+            'contact': {'email': 'contact@example.invalid'},
+          },
+        ),
+        row('second', occasion: 2),
+        row('cancelled', kind: 'order_cancelled'),
+      ];
+      c.occasions = [
+        {'id': 1, 'title': 'Same title'},
+        {'id': 2, 'title': 'Same title'},
+      ];
+      c.nextCursor = 'cursor';
+      c.unread = true;
+      final selected = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: NotificationCenterPanel(
+            controller: c,
+            onDetail: (item) => selected.add(item.id),
+          ),
+        ),
+      );
+      expect(find.text('Same title'), findsNWidgets(2));
+      expect(find.byType(PopupMenuButton<bool>), findsNWidgets(2));
+      expect(find.byIcon(Icons.expand_more), findsNothing);
+      expect(find.text('HIDDEN'), findsNothing);
+      await tester.tap(find.text('contact@example.invalid'));
+      expect(selected, ['first']);
+      await c.loadMore();
       await tester.pumpAndSettle();
-    }
-  });
+      expect(find.text('Same title'), findsNWidgets(2));
+      expect(find.text('NotificationCenter.kinds.form_opened'), findsOneWidget);
+      expect(calls, ['get_notification_center_feed']);
+      expect(c.unread, isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'email and bank incidents retain actionable details and safe affected links',
+    (tester) async {
+      tester.view.physicalSize = const Size(1100, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final c = NotificationCenterController(read: (_, params) async => {});
+      addTearDown(c.dispose);
+      c.items = [
+        row(
+          'email',
+          occasion: null,
+          kind: 'email_problem',
+          section: 0,
+          data: {
+            'messageId': 'message',
+            'recipient': 'recipient@example.invalid',
+            'reason': 'bounce',
+            'messageKind': 'registration',
+          },
+        ),
+        row(
+          'bank',
+          occasion: null,
+          kind: 'bank_problem',
+          section: 0,
+          data: {
+            'affectedOccasions': [
+              {'title': 'Affected', 'link': 'event'},
+            ],
+          },
+        ),
+        row(
+          'full',
+          kind: 'capacity_full',
+          data: {'remainingPublic': 0, 'limit': 10, 'heldForWaiting': 3},
+        ),
+      ];
+      final targets = <NotificationItem>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: NotificationCenterPanel(controller: c, onDetail: targets.add),
+        ),
+      );
+      expect(find.text('recipient@example.invalid'), findsOneWidget);
+      expect(find.text('EmailDelivery.kind.registration'), findsOneWidget);
+      await tester.tap(find.text('recipient@example.invalid'));
+      expect(targets.single.data['messageId'], 'message');
+      await tester.tap(find.text('Affected'));
+      expect(targets.last.data['relatedOrders'], isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

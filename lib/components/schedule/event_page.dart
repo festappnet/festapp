@@ -3,6 +3,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
+
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -61,6 +62,7 @@ import 'package:fstapp/components/speakers/speaker_medallion.dart';
 import 'package:fstapp/components/speakers/counseling_page.dart';
 import 'package:fstapp/components/speakers/counseling_picker.dart';
 import 'package:fstapp/database_tables/tb.dart';
+
 import '../map/map_navigation.dart';
 import 'event_metadata_item.dart';
 import '../map/public_map_session.dart';
@@ -175,7 +177,9 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-      coordinator: _htmlSave, child: _buildHtmlParent(context));
+    coordinator: _htmlSave,
+    child: _buildHtmlParent(context),
+  );
 
   Widget _buildHtmlParent(BuildContext context) {
     if (_event == null) {
@@ -189,14 +193,17 @@ class _EventPageState extends State<EventPage> {
       );
     }
     final bool isEventCancelled = _event?.isCancelled ?? false;
-    final scheduleFeature =
-        FeatureService.getFeatureDetails(FeatureConstants.schedule);
+    final scheduleFeature = FeatureService.getFeatureDetails(
+      FeatureConstants.schedule,
+    );
     final bool childrenScheduleIsEnabled =
         scheduleFeature is ScheduleFeature && scheduleFeature.enableChildren;
-    final bool showSubScheduleArea = _event?.isGroupEvent == false &&
+    final bool showSubScheduleArea =
+        _event?.isGroupEvent == false &&
         (_event?.childEvents.isNotEmpty == true ||
             (RightsService.hasCapability(
-                    AuthorizationCapabilities.scheduleWrite) &&
+                  AuthorizationCapabilities.scheduleWrite,
+                ) &&
                 childrenScheduleIsEnabled));
 
     final EventType? headerEventType = _currentEventType();
@@ -209,7 +216,8 @@ class _EventPageState extends State<EventPage> {
     );
     final bool showAddButton = _showAddButton(isEventCancelled);
     final bool canViewParticipants = RightsService.hasCapability(
-        AuthorizationCapabilities.scheduleParticipantsRead);
+      AuthorizationCapabilities.scheduleParticipantsRead,
+    );
     final onPinchStart = _onPinchStart;
     final onPinchEnd = _onPinchEnd;
 
@@ -236,15 +244,18 @@ class _EventPageState extends State<EventPage> {
                   elevation: 1,
                   expandedHeight: expandedHeight,
                   collapsedHeight: _collapsedHeaderHeight,
-                  flexibleSpace:
-                      _buildFlexibleHeader(context, expandedContentHeight),
+                  flexibleSpace: _buildFlexibleHeader(
+                    context,
+                    expandedContentHeight,
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: Align(
                     alignment: Alignment.topCenter,
                     child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
+                      constraints: BoxConstraints(
+                        maxWidth: StylesConfig.appMaxWidth,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -252,23 +263,32 @@ class _EventPageState extends State<EventPage> {
                           SizedBox(height: showAddButton ? 20 : 6),
                           if (isEventCancelled) // Using local variable for clarity
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
+                              padding: const EdgeInsets.fromLTRB(
+                                8.0,
+                                8.0,
+                                8.0,
+                                0,
+                              ),
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 10),
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
                                   color: ThemeConfig.grey700(context),
                                   borderRadius: BorderRadius.circular(
-                                      StylesConfig.commonRoundness),
+                                    StylesConfig.commonRoundness,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.cancel_outlined,
-                                        color: ThemeConfig.whiteColor(context),
-                                        size: 22),
+                                    Icon(
+                                      Icons.cancel_outlined,
+                                      color: ThemeConfig.whiteColor(context),
+                                      size: 22,
+                                    ),
                                     const SizedBox(width: 10),
                                     Text(
                                       CommonStrings.cancelled.toUpperCase(),
@@ -287,12 +307,13 @@ class _EventPageState extends State<EventPage> {
                           Visibility(
                             visible:
                                 EventModel.isEventSupportingSignIn(_event) &&
-                                    !AuthService.isLoggedIn() &&
-                                    !isEventCancelled, // Hide if cancelled
+                                !AuthService.isLoggedIn() &&
+                                !isEventCancelled, // Hide if cancelled
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: HtmlView(
-                                html: '''
+                                html:
+                                    '''
                       <div style="color: ${ThemeConfig.redColor(context).toHexString()}; text-align: center;">
                         <div>${ScheduleStrings.accountRequiredToJoin}</div>
                         <a href="${AppConfig.webLink}/login" style="color: ${ThemeConfig.redColor(context).toHexString()};">
@@ -308,15 +329,15 @@ class _EventPageState extends State<EventPage> {
                             ),
                           ),
                           Visibility(
-                              visible: EventModel.isEventFull(_event) &&
-                                  AuthService.isLoggedIn() &&
-                                  !isEventCancelled,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  ScheduleStrings.eventFullyBooked,
-                                ),
-                              )),
+                            visible:
+                                EventModel.isEventFull(_event) &&
+                                AuthService.isLoggedIn() &&
+                                !isEventCancelled,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(ScheduleStrings.eventFullyBooked),
+                            ),
+                          ),
                           // Counseling rozcestník: the area picker + booking flow is
                           // shown inline, ABOVE the description, on the entry event.
                           if (_event != null &&
@@ -328,35 +349,43 @@ class _EventPageState extends State<EventPage> {
                               child: CounselingPicker(day: _event!.startTime),
                             ),
                           Visibility(
-                            visible: _event != null &&
+                            visible:
+                                _event != null &&
                                 (_event?.description != null ||
                                     (RightsService.hasGroupCapability(
-                                            RightsService.currentUserGroup()
-                                                ?.id,
-                                            AuthorizationCapabilities
-                                                .groupsWrite) &&
+                                          RightsService.currentUserGroup()?.id,
+                                          AuthorizationCapabilities.groupsWrite,
+                                        ) &&
                                         (_event!.isGroupEvent ?? false))),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: _buildGroupDescription(
-                                  onPinchStart, onPinchEnd),
+                                onPinchStart,
+                                onPinchEnd,
+                              ),
                             ),
                           ),
                           _buildSpeakersSection(
-                              context, onPinchStart, onPinchEnd),
+                            context,
+                            onPinchStart,
+                            onPinchEnd,
+                          ),
                           if (_event != null &&
                               _event!.id != null &&
                               FeatureService.isFeatureEnabled(
-                                  FeatureConstants.eventFeedback) &&
+                                FeatureConstants.eventFeedback,
+                              ) &&
                               (_event!.data?[FeatureConstants.feedbackEnabled]
                                       ?.toString() ==
                                   'true'))
                             EventFeedbackWidget(
                               eventId: _event!.id!,
-                              isOpen:
-                                  TimeHelper.now().isAfter(_event!.startTime),
+                              isOpen: TimeHelper.now().isAfter(
+                                _event!.startTime,
+                              ),
                               isEditorPreview: RightsService.hasCapability(
-                                  AuthorizationCapabilities.scheduleWrite),
+                                AuthorizationCapabilities.scheduleWrite,
+                              ),
                               requiresSignIn:
                                   EventModel.isEventSupportingSignIn(_event),
                               isParticipant: _event!.isSignedIn == true,
@@ -369,63 +398,75 @@ class _EventPageState extends State<EventPage> {
                                 onEventPressed: _eventPressed,
                                 showAddNewEventButton: () =>
                                     RightsService.hasCapability(
-                                        AuthorizationCapabilities
-                                            .scheduleWrite) &&
+                                      AuthorizationCapabilities.scheduleWrite,
+                                    ) &&
                                     childrenScheduleIsEnabled,
                                 onAddNewEvent: (context, p, parent) =>
                                     AddNewEventDialog.showAddEventDialog(
-                                            context,
-                                            p,
-                                            TimeBlockItem.fromEventModelAsChild(
-                                                _event!))
-                                        .then((_) => loadData(_event!.id!)),
+                                      context,
+                                      p,
+                                      TimeBlockItem.fromEventModelAsChild(
+                                        _event!,
+                                      ),
+                                    ).then((_) => loadData(_event!.id!)),
                               ),
                             ),
                           Visibility(
-                            visible: canViewParticipants &&
+                            visible:
+                                canViewParticipants &&
                                 _event?.maxParticipants != null,
                             child: ExpansionTile(
-                              title: Row(children: [
-                                IconButton(
+                              title: Row(
+                                children: [
+                                  IconButton(
                                     onPressed: () async {
                                       final copied = await CopyButton.copy(
-                                          context,
-                                          _participants
-                                              .map((e) => e.toFullNameString())
-                                              .join("\n"));
+                                        context,
+                                        _participants
+                                            .map((e) => e.toFullNameString())
+                                            .join("\n"),
+                                      );
                                       if (!copied || !context.mounted) return;
-                                      ToastHelper.Show(context,
-                                          ScheduleStrings.participantsCopied);
+                                      ToastHelper.Show(
+                                        context,
+                                        ScheduleStrings.participantsCopied,
+                                      );
                                     },
-                                    icon: const Icon(Icons.copy)),
-                                Text("${CommonStrings.participants}:")
-                              ]),
+                                    icon: const Icon(Icons.copy),
+                                  ),
+                                  Text("${CommonStrings.participants}:"),
+                                ],
+                              ),
                               children: [
                                 ListView.builder(
-                                    shrinkWrap: true,
-                                    padding: const EdgeInsets.all(8),
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: _participants.length,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      return Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Row(
-                                          children: [
-                                            if (RightsService.hasCapability(
+                                  shrinkWrap: true,
+                                  padding: const EdgeInsets.all(8),
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _participants.length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            children: [
+                                              if (RightsService.hasCapability(
                                                 AuthorizationCapabilities
-                                                    .scheduleWrite))
-                                              IconButton(
+                                                    .scheduleWrite,
+                                              ))
+                                                IconButton(
                                                   onPressed: () => signOutOther(
-                                                      _participants[index]),
-                                                  icon: const Icon(Icons
-                                                      .remove_circle_outline)),
-                                            Text("${_participants[index]}"),
-                                          ],
-                                        ),
-                                      );
-                                    })
+                                                    _participants[index],
+                                                  ),
+                                                  icon: const Icon(
+                                                    Icons.remove_circle_outline,
+                                                  ),
+                                                ),
+                                              Text("${_participants[index]}"),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                ),
                               ],
                             ),
                           ),
@@ -437,54 +478,66 @@ class _EventPageState extends State<EventPage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                    ),
+                                    const Padding(padding: EdgeInsets.all(8.0)),
                                     Visibility(
-                                      visible: _groupInfoModel?.participants
+                                      visible:
+                                          _groupInfoModel?.participants
                                               ?.firstWhereOrNull(
-                                                  (p) => p.isAdmin!) !=
+                                                (p) => p.isAdmin!,
+                                              ) !=
                                           null,
                                       child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8.0, horizontal: 16),
-                                          child: Text(
-                                              "${ScheduleStrings.moderator}: ${_groupInfoModel?.participants?.firstWhereOrNull((p) => p.isAdmin!)?.userInfo?.name ?? ""}",
-                                              style: StylesConfig
-                                                  .normalTextStyle)),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8.0,
+                                          horizontal: 16,
+                                        ),
+                                        child: Text(
+                                          "${ScheduleStrings.moderator}: ${_groupInfoModel?.participants?.firstWhereOrNull((p) => p.isAdmin!)?.userInfo?.name ?? ""}",
+                                          style: StylesConfig.normalTextStyle,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8.0, horizontal: 16),
-                                        child: Text(
-                                            "${CommonStrings.participants}:",
-                                            style:
-                                                StylesConfig.normalTextStyle)),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0,
+                                        horizontal: 16,
+                                      ),
+                                      child: Text(
+                                        "${CommonStrings.participants}:",
+                                        style: StylesConfig.normalTextStyle,
+                                      ),
+                                    ),
                                     ListView.builder(
-                                        shrinkWrap: true,
-                                        padding: const EdgeInsets.all(8),
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        itemCount: _groupInfoModel
-                                                ?.participants!.length ??
-                                            0,
-                                        itemBuilder:
-                                            (BuildContext context, int index) {
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 16.0,
-                                                vertical: 4.0),
-                                            child: Text(
+                                      shrinkWrap: true,
+                                      padding: const EdgeInsets.all(8),
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount:
+                                          _groupInfoModel
+                                              ?.participants!
+                                              .length ??
+                                          0,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16.0,
+                                                    vertical: 4.0,
+                                                  ),
+                                              child: Text(
                                                 "${_groupInfoModel?.participants!.toList()[index].userInfo?.name}",
                                                 style: StylesConfig
-                                                    .normalTextStyle),
-                                          );
-                                        })
+                                                    .normalTextStyle,
+                                              ),
+                                            );
+                                          },
+                                    ),
                                   ],
-                                )
+                                ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -504,7 +557,10 @@ class _EventPageState extends State<EventPage> {
               child: KeyedSubtree(
                 key: _headerMeasureKey,
                 child: _buildExpandedHeaderContent(
-                    context, headerFg, headerEventType),
+                  context,
+                  headerFg,
+                  headerEventType,
+                ),
               ),
             ),
           ),
@@ -571,10 +627,7 @@ class _EventPageState extends State<EventPage> {
   /// event's base colour (light grey for untyped, a pale type tint otherwise).
   Color _collapsedTint() {
     final Color base = EventTypeColors.background(_event?.type);
-    return EventPageTheme.collapsedTint(
-      base,
-      Theme.of(context).brightness,
-    );
+    return EventPageTheme.collapsedTint(base, Theme.of(context).brightness);
   }
 
   double _measureTextWidth(BuildContext context, String text, TextStyle style) {
@@ -592,7 +645,8 @@ class _EventPageState extends State<EventPage> {
   double _expandedHeaderHeight(BuildContext context) {
     final double topInset = MediaQuery.of(context).padding.top;
     final double screenW = MediaQuery.of(context).size.width;
-    final double contentW = (screenW < StylesConfig.appMaxWidth
+    final double contentW =
+        (screenW < StylesConfig.appMaxWidth
             ? screenW
             : StylesConfig.appMaxWidth) -
         40;
@@ -602,7 +656,10 @@ class _EventPageState extends State<EventPage> {
       text: TextSpan(
         text: _event?.title ?? "",
         style: const TextStyle(
-            fontWeight: FontWeight.bold, fontSize: 30, height: 1.1),
+          fontWeight: FontWeight.bold,
+          fontSize: 30,
+          height: 1.1,
+        ),
       ),
       textDirection: Directionality.of(context),
       maxLines: 3,
@@ -615,8 +672,10 @@ class _EventPageState extends State<EventPage> {
     // Estimate how many lines the meta Wrap takes by greedily packing items.
     double metaH = 0;
     if (_event != null) {
-      const TextStyle metaStyle =
-          TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
+      const TextStyle metaStyle = TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 15,
+      );
       const double iconAndGap = 26; // icon(20) + gap(6)
       const double spacing = 22; // Wrap spacing between items
       final List<String> metaTexts = [];
@@ -705,7 +764,10 @@ class _EventPageState extends State<EventPage> {
   /// The expanded banner content (back row, type badge, big title, meta row),
   /// laid over the [_headerBackground].
   Widget _buildExpandedHeaderContent(
-      BuildContext context, Color fg, EventType? eventType) {
+    BuildContext context,
+    Color fg,
+    EventType? eventType,
+  ) {
     return SafeArea(
       bottom: false,
       child: Column(
@@ -721,11 +783,14 @@ class _EventPageState extends State<EventPage> {
                 if (showLoginLogoutButton() &&
                     RightsService.canOpenScheduleEntryCheck() &&
                     FeatureService.isFeatureEnabled(
-                        FeatureConstants.entryCode) &&
+                      FeatureConstants.entryCode,
+                    ) &&
                     _event != null)
                   IconButton(
                     onPressed: () => RouterService.navigatePageInfo(
-                        context, CheckRoute(id: _event!.id!)),
+                      context,
+                      CheckRoute(id: _event!.id!),
+                    ),
                     icon: Icon(Icons.qr_code_scanner, color: fg),
                   ),
               ],
@@ -794,18 +859,26 @@ class _EventPageState extends State<EventPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          color: fg, fontWeight: FontWeight.bold, fontSize: 19),
+                        color: fg,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 19,
+                      ),
                     ),
                     if (_event != null) ...[
                       const SizedBox(height: 3),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: _joinMeta(_metaItems(context, fg,
+                          children: _joinMeta(
+                            _metaItems(
+                              context,
+                              fg,
                               iconSize: 15,
                               fontSize: 13,
                               compact: true,
-                              includeParticipants: false)),
+                              includeParticipants: false,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -831,10 +904,20 @@ class _EventPageState extends State<EventPage> {
                 const SizedBox(width: 8),
                 if (_event?.isSignedIn == true)
                   _participantPill(
-                      context, fg, _event!.participantCapacityLabel!, 18, 14)
+                    context,
+                    fg,
+                    _event!.participantCapacityLabel!,
+                    18,
+                    14,
+                  )
                 else
-                  _metaItem(Icons.people_alt_outlined,
-                      _event!.participantCapacityLabel!, fg, 18, 14),
+                  _metaItem(
+                    Icons.people_alt_outlined,
+                    _event!.participantCapacityLabel!,
+                    fg,
+                    18,
+                    14,
+                  ),
               ],
             ],
           ),
@@ -882,15 +965,18 @@ class _EventPageState extends State<EventPage> {
   /// the type color, and the default (untyped) event gets the brand navy→orange
   /// diagonal with a downward dark scrim.
   Widget _headerBackground(EventType? eventType, Widget child) {
-    final String? imageUrl =
-        ConnectivityService.isOfflineNotifier.value ? null : _headerImageUrl();
+    final String? imageUrl = ConnectivityService.isOfflineNotifier.value
+        ? null
+        : _headerImageUrl();
     if (imageUrl != null) {
       return Stack(
         children: [
           Positioned.fill(
             child: CachedNetworkImage(
-              imageUrl: ImageUrlHelper.transformImageUrl(imageUrl,
-                  width: ImageUrlHelper.fullWidth),
+              imageUrl: ImageUrlHelper.transformImageUrl(
+                imageUrl,
+                width: ImageUrlHelper.fullWidth,
+              ),
               fit: BoxFit.cover,
               errorWidget: (_, __, ___) =>
                   Container(color: ThemeConfig.appBarColor()),
@@ -920,8 +1006,9 @@ class _EventPageState extends State<EventPage> {
     if (_event != null && eventType != null) {
       final Color base = eventType.getColor();
       final double l = HSLColor.fromColor(base).lightness;
-      final Color lighter =
-          base.changeColorLightness((l + 0.10).clamp(0.0, 1.0));
+      final Color lighter = base.changeColorLightness(
+        (l + 0.10).clamp(0.0, 1.0),
+      );
       return Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -987,11 +1074,14 @@ class _EventPageState extends State<EventPage> {
 
   /// The meta chips shared by the expanded header (wrapped) and the collapsed
   /// bar (condensed, single scrolling row): time, place and capacity.
-  List<Widget> _metaItems(BuildContext context, Color fg,
-      {double iconSize = 20,
-      double fontSize = 15,
-      bool compact = false,
-      bool includeParticipants = true}) {
+  List<Widget> _metaItems(
+    BuildContext context,
+    Color fg, {
+    double iconSize = 20,
+    double fontSize = 15,
+    bool compact = false,
+    bool includeParticipants = true,
+  }) {
     final List<Widget> items = [];
 
     final String duration = compact
@@ -1002,15 +1092,24 @@ class _EventPageState extends State<EventPage> {
     }
 
     if (_event?.place?.id != null) {
-      items.add(_placeItem(
-          context, fg, _event?.place?.title ?? "", iconSize, fontSize));
+      items.add(
+        _placeItem(context, fg, _event?.place?.title ?? "", iconSize, fontSize),
+      );
     }
 
     final text = _event?.participantCapacityLabel;
     if (includeParticipants && text != null) {
-      items.add(_event?.isSignedIn == true
-          ? _participantPill(context, fg, text, iconSize, fontSize)
-          : _metaItem(Icons.people_alt_outlined, text, fg, iconSize, fontSize));
+      items.add(
+        _event?.isSignedIn == true
+            ? _participantPill(context, fg, text, iconSize, fontSize)
+            : _metaItem(
+                Icons.people_alt_outlined,
+                text,
+                fg,
+                iconSize,
+                fontSize,
+              ),
+      );
     }
 
     return items;
@@ -1026,8 +1125,13 @@ class _EventPageState extends State<EventPage> {
     return out;
   }
 
-  Widget _metaItem(IconData icon, String text, Color fg,
-      [double iconSize = 20, double fontSize = 15]) {
+  Widget _metaItem(
+    IconData icon,
+    String text,
+    Color fg, [
+    double iconSize = 20,
+    double fontSize = 15,
+  ]) {
     return EventMetadataItem(
       icon: icon,
       text: text,
@@ -1079,46 +1183,54 @@ class _EventPageState extends State<EventPage> {
   /// Editor / participant actions as light tonal chips with icons in a
   /// left-aligned Wrap (matches production's redesigned action row).
   Widget _buildGroupDescription(
-      VoidCallback onPinchStart, VoidCallback onPinchEnd) {
+    VoidCallback onPinchStart,
+    VoidCallback onPinchEnd,
+  ) {
     final group = _groupInfoModel;
     final version = group?.aggregateVersion ?? 0;
     final eventId = _event?.id;
-    final canEdit = RightsService.hasGroupCapability(
-            RightsService.currentUserGroup()?.id,
-            AuthorizationCapabilities.groupsWrite) &&
+    final canEdit =
+        RightsService.hasGroupCapability(
+          RightsService.currentUserGroup()?.id,
+          AuthorizationCapabilities.groupsWrite,
+        ) &&
         (_event?.isGroupEvent ?? false) &&
         group != null;
     return EditableHtmlField(
-        key: ValueKey('group-event-html-$eventId'),
-        html: _event?.description,
-        enabled: canEdit,
-        owner: RightsService.hasCapability(
-                AuthorizationCapabilities.mediaOccasionWrite)
-            ? HtmlMediaOwner.occasion(_event?.occasionId)
-            : const HtmlMediaOwner.none(),
-        twoFingersOn: onPinchStart,
-        twoFingersOff: onPinchEnd,
-        onChanged: (_) {},
-        onSave: (html) async {
-          if (group == null) {
-            throw StateError('Group description owner missing');
-          }
-          final snapshot = UserGroupInfoModel(
-              id: group.id,
-              title: group.title,
-              description: html,
-              type: group.type,
-              data: group.data,
-              place: group.place,
-              placeId: group.placeId,
-              participants: group.participants,
-              persistedPlaceId: group.persistedPlaceId,
-              persistedPlaceWasPrivate: group.persistedPlaceWasPrivate,
-              aggregateVersion: version,
-              isAdmin: group.isAdmin);
-          await DbGroups.updateUserGroupInfo(snapshot);
-          if (eventId != null && mounted) await loadData(eventId);
-        });
+      key: ValueKey('group-event-html-$eventId'),
+      html: _event?.description,
+      enabled: canEdit,
+      owner:
+          RightsService.hasCapability(
+            AuthorizationCapabilities.mediaOccasionWrite,
+          )
+          ? HtmlMediaOwner.occasion(_event?.occasionId)
+          : const HtmlMediaOwner.none(),
+      twoFingersOn: onPinchStart,
+      twoFingersOff: onPinchEnd,
+      onChanged: (_) {},
+      onSave: (html) async {
+        if (group == null) {
+          throw StateError('Group description owner missing');
+        }
+        final snapshot = UserGroupInfoModel(
+          id: group.id,
+          title: group.title,
+          description: html,
+          type: group.type,
+          data: group.data,
+          place: group.place,
+          placeId: group.placeId,
+          participants: group.participants,
+          persistedPlaceId: group.persistedPlaceId,
+          persistedPlaceWasPrivate: group.persistedPlaceWasPrivate,
+          aggregateVersion: version,
+          isAdmin: group.isAdmin,
+        );
+        await DbGroups.updateUserGroupInfo(snapshot);
+        if (eventId != null && mounted) await loadData(eventId);
+      },
+    );
   }
 
   Widget _buildActionButtons(BuildContext context, bool isEventCancelled) {
@@ -1128,8 +1240,9 @@ class _EventPageState extends State<EventPage> {
         !isEventCancelled &&
         !(_event?.isSignedIn ?? false) &&
         !EventModel.isEventFull(_event)) {
-      buttons.add(_actionButton(
-          Icons.login, UserStrings.signIn, () => signIn(context)));
+      buttons.add(
+        _actionButton(Icons.login, UserStrings.signIn, () => signIn(context)),
+      );
     }
     if (showLoginLogoutButton() && (_event?.isSignedIn ?? false)) {
       buttons.add(_actionButton(null, UserStrings.signOut, () => signOut()));
@@ -1140,31 +1253,52 @@ class _EventPageState extends State<EventPage> {
       featureEnabled: FeatureService.isCompanionsEnabled(),
       hasOwnedCompanions: _companions.isNotEmpty,
     )) {
-      buttons.add(_actionButton(Icons.group_add_outlined,
-          CommonStrings.companions, () => signInCompanion()));
+      buttons.add(
+        _actionButton(
+          Icons.group_add_outlined,
+          CommonStrings.companions,
+          () => signInCompanion(),
+        ),
+      );
     }
     if (showLoginLogoutButton() &&
         RightsService.hasCapability(AuthorizationCapabilities.scheduleWrite)) {
-      buttons.add(_actionButton(
-          Icons.person_add_alt_1, ScheduleStrings.signInOther, () async {
-        _queriedParticipants = await DbUsers.getAllUsersBasics();
-        _queriedParticipants.forEach((q) => {
-              if (_participants.any((p) => p.id == q.id)) {q.isSignedIn = true}
-            });
-        if (!mounted) return;
-        // ignore: use_build_context_synchronously
-        DialogHelper.chooseUser(context, (person) async {
-          await signIn(context, person);
-          await loadData(_event!.id!);
-        }, _queriedParticipants, ScheduleStrings.signInSomeone);
-      }));
+      buttons.add(
+        _actionButton(
+          Icons.person_add_alt_1,
+          ScheduleStrings.signInOther,
+          () async {
+            _queriedParticipants = await DbUsers.getAllUsersBasics();
+            _queriedParticipants.forEach(
+              (q) => {
+                if (_participants.any((p) => p.id == q.id))
+                  {q.isSignedIn = true},
+              },
+            );
+            if (!mounted) return;
+            // ignore: use_build_context_synchronously
+            DialogHelper.chooseUser(
+              context,
+              (person) async {
+                await signIn(context, person);
+                await loadData(_event!.id!);
+              },
+              _queriedParticipants,
+              ScheduleStrings.signInSomeone,
+            );
+          },
+        ),
+      );
     }
     if (RightsService.hasCapability(AuthorizationCapabilities.scheduleWrite)) {
-      buttons.add(_actionButton(Icons.edit, CommonStrings.edit, () {
-        RouterService.navigateOccasion(
-                context, "${EventEditPage.ROUTE}/${_event!.id}")
-            .then((value) => loadData(_event!.id!));
-      }));
+      buttons.add(
+        _actionButton(Icons.edit, CommonStrings.edit, () {
+          RouterService.navigateOccasion(
+            context,
+            "${EventEditPage.ROUTE}/${_event!.id}",
+          ).then((value) => loadData(_event!.id!));
+        }),
+      );
     }
 
     if (buttons.isEmpty) return const SizedBox.shrink();
@@ -1176,28 +1310,39 @@ class _EventPageState extends State<EventPage> {
 
   Widget _actionButton(IconData? icon, String label, VoidCallback onPressed) =>
       ButtonsHelper.actionButton(
-          context: context, icon: icon, label: label, onPressed: onPressed);
+        context: context,
+        icon: icon,
+        label: label,
+        onPressed: onPressed,
+      );
 
   /// The "Speakers" (lecturers) section: a centered profile card per attached
   /// speaker — large circular photo, name and subtitle centered, HTML bio
   /// always visible below (no expansion) — never as a page banner (Julie's
   /// question #1). Empty (no widget) when the feature is off or the event has
   /// no attached speakers.
-  Widget _buildSpeakersSection(BuildContext context, VoidCallback onPinchStart,
-      VoidCallback onPinchEnd) {
+  Widget _buildSpeakersSection(
+    BuildContext context,
+    VoidCallback onPinchStart,
+    VoidCallback onPinchEnd,
+  ) {
     // Speakers are core: the section shows whenever the event has speakers
     // attached, regardless of any feature (decision R7).
     if (_event?.id == null || _speakersBundle == null) {
       return const SizedBox.shrink();
     }
-    final List<SpeakerModel> speakers =
-        _speakersBundle!.speakersForEvent(_event!.id!);
+    final List<SpeakerModel> speakers = _speakersBundle!.speakersForEvent(
+      _event!.id!,
+    );
     if (speakers.isEmpty) return const SizedBox.shrink();
 
     // Borderless section: a hairline separates it from the description above,
     // and further hairlines separate multiple speaker profiles from each other.
-    final divider =
-        Divider(height: 24, thickness: 1, color: ThemeConfig.grey300(context));
+    final divider = Divider(
+      height: 24,
+      thickness: 1,
+      color: ThemeConfig.grey300(context),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
       child: Column(
@@ -1207,15 +1352,23 @@ class _EventPageState extends State<EventPage> {
           for (var i = 0; i < speakers.length; i++) ...[
             if (i > 0) divider,
             _buildSpeakerMedallion(
-                context, speakers[i], onPinchStart, onPinchEnd),
+              context,
+              speakers[i],
+              onPinchStart,
+              onPinchEnd,
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildSpeakerMedallion(BuildContext context, SpeakerModel s,
-      VoidCallback onPinchStart, VoidCallback onPinchEnd) {
+  Widget _buildSpeakerMedallion(
+    BuildContext context,
+    SpeakerModel s,
+    VoidCallback onPinchStart,
+    VoidCallback onPinchEnd,
+  ) {
     // Borderless, flat (2D — no shadows or elevation) profile that flows with
     // the page content: a large centered photo, the name beneath it, the
     // subtitle split into role pills and the bio always visible below —
@@ -1239,13 +1392,20 @@ class _EventPageState extends State<EventPage> {
   /// navigates to the place on the map), so its label is underlined and it
   /// carries a trailing chevron to read as a link. It keeps the same
   /// icon+text height as the time item so both align on the meta row.
-  Widget _placeItem(BuildContext context, Color fg, String text,
-      double iconSize, double fontSize) {
+  Widget _placeItem(
+    BuildContext context,
+    Color fg,
+    String text,
+    double iconSize,
+    double fontSize,
+  ) {
     return InkWell(
       borderRadius: BorderRadius.circular(6),
       onTap: () async {
-        final result =
-            await MapNavigation.openPlace(context, _event!.place!.id!);
+        final result = await MapNavigation.openPlace(
+          context,
+          _event!.place!.id!,
+        );
         if (mounted && result.kind == MapVisitKind.returned) {
           await loadData(_event!.id!);
         }
@@ -1261,8 +1421,13 @@ class _EventPageState extends State<EventPage> {
     );
   }
 
-  Widget _participantPill(BuildContext context, Color fg, String text,
-      double iconSize, double fontSize) {
+  Widget _participantPill(
+    BuildContext context,
+    Color fg,
+    String text,
+    double iconSize,
+    double fontSize,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final pill = EventPageTheme.participantPillColors(
       primary: colorScheme.primary,
@@ -1277,14 +1442,20 @@ class _EventPageState extends State<EventPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(text,
-              style: TextStyle(
-                  color: pill.foreground,
-                  fontWeight: FontWeight.bold,
-                  fontSize: fontSize)),
+          Text(
+            text,
+            style: TextStyle(
+              color: pill.foreground,
+              fontWeight: FontWeight.bold,
+              fontSize: fontSize,
+            ),
+          ),
           const SizedBox(width: 6),
-          Icon(Icons.people_alt_outlined,
-              color: pill.foreground, size: iconSize),
+          Icon(
+            Icons.people_alt_outlined,
+            color: pill.foreground,
+            size: iconSize,
+          ),
         ],
       ),
     );
@@ -1300,11 +1471,7 @@ class _EventPageState extends State<EventPage> {
     _syncSavedProgramUi();
     if (event.isCancelled) setState(() {});
 
-    final result = await DbEvents.setSavedProgram(
-      context,
-      eventId,
-      saved,
-    );
+    final result = await DbEvents.setSavedProgram(context, eventId, saved);
     if (!mounted ||
         _event?.id != eventId ||
         mutationRevision != _savedProgramMutationRevision) {
@@ -1358,7 +1525,8 @@ class _EventPageState extends State<EventPage> {
       }
       if (!isOffline &&
           RightsService.hasCapability(
-              AuthorizationCapabilities.scheduleParticipantsRead)) {
+            AuthorizationCapabilities.scheduleParticipantsRead,
+          )) {
         await loadParticipants(id);
       }
       if (localOnly) {
@@ -1393,7 +1561,8 @@ class _EventPageState extends State<EventPage> {
     if (event.isCounselingEntry) return false;
     final counselingType =
         FeatureService.getCounselingFeature()?.counselingEventType;
-    final isCounselingTyped = counselingType != null &&
+    final isCounselingTyped =
+        counselingType != null &&
         counselingType.isNotEmpty &&
         event.type == counselingType;
     // A counseling slot / counseling-typed event is authoritative on its own:
@@ -1454,8 +1623,10 @@ class _EventPageState extends State<EventPage> {
     try {
       final occasionId = RightsService.currentOccasionId();
       if (occasionId == null) return;
-      final bundle =
-          await DbSpeakers.getSpeakers(occasionId, includeDescription: true);
+      final bundle = await DbSpeakers.getSpeakers(
+        occasionId,
+        includeDescription: true,
+      );
       if (mounted) setState(() => _speakersBundle = bundle);
     } catch (_) {
       // Offline / RPC failure: fall back to the synced speakers cache so the
@@ -1470,8 +1641,9 @@ class _EventPageState extends State<EventPage> {
   Future<void> loadOfflineData(int id) async {
     final savedProgramRevisionAtLoadStart = _savedProgramMutationRevision;
     var allEvents = await OfflineDataService.getAllEvents();
-    final cachedEvent =
-        allEvents.firstWhereOrNull((element) => element.id == id);
+    final cachedEvent = allEvents.firstWhereOrNull(
+      (element) => element.id == id,
+    );
     if (cachedEvent != null) {
       var event = cachedEvent;
       if ((event.isGroupEvent ?? false) && AuthService.isLoggedIn()) {
@@ -1479,8 +1651,9 @@ class _EventPageState extends State<EventPage> {
         if (userInfo?.eventUserGroup != null) {
           event = event.copyWith(title: userInfo!.eventUserGroup!.title);
           event = event.copyWith(isMyGroupEvent: true);
-          event =
-              event.copyWith(description: userInfo.eventUserGroup!.description);
+          event = event.copyWith(
+            description: userInfo.eventUserGroup!.description,
+          );
           event = event.copyWith(place: userInfo.eventUserGroup!.place);
           _groupInfoModel = userInfo.eventUserGroup;
         }
@@ -1494,13 +1667,14 @@ class _EventPageState extends State<EventPage> {
         }
         final loadedSaved = await OfflineDataService.isEventSaved(id);
         event = event.copyWith(
-            isInMySchedule: reconcileLoadedSavedProgramState(
-          incoming: loadedSaved,
-          visible: _event?.id == id ? _event?.isInMySchedule : null,
-          mutationInFlight: _isUpdatingSavedProgram,
-          loadRevision: savedProgramRevisionAtLoadStart,
-          currentRevision: _savedProgramMutationRevision,
-        ));
+          isInMySchedule: reconcileLoadedSavedProgramState(
+            incoming: loadedSaved,
+            visible: _event?.id == id ? _event?.isInMySchedule : null,
+            mutationInFlight: _isUpdatingSavedProgram,
+            loadRevision: savedProgramRevisionAtLoadStart,
+            currentRevision: _savedProgramMutationRevision,
+          ),
+        );
       }
 
       var childEvents = allEvents
@@ -1511,18 +1685,23 @@ class _EventPageState extends State<EventPage> {
       // offline places to full models, same as the parent's place above.
       var offlinePlaces = await OfflineDataService.getAllPlaces();
       childEvents = childEvents
-          .map((child) => child.place?.id == null
-              ? child
-              : child.copyWith(
-                  place: offlinePlaces.firstWhereOrNull(
-                          (place) => place.id == child.place!.id) ??
-                      child.place,
-                ))
+          .map(
+            (child) => child.place?.id == null
+                ? child
+                : child.copyWith(
+                    place:
+                        offlinePlaces.firstWhereOrNull(
+                          (place) => place.id == child.place!.id,
+                        ) ??
+                        child.place,
+                  ),
+          )
           .toList();
       event = event.copyWith(childEvents: childEvents);
       _childDots.clear();
       _childDots.addAll(
-          event.childEvents.map((e) => TimeBlockItem.fromEventModelAsChild(e)));
+        event.childEvents.map((e) => TimeBlockItem.fromEventModelAsChild(e)),
+      );
 
       if (mounted) {
         setState(() {
@@ -1541,13 +1720,17 @@ class _EventPageState extends State<EventPage> {
     var event = await DbEvents.getEvent(eventId);
 
     if ((event.isGroupEvent ?? false) && (event.isMyGroupEvent ?? false)) {
-      var group = RightsService.hasGroupCapability(
-              RightsService.currentUserGroup()?.id,
-              AuthorizationCapabilities.groupsEditorRead)
+      var group =
+          RightsService.hasGroupCapability(
+            RightsService.currentUserGroup()?.id,
+            AuthorizationCapabilities.groupsEditorRead,
+          )
           ? await DbGroups.getUserGroupForEdit(
-              RightsService.currentUserGroup()!.id!)
+              RightsService.currentUserGroup()!.id!,
+            )
           : await DbGroups.getUserGroupInfo(
-              RightsService.currentUserGroup()!.id!);
+              RightsService.currentUserGroup()!.id!,
+            );
       if (group == null) {
         if (mounted) RouterService.goBack(context);
         return;
@@ -1561,13 +1744,15 @@ class _EventPageState extends State<EventPage> {
       return;
     }
 
-    var currentParticipants =
-        await DbEvents.getParticipantsPerEventCount(eventId);
+    var currentParticipants = await DbEvents.getParticipantsPerEventCount(
+      eventId,
+    );
     event = event.copyWith(currentParticipants: currentParticipants);
     _setLoadedEvent(event);
     _childDots.clear();
     _childDots.addAll(
-        _event!.childEvents.map((e) => TimeBlockItem.fromEventModelAsChild(e)));
+      _event!.childEvents.map((e) => TimeBlockItem.fromEventModelAsChild(e)),
+    );
     if (mounted) setState(() {});
   }
 
@@ -1577,10 +1762,15 @@ class _EventPageState extends State<EventPage> {
         .then((value) => loadData(_event!.id!));
   }
 
-  Future<void> signIn(BuildContext context,
-      [UserInfoModel? participant]) async {
-    final didSignIn =
-        await DbEvents.signInToEvent(context, _event!.id!, participant);
+  Future<void> signIn(
+    BuildContext context, [
+    UserInfoModel? participant,
+  ]) async {
+    final didSignIn = await DbEvents.signInToEvent(
+      context,
+      _event!.id!,
+      participant,
+    );
     if (!didSignIn || participant != null || !mounted) return;
 
     setState(() {
@@ -1614,29 +1804,35 @@ class _EventPageState extends State<EventPage> {
   Future<String?> signOutOther(UserInfoModel participant) {
     // Allowed for cancelled events
     return showDialog<String>(
-        context: context,
-        builder: (BuildContext context) => AppAlertDialog(
-              onClose: () => RouterService.goBack(context),
-              title: Text(ScheduleStrings.signOutParticipant),
-              content: Text(ScheduleStrings.signOutParticipantConfirm(
-                participant: participant.toString(),
-                event: _event!.toString(),
-              )),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => RouterService.goBack(context),
-                  child: Text(CommonStrings.storno),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    RouterService.goBack(context);
-                    await DbEvents.signOutFromEvent(
-                        context, _event!.id!, participant);
-                    await loadData(_event!.id!);
-                  },
-                  child: Text(ScheduleStrings.signOutSomeone),
-                ),
-              ],
-            ));
+      context: context,
+      builder: (BuildContext context) => AppAlertDialog(
+        onClose: () => RouterService.goBack(context),
+        title: Text(ScheduleStrings.signOutParticipant),
+        content: Text(
+          ScheduleStrings.signOutParticipantConfirm(
+            participant: participant.toString(),
+            event: _event!.toString(),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => RouterService.goBack(context),
+            child: Text(CommonStrings.storno),
+          ),
+          TextButton(
+            onPressed: () async {
+              RouterService.goBack(context);
+              await DbEvents.signOutFromEvent(
+                context,
+                _event!.id!,
+                participant,
+              );
+              await loadData(_event!.id!);
+            },
+            child: Text(ScheduleStrings.signOutSomeone),
+          ),
+        ],
+      ),
+    );
   }
 }

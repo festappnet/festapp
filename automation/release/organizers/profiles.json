@@ -2,7 +2,8 @@
   "vstupenky-cs": {
     "locale": "cs",
     "content": "content.json",
-    "clips": "clips.json"
+    "clips": "clips.json",
+    "platformUpdates": true
   },
   "festapp-en": {
     "locale": "en",

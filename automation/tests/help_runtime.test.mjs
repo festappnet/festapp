@@ -1,4 +1,5 @@
 import test from 'node:test';
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -23,6 +24,21 @@ test('built help owns its complete runtime outside the installed app cache', t=>
  const html=fs.readFileSync(path.join(out,'index.html'),'utf8');
  assert.match(html,/src="\/napoveda\/assets\/runtime\/help.js"/);
  assert.match(html,/href="\/napoveda\/assets\/runtime\/theme.css"/);
+ // Exercise the actual generated pre-paint scripts, without loading the module runtime.
+ const head = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ const body = html.match(/<body[^>]*><script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(head && body, 'Theme must resolve synchronously before page content');
+ assert.ok(html.indexOf(`<script>${head}`) < html.indexOf('<link'), 'Preference must resolve before stylesheets');
+ for (const [saved, systemDark, expected] of [['light',true,'light'],['dark',false,'dark'],[null,true,'dark'],[null,false,'light'],['invalid',false,'light'],['blocked',true,'dark']]) {
+  const classes = new Set();
+  const document = {documentElement:{style:{}},body:{style:{},dataset:{},classList:{toggle(name,on){if(on) classes.add(name);else classes.delete(name);}}}};
+  const context = vm.createContext({document,localStorage:{getItem(){if(saved==='blocked') throw Error('Storage blocked');return saved;}},matchMedia:()=>({matches:systemDark})});
+  vm.runInContext(head,context);vm.runInContext(body,context);
+  assert.equal(document.documentElement.style.colorScheme,expected);
+  assert.equal(document.body.style.colorScheme,expected);
+  assert.equal(classes.has('dark-mode'),expected==='dark');
+  assert.equal(document.body.dataset.publicTheme,'initialized', 'OS-only CSS fallback must be disabled before paint');
+ }
  const runtime=path.join(out,'assets/runtime');
  assert.equal(fs.readFileSync(path.join(runtime,'help.js'),'utf8'),'import "./account.js";');
  assert.equal(fs.readFileSync(path.join(runtime,'account.js'),'utf8'),'fetch("/napoveda/assets/translations/cs.json");import("/napoveda/assets/runtime/login.js");const deps=["napoveda/assets/runtime/login.js"];');

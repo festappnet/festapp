@@ -12,6 +12,7 @@ const excludedNames = new Set([
   'festapp_service_worker.js',
   'organizers-page',
   'organizer-pages.json',
+  'platform-updates.json',
 ]);
 
 export function shouldPrecache(relativePath) {
@@ -117,6 +118,8 @@ export async function collectPwaShellManifest(buildDir) {
     if (aliasIndex !== -1) files.splice(aliasIndex, 1);
     files.push({ url: flutterMain, bytes: (await stat(file)).size });
   }
+  const updatePages=marketing.pages.filter(page=>page.type==='updates-index' || page.type==='update-detail');
+  for (const page of updatePages) files.push({url:page.path,bytes:(await stat(path.join(buildDir,page.asset))).size});
   const byUrl = new Map();
   for (const file of files) {
     const existing = byUrl.get(file.url);
@@ -152,6 +155,8 @@ export async function collectPwaShellManifest(buildDir) {
     flutterEntry,
     organizerHomepage,
     marketingRoutes,
+    publicUpdatePaths:updatePages.map(page=>page.path),
+    publicFeeds:marketing.feeds ?? [],
     flutterMain,
     webClientEntry,
     standaloneDocuments,

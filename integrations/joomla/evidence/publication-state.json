@@ -1,0 +1,56 @@
+{
+  "recorded_at": "2026-10-26T08:54:51.936789+00:00",
+  "state": "PUBLIC_ZIP_RELEASED_JED_SUBMITTED_PENDING_REVIEW",
+  "scope": "Czech vstupenky.online Joomla1.0.1 only",
+  "zip": "dist/vstupenky.online.zip",
+  "sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "critic": "APPROVED",
+  "source_worktree": "/Users/miakh/source/festapp-joomla-release-20261026",
+  "base_sha": "594cc2689c71afbb802f47ca8b9dee5f10839881",
+  "source_sha": "19ec65997430d7a971b3e7a1549617111ada8310",
+  "pr": "https://github.com/festappnet/festapp/pull/603",
+  "review_decision": "REVIEW_REQUIRED",
+  "draft_release": "https://github.com/festappnet/festapp/releases/tag/untagged-031fb097965668878517",
+  "tag": "joomla-vstupenky-online-v1.0.1",
+  "draft_zip_download_verified": true,
+  "public_release_published": true,
+  "production_app_deploy_performed": false,
+  "jed_submitted": true,
+  "remaining_steps": [
+    "Joomla catalog editorial screening/publication; respond to actual review feedback if requested"
+  ],
+  "ci": {
+    "head_sha": "19ec65997430d7a971b3e7a1549617111ada8310",
+    "all_passed": true,
+    "passed_checks": [
+      "image-contract",
+      "seat-checkout",
+      "ticket-preview-and-delivery",
+      "web-startup",
+      "wix-checkout-compatibility"
+    ],
+    "web_startup_failed_only_retry": {
+      "run_id": 40295300966,
+      "passed_job_id": 121482153788,
+      "initial_failure": "CDP Fetch.enable session-not-found before scenario load",
+      "retry_count": 1
+    }
+  },
+  "main_protection": {
+    "required_reviews": 1,
+    "enforce_admins": false,
+    "administrative_exception_authorization": "explicit user authorization after all5CIgreen"
+  },
+  "main_merge_sha": "4b06687ce418bb790d6cc34e295dddbb14fc2159",
+  "release_url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.1",
+  "download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+  "jed_account_created": true,
+  "jed_blocker": null,
+  "jed_submission_prepared": "submission/listing.json",
+  "human_handoff_session_closed": true,
+  "actual_public_cms_installation_verified": [
+    "Joomla5.4.10/PHP8.3.36",
+    "Joomla6.1.4/PHP8.4.27"
+  ],
+  "jed_extension_id": 17931
+}

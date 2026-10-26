@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../models/inventory_context_stock.dart';
+
 import 'package:fstapp/styles/styles_config.dart';
 
 import 'inventory_strings.dart';
@@ -31,8 +33,9 @@ class InventoryPoolCard extends StatelessWidget {
 
     const int maxItems = 12; // Show a max of 11 items + "more" indicator
     final bool isOverflowing = contexts.length > maxItems;
-    final itemsToShow =
-        isOverflowing ? contexts.take(maxItems - 1).toList() : contexts;
+    final itemsToShow = isOverflowing
+        ? contexts.take(maxItems - 1).toList()
+        : contexts;
 
     return Card(
       elevation: 0,
@@ -56,8 +59,9 @@ class InventoryPoolCard extends StatelessWidget {
                   Flexible(
                     child: Text(
                       pool.title ?? InventoryStrings.cardUnnamedPool,
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -65,18 +69,23 @@ class InventoryPoolCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  _buildStatItem(context,
-                      icon: Icons.inventory_2_outlined,
-                      label: InventoryStrings.cardStatSellable,
-                      value: pool.sellableCapacity?.toString() ??
-                          InventoryStrings.cardStatDynamic),
+                  _buildStatItem(
+                    context,
+                    icon: Icons.inventory_2_outlined,
+                    label: InventoryStrings.cardStatSellable,
+                    value:
+                        pool.sellableCapacity?.toString() ??
+                        InventoryStrings.cardStatDynamic,
+                  ),
                   if (hasContexts && capacityPerContext > 0) ...[
                     const SizedBox(width: 12),
-                    _buildStatItem(context,
-                        icon: Icons.groups_outlined,
-                        label: InventoryStrings.cardStatSlotSize,
-                        value: capacityPerContext.toString()),
-                  ]
+                    _buildStatItem(
+                      context,
+                      icon: Icons.groups_outlined,
+                      label: InventoryStrings.cardStatSlotSize,
+                      value: capacityPerContext.toString(),
+                    ),
+                  ],
                 ],
               ),
               if (hasContexts) ...[
@@ -90,17 +99,23 @@ class InventoryPoolCard extends StatelessWidget {
                         (constraints.maxWidth - totalSpacing) / itemsPerRow;
 
                     List<Widget> contextWidgets = itemsToShow
-                        .map((c) => _ContextChip(
-                              stock: c,
-                              useCompressedStyle: useCompressedStyle,
-                              width: chipWidth,
-                            ))
+                        .map(
+                          (c) => _ContextChip(
+                            stock: c,
+                            useCompressedStyle: useCompressedStyle,
+                            width: chipWidth,
+                          ),
+                        )
                         .toList();
 
                     if (isOverflowing) {
-                      contextWidgets.add(_buildEllipsisIndicator(context,
+                      contextWidgets.add(
+                        _buildEllipsisIndicator(
+                          context,
                           useCompressedStyle: useCompressedStyle,
-                          width: chipWidth));
+                          width: chipWidth,
+                        ),
+                      );
                     }
 
                     return Wrap(
@@ -118,29 +133,43 @@ class InventoryPoolCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context,
-      {required IconData icon, required String label, required String value}) {
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon,
-            size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+        Icon(
+          icon,
+          size: 16,
+          color: theme.colorScheme.onSurface.withOpacity(0.7),
+        ),
         const SizedBox(width: 6),
         Text(
           "$label: ",
-          style: theme.textTheme.bodyMedium
-              ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
         ),
-        Text(value,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildEllipsisIndicator(BuildContext context,
-      {required bool useCompressedStyle, required double width}) {
+  Widget _buildEllipsisIndicator(
+    BuildContext context, {
+    required bool useCompressedStyle,
+    required double width,
+  }) {
     final theme = Theme.of(context);
     final double height = useCompressedStyle ? 40 : 56;
     return Container(
@@ -150,8 +179,11 @@ class InventoryPoolCard extends StatelessWidget {
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(Icons.more_horiz_rounded,
-          size: 24, color: theme.colorScheme.onSurfaceVariant),
+      child: Icon(
+        Icons.more_horiz_rounded,
+        size: 24,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -169,7 +201,10 @@ class _ContextChip extends StatelessWidget {
 
   // --- NEW: Helper widget for the unassigned indicator badge ---
   Widget _buildUnassignedIndicator(
-      BuildContext context, int count, String contextTitle) {
+    BuildContext context,
+    int count,
+    String contextTitle,
+  ) {
     final theme = Theme.of(context);
     return Tooltip(
       // Using a new, more specific string from InventoryStrings
@@ -180,13 +215,11 @@ class _ContextChip extends StatelessWidget {
           color: theme.colorScheme.errorContainer,
           shape: BoxShape.circle,
           border: Border.all(
-              color: theme.colorScheme.onErrorContainer.withOpacity(0.5),
-              width: 1),
+            color: theme.colorScheme.onErrorContainer.withOpacity(0.5),
+            width: 1,
+          ),
         ),
-        constraints: const BoxConstraints(
-          minWidth: 20,
-          minHeight: 20,
-        ),
+        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
         child: Center(
           child: Text(
             count.toString(),
@@ -212,8 +245,9 @@ class _ContextChip extends StatelessWidget {
     final unassignedInContext = stock.unassignedCount;
     final totalCapacity = stock.physicalCount;
 
-    final double fillPercentage =
-        totalCapacity > 0 ? orderedCapacity / totalCapacity : 0.0;
+    final double fillPercentage = totalCapacity > 0
+        ? orderedCapacity / totalCapacity
+        : 0.0;
     final contextTitle = contextModel.getContextTitle(context);
     final double height = useCompressedStyle ? 42 : 56;
 
@@ -268,10 +302,12 @@ class _ContextChip extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(contextTitle,
-                  style: titleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                contextTitle,
+                style: titleStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const Spacer(),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -283,10 +319,7 @@ class _ContextChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                '$orderedCapacity / $totalCapacity',
-                style: detailStyle,
-              ),
+              Text('$orderedCapacity / $totalCapacity', style: detailStyle),
             ],
           ),
         ),
@@ -295,7 +328,10 @@ class _ContextChip extends StatelessWidget {
             top: -5,
             right: -5,
             child: _buildUnassignedIndicator(
-                context, unassignedInContext, contextTitle),
+              context,
+              unassignedInContext,
+              contextTitle,
+            ),
           ),
       ],
     );

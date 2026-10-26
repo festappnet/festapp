@@ -148,7 +148,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_center_events,d public.notification_center_deliveries)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text;
+DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text; contact jsonb;
 BEGIN
  IF e.kind='email_problem' AND public.notification_center_allowed(e,auth.uid()) THEN
   SELECT payload||jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'recipient',m.recipient,'customerName',coalesce(
@@ -170,10 +170,11 @@ BEGIN
   payload:=payload||jsonb_build_object('customerName',customer,'state',CASE WHEN EXISTS(
    SELECT 1 FROM public.occasion_users m WHERE m.occasion=e.occasion AND m."user"=(e.data->>'userId')::uuid) THEN 'membership_active' ELSE 'membership_left' END);
  END IF;
- IF e.data ? 'orderId' AND e.occasion IS NOT NULL THEN
-  SELECT nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),o.state INTO customer,actual_state
-   FROM eshop.orders o WHERE o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion;
-  payload:=payload||jsonb_build_object('customerName',customer,'state',coalesce(actual_state,e.data->>'state'));
+ IF e.data ? 'orderId' AND e.occasion IS NOT NULL AND public.notification_center_allowed(e,auth.uid()) THEN
+  SELECT jsonb_build_object('name',o.data->>'name','surname',o.data->>'surname','email',o.data->>'email'),o.state INTO contact,actual_state
+   FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=e.organization
+   WHERE o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion;
+  payload:=payload||jsonb_build_object('contact',coalesce(contact,'{}'),'customerName',nullif(trim(concat_ws(' ',contact->>'name',contact->>'surname')),''),'state',coalesce(actual_state,e.data->>'state'));
  END IF;
  IF e.kind='bank_problem' THEN
   SELECT bu.bank_account,u.id INTO account,un FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu
@@ -190,13 +191,55 @@ BEGIN
  'status',e.status,'data',payload,'occasionId',e.occasion,'occasionLink',oc.link,'occasionTitle',oc.title)
  FROM (SELECT 1) seed LEFT JOIN public.occasions oc ON oc.id=e.occasion AND oc.organization=e.organization);
 END $$;
+-- One authorized snapshot selector shared by feed, hydration and external legacy serializers.
+CREATE OR REPLACE FUNCTION public.notification_center_visible_internal(p_org bigint,p_snapshot bigint,p_current bigint DEFAULT NULL)
+RETURNS TABLE(event public.notification_center_events,delivery public.notification_center_deliveries,section integer)
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT e,d,CASE WHEN e.occasion IS NULL AND (p_current IS NULL OR cardinality(e.affected_occasions)=0 OR p_current=ANY(e.affected_occasions)) THEN 0
+ WHEN e.occasion=p_current THEN 1 ELSE 2 END
+ FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+ WHERE d.organization=p_org AND d.recipient=auth.uid() AND d.sequence<=p_snapshot AND public.notification_center_allowed(e,auth.uid())
+ AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient
+ AND newer.sequence<=p_snapshot AND newer.sequence>d.sequence);
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_visible_internal(bigint,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.get_notification_center_feed(p_organization bigint,p_current_occasion bigint DEFAULT NULL,
+ p_snapshot bigint DEFAULT NULL,p_cursor jsonb DEFAULT NULL,p_limit integer DEFAULT 30)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE snap bigint; tuple jsonb; items jsonb; tail jsonb; more boolean; lim integer:=greatest(1,least(p_limit,100));
+BEGIN
+ PERFORM public.notification_center_check_context(p_organization,p_current_occasion);
+ SELECT least(coalesce(p_snapshot,last_delivery_sequence),last_delivery_sequence) INTO snap FROM public.notification_center_user_state
+ WHERE organization=p_organization AND recipient=auth.uid(); snap:=coalesce(snap,0);
+ IF p_cursor IS NOT NULL AND p_cursor<>'null'::jsonb THEN
+  BEGIN
+   IF jsonb_typeof(p_cursor)<>'string' THEN RAISE EXCEPTION 'invalid cursor'; END IF;
+   tuple:=convert_from(decode(p_cursor#>>'{}','base64'),'UTF8')::jsonb;
+   IF jsonb_typeof(tuple)<>'object' OR NOT tuple ?& ARRAY['organization','snapshot','occasion','section','time','id']
+    OR (tuple->>'organization')::bigint IS DISTINCT FROM p_organization OR (tuple->>'snapshot')::bigint IS DISTINCT FROM snap
+    OR (tuple->>'occasion')::bigint IS DISTINCT FROM p_current_occasion OR (tuple->>'section')::int NOT BETWEEN 0 AND 2
+    OR (tuple->>'time')::timestamptz IS NULL OR (tuple->>'id')::uuid IS NULL THEN RAISE EXCEPTION 'invalid cursor'; END IF;
+  EXCEPTION WHEN OTHERS THEN RAISE invalid_parameter_value USING MESSAGE='notification_invalid_cursor'; END;
+ END IF;
+ WITH rows AS (SELECT v.*,row_number() OVER(ORDER BY section,(event).occurred_at DESC,(event).id DESC) position
+ FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v
+ WHERE tuple IS NULL OR section>(tuple->>'section')::int OR (section=(tuple->>'section')::int
+ AND ((event).occurred_at,(event).id)<((tuple->>'time')::timestamptz,(tuple->>'id')::uuid))
+ ORDER BY section,(event).occurred_at DESC,(event).id DESC LIMIT lim+1), page AS (SELECT * FROM rows WHERE position<=lim)
+ SELECT coalesce((SELECT jsonb_agg(public.notification_center_dto(event,delivery)||jsonb_build_object('section',section) ORDER BY position) FROM page),'[]'),
+ (SELECT jsonb_build_object('organization',p_organization,'snapshot',snap,'occasion',p_current_occasion,'section',section,'time',(event).occurred_at,'id',(event).id) FROM page ORDER BY position DESC LIMIT 1),
+ (SELECT count(*)>lim FROM rows) INTO items,tail,more;
+ RETURN jsonb_build_object('snapshot',snap,'items',items,'nextCursor',CASE WHEN more THEN to_jsonb(encode(convert_to(tail::text,'UTF8'),'base64')) END);
+END $$;
+REVOKE ALL ON FUNCTION public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer) TO authenticated;
 CREATE OR REPLACE FUNCTION public.get_notification_center_badge(p_organization bigint) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.notification_center_user_state;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
  SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
- RETURN jsonb_build_object('enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
+ RETURN jsonb_build_object('feedSupported',true,'enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
  'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
  WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
  AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
@@ -207,12 +250,10 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE items jsonb; next_cursor bigint;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
- WITH rows AS (SELECT public.notification_center_dto(e,d) item,d.sequence FROM public.notification_center_deliveries d
- JOIN public.notification_center_events e ON e.id=d.event_id WHERE d.organization=p_organization AND d.recipient=auth.uid()
- AND d.group_key=p_group_key AND d.sequence<=p_snapshot AND (p_cursor IS NULL OR d.sequence<p_cursor)
- AND public.notification_center_allowed(e,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer
- WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient AND newer.sequence<=p_snapshot AND newer.sequence>d.sequence)
- ORDER BY d.sequence DESC LIMIT greatest(1,least(p_limit,50)))
+ -- External legacy serializer for previously shipped clients only.
+ WITH rows AS (SELECT public.notification_center_dto(event,delivery) item,(delivery).sequence FROM
+ public.notification_center_visible_internal(p_organization,p_snapshot) WHERE (delivery).group_key=p_group_key
+ AND (p_cursor IS NULL OR (delivery).sequence<p_cursor) ORDER BY (delivery).sequence DESC LIMIT greatest(1,least(p_limit,50)))
  SELECT coalesce(jsonb_agg(item ORDER BY sequence DESC),'[]'),CASE WHEN count(*)=greatest(1,least(p_limit,50)) THEN min(sequence) END INTO items,next_cursor FROM rows;
  RETURN jsonb_build_object('items',items,'nextCursor',next_cursor);
 END $$;
@@ -224,13 +265,10 @@ BEGIN
  PERFORM public.notification_center_check_context(p_organization,p_current_occasion);
  SELECT least(coalesce(p_snapshot,last_delivery_sequence),last_delivery_sequence) INTO snap FROM public.notification_center_user_state
  WHERE organization=p_organization AND recipient=auth.uid(); snap:=coalesce(snap,0);
- WITH available AS (SELECT d.*,e.kind,e.occasion,oc.title,
- CASE WHEN e.occasion IS NULL AND (p_current_occasion IS NULL OR cardinality(e.affected_occasions)=0 OR p_current_occasion=ANY(e.affected_occasions)) THEN 0 WHEN e.occasion=p_current_occasion THEN 1 ELSE 2 END section
- FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
- LEFT JOIN public.occasions oc ON oc.id=e.occasion AND oc.organization=p_organization
- WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence<=snap AND public.notification_center_allowed(e,auth.uid())
- AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient
- AND newer.sequence<=snap AND newer.sequence>d.sequence)), grouped AS (
+ -- External legacy grouped page; authorization and revision selection share the feed owner.
+ WITH available AS (SELECT (delivery).*,(event).kind,(event).occasion,oc.title,v.section
+ FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v
+ LEFT JOIN public.occasions oc ON oc.id=(event).occasion AND oc.organization=p_organization), grouped AS (
  SELECT group_key,kind,occasion,title,section,count(*) n,max(sequence) latest FROM available GROUP BY group_key,kind,occasion,title,section
  ), page AS (SELECT * FROM grouped WHERE p_cursor IS NULL OR section>(p_cursor->>'section')::int OR
  (section=(p_cursor->>'section')::int AND (latest,group_key)<((p_cursor->>'sequence')::bigint,p_cursor->>'key'))
@@ -247,7 +285,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.open_notification_center(p_organization bigint,p_current_occasion bigint DEFAULT NULL,p_limit integer DEFAULT 30)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.notification_center_user_state; result jsonb;
+DECLARE s public.notification_center_user_state; result jsonb; feed jsonb;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization,p_current_occasion);
  INSERT INTO public.notification_center_user_state(organization,recipient) VALUES(p_organization,auth.uid()) ON CONFLICT DO NOTHING;
@@ -255,7 +293,10 @@ BEGIN
  UPDATE public.notification_center_user_state SET read_through_sequence=greatest(read_through_sequence,s.last_delivery_sequence)
  WHERE organization=p_organization AND recipient=auth.uid();
  result:=public.get_notification_center_page(p_organization,p_current_occasion,p_limit,s.last_delivery_sequence,NULL);
- RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence);
+ feed:=public.get_notification_center_feed(p_organization,p_current_occasion,s.last_delivery_sequence,NULL,p_limit);
+ RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence,'feedSupported',true,
+ 'feedItems',feed->'items',
+ 'feedNextCursor',feed->'nextCursor');
 END $$;
 CREATE OR REPLACE FUNCTION public.set_notification_center_muted(p_organization bigint,p_occasion bigint,p_muted boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -283,11 +324,8 @@ DECLARE result jsonb;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
  IF coalesce(cardinality(p_ids),0)>200 THEN RAISE EXCEPTION 'notification_update_limit'; END IF;
- SELECT coalesce(jsonb_agg(public.notification_center_dto(e,d) ORDER BY d.sequence DESC),'[]') INTO result
- FROM public.notification_center_events e JOIN public.notification_center_deliveries d ON d.event_id=e.id
- WHERE d.organization=p_organization AND d.recipient=auth.uid() AND e.id=ANY(p_ids) AND d.sequence<=p_snapshot
- AND public.notification_center_allowed(e,auth.uid()) AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries newer
- WHERE newer.event_id=d.event_id AND newer.recipient=d.recipient AND newer.sequence>d.sequence AND newer.sequence<=p_snapshot);
+ SELECT coalesce(jsonb_agg(public.notification_center_dto(event,delivery) ORDER BY (delivery).sequence DESC),'[]') INTO result
+ FROM public.notification_center_visible_internal(p_organization,p_snapshot) WHERE (event).id=ANY(p_ids);
  RETURN jsonb_build_object('items',result);
 END $$;
 REVOKE ALL ON FUNCTION public.get_notification_center_updates(bigint,bigint,uuid[]) FROM PUBLIC,anon;

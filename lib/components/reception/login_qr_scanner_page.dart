@@ -12,9 +12,9 @@ enum ReceptionLoginCredentialType { qr, manualCode }
 
 class ReceptionLoginCredential {
   const ReceptionLoginCredential.qr(this.value)
-      : type = ReceptionLoginCredentialType.qr;
+    : type = ReceptionLoginCredentialType.qr;
   const ReceptionLoginCredential.manualCode(this.value)
-      : type = ReceptionLoginCredentialType.manualCode;
+    : type = ReceptionLoginCredentialType.manualCode;
 
   final ReceptionLoginCredentialType type;
   final String value;
@@ -30,15 +30,18 @@ class LoginQrScannerPage extends StatefulWidget {
 
 class _LoginQrScannerPageState extends State<LoginQrScannerPage> {
   final _controller = MobileScannerController(
-      formats: [BarcodeFormat.qrCode],
-      detectionSpeed: DetectionSpeed.noDuplicates);
+    formats: [BarcodeFormat.qrCode],
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
   bool _handled = false;
   @override
   void initState() {
     super.initState();
     if (kIsWeb) {
-      LaunchUrlService.openExternalUrl('${AppConfig.webLink}/login-qr',
-          inCurrentWindow: true);
+      LaunchUrlService.openExternalUrl(
+        '${AppConfig.webLink}/login-qr',
+        inCurrentWindow: true,
+      );
     }
   }
 
@@ -75,42 +78,43 @@ class _LoginQrScannerPageState extends State<LoginQrScannerPage> {
   Widget build(BuildContext context) => kIsWeb
       ? const SizedBox.shrink()
       : Scaffold(
-      appBar: AppBar(title: Text(ReceptionStrings.scan)),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: MobileScanner(
-              controller: _controller,
-              onDetect: _detect,
-              errorBuilder: (context, error) =>
-                  Center(child: Text(ReceptionStrings.cameraUnavailable)),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: SafeArea(
-              top: false,
-              child: Center(
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ManualLoginCodeEntry(
-                      onSubmitted: _useManualCode,
-                      title: ReceptionStrings.enterManualCode,
-                      fieldLabel: ReceptionStrings.manualCode,
-                      submitLabel:
-                          MaterialLocalizations.of(context).okButtonLabel,
+          appBar: AppBar(title: Text(ReceptionStrings.scan)),
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: MobileScanner(
+                  controller: _controller,
+                  onDetect: _detect,
+                  errorBuilder: (context, error) =>
+                      Center(child: Text(ReceptionStrings.cameraUnavailable)),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: SafeArea(
+                  top: false,
+                  child: Center(
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: ManualLoginCodeEntry(
+                          onSubmitted: _useManualCode,
+                          title: ReceptionStrings.enterManualCode,
+                          fieldLabel: ReceptionStrings.manualCode,
+                          submitLabel: MaterialLocalizations.of(context)
+                              .okButtonLabel,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ));
+        );
 }

@@ -15,7 +15,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/views/waitlist_order_detail.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -23,7 +22,6 @@ import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/forms.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:trina_grid/trina_grid.dart';
 

@@ -26,7 +26,7 @@ BEGIN
  high:=CASE WHEN used::numeric/lim<0.85 THEN false WHEN used::numeric/lim>=0.9 THEN true ELSE coalesce((old.state->>'high')::boolean,false) END;
  next_state:=p_snapshot||jsonb_build_object('high',high);
  IF NOT FOUND THEN
-  INSERT INTO public.notification_center_source_state VALUES(p_org,p_key,next_state,0,clock_timestamp()) ON CONFLICT DO NOTHING;
+  INSERT INTO public.notification_center_source_state(organization,source_key,state,episode,observed_at) VALUES(p_org,p_key,next_state,0,clock_timestamp()) ON CONFLICT DO NOTHING;
   RETURN;
  END IF;
  crossing:=CASE WHEN remaining=0 AND (coalesce((old.state->>'limit')::bigint,0)<=0 OR coalesce((old.state->>'remainingPublic')::bigint,1)>0) THEN 'capacity_full'

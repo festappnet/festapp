@@ -45,41 +45,43 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
   @override
   Widget build(BuildContext context) {
     controller = SingleDataGridController<UnitUserModel>(
-        context: context,
-        loadData: () => DbUsers.getAllUsersFromUnit(widget.unit.id!),
-        fromPlutoJson: UnitUserModel.fromPlutoJson,
-        firstColumnType: DataGridFirstColumn.deleteAndCheck,
-        idColumn: Tb.occasion_users.user,
-        actionsExtended: DataGridActionsController(
-          areAllActionsEnabled: RightsService.canUpdateUnitUsers,
-        ),
-        getNewObject: () => UnitUserModel.newRow(widget.unit.id!),
-        headerChildren: [
-          if (RightsService.hasCapability(
-              AuthorizationCapabilities.unitUsersWrite))
-            DataGridAction(
-              name: CommonStrings.addExisting,
-              action: (SingleDataGridController p0, [_]) async {
-                var users = await DbUsers.getAllUsersFromUnit(widget.unit.id!);
-                await UsersTabHelper.addExistingToUnit(
-                  context,
-                  p0,
-                  users,
-                  controller!.reloadData,
-                  widget.unit.id!,
-                );
-              },
-            ),
+      context: context,
+      loadData: () => DbUsers.getAllUsersFromUnit(widget.unit.id!),
+      fromPlutoJson: UnitUserModel.fromPlutoJson,
+      firstColumnType: DataGridFirstColumn.deleteAndCheck,
+      idColumn: Tb.occasion_users.user,
+      actionsExtended: DataGridActionsController(
+        areAllActionsEnabled: RightsService.canUpdateUnitUsers,
+      ),
+      getNewObject: () => UnitUserModel.newRow(widget.unit.id!),
+      headerChildren: [
+        if (RightsService.hasCapability(
+          AuthorizationCapabilities.unitUsersWrite,
+        ))
           DataGridAction(
-            name: UserStrings.changePassword,
-            requiresSelection: true,
-            action: (SingleDataGridController p0, [_]) =>
-                UsersTabHelper.setPassword(context, p0),
-            isEnabled: RightsService.canUpdateUnitUsers,
+            name: CommonStrings.addExisting,
+            action: (SingleDataGridController p0, [_]) async {
+              var users = await DbUsers.getAllUsersFromUnit(widget.unit.id!);
+              await UsersTabHelper.addExistingToUnit(
+                context,
+                p0,
+                users,
+                controller!.reloadData,
+                widget.unit.id!,
+              );
+            },
           ),
-        ],
-        columnHelp: UserColumns.columnHelp,
-        columns: UserColumns.generateColumns(columnIdentifiers));
+        DataGridAction(
+          name: UserStrings.changePassword,
+          requiresSelection: true,
+          action: (SingleDataGridController p0, [_]) =>
+              UsersTabHelper.setPassword(context, p0),
+          isEnabled: RightsService.canUpdateUnitUsers,
+        ),
+      ],
+      columnHelp: UserColumns.columnHelp,
+      columns: UserColumns.generateColumns(columnIdentifiers),
+    );
 
     return SingleTableDataGrid<UnitUserModel>(controller!);
   }

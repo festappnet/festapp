@@ -1,6 +1,9 @@
 import 'dart:async';
+
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
+
 import 'occasion_sale_badge.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -73,14 +76,17 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
   }
 
   /// Builds a single stat widget with an icon, value, and tooltip.
-  Widget _buildStat(BuildContext context,
-      {required IconData icon,
-      required String value,
-      required String tooltip}) {
+  Widget _buildStat(
+    BuildContext context, {
+    required IconData icon,
+    required String value,
+    required String tooltip,
+  }) {
     final theme = Theme.of(context);
     final defaultColor = theme.colorScheme.onSurface.withOpacity(0.7);
-    final statsTextStyle =
-        theme.textTheme.bodySmall?.copyWith(color: defaultColor);
+    final statsTextStyle = theme.textTheme.bodySmall?.copyWith(
+      color: defaultColor,
+    );
 
     return Tooltip(
       message: tooltip,
@@ -102,15 +108,19 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
     final occasionEnd =
         occasion.saleOccasionEndUtc ?? occasion.endTime?.toUtc();
     final isPast = occasionEnd != null && !now.isBefore(occasionEnd);
-    final saleStatus = OccasionSaleStatus.resolve(occasion.saleForms,
-        now: now, occasionEnd: occasionEnd);
+    final saleStatus = OccasionSaleStatus.resolve(
+      occasion.saleForms,
+      now: now,
+      occasionEnd: occasionEnd,
+    );
     final showSaleBadge =
         !isPast && OccasionSaleBadge.isVisible(saleStatus, now);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final onSurfaceColor = theme.colorScheme.onSurface;
 
-    final cardColor = widget.backgroundColor ??
+    final cardColor =
+        widget.backgroundColor ??
         (isDarkMode ? Colors.grey[850]! : theme.cardColor);
 
     // Use a glowing primary color border for present events, otherwise a standard border.
@@ -139,8 +149,10 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                 children: [
                   PopupMenuButton<String>(
                     elevation: 0,
-                    icon: Icon(Icons.more_vert,
-                        color: onSurfaceColor.withOpacity(0.7)),
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: onSurfaceColor.withOpacity(0.7),
+                    ),
                     onSelected: (value) {
                       if (value == "app_landing")
                         widget.onSetAppLanding?.call();
@@ -151,10 +163,13 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                     itemBuilder: (BuildContext context) => [
                       if (widget.onSetAppLanding != null)
                         PopupMenuItem(
-                            value: 'app_landing',
-                            child: Text(widget.isAppLanding
+                          value: 'app_landing',
+                          child: Text(
+                            widget.isAppLanding
                                 ? UnitStrings.clearAppLanding
-                                : UnitStrings.setAppLanding)),
+                                : UnitStrings.setAppLanding,
+                          ),
+                        ),
                       if (widget.onCreateCopy != null)
                         PopupMenuItem(
                           value: "create_copy",
@@ -173,7 +188,8 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                         children: [
                           Padding(
                             padding: EdgeInsetsDirectional.only(
-                                end: showSaleBadge ? 24 : 0),
+                              end: showSaleBadge ? 24 : 0,
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.baseline,
                               textBaseline: TextBaseline.alphabetic,
@@ -182,38 +198,45 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                                 if (occasion.startTime != null &&
                                     occasion.endTime != null)
                                   Expanded(
-                                      child: Text(
-                                    TimeHelper.getMinimalisticDateRange(context,
-                                        occasion.startTime!, occasion.endTime!),
-                                    key: const ValueKey('occasion-card-date'),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
+                                    child: Text(
+                                      TimeHelper.getMinimalisticDateRange(
+                                        context,
+                                        occasion.startTime!,
+                                        occasion.endTime!,
+                                      ),
+                                      key: const ValueKey('occasion-card-date'),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )),
+                                  ),
                                 if (showSaleBadge) ...[
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: OccasionSaleBadge(
-                                        occasion: occasion,
-                                        status: saleStatus!,
-                                        now: now),
+                                      occasion: occasion,
+                                      status: saleStatus!,
+                                      now: now,
+                                    ),
                                   ),
                                 ],
                                 if (widget.badge != null) ...[
                                   const SizedBox(width: 8),
                                   Badge(
-                                      backgroundColor:
-                                          theme.colorScheme.primary,
-                                      textColor: theme.colorScheme.onPrimary,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 2),
-                                      textStyle: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                              fontWeight: FontWeight.bold),
-                                      label: Text(widget.badge!)),
+                                    backgroundColor: theme.colorScheme.primary,
+                                    textColor: theme.colorScheme.onPrimary,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    textStyle: theme.textTheme.labelSmall
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                    label: Text(widget.badge!),
+                                  ),
                                 ],
                               ],
                             ),
@@ -226,11 +249,8 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                             showDuration: const Duration(seconds: 8),
                             preferBelow: false,
                             constraints: BoxConstraints(
-                              maxWidth:
-                                  (MediaQuery.sizeOf(context).width - 32).clamp(
-                                0.0,
-                                360.0,
-                              ),
+                              maxWidth: (MediaQuery.sizeOf(context).width - 32)
+                                  .clamp(0.0, 360.0),
                             ),
                             margin: const EdgeInsets.symmetric(horizontal: 16),
                             padding: const EdgeInsets.symmetric(
@@ -257,8 +277,9 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                               height: 1.4,
                             ),
                             child: Padding(
-                              padding:
-                                  const EdgeInsetsDirectional.only(end: 28),
+                              padding: const EdgeInsetsDirectional.only(
+                                end: 28,
+                              ),
                               child: Text(
                                 occasion.title ?? '',
                                 style: theme.textTheme.titleMedium?.copyWith(
@@ -271,55 +292,69 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                           ),
                           if (occasion.stats != null) ...[
                             if (FeatureService.isFeatureEnabled(
-                                FeatureConstants.form,
-                                features: occasion.features)) ...[
+                              FeatureConstants.form,
+                              features: occasion.features,
+                            )) ...[
                               SizedBox(height: showSaleBadge ? 4 : 8),
-                              Builder(builder: (context) {
-                                final bool hasTickets =
-                                    FeatureService.isFeatureEnabled(
+                              Builder(
+                                builder: (context) {
+                                  final bool hasTickets =
+                                      FeatureService.isFeatureEnabled(
                                         FeatureConstants.ticket,
-                                        features: occasion.features);
+                                        features: occasion.features,
+                                      );
 
-                                return Wrap(
-                                  spacing: 12.0,
-                                  runSpacing: 4.0,
-                                  children: [
-                                    _buildStat(context,
+                                  return Wrap(
+                                    spacing: 12.0,
+                                    runSpacing: 4.0,
+                                    children: [
+                                      _buildStat(
+                                        context,
                                         icon: hasTickets
                                             ? Icons.confirmation_number_outlined
                                             : Icons.chat_bubble,
-                                        value: (occasion.stats!.total -
-                                                occasion.stats!.storno)
-                                            .toString(),
+                                        value:
+                                            (occasion.stats!.total -
+                                                    occasion.stats!.storno)
+                                                .toString(),
                                         tooltip: hasTickets
                                             ? OrdersStrings.tickets
-                                            : OrdersStrings.applications),
-                                    _buildStat(context,
+                                            : OrdersStrings.applications,
+                                      ),
+                                      _buildStat(
+                                        context,
                                         icon: Icons.check_circle_outline,
-                                        value: (occasion.stats!.paidOrSent +
-                                                occasion.stats!.used)
-                                            .toString(),
-                                        tooltip: OrdersStrings.gridPaidOrSent),
-                                    _buildStat(context,
-                                        icon: Icons.shopping_cart_outlined,
                                         value:
-                                            occasion.stats!.ordered.toString(),
-                                        tooltip: OrdersStrings.gridOrdered),
-                                  ],
-                                );
-                              })
+                                            (occasion.stats!.paidOrSent +
+                                                    occasion.stats!.used)
+                                                .toString(),
+                                        tooltip: OrdersStrings.gridPaidOrSent,
+                                      ),
+                                      _buildStat(
+                                        context,
+                                        icon: Icons.shopping_cart_outlined,
+                                        value: occasion.stats!.ordered
+                                            .toString(),
+                                        tooltip: OrdersStrings.gridOrdered,
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                             ] else ...[
                               SizedBox(height: showSaleBadge ? 4 : 8),
                               Wrap(
                                 spacing: 12.0,
                                 runSpacing: 4.0,
                                 children: [
-                                  _buildStat(context,
-                                      icon: Icons.group_outlined,
-                                      value: occasion.stats!.users.toString(),
-                                      tooltip: CommonStrings.users),
+                                  _buildStat(
+                                    context,
+                                    icon: Icons.group_outlined,
+                                    value: occasion.stats!.users.toString(),
+                                    tooltip: CommonStrings.users,
+                                  ),
                                 ],
-                              )
+                              ),
                             ],
                           ],
                         ],
@@ -328,10 +363,13 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                   ),
                   if (widget.isAppLanding)
                     Tooltip(
-                        message: UnitStrings.appLanding,
-                        child: Icon(Icons.home,
-                            semanticLabel: UnitStrings.appLanding,
-                            color: theme.colorScheme.primary)),
+                      message: UnitStrings.appLanding,
+                      child: Icon(
+                        Icons.home,
+                        semanticLabel: UnitStrings.appLanding,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
                   const SizedBox(width: 8),
                 ],
               ),
@@ -342,8 +380,10 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
             top: 0,
             bottom: 0,
             child: IgnorePointer(
-              child: Icon(Icons.chevron_right,
-                  color: onSurfaceColor.withOpacity(0.5)),
+              child: Icon(
+                Icons.chevron_right,
+                color: onSurfaceColor.withOpacity(0.5),
+              ),
             ),
           ),
         ],

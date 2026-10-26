@@ -1,7 +1,8 @@
+import {fileURLToPath} from 'node:url';
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { symlinkSync, mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -14,6 +15,9 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(),'organizer-context-'));
   t.after(()=>rmSync(root,{recursive:true,force:true}));
   mkdirSync(join(root,'automation/release'),{recursive:true});
+  cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
+  symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
+  cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
   cpSync(source,join(root,'automation/release/organizers'),{recursive:true});
   cpSync(new URL('../release/render_organizer_page.mjs',import.meta.url),join(root,'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../../web/organizers-media/',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
@@ -28,7 +32,12 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   writeFileSync(join(f.root,'web/organizers/ball-ticket-sales'),'retired article');
   const result=f.render(); assert.equal(result.status,0,result.stderr);
   const context=await verifyMarketingBundle(join(f.root,'web'),f.configPath);
-  assert.equal(context.pages.length,2);
+  assert.equal(context.pages.length,4);
+  const headerOf=html=>html.match(/<header[\s\S]*?<\/header>/)[0].replace(' auth-pending','');
+  const homeHtml=readFileSync(join(f.root,'web/organizers-page'),'utf8'),header=headerOf(homeHtml);
+  assert.ok(!header.includes('/co-je-nove'));
+  assert.match(homeHtml.match(/<footer[\s\S]*?<\/footer>/)[0],/href="\/co-je-nove"/);
+  for (const page of context.pages) assert.equal(headerOf(readFileSync(join(f.root,'web',page.asset),'utf8')),header,'all public pages use the upstream shared header');
   assert.equal(existsSync(join(f.root,'web/organizers/ball-ticket-sales')),false);
   assert.deepEqual(context.redirects,[{from:'/prodej-vstupenek-na-ples',to:'/'}]);
   const manifest=JSON.parse(readFileSync(join(f.root,'web/organizer-pages.json')));

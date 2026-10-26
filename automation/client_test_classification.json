@@ -958,6 +958,34 @@
       "sources": [
         "test/services/help_destination_test.dart"
       ]
+    },
+    "test/components/navigation/help_occasion_picker_test.dart": {
+      "kind": "environment",
+      "reason": "Checks occasion-specific help navigation with the public widget environment.",
+      "sources": [
+        "test/components/navigation/help_occasion_picker_test.dart"
+      ]
+    },
+    "test/components/navigation/help_organization_picker_test.dart": {
+      "kind": "environment",
+      "reason": "Checks organization help destination selection and capability-scoped context.",
+      "sources": [
+        "test/components/navigation/help_organization_picker_test.dart"
+      ]
+    },
+    "test/components/navigation/organizer_creation_entry_test.dart": {
+      "kind": "environment",
+      "reason": "Checks canonical organizer creation entry and retained route behavior.",
+      "sources": [
+        "test/components/navigation/organizer_creation_entry_test.dart"
+      ]
+    },
+    "test/services/organizer_destination_test.dart": {
+      "kind": "environment",
+      "reason": "Checks configured organizer destination routing in the Flutter environment.",
+      "sources": [
+        "test/services/organizer_destination_test.dart"
+      ]
     }
   }
 }

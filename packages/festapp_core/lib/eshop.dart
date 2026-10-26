@@ -15,3 +15,4 @@ export 'src/eshop/order_change_summary.dart';
 export 'src/eshop/product_selection.dart';
 
 export 'src/eshop/bank_sync_warning.dart';
+export 'src/eshop/customer_label.dart';

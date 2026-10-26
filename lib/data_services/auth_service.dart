@@ -23,6 +23,7 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:festapp_core/map.dart';
+
 import '../components/users/logout_flow.dart';
 
 enum InvitationDeliveryStatus { sent, queued }
@@ -42,8 +43,9 @@ class AuthService {
     try {
       DbEvents.invalidateSavedProgramMutationScope();
       RightsService.invalidateCapabilities(clearIdentity: true);
-      final auth =
-          await _supabase.auth.setSession(session['refresh_token'] as String);
+      final auth = await _supabase.auth.setSession(
+        session['refresh_token'] as String,
+      );
       if (auth.session?.user.id != result['userId']) {
         throw const AuthException('account_identity_inconsistent');
       }
@@ -73,22 +75,28 @@ class AuthService {
   static Future<void> login(String email, String password) async {
     DbEvents.invalidateSavedProgramMutationScope();
     if (RegExp(r'^\d{6}$').hasMatch(password)) {
-      final exchange =
-          await _supabase.functions.invoke('exchange-sign-in-code', body: {
-        'email': AppConfig.removeUserPrefix(email),
-        'code': password,
-        'organization': AppConfig.organization,
-      });
-      final refreshToken =
-          exchange.data is Map ? exchange.data['refresh_token'] : null;
+      final exchange = await _supabase.functions.invoke(
+        'exchange-sign-in-code',
+        body: {
+          'email': AppConfig.removeUserPrefix(email),
+          'code': password,
+          'organization': AppConfig.organization,
+        },
+      );
+      final refreshToken = exchange.data is Map
+          ? exchange.data['refresh_token']
+          : null;
       if (refreshToken is String && refreshToken.isNotEmpty) {
         final data = await _supabase.auth.setSession(refreshToken);
+        if (data.session == null) { throw const AuthException('Invalid code session'); }
         await _finalizeLogin(data.session!);
         return;
       }
     }
-    final data = await _supabase.auth
-        .signInWithPassword(email: email, password: password);
+    final data = await _supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
     await _finalizeLogin(data.session!);
   }
 
@@ -104,7 +112,8 @@ class AuthService {
   }
 
   static Future<void> _loginWithReceptionCredential(
-      Map<String, dynamic> credential) async {
+    Map<String, dynamic> credential,
+  ) async {
     DbEvents.invalidateSavedProgramMutationScope();
     final response = await _supabase.functions.invoke(
       'exchange-login-qr',
@@ -126,14 +135,18 @@ class AuthService {
       throw Exception('Account is not available for this organization.');
     }
     await _secureStorage.write(
-        key: REFRESH_TOKEN_KEY, value: session.refreshToken.toString());
+      key: REFRESH_TOKEN_KEY,
+      value: session.refreshToken.toString(),
+    );
     try {
       await RightsService.updateAppData(force: true, refreshOffline: false);
       if (AppConfig.isAppSupported) {
         if (ClientSyncRuntime.isV1Selected) {
           await ClientSyncRuntime.identityChanged();
-          await ClientSyncRuntime.refresh(SyncReason.login,
-              privateConsumer: true);
+          await ClientSyncRuntime.refresh(
+            SyncReason.login,
+            privateConsumer: true,
+          );
           await DbEvents.synchronizeMySchedule(join: true);
         } else {
           await DbEvents.synchronizeMySchedule(join: true);
@@ -161,26 +174,33 @@ class AuthService {
       clearRights: () {
         RightsService.invalidateCapabilities(clearIdentity: true);
       },
-      detachNotifications: () => NotificationHelper.logoutCurrentUser()
-          .timeout(const Duration(seconds: 2)),
+      detachNotifications: () => NotificationHelper.logoutCurrentUser().timeout(
+        const Duration(seconds: 2),
+      ),
       onCleanupError: (step, error) =>
           AppLogger.error('Post-logout $step cleanup failed: $error'),
     );
   }
 
   static Future<dynamic> resetPasswordForEmail(String email) async {
-    return await _supabase.functions.invoke("send-reset-password-link",
-        body: {"email": email, "organization": AppConfig.organization});
+    return await _supabase.functions.invoke(
+      "send-reset-password-link",
+      body: {"email": email, "organization": AppConfig.organization},
+    );
   }
 
-  static Future<InvitationDeliveryStatus> sendSignInCode(OccasionUserModel ou,
-      {String? requestId}) async {
-    final response =
-        await _supabase.functions.invoke("send-sign-in-code", body: {
-      "oc": ou.occasion,
-      "usr": ou.user,
-      if (requestId != null) "requestId": requestId,
-    });
+  static Future<InvitationDeliveryStatus> sendSignInCode(
+    OccasionUserModel ou, {
+    String? requestId,
+  }) async {
+    final response = await _supabase.functions.invoke(
+      "send-sign-in-code",
+      body: {
+        "oc": ou.occasion,
+        "usr": ou.user,
+        if (requestId != null) "requestId": requestId,
+      },
+    );
     return switch (response.data?["status"]) {
       "sent" => InvitationDeliveryStatus.sent,
       "queued" => InvitationDeliveryStatus.queued,
@@ -189,10 +209,10 @@ class AuthService {
   }
 
   static Future<bool> sendAppLinks(OccasionUserModel ou) async {
-    final response = await _supabase.functions.invoke("send-app-links", body: {
-      "oc": ou.occasion,
-      "usr": ou.user,
-    });
+    final response = await _supabase.functions.invoke(
+      "send-app-links",
+      body: {"oc": ou.occasion, "usr": ou.user},
+    );
     return response.data?["status"] == "sent";
   }
 
@@ -202,13 +222,15 @@ class AuthService {
           RightsService.currentUser() ??
           UserInfoModel();
     }
-    final participation =
-        await DbUsers.getOccasionUser(AuthService.currentUserId());
+    final participation = await DbUsers.getOccasionUser(
+      AuthService.currentUserId(),
+    );
     var user = (RightsService.currentUser() ?? UserInfoModel())
         .withOccasionParticipation(participation);
     if (RightsService.currentOccasionUser()?.role != null) {
-      user.roleString =
-          await getRoleInfo(RightsService.currentOccasionUser()!.role!);
+      user.roleString = await getRoleInfo(
+        RightsService.currentOccasionUser()!.role!,
+      );
     }
     user.userGroups = await DbGroups.getUserGroups();
     var eUserGroup = user.userGroups!.firstWhereOrNull((g) => g.type == null);
@@ -220,10 +242,16 @@ class AuthService {
     }
     var oc = RightsService.currentOccasion()!;
     var place = oc.getReferenceToService(
-        DbOccasions.serviceTypeAccommodation, user.occasionUser?.services);
+      DbOccasions.serviceTypeAccommodation,
+      user.occasionUser?.services,
+    );
     if (place != null) {
       user.accommodationPlace = PlaceModel(
-          id: place.reference, title: place.title, description: "", type: "");
+        id: place.reference,
+        title: place.title,
+        description: "",
+        type: "",
+      );
     }
     return user;
   }
@@ -265,8 +293,9 @@ class AuthService {
       var result = await _supabase.auth.setSession(refresh.toString());
       if (result.user != null) {
         await _secureStorage.write(
-            key: REFRESH_TOKEN_KEY,
-            value: _supabase.auth.currentSession!.refreshToken.toString());
+          key: REFRESH_TOKEN_KEY,
+          value: _supabase.auth.currentSession!.refreshToken.toString(),
+        );
         return true;
       } else {
         await NotificationHelper.logoutCurrentUser();
@@ -344,34 +373,40 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>> register(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     data["organization"] = AppConfig.organization;
     var resp = await _supabase.functions.invoke("register", body: data);
     return resp.data;
   }
 
   static Future<void> unsafeChangeUserPassword(
-      OccasionUserModel occasionUserModel, String pwd) async {
-    var data = await _supabase.rpc("reset_user_password",
-        params: {"p_user_id": occasionUserModel.user, "p_password": pwd});
+    OccasionUserModel occasionUserModel,
+    String pwd,
+  ) async {
+    var data = await _supabase.rpc(
+      "reset_user_password",
+      params: {"p_user_id": occasionUserModel.user, "p_password": pwd},
+    );
     if (data["code"] != 200) {
       throw Exception(data["message"]);
     }
   }
 
   static Future<dynamic> changePassword(String token, String pw) async {
-    return await _supabase.rpc("set_user_password_token", params: {
-      "token": token,
-      "password": pw,
-    });
+    return await _supabase.rpc(
+      "set_user_password_token",
+      params: {"token": token, "password": pw},
+    );
   }
 
   static Future<void> recoverSession(String refreshToken) async {
     final response = await _supabase.auth.setSession(refreshToken);
     if (response.session != null) {
       await _secureStorage.write(
-          key: REFRESH_TOKEN_KEY,
-          value: response.session!.refreshToken.toString());
+        key: REFRESH_TOKEN_KEY,
+        value: response.session!.refreshToken.toString(),
+      );
     }
   }
 }

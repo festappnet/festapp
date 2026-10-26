@@ -35,17 +35,14 @@ class _ServiceTabState extends State<ServiceTab> {
   /// Grid columns limited to what the ServicesFeature permits. Accommodation
   /// and food/diet columns are only included when their setting is enabled.
   List<String> get _columnIdentifiers => [
-        UserColumns.ID,
-        UserColumns.EMAIL,
-        UserColumns.NAME,
-        UserColumns.SURNAME,
-        if (_allowAccommodation) UserColumns.ACCOMMODATION,
-        if (_allowFood) ...[
-          UserColumns.FOOD,
-          UserColumns.DIET,
-        ],
-        UserColumns.NOTE,
-      ];
+    UserColumns.ID,
+    UserColumns.EMAIL,
+    UserColumns.NAME,
+    UserColumns.SURNAME,
+    if (_allowAccommodation) UserColumns.ACCOMMODATION,
+    if (_allowFood) ...[UserColumns.FOOD, UserColumns.DIET],
+    UserColumns.NOTE,
+  ];
 
   List<ServiceItemModel> allFood = [];
   List<ServiceItemModel> allAccommodation = [];
@@ -68,12 +65,12 @@ class _ServiceTabState extends State<ServiceTab> {
   }
 
   List<TrinaColumn> _buildColumns() => UserColumns.generateColumns(
-        _columnIdentifiers,
-        data: {
-          UserColumns.FOOD: allFood,
-          UserColumns.ACCOMMODATION: allAccommodation,
-        },
-      );
+    _columnIdentifiers,
+    data: {
+      UserColumns.FOOD: allFood,
+      UserColumns.ACCOMMODATION: allAccommodation,
+    },
+  );
 
   SingleDataGridController<OccasionUserModel> _createController() =>
       SingleDataGridController<OccasionUserModel>(
@@ -93,14 +90,16 @@ class _ServiceTabState extends State<ServiceTab> {
               action: (SingleDataGridController p0, [_]) =>
                   _accommodationDefinition(p0),
               isEnabled: () => RightsService.hasCapability(
-                  AuthorizationCapabilities.servicesWrite),
+                AuthorizationCapabilities.servicesWrite,
+              ),
             ),
           if (_allowFood)
             DataGridAction(
               name: OccasionServicesStrings.foodSettings,
               action: (SingleDataGridController p0, [_]) => _foodDefinition(p0),
               isEnabled: () => RightsService.hasCapability(
-                  AuthorizationCapabilities.servicesWrite),
+                AuthorizationCapabilities.servicesWrite,
+              ),
             ),
         ],
         columns: _buildColumns(),
@@ -112,7 +111,8 @@ class _ServiceTabState extends State<ServiceTab> {
   }
 
   Future<void> _accommodationDefinition(
-      SingleDataGridController<ITrinaRowModel> controller) async {
+    SingleDataGridController<ITrinaRowModel> controller,
+  ) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -129,7 +129,8 @@ class _ServiceTabState extends State<ServiceTab> {
   }
 
   Future<void> _foodDefinition(
-      SingleDataGridController<ITrinaRowModel> controller) async {
+    SingleDataGridController<ITrinaRowModel> controller,
+  ) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {

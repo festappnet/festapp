@@ -1,4 +1,4 @@
-# Festapp patch for `maplibre_ios` 0.3.6
+# Festapp patch for `maplibre_ios` 0.3.7
 
 This repository pin adds the missing `MapLibrePlugin` declaration to upstream's
 pre-generated public Swift compatibility header, `MapLibreIos.h`. Upstream
@@ -23,3 +23,11 @@ Remove this package and the root `dependency_overrides` entry once an upstream
 release exposes `MapLibrePlugin` to the registrant during a clean unsigned iOS
 archive and supports style-image pixel ratios. Validate removal with
 `fvm flutter build ipa --release --no-codesign` and a Retina map-icon check.
+
+## Upstream review: 0.3.7 (2026-10-25)
+
+Rebased this adapter onto the published 0.3.7 archive while retaining the
+patches described above. Upstream still lacks the pixel-ratio and retained-map
+activity contracts. Android still needs the asynchronous style-loaded callback
+and a fixed native renderer version; iOS still needs the public plugin header
+and navigation-grade location policy. The dependency overrides remain required.

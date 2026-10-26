@@ -1954,6 +1954,7 @@
     "noExistingParticipants": "Žádní další účastníci nejsou k dispozici. Jednotka zatím nemá účastníky, nebo už jsou všichni přidaní. Vraťte se do seznamu a tlačítkem Přidat vytvořte nového účastníka."
   },
   "Common": {
+    "platformUpdates": "Co je nového",
     "fieldCannotBeEmpty": "Pole nemůže být prázdné",
     "invalidFormat": "Neplatný formát",
     "back": "Zpět",
@@ -4326,18 +4327,22 @@
     "section2": "Ostatní akce",
     "more": "Zobrazit další",
     "unavailable": "Detail již není dostupný nebo k němu nemáte oprávnění.",
+    "form": "Formulář",
+    "acceptingWaitlist": "Příjem náhradníků",
     "kinds": {
+      "form_closed": "Formulář uzavřen",
+      "form_opened": "Formulář otevřen",
       "occasion_joined": "Noví účastníci akce",
       "event_capacity_full": "Událost je plně obsazena",
-      "order_created": "Nové objednávky",
-      "waitlist_registered": "Nové registrace do pořadníku",
-      "order_cancelled": "Zrušené objednávky",
+      "order_created": "Nová objednávka",
+      "waitlist_registered": "Nový náhradník",
+      "order_cancelled": "Storno objednávky",
       "offer_accepted": "Nabídka přijata",
       "offer_declined": "Nabídka odmítnuta",
       "offer_expired": "Nabídka vypršela",
       "capacity_warning": "Kapacita nad 90 %",
-      "capacity_full": "Vyprodáno",
-      "capacity_reopened": "Prodej znovu otevřen",
+      "capacity_full": "Kapacita naplněna",
+      "capacity_reopened": "Místa znovu dostupná",
       "bank_problem": "Bankovní spojení vyžaduje pozornost",
       "email_problem": "Doručení e-mailu vyžaduje pozornost"
     },
@@ -4364,6 +4369,10 @@
       "used": "Použito"
     },
     "reasons": {
+      "schedule_changed": "Změna termínu",
+      "schedule_end": "Konec termínu",
+      "schedule_start": "Začátek termínu",
+      "manual": "Ruční změna",
       "complaint": "Příjemce označil e-mail jako spam",
       "bounce": "E-mail se nepodařilo doručit",
       "reject": "E-mail byl odmítnut",

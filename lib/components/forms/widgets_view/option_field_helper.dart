@@ -69,7 +69,7 @@ class OptionFieldHelper {
     final hasAmount = amount != null && amount != 0;
     // No amount → render nothing. Global description alone is not enough.
     if (!hasAmount) return null;
-    final amountText = formatMetaSurchargeAmount(context, amount!, currency);
+    final amountText = formatMetaSurchargeAmount(context, amount, currency);
     return desc != null ? '$amountText — $desc' : amountText;
   }
 

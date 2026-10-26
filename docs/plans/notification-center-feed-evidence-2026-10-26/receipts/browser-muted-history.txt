@@ -1,0 +1,7 @@
+- dialog "Nastavení upozorněníZavřítAktuální akceDalší možnosti26. 10. 2026 11:34\nStorno objednávky\nnotificati" [ref=e236] focusable [tabindex]
+  - button "Nastavení upozornění" [ref=e237]
+  - button "Zavřít" [ref=e238]
+  - button "Další možnosti" [expanded=false, ref=e239]
+  - button "26. 10. 2026 11:34 Storno objednávky notification-customer-1@example.invalid Počet míst: 1 Dnes v 11:34" [ref=e240]
+  - button "26. 10. 2026 11:34 Nový náhradník waiting@example.invalid Počet míst: 1 Dnes v 11:34" [ref=e241]
+  - button "26. 10. 2026 11:34 Nová objednávka two-tickets@example.invalid Počet míst: 2 Dnes v 11:34" [ref=e242]

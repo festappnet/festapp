@@ -423,6 +423,7 @@
     "foodCreateHint": "Щоб створити їжу, заповніть назву, унікальний код та посилання на подію."
   },
   "Common": {
+    "platformUpdates": "Що нового",
     "contextLoadFailed": "Не вдалося перевірити доступ. Спробуйте ще раз.",
     "add": "Додати",
     "addExisting": "Додати існуючий",
@@ -2482,18 +2483,22 @@
     "section2": "Інші події",
     "more": "Показати ще",
     "unavailable": "Деталі більше недоступні або у вас немає доступу.",
+    "form": "Форма",
+    "acceptingWaitlist": "Прийом до черги очікування",
     "kinds": {
+      "form_closed": "Форму закрито",
+      "form_opened": "Форму відкрито",
       "occasion_joined": "Нові учасники заходу",
       "event_capacity_full": "Подія повністю заповнена",
-      "order_created": "Нові замовлення",
-      "waitlist_registered": "Нові реєстрації в черзі",
-      "order_cancelled": "Скасовані замовлення",
+      "order_created": "Нове замовлення",
+      "waitlist_registered": "Новий запис у черзі",
+      "order_cancelled": "Скасування замовлення",
       "offer_accepted": "Пропозицію прийнято",
       "offer_declined": "Пропозицію відхилено",
       "offer_expired": "Пропозиція прострочена",
       "capacity_warning": "Заповненість понад 90%",
-      "capacity_full": "Розпродано",
-      "capacity_reopened": "Продаж відновлено",
+      "capacity_full": "Ліміт місць досягнуто",
+      "capacity_reopened": "Місця знову доступні",
       "bank_problem": "Банківське з’єднання потребує уваги",
       "email_problem": "Доставка пошти потребує уваги"
     },
@@ -2520,6 +2525,10 @@
       "used": "Використано"
     },
     "reasons": {
+      "schedule_changed": "Розклад змінено",
+      "schedule_end": "Заплановане завершення",
+      "schedule_start": "Запланований початок",
+      "manual": "Ручна зміна",
       "complaint": "Одержувач позначив лист як спам",
       "bounce": "Не вдалося доставити лист",
       "reject": "Лист відхилено",

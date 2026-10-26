@@ -1,0 +1,23 @@
+vstupenky.online connects your Joomla website to an existing public ticket order form in the vstupenky.online service.
+
+Install the module ZIP, create a site module, paste the saved public /form/ URL and publish it in a template position or an article using Joomla's standard {loadmoduleid ID} syntax. Native module settings and onboarding are available in English and Czech. No custom HTML, API key or organizer password is required in Joomla.
+
+Features:
+- Automatic iframe height or a fixed height from 240 to 4000 pixels.
+- Optional website appearance inheritance through the service-owned embed helper.
+- Accessible iframe title and a public fallback link opening in a new tab.
+- Strict validation of the vstupenky.online HTTPS origin and canonical public form path.
+- Multiple module instances with the helper loaded once per page.
+- Standard Joomla update system with a public update feed and SHA-256 package checksum.
+
+A separate organizer account and a saved public form in vstupenky.online are required. Event setup, prices, seat reservations, orders, payments, ticket emails, PDFs and admission remain in the external service. The module does not introduce a second checkout or store buyer orders in Joomla.
+
+The Joomla module is distributed under GPL version 2 or later. The external service has its own commercial terms; service pricing is agreed separately. Creating an account does not imply that ticketing service is permanently free. Please review the current offer, terms and privacy information before publishing a form.
+
+Tested on Joomla 5.4.10 with PHP 8.3.36 and Joomla 6.1.4 with PHP 8.4.27. The update channel currently targets Joomla 5.4 and 6.1, with PHP 8.3 or newer. Browser smoke checks include a 320px viewport, keyboard navigation, automatic height, opening and closing the seat map and the helper-blocked fallback. Production smoke checks do not submit purchases or reserve seats.
+
+Installation and documentation: https://github.com/festappnet/festapp/tree/main/integrations/joomla
+Service and current offer: https://vstupenky.online/pro-poradatele
+Support: https://vstupenky.online/support/
+Terms: https://vstupenky.online/terms/
+Privacy: https://vstupenky.online/privacy/

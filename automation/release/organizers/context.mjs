@@ -1,12 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveUpdates } from '../platform_updates/context.mjs';
 import { resolvePages, resolveRedirects } from './page_definitions.mjs';
 const directory = path.dirname(fileURLToPath(import.meta.url));
 export function readConfig(file) {
   return Object.fromEntries([...fs.readFileSync(file,'utf8').matchAll(/^([A-Z_0-9]+)=(.*)$/gm)].map(([,key,value]) => [key,value.trim().replace(/^(['"])(.*)\1$/, '$2')]));
 }
-export function resolveContext(config, { profilesDir = directory, preview = false } = {}) {
+export function resolveContext(config, { profilesDir = directory, preview = false, updatesOptions = {} } = {}) {
   const url = new URL(config.WEB_LINK);
   if (url.protocol !== 'https:' || url.username || url.password || url.port || url.pathname !== '/' || url.search || url.hash || (config.DOMAIN && config.DOMAIN !== url.hostname)) throw new Error('DOMAIN/WEB_LINK must agree on a bare HTTPS origin');
   const flag = config.WEB_ORGANIZER_LANDING_ENABLED ?? 'false';
@@ -55,7 +56,13 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   for (const section of clips.sections ?? []) for (const id of [...(section.clips ?? []), ...(section.secondaryClips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required clip ${id}`);
   for (const page of pages) for (const id of page.sections ?? []) if (!(clips.sections ?? []).some(section => section.id === id)) throw new Error(`Missing required section ${id}`);
   for (const page of pages) for (const id of [...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
-  return { ...context, locale, profileId: config.WEB_ORGANIZER_CONTENT_PROFILE, pages, redirects, projection, clips };
+  if (profile.platformUpdates !== undefined && typeof profile.platformUpdates !== 'boolean') throw new Error('Invalid platformUpdates capability');
+  const updates=profile.platformUpdates===true ? resolveUpdates(context.origin,updatesOptions) : null;
+  for (const page of updates?.pages ?? []) {
+    if (pages.some(existing=>existing.path===page.path || existing.id===page.id || existing.asset===page.asset)) throw new Error('Duplicate public update URL/identity');
+    pages.push(page);
+  }
+  return { ...context, updates, locale, profileId: config.WEB_ORGANIZER_CONTENT_PROFILE, pages, redirects, projection, clips };
 }
 export function marketingMedia(context) {
   if (!context.enabled) return [];
@@ -63,11 +70,12 @@ export function marketingMedia(context) {
   const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
   return [...new Set([projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
-    ...(clips.sections ?? []).flatMap(section=>[section.companion?.image,...(section.showcase?.items ?? []).map(item=>item.image)])].filter(Boolean))];
+    ...(clips.sections ?? []).flatMap(section=>[section.companion?.image,...(section.showcase?.items ?? []).map(item=>item.image)]), ...(context.updates?.assets ?? [])].filter(Boolean))];
 }
 export function publicManifest(context) {
   return { schemaVersion: 1, enabled: context.enabled, origin: context.origin, locale: context.locale ?? null,
-    pages: context.pages.map(({id,path,asset,canonical,title,heading}) => ({id,path,asset,canonical,title,heading:heading ?? null})),
+    feeds: context.updates ? ['/platform-updates.json'] : [],
+    pages: context.pages.map(({id,type,locale,path,asset,canonical,title,heading}) => ({id,...(type?{type,locale}:{}),path,asset,canonical,title,heading:heading ?? null})),
     redirects: context.redirects ?? [],
     sitemapPaths: context.enabled ? [...context.pages.map(page=>page.path),'/events'] : ['/'] };
 }

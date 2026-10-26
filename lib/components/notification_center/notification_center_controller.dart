@@ -1,53 +1,41 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef NotificationRead = Future<dynamic> Function(
-    String, Map<String, dynamic>);
+  String,
+  Map<String, dynamic>,
+);
 
 class NotificationItem {
   NotificationItem.fromJson(Map<String, dynamic> json)
-      : id = json['id'].toString(),
-        kind = json['kind'] as String? ?? '',
-        status = json['status'] as String? ?? '',
-        occurredAt = DateTime.tryParse(json['occurredAt']?.toString() ?? ''),
-        occasionId = (json['occasionId'] as num?)?.toInt(),
-        occasionLink = json['occasionLink'] as String?,
-        data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
+    : id = json['id'].toString(),
+      section = json['section'] as int? ?? 2,
+      sequence = json['sequence'] as int? ?? 0,
+      occasionId = json['occasionId'] as int?,
+      occasionTitle = json['occasionTitle'] as String?,
+      kind = json['kind'] as String? ?? '',
+      status = json['status'] as String? ?? '',
+      occurredAt = DateTime.tryParse(json['occurredAt']?.toString() ?? ''),
+      occasionLink = json['occasionLink'] as String?,
+      data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
   final String id, kind, status;
+  final int section, sequence;
+  final int? occasionId;
+  final String? occasionTitle;
   final DateTime? occurredAt;
   final String? occasionLink;
-  final int? occasionId;
   final Map<String, dynamic> data;
-}
-
-class NotificationGroup {
-  NotificationGroup.fromJson(Map<String, dynamic> json)
-      : key = json['key'] as String,
-        kind = json['kind'] as String? ?? '',
-        section = json['section'] as int? ?? 2,
-        occasionId = json['occasionId'] as int?,
-        occasionTitle = json['occasionTitle'] as String?,
-        count = json['count'] as int? ?? 0,
-        day = json['day'] as String?,
-        items = (json['items'] as List? ?? [])
-            .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
-  final String key, kind;
-  final int section, count;
-  final int? occasionId;
-  final String? occasionTitle, day;
-  final List<NotificationItem> items;
-  int? cursor;
-  bool expanded = false, busy = false, failed = false, loaded = false;
 }
 
 /// Only open acknowledges. Generation and revision fences reject stale polls.
 class NotificationCenterController extends ChangeNotifier {
   NotificationCenterController({NotificationRead? read})
-      : _read = read ??
-            ((name, params) =>
-                Supabase.instance.client.rpc(name, params: params));
+    : _read =
+          read ??
+          ((name, params) =>
+              Supabase.instance.client.rpc(name, params: params));
   final NotificationRead _read;
   int? organization, currentOccasion;
   String? user;
@@ -59,24 +47,28 @@ class NotificationCenterController extends ChangeNotifier {
       pageFailed = false;
   bool panelOpen = false, foreground = true, refreshFailed = false;
   int snapshot = 0;
-  List<NotificationGroup> groups = [];
+  List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
   dynamic nextCursor;
-  final _orderDetails = <int, Future<Map<String, dynamic>?>>{};
   Timer? _timer;
   bool _unsupported = false;
-  Map<String, dynamic> get _scope =>
-      {'p_organization': organization, 'p_current_occasion': currentOccasion};
+  Map<String, dynamic> get _scope => {
+    'p_organization': organization,
+    'p_current_occasion': currentOccasion,
+  };
 
-  void configure(
-      {required String? userId,
-      required int? organizationId,
-      int? occasionId,
-      bool invalidate = false}) {
+  void configure({
+    required String? userId,
+    required int? organizationId,
+    int? occasionId,
+    bool invalidate = false,
+  }) {
     if (!invalidate &&
         user == userId &&
         organization == organizationId &&
-        currentOccasion == occasionId) return;
+        currentOccasion == occasionId) {
+      return;
+    }
     final identityChanged = user != userId || organization != organizationId;
     _generation++;
     _revision++;
@@ -88,13 +80,13 @@ class NotificationCenterController extends ChangeNotifier {
     nextCursor = null;
     snapshot = 0;
     panelOpen = false;
-    groups = [];
+    items = [];
     occasions = [];
-    _orderDetails.clear();
     refreshFailed = false;
     _schedule();
-    if ((identityChanged || invalidate) && user != null && organization != null)
+    if ((identityChanged || invalidate) && user != null && organization != null) {
       unawaited(refreshBadge());
+    }
     notifyListeners();
   }
 
@@ -102,7 +94,9 @@ class NotificationCenterController extends ChangeNotifier {
     _timer?.cancel();
     if (!_unsupported && foreground && user != null && organization != null) {
       _timer = Timer.periodic(
-          Duration(seconds: panelOpen ? 15 : 60), (_) => refresh());
+        Duration(seconds: panelOpen ? 15 : 60),
+        (_) => refresh(),
+      );
     }
   }
 
@@ -119,12 +113,11 @@ class NotificationCenterController extends ChangeNotifier {
           organization == null ||
           user == null ||
           generation != _generation ||
-          revision != _revision) return;
-      final captured = <NotificationGroup, Set<String>>{
-        for (final group in groups)
-          group: group.items.map((item) => item.id).toSet(),
-      };
-      final ids = captured.values.expand((value) => value).toSet().toList();
+          revision != _revision) {
+        return;
+      }
+      final captured = items.map((item) => item.id).toSet();
+      final ids = captured.toList();
       final updates = <String, NotificationItem>{};
       for (var start = 0; start < ids.length; start += 200) {
         final result = await _read('get_notification_center_updates', {
@@ -134,22 +127,32 @@ class NotificationCenterController extends ChangeNotifier {
         });
         if (generation != _generation || revision != _revision) return;
         for (final row in result['items'] as List? ?? []) {
-          final item =
-              NotificationItem.fromJson(Map<String, dynamic>.from(row));
+          final item = NotificationItem.fromJson(
+            Map<String, dynamic>.from(row),
+          );
           updates[item.id] = item;
         }
       }
-      // Preserve position and expansion, update known facts and remove revoked data.
-      for (final group in captured.keys) {
-        group.items.removeWhere((item) =>
-            captured[group]!.contains(item.id) &&
-            !updates.containsKey(item.id));
-        for (var index = 0; index < group.items.length; index++) {
-          group.items[index] =
-              updates[group.items[index].id] ?? group.items[index];
-        }
-        if (group.items.isEmpty) groups.remove(group);
-      }
+      // Hydration updates facts, never snapshot order or section.
+      items.removeWhere(
+        (item) => captured.contains(item.id) && !updates.containsKey(item.id),
+      );
+      items = items.map((item) {
+        final update = updates[item.id];
+        if (update == null) return item;
+        return NotificationItem.fromJson({
+          'id': update.id,
+          'kind': update.kind,
+          'status': update.status,
+          'occurredAt': item.occurredAt?.toIso8601String(),
+          'section': item.section,
+          'sequence': item.sequence,
+          'occasionId': item.occasionId,
+          'occasionTitle': update.occasionTitle,
+          'occasionLink': update.occasionLink,
+          'data': update.data,
+        });
+      }).toList();
       refreshFailed = false;
       notifyListeners();
     } catch (error) {
@@ -166,14 +169,14 @@ class NotificationCenterController extends ChangeNotifier {
 
   bool _accessFailure(Object error) {
     if (error is! PostgrestException ||
-        !const {'42501', '28000', 'PGRST301'}.contains(error.code))
+        !const {'42501', '28000', 'PGRST301'}.contains(error.code)) {
       return false;
+    }
     _revision++;
     enabled = unread = loading = false;
     failed = true;
-    groups = [];
+    items = [];
     occasions = [];
-    _orderDetails.clear();
     nextCursor = null;
     _timer?.cancel();
     notifyListeners();
@@ -188,24 +191,37 @@ class NotificationCenterController extends ChangeNotifier {
   }
 
   Future<void> refreshBadge() async {
-    if (_unsupported || user == null || organization == null || !foreground)
+    if (_unsupported || user == null || organization == null || !foreground) {
       return;
+    }
     final generation = _generation,
         revision = _revision,
         request = ++_badgeRequest;
     try {
-      final result = await _read(
-          'get_notification_center_badge', {'p_organization': organization});
+      final result = await _read('get_notification_center_badge', {
+        'p_organization': organization,
+      });
       if (generation != _generation ||
           revision != _revision ||
-          request != _badgeRequest) return;
+          request != _badgeRequest) {
+        return;
+      }
+      if (result['feedSupported'] != true) {
+        _unsupported = true;
+        enabled = unread = false;
+        _timer?.cancel();
+        notifyListeners();
+        return;
+      }
       enabled = result['enabled'] == true;
       unread = result['unread'] == true;
       notifyListeners();
     } on PostgrestException catch (error) {
       if (generation != _generation ||
           revision != _revision ||
-          request != _badgeRequest) return;
+          request != _badgeRequest) {
+        return;
+      }
       if (_accessFailure(error)) return;
       // A deployment without the additive RPC has one capability outcome.
       if (error.code == 'PGRST202' || error.code == '42883') {
@@ -214,36 +230,49 @@ class NotificationCenterController extends ChangeNotifier {
         _timer?.cancel();
         notifyListeners();
       }
-    } catch (_) {/* Preserve the last confirmed badge while offline. */}
+    } catch (_) {
+      /* Preserve the last confirmed badge while offline. */
+    }
   }
 
   Future<void> open() async {
-    if (organization == null || user == null || loading) return;
+    if (_unsupported || organization == null || user == null || loading) return;
     panelOpen = true;
-    _orderDetails.clear();
     _schedule();
     final generation = _generation, revision = ++_revision;
     loading = true;
     failed = pageFailed = refreshFailed = false;
     notifyListeners();
     try {
-      final result =
-          await _read('open_notification_center', {..._scope, 'p_limit': 30});
+      final result = await _read('open_notification_center', {
+        ..._scope,
+        'p_limit': 30,
+      });
       if (generation != _generation || revision != _revision) return;
+      if (result['feedSupported'] != true) {
+        _unsupported = true;
+        enabled = unread = false;
+        items = [];
+        _timer?.cancel();
+        failed = true;
+        return;
+      }
       snapshot = result['snapshot'] as int? ?? 0;
-      groups = (result['groups'] as List? ?? [])
-          .map((e) => NotificationGroup.fromJson(Map<String, dynamic>.from(e)))
+      items = (result['feedItems'] as List? ?? [])
+          .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       occasions = (result['occasions'] as List? ?? [])
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
-      nextCursor = result['nextCursor'];
+      nextCursor = result['feedNextCursor'];
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
       if (generation == _generation &&
           revision == _revision &&
-          !_accessFailure(error)) failed = true;
+          !_accessFailure(error)) {
+        failed = true;
+      }
     } finally {
       if (generation == _generation && revision == _revision) {
         loading = false;
@@ -264,100 +293,32 @@ class NotificationCenterController extends ChangeNotifier {
     pageFailed = false;
     notifyListeners();
     try {
-      final result = await _read('get_notification_center_page', {
+      final result = await _read('get_notification_center_feed', {
         ..._scope,
         'p_snapshot': snapshot,
         'p_cursor': nextCursor,
-        'p_limit': 30
+        'p_limit': 30,
       });
       if (generation != _generation || revision != _revision) return;
-      final known = groups.map((e) => e.key).toSet();
-      groups.addAll((result['groups'] as List? ?? [])
-          .map((e) => NotificationGroup.fromJson(Map<String, dynamic>.from(e)))
-          .where((e) => !known.contains(e.key)));
+      final known = items.map((e) => e.id).toSet();
+      items.addAll(
+        (result['items'] as List? ?? [])
+            .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
+            .where((e) => known.add(e.id)),
+      );
       nextCursor = result['nextCursor'];
     } catch (error) {
       if (generation == _generation &&
           revision == _revision &&
-          !_accessFailure(error)) pageFailed = true;
+          !_accessFailure(error)) {
+        pageFailed = true;
+      }
     } finally {
       if (generation == _generation && revision == _revision) {
         loading = false;
         notifyListeners();
       }
     }
-  }
-
-  Future<void> expand(NotificationGroup group, {bool more = false}) async {
-    if (group.busy) return;
-    if (!more) {
-      group.expanded = !group.expanded;
-      notifyListeners();
-      if (!group.expanded || group.loaded) return;
-    }
-    final generation = _generation, revision = _revision;
-    group.busy = true;
-    group.failed = false;
-    notifyListeners();
-    try {
-      final result = await _read('get_notification_center_group', {
-        'p_organization': organization,
-        'p_group_key': group.key,
-        'p_snapshot': snapshot,
-        'p_cursor': more ? group.cursor : null,
-        'p_limit': 5
-      });
-      if (generation != _generation || revision != _revision) return;
-      if (!more || !group.loaded) group.items.clear();
-      group.loaded = true;
-      group.items.addAll((result['items'] as List? ?? [])
-          .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e))));
-      group.cursor = result['nextCursor'] as int?;
-    } catch (error) {
-      if (generation == _generation &&
-          revision == _revision &&
-          !_accessFailure(error)) group.failed = true;
-    } finally {
-      if (generation == _generation && revision == _revision) {
-        group.busy = false;
-        notifyListeners();
-      }
-    }
-  }
-
-  /// Reuse the existing authorized readers only for expanded order items.
-  /// Cached futures deduplicate email/order notifications for the same order.
-  Future<Map<String, dynamic>?> orderDetails(NotificationItem item) {
-    final orderId = item.data['orderId'];
-    if (orderId is! int) return Future.value(null);
-    return _orderDetails.putIfAbsent(orderId, () async {
-      final generation = _generation;
-      final result = await _read('get_order_history', {'order_id': orderId});
-      if (generation != _generation) return null;
-      if (result is! Map || result['code'] != 200) {
-        throw StateError('Order details unavailable');
-      }
-      final order = Map<String, dynamic>.from(result['data']['order']);
-      if (item.occasionId != null && order['occasion'] != item.occasionId) {
-        throw StateError('Order context changed');
-      }
-      final waiting = order['state'] == 'waitlisted';
-      final tickets = await _read(
-          waiting ? 'get_waitlist_order_detail' : 'get_tickets_with_details',
-          waiting ? {'p_order_id': orderId} : {'order_id': orderId});
-      if (generation != _generation) return null;
-      return {
-        'order': order,
-        'tickets': waiting
-            ? (tickets['tickets'] as List? ?? [])
-            : (tickets as List? ?? [])
-      };
-    });
-  }
-
-  void retryOrderDetails(NotificationItem item) {
-    _orderDetails.remove(item.data['orderId']);
-    notifyListeners();
   }
 
   Future<bool> mute(Map<String, dynamic> occasion, bool muted) async {
@@ -369,7 +330,7 @@ class NotificationCenterController extends ChangeNotifier {
       await _read('set_notification_center_muted', {
         'p_organization': organization,
         'p_occasion': occasion['id'],
-        'p_muted': muted
+        'p_muted': muted,
       });
       if (generation != _generation) return false;
       occasion['muted'] = muted;
@@ -390,7 +351,6 @@ class NotificationCenterController extends ChangeNotifier {
   @override
   void dispose() {
     _generation++;
-    _orderDetails.clear();
     _timer?.cancel();
     super.dispose();
   }

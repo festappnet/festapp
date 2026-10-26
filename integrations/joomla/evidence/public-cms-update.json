@@ -1,0 +1,38 @@
+{
+  "state": "PUBLIC_CMS_UPDATE_VERIFIED",
+  "verified_at": "2026-10-26T09:22:38.980283+00:00",
+  "release_version": "1.0.1",
+  "public_download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+  "public_update_feed_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+  "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "checks": {
+    "installed_from_public_zip": true,
+    "manifest_and_registry_version_verified": true,
+    "public_update_site_registered": true,
+    "native_updater_feed_parse": true,
+    "installer_helper_public_download_checksum": true,
+    "synthetic_older_version_metadata_used": false
+  },
+  "environments": [
+    {
+      "joomla": "5.4.10",
+      "php": "8.3.36",
+      "installed_manifest_version": "1.0.1",
+      "registered_public_update_site": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+      "native_updater_download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+      "native_updater_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+      "installer_helper_download_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+      "passed": true
+    },
+    {
+      "joomla": "6.1.4",
+      "php": "8.4.27",
+      "installed_manifest_version": "1.0.1",
+      "registered_public_update_site": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+      "native_updater_download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+      "native_updater_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+      "installer_helper_download_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+      "passed": true
+    }
+  ]
+}

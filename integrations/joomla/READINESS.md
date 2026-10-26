@@ -1,6 +1,6 @@
 # Joomla vstupenky.online - readiness 2026-10-26
 
-**Český kandidát 1.0.1 prošel finální revizí kritika a je zapečetěný k vydání. Veřejné vydání zatím neproběhlo.**
+**Česká distribuce 1.0.1 je veřejně vydaná. Kritik ji schválil a všech pět CI kontrol prošlo. Podání do JED bylo přijato jako ID 17931 a čeká na redakční kontrolu.**
 Finální uživatelský soubor: [vstupenky.online.zip](dist/vstupenky.online.zip).
 Globální varianta 1.0.0 zůstává ověřovanou samostatnou distribucí, její veřejné
 vydání není v tomto kroku autorizováno.
@@ -94,18 +94,38 @@ zůstává v `evidence/public-links.json`, aktuální stav v novém receiptu.
 
 ## Distribuce a zbývající veřejné kroky
 
-Český manifest již obsahuje skutečný navržený stabilní GitHub update kanál a
-feed obsahuje přesný release URL/checksum. [SUBMISSION.md](SUBMISSION.md)
-popisuje zapečetění a publikaci. Dokud není zdrojový PR přijat do `main` a GitHub
-release skutečně zveřejněn, neoznačujeme veřejné ZIP/feed URL za dostupné.
+Český ZIP je [veřejně vydaný](https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.1)
+a stabilní update feed je dostupný. [PR #603](https://github.com/festappnet/festapp/pull/603)
+byl po výslovném souhlasu vlastníka administrátorsky sloučen do `main` jako
+`4b06687ce418bb790d6cc34e295dddbb14fc2159`. Všech pět CI kontrol prošlo;
+přechodná chyba CDP při startu browser jobu prošla jediným cíleným opakováním.
 
-Repozitářová ochrana `main` aktuálně vyžaduje PR a jedno schválení. Nelze ji
-nahradit lokálním souhlasem kritika nebo obejít administrátorským pushem.
-Po kritikovi se připraví konkrétní zdrojový PR a vydání; po požadovaném review
-následuje publikace a `scripts/release-gate.py --public` se skutečným byte readbackem.
+[Byte readback veřejného ZIPu a feedu](evidence/public-release.json) souhlasí
+se zapečetěnými hashi. [Skutečná instalace a update HTTP transport na obou CMS](evidence/public-cms-update.json)
+potvrdily verzi 1.0.1, veřejný update kanál a download stejného ZIPu přes
+nativní Joomla API, bez simulace starší verze. Nebyl proveden aplikační deploy,
+produkční databázová změna ani vydání jiné značky.
 
-JED je samostatný katalogový krok. [Oficiální checklist](https://extensions.joomla.org/support/knowledgebase/submission-requirements/jed-entries-checklists/)
-vyžaduje update server a rozlišuje Free/Paid také podle SaaS modelu, nikoli jen
-ceny ZIPu. Případný demo odkaz musí být neprodukční. Podání dosud nebylo
-provedeno ani schváleno. Dostupná dokumentace, podpora a veřejný release
-repozitář jsou připravené pro publikaci českého balíčku.
+## Joomla Extensions Directory - podání přijato
+
+Účet autora je aktivní. Dne 2026-10-26 bylo skutečně odesláno podání
+**vstupenky.online 1.0.1**, ID **17931**. JED zobrazil „Listing Submission Received“
+a potvrdil přijetí: [receipt](evidence/jed-submission.json). Přiložený ZIP je
+stejný jako veřejný schválený release, s hashem uvedeným výše.
+
+[Oficiální JED Checker 2.4.4](evidence/jed-checker.json) dokončil všech 12 pravidel
+na Joomla 5.4.10/PHP 8.3.36 bez chyb. Upozornění na iframe odpovídá záměrnému
+embed rendereru; notice se týká nepovinných authorEmail/authorUrl. Pravidlo update
+serveru i GPL prošlo. Checker samotný na Joomla 6.1 používá odstraněnou legacy
+Folder třídu, proto je úplný checker receipt z podporovaného Joomla 5 prostředí;
+instalace a runtime modulu na Joomla 6.1 jsou samostatně ověřené výše.
+
+[Odeslaná metadata](submission/listing.json), [anglický popis](submission/description.en.txt),
+logo, skutečný download, dokumentace, licence a support byly vyplněny v nativním
+formuláři JED. Vybrána kategorie Calendars & Events > Events, modul, GPLv2 or
+later a placená SaaS integrace s bezplatným ZIP downloadem, bez nepravdivého
+slibu trvale bezplatné služby. Produkční zákaznická akce nebyla použita jako demo.
+
+**Katalogové zveřejnění zatím není schválené.** Podání musí projít kontrolou
+specialistou JED; případné připomínky nebo oznámení o publikaci jsou další
+externí událostí. Nezaměňovat přijetí podání s veřejným záznamem v katalogu.

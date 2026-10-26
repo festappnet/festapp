@@ -1,0 +1,7 @@
+- dialog "Notification settingsCloseCurrent eventMore Options10/26/2026 1:08 PM\nOrder cancellation\nnotificatio" [ref=e472] focusable [tabindex]
+  - button "Notification settings" [ref=e473]
+  - button "Close" [ref=e474]
+  - button "More Options" [expanded=false, ref=e475]
+  - button "10/26/2026 1:08 PM Order cancellation notification-customer-1@example.invalid Places: 1 Today at 1:08 PM" [ref=e476]
+  - button "10/26/2026 1:08 PM New waiting list entry waiting@example.invalid Places: 1 Today at 1:08 PM" [ref=e477]
+  - button "10/26/2026 1:08 PM New order two-tickets@example.invalid Places: 2 Today at 1:08 PM" [ref=e478]

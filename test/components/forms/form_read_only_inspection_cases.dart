@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
-import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
 import 'package:fstapp/components/forms/widgets_editor/product_detail_editor_dialog.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';

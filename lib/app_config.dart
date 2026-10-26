@@ -58,6 +58,7 @@ class AppConfig {
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;
 
+  static const bool platformUpdatesEnabled = true;
   static const String webLink = "https://vstupenky.online";
   static const String privacyUrl = "https://vstupenky.online/privacy/";
   static const String privacyChoicesUrl = "https://vstupenky.online/privacy/choices/";

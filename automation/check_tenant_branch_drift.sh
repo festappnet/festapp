@@ -129,6 +129,9 @@ while IFS= read -r -d '' path; do
   fi
 done < <(git diff --name-only -z "$BASE_MAIN_SHA" "$PROD_TIP")
 
+# Replay from canonical blobs has no workstation node_modules. Materialize the
+# main-owned Markdown renderer before resolving any published update content.
+(cd "$EXPECTED_TREE/automation/release/platform_updates" && pnpm install --frozen-lockfile --ignore-scripts --silent)
 (cd "$EXPECTED_TREE" && bash automation/apply_config.sh automation/project.conf >/dev/null)
 
 while IFS= read -r -d '' path; do

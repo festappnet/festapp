@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart'; // Added for translat
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:festapp_core/forms.dart';
-import 'package:festapp_core/forms.dart'; // Importing product model.
+// Importing product model.
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';

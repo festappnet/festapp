@@ -84,6 +84,12 @@ jobs:
         run: deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
       - name: Database contract and anonymous checkout
         run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test blueprint/resource_admission_test
+      - name: Notification feed and history authorization contracts
+        run: |
+          python3 automation/assemble-notification-center-migration.py --check
+          node --test automation/tests/notification_feed_migration.test.mjs
+          node web_client/scripts/run_db_tests.js notification_center delete_order_history_permissions_test
+          node --test database/tests/notification_center/*concurrency.test.mjs
       - name: Reserve a seat, lose connectivity and recover checkout in a real browser
         run: pnpm --dir web_client run test:seat-checkout-browser --offline-recovery
 
@@ -114,5 +120,10 @@ jobs:
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - run: fvm flutter pub get
-      - name: First delivery and resend client requests
-        run: fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart
+      - name: Shared customer display labels
+        working-directory: packages/festapp_core
+        run: |
+          fvm dart pub get
+          fvm dart test test/eshop/customer_label_test.dart
+      - name: First delivery, notification feed and resend client requests
+        run: fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart test/components/notification_center/notification_center_cases.dart test/components/notification_center/notification_center_time_test.dart
