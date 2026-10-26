@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.0\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.1\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -18,7 +18,7 @@ msgstr ""
 msgid "Automatic"
 msgstr ""
 
-msgid "Automatic height and website styling are already enabled. Start with these defaults; change them only if your page needs it."
+msgid "Automatic height is enabled. The appearance option in the block explicitly controls whether the WordPress theme overrides the appearance from the app."
 msgstr ""
 
 msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
@@ -75,12 +75,6 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
-msgid "Match website style"
-msgstr ""
-
-msgid "Match website style is enabled by default. Disable it in the block, or add inherit_style=\"false\" to the shortcode. The form uses the website font family and colors; the seat map keeps its own appearance. This option loads the service helper even with fixed height. Custom fonts must permit cross-origin loading."
-msgstr ""
-
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr ""
 
@@ -88,6 +82,9 @@ msgid "Open the form in a new tab"
 msgstr ""
 
 msgid "Open vstupenky.online"
+msgstr ""
+
+msgid "Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance."
 msgstr ""
 
 msgid "Paid sales also require your payment and organizer details in the service."
@@ -120,6 +117,9 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
+msgid "The WordPress appearance override replaces the app font, background and colors only for this block. It does not change the saved form in the app or the seating map. Disable it to use the app appearance; for a shortcode, add inherit_style=\"false\"."
+msgstr ""
+
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr ""
 
@@ -138,7 +138,10 @@ msgstr ""
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr ""
 
-msgid "Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service."
+msgid "Use the WordPress theme instead of the app appearance"
+msgstr ""
+
+msgid "Uses the appearance configured in the app."
 msgstr ""
 
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."

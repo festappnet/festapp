@@ -51,5 +51,10 @@
   "Visitors buy tickets on your published page. Manage orders, payments and admission in your @@NAME@@ account.": "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Objednávky, platby a odbavení spravujete ve svém účtu @@NAME@@.",
   "Shortcode, display options and service information": "Shortcode, možnosti zobrazení a informace o službě",
   "Form title": "Název formuláře",
-  "Describe this form for visitors using screen readers. This does not rename the event.": "Popište formulář pro návštěvníky používající čtečku obrazovky. Název akce se tím nezmění."
+  "Describe this form for visitors using screen readers. This does not rename the event.": "Popište formulář pro návštěvníky používající čtečku obrazovky. Název akce se tím nezmění.",
+  "Use the WordPress theme instead of the app appearance": "Použít vzhled WordPressu místo vzhledu z aplikace",
+  "Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance.": "Pouze v tomto bloku přepíše písmo, pozadí a barvy z aplikace vzhledem WordPressu. Vzhled uloženého formuláře v aplikaci ani plánku sálu nemění.",
+  "Uses the appearance configured in the app.": "Použije vzhled nastavený v aplikaci.",
+  "Automatic height is enabled. The appearance option in the block explicitly controls whether the WordPress theme overrides the appearance from the app.": "Automatická výška je zapnutá. Volba vzhledu v bloku výslovně určuje, zda vzhled WordPressu přepíše vzhled z aplikace.",
+  "The WordPress appearance override replaces the app font, background and colors only for this block. It does not change the saved form in the app or the seating map. Disable it to use the app appearance; for a shortcode, add inherit_style=\"false\".": "Převzetí vzhledu WordPressu přepíše písmo, pozadí a barvy z aplikace pouze pro tento blok. Uložený formulář v aplikaci ani plánek sálu nemění. Pro vzhled z aplikace tuto volbu vypněte; ve shortcode přidejte inherit_style=\"false\"."
 }

@@ -22,8 +22,10 @@
                     help: __('Describe this form for visitors using screen readers. This does not rename the event.', '@@SLUG@@')}),
                 el(components.SelectControl, {label: __('Form height', '@@SLUG@@'), value: a.mode,
                     options: [{label: __('Automatic', '@@SLUG@@'), value: 'auto'}, {label: __('Fixed', '@@SLUG@@'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
-                el(components.ToggleControl, {label: __('Match website style', '@@SLUG@@'), checked: a.inheritStyle, onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
-                    help: __('Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service.', '@@SLUG@@')}),
+                el(components.ToggleControl, {label: __('Use the WordPress theme instead of the app appearance', '@@SLUG@@'), checked: a.inheritStyle, onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
+                    help: a.inheritStyle
+                        ? __('Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance.', '@@SLUG@@')
+                        : __('Uses the appearance configured in the app.', '@@SLUG@@')}),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', '@@SLUG@@') : __('Fallback height without the helper (px)', '@@SLUG@@'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to @@NAME@@ and enter data directly into the service. Automatic height loads its /embed.js. The remote form is not loaded in the editor.', '@@SLUG@@')),
                 el('p', null, el('a', {href: '@@ORIGIN@@/privacy/', target: '_blank', rel: 'noopener noreferrer'}, __('Service privacy policy', '@@SLUG@@')))

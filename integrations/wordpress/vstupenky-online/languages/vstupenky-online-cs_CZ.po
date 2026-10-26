@@ -1,5 +1,5 @@
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.0\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.1\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr "1. Připravte formulář"
@@ -16,8 +16,8 @@ msgstr "Po zveřejnění se návštěvník připojí k vstupenky.online a zadáv
 msgid "Automatic"
 msgstr "Automatická"
 
-msgid "Automatic height and website styling are already enabled. Start with these defaults; change them only if your page needs it."
-msgstr "Automatická výška i převzetí vzhledu webu jsou už zapnuté. Začněte s tímto nastavením a upravte ho jen podle potřeby."
+msgid "Automatic height is enabled. The appearance option in the block explicitly controls whether the WordPress theme overrides the appearance from the app."
+msgstr "Automatická výška je zapnutá. Volba vzhledu v bloku výslovně určuje, zda vzhled WordPressu přepíše vzhled z aplikace."
 
 msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr "Automatická výška načítá pomocný skript služby. Pevná výška (240-4000 px) používá posouvání uvnitř formuláře. Odkaz pod formulářem funguje i bez skriptu. Pokud šablona nebo bezpečnostní pravidla blokují vložení, návštěvník otevře formulář v nové záložce."
@@ -73,12 +73,6 @@ msgstr "Výška (px)"
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr "Při nejistém výsledku nákupu ověřte objednávku s pořadatelem před novým nákupem. Platby a dostupnost sedadel řídí služba. Deaktivace ani odinstalace pluginu nemaže objednávky ve službě; shortcode pak může být na stránce viditelný jako text."
 
-msgid "Match website style"
-msgstr "Převzít styl stránky"
-
-msgid "Match website style is enabled by default. Disable it in the block, or add inherit_style=\"false\" to the shortcode. The form uses the website font family and colors; the seat map keeps its own appearance. This option loads the service helper even with fixed height. Custom fonts must permit cross-origin loading."
-msgstr "Převzít styl stránky je zapnuto ve výchozím stavu. Vypněte jej v bloku nebo do shortcodu přidejte inherit_style=\"false\". Formulář použije rodinu písma a barvy webu; plánek sálu si zachová vlastní vzhled. Tato volba načítá pomocný skript služby i při pevné výšce. Vlastní fonty musí povolovat načtení z jiné domény."
-
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr "Otevřete novou nebo existující stránku ve WordPressu. Přes tlačítko + vyhledejte blok vstupenky.online a vložte do něj veřejný odkaz formuláře."
 
@@ -87,6 +81,9 @@ msgstr "Otevřít formulář v nové záložce"
 
 msgid "Open vstupenky.online"
 msgstr "Otevřít vstupenky.online"
+
+msgid "Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance."
+msgstr "Pouze v tomto bloku přepíše písmo, pozadí a barvy z aplikace vzhledem WordPressu. Vzhled uloženého formuláře v aplikaci ani plánku sálu nemění."
 
 msgid "Paid sales also require your payment and organizer details in the service."
 msgstr "Placený prodej vyžaduje také nastavení plateb a údajů pořadatele ve službě."
@@ -118,6 +115,9 @@ msgstr "Přihlaste se do vstupenky.online, otevřete svou akci a uložte formul�
 msgid "Support"
 msgstr "Podpora"
 
+msgid "The WordPress appearance override replaces the app font, background and colors only for this block. It does not change the saved form in the app or the seating map. Disable it to use the app appearance; for a shortcode, add inherit_style=\"false\"."
+msgstr "Převzetí vzhledu WordPressu přepíše písmo, pozadí a barvy z aplikace pouze pro tento blok. Uložený formulář v aplikaci ani plánek sálu nemění. Pro vzhled z aplikace tuto volbu vypněte; ve shortcode přidejte inherit_style=\"false\"."
+
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr "V editoru uvidíte nastavení bloku. Stránku uložte a otevřete její náhled, kde se zobrazí skutečný formulář. Pak ji můžete zveřejnit."
 
@@ -136,8 +136,11 @@ msgstr "Vstupenky na vašem webu"
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr "Použijte https://vstupenky.online/form/ulozeny-odkaz bez parametrů a osobního fragmentu."
 
-msgid "Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service."
-msgstr "Použít rodinu písma a barvy webu. Plánek sálu si zachová vlastní vzhled. Fonty webu musí povolovat načtení ze služby."
+msgid "Use the WordPress theme instead of the app appearance"
+msgstr "Použít vzhled WordPressu místo vzhledu z aplikace"
+
+msgid "Uses the appearance configured in the app."
+msgstr "Použije vzhled nastavený v aplikaci."
 
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
 msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Objednávky, platby a odbavení spravujete ve svém účtu vstupenky.online."

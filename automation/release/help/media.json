@@ -65,13 +65,14 @@
     "id": "cs/wordpress/02-block-editor",
     "file": "cs/wordpress/02-block-editor.png",
     "locale": "cs",
-    "capturedAt": "2026-10-25",
-    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
-    "width": 1280,
+    "capturedAt": "2026-10-26",
+    "source": "Real WordPress7.1.3 Gutenberg editor, installed vstupenky.online1.0.1 ZIP, isolated loopback fixture; no remote form loaded.",
+    "width": 1440,
     "height": 1000,
-    "alt": "Editor WordPressu s blokem vstupenky.online, veřejným odkazem formuláře, automatickou výškou a převzetím stylu stránky.",
-    "caption": "V bloku vložte veřejný odkaz svého uloženého formuláře. Automatická výška a převzetí stylu jsou výchozí volby.",
-    "openLabel": "Zvětšit snímek WordPressu (nová karta)"
+    "alt": "Blok vstupenky.online ve WordPressu s výslovně označeným přepsáním vzhledu z aplikace a vysvětlením rozsahu změny.",
+    "caption": "Zapnutá volba použije vzhled WordPressu místo vzhledu z aplikace pouze v tomto bloku. Vypnutá ponechá vzhled z aplikace.",
+    "openLabel": "Zvětšit snímek WordPressu (nová karta)",
+    "sha256": "ca296b3a6a4a6bac8e2d7f6307dd5cd78b6a2952ccc15e570220634051d9af10"
   },
   {
     "id": "cs/wordpress/03-custom-html",
@@ -101,13 +102,14 @@
     "id": "en/wordpress/02-block-editor",
     "file": "en/wordpress/02-block-editor.png",
     "locale": "en",
-    "capturedAt": "2026-10-25",
-    "source": "Local WordPress 7.1.3, plugin 1.0.0, synthetic documentation draft; unpublished",
-    "width": 1280,
-    "height": 968,
-    "alt": "The WordPress editor with the vstupenky.online block, public form URL, automatic height and website styling.",
-    "caption": "Paste your saved public form link into the block. Automatic height and website styling are enabled by default.",
-    "openLabel": "Enlarge the WordPress screenshot (new tab)"
+    "capturedAt": "2026-10-26",
+    "source": "Real WordPress7.1.3 Gutenberg editor, installed vstupenky.online1.0.1 ZIP, isolated loopback fixture; no remote form loaded.",
+    "width": 1440,
+    "height": 1000,
+    "alt": "The native WordPress block explicitly labels its local override of the app appearance and explains its scope.",
+    "caption": "The enabled option uses the WordPress theme instead of the app appearance for this block only. Turn it off to use the app appearance.",
+    "openLabel": "Enlarge the WordPress screenshot (new tab)",
+    "sha256": "097505e94c121ccf0b1140cb04cc1c8f8e52d0cdc69bb3ae42289df5b284b0de"
   },
   {
     "id": "en/wordpress/03-custom-html",

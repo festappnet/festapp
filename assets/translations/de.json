@@ -371,7 +371,7 @@
     "embedAutomatic": "Automatische Höhe (empfohlen)",
     "embedFixed": "Feste Höhe ohne Skript",
     "embedInheritStyle": "Darstellung an Website anpassen",
-    "embedInheritStyleHelp": "Schrift, Hintergrund und Farben Ihrer Website verwenden.",
+    "embedInheritStyleHelp": "Schrift, Hintergrund und Farben der App nur für diese Einbettung überschreiben.",
     "embedInheritStyleRequiresScript": "Wählen Sie die automatische Höhe, um die Darstellung anzupassen.",
     "labelShowBeforeStartMessage": "Informationen vor Anmeldestart anzeigen",
     "helperBeforeStartMessage": "Unter dem Countdown können Sie Informationen zur Veranstaltung, Bilder oder einen Saalplan veröffentlichen. Die Anmeldung öffnet erst zum festgelegten Zeitpunkt.",
