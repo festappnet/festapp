@@ -1,4 +1,3 @@
-import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_navigation.dart';
@@ -53,17 +52,6 @@ class _ActionMenuItem {
 }
 
 class AppPanelHelper {
-  static Widget _platformUpdatesAction(BuildContext context, Color color) {
-    return IconButton(
-      tooltip: CommonStrings.platformUpdates,
-      icon: Icon(Icons.new_releases_outlined, color: color),
-      onPressed: () => LaunchUrlService.openExternalUrl(
-        '${AppConfig.webLink}${Localizations.localeOf(context).languageCode == 'cs' ? '/co-je-nove' : '/en/whats-new'}',
-      ),
-    );
-  }
-
-
   /// This method returns a breadcrumb widget for navigating units and occasions.
   /// This is now primarily used for the desktop layout.
   static Widget _buildBreadcrumbs(
@@ -596,8 +584,6 @@ class AppPanelHelper {
       ),
 
       actions: [
-        if (AppConfig.platformUpdatesEnabled)
-          _platformUpdatesAction(context, Colors.white),
         const NotificationCenterBell(color: Colors.white),
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
@@ -793,8 +779,6 @@ class AppPanelHelper {
         },
       ),
       actions: [
-        if (AppConfig.platformUpdatesEnabled)
-          _platformUpdatesAction(context, iconColor),
         NotificationCenterBell(color: iconColor),
         ValueListenableBuilder<OccasionLinkModel?>(
           valueListenable: RightsService.occasionLinkModelNotifier,
