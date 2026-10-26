@@ -1,12 +1,12 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Stav: etapy 0, 0B, 1 a řez 2A lokálně dokončeny; pokračují další řezy etapy 2.
+Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapy 3 a 4 jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
 `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`: MCP `2026-07-28`, server SDK
 2.3.1, Node adaptér 2.1.1, oficiální legacy hranice; všech 74 MCP testů prošlo
-včetně disposable PostgreSQL bez skipů. Exekuční práce začíná etapou 0 níže.
+včetně disposable PostgreSQL bez skipů. Etapy 0-4 dokládají checkpointy; další pokračování je etapa 5.
 
 ## Výsledek a hranice
 
@@ -411,6 +411,17 @@ chybného child záznamu. Souběh prodeje s kapacitní změnou přes skutečný 
 public checkout a uložené objednávky zůstávají kompatibilní.
 
 ### 5. Nastavení akce a unit
+
+**Stav 2026-10-26: dokončeno a lokálně ověřeno, nenasazeno.** Osm nových
+nástrojů pokrývá všech 11 potvrzených úkonů etapy 5; katalog má 68 nástrojů.
+UI i MCP používají původní receipt vlastníky. Metadata se ukládají úzkým
+kontraktem, hra vyžaduje původní verzi a pořadatel vlastní manager/souhlas scope.
+Současný přesun mimo scope je otestovaný skutečným čekáním na řádkový zámek.
+[Důkazy a source digests](../reports/admin-configuration-evidence-2026-10-26.json).
+Jediné review místo etap 3-5 je PR #617; #613/#615/#616 jsou uzavřené jako
+nahrazené. Další implementační etapa je 6. Poskytovatele/setup nemíchat do
+obecného settings příkazu, artwork pokračuje samostatnou etapou 7.
+
 
 **Změny:** read/edit základních údajů, časů, feature nastavení, publikace a prodeje
 připojit přes `OccasionCommands.save` a `SupabaseUnitCommands.save`. Nejdřív
@@ -838,3 +849,69 @@ Doklad: `docs/reports/admin-seats-2b-release-2026-10-23.json`; cílené ověřen
 evidenci. Živé zdroje, ACL a zdraví Edge/MCP i webové verze jsou ověřené.
 Dle posledního pokynu uživatele zde skončit; neotevírat etapy3-10. Při pozdějším
 pokračování nejprve načíst aktuální autoritativní main a navázat etapou3.
+
+
+### Pokračování 2026-10-26 - etapa 3
+
+Uživatel obnovil práci a výslovně připomněl jednu kanonickou cestu.
+Etapa 3 implementuje čtení zdroje/dědičnosti, receipted save/reset, bannery a
+syntetický náhled přes produkční renderer. Aktuální checkpoint a evidence jsou
+v navazujícím souboru; historické „stop after 2B“ výše popisuje tehdejší pokyn,
+nikoli nové pokračování. Nové produkční změny zatím neproběhly.
+
+Při sjednocování se odstranilo přímé mutační RPC volání aktuálního editoru,
+klientský výpočet dědičnosti banneru i jeho ruční lokální zrcadlení po zápisu a
+duplicitní validace ticket bloku v průvodci. Staré vydané RPC zůstávají hranicemi
+na stejné persistenci, nikoli druhou implementací. Init/copy/delete celé akce
+zachovává vlastní atomickou transakci. Další doménová etapa je 4 (formuláře).
+
+## Aktuální řez 4A (2026-10-26)
+
+Lokálně ověřeno: šest nástrojů formulářů, společné čtení editoru a souhrnů,
+kanonická práva, existující lifecycle receipts se snapshotem a přijetí výsledku
+v UI bez explicitního opakovaného načtení editoru. Změny kapacity soutěží se
+skutečným checkout ownerem v jedné transakční hranici. Přesný rozsah a odstraněné
+alternativy uvádí mapa pokrytí a poslední checkpoint „Stage 4A 2026-10-26“.
+
+Další řez 4B: rozšířená nastavení uložená ve form.data (platební metody,
+připomínky, vzhled a související validace). Nejdřív určit existující vlastníky a
+úzké kontrakty. Inline produktové změny přes MCP, změny veřejných URL, operace
+nabídek čekací listiny a obecné ruční objednávky zůstávají otevřené. Nepřidávat
+druhý editor, receipt nebo paralelní ACL. Celá etapa 4 není dokončená.
+
+## Aktuální řez 4B (2026-10-26)
+
+Dokončeno a lokálně ověřeno: společný úzký settings patch pro připomínky,
+platební volby/zprávy, tón komunikace, politiku VS, vzhled a časování prodeje.
+UI již neposílá celé neprůhledné form.data; SQL zachovává metadata jiných ownerů
+včetně přípravy prodeje. Sedmý formulářový MCP nástroj čte existující platební
+možnosti přes stejné UI projekce a aktuální form-author práva. Výběr platební
+metody nepřipojuje účty, neaktivuje poskytovatele ani nemění existující platby.
+Published migrace 4A zůstává beze změny, assembler teď vlastní aktuální řez 4B.
+
+Další řez etapy 4: veřejné odkazy a inline produktové mutace formuláře přes
+existující vlastníky. Nabídky čekací listiny a obecné ruční objednávky zůstávají
+otevřené. Neopakovat transport, e-maily ani hotová nastavení 4A/4B.
+
+## Etapa 4 dokončena v repozitáři (2026-10-26)
+
+Uzavřené plánované řezy: výslovné veřejné odkazy, kompletní podporovaná pole a
+inline typy/produkty v jednom Save, správa čekacích nabídek včetně přijetí za
+účastníka a dosud nepokryté administrátorské vytvoření objednávky z formuláře.
+Navazují na 4A/4B bez nového form enginu, shadow ticketů, platebního ledgeru,
+receiptu navíc či paralelní fronty. Zpracování faktur používá stávající durable
+owner včetně ochrany před druhým invoice POST po nejistém výsledku.
+
+Stav je lokálně ověřeno a publikováno k review, nikoli nasazeno. Produkční SQL,
+Edge a MCP rollout musí být koherentní a zůstává samostatným krokem. Aktuální
+checkpoint a evidence určují přesné zdroje/gates; historické otevřené body 4A/4B
+jsou tímto řezem vyřešené. Další doménová etapa je 5 - akce a pořadatel.
+
+
+### Checkpoint po etapě 5 - 2026-10-26
+
+Etapy 0-5 jsou implementované, tedy 6 z 11 hlavních etap. Etapy 3-5 čekají
+na review a samostatný produkční rollout. Dosavadní orientační váhy dávají
+přibližně 45 % celkového objemu práce, s rozumným rozpětím 40-50 %; nejde
+o změřené odpracované hodiny. Zbývají etapy 6-10. Autoritativní aktuální stav
+je v posledním checkpointu, nikoli v historických odstavcích o review stacku.

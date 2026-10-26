@@ -25,8 +25,8 @@ class WorkshopsFeature extends Feature {
   factory WorkshopsFeature.fromJson(Map<String, dynamic> json) {
     DateTime? parsed;
     if (json[metaStartTime] != null) {
-      parsed =
-          DateTime.parse(json[metaStartTime] as String).toUtcFromOccasionTime();
+      parsed = DateTime.parse(json[metaStartTime] as String)
+          .toUtcFromOccasionTime();
     }
     return WorkshopsFeature(
       code: json[FeatureConstants.metaCode] as String? ?? metaWorkshops,
@@ -44,7 +44,7 @@ class WorkshopsFeature extends Feature {
       FeatureConstants.metaIsEnabled: isEnabled,
     };
     if (startTime != null) {
-      data[metaStartTime] = startTime!.toIso8601String();
+      data[metaStartTime] = startTime!.toUtc().toIso8601String();
     }
     if (registrationNotOpenMessage != null) {
       data[metaRegistrationNotOpenMessage] = registrationNotOpenMessage;

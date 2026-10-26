@@ -14,9 +14,7 @@ BEGIN
     OR length(item.value->>'subject')>2000 OR octet_length(item.value->>'html')>65536
     OR EXISTS(SELECT 1 FROM jsonb_object_keys(item.value) k WHERE k NOT IN ('subject','html')) THEN
    RAISE invalid_parameter_value USING MESSAGE='Invalid draft email template'; END IF;
-  IF item.key='TICKET_ORDER_PAYMENT_DONE' AND
-    (length(item.value->>'html')-length(replace(item.value->>'html','{{tickets}}','')))/length('{{tickets}}')>1 THEN
-    RAISE invalid_parameter_value USING MESSAGE='Only one tickets block is allowed'; END IF;
+  PERFORM public.validate_email_template_content_internal(item.key,item.value->>'html');
  END LOOP;
  RETURN result;
 END $$;

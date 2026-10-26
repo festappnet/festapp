@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-26",
+  "stage": "4B",
+  "state": "locally_verified_not_deployed",
+  "verification": "standard",
+  "branch": "feat/admin-mcp-form-settings-20261026",
+  "authoritativeMain": "3988bb7cbaf8766068a84f49f759d5544269e325",
+  "parent": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/615",
+    "head": "7f4053be653fa3e745a5207dd7ac578f8d51c681",
+    "stateAtVerification": "OPEN, stacked on #613"
+  },
+  "ancestor": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/613",
+    "head": "6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b",
+    "stateAtVerification": "OPEN / REVIEW_REQUIRED"
+  },
+  "canonicalOwners": {
+    "settings": "eshop_forms/form_settings.sql",
+    "transactions": "Existing update_form_client_sync_v1 / update_form_internal_v1 and receipt",
+    "bankChoices": "get_form_bank_accounts_internal, shared editor/MCP projection",
+    "stripeRecipient": "Existing get_form_stripe_recipient, now gated by can_author_forms",
+    "paymentValidation": "Existing validate_form_payment_configuration_internal",
+    "reminders": "Existing queue_payment_reminders / email_messages",
+    "referenceAllocation": "Existing allocation owner; save changes only future policy"
+  },
+  "newTool": "forms.paymentOptions",
+  "extendedTool": "forms.save.settings",
+  "contract": {
+    "patch": "Omitted keys preserve, null removes known override; null sections reset known keys only and preserve lifecycle/other-owner fields",
+    "settings": [
+      "is_reminder_enabled",
+      "reminder_interval_seconds",
+      "communication_tone",
+      "variable_symbol",
+      "payment_message",
+      "payments",
+      "design",
+      "schedule"
+    ],
+    "limits": {
+      "settingsBytes": 131072,
+      "paymentOptionsBytes": 1048576,
+      "bankAccountChoices": 100
+    },
+    "times": "ISO instants with explicit timezone; actual start/end order validated in SQL",
+    "consent": "Payment options require existing forms write consent and current form-author rights; forms read alone does not expose account selection"
+  },
+  "removed": [
+    "Current Flutter opaque whole-metadata save producer",
+    "Separate editor bank-account selection SQL",
+    "Conflicting order-write gate in Stripe form-recipient read",
+    "Duplicate old reminder interval validation",
+    "Design editor discarding authoritative save/version result",
+    "Historical root schedule aliases on administrative read/save paths; reset no longer reactivates old dates"
+  ],
+  "retainedBoundary": {
+    "contract": "Released full data RPC input, including historical array normalization, delegates known settings to the same private owner",
+    "exitCondition": "Remove only after released clients upgrade; signatures and receipt owner preserved",
+    "newClient": "FormMetadata.authoringSettingsSnapshot is wire projection only; SQL owns merge and validation",
+    "runtime": "Public runtime fallback remains for untouched legacy records; retire only after those records and clients migrate. No claim of a full persisted-data cutover.",
+    "legacyTime": "Historical stored timestamps keep their existing runtime interpretation before explicit-instant serialization. Private normalizers are STABLE because this interpretation may depend on session timezone; new patches require explicit ISO instants."
+  },
+  "migration": {
+    "path": "supabase/migrations/20261026200000_form_authoring_settings.sql",
+    "sha256": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc",
+    "functionDeclarations": 11,
+    "uniqueFunctionNames": 11,
+    "previousPublishedMigrationUnchanged": {
+      "path": "supabase/migrations/20261026190000_form_authoring.sql",
+      "sha256": "26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa"
+    },
+    "assembler": "Existing assemble-form-authoring-migration.py now seals latest cut; historical migration not regenerated",
+    "newTables": 0,
+    "newTriggers": 0,
+    "newReceipts": 0
+  },
+  "checks": [
+    {
+      "command": "FESTAPP_MCP_TEST_DATABASE_URL=<marked-loopback-disposable-admin-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/forms-settings-postgres.test.mjs test/forms-postgres.test.mjs test/forms.test.mjs",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "realPostgresCases": 27,
+      "pureBoundaryCases": 4,
+      "log": "/tmp/festapp-4b-sql-final.log",
+      "coverage": [
+        "Null/omitted settings, unknown metadata preservation, typed nested schemas matching SQL",
+        "Actual UI/MCP command owner, atomic rejection, original versions, frozen retries and role revocation",
+        "DST offset instant order and timezone-free input rejection",
+        "Real saved Stripe recipient scope/compatibility and runtime restrictions; no payment/reference allocation",
+        "Shared bank projection; unit editor without orders-write; wrong scope/read-only denial",
+        "Private helper and public endpoint ACLs, full canonical SQL source parity",
+        "Existing capacity versus actual checkout concurrency and eight existing SQL regressions",
+        "Legacy root and released date spelling adoption in both admin reads and saves; reset checked against actual canonical runtime gate"
+      ]
+    },
+    {
+      "command": "fvm flutter test --no-pub --concurrency=1 test/components/forms/form_commands_cases.dart test/components/forms/forms_editor_widget_cases.dart test/components/forms/form_capacity_settings_cases.dart test/components/forms/public_link_settings_cases.dart test/components/forms/form_metadata_cases.dart",
+      "passed": 68,
+      "log": "/tmp/festapp-4b-flutter.log",
+      "coverage": "Current editor settings snapshot/reset contract; actual design widget saves twice using acknowledged versions 3 then 4 with one initial read; existing editor/payment/capacity/link regressions"
+    },
+    {
+      "command": "pnpm --dir tools/festapp exec node --test test/remote.test.mjs",
+      "passed": 25,
+      "log": "/tmp/festapp-4b-remote-final.log",
+      "coverage": "Includes payment-options consent requiring forms write and token narrowing"
+    },
+    {
+      "command": "pnpm --dir web_client exec node --test tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js",
+      "passed": 37,
+      "log": "/tmp/festapp-4b-web-consent.log"
+    },
+    {
+      "command": "fvm dart analyze lib/components/forms/models/form_editor_draft.dart lib/components/forms/views/form_design_content.dart packages/festapp_core/lib/src/forms/form_metadata.dart",
+      "errors": 0,
+      "warnings": 0,
+      "informationalDiagnostics": 3,
+      "log": "/tmp/festapp-4b-analyze.log"
+    },
+    {
+      "commands": [
+        "python3 automation/assemble-form-authoring-migration.py --check",
+        "python3 automation/generate_canonical_source_contract.py --check",
+        "python3 automation/generate_authorization_policy_contract.py --check",
+        "node automation/reports/generate_admin_capabilities.mjs --check",
+        "git diff --check"
+      ],
+      "result": "passed",
+      "catalogActions": 99,
+      "catalogTools": 48
+    }
+  ],
+  "fixtureCorrection": {
+    "file": "database/tests/eshop/reminders/form_reminder_inheritance_test.sql",
+    "diagnosis": "The existing fixture failed identically against 4A and 4B: repeated whole-occasion reminder rebuilds hit email.ordinary.recipient.burst for the previous buyer. Proven in disposable rollback transactions.",
+    "correction": "Finish the previous synthetic order before independent deadline cases and give those cases distinct synthetic buyers. Existing guards and production quota remain unchanged.",
+    "prerequisites": "Existing canonical blueprint resources/hold fixture and service-role email-intent validity checks are loaded in the isolated regression harness."
+  },
+  "limits": [
+    "No production SQL/deployment, Stripe onboarding/provider request or live activation",
+    "Only synthetic disposable orders/payment references in regression fixtures; no production/customer payments or message delivery",
+    "No new visual layout; widget tests cover interaction, no browser or release build performed",
+    "Public URL changes, inline MCP product edits, waitlist offer operations and general manual orders remain open",
+    "No new network latency/performance claim; previous stage measurements are separate evidence"
+  ],
+  "sourceSha256": {
+    "automation/assemble-form-authoring-migration.py": "539f9fe37914d3a549deb1fcd3858ab09d9181652f5e0a2e4a8521c63456d335",
+    "automation/canonical-operation-sources.json": "78de7a31da1d91cd6e993a7dd91712587c4e028624411538e4504a79fdad1f61",
+    "database/functions/eshop_forms/admin_form_commands.sql": "3acf477788a3548a9436ef0208d901d8bda6b2ba999d410c5466ca40630ec341",
+    "database/functions/eshop_forms/form_payment_options.sql": "fa2b6c31395093c3d065d82f5545810a2072aff329fa69637739dc2fc9d51724",
+    "database/functions/eshop_forms/form_settings.sql": "e14bd20e28f4543ea9637a4d9010d35050c00aed2da69928bb6ce171c1657ab8",
+    "database/functions/eshop_forms/get_form_for_edit.sql": "7dd2cbf2239333edcc3858bf04967cc76cb43b6c8e37a9e5ca2f8bfc012b813f",
+    "database/functions/eshop_forms/update_form.sql": "ddc0dfac8cc567c001aff365a4e4b10a619d87a2a4d31a23bb41adc587a76208",
+    "database/functions/eshop_stripe/form_recipient.sql": "2dd102a48691f17e741bf1b107206c62e6045c190398c48de4e6378954a3c6b2",
+    "database/tests/canonical_mutation_source_parity_test.sql": "9aee1f3e095e9fe76c41b3fcecf9f2d90ba25374da2fe098efb2fff68b33720b",
+    "database/tests/eshop/reminders/form_reminder_inheritance_test.sql": "861c22b36ca89583bca47216b9fa9955bd6305ac61a643d9da1f144b54da30d6",
+    "lib/components/forms/README.md": "2fe5c1b4bc99d1d741f17d0dfa811c024d193abb64c202631293a4c217305076",
+    "lib/components/forms/models/form_editor_draft.dart": "4577d10e6cb346011573e1b13265b4e2146c5c02e2a3c6f5a9926c6a694af267",
+    "lib/components/forms/views/form_design_content.dart": "de54675a2735830e6e57990e99f3617b0dd683be715b649b9db9461c03c2e94e",
+    "packages/festapp_contracts/mcp-permissions.mjs": "555fb8603bbc19b2c8090034a222c37e6c6afe5078942caf2e5c2b275522f1d8",
+    "packages/festapp_core/lib/src/forms/form_metadata.dart": "811385dbb720b87f30498d361be7d87dcdaf002cd2fd92a41ea3a4d4805ccdb0",
+    "supabase/migrations/20261026200000_form_authoring_settings.sql": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc",
+    "test/components/forms/form_commands_cases.dart": "356c20246299490e6a329424512b69a5a41729e7fecd98c89a546456f855c761",
+    "test/components/forms/form_editor_actions_cases.dart": "715392b6f39614e1d80019880c79754970e40244d10a4c0c407140d6a5562dee",
+    "tools/festapp/src/operations/forms.mjs": "4a6ee2baa992f5ddc10ff6645abc3887869b834cba66fc7b2c379e75f20f4cae",
+    "tools/festapp/test/form-fixtures.mjs": "a02862956121fa0cad8b34fba5c8bca60a2f4fd4cee5a8b85230c353dadb5a03",
+    "tools/festapp/test/forms-settings-postgres.test.mjs": "e40691dc41271954c41ed97c615ddd618d787710fd7410c1eceb3a50288bf8e9",
+    "tools/festapp/test/forms.test.mjs": "6151a5816ae6415ac6c5de219da42362ac9e83049831b63fb8ae238ad4376a25",
+    "tools/festapp/test/remote.test.mjs": "5a9dc1c112c2df323c8fed36db6f6a8051595be6a9d52eb74aeafc8103ced050"
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/616",
+    "base": "feat/admin-mcp-forms-20261026",
+    "initialImplementationHead": "1970e868e9a49fef1c33b63877e01ba26675a5f4",
+    "deployed": false
+  },
+  "unchangedRuntimeTestInput": {
+    "path": "database/functions/eshop_forms/form_availability.sql",
+    "sha256": "4603dc9d03e157cdfd6a8c2099740e3db216f4c064021499934cebff4afbcc4c"
+  }
+}

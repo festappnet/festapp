@@ -45,7 +45,7 @@ archive because the source repository is public.
 The candidate workflow pins the source branch to its exact remote SHA, checks
 tenant drift, builds on Ubuntu, verifies the AAB package/version/signature,
 rejects personal path or identity markers, and stores the AAB plus a technical
-receipt as a private GitHub Actions artifact for 30 days. The artifact name is
+receipt as an encrypted GitHub Actions artifact for 7 days. The artifact name is
 `android-candidate-<tenant>-<sourceSha>`; the workflow summary records its run
 ID, package, version code, source SHA, release-tooling SHA and AAB SHA-256.
 
@@ -57,6 +57,16 @@ refuses an advanced branch, downloads only the exact GitHub artifact, repeats al
 the binary-only production upload, and reads the completed version back from
 Google Play. Dispatching this workflow is still a production mutation and needs
 fresh authorization for every listed package and artifact.
+
+Candidate artifacts provide a 7-day promotion window, not a release archive.
+Promote the exact verified candidate within that window. After expiry, build and
+verify a new candidate and obtain authorization for its new run ID and digest;
+do not reuse an expired candidate identity. Encrypted raw AABs remain available
+for validation recovery for 3 days. Revalidation also produces a 7-day candidate.
+Keep an independently verified archive before relying on a candidate for longer
+term recovery. Small Google Play operation receipts retain their 30-day policy.
+Changing workflow retention affects new uploads only; it does not shorten the
+expiry of existing artifacts.
 
 ## Reusable Google Play operations
 

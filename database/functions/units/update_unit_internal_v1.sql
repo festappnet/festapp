@@ -10,7 +10,7 @@ BEGIN
     END IF;
 
     -- Check if the current user is a manager for the provided unit
-    IF NOT get_is_manager_on_unit(p_unit_id) THEN
+    IF NOT public.can_manage_unit_configuration(p_unit_id) THEN
         RAISE EXCEPTION 'User is not a manager on this unit';
     END IF;
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -8,7 +9,7 @@ import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 
 class SupabaseFormCommands implements FormCommands {
   SupabaseFormCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client, durable: true);
+    : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseFormCommands.withTransport(this._transport);
   final ClientCommandTransport _transport;
@@ -19,12 +20,11 @@ class SupabaseFormCommands implements FormCommands {
     required String occasionLink,
     required String link,
     required String title,
-  }) =>
-      _invoke('create_form_client_sync_v1', {
-        'p_occasion_link': occasionLink,
-        'p_link': link,
-        'p_title': title,
-      });
+  }) => _invoke('create_form_client_sync_v1', {
+    'p_occasion_link': occasionLink,
+    'p_link': link,
+    'p_title': title,
+  });
 
   @override
   Future<int> duplicate({
@@ -44,13 +44,21 @@ class SupabaseFormCommands implements FormCommands {
 
   @override
   Future<void> delete(int formId, {required int expectedVersion}) async {
-    await _invoke('delete_form_client_sync_v1',
-        {'p_form_id': formId, 'p_expected_version': expectedVersion});
+    await _invoke('delete_form_client_sync_v1', {
+      'p_form_id': formId,
+      'p_expected_version': expectedVersion,
+    });
   }
 
   @override
-  Future<Map<String, dynamic>> save(Map<String, dynamic> form) =>
-      _invoke('update_form_client_sync_v1', {'p_form': form});
+  Future<Map<String, dynamic>> save(Map<String, dynamic> form) {
+    if (form['expected_aggregate_version'] is! int ||
+        form['expected_product_versions'] is! Map ||
+        form['expected_product_type_versions'] is! Map) {
+      throw StateError('Original form and product versions required');
+    }
+    return _invoke('update_form_client_sync_v1', {'p_form': form});
+  }
 
   @override
   Future<Map<String, dynamic>> saveBlueprint(
@@ -62,10 +70,14 @@ class SupabaseFormCommands implements FormCommands {
     }
     final parameters = {'p_blueprint': blueprint};
     final key = jsonEncode(blueprint);
-    final response = _blueprintReceipts[key] ??
+    final response =
+        _blueprintReceipts[key] ??
         ClientCommandResponse.from(
-          await _transport.invokeIntent('blueprint:${blueprint['id']}',
-              'update_blueprint_client_sync_v1', parameters),
+          await _transport.invokeIntent(
+            'blueprint:${blueprint['id']}',
+            'update_blueprint_client_sync_v1',
+            parameters,
+          ),
         );
     if (response.code != 200) {
       _blueprintReceipts.remove(key);

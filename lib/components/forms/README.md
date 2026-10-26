@@ -203,3 +203,107 @@ retains the draft and marks the field; the form-save SQL validates the same
 contract transactionally. Partial settings saves do not revalidate omitted
 fields. Public readers tolerate legacy missing options so one malformed field
 cannot turn the whole form into an unavailable page.
+
+## Admin authoring: canonical UI/MCP path
+
+Public runtime form submission remains a separate lifecycle from administrative
+editing. Admin reads share `get_form_editor_bundle_internal`; MCP uses its
+related-only projection through `get_form_for_authoring`. Catalog rows and editor
+and deletion usage guards share `get_form_usage_rows_internal`. Current order
+form FKs own responses; UUID history is a response fallback only without an FK,
+while every historical reference still blocks destructive deletion. Paging is
+applied before summary work and usage scans are batched.
+
+`manage_form` delegates to the existing create/save/copy/delete client-sync
+commands and their receipts. It creates no second receipt or transaction owner.
+The receipt freezes the authoritative authoring snapshot; Flutter adopts it and
+updates the draft baseline without reloading the full editor. Cached unrelated
+product choices retain their original versions. Current clients must supply
+original form/product/type versions; released public RPC signatures remain
+compatibility boundaries on those same domain owners until client upgrade.
+
+Both UI and MCP use `forms.write` from the canonical `can_author_forms` rule.
+Catalog reads include actual form authors without granting access to customer
+orders. Copy rechecks both source and target permissions, including source MCP
+consent; replay never bypasses current authority. Explicit scopes require a new
+user grant and do not widen older grants.
+
+MCP supports list/inspect/paymentOptions/create/save/duplicate/delete, basic
+fields and existing product-type references, capacity and waitlist configuration.
+`settings` is the shared narrow patch for reminders, communication tone, payment
+method selection/message, VS policy, design and sale schedule. Omitted keys
+preserve stored values; explicit null removes a known override and restores
+inherited/default behavior. Null sections reset only their known keys, preserving
+lifecycle flags such as `sale_preparation` and metadata owned by other modules.
+Schedule instants require explicit timezones; SQL checks their actual order.
+
+`form_settings.sql` owns metadata normalization, patch semantics and validation.
+Admin reads and saves also adopt historical root-level start/end dates into
+`schedule`, matching the runtime's nested/root precedence and retiring the root
+aliases. Released date spellings become explicit instants under their existing
+runtime interpretation; new patches still require ISO with a timezone. Clearing
+a schedule cannot resurrect a retained root date. The public runtime's read
+fallback remains intentional for unsaved legacy records; remove it after those
+records and clients have migrated.
+Current Flutter drafts send a known-settings snapshot (including null resets),
+never an opaque metadata replacement. Released clients may still send full
+`data`; that boundary normalizes historical arrays and passes known settings to
+the same owner. Retire this boundary after client upgrade. Mixing both transports
+is rejected. MCP accepts no arbitrary form data, public key or URL writes.
+
+`get_form_bank_accounts_internal` owns the editor and MCP bank choice projection.
+`forms.paymentOptions` requires current form-author rights and forms write consent;
+it returns linked non-cash accounts, the persisted Stripe recipient for an explicit
+live/test environment, and current configured/available methods. Reads are bounded
+to 100 accounts / 1 MiB. Bank management, Stripe onboarding and live activation
+remain separate operations. Selecting a method delegates existing same-unit and
+payment compatibility validation; temporary runtime restrictions do not erase the
+saved selection. VS settings change only future allocation policy, never issue a
+reference or rewrite existing orders. Reminder changes reuse the existing queue
+owner, not a new sender. Authoring patches are bounded to 128 KiB.
+
+The full inline product/type aggregate uses the same form Save, original child
+versions and explicit deletion lists as Flutter. Current field settings include
+age limits/warnings, ID-document expiry labels and ticket surcharge visibility.
+An invalid child rolls back the entire aggregate; historical purchased amounts
+remain owned by the order ledger.
+
+Saved public links have explicit `forms.publicLink` / `forms.setPublicLink`
+intents, returning a slug and encoded public path rather than an access UUID.
+Writes reuse the form receipt and canonical allocator/history. Generic authoring
+DTOs still omit public keys/links; replay returns the saved slug, not a fresh read.
+
+Administrative orders and offer acceptance preview the actual command in a
+rollback subtransaction (including invoice/email gating), then confirm its
+actor-bound hash under the same parent locks. Inputs, saved form/product facts,
+price and receiving-account details bind the decision. Preview may advance SQL
+sequences; it persists no order, receipt, notification or email. Creation delegates
+the single existing command/receipt. The released checkout signature is a thin
+facade on that same core, preserving historical request hashes. Scope and current
+rights are checked before replay; expired commands cannot allocate another order.
+
+Waitlist proposal/detail/send/cancel/decline/withdraw and confirmed acceptance use
+existing waiting tickets, offer slots, FIFO/capacity calculations and receipts.
+The proposal's private projection pages before JSON aggregation; the UI's released
+unpaged reader uses that same owner. MCP pages by order ID while FIFO suggestions
+remain global. Acceptance keeps the original waiting ticket IDs. Public customer
+registration/capability access keeps its own supported boundary, not an admin
+simulation.
+
+Both UI and MCP call the same Edge coordinators and globally gated queue. The
+acceptance payload consists of one intent plus its ordinary `orderDetails`;
+combining an independent replacement or admin order is rejected. Existing
+capability preparation is shared, and a typed scope check precedes it. Service-only
+administration wrappers recheck the stored hierarchy and live authority in the
+write transaction. Tokens, sealing material and customer capabilities are never
+returned through MCP.
+
+Confirmed seat orders, form orders and administrative offer acceptance share
+invoice preparation. Fresh confirmed receipts carry the existing
+`leased_keep_pending` policy, so a durable lease fences the first invoice POST.
+After an uncertain dispatch, retries perform lookup only. Original pending receipts
+without that proof remain lookup-only too. The same preparation table and owner
+serve these cases; there is no second invoice ledger. A pending/closed result
+always refers to its original committed order. Admin tools create bank/invoice
+orders and do not charge a card or refund money; customer online payment remains
+the existing public checkout journey.

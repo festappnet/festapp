@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {check,upstream,OperationError} from '../errors.mjs';
+import {check,upstream,OperationError,commandEdgeResponse} from '../errors.mjs';
 import {decimalAmount,currencyCode,orderAmountChangeSchema} from './order-money.mjs';
 const id=z.number().int().positive().max(Number.MAX_SAFE_INTEGER),revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const ids=z.array(id).min(1).max(1000).refine(a=>new Set(a).size===a.length),hash=z.string().regex(/^[0-9a-f]{64}$/);
@@ -42,12 +42,7 @@ export async function invokeSeatOrderOperation(owner,client,operation,args,conte
  if(!write)({data,error}=await client.rpc('preview_blueprint_seat_order',{p_occasion:args.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_blueprint:args.blueprintId,p_spots:args.spotIds,p_input:args.inputData??null,p_editor:false}));
  else ({data,error}=await client.functions.invoke('send-ticket-order',{body:{commandId:args.commandId,clientId:owner.profile.binding,replacement:{spotIds:args.spotIds,inputData:args.inputData,confirmation:{actorId:args.actorId,occasionId:args.occasionId,organizationId:scope.organizationId,unitId:scope.unitId,blueprintId:args.blueprintId,targetSpotIds:args.targetSpotIds,affectedSpotIds:args.affectedSpotIds,blueprints:args.blueprints,confirmationHash:args.confirmationHash,editor:false}}}}));
  if(['40001','40P01'].includes(error?.code??data?.errorCode))throw new OperationError('TEMPORARY_CONCURRENCY_RETRY_SAME_COMMAND',true);
- if(write&&error&&![401,403].includes(Number(error.status??error.context?.status))&&(['FunctionsFetchError','FunctionsRelayError'].includes(error.name)
-  ||[408,429].includes(Number(error.status??error.context?.status))||Number(error.status??error.context?.status)>=500))
-  throw new OperationError('TEMPORARY_FAILURE_RETRY_SAME_COMMAND',true);
- if(data?.errorCode==='42501')throw new OperationError('FORBIDDEN');
- if(write&&data?.code===503&&data.committed){check(data.committed.mutation?.commandId===args.commandId);data=data.committed;}
- if(data?.code===503)throw new OperationError(data.errorCode==='PAYMENT_PREPARATION_PENDING_RETRY_SAME_COMMAND'?data.errorCode:'TEMPORARY_FAILURE_RETRY_SAME_COMMAND',true);
+ if(write){data=commandEdgeResponse({data,error},args.commandId);error=null;}
  if(['22023','23514','54000'].includes(error?.code??data?.errorCode))throw new OperationError('SEAT_ORDER_REJECTED_NEW_PREVIEW_REQUIRED');
  if(error)upstream({...error,status:error.status??error.context?.status});
  if(!write){if(data?.code===409)return seatOrderDataSchemas[operation].parse({...data,mode:'rejected',occasionId:args.occasionId,blueprintId:args.blueprintId});check(data?.code===200&&data.occasionId===args.occasionId&&data.blueprintId===args.blueprintId&&data.actorId===context.userId);return seatOrderDataSchemas[operation].parse(data);}

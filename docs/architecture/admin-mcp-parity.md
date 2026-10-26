@@ -70,7 +70,7 @@ that every row is exposed by the current MCP catalog.
 | Payments and ticket delivery | payment pairing and canonical mail queue | Manual payment and queued tickets available; no implied provider refund |
 | Products, stock assignments | product catalog and client-sync product owners | First slice: read/create/update/delete and combined stock save |
 | Scheduled product prices/visibility, waves | shared schedule command adapter and existing wave/plan owners | Local: wave list, ensure/target/move/cancel and standalone price changes; explicit new consent |
-| Email templates, previews, inheritance | email template domain and shared renderer; unit/occasion template tabs | Next area after products; retain exact inheritance and rendering rules |
+| Email templates, previews, inheritance | email template domain and shared renderer; unit/occasion template tabs | Stage 3 implemented locally: shared save/reset/banner commands and production-rendered synthetic preview; production rollout pending |
 | Forms, fields, form access/sales | form aggregate commands; forms tab | Pending, audit draft/save/publication boundaries together |
 | Seating plans, spots and ticket artwork | blueprint aggregate, seating/capacity commands and canonical PDF renderer | Artwork read available; full editor operations pending |
 | Stock pools, contexts, resources | inventory domain commands; pools tab | Catalog assignments included; pool/resource administration pending |
@@ -387,3 +387,138 @@ used-unit restrictions still apply. Scope/permissions are checked before replay
 and after the operation. A new explicit cancel-tickets consent requires seat and
 order reads, and does not expand prior grants. Optional order-update email remains
 an explicit follow-up; the cancellation does not execute a payment-provider refund.
+
+
+## Stage 3 - canonical email authoring (2026-10-26)
+
+Six MCP operations cover list, inspect, save/reset, banner inspect/change and
+synthetic preview. Current Flutter mutations and MCP both use
+`manage_email_template` / `manage_email_banner`; `get_all_email_templates` and
+the sending resolver remain the sole inheritance/visibility owners. The card's
+client-side banner inheritance and local post-save data mirroring are removed.
+Setup/editor ticket-block validation is consolidated into one SQL invariant.
+`authoringPreview` reuses production `renderEmail` and the existing scenario
+generator; there is no MCP renderer or mail sender.
+
+Occasion-only grants cannot read/write a unit template. New explicit read/write
+scopes do not widen old grants. Supported released-client RPC signatures remain
+as boundaries on the same persistence implementation, with removal gated on
+client upgrade. Occasion provisioning/copy/deletion keep their own atomic
+lifecycle owners, without nested authoring receipts.
+See the current checkpoint for targeted evidence, publication and deployment.
+
+## Stage 4A: form authoring (locally verified, not deployed)
+
+- Six tools: `forms.list`, `forms.inspect`, `forms.create`, `forms.save`,
+  `forms.duplicate`, `forms.delete`. Source/target occasion and consent are both
+  bound for copy. Typed `can_author_forms` owns UI and MCP write authority;
+  `can_read_form_catalog` includes authors but grants no customer-order rights.
+- `manage_form` is a scope/DTO adapter to existing client-sync command receipts.
+  Those receipts now include a frozen authoring snapshot, adopted by the UI
+  without its former explicit post-save full editor reload.
+- One editor projection: `get_form_editor_bundle_internal`, related-only for MCP.
+  One summary/usage owner: `get_form_catalog_rows_internal` and batched
+  `get_form_usage_rows_internal`, also used by deletion and editor guards.
+- Removed: duplicate admin count queries; the conflicting orders-write gate on
+  form saves; current-client missing-baseline fallback; silent foreign-field
+  updates; obsolete private two-argument `form_catalog_read_rule` after replacing
+  its callers. Missing field metadata/type bindings preserve existing values.
+- Retained compatibility boundaries: released public form RPC signatures delegate
+  to the same owner. Remove only after client upgrade. Public checkout and URL
+  reservation remain distinct lifecycle contracts, not duplicate admin engines.
+- Not covered: arbitrary form data, public URL editing, inline MCP product edits,
+  advanced payment/reminder/design settings, waitlist offers and general manual
+  orders. Full stage 4 is not complete.
+
+Evidence: [form checks](../reports/admin-form-authoring-evidence-2026-10-26.json)
+and [actual SQL/data measurements](../reports/admin-form-authoring-data-network-2026-10-26.json).
+The measurement compares the same usage semantics per form versus batched, not
+an archived production query; no production performance claim is implied.
+
+## Stage 4B: advanced form settings (locally verified, not deployed)
+
+- `forms.save.settings` and current Flutter drafts reach one private metadata
+  merge/validation owner in `eshop_forms/form_settings.sql`, within the existing
+  form save transaction/receipt. Supports reminders, communication tone,
+  payment-method selection/message, VS policy, design and sale schedule.
+- Missing patch keys preserve values. Null removes a known override; section
+  reset preserves server lifecycle and unrelated metadata. No arbitrary form data
+  or public slug/key mutation is exposed through MCP.
+- Current Flutter opaque metadata writes are removed. Released full-data RPC
+  inputs remain a bounded compatibility adapter into the same owner until client
+  upgrade. Historical arrays normalize once. Duplicate old reminder validation
+  is removed; payment/recipient/queue/allocation owners are reused.
+- `forms.paymentOptions` shares the UI bank projection and existing Stripe
+  recipient projection. The latter now uses `can_author_forms`, removing its
+  conflicting order-write gate. Both actual form scope and form-author rights
+  are required; forms read consent alone cannot enumerate payment selection.
+- Historical root sale dates normalize into the canonical nested schedule at
+  admin read/save boundaries, using the existing runtime precedence and date
+  interpretation. Root aliases are retired on save, so resetting the schedule
+  cannot reapply an old root date. Public runtime read compatibility remains for
+  untouched legacy records until those records and clients migrate.
+- Form design saves now adopt the authoritative draft and version before the
+  next save. A widget test saves twice with versions 3 then 4 and one initial
+  read. No browser visual change or provider request is part of this cut.
+- The current migration assembler seals `20261026200000_form_authoring_settings.sql`.
+  Published stage 4A SQL stays frozen; only the newest canonical source cut is
+  regenerated. No trigger, table, receipt, sender or payment allocator is added.
+
+Evidence: [4B checks and source digests](../reports/admin-form-settings-evidence-2026-10-26.json).
+Public URL changes, inline MCP product edits, waitlist offers and general manual
+orders still remain. Stage 4 as a whole is not complete.
+
+## Stage 4 completed locally (2026-10-26, not deployed)
+
+The remaining planned administration paths now have explicit MCP operations:
+
+| Area | Canonical owner | Cutover |
+| --- | --- | --- |
+| Public slug/path | Existing form Save + public-link allocator/history | Separate read/write intent; generic DTO remains key/link-free; frozen link retry |
+| Full fields and inline products | Existing form aggregate Save | Product/type baselines, generated IDs, foreign-child rollback; age/document/surcharge metadata |
+| Ordinary admin order | Existing checkout command core and receipt | Rollback quote, actor/form/product/account hash, one confirmed intent; released facade keeps its original hash |
+| Waiting offers | Existing waitlist command/slots/queue | Proposal/detail/send/cancel/decline/withdraw plus quoted admin acceptance, preserving ticket identities |
+| Invoice preparation | Existing durable preparation owner/table | Confirmed create and accept receipts reuse the seat-order dispatch fence and lookup-only uncertain recovery |
+| Edge transport | Shared order fulfillment and waitlist coordinators | One HTTP uncertainty classifier; identical command IDs after lost replies; real UI acceptance body recognized as one intent |
+
+New order-create, waitlist-read/write and waitlist-accept consent scopes do not
+expand older grants. Acceptance additionally requires the order-create grant.
+Every server adapter binds actual occasion/organization/unit/form rows and current
+operation predicates, including before receipt replay. Waiting participant tokens
+remain behind their existing public customer boundary and never enter MCP DTOs.
+
+Intentional boundaries: released checkout/form signatures, unpaged UI proposal
+facade, old pending invoice receipts in lookup-only recovery, and existing public
+customer checkout/capability access. They delegate the same owners; remove upgrade
+facades only after client/worker upgrade and recorded legacy-data adoption.
+
+Evidence: [completion checks and source digests](../reports/admin-form-completion-evidence-2026-10-26.json).
+Stage 4 is complete as repository implementation; its migration, Edge and MCP
+rollout remains unperformed. Next planned domain stage is 5.
+
+
+## Occasion and organizer settings - stage 5
+
+The current UI and eight configuration tools share the existing occasion, unit
+and game command owners. `configuration-settings.json` is the explicit named
+field/type contract; SQL is generated from it and MCP builds its strict schemas
+from that same source. Current UI metadata sends only settings intent, preserving
+unrelated domain metadata. Released full-snapshot and four-argument game RPCs
+remain thin compatibility boundaries of the same writers.
+
+The original intent is hashed before state-dependent merging and before version
+checking. Reads and frozen receipt snapshots use the same safe configuration
+projection. Generic reads omit public links, raw metadata and ticket artwork;
+link inspection/rename uses an explicit operation and the existing allocator.
+Game editing preserves its occasion-editor authority and now requires the read
+version in current clients. Organizer metadata retains its independent manager
+predicate and explicit whole-unit consent. A concurrent move outside an explicit
+organizer binding rejects the read or rolls back the entire save after locking.
+
+Known feature settings preserve untouched server fields and enforce tenant/app,
+form, map-bundle and promotion prerequisites. Program notifications remain
+unavailable. New image references must belong to the occasion or its organizer;
+uploads still use the image Worker. Draft/setup finalization, ownership moves,
+provider setup and ticket artwork are outside the generic MCP settings intent.
+All eleven confirmed stage-5 catalog actions are covered; the next stage is 6.
+See [stage-5 evidence](../reports/admin-configuration-evidence-2026-10-26.json).

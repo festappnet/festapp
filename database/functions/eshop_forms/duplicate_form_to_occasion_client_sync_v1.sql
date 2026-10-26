@@ -13,13 +13,13 @@ BEGIN
   IF v_actor IS NULL OR v_target IS NULL
     OR NOT public.can_copy_form_target(v_target) THEN
     RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
+  IF v_source_occasion IS NULL OR NOT public.can_copy_form_source(v_source_occasion) THEN RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'sourceFormId',p_source_form_id,'targetOccasion',v_target,'locale',p_locale)::text,'UTF8'),
     'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.form.duplicate',v_target,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
-  IF v_source_occasion IS NULL OR NOT public.can_copy_form_source(v_source_occasion) THEN RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
   v_form:=public.duplicate_form_to_occasion_internal_v1(
     p_source_form_id,p_target_occasion_link,p_locale);
   RETURN public.complete_private_inventory_mutation_v1(p_command_id,v_target,
@@ -27,7 +27,7 @@ BEGIN
       'entityType','form','entityId',v_form,'operation','insert',
       'safeLabel','Duplicated form','changedFields',jsonb_build_array(
         'configuration','fields','products'))),'{}'::uuid[],
-    jsonb_build_object('formId',v_form));
+    jsonb_build_object('formId',v_form,'authoring',public.get_form_authoring_snapshot_internal(v_form)));
 END; $$;
 REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid,text) TO authenticated;

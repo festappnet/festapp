@@ -28,6 +28,7 @@ class EmailTemplateSub {
 
 class EmailTemplateModel {
   int? id;
+  String? revision;
   String? html;
   int? occasion;
   String? subject;
@@ -38,6 +39,7 @@ class EmailTemplateModel {
 
   EmailTemplateModel({
     this.id,
+    this.revision,
     this.html,
     this.occasion,
     this.subject,
@@ -50,6 +52,7 @@ class EmailTemplateModel {
   factory EmailTemplateModel.fromJson(Map<String, dynamic> json) {
     return EmailTemplateModel(
       id: json[Tb.email_templates.id],
+      revision: json['revision'],
       html: json[Tb.email_templates.html],
       occasion: json[Tb.email_templates.occasion],
       subject: json[Tb.email_templates.subject],

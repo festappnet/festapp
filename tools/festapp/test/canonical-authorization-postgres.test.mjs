@@ -21,6 +21,7 @@ async function forbidden(db,sql,args) {
 test('canonical truth table preserves server operation rights across 2048 role combinations',options,async t=>within(t,async(db,f)=>{
     await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,false)',[f.org,f.actor]);
     await db.query("update occasions set features='[{\"code\":\"reception\",\"is_enabled\":true}]' where id=$1",[f.occasion]);
+    await db.query(await readFile(new URL('../../../supabase/migrations/20261026190000_form_authoring.sql',import.meta.url),'utf8'));
     await db.query(await readFile(new URL('../../../database/tests/helpers/authorization_context_reference.sql',import.meta.url),'utf8'));
     for(let bits=0;bits<2048;bits++) {
         const b=Array.from({length:11},(_,i)=>Boolean(bits&(1<<i)));
@@ -57,7 +58,7 @@ test('canonical truth table preserves server operation rights across 2048 role c
           landing_read:b[7]||b[8]||b[5]||b[6],landing_write:b[7],abuse_read:b[5]||b[6],legal_read:b[6]||b[7],icons_write:b[5],copy_occasion_target:b[6],activity_log:b[4]||b[6]||b[7],
           publish:b[0]||b[5]||b[7],reviewed:b[0]||b[4],
           create:b[5]||b[6],occasion_editor_read:b[1]||b[4]||b[7],background_occasion:b[0]||b[4],background_unit:b[5]||b[6],information:b[1],map:b[0]||b[1],delete:b[5]||b[6]||b[7],
-          forms_author:b[0]||b[5],forms_catalog:b[1]||b[3],copy_source:b[1]||b[8],copy_target:b[0],
+          forms_author:b[0]||b[5],forms_catalog:b[1]||b[3]||b[0]||b[5],copy_source:b[1]||b[8],copy_target:b[0],
           news:b[0],information_write:b[0],directory_read:b[1]||b[3],unit_occasion_catalog:b.slice(0,7).some(Boolean)||b[8],legacy_unit_occasion_catalog:b[5]||b[6]||b[8],unit_information_read:b[8],unit_information_write:b[5],
           reception:b[9]||b[4]||b[7],schedule:b[0],schedule_read:b[1],schedule_participants:b[0]||b[1]||b[7],feedback:b[1]||b[7],
           speakers:b[0],speakers_read:b[1],services:b[4],participants:b[4]||b[7],users_manage:b[4]||b[7]||b[5],contacts:b[0]||b[4]||b[10],
@@ -81,7 +82,7 @@ test('canonical truth table preserves server operation rights across 2048 role c
           'ticket_layouts.read':r.layout,'ticket_layouts.write':r.layout,
           'occasions.create':r.create,'occasions.write':r.edit,
           'information.editor.read':r.information,'map.editor.read':r.map,
-          'forms.create':r.forms_author,'forms.delete':r.forms_author,'forms.catalog.read':r.forms_catalog,
+          'forms.create':r.forms_author,'forms.write':r.forms_author,'forms.delete':r.forms_author,'forms.catalog.read':r.forms_catalog,
           'forms.copy.source':r.copy_source,'forms.copy.target':r.copy_target,
           'news.write':r.news,'information.write':r.information_write,
           'unit_information.read':r.unit_information_read,'unit_information.write':r.unit_information_write,

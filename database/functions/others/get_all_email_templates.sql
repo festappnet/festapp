@@ -85,8 +85,8 @@ BEGIN
   ) INTO show_waitlist_templates;
 
   -- 5. Retrieve email templates
-  SELECT jsonb_agg(public.get_resolved_email_template(result.code,
-    jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org)) ORDER BY result.code)
+  SELECT jsonb_agg(public.get_email_template_state_internal(
+    jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org),result.code) ORDER BY result.code)
     INTO email_data
   FROM (
     SELECT DISTINCT et.code

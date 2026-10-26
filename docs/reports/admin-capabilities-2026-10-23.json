@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "date": "2026-10-23",
-  "sourceMain": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "date": "2026-10-26",
+  "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Provozní etapa 2B je dokončená a nasazená pro festapptickets / vstupenky.online: inspekce a blokace míst, uvolnění dočasných rezervací, prohození vstupenek, objednávky z míst a rušení vybraných vstupenek. UI i MCP používají společné doménové operace. Na žádost uživatele zde práce končí; etapy 3-10 zůstávají na později.",
+  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapy 3 a 4 jsou lokálně dokončené a ověřené; jejich produkční rollout neproběhl.",
   "actions": [
     {
       "id": "action-001",
@@ -776,9 +776,12 @@
       "title": "Povolit nebo zakázat ruční skenování",
       "description": "Nastavení TicketFeature, ne samotné provedení check-in.",
       "sources": [
-        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+        "lib/components/features/ticket_feature.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -790,9 +793,12 @@
       "title": "Zobrazovat skrytou poznámku při skenování",
       "description": "Samostatná viditelnost interních informací při kontrole vstupenek.",
       "sources": [
-        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+        "lib/components/features/ticket_feature.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -804,27 +810,39 @@
       "title": "Vytvořit, kopírovat a odstranit formulář",
       "description": "Použít existující FormCommands a jejich doménové podmínky.",
       "sources": [
-        "lib/components/forms/supabase_form_commands.dart"
+        "lib/components/forms/supabase_form_commands.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.create",
+        "forms.duplicate",
+        "forms.delete"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-047",
       "area": "Formuláře a prodej",
       "title": "Upravit pole formuláře a produktové vazby",
-      "description": "Kompletní validní agregát místo řady nezávislých field zápisů.",
+      "description": "Jeden verzovaný agregát polí, existujících vazeb i kompletních inline typů a produktů. Pokrývá také věkové podmínky, texty a platnost dokladů, výchozí volby i zobrazení příplatků. Nová ID vrací stejný uložený snapshot; chybné dítě vrátí celý Save zpět.",
       "sources": [
-        "lib/components/forms/supabase_form_commands.dart"
+        "lib/components/forms/supabase_form_commands.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-048",
@@ -832,55 +850,83 @@
       "title": "Nastavit limit kapacity a zobrazování zbývajících míst",
       "description": "Nezaměňovat prodané vstupenky, držení a nabídky čekací listiny.",
       "sources": [
-        "lib/components/forms/views/form_capacity_settings.dart"
+        "lib/components/forms/views/form_capacity_settings.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-049",
       "area": "Formuláře a prodej",
       "title": "Zapnout čekací listinu a délku nabídky místa",
-      "description": "Nabídka má vlastní životnost a kapacitní účinky.",
+      "description": "Zapnout čekací listinu a nastavit délku nabídky přes společné ukládání. Správa konkrétních nabídek zůstává samostatnou operací.",
       "sources": [
-        "lib/components/forms/views/form_capacity_settings.dart"
+        "lib/components/forms/views/form_capacity_settings.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-050",
       "area": "Formuláře a prodej",
       "title": "Připravit a spravovat nabídky čekací listiny",
-      "description": "Přes existující waitlist command owner, nikoliv nový výpočet v MCP.",
+      "description": "Dávkový návrh kapacity, detail čekajících vstupenek, odeslání, zrušení či odmítnutí nabídky, stažení čekajících a přijetí nabídky za účastníka. Původní identity vstupenek, receipts, fronta a případná faktura mají stávající vlastníky. Přijetí vyžaduje samostatný souhlas pro vytvoření objednávky.",
       "sources": [
-        "lib/components/forms/waitlist_commands.dart"
+        "lib/components/forms/waitlist_commands.dart",
+        "database/functions/eshop_forms/admin_form_waitlist.sql",
+        "database/functions/eshop_forms/admin_waitlist_acceptance.sql",
+        "tools/festapp/src/operations/form-sales.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "waitlist.proposal",
+        "waitlist.detail",
+        "waitlist.send",
+        "waitlist.cancel",
+        "waitlist.decline",
+        "waitlist.withdraw",
+        "waitlist.previewAccept",
+        "waitlist.accept"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-051",
       "area": "Formuláře a prodej",
-      "title": "Změnit název a veřejný odkaz formuláře",
-      "description": "Zachovat pravidla historie veřejných odkazů.",
+      "title": "Změnit název formuláře",
+      "description": "Změna názvu přes společný verzovaný příkaz. Změna veřejného odkazu je samostatná dosud nepokrytá operace.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-052",
@@ -888,13 +934,18 @@
       "title": "Nastavit splatnost platby",
       "description": "Respektovat zděděné hodnoty a explicitní override.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-053",
@@ -902,27 +953,37 @@
       "title": "Zapnout upomínky a nastavit interval",
       "description": "Změna konfigurace není pokynem k okamžitému odeslání.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-054",
       "area": "Formuláře a prodej",
       "title": "Nastavit bankovní a kartovou platební metodu",
-      "description": "Zachovat ověřeného příjemce a dostupnost měn; bankovní oprávnění se neobcházejí.",
+      "description": "Vybrat již existující ověřený Stripe účet a povolit bankovní převod. Stejný SQL owner ověří skutečného pořadatele, měny a kompatibilitu. Neprovádí připojení nového účtu ani aktivaci poskytovatele.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-055",
@@ -930,13 +991,18 @@
       "title": "Vybrat platební účet a zprávu pro příjemce",
       "description": "Konkrétní bankovní účet musí být pro formulář způsobilý.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-056",
@@ -944,41 +1010,56 @@
       "title": "Nastavit formální nebo neformální komunikaci",
       "description": "Podporovat explicitní hodnotu i dědičnost.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-057",
       "area": "Formuláře a prodej",
       "title": "Nastavit typ a počáteční číslo variabilního symbolu",
-      "description": "Náhodný symbol nebo posloupnost; zachovat unikátnost.",
+      "description": "Náhodný symbol nebo posloupnost s počátkem 1-9999999999. Pouze politika pro budoucí objednávky; stávající rezervace a unikátnost vlastní dosavadní allocator, ukládání nastavení žádný symbol nevydává.",
       "sources": [
-        "lib/components/forms/views/form_variable_symbol_settings.dart"
+        "lib/components/forms/views/form_variable_symbol_settings.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-058",
       "area": "Formuláře a prodej",
       "title": "Upravit barvy, typografii a vzhled formuláře",
-      "description": "Nastavení designu není změna obchodních pravidel.",
+      "description": "Karetní vzhled, barvy, název fontu a styl odpočtu. Uložení nepřepisuje jiné interní designové hodnoty, nenahrává font ani neupravuje geometrii plánku.",
       "sources": [
-        "lib/components/forms/views/form_design_settings.dart"
+        "lib/components/forms/views/form_design_settings.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-059",
@@ -986,13 +1067,19 @@
       "title": "Zobrazit efektivní šablonu a její dědičnost",
       "description": "Odlišit zdroj unit, occasion a systémovou šablonu.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.list",
+        "email_templates.inspect"
+      ],
       "phase": "3",
       "effect": "read",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-060",
@@ -1000,13 +1087,18 @@
       "title": "Upravit předmět a obsah šablony",
       "description": "Původní verze a zachování placeholderů.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-061",
@@ -1014,13 +1106,18 @@
       "title": "Odstranit override a obnovit dědičnost",
       "description": "Není to smazání nadřazené šablony.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-062",
@@ -1028,13 +1125,19 @@
       "title": "Nastavit nebo odstranit e-mailový banner",
       "description": "Změna může mít účinek v podřízených akcích.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.banner.inspect",
+        "email_templates.banner.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-063",
@@ -1042,13 +1145,18 @@
       "title": "Zobrazit náhled šablony",
       "description": "Bez skutečných zákazníků a bez rozesílky.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.preview"
+      ],
       "phase": "3",
       "effect": "read",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-064",
@@ -1074,7 +1182,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_settings_model.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1088,7 +1199,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_settings_model.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1102,7 +1216,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_settings_model.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.game.inspect",
+        "occasions.game.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1116,7 +1233,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_advanced_settings.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.publicLink",
+        "occasions.setPublicLink"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1130,7 +1250,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_advanced_settings.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1144,7 +1267,10 @@
       "sources": [
         "lib/components/occasion_settings/occasion_advanced_settings.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.settings.inspect",
+        "occasions.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Akce",
@@ -1186,7 +1312,10 @@
       "sources": [
         "lib/components/unit/views/unit_settings_screen.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.settings.inspect",
+        "units.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Pořadatel",
@@ -1200,7 +1329,10 @@
       "sources": [
         "lib/components/unit/views/unit_settings_screen.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.settings.inspect",
+        "units.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Pořadatel",
@@ -1214,7 +1346,10 @@
       "sources": [
         "lib/components/unit/views/unit_settings_screen.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.settings.inspect",
+        "units.settings.save"
+      ],
       "phase": "5",
       "effect": "write",
       "scope": "Pořadatel",
@@ -1485,16 +1620,129 @@
       "effect": "read",
       "scope": "Akce",
       "certainty": "audit"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-095",
+      "title": "Vypsat a zkontrolovat formuláře",
+      "description": "Stránkovaný souhrn a omezený detail formuláře včetně původních verzí a pouze souvisejících produktů. Bez veřejných klíčů či odkazů.",
+      "sources": [
+        "database/functions/eshop_forms/admin_form_reads.sql",
+        "tools/festapp/src/operations/forms.mjs"
+      ],
+      "mcp": [
+        "forms.list",
+        "forms.inspect"
+      ],
+      "effect": "read",
+      "deploymentState": "pending"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-096",
+      "title": "Změnit veřejný odkaz formuláře",
+      "description": "Výslovný záměr přečíst uložený veřejný slug/cestu nebo jej změnit přes stejný verzovaný Save a rezervace odkazů. Generické form reads zůstávají bez odkazů a přístupových UUID. Historie a tombstones se zachovávají.",
+      "sources": [
+        "database/functions/public_links/registry.sql",
+        "database/functions/eshop_forms/admin_form_commands.sql",
+        "tools/festapp/src/operations/forms.mjs"
+      ],
+      "mcp": [
+        "forms.publicLink",
+        "forms.setPublicLink"
+      ],
+      "effect": "write",
+      "deploymentState": "pending"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-097",
+      "title": "Upravit produkty přímo v editoru formuláře",
+      "description": "Kompletní inline typ a produkty ve stejném Save jako pole a nastavení. Povinné původní verze sdílených produktů/typů, kontrola skutečné akce, explicitní mazání a rollback chybného dítěte. Nevyžaduje řadu samostatných produktových zápisů.",
+      "sources": [
+        "database/functions/eshop_forms/update_form.sql",
+        "database/functions/eshop_forms/update_form_client_sync_v1.sql",
+        "tools/festapp/src/operations/forms.mjs"
+      ],
+      "mcp": [
+        "forms.save"
+      ],
+      "effect": "write",
+      "deploymentState": "pending"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending",
+      "id": "action-098",
+      "title": "Zkontrolovat existující platební možnosti formuláře",
+      "description": "Sdílený UI přehled propojených bezhotovostních bankovních účtů a ověřeného Stripe příjemce pro výslovné live/test prostředí. Vyžaduje form-author práva a forms write souhlas; čte uložená fakta a aktuální dostupnost bez dotazu poskytovateli.",
+      "sources": [
+        "database/functions/eshop_forms/form_payment_options.sql",
+        "database/functions/eshop_stripe/form_recipient.sql"
+      ],
+      "mcp": [
+        "forms.paymentOptions"
+      ],
+      "effect": "read"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending",
+      "id": "action-099",
+      "title": "Nastavit období prodeje a odpočet formuláře",
+      "description": "Začátek a konec jako ISO okamžiky s časovou zónou, zapnutí odpočtu a text před zahájením. SQL ověří pořadí okamžiků. Reset veřejných nastavení zachová interní příznak přípravy prodeje.",
+      "sources": [
+        "database/functions/eshop_forms/form_settings.sql",
+        "lib/components/forms/views/form_editor_content.dart"
+      ],
+      "mcp": [
+        "forms.save"
+      ],
+      "effect": "write"
+    },
+    {
+      "id": "action-100",
+      "area": "Formuláře a prodej",
+      "title": "Vytvořit administrátorskou objednávku z formuláře",
+      "description": "Náhled skutečného checkoutu v rollbacku a potvrzení přes původní transakci a receipt. Původní hash váže osobu správce, vstupy, cenu, přijímající účet a uložený formulář. Nejistý výsledek či příprava faktury se obnovují stejným UUID bez druhé objednávky či opakovaného invoice POST. Příkaz neprovádí platbu kartou ani refundaci.",
+      "sources": [
+        "database/functions/eshop_forms/admin_form_orders.sql",
+        "supabase/functions/send-ticket-order/confirmedFormOrder.ts",
+        "tools/festapp/src/operations/form-sales.mjs"
+      ],
+      "mcp": [
+        "forms.previewOrder",
+        "forms.createOrder"
+      ],
+      "phase": "4",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     }
   ],
   "dataQualityReview": {
-    "date": "2026-10-23",
-    "status": "Celá provozní etapa 2B ověřena a nasazena.",
-    "finding": "68 PostgreSQL testů prošlo bez skipů; dále 31 vzdálených/SDK testů, 37 testů souhlasu, 14 testů obnovy klienta a 3 cílené UI testy. Produkční kontrola potvrdila atomický ledger, shodu SQL zdrojů a ACL, zdravé Edge/MCP a koherentní web build869. Původní PWA limity zůstaly zachované. Historická PDF readiness evidence není důkazem živé PDF připravenosti; PDF editor není součástí tohoto řezu.",
-    "nextStep": "Práce zastavena po dokončené etapě 2B. Při pozdějším pokračování začít etapou 3 podle aktuálního main.",
-    "evidence": "admin-seats-2b-evidence-2026-10-23.json"
+    "status": "Etapa 4: lokálně ověřené společné SQL a omezené datové kontrakty.",
+    "finding": "Návrh čekací listiny stránkuje před JSON agregací a zachovává globální FIFO výpočet. Quote používá skutečný příkaz v rollbacku; potvrzení drží stejný receipt a externí invoice fence. Naměřené velikosti jsou syntetické SQL/JSON vzorky, nikoli produkční latence nebo tokenové úspory.",
+    "nextStep": "Stejným způsobem prověřit rozsah a vlastníky etapy 5; rollout hotových etap zůstává samostatný krok.",
+    "evidence": "admin-form-completion-evidence-2026-10-26.json"
   },
-  "progress": "Etapy 0, 1 a 2 včetně provozního řezu 2B jsou nasazené. Poslední vydání: 0.20.371+869. Práce je zastavená po etapě 2B; další v pořadí je etapa 3. Starší čekání na review PR #571 už neplatí.",
+  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 (#617) jsou publikované k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
   "phases": [
     {
       "id": "0",
@@ -1534,13 +1782,13 @@
       "purpose": "Obsloužit existující plánek při prodeji a řešení rezervací či objednávek.",
       "example": "Zablokovat místo, uvolnit dočasnou rezervaci, prohodit místa, vytvořit objednávku nebo zrušit vybrané vstupenky.",
       "result": "Před potvrzením jsou vidět skutečně dotčená místa, vstupenky a finanční dopady. Jeden související zápis je atomický a lze jej bezpečně obnovit se stejným ID.",
-      "note": "Tady jsme skončili. Etapa 2B řeší provoz existujícího plánku; etapa 7 bude řešit jeho pokročilou tvorbu a vzhled vstupenek."
+      "note": "Etapa 2B je nasazená. Etapa 7 bude řešit pokročilou tvorbu plánků a vzhled vstupenek."
     },
     {
       "id": "3",
       "title": "E-mailové šablony a dědičnost",
-      "state": "next",
-      "status": "Další na řadě",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Sjednotit úpravy šablon pořadatele a akce, bannery a náhled výsledného e-mailu.",
       "example": "Upravit potvrzení objednávky pro konkrétní akci nebo vrátit šablonu k výchozí podobě pořadatele.",
       "result": "UI i MCP ukážou, odkud výsledná šablona pochází, a použijí stejné ukládání a renderer náhledu.",
@@ -1549,18 +1797,18 @@
     {
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
-      "note": ""
+      "note": "Dokončeny 4A/4B i zbývající admin operace: uložené veřejné odkazy, inline produktové agregáty, nastavení polí, čekací nabídky a objednávky. UI i MCP používají stejné příkazy, receipts a finanční/e-mailové vlastníky. Online platba zákazníka zůstává ve stávajícím veřejném checkoutu; admin příkazy platební kartu nenabíjejí."
     },
     {
       "id": "5",
       "title": "Nastavení akce a pořadatele",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "next",
+      "status": "Další na řadě",
       "purpose": "Sjednotit změny základních údajů, termínů, funkcí, publikace a prodeje.",
       "example": "Posunout začátek akce nebo upravit její dostupné funkce.",
       "result": "Změny půjdou přes existující společné ukládání. Práva k jedné akci automaticky nedávají právo měnit celého pořadatele.",
@@ -1616,5 +1864,6 @@
       "result": "Citlivé kroky zachovají finanční oprávnění a ověří skutečný výsledek. Výpadek nesmí způsobit dvojí externí účinek.",
       "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
     }
-  ]
+  ],
+  "phaseSummary": "Nasazeno 0-2B; etapy 3 a 4 lokálně dokončené, nenasazené. Další je etapa 5."
 }

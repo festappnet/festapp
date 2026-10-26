@@ -1,4 +1,5 @@
--- A replacement has already atomically canceled its old allocation. Provider
+-- Confirmed seat replacements and administrative form orders share this owner.
+-- Their order allocation is already committed. Provider
 -- preparation retries keep the new allocation and fence invoice POST separately.
 CREATE TABLE IF NOT EXISTS eshop.replacement_invoice_preparations(
  command_id uuid PRIMARY KEY,
@@ -23,7 +24,7 @@ BEGIN
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
  SELECT o.state INTO state FROM eshop.orders o WHERE o.id=p_order FOR UPDATE;
  SELECT r.response INTO receipt FROM public.client_mutation_receipts r
-  WHERE r.command_id=p_command AND r.command_name='inventory.order.replace' AND r.status='completed'
+  WHERE r.command_id=p_command AND (r.command_name='inventory.order.replace' OR (r.command_name IN('inventory.order.create','inventory.waitlist.accept') AND r.response#>'{data,adminQuote}' IS NOT NULL)) AND r.status='completed'
   AND r.response->>'status'='applied' AND (r.response#>>'{data,order,id}')::bigint=p_order;
  IF receipt IS NULL AND NOT EXISTS(SELECT 1 FROM eshop.replacement_invoice_preparations a
   WHERE a.command_id=p_command AND a.order_id=p_order) THEN

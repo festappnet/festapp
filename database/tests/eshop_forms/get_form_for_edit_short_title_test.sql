@@ -4,6 +4,8 @@
 
 DO $$
 DECLARE
+    v_actor uuid;
+    v_actor_alias text := 'form-short-title-' || gen_random_uuid();
     v_org_id bigint;
     v_unit_id bigint;
     v_occasion_id bigint;
@@ -19,15 +21,6 @@ DECLARE
 BEGIN
     -- 1. Setup: Create Hierarchy & User context
     
-    -- Mocking Permission Functions to bypass Auth/User dependencies
-    -- Mocking Permission Functions to bypass Auth/User dependencies
-    EXECUTE 'CREATE OR REPLACE FUNCTION public.check_is_editor_order_view_via_form_link(form_link text)
-    RETURNS void AS ''
-    BEGIN
-        RETURN;
-    END;
-    '' LANGUAGE plpgsql';
-
     -- Insert Org
     INSERT INTO public.organizations (title) VALUES ('Form Test Org') RETURNING id INTO v_org_id;
     
@@ -38,6 +31,14 @@ BEGIN
     INSERT INTO public.occasions (organization, unit, title, link, start_time, end_time, is_hidden)
     VALUES (v_org_id, v_unit_id, 'Form Test Occasion', v_occasion_link, now(), now() + interval '1 day', false)
     RETURNING id INTO v_occasion_id;
+
+    PERFORM public.create_user_for_test(v_actor_alias,v_actor_alias||'@example.invalid');
+    v_actor:=public.get_user_id(v_actor_alias);
+    UPDATE public.user_info SET organization=v_org_id WHERE id=v_actor;
+    INSERT INTO public.occasion_users(occasion,"user",is_editor_view,is_editor_order_view)
+    VALUES(v_occasion_id,v_actor,true,true);
+    PERFORM set_config('request.jwt.claim.sub',v_actor::text,true);
+    PERFORM set_config('request.jwt.claim.role','authenticated',true);
 
     -- Insert Form
     INSERT INTO public.forms (occasion, title, link, is_open)

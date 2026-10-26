@@ -938,10 +938,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           DbEmailTemplates.deleteEntityEmailTemplate(
                             occasionId:
                                 widget.emailTemplatesResponse.occasion?.id,
-                            unitId:
-                                widget.emailTemplatesResponse.occasion == null
-                                ? widget.emailTemplatesResponse.unit.id
-                                : null,
+                            unitId: widget.emailTemplatesResponse.unit.id!,
+                            organizationId: widget.emailTemplatesResponse.organization.id!,
+                            expectedRevision: widget.template.revision!,
                             code: widget.template.code!,
                           ));
 

@@ -1,3 +1,4 @@
+import 'email_template_commands.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -38,7 +39,17 @@ class DbEmailTemplates {
   }
 
   static Future<void> updateEmailTemplate(EmailTemplateModel template) async {
-    await _supabase.rpc('update_email_template', params: {"p_data": template});
+    final revision = template.revision;
+    if (revision == null) throw StateError('Email template baseline required');
+    final stored = await EmailTemplateCommands(_supabase).change(
+      entityType: template.occasion != null ? 'occasion' : 'unit',
+      entityId: (template.occasion ?? template.unit)!,
+      organizationId: template.organization!, unitId: template.unit!,
+      code: template.code!, expectedRevision: revision, action: 'save',
+      payload: {'title': template.title, 'subject': template.subject, 'html': template.html},
+    );
+    template.id = stored['id'];
+    template.revision = stored['revision'];
   }
 
   static Future<EmailTemplatesResponse> getEntityEmailTemplates({
@@ -52,45 +63,36 @@ class DbEmailTemplates {
     return EmailTemplatesResponse.fromJson(response);
   }
 
-  static Future<void> updateEntityEmailBanner({
-    int? occasionId,
-    int? unitId,
+  static Future<Map<String, dynamic>> updateEntityEmailBanner({
+    required EmailTemplatesResponse scope,
     String? bannerUrl,
   }) async {
-    if (occasionId != null) {
-      await _supabase.rpc('update_entity_email_banner', params: {
-        "p_entity_type": "occasion",
-        "p_entity_id": occasionId,
-        "p_banner_url": bannerUrl
-      });
-    } else if (unitId != null) {
-      await _supabase.rpc('update_entity_email_banner', params: {
-        "p_entity_type": "unit",
-        "p_entity_id": unitId,
-        "p_banner_url": bannerUrl
-      });
-    }
+    final result = await EmailTemplateCommands(_supabase).banner(
+      entityType: scope.occasion != null ? 'occasion' : 'unit',
+      entityId: (scope.occasion?.id ?? scope.unit.id)!,
+      organizationId: scope.organization.id!, unitId: scope.unit.id!,
+      expectedRevision: scope.bannerState!['revision'] as String,
+      bannerUrl: bannerUrl,
+    );
+    scope.bannerState = result;
+    return result;
   }
 
   static Future<void> deleteEntityEmailTemplate({
     int? occasionId,
-    int? unitId,
+    required int unitId,
+    required int organizationId,
+    required String expectedRevision,
     required String code,
   }) async {
-    if (occasionId != null) {
-      await _supabase.rpc('delete_entity_email_template', params: {
-        "p_entity_type": "occasion",
-        "p_entity_id": occasionId,
-        "p_code": code
-      });
-    } else if (unitId != null) {
-      await _supabase.rpc('delete_entity_email_template', params: {
-        "p_entity_type": "unit",
-        "p_entity_id": unitId,
-        "p_code": code
-      });
-    }
+    await EmailTemplateCommands(_supabase).change(
+      entityType: occasionId != null ? 'occasion' : 'unit',
+      entityId: occasionId ?? unitId,
+      organizationId: organizationId, unitId: unitId,
+      code: code, expectedRevision: expectedRevision, action: 'reset',
+    );
   }
+
 }
 
 class EmailAuthoringContext {
@@ -145,16 +147,19 @@ class EmailTemplatesResponse {
   final UnitModel unit;
   final UnitModel organization;
   final List<EmailTemplateModel> templates;
+  Map<String, dynamic>? bannerState;
 
   EmailTemplatesResponse({
     this.occasion,
     required this.unit,
     required this.organization,
     required this.templates,
+    this.bannerState,
   });
 
   factory EmailTemplatesResponse.fromJson(Map<String, dynamic> json) {
     return EmailTemplatesResponse(
+      bannerState: json['banner'] == null ? null : Map<String, dynamic>.from(json['banner']),
       occasion: json['occasion'] != null
           ? OccasionModel.fromJson(json['occasion'])
           : null,

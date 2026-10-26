@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
 import 'package:fstapp/components/forms/models/form_presentation.dart';
@@ -99,7 +100,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   final ScrollController _scrollController = ScrollController();
   bool _prototypeSaved = false;
   bool get _prototype => widget.prototypeBundle != null;
-  bool get _canEdit => _prototype || RightsService.canUpdateOrders();
+  bool get _canEdit => _prototype || RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _canSeeReservations =>
       !_prototype && RightsService.canSeeReservations();
 
@@ -207,13 +208,17 @@ class _FormEditorContentState extends State<FormEditorContent>
         return;
       }
       await prepareFormHtml(form, _htmlSave);
-      await DbForms.updateForm(form);
+      final saved = await DbForms.updateForm(form);
       _htmlSave.markSaved();
       if (!mounted) return;
       ToastHelper.Show(
           context, "${CommonStrings.saved}: ${form.definition.link}",
           severity: ToastSeverity.Ok);
-      await loadData();
+      setState(() {
+        _bundle = _bundle!.afterSave(saved);
+        _snapshot.accept(saved.toEditedJson());
+        _acceptRenderedDraft(_bundle!);
+      });
       widget.onDataUpdated?.call();
     } catch (e) {
       if (!mounted) return;
