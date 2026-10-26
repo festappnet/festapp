@@ -102,7 +102,7 @@ Add the package to your Flutter application's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  venue_seat_picker: ^0.3.7
+  venue_seat_picker: ^0.4.3
 ```
 
 The object API uses `VenueLayoutController`, `VenueLayoutEditor`,

@@ -4,6 +4,76 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_inspector.dart';
 
 void main() {
+  test('each side can remove an imported fixed chair independently', () {
+    final original = tableLayout(
+      shape: 'rectangle',
+      count: 8,
+      width: 240,
+      height: 96,
+      edgeCounts: [4, 0, 4, 0],
+    );
+    final table = original.nodes.firstWhere((n) => n.kind == 'table');
+    // Imported chairs can be ordered independently of their table side.
+    final document = original.copyWith(
+      nodes: original.nodes
+          .map(
+            (n) => n.kind == 'seat'
+                ? n.copyWith(
+                    properties: {
+                      ...n.properties,
+                      'slot': tableSideForSeat(original, n) == 'top' ? 10 : 0,
+                    },
+                  )
+                : n,
+          )
+          .toList(),
+      attachments: original.attachments
+          .map(
+            (a) => {
+              ...a,
+              'placement': {'mode': 'free'},
+            },
+          )
+          .toList(),
+    );
+    final c = VenueLayoutController(document);
+    addTearDown(c.dispose);
+    for (final side in [0, 2]) {
+      final counts = [4, 0, 4, 0]..[side] = 3;
+      expect(
+        c.canSetSeatCount(table.id, 7, edgeCounts: counts),
+        isTrue,
+        reason: 'Removing a chair on side $side must remain available',
+      );
+      c.setSeatCount(table.id, 7, edgeCounts: counts);
+      expect(c.error, isNull);
+      expect(
+        c.document.nodes
+            .firstWhere((n) => n.id == table.id)
+            .seating['edgeCounts'],
+        counts,
+      );
+      for (final seat in c.document.nodes.where((n) => n.kind == 'seat')) {
+        final before = document.nodes.firstWhere((n) => n.id == seat.id);
+        expect(
+          [seat.x, seat.y, seat.rotation],
+          [before.x, before.y, before.rotation],
+        );
+      }
+      c.undo();
+      expect(c.document.toJson(), document.toJson());
+    }
+    c.protectedSeatIds = () => document.nodes
+        .where(
+          (n) => n.kind == 'seat' && tableSideForSeat(document, n) == 'bottom',
+        )
+        .map((n) => n.id)
+        .toSet();
+    expect(c.canSetSeatCount(table.id, 7, edgeCounts: [4, 0, 3, 0]), isFalse);
+    expect(c.canSetSeatCount(table.id, 7, edgeCounts: [3, 0, 4, 0]), isTrue);
+    expect(c.document.toJson(), document.toJson());
+  });
+
   testWidgets(
     'table edge controls reflow actual chairs and reject edge overflow',
     (tester) async {

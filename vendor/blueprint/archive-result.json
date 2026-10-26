@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "48477cff5920b22b054137eae779686dbaf09190",
+  "sourceCommit": "3b56d2448fe75a60248e99bde8653afd5e052bdd",
   "passed": true,
   "coreSourceByteEquivalent": true,
   "pubSelectedCoreAndWrapper": true,
@@ -11,7 +11,7 @@
     "src/index.js": "1a2e6e9fc60472dc9f747fbd75e488d6ef22da6d7404ccc6e5f26e9f558c4edb",
     "src/index.d.ts": "183da0fad404867a2e93a44de9e2a32a784b8897f962704def864e7a45814dc6",
     "dist/venue_layout_kernel.js": "7cbffdde7c86050ccb5d5ffd63d5fd1f95ed023de69df614209c859b6d4197d2",
-    "dist/manifest.json": "180f9341cf03f885edc4ccc33ecffdb6d64cb23c03ba79df6f52e50aaea503f9",
+    "dist/manifest.json": "f0e9a04f0525faaf0a880250fc6a482624b1880f2a7ed4ddcd61a04872c16f26",
     "demo/index.html": "b7e43c5adede6063e37c18975c566e0ea077fd6fe69421d8dc46b36f7ace0272",
     "LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
     "assets/layout_fonts/fixtures.json": "d92619359e31da7c24fc06e6259533977dbf48b899dc63a5332b24f93c53860b",
