@@ -1,0 +1,253 @@
+{
+  "date": "2026-10-26",
+  "stage": "4 complete",
+  "state": "locally_verified_not_deployed",
+  "verification": "standard",
+  "branch": "feat/admin-mcp-stage4-complete-20261026",
+  "authoritativeMain": "3988bb7cbaf8766068a84f49f759d5544269e325",
+  "parent": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/616",
+    "head": "a525f5aa59d32d2b000159124e81c2818a9721e7",
+    "stateAtVerification": "OPEN, stacked on #615 and #613"
+  },
+  "newTools": [
+    "forms.publicLink",
+    "forms.setPublicLink",
+    "forms.previewOrder",
+    "forms.createOrder",
+    "waitlist.proposal",
+    "waitlist.detail",
+    "waitlist.send",
+    "waitlist.cancel",
+    "waitlist.decline",
+    "waitlist.withdraw",
+    "waitlist.previewAccept",
+    "waitlist.accept"
+  ],
+  "expandedTool": "forms.save (full inline types/products and current age/document/surcharge field settings)",
+  "closure": {
+    "confirmedStage4CatalogActionsWithoutTools": [],
+    "catalogActions": 100,
+    "catalogTools": 60,
+    "nextStage": "5: occasion and organizer settings"
+  },
+  "canonicalOwners": {
+    "formLinks": "Existing update_form_client_sync_v1 receipt and public link reservation/history",
+    "inlineChildren": "Existing form aggregate save, baseline maps, price/deletion guards and returned snapshot",
+    "orderCreation": "Existing create_ticket_order_client_sync_v1 extracted once into private create_ticket_order_command_internal; released signature and hash remain unchanged",
+    "waitlist": "Existing execute_waitlist_command_client_sync_v1, original tickets/offer slots, global FIFO and capacity owner",
+    "invoice": "Existing replacement_invoice_preparations table and claim/dispatch/release/complete owner, extended only to server-proven confirmed create/accept receipts",
+    "email": "Existing sealed capability preparation and globally gated email_messages queue",
+    "transport": "Shared confirmed-order fulfillment, waitlist Edge coordinator and commandEdgeResponse uncertainty handling"
+  },
+  "retired": [
+    "MCP inability to save inline product children atomically with fields/settings",
+    "Generic-DTO workaround for public link access",
+    "Separate order/waitlist transport uncertainty classification",
+    "Independent Edge fulfillment paths for confirmed order variants",
+    "Ambiguous rejection of current UI acceptance plus accompanying orderDetails"
+  ],
+  "retainedBoundaries": [
+    "Released checkout/form RPC signatures on the same owners until client upgrade",
+    "Unpaged UI waitlist proposal facade on the same paged projection",
+    "Historical pending invoice receipts remain lookup-only without a fresh leased_keep_pending proof",
+    "Existing public customer checkout/registration/capability access; administrator commands never use participant tokens",
+    "Administrative orders/acceptances use bank/invoice creation; customer online card payment and refunds retain their existing separate journeys"
+  ],
+  "contracts": {
+    "scope": "Stored occasion/organization/unit/form and current typed operation predicates, before replay and mutation",
+    "newConsent": [
+      "festapp:orders:create",
+      "festapp:waitlist:read",
+      "festapp:waitlist:write",
+      "festapp:waitlist:accept"
+    ],
+    "acceptConsent": "waitlist accept additionally requires waitlist write and order create; dependencies preserve existing read consent",
+    "quote": "Actual command and invoice/email gate execute in rollback. Actor, stored form/product/field facts, input, price, receiving account and (for acceptance) offer/slots bind approval. No preview order/receipt/email persists; sequences may advance.",
+    "identity": "Waiting ticket IDs reused, no shadow person ledger; expired commands cannot allocate a second order",
+    "retry": "Identical UUID/payload after lost reply; frozen receipt and quoted intent. Uncertain invoice POST switches to lookup-only recovery; no second provider POST.",
+    "output": "Generic form DTOs stay key/link-free. Explicit public links return saved slug/encoded path, never access UUID. MCP sales results project no capability/sealing material."
+  },
+  "migration": {
+    "path": "supabase/migrations/20261026210000_form_administration_completion.sql",
+    "sha256": "86197e5b5a8d25ba49f60b5d54a99184734b7194e71def217e94afef2273bf62",
+    "functionDeclarations": 34,
+    "uniqueFunctionNames": 34,
+    "previousPublishedMigrationsUnchanged": {
+      "supabase/migrations/20261026190000_form_authoring.sql": "26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa",
+      "supabase/migrations/20261026200000_form_authoring_settings.sql": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc"
+    },
+    "existingInvoiceTableDdlUnchanged": true,
+    "newPersistentTables": 0,
+    "newApplicationTriggers": 0,
+    "newReceiptOwners": 0
+  },
+  "checks": [
+    {
+      "command": "FESTAPP_MCP_TEST_DATABASE_URL=<marked-loopback-disposable-admin-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/forms-completion-postgres.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/forms.test.mjs test/seat-orders-postgres.test.mjs",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "realPostgresCases": 51,
+      "pureBoundaryCases": 4,
+      "log": "/tmp/festapp-stage4-db-final.log",
+      "coverage": [
+        "All new link/inline/field/order/waitlist entrypoints through real SQL and actual Edge coordinators",
+        "Lost replies after real create/send/accept; frozen retry and revocation",
+        "Actual invoice lease/dispatch/completion with provider boundary simulated; one order and one POST after uncertainty",
+        "Offer decline/cancel/withdraw and paid administrative acceptance preserve original ticket IDs",
+        "Changed bank recipient invalidates quote; expired receipt cannot create replacement",
+        "Old checkout request SHA remains identical; private/public/service ACLs and canonical source parity",
+        "105-recipient bounded pages retain global allocations and legacy UI semantics",
+        "Existing form/settings/checkout concurrency and seat-order/invoice recovery regressions"
+      ]
+    },
+    {
+      "command": "pnpm --dir tools/festapp exec node --test test/form-sales-http.test.mjs test/seat-order-http.test.mjs test/remote.test.mjs",
+      "passed": 51,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/tmp/festapp-stage4-http-final.log",
+      "coverage": "Actual Supabase HTTP network/relay/auth failures and preserved bodies, pending receipts, shared scope-before-sealing coordinator, MCP SDK and explicit new consent boundaries"
+    },
+    {
+      "command": "pnpm --dir web_client exec node --test tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js tests/forms/waitlist_flow.test.js tests/forms/waitlist_presentation.test.js",
+      "passed": 74,
+      "log": "/tmp/festapp-stage4-web-final.log"
+    },
+    {
+      "command": "deno test --allow-env --allow-read supabase/functions/send-ticket-order/commandIdentity_test.ts supabase/functions/send-ticket-order/fakturoid_test.ts supabase/functions/_shared/waitlistEmail_test.ts",
+      "passed": 25,
+      "log": "/tmp/festapp-stage4-deno-final.log"
+    },
+    {
+      "command": "deno check supabase/functions/send-ticket-order/index.ts supabase/functions/waitlist-commands/index.ts",
+      "result": "passed",
+      "log": "/tmp/festapp-stage4-entrypoints.log"
+    },
+    {
+      "commands": [
+        "python3 automation/assemble-form-authoring-migration.py --check",
+        "python3 automation/generate_canonical_source_contract.py --check",
+        "python3 automation/generate_authorization_policy_contract.py --check",
+        "node automation/reports/generate_admin_capabilities.mjs --check",
+        "git diff --check"
+      ],
+      "result": "passed"
+    }
+  ],
+  "totalPassingCases": 205,
+  "dataNetwork": {
+    "measuredFixture": "Marked disposable PostgreSQL and actual adapters; only synthetic rows, instrumented RPC boundaries",
+    "samples": {
+      "orderRequests": {
+        "calls": [
+          {
+            "name": "preview_admin_form_order",
+            "requestBytes": 207,
+            "responseBytes": 391
+          },
+          {
+            "name": "create_admin_form_order",
+            "requestBytes": 461,
+            "responseBytes": 2552
+          },
+          {
+            "name": "create_admin_form_order",
+            "requestBytes": 461,
+            "responseBytes": 2552
+          },
+          {
+            "name": "create_admin_form_order",
+            "requestBytes": 461,
+            "responseBytes": 2552
+          }
+        ],
+        "edgeRequests": 3
+      },
+      "proposalBytes": {
+        "legacyRecipients": 105,
+        "legacyBytes": 5158,
+        "pages": [
+          {
+            "name": "get_form_waitlist_context",
+            "requestBytes": 130,
+            "responseBytes": 2727
+          },
+          {
+            "name": "get_form_waitlist_context",
+            "requestBytes": 131,
+            "responseBytes": 2728
+          },
+          {
+            "name": "get_form_waitlist_context",
+            "requestBytes": 131,
+            "responseBytes": 702
+          }
+        ]
+      }
+    },
+    "limits": [
+      "Byte counts are SQL/JSON payloads, excluding HTTP/auth/delegated-context overhead. No token savings or production latency claim.",
+      "Proposal sample compares a bounded first page to the legacy full UI read; full traversal has more envelope overhead and is not claimed to save total bytes. Global FIFO ranking still scans eligible tickets before paged JSON aggregation.",
+      "Order sample deliberately includes a lost reply and repeated identical creation calls; all resolve to one receipt/order. Internal rollback SQL is not another HTTP request.",
+      "Invoice provider responses are simulated. Actual durable SQL dispatch/lease ownership and completion execute; no paid external call occurs."
+    ]
+  },
+  "limits": [
+    "No production migration, Edge/MCP deployment, message delivery, customer payment or real provider call",
+    "Only marked disposable DBs and synthetic orders/references are used",
+    "No Dart UI logic/layout changed; Flutter/browser/release builds not rerun. Current UI request shapes are covered by shared Edge protocol tests and web waitlist suites.",
+    "Implementation is complete for stage 4 in the plan, but the published review stack is not merged/deployed and later stages remain open"
+  ],
+  "sourceSha256": {
+    "assets/translations/cs.json": "6abba6e7514c4473fcfdb79f95a95cacc01d0ea6aaeb1b32a8fe5838e44c2abe",
+    "assets/translations/de.json": "a15cbed99a578271826c455c55ccebeeb2453a24ff6612e1a8f29813c1e971ec",
+    "assets/translations/en.json": "ac45274e346809130ce247d9e25488033e796bd2b5814432aa05014973d7e1ee",
+    "assets/translations/pl.json": "1caa298253f2b0c9b19cc981e1b79fb2bf9e535bb88574d912c5038470ade02d",
+    "assets/translations/sk.json": "79494721a88b2d829a6937455c0efd0d1360d46a926ec6d7303ff901e6721102",
+    "assets/translations/uk.json": "2d377f1f9bdda0984891dacff91e8b92b5ab8ab655e1de28348f3949d6908fbd",
+    "automation/assemble-form-authoring-migration.py": "e8e30fbfe801978d8193452620d78b968d451f5d948115c172c7acedad025a98",
+    "automation/canonical-operation-sources.json": "3e91f8c9172cda0dd474e6fede26cec6bb0b46aefcb8b1cbbdb7d698d2330b1d",
+    "automation/reports/generate_admin_capabilities.mjs": "3cd536440161dd4be1af8def645b55411644feac956934fdaa83dc11f6ee1932",
+    "database/functions/eshop_forms/admin_form_commands.sql": "5157b1c2a4335b84a73f17d5605eab0e88d9a9f069851aad32b2009e2363c761",
+    "database/functions/eshop_forms/admin_form_orders.sql": "6e79bdf715a97116c3499dd95bd8a784dba0ae13da9c29e67e423908d0017f24",
+    "database/functions/eshop_forms/admin_form_reads.sql": "e303fa3cb8abf59696a223f4b1a85a35b15506d0a07b59d2879c4390e4ebe27c",
+    "database/functions/eshop_forms/admin_form_waitlist.sql": "21da475fef1fe2660bc450db86ec755ae6e4e966ec005778b1dbfd5ce22e25a4",
+    "database/functions/eshop_forms/admin_waitlist_acceptance.sql": "c6a0816c0ae2786322b13cb1eb3c5e4d979e658c356dfdb8a2846ba2b3def7a9",
+    "database/functions/eshop_orders/create_ticket_order_client_sync_v1.sql": "8d9c25a1dba0ad380a66e483231e9a71520ac513a599922a68debe00bc8c6eea",
+    "database/functions/eshop_orders/replacement_invoice_preparation.sql": "349634ea20418b8d9c4309f37147c84a82aa4289c78769646edcd647c4dac36b",
+    "database/functions/eshop_waitlist/commands.sql": "1dae4a76261d48b7adfc2d182ee034cb36793431189f537d0fb8624daf657598",
+    "database/functions/eshop_waitlist/email_context.sql": "4e02064435f8490d0b6d3f0473c37cb6fb9fafc2fef7e02f91615bd56890f9b7",
+    "database/functions/eshop_waitlist/offers.sql": "6d155f03a6f402b743cf498e1b8dcbdca6da043b9f9c64cb42b577d3ca5b880b",
+    "database/tests/canonical_mutation_source_parity_test.sql": "c6c42b7c376c2e34e5a4afacbaf70484d58270cfd33050d08a041b739edf8631",
+    "lib/components/forms/README.md": "4744db0fec51a3caa79b0a4e242d00ab72ca95697ae15d7281972d642fd2b963",
+    "packages/festapp_contracts/mcp-permissions.mjs": "1775d30936df6a471283af8af8421758fd2d063d94bec445abec832240948c67",
+    "supabase/functions/send-ticket-order/commandIdentity.ts": "5e0790b3e40aa468a07ae0d2231bd4434382d017cc19cf2a443715b9c6fb98bd",
+    "supabase/functions/send-ticket-order/commandIdentity_test.ts": "1ffa4aa7ae6804feb70875e492e7caec734429abe14506663e841232b42953b2",
+    "supabase/functions/send-ticket-order/confirmedFormOrder.ts": "504a5740621e6820feb7e318da478f993aa7673570a23dd3e30738e60d7ff556",
+    "supabase/functions/send-ticket-order/confirmedReplacement.ts": "4704d7ebbdc9cdc40dcd275daca82af08dd74e12dfaa32aae02bc3f4299cf8cf",
+    "supabase/functions/send-ticket-order/confirmedWaitlistOrder.ts": "1764ea2adbed63709c3e584f31d034a9a1c860b1735bb404214a99c4bdee031a",
+    "supabase/functions/send-ticket-order/fakturoidPreparation.ts": "c02bdec14c0bc5d42a394c96e282c569b7f3186eaf33763662ad04cc13ef6473",
+    "supabase/functions/send-ticket-order/index.ts": "2dd6e5aa7825c0dc241a6ccc809060e2fa3e18ce82265759781279137c26b6d8",
+    "supabase/functions/waitlist-commands/executeOperation.ts": "a8b78c160b1361cc724c440a2b83e7acd5681e089530df62c72215c7d40349bb",
+    "supabase/functions/waitlist-commands/index.ts": "636a10b80b9ccd7878257b7ef7f49d77e500a44058a197901e7705fa2939a187",
+    "supabase/migrations/20261026210000_form_administration_completion.sql": "86197e5b5a8d25ba49f60b5d54a99184734b7194e71def217e94afef2273bf62",
+    "tools/festapp/src/errors.mjs": "af5f958f39eb8383b1c237b25dd6d7ae3497525747c1e27aa1f6a90d4ced25e6",
+    "tools/festapp/src/operations/catalog.mjs": "56bb5d51a181eec8f24205edfacf91ae9b98c9375e89c5f7e6121b4c93aa1461",
+    "tools/festapp/src/operations/form-sales.mjs": "4f1e19dfb301058f2ec04bb9faf7d78bb0e2d8e4704521a7c0ed0b202bae3d85",
+    "tools/festapp/src/operations/forms.mjs": "c6da4215f0b1d48d57c5835d06ff2435f4edf05a6d8fd272c0a57f5e0c8422bc",
+    "tools/festapp/src/operations/seat-orders.mjs": "4fee022ce81a62909c87db57ac6b1167561d518a9d74a16cf63f7ce41a859c1a",
+    "tools/festapp/test/form-completion-fixtures.mjs": "a64aba50a3cd5dc8b7ee60acef065d8fd320997c66505e62625381a7ee53e46d",
+    "tools/festapp/test/form-fixtures.mjs": "719cbdbfd1fbbc75d8589176d849242ae6904ff345a9ab56af3003703f791648",
+    "tools/festapp/test/form-sales-http.test.mjs": "f28aa2f3a543ec41444d7a9eef9d357ec5c7219a452cac6d3c7db37a49c80656",
+    "tools/festapp/test/forms-completion-postgres.test.mjs": "25b216e3e81fbb2e035f8f1bbf74154d9c150599ab297b020ec8bdeac216d0d4",
+    "tools/festapp/test/remote.test.mjs": "b2ef5ee95603725807b2af67bb348a4676db0730dcf138b29c67f88e1b6c665c",
+    "web_client/public/assets/translations/cs.json": "5b2eace47256d754000a71a4f8b4317a9b31f4155a0681b4c326eb21112edd3d",
+    "web_client/public/assets/translations/de.json": "9d4dcbf14b2d32772c0d146df7c571763b8a3635c194f64e89c6ad212a6b5a69",
+    "web_client/public/assets/translations/en.json": "a9141cfe3b0eddd156c74240cd0eafa2212defe71c446baffcf98e682ab20fd1",
+    "web_client/public/assets/translations/pl.json": "89cd0062d09e61f2a38ffae1c65bbf5956b5adc6d239d6f9e8b548544e0a593d",
+    "web_client/public/assets/translations/sk.json": "4c6175090e058ae16daca20e82db148bae28de279e72c7a76bb93479701ec572",
+    "web_client/public/assets/translations/uk.json": "2d3d58a79de65477f94c2883b238cdd03021a0973ab2feae55e84cc06ebf9310"
+  }
+}

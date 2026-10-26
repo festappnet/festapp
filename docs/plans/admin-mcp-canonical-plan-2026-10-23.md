@@ -1,12 +1,12 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 a řezy 4A/4B jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
+Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapy 3 a 4 jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
 `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`: MCP `2026-07-28`, server SDK
 2.3.1, Node adaptér 2.1.1, oficiální legacy hranice; všech 74 MCP testů prošlo
-včetně disposable PostgreSQL bez skipů. Exekuční práce začíná etapou 0 níže.
+včetně disposable PostgreSQL bez skipů. Etapy 0-4 dokládají checkpointy; další pokračování je etapa 5.
 
 ## Výsledek a hranice
 
@@ -881,3 +881,17 @@ Published migrace 4A zůstává beze změny, assembler teď vlastní aktuální 
 Další řez etapy 4: veřejné odkazy a inline produktové mutace formuláře přes
 existující vlastníky. Nabídky čekací listiny a obecné ruční objednávky zůstávají
 otevřené. Neopakovat transport, e-maily ani hotová nastavení 4A/4B.
+
+## Etapa 4 dokončena v repozitáři (2026-10-26)
+
+Uzavřené plánované řezy: výslovné veřejné odkazy, kompletní podporovaná pole a
+inline typy/produkty v jednom Save, správa čekacích nabídek včetně přijetí za
+účastníka a dosud nepokryté administrátorské vytvoření objednávky z formuláře.
+Navazují na 4A/4B bez nového form enginu, shadow ticketů, platebního ledgeru,
+receiptu navíc či paralelní fronty. Zpracování faktur používá stávající durable
+owner včetně ochrany před druhým invoice POST po nejistém výsledku.
+
+Stav je lokálně ověřeno a publikováno k review, nikoli nasazeno. Produkční SQL,
+Edge a MCP rollout musí být koherentní a zůstává samostatným krokem. Aktuální
+checkpoint a evidence určují přesné zdroje/gates; historické otevřené body 4A/4B
+jsou tímto řezem vyřešené. Další doménová etapa je 5 - akce a pořadatel.

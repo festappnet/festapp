@@ -328,6 +328,12 @@
     "eshop_forms/get_all_forms_with_fields.sql",
     "eshop_forms/form_settings.sql",
     "eshop_forms/form_payment_options.sql",
-    "eshop_stripe/form_recipient.sql"
+    "eshop_stripe/form_recipient.sql",
+    "eshop_forms/admin_form_orders.sql",
+    "eshop_forms/admin_form_waitlist.sql",
+    "eshop_orders/create_ticket_order_client_sync_v1.sql",
+    "eshop_waitlist/offers.sql",
+    "eshop_waitlist/email_context.sql",
+    "eshop_forms/admin_waitlist_acceptance.sql"
   ]
 }

@@ -2,9 +2,13 @@
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
     'festapp:forms:read': { label: 'formsRead', operations: ['forms.list','forms.inspect'], requires: [] },
-    'festapp:forms:write': { label: 'formsWrite', operations: ['forms.paymentOptions','forms.create','forms.save','forms.duplicate','forms.delete'], requires: ['festapp:forms:read'] },
+    'festapp:forms:write': { label: 'formsWrite', operations: ['forms.publicLink','forms.setPublicLink','forms.paymentOptions','forms.create','forms.save','forms.duplicate','forms.delete'], requires: ['festapp:forms:read'] },
     'festapp:email-templates:read': { label: 'emailTemplatesRead', operations: ['email_templates.list','email_templates.inspect','email_templates.banner.inspect','email_templates.preview'], requires: [] },
     'festapp:email-templates:write': { label: 'emailTemplatesWrite', operations: ['email_templates.change','email_templates.banner.change'], requires: ['festapp:email-templates:read'] },
+    'festapp:orders:create': {label:'ordersCreate',operations:['forms.previewOrder','forms.createOrder'],requires:['festapp:orders:read','festapp:forms:read']},
+    'festapp:waitlist:accept': {label:'waitlistAccept',operations:['waitlist.previewAccept','waitlist.accept'],requires:['festapp:waitlist:write','festapp:orders:create']},
+    'festapp:waitlist:read': {label:'waitlistRead',operations:['waitlist.detail'],requires:['festapp:orders:read']},
+    'festapp:waitlist:write': {label:'waitlistWrite',operations:['waitlist.proposal','waitlist.send','waitlist.cancel','waitlist.decline','waitlist.withdraw'],requires:['festapp:waitlist:read','festapp:orders:read']},
     'festapp:orders:read': { label: 'ordersRead', operations: ['orders.report', 'orders.list', 'orders.inspect'], requires: [] },
     'festapp:orders:write': { label: 'ordersWrite', operations: ['orders.update', 'orders.cancel'], requires: ['festapp:orders:read'] },
     'festapp:payments:write': { label: 'paymentsWrite', operations: ['orders.mark_paid', 'payments.record'], requires: ['festapp:orders:read'] },

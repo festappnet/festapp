@@ -1,3 +1,4 @@
+import {formSalesDescriptors,formSalesDataSchemas,invokeFormSalesOperation} from './form-sales.mjs';
 import { formDescriptors, formDataSchemas, invokeFormOperation } from './forms.mjs';
 import { emailTemplateDescriptors, emailTemplateDataSchemas, invokeEmailTemplateOperation } from './email-templates.mjs';
 import {seatCancellationDescriptors,seatCancellationDataSchemas,invokeSeatCancellationOperation} from './seat-cancellations.mjs';
@@ -43,6 +44,7 @@ const projection = z
     .strict();
 const dataSchemas = {
     ...formDataSchemas,
+    ...formSalesDataSchemas,
     ...emailTemplateDataSchemas,
     ...orderDataSchemas,
     ...productDataSchemas,
@@ -124,7 +126,7 @@ const resultSchema = (id) =>
         meta: metaSchema,
     });
 const descriptors = [
-    ...[...formDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
+    ...[...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
@@ -303,9 +305,10 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...formDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (formSalesDataSchemas[id]) data = await invokeFormSalesOperation(this.owner, client, id, args, context);
                 else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args);
                 else if (emailTemplateDataSchemas[id]) data = await invokeEmailTemplateOperation(this.owner, client, id, args);
                 else if (seatCancellationDataSchemas[id]) data = await invokeSeatCancellationOperation(this.owner, client, id, args);

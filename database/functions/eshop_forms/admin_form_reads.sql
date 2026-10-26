@@ -108,3 +108,17 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.get_form_for_authoring(bigint,bigint,bigint,bigint) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_form_for_authoring(bigint,bigint,bigint,bigint) TO authenticated;
+
+-- Explicit link intent, never part of generic authoring or customer DTOs.
+CREATE OR REPLACE FUNCTION public.get_form_public_link(p_occasion bigint,p_organization bigint,p_unit bigint,p_form bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ PERFORM public.check_form_authoring_scope_internal(p_occasion,p_organization,p_unit,'save');
+ SELECT jsonb_build_object('occasionId',p_occasion,'formId',id,'slug',link) INTO result
+ FROM public.forms WHERE id=p_form AND occasion=p_occasion;
+ IF result IS NULL THEN RAISE insufficient_privilege USING MESSAGE='foreign form'; END IF;
+ RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.get_form_public_link(bigint,bigint,bigint,bigint) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_form_public_link(bigint,bigint,bigint,bigint) TO authenticated;

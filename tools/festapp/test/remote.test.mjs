@@ -646,3 +646,10 @@ test('form scopes do not widen older grants and copy must consent both source an
  assert.equal((await invokeFormOperation(owner(),client,'forms.duplicate',args)).formId,88);assert.equal(calls,1);
  token.scope=READ_SCOPE+' festapp:forms:read';assert(!owner().allowedOperations.includes('forms.save'));assert(!owner().allowedOperations.includes('forms.paymentOptions'));
 });
+
+test('completed form sales require explicit new order and waitlist consent with dependency and occasion boundaries',async t=>{
+ const f=await setup(t),id='complete-form-consent',grant={id,binding:'stage4-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300},owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('forms.createOrder'));assert(!owner().allowedOperations.includes('waitlist.send'));assert(owner().allowedOperations.includes('forms.publicLink'));
+ const permissions=[...grant.permissions,'festapp:orders:create','festapp:waitlist:read','festapp:waitlist:write','festapp:waitlist:accept'];verifyPermissions(permissions,MCP_SCOPES);f.storage.put('Delegation',id,{...grant,permissions});assert(owner().allowedOperations.includes('forms.createOrder'));assert(owner().allowedOperations.includes('waitlist.accept'));assert.throws(()=>owner().authorizeOperation('waitlist.accept',{occasionId:8,formId:42}));
+ token.scope=READ_SCOPE+' festapp:forms:read festapp:orders:read';assert(!owner().allowedOperations.includes('forms.publicLink'));assert(!owner().allowedOperations.includes('forms.createOrder'));assert(!owner().allowedOperations.includes('waitlist.accept'));
+});

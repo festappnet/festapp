@@ -467,3 +467,31 @@ an archived production query; no production performance claim is implied.
 Evidence: [4B checks and source digests](../reports/admin-form-settings-evidence-2026-10-26.json).
 Public URL changes, inline MCP product edits, waitlist offers and general manual
 orders still remain. Stage 4 as a whole is not complete.
+
+## Stage 4 completed locally (2026-10-26, not deployed)
+
+The remaining planned administration paths now have explicit MCP operations:
+
+| Area | Canonical owner | Cutover |
+| --- | --- | --- |
+| Public slug/path | Existing form Save + public-link allocator/history | Separate read/write intent; generic DTO remains key/link-free; frozen link retry |
+| Full fields and inline products | Existing form aggregate Save | Product/type baselines, generated IDs, foreign-child rollback; age/document/surcharge metadata |
+| Ordinary admin order | Existing checkout command core and receipt | Rollback quote, actor/form/product/account hash, one confirmed intent; released facade keeps its original hash |
+| Waiting offers | Existing waitlist command/slots/queue | Proposal/detail/send/cancel/decline/withdraw plus quoted admin acceptance, preserving ticket identities |
+| Invoice preparation | Existing durable preparation owner/table | Confirmed create and accept receipts reuse the seat-order dispatch fence and lookup-only uncertain recovery |
+| Edge transport | Shared order fulfillment and waitlist coordinators | One HTTP uncertainty classifier; identical command IDs after lost replies; real UI acceptance body recognized as one intent |
+
+New order-create, waitlist-read/write and waitlist-accept consent scopes do not
+expand older grants. Acceptance additionally requires the order-create grant.
+Every server adapter binds actual occasion/organization/unit/form rows and current
+operation predicates, including before receipt replay. Waiting participant tokens
+remain behind their existing public customer boundary and never enter MCP DTOs.
+
+Intentional boundaries: released checkout/form signatures, unpaged UI proposal
+facade, old pending invoice receipts in lookup-only recovery, and existing public
+customer checkout/capability access. They delegate the same owners; remove upgrade
+facades only after client/worker upgrade and recorded legacy-data adoption.
+
+Evidence: [completion checks and source digests](../reports/admin-form-completion-evidence-2026-10-26.json).
+Stage 4 is complete as repository implementation; its migration, Edge and MCP
+rollout remains unperformed. Next planned domain stage is 5.

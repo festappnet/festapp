@@ -8,7 +8,7 @@ Autoritativní plán:
 [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
 Aktuální stav a přesné důkazy:
 [checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md), poslední sekce
-„Stage 4B 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
+„Stage 4 complete 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
 odvoláno. Transport/SDK ani hotové etapy znovu neimplementovat.
 
 Etapy 0-2B jsou nasazené. Etapa 3 je lokálně ověřená v
@@ -23,9 +23,14 @@ rozšířených nastavení je dokončený v [PR #616](https://github.com/festapp
 na `feat/admin-mcp-form-settings-20261026`,
 navazuje na #615 a zůstává nenasazený. Při navázání ověřit aktuální stav celé
 review návaznosti a její heady; neslučovat ani nevydávat bez příslušné autorizace.
-Další řez etapy 4 jsou veřejné odkazy a inline produktové změny MCP přes
-existující vlastníky. Nabídky čekací listiny a obecné ruční objednávky zůstávají
-otevřené. Neopakovat šest nástrojů 4A ani metadata/platební volby dokončené v 4B.
+Etapa 4 je nyní dokončená na `feat/admin-mcp-stage4-complete-20261026`,
+navazuje na #616 a zůstává nenasazená. Uzavřené jsou také veřejné odkazy,
+inline produkty a podporovaná pole, čekací nabídky včetně přijetí a obecné
+administrátorské objednávky. Nepřidávat další implementaci těchto operací.
+Další doménová etapa je 5: nastavení akce a pořadatele. Nejdřív dohledat její
+existující OccasionCommands/UnitCommands vlastníky a potvrzený rozsah plánu.
+Před navázáním ověřit stav review návaznosti #613 -> #615 -> #616 -> dokončení 4
+uvedené v posledním checkpointu a případně přesměrovat base po merge rodičů.
 Před editací jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
 Navázat na existující SQL pravidla a receipts; UI i MCP vést jednou cestou.
 Zvlášť zachovat draft/persisted rozdíl, původní verzi, null/default semantics,

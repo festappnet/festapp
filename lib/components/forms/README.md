@@ -262,6 +262,48 @@ saved selection. VS settings change only future allocation policy, never issue a
 reference or rewrite existing orders. Reminder changes reuse the existing queue
 owner, not a new sender. Authoring patches are bounded to 128 KiB.
 
-Inline product editing via MCP, public URL changes, waitlist offer operations and
-general manual orders remain subsequent cuts of stage 4. Public checkout and
-URL reservation retain their own lifecycle owners.
+The full inline product/type aggregate uses the same form Save, original child
+versions and explicit deletion lists as Flutter. Current field settings include
+age limits/warnings, ID-document expiry labels and ticket surcharge visibility.
+An invalid child rolls back the entire aggregate; historical purchased amounts
+remain owned by the order ledger.
+
+Saved public links have explicit `forms.publicLink` / `forms.setPublicLink`
+intents, returning a slug and encoded public path rather than an access UUID.
+Writes reuse the form receipt and canonical allocator/history. Generic authoring
+DTOs still omit public keys/links; replay returns the saved slug, not a fresh read.
+
+Administrative orders and offer acceptance preview the actual command in a
+rollback subtransaction (including invoice/email gating), then confirm its
+actor-bound hash under the same parent locks. Inputs, saved form/product facts,
+price and receiving-account details bind the decision. Preview may advance SQL
+sequences; it persists no order, receipt, notification or email. Creation delegates
+the single existing command/receipt. The released checkout signature is a thin
+facade on that same core, preserving historical request hashes. Scope and current
+rights are checked before replay; expired commands cannot allocate another order.
+
+Waitlist proposal/detail/send/cancel/decline/withdraw and confirmed acceptance use
+existing waiting tickets, offer slots, FIFO/capacity calculations and receipts.
+The proposal's private projection pages before JSON aggregation; the UI's released
+unpaged reader uses that same owner. MCP pages by order ID while FIFO suggestions
+remain global. Acceptance keeps the original waiting ticket IDs. Public customer
+registration/capability access keeps its own supported boundary, not an admin
+simulation.
+
+Both UI and MCP call the same Edge coordinators and globally gated queue. The
+acceptance payload consists of one intent plus its ordinary `orderDetails`;
+combining an independent replacement or admin order is rejected. Existing
+capability preparation is shared, and a typed scope check precedes it. Service-only
+administration wrappers recheck the stored hierarchy and live authority in the
+write transaction. Tokens, sealing material and customer capabilities are never
+returned through MCP.
+
+Confirmed seat orders, form orders and administrative offer acceptance share
+invoice preparation. Fresh confirmed receipts carry the existing
+`leased_keep_pending` policy, so a durable lease fences the first invoice POST.
+After an uncertain dispatch, retries perform lookup only. Original pending receipts
+without that proof remain lookup-only too. The same preparation table and owner
+serve these cases; there is no second invoice ledger. A pending/closed result
+always refers to its original committed order. Admin tools create bank/invoice
+orders and do not charge a card or refund money; customer online payment remains
+the existing public checkout journey.

@@ -165,6 +165,9 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN result;
  END;
  entity_changes:=entity_changes||jsonb_build_array(jsonb_build_object('entityType','form','entityId',fid,'operation','update','safeLabel','Form capacity','changedFields',jsonb_build_array('capacity','registrationMode')));
+ IF p_operation='accept' AND p_payload ? 'administrativeApproval' THEN
+  result:=result||jsonb_build_object('adminQuote',p_payload#>'{administrativeApproval,quote}',
+   'adminScope',p_payload#>'{administrativeApproval,scope}','paymentPreparationPolicy','leased_keep_pending'); END IF;
  result:=public.complete_profile_inventory_membership_mutation_v1(p_command_id,occ,'inventory.waitlist.'||p_operation,entity_changes,before_users,result,actor_kind);
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);
  RETURN result;

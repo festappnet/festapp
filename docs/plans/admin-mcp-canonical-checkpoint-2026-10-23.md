@@ -1335,3 +1335,59 @@ fetch potvrdil main `3988bb7cb` i parent #615 `7f4053be6` jako předky větve.
 Aktuální zdroje včetně legacy-date dokončení jsou svázané SHA256 v evidence JSON.
 Při navázání ověřit #613 -> #615 -> #616 a po sloučení rodičů upravit review base;
 neslučovat ani nevydávat automaticky přes povinné main review.
+
+## Stage 4 complete 2026-10-26
+
+Stav: etapa 4 dokončená a lokálně ověřená, nenasazená. Větev
+`feat/admin-mcp-stage4-complete-20261026`, izolovaný checkout
+`/private/tmp/festapp-admin-mcp-stage4-complete-20261026`, rodič #616
+`a525f5aa59d32d2b000159124e81c2818a9721e7`. Aktuální main
+`3988bb7cbaf8766068a84f49f759d5544269e325` je předkem větve; rodič je stále OPEN,
+navazuje na #615 / #613. Povinné main review se neobchází.
+
+Uzavřeny všechny zbývající potvrzené body etapy 4:
+
+- Výslovné čtení/změna veřejného slugu přes původní Save a rezervační historii.
+  Generické DTO dál nevrací veřejné klíče/odkazy; replay vrací zmrazený uložený slug.
+- Kompletní inline typy/produkty a současná nastavení polí (věk, doklady, popis
+  příplatků) v jednom verzovaném agregátu včetně kontroly původních child verzí,
+  nových ID a rollbacku chybného dítěte.
+- Obecná administrátorská objednávka z formuláře: skutečný command v rollbacku
+  včetně invoice/e-mail gate, potvrzený actor/form/product/account hash, původní
+  checkout receipt a společná příprava faktury. Released RPC/signature/hash se
+  zachovávají přes jediného extrahovaného command ownera.
+- Návrh/detail čekací listiny, odeslání, zrušení, odmítnutí a stažení nabídnutých
+  nebo čekajících míst i potvrzené přijetí za účastníka. Původní ticket IDs,
+  nabídky, fronta a receipts se znovu neimplementují. Stránkování před JSON
+  agregací zachovává globální FIFO výpočet a původní UI fasádu.
+- Jeden Edge fulfillment coordinator a jedno zpracování nejasné HTTP odpovědi.
+  Nové potvrzené create/accept receipts používají stávající invoice dispatch fence;
+  nejistý POST se neopakuje, retry dělá lookup se stejným UUID. Staré pending
+  receipts bez důkazu prvního dispatch zůstávají lookup-only. Žádná nová tabulka,
+  aplikační trigger nebo receipt owner. UI acceptance plus `orderDetails` je jeden
+  podporovaný intent; nezávislé kombinace módů se odmítají před účinkem.
+
+Nové explicitní scopes order-create a waitlist read/write/accept nerozšiřují staré
+souhlasy. Přijetí nabídky vyžaduje také order-create souhlas. SQL váže skutečnou
+hierarchii a aktuální práva před mutací/replay; scope check předchází i sealování.
+Customer capabilities ani access UUID se přes MCP nevracejí. Admin příkazy
+vytvářejí bankovní/fakturační objednávky, neprovádějí platbu kartou či refundaci;
+veřejný zákaznický checkout/registrace mají nadále své existující rozhraní.
+
+Ověření standard: 55 SQL/boundary případů (51 skutečná PostgreSQL, 0 skipů),
+51 HTTP/SDK/remote případů, 74 web consent/waitlist případů a 25 Deno testů -
+celkem 205 úspěšných případů. Oba Edge entrypointy prošly typecheckem. Generátory
+migrace, parity, authorization policy a katalogu i whitespace check prošly.
+Flutter/browser/release build se neopakovaly: Dart/UI layout se neměnil.
+
+Migrace `20261026210000_form_administration_completion.sql`: SHA256 `86197e5b5a8d25ba49f60b5d54a99184734b7194e71def217e94afef2273bf62`,
+34 deklarací / 34 různých názvů funkcí. Publikované migrace 4A a 4B zůstaly
+beze změny. Katalog má 100 úkonů a 60 nástrojů, žádná potvrzená položka etapy 4
+nezůstává bez mapování. Evidence včetně source digestů a skutečných SQL/JSON
+request-size vzorků: [dokončení etapy 4](../reports/admin-form-completion-evidence-2026-10-26.json).
+Měření neznamená produkční latenci, úsporu tokenů ani nižší celkové bajty při
+úplném stránkovaném průchodu; přesné limity jsou uvedeny v evidence JSON.
+
+Produkce, ostatní tenanty a paid providers se neměnily. Navazující doménová etapa
+je 5 - nastavení akce a pořadatele. Před pokračováním ověřit review stack a čerstvý
+main, neimplementovat znovu formuláře ani jejich transakce.

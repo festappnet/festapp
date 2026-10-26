@@ -4,7 +4,7 @@
   "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapa 3 a řezy 4A/4B jsou lokálně ověřené, jejich produkční rollout neproběhl.",
+  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapy 3 a 4 jsou lokálně dokončené a ověřené; jejich produkční rollout neproběhl.",
   "actions": [
     {
       "id": "action-001",
@@ -822,8 +822,8 @@
     {
       "id": "action-047",
       "area": "Formuláře a prodej",
-      "title": "Upravit pole formuláře a existující produktové vazby",
-      "description": "Verzovaný agregát polí a vazby na existující typy produktů stejné akce. Inline editace produktů přes MCP je další řez; běžný UI editor ji zachovává.",
+      "title": "Upravit pole formuláře a produktové vazby",
+      "description": "Jeden verzovaný agregát polí, existujících vazeb i kompletních inline typů a produktů. Pokrývá také věkové podmínky, texty a platnost dokladů, výchozí volby i zobrazení příplatků. Nová ID vrací stejný uložený snapshot; chybné dítě vrátí celý Save zpět.",
       "sources": [
         "lib/components/forms/supabase_form_commands.dart",
         "tools/festapp/src/operations/forms.mjs",
@@ -880,15 +880,28 @@
       "id": "action-050",
       "area": "Formuláře a prodej",
       "title": "Připravit a spravovat nabídky čekací listiny",
-      "description": "Přes existující waitlist command owner, nikoliv nový výpočet v MCP.",
+      "description": "Dávkový návrh kapacity, detail čekajících vstupenek, odeslání, zrušení či odmítnutí nabídky, stažení čekajících a přijetí nabídky za účastníka. Původní identity vstupenek, receipts, fronta a případná faktura mají stávající vlastníky. Přijetí vyžaduje samostatný souhlas pro vytvoření objednávky.",
       "sources": [
-        "lib/components/forms/waitlist_commands.dart"
+        "lib/components/forms/waitlist_commands.dart",
+        "database/functions/eshop_forms/admin_form_waitlist.sql",
+        "database/functions/eshop_forms/admin_waitlist_acceptance.sql",
+        "tools/festapp/src/operations/form-sales.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "waitlist.proposal",
+        "waitlist.detail",
+        "waitlist.send",
+        "waitlist.cancel",
+        "waitlist.decline",
+        "waitlist.withdraw",
+        "waitlist.previewAccept",
+        "waitlist.accept"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-051",
@@ -1601,12 +1614,18 @@
       "certainty": "confirmed",
       "id": "action-096",
       "title": "Změnit veřejný odkaz formuláře",
-      "description": "Existující UI pravidla rezervace a historie veřejných odkazů. Samostatný MCP kontrakt zatím není implementovaný.",
+      "description": "Výslovný záměr přečíst uložený veřejný slug/cestu nebo jej změnit přes stejný verzovaný Save a rezervace odkazů. Generické form reads zůstávají bez odkazů a přístupových UUID. Historie a tombstones se zachovávají.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "database/functions/public_links/registry.sql",
+        "database/functions/eshop_forms/admin_form_commands.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
-      "effect": "write"
+      "mcp": [
+        "forms.publicLink",
+        "forms.setPublicLink"
+      ],
+      "effect": "write",
+      "deploymentState": "pending"
     },
     {
       "area": "Formuláře a prodej",
@@ -1615,12 +1634,17 @@
       "certainty": "confirmed",
       "id": "action-097",
       "title": "Upravit produkty přímo v editoru formuláře",
-      "description": "UI ukládá související produktový agregát. MCP zatím podporuje jen reference na existující typy; inline produktové změny vyžadují další řez.",
+      "description": "Kompletní inline typ a produkty ve stejném Save jako pole a nastavení. Povinné původní verze sdílených produktů/typů, kontrola skutečné akce, explicitní mazání a rollback chybného dítěte. Nevyžaduje řadu samostatných produktových zápisů.",
       "sources": [
-        "database/functions/eshop_forms/update_form.sql"
+        "database/functions/eshop_forms/update_form.sql",
+        "database/functions/eshop_forms/update_form_client_sync_v1.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
-      "effect": "write"
+      "mcp": [
+        "forms.save"
+      ],
+      "effect": "write",
+      "deploymentState": "pending"
     },
     {
       "area": "Formuláře a prodej",
@@ -1657,16 +1681,35 @@
         "forms.save"
       ],
       "effect": "write"
+    },
+    {
+      "id": "action-100",
+      "area": "Formuláře a prodej",
+      "title": "Vytvořit administrátorskou objednávku z formuláře",
+      "description": "Náhled skutečného checkoutu v rollbacku a potvrzení přes původní transakci a receipt. Původní hash váže osobu správce, vstupy, cenu, přijímající účet a uložený formulář. Nejistý výsledek či příprava faktury se obnovují stejným UUID bez druhé objednávky či opakovaného invoice POST. Příkaz neprovádí platbu kartou ani refundaci.",
+      "sources": [
+        "database/functions/eshop_forms/admin_form_orders.sql",
+        "supabase/functions/send-ticket-order/confirmedFormOrder.ts",
+        "tools/festapp/src/operations/form-sales.mjs"
+      ],
+      "mcp": [
+        "forms.previewOrder",
+        "forms.createOrder"
+      ],
+      "phase": "4",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     }
   ],
   "dataQualityReview": {
-    "date": "2026-10-23",
-    "status": "Celá provozní etapa 2B ověřena a nasazena.",
-    "finding": "68 PostgreSQL testů prošlo bez skipů; dále 31 vzdálených/SDK testů, 37 testů souhlasu, 14 testů obnovy klienta a 3 cílené UI testy. Produkční kontrola potvrdila atomický ledger, shodu SQL zdrojů a ACL, zdravé Edge/MCP a koherentní web build869. Původní PWA limity zůstaly zachované. Historická PDF readiness evidence není důkazem živé PDF připravenosti; PDF editor není součástí tohoto řezu.",
-    "nextStep": "PR #613 vyžaduje schvalující review. Produkční rollout etapy 3 neproběhl; další doménová implementace je etapa 4 (formuláře).",
-    "evidence": "admin-seats-2b-evidence-2026-10-23.json"
+    "status": "Etapa 4: lokálně ověřené společné SQL a omezené datové kontrakty.",
+    "finding": "Návrh čekací listiny stránkuje před JSON agregací a zachovává globální FIFO výpočet. Quote používá skutečný příkaz v rollbacku; potvrzení drží stejný receipt a externí invoice fence. Naměřené velikosti jsou syntetické SQL/JSON vzorky, nikoli produkční latence nebo tokenové úspory.",
+    "nextStep": "Stejným způsobem prověřit rozsah a vlastníky etapy 5; rollout hotových etap zůstává samostatný krok.",
+    "evidence": "admin-form-completion-evidence-2026-10-26.json"
   },
-  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613) a řez 4A (#615) čekají na dokončení review. Řez 4B přidává společný úzký kontrakt rozšířených nastavení a čtení platebních voleb; je lokálně ověřený, nenasazený. Zbývají veřejné odkazy, inline produktové změny MCP, nabídky čekací listiny a obecné ruční objednávky.",
+  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 jsou publikované nebo připravené k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
   "phases": [
     {
       "id": "0",
@@ -1722,17 +1765,17 @@
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
       "state": "local",
-      "status": "4A/4B lokálně hotovo, další řezy otevřené",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
-      "note": "4A: správa formulářů, pole a kapacita. 4B: připomínky, platební volby, zpráva pro příjemce, tón, pravidla VS, vzhled a časování prodeje. Zbývají veřejné URL, inline produktové mutace MCP, operace nabídek čekací listiny a obecné ruční objednávky."
+      "note": "Dokončeny 4A/4B i zbývající admin operace: uložené veřejné odkazy, inline produktové agregáty, nastavení polí, čekací nabídky a objednávky. UI i MCP používají stejné příkazy, receipts a finanční/e-mailové vlastníky. Online platba zákazníka zůstává ve stávajícím veřejném checkoutu; admin příkazy platební kartu nenabíjejí."
     },
     {
       "id": "5",
       "title": "Nastavení akce a pořadatele",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "next",
+      "status": "Další na řadě",
       "purpose": "Sjednotit změny základních údajů, termínů, funkcí, publikace a prodeje.",
       "example": "Posunout začátek akce nebo upravit její dostupné funkce.",
       "result": "Změny půjdou přes existující společné ukládání. Práva k jedné akci automaticky nedávají právo měnit celého pořadatele.",
@@ -1789,5 +1832,5 @@
       "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
     }
   ],
-  "phaseSummary": "Nasazeno 0-2B; etapa 3 a řezy 4A/4B lokálně ověřené, nenasazené. Etapa 4 má další otevřené řezy."
+  "phaseSummary": "Nasazeno 0-2B; etapy 3 a 4 lokálně dokončené, nenasazené. Další je etapa 5."
 }
