@@ -96,6 +96,9 @@ try {
         }
         if (scenario === 'guest-open') await browser('set', 'viewport', '390', '844');
         console.log(`PASS: ${scenario} - visible form, hidden site header and permitted editor access`);
+        // Each identity gets a fresh browser context. This also avoids reusing a
+        // detached CDP target while installing network controls on navigation.
+        await browser('close');
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
     await browser('open', `${origin}/?scenario=guest-login`);
