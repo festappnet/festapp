@@ -68,6 +68,104 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  test(
+    'unread rows retain the pre-open watermark until the next open',
+    () async {
+      var watermark = 4;
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          if (name == 'get_notification_center_badge') return badge();
+          if (name == 'open_notification_center') {
+            return {...opened(), 'previousReadThrough': watermark};
+          }
+          return opened([
+            {'id': 'read', 'sequence': 4},
+            {'id': 'new', 'sequence': 5},
+          ]);
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await c.open();
+      expect(c.unread, isFalse);
+      expect(c.isUnread(c.items.first), isFalse);
+      expect(c.isUnread(c.items.last), isTrue);
+      expect(
+        c.isUnread(NotificationItem.fromJson({'id': 'future', 'sequence': 8})),
+        isFalse,
+      );
+      c.close();
+      watermark = 7;
+      await c.open();
+      expect(c.items.any(c.isUnread), isFalse);
+      c.configure(userId: 'other', organizationId: 1);
+      expect(c.previousReadThrough, isNull);
+    },
+  );
+  test('older backends do not invent an unread watermark', () async {
+    final c = NotificationCenterController(
+      read: (name, params) async => name == 'get_notification_center_badge'
+          ? badge()
+          : opened([
+              {'id': 'unknown', 'sequence': 5},
+            ]),
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    await c.open();
+    expect(c.isUnread(c.items.single), isFalse);
+  });
+  for (final brightness in Brightness.values) {
+    testWidgets('unread indication fits narrow ${brightness.name} panel', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final c = NotificationCenterController();
+      addTearDown(c.dispose);
+      c.snapshot = 7;
+      c.previousReadThrough = 4;
+      c.items = [
+        for (final sequence in [4, 5])
+          NotificationItem.fromJson({
+            'id': '$sequence',
+            'sequence': sequence,
+            'kind': 'order_created',
+            'occurredAt': '2026-10-26T12:00:00Z',
+          }),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          builder: DependencyMaterialBridge.builder,
+          home: NotificationCenterPanel(controller: c, onDetail: (_) {}),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(
+        find.bySemanticsLabel(RegExp('NotificationCenter.newNotification')),
+        findsOneWidget,
+      );
+      final oldRow = find.byKey(const ValueKey('notification-item-4'));
+      final newRow = find.byKey(const ValueKey('notification-item-5'));
+      expect(tester.widget<Material>(oldRow).color, Colors.transparent);
+      expect(tester.widget<Material>(newRow).color, isNot(Colors.transparent));
+      for (final entry in [
+        (oldRow, FontWeight.w400),
+        (newRow, FontWeight.w600),
+      ]) {
+        final title = find.descendant(
+          of: entry.$1,
+          matching: find.text('NotificationCenter.kinds.order_created'),
+        );
+        expect(tester.widget<Text>(title).style?.fontWeight, entry.$2);
+      }
+      semantics.dispose();
+    });
+  }
   test('open acknowledges once and late badge cannot restore unread', () async {
     final pending = Completer<dynamic>();
     final calls = <String>[];

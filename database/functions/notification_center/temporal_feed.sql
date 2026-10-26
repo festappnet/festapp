@@ -58,12 +58,12 @@ BEGIN
   SELECT section,(event).occurred_at at,(event).id::text id,NULL::jsonb payload,event,delivery
   FROM classified WHERE period IS NULL),
  buckets AS (
-  SELECT section,(event).occasion occasion,period,count(*) n,max((event).occurred_at) at,
+  SELECT section,(event).occasion occasion,period,count(*) n,max((event).occurred_at) at,max((delivery).sequence) latest,
    'order-period:'||(event).occasion||':'||md5(period::text) id
   FROM classified WHERE period IS NOT NULL GROUP BY section,(event).occasion,period),
  combined AS (
   SELECT * FROM raw UNION ALL
-  SELECT b.section,b.at,b.id,jsonb_build_object('id',b.id,'kind','order_activity_group','section',b.section,'occurredAt',b.at,
+  SELECT b.section,b.at,b.id,jsonb_build_object('id',b.id,'kind','order_activity_group','section',b.section,'occurredAt',b.at,'sequence',b.latest,
    'occasionId',b.occasion,'occasionTitle',oc.title,'occasionLink',oc.link,'data',jsonb_build_object('period',b.period,'count',b.n)),
    NULL::public.notification_center_events,NULL::public.notification_center_deliveries
   FROM buckets b JOIN public.occasions oc ON oc.id=b.occasion AND oc.organization=p_organization),

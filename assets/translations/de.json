@@ -2324,6 +2324,7 @@
     "muteHelp": "Stummgeschaltete Veranstaltungen senden keine neuen Benachrichtigungen. Der Verlauf bleibt erhalten. Verpasste Ereignisse werden nicht nachgeholt.",
     "muted": "Neue Benachrichtigungen stummschalten",
     "saveFailed": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen.",
+    "newNotification": "Neue Benachrichtigung",
     "newItems": "Neue Benachrichtigungen",
     "loadFailed": "Benachrichtigungen konnten nicht geladen werden.",
     "refreshFailed": "Benachrichtigungen konnten nicht aktualisiert werden.",

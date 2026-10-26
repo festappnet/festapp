@@ -2326,6 +2326,7 @@
     "muteHelp": "Wyciszenie wydarzenia zatrzymuje nowe powiadomienia. Historia pozostaje dostępna. Pominięte zdarzenia nie zostaną odtworzone.",
     "muted": "Wycisz nowe powiadomienia",
     "saveFailed": "Nie udało się zapisać ustawień. Spróbuj ponownie.",
+    "newNotification": "Nowe powiadomienie",
     "newItems": "Nowe powiadomienia",
     "loadFailed": "Nie udało się wczytać powiadomień.",
     "refreshFailed": "Nie można odświeżyć powiadomień.",

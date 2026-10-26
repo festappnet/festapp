@@ -2351,6 +2351,7 @@
     "muteHelp": "Stlmenie akcie zastaví nové upozornenia. História zostane dostupná. Zmeškané udalosti sa po zapnutí nedoplnia.",
     "muted": "Stlmiť nové upozornenia",
     "saveFailed": "Nastavenia sa nepodarilo uložiť. Skúste znova.",
+    "newNotification": "Nové oznámenie",
     "newItems": "Nové upozornenia",
     "loadFailed": "Upozornenia sa nepodarilo načítať.",
     "refreshFailed": "Upozornenia sa nedajú aktualizovať.",

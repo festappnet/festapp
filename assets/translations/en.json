@@ -4338,6 +4338,7 @@
     "muteHelp": "Mute an event to stop new notifications. Your history stays available. Unmuting does not replay missed events.",
     "muted": "Mute new notifications",
     "saveFailed": "Could not save notification settings. Try again.",
+    "newNotification": "New notification",
     "newItems": "New notifications",
     "loadFailed": "Could not load notifications.",
     "refreshFailed": "Could not refresh notifications.",

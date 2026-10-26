@@ -4340,6 +4340,7 @@
     "muteHelp": "Ztlumení akce zastaví nová upozornění. Historie zůstane dostupná. Po odtlumení se zmeškané události nedoplní.",
     "muted": "Ztlumit nová upozornění",
     "saveFailed": "Nastavení se nepodařilo uložit. Zkuste to znovu.",
+    "newNotification": "Nové oznámení",
     "newItems": "Nová upozornění",
     "loadFailed": "Upozornění se nepodařilo načíst.",
     "refreshFailed": "Nelze aktualizovat upozornění.",

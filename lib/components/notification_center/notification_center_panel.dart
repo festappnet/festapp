@@ -266,8 +266,28 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         ],
       );
 
+  Widget _unreadDot(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 8),
+    child: Tooltip(
+      message: s('newNotification'),
+      excludeFromSemantics: true,
+      child: Semantics(
+        label: s('newNotification'),
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    ),
+  );
+
   Widget _period(BuildContext context, NotificationItem item) {
     final state = widget.controller.periodState(item);
+    final isUnread = widget.controller.isUnread(item);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final locale =
@@ -289,61 +309,76 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
       key: ValueKey('notification-period-${item.id}'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          expanded: state.expanded,
-          child: InkWell(
-            onTap: () => widget.controller.togglePeriod(item),
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: colors.onSurface,
+        Material(
+          color: isUnread
+              ? colors.primary.withValues(alpha: .08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          child: Semantics(
+            expanded: state.expanded,
+            child: InkWell(
+              onTap: () => widget.controller.togglePeriod(item),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    if (isUnread)
+                      _unreadDot(context)
+                    else
+                      const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: isUnread
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: colors.onSurface,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          s('orderActivities'),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
+                          const SizedBox(height: 3),
+                          Text(
+                            s('orderActivities'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${item.data['count']}',
+                        style: theme.textTheme.labelLarge,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(6),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: s(state.expanded ? 'collapse' : 'expand'),
+                      child: Icon(
+                        state.expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
-                    child: Text(
-                      '${item.data['count']}',
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: s(state.expanded ? 'collapse' : 'expand'),
-                    child: Icon(
-                      state.expanded ? Icons.expand_less : Icons.expand_more,
-                      size: 20,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -386,6 +421,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final problem = const {'email_problem', 'bank_problem'}.contains(item.kind);
+    final isUnread = widget.controller.isUnread(item);
     final locale =
         (EasyLocalization.of(context)?.locale ??
                 Localizations.localeOf(context))
@@ -396,7 +432,14 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
       padding: EdgeInsets.symmetric(vertical: problem ? 8 : 0),
       child: Material(
         key: ValueKey('notification-item-${item.id}'),
-        color: problem ? colors.surface : Colors.transparent,
+        color: isUnread
+            ? Color.alphaBlend(
+                colors.primary.withValues(alpha: .08),
+                colors.surface,
+              )
+            : problem
+            ? colors.surface
+            : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
           side: problem
@@ -476,9 +519,13 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         return ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 72),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: Row(
               children: [
+                if (widget.controller.isUnread(item))
+                  _unreadDot(context)
+                else
+                  const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,13 +534,14 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         presentation.title,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: colors.onSurface,
-                          fontWeight:
-                              const {
-                                'form_opened',
-                                'form_closed',
-                              }.contains(item.kind)
+                          fontWeight: widget.controller.isUnread(item)
+                              ? FontWeight.w600
+                              : const {
+                                  'form_opened',
+                                  'form_closed',
+                                }.contains(item.kind)
                               ? FontWeight.w500
-                              : FontWeight.normal,
+                              : FontWeight.w400,
                         ),
                       ),
                       if (presentation.details.isNotEmpty) ...[
@@ -566,6 +614,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     : colors.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
+              if (widget.controller.isUnread(item)) _unreadDot(context),
               Expanded(
                 child: Text(
                   presentation.title,
