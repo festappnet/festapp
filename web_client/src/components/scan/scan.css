@@ -309,3 +309,41 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-settings .scan-product-modes label {display:flex;align-items:center;gap:8px;margin:0;padding:10px 14px;min-height:48px;border:1px solid var(--scan-line);border-radius:10px;cursor:pointer}
 .scan-settings .scan-product-modes label:has(:checked) {border-color:var(--primary-color);background:var(--scan-soft)}
 .scan-settings .scan-product-modes input[type=radio] {appearance:auto;width:20px;height:20px;min-height:20px;padding:0;margin:0;accent-color:var(--primary-color);flex-shrink:0}
+
+/* Entry stays aligned with its navigation; saved events are a separate return path. */
+.scan-entry-shell {max-width:624px;margin-inline:auto}
+.scan-entry-shell .scan-header>[data-theme] {background:transparent;border-color:transparent;padding:12px}
+.scan-entry-shell .scan-status {padding:4px 0 16px}
+.scan-entry {margin:8px 0 0;padding:32px;background:var(--surface-color);border:1px solid var(--scan-line);border-radius:16px}
+.scan-entry h2 {font-size:1.65rem;margin:0 0 8px}
+.scan-entry .scan-entry-intro {color:var(--scan-muted);margin:0 0 28px}
+.scan-entry [data-open] {display:grid;gap:24px}
+.scan-entry-field {min-width:0}
+.scan-entry-field label {display:block;margin:0 0 8px;color:inherit;font-weight:500}
+.scan-entry-field input {caret-color:var(--primary-color)}
+.scan-entry-field input::selection {background:var(--primary-color);color:var(--surface-color)}
+.scan-entry-field input[aria-invalid=true] {border-color:var(--red-color)}
+.scan-entry-field input:read-only {background:var(--scan-soft)}
+.scan-shell .scan-entry-hint {font-size:.95rem;line-height:1.4;color:var(--scan-muted);margin:8px 0 0}
+.scan-entry .scan-primary {width:100%;justify-content:space-between;min-height:52px}
+.scan-entry-error {display:flex;gap:8px;color:var(--red-color);font-size:.95rem;line-height:1.4}
+.scan-entry-field .scan-entry-error {margin-top:10px}
+.scan-entry-error .scan-icon {width:18px;height:18px;margin-top:2px}
+.scan-entry-error strong {font-weight:500}
+.scan-entry-error p {margin:4px 0 0;color:var(--scan-muted)}
+.scan-entry-network {color:var(--scan-warning);margin:0!important}
+.scan-saved {margin:28px 0 0;padding:0 8px}
+.scan-saved h2 {font-size:1.15rem;margin:0}
+.scan-saved-list {margin-top:16px;display:grid;gap:8px}
+.scan-saved-list button {justify-content:space-between;text-align:start;min-width:0;padding:16px;gap:20px}
+.scan-saved-list strong {display:block;font-weight:500;line-height:1.3}
+.scan-saved-device,.scan-saved-locked {display:block;font-size:.95rem;color:var(--scan-muted);margin-top:4px}
+.scan-saved-locked {color:var(--scan-warning)}
+@media(max-width:599px) {
+    .scan-entry-shell {padding:12px 16px 24px}
+    .scan-entry {padding:24px 20px;margin-top:4px}
+    .scan-entry h2 {font-size:1.5rem}
+    .scan-entry .scan-entry-intro {margin-bottom:24px}
+    .scan-entry [data-open] {gap:20px}
+    .scan-saved {padding:0 4px}
+}

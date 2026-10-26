@@ -3469,6 +3469,13 @@
     "standing": "Standing"
   },
   "Scanner": {
+    "entry_intro": "Connect this device to an event to start checking tickets.",
+    "entry_code_hint": "Get the code from the event organizer.",
+    "entry_code_retry": "Check the code or ask the organizer for a new one.",
+    "entry_device_hint": "For example, “Main entrance”. Ticket checks will be recorded under this name.",
+    "entry_offline": "An internet connection is required to connect to a new event.",
+    "entry_opening": "Connecting…",
+    "entry_saved_hint": "Continue an event saved in this browser.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",
