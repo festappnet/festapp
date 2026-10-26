@@ -317,7 +317,10 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           ? LayoutTapDisposition.activate
           : LayoutTapDisposition.ignore;
     }
-    return node.properties['role'] == 'decoration' &&
+    // Imported floorplans also mark real tables as decoration. Their visible
+    // tabletops must remain editable instead of falling through to the canvas.
+    return node.kind != 'table' &&
+            node.properties['role'] == 'decoration' &&
             !c.document.nodes.any(
               (parent) => parent.id == node.parentId && parent.assembly != null,
             )
