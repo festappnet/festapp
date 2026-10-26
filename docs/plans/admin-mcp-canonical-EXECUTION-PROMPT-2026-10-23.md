@@ -1,71 +1,43 @@
 # Pokračování kanonické administrace a MCP
 
-Aktuální pokračování: 2026-10-26. Nejdřív načíst aktuální autoritativní
-`origin/main`, AGENTS.md, CLAUDE.md a `docs/architecture/ai_context.md`.
-Cizí dirty checkout nepřesouvat ani neměnit. Ověřování `standard`.
+Aktuální pokračování: 2026-10-26. Načíst aktuální `origin/main`, AGENTS.md,
+CLAUDE.md a `docs/architecture/ai_context.md`. Cizí dirty checkout neměnit.
+Ověřování `standard`; práce patří do izolovaného worktree.
 
-Autoritativní plán:
-[admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
-Aktuální stav a přesné důkazy:
-[checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md), poslední sekce
-„Stage 4 complete 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
-odvoláno. Transport/SDK ani hotové etapy znovu neimplementovat.
+Autoritativní plán je [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
+Poslední aktuální sekce [checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md)
+je **Stage 5 complete 2026-10-26**. Etapy 0-5 jsou implementované. Etapy 0-2B
+jsou nasazené; etapy 3-5 jsou lokálně ověřené a čekají na review/rollout.
+Jejich jediné review místo je [PR #617](https://github.com/festappnet/festapp/pull/617),
+base main, branch `feat/admin-mcp-stage4-complete-20261026`. #613/#615/#616 jsou
+uzavřené jako nahrazené. Neobnovovat review stack ani duplicitní implementace.
+Při navázání znovu ověřit skutečný stav PR/headu a čerstvý main. Ochrana main
+vyžaduje review; nevydávat bez samostatného oprávnění k danému rollout cíli.
 
-Etapy 0-2B jsou nasazené. Etapa 3 je lokálně ověřená v
-[PR #613](https://github.com/festappnet/festapp/pull/613), head
-`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`, obsahuje main `3988bb7cb`.
-Ověřit aktuální GitHub stav; produkční rollout etapy 3 neproběhl. Main vyžaduje
-jedno schválení review, bez obcházení ochrany.
+Další doménová etapa je **6 - lidé, role, skupiny a dobrovolníci**. Nejprve
+najít konkrétní UI handlery a existující group/profile/unit command vlastníky,
+vypsat typed predicate -> SQL owner -> UI -> nástroj. Postupovat scoped čtením,
+pak běžnými údaji a členstvím; role jako samostatný explicitní příkaz. Před
+kódem potvrdit úzký kontrakt a nejmenší smysluplný ověřovací batch.
 
-Řez 4A je lokálně ověřený v [PR #615](https://github.com/festappnet/festapp/pull/615),
-head `7f4053be653fa3e745a5207dd7ac578f8d51c681`, stacked na #613. Řez 4B
-rozšířených nastavení je dokončený v [PR #616](https://github.com/festappnet/festapp/pull/616)
-na `feat/admin-mcp-form-settings-20261026`,
-navazuje na #615 a zůstává nenasazený. Při navázání ověřit aktuální stav celé
-review návaznosti a její heady; neslučovat ani nevydávat bez příslušné autorizace.
-Etapa 4 je nyní dokončená v [PR #617](https://github.com/festappnet/festapp/pull/617)
-na `feat/admin-mcp-stage4-complete-20261026`,
-navazuje na #616 a zůstává nenasazená. Uzavřené jsou také veřejné odkazy,
-inline produkty a podporovaná pole, čekací nabídky včetně přijetí a obecné
-administrátorské objednávky. Nepřidávat další implementaci těchto operací.
-Další doménová etapa je 5: nastavení akce a pořadatele. Nejdřív dohledat její
-existující OccasionCommands/UnitCommands vlastníky a potvrzený rozsah plánu.
-Před navázáním ověřit stav review návaznosti #613 -> #615 -> #616 -> #617
-uvedené v posledním checkpointu a případně přesměrovat base po merge rodičů.
-Před editací jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
-Navázat na existující SQL pravidla a receipts; UI i MCP vést jednou cestou.
-Zvlášť zachovat draft/persisted rozdíl, původní verzi, null/default semantics,
-práva, atomicitu a retry stejným command UUID. Nepřidávat univerzální CRUD
-framework, kopie výpočtů/ACL nebo nový form engine.
+Etapu 5 znovu neimplementovat: osm nástrojů sdílí původní occasion/unit/game
+receipt vlastníky. Kontrakt `packages/festapp_contracts/configuration-settings.json`
+generuje SQL a MCP strict schemas. Současný UI producer posílá named metadata;
+sloučení až po původním hashi/version locku. Game UI/MCP vyžaduje původní verzi,
+organizer settings vlastní manager oprávnění a explicitní whole-unit souhlas.
+Současný přesun mimo scope je otestovaný přes skutečný row-lock wait; nesmí
+přežít ani vrátit čtení nebo commit. Důkazy:
+[admin-configuration-evidence-2026-10-26.json](../reports/admin-configuration-evidence-2026-10-26.json).
 
-Součástí řezu je odstranění všech nahrazených aktuálních volání, fallbacků a
-lokálních zrcadel. Vydané veřejné klienty neodpojovat bez upgrade gate; zachovat
-jen hranici na stejného doménového vlastníka a zapsat podmínku odstranění.
-Provisioning/copy/delete celé akce ponechat v jejím vlastním atomickém lifecycle,
-neobalovat jej sérií vnořených editorových receipts.
+Publikované migrace neměnit. Aktuální konfiguraci sestavuje
+`automation/assemble-configuration-migration.py`, pak generátory canonical source
+contract a katalogu. Změna occasion save owneru vyžaduje též přegenerovat runtime
+ticket-layout kontrakt a zahrnout jej do nové migrace; samotné změnění source
+souboru nestačí. Striktní vstupy ani nové scopes nesmí rozšířit starší souhlasy.
+Draft finalizace, provider setup a ticket artwork si ponechávají své vlastníky.
 
-Řídit se [zásadami MCP](../architecture/mcp-design-practices.md) a aktuální
-mapou administrace. U každého řezu ověřit data/SQL/síť: duplicity, skutečné FK,
-limity před agregací, pořadí zámků, počet requestů a serializované bajty.
-Výkonové tvrzení musí mít srovnatelnou evidenci; index ani cache bez konkrétního
-důvodu nepřidávat. Opakovat jen zasažené kontroly po hotové koherentní změně.
-Práva/replay/souběh ověřit na skutečné marked disposable PostgreSQL bez skipů.
-
-Nejvýše jeden Flutter task na workstation, testy `--concurrency=1`; JavaScript
-přes pnpm 11.24.0. Browser jen při změně skutečné UI interakce, izolovaně a
-headless. Náhled e-mailu není pokyn k odeslání; nepoužívat skutečné zákazníky,
-objednávky nebo platby jako testovací fixture.
-
-Produkční změny jsou samostatným autorizovaným krokem; tento dokument oprávnění
-neuděluje. Při již uděleném oprávnění se znovu neptat na totéž. Vybraný tenant
-musí být doložen session scope; jiné varianty nevydávat. Pro případné pokračování
-historického rollout scope šlo pouze o `festapptickets` / `vstupenky.online`, org3,
-canonical backend `api.festapp.net`. Ověřit aktuální aktivaci/cíl, backup/recovery,
-zdrojové digesty, SQL ledger/ACL, health a koherentní live verzi. Rutinní release
-delegovat podle AGENTS levnějšímu agentovi s přesným frozen source a gates.
-Web se sestavuje lokálně a vydává přes `automation/deploy_direct.sh`.
-
-Po řezu aktualizovat checkpoint, mapu pokrytí, zdrojový JSON katalogu a HTML přes
-`node automation/reports/generate_admin_capabilities.mjs`. Stručně odlišit
-lokálně hotovo, publikováno a nasazeno. Pokud další krok blokuje review nebo
-vnější stav, zapsat konkrétní podmínku; nevydávat cizí rozpracované změny.
+Celkem 6/11 hlavních etap, orientačně 45 % podle velikosti (40-50 %). Nejde o
+odpracované hodiny. Další výrazné bloky jsou 6, 7, 8 a 10. Efektivita: nevytvářet
+novou ACL, writer, receipt, univerzální JSON CRUD ani paralelní cestu k existující
+operaci. Testovat skutečné běžné identity a cílené inputy; passing check neopakovat,
+pokud jeho vstupy zůstaly stejné. Flutter pouze jeden proces a concurrency=1.

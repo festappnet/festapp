@@ -1398,3 +1398,41 @@ base `feat/admin-mcp-form-settings-20261026`, implementation head
 pushem/PR potvrdil main `3988bb7cb` a parent #616 `a525f5aa5`; oba jsou předky
 navrženého headu. Aktuální review návaznost je #613 -> #615 -> #616 -> #617.
 Sloučení ani produkční rollout neproběhly; source digests nadále odpovídají ověření.
+
+
+## Stage 5 complete 2026-10-26
+
+Etapa 5 je dokončená a lokálně ověřená, implementace `a04d18423080022700b20e1e6c1032a679850116`.
+Základ je #617 `859ab98ad571f08ded25bcd7122ccdcac5e8799d`; autoritativní main při zahájení `3988bb7cbaf8766068a84f49f759d5544269e325`.
+PR #617 byl mezitím sjednocen na base main; #613, #615 a #616 jsou uzavřené
+jako nahrazené. Pro etapy 3-5 zůstává jediné review/publikace místo
+[PR #617](https://github.com/festappnet/festapp/pull/617), větev
+`feat/admin-mcp-stage4-complete-20261026`; nevytvářet znovu starý review stack.
+Main vyžaduje review, bez obcházení ochrany a bez automatického nasazení.
+
+- Přidáno 8 nástrojů pro nastavení akce, pořadatele, hry a explicitní veřejný
+  odkaz. Všech 11 potvrzených položek etapy 5 má mapování; katalog 100/68.
+- Jeden explicitní field/type kontrakt sdílí SQL a MCP. UI posílá pojmenovaná
+  metadata místo celého opaque data. Sloučení probíhá uvnitř původních příkazů
+  po původním hashi a version locku. Žádný další writer/receipt/trigger.
+- Unit manager/souhlas zůstává samostatný. Hra zachovává occasion editor roli
+  a současný UI/MCP producent vyžaduje verzi ze čtení. Staré RPC jsou fasády.
+- Ověřený konflikt, frozen replay, revokace, dědičnost Reply-To, nezměněné
+  okamžiky při změně timezone, feature předpoklady a skutečný souběžný přesun
+  mimo scope při čtení i zápisu. Zápis se atomicky vrací zpět.
+- Prošlo 10 nových boundary/DB/SDK případů (9 reálných PostgreSQL), 27 remote,
+  56 web, 42 unikátních Flutter případů, 12 Deno a source/generator checks.
+  Dart analyze nemá errors/warnings, zůstává 6 existujících info lintů.
+
+Migrace `supabase/migrations/20261026220000_occasion_unit_configuration.sql` má SHA256
+`b89786da1b5f6e78aa4e3eb3f7e15c44e1a3ff89e2d6330742abfa82e19d60df`. Runtime ticket-layout kontrakt je přegenerovaný a v
+reálném fixture zůstává ready; historické migrace se neměnily. Přesné příkazy,
+source hashe a limity jsou v [evidence etapy 5](../reports/admin-configuration-evidence-2026-10-26.json).
+Žádné produkční/tenant nasazení ani paid provider volání neproběhlo. Další
+etapa je **6 - lidé, role, skupiny a dobrovolníci**. Celkem 6/11 hlavních
+etap, orientačně podle velikosti **45 %**, rozpětí 40-50 %.
+
+Bezprostřední publication preflight znovu fetchoval main `3988bb7cb` a review
+větev #617 `859ab98ad`; oba jsou předky navrženého headu. Etapa 5 se publikuje
+fast-forward do existujícího #617, nikoli novým stacked PR. Stav main zůstává
+review-required. Zdrojová implementace a ověření se po tomto fetchi nezměnily.

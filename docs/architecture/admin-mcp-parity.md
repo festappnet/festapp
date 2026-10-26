@@ -495,3 +495,30 @@ facades only after client/worker upgrade and recorded legacy-data adoption.
 Evidence: [completion checks and source digests](../reports/admin-form-completion-evidence-2026-10-26.json).
 Stage 4 is complete as repository implementation; its migration, Edge and MCP
 rollout remains unperformed. Next planned domain stage is 5.
+
+
+## Occasion and organizer settings - stage 5
+
+The current UI and eight configuration tools share the existing occasion, unit
+and game command owners. `configuration-settings.json` is the explicit named
+field/type contract; SQL is generated from it and MCP builds its strict schemas
+from that same source. Current UI metadata sends only settings intent, preserving
+unrelated domain metadata. Released full-snapshot and four-argument game RPCs
+remain thin compatibility boundaries of the same writers.
+
+The original intent is hashed before state-dependent merging and before version
+checking. Reads and frozen receipt snapshots use the same safe configuration
+projection. Generic reads omit public links, raw metadata and ticket artwork;
+link inspection/rename uses an explicit operation and the existing allocator.
+Game editing preserves its occasion-editor authority and now requires the read
+version in current clients. Organizer metadata retains its independent manager
+predicate and explicit whole-unit consent. A concurrent move outside an explicit
+organizer binding rejects the read or rolls back the entire save after locking.
+
+Known feature settings preserve untouched server fields and enforce tenant/app,
+form, map-bundle and promotion prerequisites. Program notifications remain
+unavailable. New image references must belong to the occasion or its organizer;
+uploads still use the image Worker. Draft/setup finalization, ownership moves,
+provider setup and ticket artwork are outside the generic MCP settings intent.
+All eleven confirmed stage-5 catalog actions are covered; the next stage is 6.
+See [stage-5 evidence](../reports/admin-configuration-evidence-2026-10-26.json).

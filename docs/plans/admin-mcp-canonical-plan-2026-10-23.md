@@ -412,6 +412,17 @@ public checkout a uložené objednávky zůstávají kompatibilní.
 
 ### 5. Nastavení akce a unit
 
+**Stav 2026-10-26: dokončeno a lokálně ověřeno, nenasazeno.** Osm nových
+nástrojů pokrývá všech 11 potvrzených úkonů etapy 5; katalog má 68 nástrojů.
+UI i MCP používají původní receipt vlastníky. Metadata se ukládají úzkým
+kontraktem, hra vyžaduje původní verzi a pořadatel vlastní manager/souhlas scope.
+Současný přesun mimo scope je otestovaný skutečným čekáním na řádkový zámek.
+[Důkazy a source digests](../reports/admin-configuration-evidence-2026-10-26.json).
+Jediné review místo etap 3-5 je PR #617; #613/#615/#616 jsou uzavřené jako
+nahrazené. Další implementační etapa je 6. Poskytovatele/setup nemíchat do
+obecného settings příkazu, artwork pokračuje samostatnou etapou 7.
+
+
 **Změny:** read/edit základních údajů, časů, feature nastavení, publikace a prodeje
 připojit přes `OccasionCommands.save` a `SupabaseUnitCommands.save`. Nejdřív
 vypsat konkrétní pole, která mohou tyto vlastníky měnit; neposkytnout agentovi
@@ -895,3 +906,12 @@ Stav je lokálně ověřeno a publikováno k review, nikoli nasazeno. Produkčn�
 Edge a MCP rollout musí být koherentní a zůstává samostatným krokem. Aktuální
 checkpoint a evidence určují přesné zdroje/gates; historické otevřené body 4A/4B
 jsou tímto řezem vyřešené. Další doménová etapa je 5 - akce a pořadatel.
+
+
+### Checkpoint po etapě 5 - 2026-10-26
+
+Etapy 0-5 jsou implementované, tedy 6 z 11 hlavních etap. Etapy 3-5 čekají
+na review a samostatný produkční rollout. Dosavadní orientační váhy dávají
+přibližně 45 % celkového objemu práce, s rozumným rozpětím 40-50 %; nejde
+o změřené odpracované hodiny. Zbývají etapy 6-10. Autoritativní aktuální stav
+je v posledním checkpointu, nikoli v historických odstavcích o review stacku.
