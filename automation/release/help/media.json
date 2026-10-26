@@ -1245,5 +1245,33 @@
     "alt": "Payment instructions and deadline for an existing form.",
     "caption": "Existing-form payment settings are separate from organizer account management and creation of a Fio token.",
     "openLabel": "Enlarge administration screenshot (new tab)"
+  },
+  {
+    "id": "cs/webnode/03-published-mobile",
+    "file": "cs/webnode/03-published-mobile.png",
+    "locale": "cs",
+    "capturedAt": "2026-10-26",
+    "source": "Published owned Webnode Premium Standard trial site; real MobileSafari26.5 on iPhone17Pro iOS26.5 Simulator, 402x874 CSS pixels, background-only. Public production form render/scroll only; no purchase or seat selection. Unedited native screenshot.",
+    "width": 1206,
+    "height": 2622,
+    "device": "mobile",
+    "alt": "Publikovaný Webnode v mobilním Safari. Pod formulářem jsou vidět obě spodní tlačítka, záložní odkaz a běžné tlačítko Koupit vstupenky.",
+    "caption": "Publikovaný výsledek: formulář lze posunout až ke spodním tlačítkům. Vzhled zde přebírá písmo a barvy stránky.",
+    "openLabel": "Zvětšit snímek publikovaného Webnode na mobilu (nová karta)",
+    "sha256": "7c2df1e52638e7c429e031eb4b7daa9587ecafd1c5f6d897a889e1af6c3695b4"
+  },
+  {
+    "id": "en/webnode/03-published-mobile",
+    "file": "cs/webnode/03-published-mobile.png",
+    "locale": "en",
+    "capturedAt": "2026-10-26",
+    "source": "Published owned Webnode Premium Standard trial site; real MobileSafari26.5 on iPhone17Pro iOS26.5 Simulator, 402x874 CSS pixels, background-only. Public production form render/scroll only; no purchase or seat selection. Unedited native screenshot.",
+    "width": 1206,
+    "height": 2622,
+    "device": "mobile",
+    "alt": "Published Webnode in mobile Safari, showing the bottom form controls, fallback link and native Buy tickets button.",
+    "caption": "Published result: the form scrolls to its bottom controls. This example inherits the website font and colours.",
+    "openLabel": "Enlarge the published mobile Webnode screenshot (new tab)",
+    "sha256": "7c2df1e52638e7c429e031eb4b7daa9587ecafd1c5f6d897a889e1af6c3695b4"
   }
 ]
