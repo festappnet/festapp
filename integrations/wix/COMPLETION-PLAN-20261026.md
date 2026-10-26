@@ -185,3 +185,17 @@ local bank receipt also displayed literal icon names with overflow; later font
 diagnostics loaded the Material Icons face successfully but did not establish
 the original cause. Its layout remains unqualified; no app font fix is claimed.
 See `evidence/safari-storage-bank-20261026.json` for the exact boundary.
+
+### Follow-up: receipt icon independence
+
+A minimized actual OrderResult renderer reproduced literal glyph text and
+copy overflow without the external icon stylesheet (18px control,107px content).
+The same renderer with Google font CSS and explicit load passed18/18, with
+Material Icons/liga/normal ligatures. This proves the dependency's failure mode,
+not the original Safari cold-load trigger. Fixed status/copy/check SVG paths
+remove that dependency in this receipt layer. Actual320px Chrome measured
+component320/scroll320 and icon30/30,18/18; background MobileSafari screenshots
+show proper icons and wrapped IBAN. Existing clipboard/reset/accessibility
+behavior retained. No backend, purchase or foreground window was used.
+Local fix verified; publication and selected-tenant deployment still required.
+See `evidence/receipt-icons-20261026.json`.
