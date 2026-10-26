@@ -1,11 +1,21 @@
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import { helpActionFlutterPath } from '../../web_client/src/services/help_action_routes.js';
+import { organizerCreateFlutterPath, ORGANIZER_CREATE_ACTION } from '../../web_client/src/services/organizer_entry.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const html=fs.readFileSync(new URL('../../web/index.html',import.meta.url),'utf8');
 const code=html.match(/<script>(\s*\/\/ Check for redirect query param[\s\S]*?)<\/script>/)[1];
+test('the actual Flutter bootstrap restores organizer creation continuation',()=>{
+ const writes=[];
+ const location=new URL(organizerCreateFlutterPath(),'https://tenant.invalid');
+ vm.runInNewContext(code,{URLSearchParams,window:{location,history:{replaceState:(_,__,value)=>writes.push(value)}},console:{log(){}}});
+ assert.equal(writes.length,1);
+ const restored=new URL(writes[0],location.origin);
+ assert.equal(restored.pathname,'/login');
+ assert.equal(restored.searchParams.get('redirect'),ORGANIZER_CREATE_ACTION);
+});
 test('help login target survives shell bootstrap; legacy Flutter clean URLs still restore',()=>{
  for(const intent of ['seating','scanner-settings']) for(const path of ['/login','/app/login','/flutter']){
   const writes=[];const location=new URL('https://tenant.invalid'+path+'?redirect='+encodeURIComponent('/help-action/'+intent));

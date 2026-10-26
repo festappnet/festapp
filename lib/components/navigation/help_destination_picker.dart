@@ -107,7 +107,7 @@ Future<String?> chooseHelpOccasion(BuildContext context) async {
     return null;
   if (choice is String) return choice;
   if (choice != _HelpChoice.create) return null;
-  final created = await _createHelpOccasion(context);
+  final created = await createOrganizerOccasion(context);
   if (created != null) return created;
   // A cancelled wizard keeps its saved draft and the original help URL.
   if (!context.mounted || RightsService.currentUser()?.id != user?.id)
@@ -163,7 +163,10 @@ Future<int?> chooseHelpOrganization(BuildContext context) async {
       : null;
 }
 
-Future<String?> _createHelpOccasion(BuildContext context) async {
+/// Shared entry for explicit creation and help. Fresh capability grants access.
+Future<String?> createOrganizerOccasion(BuildContext context) async {
+  final userId = RightsService.currentUser()?.id;
+  if (userId == null) return null;
   final units = RightsService.currentUser()?.units ?? <UnitModel>[];
   UnitModel? unit;
   if (units.isEmpty) {
@@ -204,7 +207,10 @@ Future<String?> _createHelpOccasion(BuildContext context) async {
       ),
     );
   }
-  if (unit?.id == null || !context.mounted) return null;
+  if (unit?.id == null ||
+      !context.mounted ||
+      RightsService.currentUser()?.id != userId)
+    return null;
   // Consume the server's current unit capability, never infer create access
   // from a remembered membership or a role combination.
   await RightsService.updateAppData(
@@ -212,14 +218,16 @@ Future<String?> _createHelpOccasion(BuildContext context) async {
     force: true,
     refreshOffline: false,
   );
-  if (!context.mounted) return null;
+  if (!context.mounted || RightsService.currentUser()?.id != userId)
+    return null;
   if (RightsService.currentUnit()?.id != unit.id ||
       !RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)) {
     await showHelpAccess(context);
     return null;
   }
   final dashboard = await DbUnits.getOccasionDashboard(unit.id!);
-  if (!context.mounted) return null;
+  if (!context.mounted || RightsService.currentUser()?.id != userId)
+    return null;
   if (AppConfig.occasionSetupEnabled && dashboard.drafts.isNotEmpty) {
     // Reloading a help link must offer the real saved wizard before creating
     // another draft. Finalization still uses the normal permission-checked RPC.
@@ -259,7 +267,10 @@ Future<String?> _createHelpOccasion(BuildContext context) async {
         ],
       ),
     );
-    if (draft == null || !context.mounted) return null;
+    if (draft == null ||
+        !context.mounted ||
+        RightsService.currentUser()?.id != userId)
+      return null;
     if (draft != _HelpChoice.create) {
       final selected = dashboard.drafts.firstWhere(
         (item) => identical(item, draft),

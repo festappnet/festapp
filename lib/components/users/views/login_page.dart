@@ -1,4 +1,7 @@
 import 'package:fstapp/services/help_destination.dart';
+import 'package:fstapp/services/organizer_destination.dart';
+import 'package:fstapp/services/launch_url_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -75,6 +78,12 @@ class _LoginPageState extends State<LoginPage> {
         isLoggedIn: AuthService.isLoggedIn,
         restoreSession: AuthService.tryAuthUser,
       ).timeout(const Duration(seconds: 10));
+      if (mounted && !loggedIn && kIsWeb &&
+          OrganizerDestination.isCreate(widget.redirect)) {
+        await LaunchUrlService.openExternalUrl('/login?create=1',
+            inCurrentWindow: true);
+        return;
+      }
       if (!mounted ||
           !loggedIn ||
           GoogleAuthService.hasCallback ||
@@ -83,7 +92,8 @@ class _LoginPageState extends State<LoginPage> {
       }
       // Help onboarding includes human-paced event selection and setup. A
       // navigation timeout would mark that still-running wizard as failed.
-      if (HelpDestination.parse(widget.redirect) != null) {
+      if (HelpDestination.parse(widget.redirect) != null ||
+        OrganizerDestination.isCreate(widget.redirect)) {
         await _refreshSignedInStatus(null);
       } else {
         await _refreshSignedInStatus(null).timeout(const Duration(seconds: 15));
@@ -98,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _recoverAuthenticatedNavigation() async {
     if (!mounted) return;
-    if (HelpDestination.parse(widget.redirect) != null) {
+    if (HelpDestination.parse(widget.redirect) != null ||
+        OrganizerDestination.isCreate(widget.redirect)) {
       setState(() => _initialNavigationFailed = true);
       return;
     }

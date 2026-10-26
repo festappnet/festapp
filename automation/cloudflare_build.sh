@@ -418,6 +418,9 @@ async function routeRequest(request, env) {
 
     // Previously shared links are a boundary adapter into the canonical web flow.
     if (path === "/login" && url.searchParams.getAll("redirect").length === 1) {
+      if (url.searchParams.get("redirect") === "/organizer-action/create") {
+        return Response.redirect(new URL("/login?create=1", url).href, 302);
+      }
       const help = helpActionFromPath(url.searchParams.get("redirect"));
       if (help) return Response.redirect(new URL(helpActionWebPath(help), url).href, 302);
     }

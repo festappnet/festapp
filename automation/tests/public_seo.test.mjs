@@ -23,6 +23,16 @@ const env = {
   } },
 };
 const request = path => new Request('https://tickets.invalid' + path);
+
+test('reloading the creation handoff returns to web authentication with its intent', async () => {
+  const response = await worker.fetch(request('/login?redirect=%2Forganizer-action%2Fcreate'), env);
+  assert.equal(response.status, 302);
+  const target = new URL(response.headers.get('location'));
+  assert.equal(target.pathname + target.search, '/login?create=1');
+  const login = await worker.fetch(new Request(target), env);
+  assert.equal(login.status, 200);
+  assert.match(await login.text(), /id="app"/);
+});
 const occasions = [
   { title: 'Camp & <script>bad</script>', link: 'camp', form: { link: 'camp-registration' }, features: [{ code: 'form', is_enabled: true }] },
   { title: 'Program', link: 'program', features: [] },
