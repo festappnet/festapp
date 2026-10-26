@@ -239,7 +239,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
             ),
           if (first.occasionId != null && title != null)
             const Divider(height: 1),
-          for (final item in entry.value) _item(context, item),
+          for (final item in entry.value)
+            if (item.isPeriod) _period(context, item) else _item(context, item),
         ],
       );
     }
@@ -264,6 +265,122 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           ),
         ],
       );
+
+  Widget _period(BuildContext context, NotificationItem item) {
+    final state = widget.controller.periodState(item);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final locale =
+        (EasyLocalization.of(context)?.locale ??
+                Localizations.localeOf(context))
+            .toLanguageTag();
+    final period = item.period;
+    final first = DateTime.parse(period['firstDay'] as String);
+    final last = DateTime.parse(period['lastDay'] as String);
+    final label = period['unit'] == 'day' || first == last
+        ? NotificationCenterTime.day(first, locale)
+        : 'NotificationCenter.week'.tr(
+            namedArgs: {
+              'range':
+                  '${DateFormat.yMd(locale).format(first)} - ${DateFormat.yMd(locale).format(last)}',
+            },
+          );
+    return Column(
+      key: ValueKey('notification-period-${item.id}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          expanded: state.expanded,
+          child: InkWell(
+            onTap: () => widget.controller.togglePeriod(item),
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          s('orderActivities'),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${item.data['count']}',
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: s(state.expanded ? 'collapse' : 'expand'),
+                    child: Icon(
+                      state.expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (state.expanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final child in state.items) _item(context, child),
+                if (state.loading) const LinearProgressIndicator(),
+                if (state.failed) ...[
+                  Text(s('refreshFailed')),
+                  TextButton(
+                    onPressed: () => widget.controller.loadPeriod(item),
+                    child: Text(CommonStrings.retry),
+                  ),
+                ] else if (!state.loading && state.items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(s('unavailable')),
+                  ),
+                if (!state.failed && state.nextCursor != null)
+                  TextButton(
+                    onPressed: state.loading
+                        ? null
+                        : () => widget.controller.loadPeriod(item),
+                    child: Text(s('more')),
+                  ),
+              ],
+            ),
+          ),
+        const Divider(height: 1),
+      ],
+    );
+  }
 
   Widget _item(BuildContext context, NotificationItem item) {
     final theme = Theme.of(context);

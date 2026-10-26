@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'notification_center_calendar.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,6 +29,16 @@ class NotificationItem {
   final DateTime? occurredAt;
   final String? occasionLink;
   final Map<String, dynamic> data;
+  bool get isPeriod => kind == 'order_activity_group';
+  Map<String, dynamic> get period =>
+      Map<String, dynamic>.from(data['period'] as Map);
+}
+
+class NotificationPeriodState {
+  bool expanded = false, loading = false, failed = false;
+  int request = 0;
+  List<NotificationItem> items = [];
+  dynamic nextCursor;
 }
 
 /// Only open acknowledges. Generation and revision fences reject stale polls.
@@ -47,6 +59,16 @@ class NotificationCenterController extends ChangeNotifier {
       pageFailed = false;
   bool panelOpen = false, foreground = true, refreshFailed = false;
   int snapshot = 0;
+  DateTime? snapshotAt;
+  List<Map<String, dynamic>> periods = [];
+  final Map<String, NotificationPeriodState> periodStates = {};
+  NotificationPeriodState periodState(NotificationItem item) =>
+      periodStates.putIfAbsent(item.id, NotificationPeriodState.new);
+  Map<String, dynamic> get _timelineScope => {
+    ..._scope,
+    'p_snapshot': snapshot,
+    'p_snapshot_at': snapshotAt!.toIso8601String(),
+  };
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
   dynamic nextCursor;
@@ -79,12 +101,17 @@ class NotificationCenterController extends ChangeNotifier {
     failed = pageFailed = loading = false;
     nextCursor = null;
     snapshot = 0;
+    snapshotAt = null;
+    periods = [];
+    periodStates.clear();
     panelOpen = false;
     items = [];
     occasions = [];
     refreshFailed = false;
     _schedule();
-    if ((identityChanged || invalidate) && user != null && organization != null) {
+    if ((identityChanged || invalidate) &&
+        user != null &&
+        organization != null) {
       unawaited(refreshBadge());
     }
     notifyListeners();
@@ -116,7 +143,10 @@ class NotificationCenterController extends ChangeNotifier {
           revision != _revision) {
         return;
       }
-      final captured = items.map((item) => item.id).toSet();
+      final captured = [
+        ...items.where((item) => !item.isPeriod),
+        for (final state in periodStates.values) ...state.items,
+      ].map((item) => item.id).toSet();
       final ids = captured.toList();
       final updates = <String, NotificationItem>{};
       for (var start = 0; start < ids.length; start += 200) {
@@ -133,11 +163,33 @@ class NotificationCenterController extends ChangeNotifier {
           updates[item.id] = item;
         }
       }
-      // Hydration updates facts, never snapshot order or section.
-      items.removeWhere(
-        (item) => captured.contains(item.id) && !updates.containsKey(item.id),
-      );
-      items = items.map((item) {
+      final headers = items.where((item) => item.isPeriod).toList();
+      final counts = <String, Map<String, dynamic>>{};
+      for (var start = 0; start < headers.length; start += 200) {
+        final result = await _read(
+          'get_notification_center_timeline_group_updates',
+          {
+            ..._timelineScope,
+            'p_groups': headers
+                .sublist(start, (start + 200).clamp(0, headers.length))
+                .map(
+                  (item) => {
+                    'id': item.id,
+                    'occasionId': item.occasionId,
+                    'period': item.period,
+                  },
+                )
+                .toList(),
+          },
+        );
+        if (generation != _generation || revision != _revision) return;
+        for (final row in result['groups'] as List? ?? []) {
+          final value = Map<String, dynamic>.from(row);
+          counts[value['id'] as String] = value;
+        }
+      }
+      // Live facts may change, but snapshot positions and date boundaries stay fixed.
+      NotificationItem hydrate(NotificationItem item) {
         final update = updates[item.id];
         if (update == null) return item;
         return NotificationItem.fromJson({
@@ -152,7 +204,34 @@ class NotificationCenterController extends ChangeNotifier {
           'occasionLink': update.occasionLink,
           'data': update.data,
         });
+      }
+
+      items.removeWhere(
+        (item) => item.isPeriod
+            ? (counts[item.id]?['count'] as int? ?? 0) == 0
+            : captured.contains(item.id) && !updates.containsKey(item.id),
+      );
+      items = items.map((item) {
+        if (!item.isPeriod) return hydrate(item);
+        final count = counts[item.id]!;
+        return NotificationItem.fromJson({
+          'id': item.id,
+          'kind': item.kind,
+          'section': item.section,
+          'occasionId': item.occasionId,
+          'occasionTitle': count['occasionTitle'],
+          'occasionLink': item.occasionLink,
+          'occurredAt': item.occurredAt?.toIso8601String(),
+          'data': {...item.data, 'count': count['count']},
+        });
       }).toList();
+      periodStates.removeWhere((id, _) => !items.any((item) => item.id == id));
+      for (final state in periodStates.values) {
+        state.items.removeWhere(
+          (item) => captured.contains(item.id) && !updates.containsKey(item.id),
+        );
+        state.items = state.items.map(hydrate).toList();
+      }
       refreshFailed = false;
       notifyListeners();
     } catch (error) {
@@ -176,6 +255,7 @@ class NotificationCenterController extends ChangeNotifier {
     enabled = unread = loading = false;
     failed = true;
     items = [];
+    periodStates.clear();
     occasions = [];
     nextCursor = null;
     _timer?.cancel();
@@ -206,7 +286,7 @@ class NotificationCenterController extends ChangeNotifier {
           request != _badgeRequest) {
         return;
       }
-      if (result['feedSupported'] != true) {
+      if (result['timelineSupported'] != true) {
         _unsupported = true;
         enabled = unread = false;
         _timer?.cancel();
@@ -249,7 +329,7 @@ class NotificationCenterController extends ChangeNotifier {
         'p_limit': 30,
       });
       if (generation != _generation || revision != _revision) return;
-      if (result['feedSupported'] != true) {
+      if (result['timelineSupported'] != true) {
         _unsupported = true;
         enabled = unread = false;
         items = [];
@@ -257,14 +337,31 @@ class NotificationCenterController extends ChangeNotifier {
         failed = true;
         return;
       }
-      snapshot = result['snapshot'] as int? ?? 0;
-      items = (result['feedItems'] as List? ?? [])
+      final newSnapshot = result['snapshot'] as int? ?? 0;
+      final at = DateTime.parse(result['snapshotAt'] as String);
+      final calendar = NotificationCenterCalendar.periods(
+        at,
+        DateTime.tryParse(result['oldestOrderAt']?.toString() ?? ''),
+      );
+      final timeline = await _read('get_notification_center_timeline', {
+        ..._scope,
+        'p_snapshot': newSnapshot,
+        'p_snapshot_at': at.toIso8601String(),
+        'p_periods': calendar,
+        'p_limit': 30,
+      });
+      if (generation != _generation || revision != _revision) return;
+      snapshot = newSnapshot;
+      snapshotAt = at;
+      periods = calendar;
+      periodStates.clear();
+      items = (timeline['items'] as List? ?? [])
           .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       occasions = (result['occasions'] as List? ?? [])
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
-      nextCursor = result['feedNextCursor'];
+      nextCursor = timeline['nextCursor'];
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
@@ -293,9 +390,9 @@ class NotificationCenterController extends ChangeNotifier {
     pageFailed = false;
     notifyListeners();
     try {
-      final result = await _read('get_notification_center_feed', {
-        ..._scope,
-        'p_snapshot': snapshot,
+      final result = await _read('get_notification_center_timeline', {
+        ..._timelineScope,
+        'p_periods': periods,
         'p_cursor': nextCursor,
         'p_limit': 30,
       });
@@ -316,6 +413,65 @@ class NotificationCenterController extends ChangeNotifier {
     } finally {
       if (generation == _generation && revision == _revision) {
         loading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> togglePeriod(NotificationItem item) async {
+    final state = periodState(item);
+    state.expanded = !state.expanded;
+    notifyListeners();
+    if (state.expanded && state.items.isEmpty && !state.loading) {
+      await loadPeriod(item);
+    }
+  }
+
+  Future<void> loadPeriod(NotificationItem item) async {
+    final state = periodState(item);
+    if (state.loading || (state.items.isNotEmpty && state.nextCursor == null))
+      return;
+    final generation = _generation,
+        revision = _revision,
+        request = ++state.request;
+    state.loading = true;
+    state.failed = false;
+    notifyListeners();
+    try {
+      final result = await _read('get_notification_center_timeline_group', {
+        ..._timelineScope,
+        'p_occasion': item.occasionId,
+        'p_period': item.period,
+        'p_cursor': state.nextCursor,
+        'p_limit': 30,
+      });
+      if (generation != _generation ||
+          revision != _revision ||
+          !identical(periodStates[item.id], state) ||
+          request != state.request)
+        return;
+      final known = state.items.map((item) => item.id).toSet();
+      state.items.addAll(
+        (result['items'] as List? ?? [])
+            .map(
+              (row) =>
+                  NotificationItem.fromJson(Map<String, dynamic>.from(row)),
+            )
+            .where((item) => known.add(item.id)),
+      );
+      state.nextCursor = result['nextCursor'];
+    } catch (error) {
+      if (generation == _generation &&
+          revision == _revision &&
+          identical(periodStates[item.id], state) &&
+          !_accessFailure(error)) {
+        state.failed = true;
+      }
+    } finally {
+      if (generation == _generation &&
+          revision == _revision &&
+          identical(periodStates[item.id], state)) {
+        state.loading = false;
         notifyListeners();
       }
     }

@@ -4308,6 +4308,10 @@
     "duplicateBlock": "Blok {{tickets}} lze použít pouze jednou."
   },
   "NotificationCenter": {
+    "orderActivities": "Změny objednávek",
+    "expand": "Rozbalit",
+    "collapse": "Sbalit",
+    "week": "Týden {range}",
     "detailUnavailable": "Podrobnosti se nepodařilo načíst. Zkusit znovu",
     "settingsEmpty": "Zatím nejsou k dispozici žádné akce.",
     "groups": {
@@ -4343,7 +4347,7 @@
       "event_capacity_full": "Událost je plně obsazena",
       "order_created": "Nová objednávka",
       "waitlist_registered": "Nový náhradník",
-      "order_cancelled": "Storno objednávky",
+      "order_cancelled": "Zrušená objednávka",
       "offer_accepted": "Nabídka přijata",
       "offer_declined": "Nabídka odmítnuta",
       "offer_expired": "Nabídka vypršela",

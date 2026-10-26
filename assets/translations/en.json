@@ -4306,6 +4306,10 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "orderActivities": "Order activity",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "week": "Week {range}",
     "detailUnavailable": "Could not load details. Try again",
     "settingsEmpty": "No events are available yet.",
     "groups": {

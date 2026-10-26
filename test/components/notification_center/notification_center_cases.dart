@@ -1,3 +1,6 @@
+import 'package:festapp_core/time.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:fstapp/components/notification_center/notification_center_calendar.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -30,14 +33,32 @@ NotificationItem row(
   'occurredAt': '2026-10-26T12:00:00Z',
   'data': data,
 });
+NotificationItem periodRow() => row(
+  'older',
+  kind: 'order_activity_group',
+  data: {
+    'count': 35,
+    'period': {
+      'unit': 'day',
+      'startAt': '2026-10-25T00:00:00Z',
+      'endAt': '2026-10-25T12:00:00Z',
+      'firstDay': '2026-10-25',
+      'lastDay': '2026-10-25',
+    },
+  },
+);
 Map<String, dynamic> opened([List<Map<String, dynamic>> items = const []]) => {
   'feedSupported': true,
+  'timelineSupported': true,
   'snapshot': 7,
   'feedItems': items,
+  'items': items,
+  'snapshotAt': '2026-10-26T12:00:00Z',
   'occasions': [],
 };
 Map<String, dynamic> badge({bool unread = true}) => {
   'feedSupported': true,
+  'timelineSupported': true,
   'enabled': true,
   'unread': unread,
 };
@@ -149,6 +170,7 @@ void main() {
       await c.open();
       expect(c.failed, isTrue);
       expect(c.unread, isTrue);
+      c.snapshotAt = DateTime.utc(2026, 10, 26);
       c.nextCursor = 'cursor';
       await c.loadMore();
       expect(c.items.single.id, 'sixth');
@@ -156,7 +178,7 @@ void main() {
         calls.where((name) => name == 'open_notification_center').length,
         1,
       );
-      expect(calls, contains('get_notification_center_feed'));
+      expect(calls, contains('get_notification_center_timeline'));
     },
   );
   testWidgets('polling pauses in background and does not acknowledge', (
@@ -186,7 +208,8 @@ void main() {
   test('pagination failure retains items and snapshot', () async {
     final c = NotificationCenterController(
       read: (name, params) async {
-        if (name == 'get_notification_center_feed') throw StateError('offline');
+        if (name == 'get_notification_center_timeline')
+          throw StateError('offline');
         return badge();
       },
     );
@@ -195,6 +218,7 @@ void main() {
     final item = row('retained');
     c.items = [item];
     c.snapshot = 9;
+    c.snapshotAt = DateTime.utc(2026, 10, 26);
     c.nextCursor = 'cursor';
     await c.loadMore();
     expect(c.items.single, same(item));
@@ -452,6 +476,7 @@ void main() {
         {'id': 1, 'title': 'Same title'},
         {'id': 2, 'title': 'Same title'},
       ];
+      c.snapshotAt = DateTime.utc(2026, 10, 26);
       c.nextCursor = 'cursor';
       c.unread = true;
       final selected = <String>[];
@@ -474,7 +499,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Same title'), findsNWidgets(2));
       expect(find.text('NotificationCenter.kinds.form_opened'), findsOneWidget);
-      expect(calls, ['get_notification_center_feed']);
+      expect(calls, ['get_notification_center_timeline']);
       expect(c.unread, isTrue);
       expect(tester.takeException(), isNull);
     },
@@ -531,6 +556,191 @@ void main() {
       expect(targets.single.data['messageId'], 'message');
       await tester.tap(find.text('Affected'));
       expect(targets.last.data['relatedOrders'], isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  test(
+    'device calendar partitions are contiguous and preserve DST day lengths',
+    () {
+      OccasionTimeContext.initializeTimeZones();
+      final zone = tz.getLocation('Europe/Prague');
+      for (final sample in [
+        (DateTime.utc(2026, 10, 27, 12), '2026-10-25', 25),
+        (DateTime.utc(2026, 3, 31, 12), '2026-03-29', 23),
+      ]) {
+        final at = sample.$1;
+        final oldest = at.subtract(const Duration(days: 40));
+        final periods = NotificationCenterCalendar.periods(
+          at,
+          oldest,
+          localize: (value) => tz.TZDateTime.from(value, zone),
+          midnight: (y, m, d) => tz.TZDateTime(zone, y, m, d),
+        );
+        expect(
+          DateTime.parse(periods.first['endAt'] as String),
+          at.subtract(const Duration(hours: 24)),
+        );
+        for (var i = 1; i < periods.length; i++) {
+          expect(periods[i]['endAt'], periods[i - 1]['startAt']);
+        }
+        final changed = periods.singleWhere((p) => p['firstDay'] == sample.$2);
+        expect(
+          DateTime.parse(changed['endAt'] as String)
+              .difference(DateTime.parse(changed['startAt'] as String))
+              .inHours,
+          sample.$3,
+        );
+        expect(periods.last['unit'], 'week');
+        expect(
+          DateTime.parse(periods.last['startAt'] as String).isAfter(oldest),
+          isFalse,
+        );
+      }
+      expect(
+        NotificationCenterCalendar.periods(DateTime.utc(2026, 10, 26), null),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'collapsed period loads lazily, keeps full count and never acknowledges',
+    () async {
+      final pending = Completer<dynamic>();
+      final calls = <String>[];
+      var pages = 0;
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          calls.add(name);
+          if (name == 'get_notification_center_badge') return badge();
+          expect(name, 'get_notification_center_timeline_group');
+          if (++pages == 1) return pending.future;
+          expect(params['p_cursor'], 'next-child');
+          return {
+            'items': [
+              {'id': 'a'},
+              {'id': 'b', 'kind': 'order_cancelled'},
+            ],
+          };
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      c.snapshotAt = DateTime.utc(2026, 10, 26, 12);
+      final header = periodRow();
+      c.items = [header];
+      final opening = c.togglePeriod(header);
+      expect(c.periodState(header).loading, isTrue);
+      await c.togglePeriod(header); // A late response must not reopen the row.
+      pending.complete({
+        'items': [
+          {'id': 'a', 'kind': 'order_created'},
+        ],
+        'nextCursor': 'next-child',
+      });
+      await opening;
+      expect(c.periodState(header).expanded, isFalse);
+      expect(header.data['count'], 35); // It is not the one loaded child.
+      await c.togglePeriod(header);
+      await c.loadPeriod(header);
+      expect(c.periodState(header).items.map((x) => x.id), ['a', 'b']);
+      expect(c.periodState(header).nextCursor, isNull);
+      expect(calls, isNot(contains('open_notification_center')));
+    },
+  );
+
+  test('identity change rejects an in-flight period expansion', () async {
+    final pending = Completer<dynamic>();
+    final c = NotificationCenterController(
+      read: (name, _) async =>
+          name == 'get_notification_center_badge' ? badge() : pending.future,
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    c.snapshotAt = DateTime.utc(2026, 10, 26, 12);
+    final header = periodRow();
+    c.items = [header];
+    final expansion = c.togglePeriod(header);
+    c.configure(userId: 'other', organizationId: 1);
+    pending.complete({
+      'items': [
+        {'id': 'secret'},
+      ],
+    });
+    await expansion;
+    expect(c.items, isEmpty);
+    expect(c.periodStates, isEmpty);
+  });
+
+  test(
+    'live permission refresh clears collapsed counts and loaded children',
+    () async {
+      final calls = <String>[];
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          calls.add(name);
+          if (name == 'get_notification_center_badge') return badge();
+          if (name == 'get_notification_center_updates') return {'items': []};
+          expect(name, 'get_notification_center_timeline_group_updates');
+          return {
+            'groups': [
+              {'id': 'older', 'count': 0},
+            ],
+          };
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      c.snapshotAt = DateTime.utc(2026, 10, 26, 12);
+      c.items = [periodRow()];
+      c.periodState(c.items.single).items = [row('previously-visible')];
+      c.panelOpen = true;
+      await c.refresh();
+      expect(c.items, isEmpty);
+      expect(c.periodStates, isEmpty);
+      expect(calls, isNot(contains('open_notification_center')));
+    },
+  );
+
+  testWidgets(
+    'period expands mixed actions while old form rows stay standalone',
+    (tester) async {
+      final c = NotificationCenterController(
+        read: (name, _) async => {
+          'items': [
+            {
+              'id': 'old-order',
+              'kind': 'order_created',
+              'occasionLink': 'event',
+              'data': {
+                'orderId': 1,
+                'contact': {'name': 'Historical customer'},
+              },
+            },
+            {'id': 'old-cancel', 'kind': 'order_cancelled', 'data': {}},
+          ],
+        },
+      );
+      addTearDown(c.dispose);
+      c.snapshotAt = DateTime.utc(2026, 10, 26, 12);
+      c.items = [periodRow(), row('old-form', kind: 'form_closed')];
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: NotificationCenterPanel(controller: c, onDetail: (_) {}),
+        ),
+      );
+      expect(find.text('35'), findsOneWidget);
+      expect(find.text('Historical customer'), findsNothing);
+      expect(find.text('NotificationCenter.kinds.form_closed'), findsOneWidget);
+      await tester.tap(find.text('NotificationCenter.orderActivities'));
+      await tester.pumpAndSettle();
+      expect(find.text('Historical customer'), findsOneWidget);
+      expect(
+        find.text('NotificationCenter.kinds.order_cancelled'),
+        findsOneWidget,
+      );
+      expect(find.text('35'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

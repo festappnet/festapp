@@ -2294,6 +2294,10 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "orderActivities": "Zmiany w zamówieniach",
+    "expand": "Rozwiń",
+    "collapse": "Zwiń",
+    "week": "Tydzień {range}",
     "detailUnavailable": "Nie udało się wczytać szczegółów. Spróbuj ponownie",
     "settingsEmpty": "Nie ma jeszcze dostępnych wydarzeń.",
     "groups": {

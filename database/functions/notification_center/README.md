@@ -89,3 +89,26 @@ prerequisite files are byte-for-byte copies of their published Git source.
 Actual SQL, concurrency, Flutter, clean/upgrade rehearsal and isolated full-app
 receipts live in the [execution evidence](../../../docs/plans/notification-center-feed-evidence-2026-10-26/README.md).
 Local implementation is separate from production migration and release.
+
+## Temporal order history (2026-10-26 follow-up)
+
+`get_notification_center_timeline` combines recent individual entries and older
+order-action counts per occasion and calendar period. The client constructs
+contiguous day/week UTC intervals using its local calendar, anchored at
+`open_notification_center.snapshotAt` down to `oldestOrderAt`. The server validates
+coverage/non-overlap and binds its keyset cursor to recipient, organization,
+occasion, snapshot, anchor and calendar. Private DTO/contact hydration happens
+only for actual page rows. No new projection table or delivery system is added.
+
+`get_notification_center_timeline_group` pages all mixed order kinds in one period;
+`get_notification_center_timeline_group_updates` rechecks full counts under live
+permissions. Neither pagination nor expansion acknowledges. Forms and other
+non-order events never enter these groups. All readers share the existing
+latest-delivered-revision selector and current event-specific authorization.
+
+The single-place label uses captured configured multi-place context when present.
+Older events missing context/count hydrate only those missing fields from the
+authorized live order/form; captured counts and configuration are never rewritten.
+`order_context.sql` is the shared owner used by publication and legacy hydration.
+The new forward migration is `20261026150000_notification_center_order_periods.sql`;
+all previous migration bytes, including the flat feed, are sealed prerequisites.

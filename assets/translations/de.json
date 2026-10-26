@@ -2292,6 +2292,10 @@
     "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   },
   "NotificationCenter": {
+    "orderActivities": "Bestellaktivitäten",
+    "expand": "Aufklappen",
+    "collapse": "Zuklappen",
+    "week": "Woche {range}",
     "detailUnavailable": "Details konnten nicht geladen werden. Erneut versuchen",
     "settingsEmpty": "Noch keine Veranstaltungen verfügbar.",
     "groups": {
