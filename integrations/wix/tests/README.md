@@ -70,7 +70,45 @@ hash for comparison with the retry. Assert counts 0 -> 1 -> 1 and identical
 request bodies. Two POST attempts must still produce one order and one ticket.
 
 Native Safari is not qualified by Chromium, a mobile user agent or headless
-WebKit. The current workstation has no headless Safari test facility. Provider
+WebKit. Desktop Safari has no headless mode here. A disposable MobileSafari simulator
+can run in the background; its rendering pass and native-input automation
+limitation are recorded in `../evidence/completion-20261026.json`. Provider
 redirect/return checks are conditional on offering such a provider; this bank
 transfer flow is qualified through its actual instructions and QR, without
 activating Stripe or making a real transfer.
+
+
+## Remaining-boundary verification, 26 October
+
+Read [the completion plan](../COMPLETION-PLAN-20261026.md) before running the
+production probe. `production-readonly-proxy.mjs <cdp-file> <private-receipt>`
+requires the same one-blank-tab owned headless browser with persistent production
+DNS fencing. It permits only an anonymous SELECT/preflight for the exact public
+`country_bal_vetrkovice` form. HTML, authentication and CORS are not rewritten.
+No production order/hold endpoint is admitted. Stop the transport with SIGTERM
+before closing its browser. This is a guarded relay read, not an unguarded
+production purchase test.
+
+The separate `reload-fixture.sql` adds only `wix-qa-reload-20261026` in the marked
+Wix disposable project. `--canonical-reload --local-client` on the checkout proxy
+uses a locally built candidate's explicitly enumerated public assets and locale
+files. Unconfigured main builds use the legacy API origin; this mode maps that
+one origin to the guarded local backend only. Production and legacy network DNS
+remain blocked. This adapted candidate is never evidence of production CORS.
+`--lose-first-order-response` can exercise the committed-but-unconfirmed result.
+Actual seat TTL comes from `hold.duration`, not `deadline_duration_seconds`.
+
+Order200 belongs to the recorded reload case. Preserve it alongside166/167 and
+do not replay the recorded synthetic buyer or reset the purchased A1. With
+storage denied, a full reload loses the draft and pending in-memory identity;
+only same-page retry is promised. Assert no automatic submit, one retained SQL
+order and occupied/nonselected seat state instead of inventing cross-reload
+receipt recovery.
+
+The real MobileSafari26.5 simulator run is recorded separately. WebDriver typed
+no text even into a standalone input control, matching
+[WebKit322938](https://bugs.webkit.org/show_bug.cgi?id=322938). Installed AXe native HID later passed text entry on published Wix without
+foregrounding Simulator. Local cross-site summary, Safari Back and Escape also
+passed with retained fields and no submit. Full software-keyboard geometry,
+Safari payment handoff/storage denial and physical hardware remain unqualified;
+see `../SAFARI-REMAINING-CHECKS.md`.
