@@ -14,8 +14,10 @@ odvoláno. Transport/SDK ani hotové etapy znovu neimplementovat.
 Etapy 0-2B jsou nasazené. Etapa 3 je lokálně dokončená a ověřená v izolovaném
 checkoutu `/private/tmp/festapp-admin-mcp-emails-20261026`, větev
 `feat/admin-mcp-emails-20261026`, základ
-`ddbeb11e6aa477477984da03f947f07f9f6a353a`. Publikaci ověřit podle aktuálního
-GitHub stavu; produkční rollout etapy 3 dosud neproběhl. Main vyžaduje jedno
+`ddbeb11e6aa477477984da03f947f07f9f6a353a`. Etapa 3 je publikovaná v PR #613
+(https://github.com/festappnet/festapp/pull/613), implementation head
+`eb7dad50b22345fccdb4eb3e92472eb711d9f1de`. Ověřit aktuální GitHub stav;
+produkční rollout etapy 3 dosud neproběhl. Main vyžaduje jedno
 schválení review, bez obcházení ochrany.
 
 Další doménová etapa je 4: formuláře, pole a prodejní nastavení. Před editací

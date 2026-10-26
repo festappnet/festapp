@@ -100,7 +100,13 @@
     }
   },
   "networkEvidence": "docs/reports/admin-email-template-network-2026-10-26.json",
-  "publication": "pending-required-review",
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/613",
+    "state": "open-review-required",
+    "implementationHead": "eb7dad50b22345fccdb4eb3e92472eb711d9f1de",
+    "refreshedBase": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
+    "requiredApprovingReviews": 1
+  },
   "deployment": "not-performed",
   "sourceSha256": {
     "assets/email_templates/preview_examples.json": "99774e32d474010bfd3e48a6403d1889b8e52b346a4fb014bac350dddef630d4",

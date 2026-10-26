@@ -1203,3 +1203,14 @@ Next implementation boundary: stage 4, forms/fields/sales settings. Reuse its
 existing aggregate writer, permissions and receipt; do not add a second form
 engine. Start from this checkpoint and current authoritative main, preserving
 stage-3 evidence and the public-client contraction gate above.
+
+
+### Stage 3 publication receipt
+
+PR https://github.com/festappnet/festapp/pull/613 is open. Verified implementation
+head `eb7dad50b22345fccdb4eb3e92472eb711d9f1de`; refreshed authoritative main base
+`ddbeb11e6aa477477984da03f947f07f9f6a353a`. Base had not advanced; worktree was
+clean at first push. GitHub reports `REVIEW_REQUIRED` (one approving review).
+No main merge, protection bypass, production migration or release was performed.
+Subsequent documentation-only bookkeeping records this receipt; the implementation
+and its retained validation inputs are unchanged.

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "date": "2026-10-23",
-  "sourceMain": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "date": "2026-10-26",
+  "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
   "scopeNote": "Provozní etapa 2B je dokončená a nasazená pro festapptickets / vstupenky.online: inspekce a blokace míst, uvolnění dočasných rezervací, prohození vstupenek, objednávky z míst a rušení vybraných vstupenek. UI i MCP používají společné doménové operace. Na žádost uživatele zde práce končí; etapy 3-10 zůstávají na později.",
@@ -1518,10 +1518,10 @@
     "date": "2026-10-23",
     "status": "Celá provozní etapa 2B ověřena a nasazena.",
     "finding": "68 PostgreSQL testů prošlo bez skipů; dále 31 vzdálených/SDK testů, 37 testů souhlasu, 14 testů obnovy klienta a 3 cílené UI testy. Produkční kontrola potvrdila atomický ledger, shodu SQL zdrojů a ACL, zdravé Edge/MCP a koherentní web build869. Původní PWA limity zůstaly zachované. Historická PDF readiness evidence není důkazem živé PDF připravenosti; PDF editor není součástí tohoto řezu.",
-    "nextStep": "Publikovat ověřenou etapu 3; produkční SQL/Edge/klient/issuer nasadit jen v autorizovaném scope. Další implementační etapa 4: formuláře.",
+    "nextStep": "PR #613 vyžaduje schvalující review. Produkční rollout etapy 3 neproběhl; další doménová implementace je etapa 4 (formuláře).",
     "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
-  "progress": "Etapy 0, 1 a 2 včetně 2B jsou nasazené. Etapa 3 (šablony, dědičnost, bannery a syntetické náhledy) je lokálně ověřená; zatím není nasazená. Následuje publikace a etapa 4. Nové scopes nerozšiřují starší souhlasy.",
+  "progress": "Etapy 0, 1 a 2 včetně 2B jsou nasazené. Etapa 3 je lokálně ověřená a publikovaná v PR #613; čeká na povinné review, produkční rollout neproběhl. Další implementační etapa je 4. Nové scopes nerozšiřují starší souhlasy.",
   "phases": [
     {
       "id": "0",
