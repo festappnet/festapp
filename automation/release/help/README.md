@@ -135,3 +135,12 @@ media identity. The renderer uses existing content-addressed assets. Optional
 `previewCrop` on the media entry selects the curated detail/upper thumbnail crop
 without changing the full screenshot. Keep previews relevant to the article and
 its workflow, localized, and decorative within the descriptive guide link.
+
+## Repeatability and capture theme
+
+All Festapp help screenshots use light mode. The canonical scenario catalogue
+and repeat procedure are documented in `automation/help_capture/README.md`.
+`automation/help_capture/scanner_light.py` regenerates twelve real CS/EN scanner
+error/settings screenshots and updates hashes in both provenance registries.
+Other catalogue chapters currently have manual replay steps, not an automated
+end-to-end runner. Private interaction logs are supplementary evidence.
