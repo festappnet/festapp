@@ -1,0 +1,4 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+defined('_JEXEC') or die;
+echo $embed;

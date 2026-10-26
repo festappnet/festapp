@@ -1,0 +1,34 @@
+[
+  {
+    "url": "https://vstupenky.online/login",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://vstupenky.online/terms/",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://vstupenky.online/privacy/",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://vstupenky.online/support/",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://tickets.festapp.net/login",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://tickets.festapp.net/terms/",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://tickets.festapp.net/privacy/",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://tickets.festapp.net/support/",
+    "error": "HTTP Error 403: Forbidden"
+  }
+]

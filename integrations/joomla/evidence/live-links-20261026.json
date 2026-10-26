@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://vstupenky.online/login",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Akce a plesy - vstupenky online | vstupenky.online",
+    "bytes": 13296,
+    "has_real_legal_content": true,
+    "curl_sha256": "012ee0bb62c765549b02666a46701424b4abdaa12b84efd29eb58c878c84d982"
+  },
+  {
+    "url": "https://vstupenky.online/terms/",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Podmínky | vstupenky.online",
+    "bytes": 8209,
+    "has_real_legal_content": true,
+    "curl_sha256": "e2bbfe1250570f172b344384cd157ae2d956ed58d2cbcc7ab3afbd8712006647"
+  },
+  {
+    "url": "https://vstupenky.online/privacy/",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Ochrana osobních údajů | vstupenky.online",
+    "bytes": 12173,
+    "has_real_legal_content": true,
+    "curl_sha256": "c4b7354aeb9ef9441530f34ca29ad572daffb8cff49ad3556e0f81add77dae94"
+  },
+  {
+    "url": "https://vstupenky.online/privacy/choices/",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Vaše volby a práva | vstupenky.online",
+    "bytes": 8429,
+    "has_real_legal_content": true,
+    "curl_sha256": "31e7e8abd2778d08dccd6f7c678bc73d3f1224c8f79b317c04cde0cd0ff0c340"
+  },
+  {
+    "url": "https://vstupenky.online/support/",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Podpora | vstupenky.online",
+    "bytes": 6224,
+    "has_real_legal_content": true,
+    "curl_sha256": "e72610ddcd27172f125795201ca429a975b3b6300967dc937fb354a9fd302aa5"
+  },
+  {
+    "url": "https://vstupenky.online/pro-poradatele",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": "Prodej vstupenek na akce | vstupenky.online",
+    "bytes": 234776,
+    "has_real_legal_content": true,
+    "curl_sha256": "b6c143dc39ac6f397b12705d5524cf6e95483b1121e7a6336d1162b8469faa89"
+  },
+  {
+    "url": "https://vstupenky.online/embed.js",
+    "curl_status": 200,
+    "python_urllib_status": 403,
+    "title": null,
+    "bytes": 16126,
+    "has_real_legal_content": false,
+    "curl_sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5"
+  }
+]

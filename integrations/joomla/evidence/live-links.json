@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-10-26T08:47:04.998833+00:00",
+  "user_agent": "Festapp-Joomla-Release-Check/1.0 (+https://github.com/festappnet/festapp)",
+  "checks": [
+    {
+      "url": "https://vstupenky.online/login",
+      "final_url": "https://vstupenky.online/login",
+      "status": 200,
+      "bytes": 13296,
+      "sha256": "012ee0bb62c765549b02666a46701424b4abdaa12b84efd29eb58c878c84d982",
+      "title": "Akce a plesy - vstupenky online | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/terms/",
+      "final_url": "https://vstupenky.online/terms/",
+      "status": 200,
+      "bytes": 8209,
+      "sha256": "e2bbfe1250570f172b344384cd157ae2d956ed58d2cbcc7ab3afbd8712006647",
+      "title": "Podmínky | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/privacy/",
+      "final_url": "https://vstupenky.online/privacy/",
+      "status": 200,
+      "bytes": 12173,
+      "sha256": "c4b7354aeb9ef9441530f34ca29ad572daffb8cff49ad3556e0f81add77dae94",
+      "title": "Ochrana osobních údajů | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/privacy/choices/",
+      "final_url": "https://vstupenky.online/privacy/choices/",
+      "status": 200,
+      "bytes": 8429,
+      "sha256": "31e7e8abd2778d08dccd6f7c678bc73d3f1224c8f79b317c04cde0cd0ff0c340",
+      "title": "Vaše volby a práva | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/support/",
+      "final_url": "https://vstupenky.online/support/",
+      "status": 200,
+      "bytes": 6224,
+      "sha256": "e72610ddcd27172f125795201ca429a975b3b6300967dc937fb354a9fd302aa5",
+      "title": "Podpora | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/pro-poradatele",
+      "final_url": "https://vstupenky.online/",
+      "status": 200,
+      "bytes": 234776,
+      "sha256": "b6c143dc39ac6f397b12705d5524cf6e95483b1121e7a6336d1162b8469faa89",
+      "title": "Prodej vstupenek na akce | vstupenky.online",
+      "expected_content": true
+    },
+    {
+      "url": "https://vstupenky.online/embed.js",
+      "final_url": "https://vstupenky.online/embed.js",
+      "status": 200,
+      "bytes": 16126,
+      "sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+      "title": null,
+      "expected_content": true
+    }
+  ],
+  "previous_probe_diagnosis": {
+    "default_python_urllib": {
+      "status": 403,
+      "body": "error code: 1010"
+    },
+    "same_client_explicit_identity_status": 200,
+    "conclusion": "Cloudflare rejects the default Python-urllib User-Agent with error 1010; descriptive release probe and real browser work. No WAF policy changed."
+  }
+}

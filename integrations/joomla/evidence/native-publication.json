@@ -1,0 +1,135 @@
+{
+  "checks": [
+    {
+      "joomla_major": 5,
+      "new_module_id": 129,
+      "article_id": 3,
+      "baseline_restored": true,
+      "cases": [
+        "native New/type selection/save/publish/template position/all-menu assignment/public readback",
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": false,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": false,
+          "cache": "warm",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": true,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": true,
+          "cache": "warm",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": false,
+          "cache": "cold",
+          "helpers": 0
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": false,
+          "cache": "warm",
+          "helpers": 0
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": true,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": true,
+          "cache": "warm",
+          "helpers": 1
+        }
+      ]
+    },
+    {
+      "joomla_major": 6,
+      "new_module_id": 127,
+      "article_id": 3,
+      "baseline_restored": true,
+      "cases": [
+        "native New/type selection/save/publish/template position/all-menu assignment/public readback",
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": false,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": false,
+          "cache": "warm",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": true,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "auto",
+          "inherit_style": true,
+          "cache": "warm",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": false,
+          "cache": "cold",
+          "helpers": 0
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": false,
+          "cache": "warm",
+          "helpers": 0
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": true,
+          "cache": "cold",
+          "helpers": 1
+        },
+        {
+          "article_only": true,
+          "mode": "fixed",
+          "inherit_style": true,
+          "cache": "warm",
+          "helpers": 1
+        }
+      ]
+    }
+  ],
+  "boundary": "native Joomla admin HTTP saves and public markup only; no service requests or purchases"
+}
