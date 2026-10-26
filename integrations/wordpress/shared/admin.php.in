@@ -54,7 +54,7 @@ function admin_page() {
 		<?php if ( current_user_can( 'edit_pages' ) ) : ?>
 		<p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>"><?php esc_html_e( 'Create a page', '@@SLUG@@' ); ?></a></p>
 		<?php endif; ?>
-		<p><?php esc_html_e( 'Automatic height and website styling are already enabled. Start with these defaults; change them only if your page needs it.', '@@SLUG@@' ); ?></p>
+		<p><?php esc_html_e( 'Automatic height is enabled. The appearance option in the block explicitly controls whether the WordPress theme overrides the appearance from the app.', '@@SLUG@@' ); ?></p>
 		</div>
 		<div class="card">
 		<h2><?php esc_html_e( '3. Preview and publish', '@@SLUG@@' ); ?></h2>
@@ -67,7 +67,7 @@ function admin_page() {
 		<p><code>[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" title="Tickets for our event"]</code></p>
 		<p><code>[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" mode="fixed" height="800"]</code></p>
 		<p><?php esc_html_e( 'Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab.', '@@SLUG@@' ); ?></p>
-		<p><?php esc_html_e( 'Match website style is enabled by default. Disable it in the block, or add inherit_style="false" to the shortcode. The form uses the website font family and colors; the seat map keeps its own appearance. This option loads the service helper even with fixed height. Custom fonts must permit cross-origin loading.', '@@SLUG@@' ); ?></p>
+		<p><?php esc_html_e( 'The WordPress appearance override replaces the app font, background and colors only for this block. It does not change the saved form in the app or the seating map. Disable it to use the app appearance; for a shortcode, add inherit_style="false".', '@@SLUG@@' ); ?></p>
 		<h2><?php esc_html_e( 'External service and privacy', '@@SLUG@@' ); ?></h2>
 		<p><?php esc_html_e( 'The published form connects to @@NAME@@. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Automatic height also loads /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form.', '@@SLUG@@' ); ?></p>
 		<p>

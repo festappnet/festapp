@@ -1,7 +1,7 @@
 {
   "plugin": "vstupenky-online",
-  "version": "1.0.0",
-  "sha256": "66c9f35ac38210bb0ca18c35011200976c92236200801626bb3e3a86fc8901c4",
+  "version": "1.0.1",
+  "sha256": "5d8a605eb7f2663e420768d6ec5f3588181fa8ac42fc7b8462aa896ba358ca75",
   "directoryStatus": "awaiting-review",
   "statusCheckedAt": "2026-10-24"
 }

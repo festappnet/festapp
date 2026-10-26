@@ -6,6 +6,17 @@ Ruční kontrola: **Awaiting Review**. Plugin ještě není veřejně v katalogu
 Receipt: `evidence/submission-20261024.json`. Další distribuci nepodávat.
 
 
+## Přímá aktualizace 1.0.1
+
+Český ZIP 1.0.1 upřesňuje místní přepsání vzhledu z aplikace ve WordPressu;
+volby a chování uložených bloků ani shortcode nemění. SHA-256:
+`5d8a605eb7f2663e420768d6ec5f3588181fa8ac42fc7b8462aa896ba358ca75`.
+[Ověření](evidence/appearance-precedence-20261026.json) zahrnuje oba podporované
+WordPress/PHP běhy a skutečný český/anglický editor. Nové podání do katalogu
+neproběhlo; původní podání 1.0.0 zůstává ve frontě. Globální balíček se nevydával.
+
+## Historické ověření 1.0.0
+
 Ověřeno 2026-10-23/24 v odděleném lokálním prostředí. Oba pluginy jsou hotové jako samostatné instalační ZIPy. Produkční opravy služby byly nasazeny jako 0.20.389+889; podání a schválení WordPress.org jsou samostatné kroky.
 
 | Produkt 1.0.0 | ZIP SHA-256 |
