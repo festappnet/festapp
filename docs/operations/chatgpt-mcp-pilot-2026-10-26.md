@@ -234,3 +234,12 @@ require new consent for changed issuer/resource, and verify the final regional
 host before resuming ChatGPT. No old-address pilot acceptance or public package
 can close these gates. Rollback must retain the read-only ceiling; it must never
 reactivate broader historical grants just to start an old image.
+
+### Source publication gate
+
+Implementation revision: `c278a48baeb715eea636677dcac3a36622149bb9`, rebased onto
+canonical main `b58e2bbd3cf2f6220c3452805985dab5675bc82f`. Only release documentation
+advanced upstream; validated source-file hashes remained unchanged. Source is
+published for required review in [PR #621](https://github.com/festappnet/festapp/pull/621).
+The source PR is not a deployed regional issuer. No immutable candidate image
+has been promoted and no ChatGPT acceptance can be claimed until cutover.

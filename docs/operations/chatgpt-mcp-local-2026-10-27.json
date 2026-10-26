@@ -438,5 +438,11 @@
   "approvedTarget": "https://mcp.vstupenky.online/mcp",
   "targetDnsResolved": false,
   "publicSubmission": false,
-  "productionMutations": false
+  "productionMutations": false,
+  "publication": {
+    "implementationSha": "c278a48baeb715eea636677dcac3a36622149bb9",
+    "baseSha": "b58e2bbd3cf2f6220c3452805985dab5675bc82f",
+    "pullRequest": "https://github.com/festappnet/festapp/pull/621",
+    "status": "awaiting required review; regional cutover not deployed"
+  }
 }
