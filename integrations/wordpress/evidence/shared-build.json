@@ -2,24 +2,24 @@
   "vstupenky-online": {
     "files": {
       "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-      "blocks/ticket-form/block.json": "8a25622868e57132a5ea5b1b21c84244829c9f2d420a20428097e89f0717d283",
+      "blocks/ticket-form/block.json": "9841e44799b459651ef209b3d7ec5f0f0b5bdf07ad19248b9a29d35e8e137c7b",
       "blocks/ticket-form/editor.js": "91b94ee8c7288360740a355c3874a6333acb8626e15b763cff0573b5c190c65d",
       "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
       "includes/admin.php": "fec85b8172b86477d3f96fb35bc2c1927f3f4ea2a18225751bbe0b2f4b0ac164",
       "includes/embed.php": "0444da495d5b2aac323cf76792e643224a33169ba7dd03d264e45549f8e6dbf1",
       "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "8afc1c4fb1fb6974eddf705bb5873ef1e35ac1669dbe3501b3bf1fcc804d1444",
-      "languages/vstupenky-online-cs_CZ.mo": "12b26f0de9683dae9c17c89d08b12bfd8e31f6bd521113b564b5574c76655124",
-      "languages/vstupenky-online-cs_CZ.po": "fe522cd7223c34302d033dff58f4c85d82a60a71ad1a27964d94ea150fb0189f",
-      "languages/vstupenky-online.pot": "06f29a6930fefffadd0b30f564b6701142da5d159c0f7cca6a8a7e250fefc94c",
-      "readme.txt": "d8f81d79f544be26bf50b25f86075615d7d356e8388d1a02cfd42697e47e87da",
-      "vstupenky-online.php": "37cb801598803ff83d3027c133ded9a3237db3fcc41360b316fb498ea004b844"
+      "languages/vstupenky-online-cs_CZ.mo": "db59b7d95c416a4d0bc4dce3385bed4f3bd3e407e97ee8e72d2206ede2d68e61",
+      "languages/vstupenky-online-cs_CZ.po": "529f02662551417287cff38399ecd659fe8d9a70fbf8976516513ff3cb78c7ea",
+      "languages/vstupenky-online.pot": "b95b9068ebf8219cba17a54e7af353e1e08f8de70ed8da428c8cfa3aee9cd613",
+      "readme.txt": "ab0f3929b4ccb8b6c12f34d83b94991db7e407b2e0ede859c5c986a158ceff0b",
+      "vstupenky-online.php": "65150204439fe2051e1ae495b26854d3d4ecd745e301155d06ae1cb5597d5eb3"
     },
     "messages": 49,
     "czech_translations": 51
   },
   "shared_inputs": {
-    "products.json": "494f08e1fe3e9b9f62d7b7c50c865f9d84d6d29f110dc3f463cfec49db69c595",
-    "scripts/build-plugins.py": "e4b74ef45bbf9ef9d6fc96bfef4cb94b515f19d4837b4bf3b2afd0bc8169e679",
+    "products.json": "5551faf7b0d824b9b491a19000441a329c7e39d4f6f28395a8d2932963810c22",
+    "scripts/build-plugins.py": "f70b3c8a1d1e9d42540af580f5b3a10be3f30ab9279982af1e1333c6edcbcb83",
     "scripts/package.py": "9e92790a26b0a0363c7d25c30729fc08211a2ed8784aecb4a4dfec546baa3e6e",
     "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
     "shared/admin.php.in": "597bcbda0a0e34a3f45e716175297828b0de2c00ef4eef404fcf2406aeced892",
@@ -28,7 +28,7 @@
     "shared/editor.js.in": "d4f973ad3dc2ebaed93b9284c391110667a91a039b4615883b4adf8b2daa8627",
     "shared/embed.php.in": "a63f5a104b94ceae7bae54090b6b28a64bef70aff9b72ec7a990fa49336c3b5c",
     "shared/plugin.php.in": "76faeccda7280462a11dad813c70c381407168e91607cec928cb42ac5da78c58",
-    "shared/readme.txt.in": "c6bfe770665626b1071e38e3ee059c1285d856ad139e6320c8713ec43d0d37d8",
+    "shared/readme.txt.in": "be052a26106a55861dcd67158aef8884cdf0ba97c46d44e1408dd0a199c6bede",
     "shared/style.css.in": "3e3b6b9c3c1bcc1f036dd9997c68df6118bb61774e7b5cf18972198c8cf598e6"
   }
 }

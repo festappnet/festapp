@@ -43,3 +43,13 @@ For Wix, [billing review](wix/BILLING-APPROVAL.md) and the release check enforce
 this constraint. No paid plan or marketplace fee is authorized by developing the
 widget. An individual agreement must confirm the treatment of ticket face value
 and our service revenue before commercial publication.
+
+## Canonical service homepage
+
+The service presentation lives at the product origin root: `https://vstupenky.online/`
+(or `https://tickets.festapp.net/` for the international product). Plugin builders
+derive offer links from that existing origin; do not add a separate marketing URL
+to product configuration or proposals. Historical receipts and immutable released
+ZIPs retain their original bytes; the retired public URL has only a permanent
+redirect to the homepage. Prepared package versions require their normal release
+gates before publishing or replacing marketplace metadata.

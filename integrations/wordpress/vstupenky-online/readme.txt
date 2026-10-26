@@ -4,7 +4,7 @@ Tags: tickets, events, registration, embed, forms
 Requires at least: 6.6.4
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Embed a saved public vstupenky.online ticket form with a block or shortcode. Man
 
 == Description ==
 
-This is a frontend integration with the Czech vstupenky.online service. You need an organizer account and a saved, published form in that service. The plugin provides one Gutenberg block, one shortcode and local onboarding under Settings > vstupenky.online. No WooCommerce or API keys are required. The plugin is free. The external service has its own organizer pricing and terms; see https://vstupenky.online/pro-poradatele for its current offer. WordPress does not process service fees.
+This is a frontend integration with the Czech vstupenky.online service. You need an organizer account and a saved, published form in that service. The plugin provides one Gutenberg block, one shortcode and local onboarding under Settings > vstupenky.online. No WooCommerce or API keys are required. The plugin is free. The external service has its own organizer pricing and terms; see https://vstupenky.online/ for its current offer. WordPress does not process service fees.
 
 Create and save a form in vstupenky.online. Copy its public URL, then insert the vstupenky.online block and paste the URL. Publish the page. Use only https://vstupenky.online/form/saved-slug, without query parameters or fragments. The editor shows local controls, never a remote administration screen.
 
@@ -48,7 +48,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.1.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.2.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > vstupenky.online, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -80,10 +80,13 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
+= 1.0.2 =
+* Link the service offer directly to the canonical homepage.
+
 = 1.0.1 =
 * Clearly identify the WordPress appearance option as a local override of the app appearance.
 
 == Upgrade Notice ==
 
-= 1.0.1 =
+= 1.0.2 =
 No database migration. Existing block and shortcode settings are retained.

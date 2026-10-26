@@ -1,3 +1,5 @@
+> Historický plán. Veřejnou prezentaci služby dnes vlastní homepage `/`; pro aktuální směrování platí `automation/release/organizers/README.md`. Tento dokument není zadání k obnově původní samostatné stránky.
+
 # UX/UI brief pro SEO vstupenky.online
 
 Datum: 2026-10-15. Stav: plán, bez změn aplikace a bez vizuálního ověření. Podřízený dokument k [autoritativnímu SEO plánu](vstupenky-seo-plan-2026-10-15.md). Použit skill `ux-designer`. Implementace ani publikace tímto dokumentem nejsou autorizovány.
