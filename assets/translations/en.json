@@ -547,6 +547,9 @@
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height without script",
+    "embedInheritStyle": "Match website appearance",
+    "embedInheritStyleHelp": "Use your website’s font, background and colors.",
+    "embedInheritStyleRequiresScript": "Choose automatic height to match your website’s appearance.",
     "productsAndPrices": "Products and prices"
   },
   "OrderGridColumns": {

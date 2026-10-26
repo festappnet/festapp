@@ -24,11 +24,18 @@
   const code = output.querySelector('textarea');
   const status = form.querySelector('[role="status"]');
   const error = form.querySelector('[data-url-error]');
+  let inheritPreference = inherit.checked;
   const escape = text => text.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const invalidate = () => { output.hidden = true; status.textContent = ''; error.textContent = ''; urlInput.removeAttribute('aria-invalid'); };
   urlInput.addEventListener('input', invalidate);
-  mode.addEventListener('change', () => { inherit.disabled = mode.value === 'fixed'; invalidate(); });
-  inherit.addEventListener('change', invalidate);
+  mode.addEventListener('change', () => {
+    const fixed = mode.value === 'fixed';
+    if (fixed) inheritPreference = inherit.checked;
+    inherit.checked = fixed ? false : inheritPreference;
+    inherit.disabled = fixed;
+    invalidate();
+  });
+  inherit.addEventListener('change', () => { inheritPreference = inherit.checked; invalidate(); });
   form.addEventListener('submit', event => {
     event.preventDefault(); invalidate();
     let url;

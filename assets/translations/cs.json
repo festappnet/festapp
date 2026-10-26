@@ -547,6 +547,9 @@
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška bez skriptu",
+    "embedInheritStyle": "Přizpůsobit vzhled webu",
+    "embedInheritStyleHelp": "Použije písmo, pozadí a barvy Vašeho webu.",
+    "embedInheritStyleRequiresScript": "Pro přizpůsobení vzhledu zvolte automatickou výšku.",
     "productsAndPrices": "Produkty a ceny"
   },
   "OrderGridColumns": {
