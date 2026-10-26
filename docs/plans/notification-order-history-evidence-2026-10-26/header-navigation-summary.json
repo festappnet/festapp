@@ -1,0 +1,7 @@
+{
+  "upstream": "ca63c704a55773eb822308e0572ce4512e4950ea",
+  "description": "Remove platform updates action from Flutter headers",
+  "affectedNavigationTestsPassed": 52,
+  "failed": 0,
+  "fullClientBaselineCases": 2345
+}

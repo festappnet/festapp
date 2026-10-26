@@ -63,7 +63,7 @@ BEGIN
  PERFORM 1 FROM public.notification_center_periods_internal(p_periods,p_snapshot_at);
  SELECT greatest(0,least(p_snapshot,last_delivery_sequence)) INTO snap FROM public.notification_center_user_state
  WHERE organization=p_organization AND recipient=auth.uid(); snap:=coalesce(snap,0);
- context:=md5(jsonb_build_array(auth.uid(),p_organization,p_current_occasion,snap,p_snapshot_at,p_periods)::text);
+ context:=md5(jsonb_build_array(auth.uid(),p_organization,p_current_occasion,snap,extract(epoch FROM p_snapshot_at),p_periods)::text);
  cursor:=public.notification_center_time_cursor_internal(p_cursor,context);
  WITH periods AS MATERIALIZED (SELECT * FROM public.notification_center_periods_internal(p_periods,p_snapshot_at)),
  visible AS MATERIALIZED (SELECT * FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion)),
@@ -106,7 +106,7 @@ BEGIN
  SELECT * INTO STRICT bounds FROM public.notification_center_periods_internal(jsonb_build_array(p_period),p_snapshot_at);
  SELECT greatest(0,least(p_snapshot,last_delivery_sequence)) INTO snap FROM public.notification_center_user_state
  WHERE organization=p_organization AND recipient=auth.uid(); snap:=coalesce(snap,0);
- context:=md5(jsonb_build_array(auth.uid(),p_organization,p_current_occasion,snap,p_snapshot_at,p_occasion,p_period)::text);
+ context:=md5(jsonb_build_array(auth.uid(),p_organization,p_current_occasion,snap,extract(epoch FROM p_snapshot_at),p_occasion,p_period)::text);
  cursor:=public.notification_center_time_cursor_internal(p_cursor,context);
  IF cursor IS NOT NULL THEN BEGIN PERFORM (cursor->>'id')::uuid; EXCEPTION WHEN OTHERS THEN RAISE invalid_parameter_value USING MESSAGE='notification_invalid_cursor'; END; END IF;
  WITH rows AS (

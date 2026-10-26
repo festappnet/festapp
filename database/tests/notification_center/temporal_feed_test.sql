@@ -44,6 +44,7 @@ BEGIN
  PERFORM assert_eq(n,5,'summary pagination never splits or repeats a bucket');
  cursor:=NULL;n:=0;ids:='{}';
  LOOP
+  PERFORM set_config('TimeZone',CASE WHEN n%2=0 THEN 'UTC' ELSE 'Europe/Prague' END,true);
   page:=public.get_notification_center_timeline_group(org,oc,snap,at,oc,bucket#>'{data,period}',cursor,7);
   n:=n+jsonb_array_length(page->'items');
   SELECT ids||coalesce(array_agg(x->>'id'),'{}') INTO ids FROM jsonb_array_elements(page->'items') x;

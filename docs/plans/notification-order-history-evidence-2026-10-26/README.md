@@ -29,3 +29,8 @@ Finální mobilní průchod z čistého checkoutu: [zavřené skupiny](collapsed
 [rozbalený týden](weekly-expanded-mobile.png). Accessibility výpis potvrzuje všech
 pět týdenních řádků. Čerstvý head prohlížeče měl viewport nastaven před spuštěním
 Flutteru; izolované browser sessions a vlastněný Flutter server byly ukončeny.
+
+Pozdější main ca63c704a odstraňuje akci novinek z hlaviček Flutteru.
+Je rovněž připojen; finální kombinace prošla dalšími 52 dotčenými navigačními
+testy. SQL cursor navíc nezávisí na session TimeZone (ověřeno střídáním UTC
+a Europe/Prague mezi stránkami) a parser má správnou STABLE volatilitu.
