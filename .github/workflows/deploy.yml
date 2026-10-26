@@ -116,12 +116,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install isolated Chromium test runner
-        run: |
-          # pnpm 11 places global executables in PNPM_HOME/bin.
-          export PATH="$PNPM_HOME/bin:$PATH"
-          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
-          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
-          agent-browser install --with-deps
+        run: bash automation/ci/browser.sh
       - id: flutter-version
         name: Read canonical Flutter version
         run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"
