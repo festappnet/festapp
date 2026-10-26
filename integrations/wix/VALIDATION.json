@@ -3,7 +3,7 @@
   "verifiedAt": "2026-10-26",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "LIVE_HELPER_FIXED_CURRENT_CHECKOUT_VERIFIED_SUBMISSION_GATED",
+  "state": "LIVE_RECEIPT_FIXED_SAFARI_KEYBOARD_VERIFIED_WIX_SUBMISSION_GATED",
   "localTests": {
     "count": 15,
     "passed": 15,
@@ -152,7 +152,7 @@
   "safari": {
     "realMobileSafariSimulatorRendering": true,
     "platformVersion": "26.5",
-    "nativeKeyboardQualified": false,
+    "nativeKeyboardQualified": true,
     "nativeTypingQualified": true,
     "physicalIphoneQualified": false,
     "localCrossSiteSummaryBackEscapeQualified": true,
@@ -164,6 +164,9 @@
     "bankReceiptLayoutQualified": false,
     "receiptIconFontIndependenceLocallyVerified": true,
     "receiptIconFixReceipt": "evidence/receipt-icons-20261026.json",
-    "receiptIconFixLive": false
+    "receiptIconFixLive": true,
+    "softwareKeyboardReceipt": "evidence/software-keyboard-20261026.json",
+    "softwareKeyboardWidth": 402,
+    "liveReceipt": "evidence/live-receipt-icons-20261026.json"
   }
 }
