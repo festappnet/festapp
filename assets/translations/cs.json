@@ -4428,7 +4428,7 @@
     "chooseEvent": "Pro kterou akci chcete otevřít administraci?",
     "noEvents": "Zatím nemáte dostupnou akci. Založte první akci a potom Vás přeneseme do sekce z návodu. Pokud spravujete cizí akci, požádejte jejího správce o přístup.",
     "recentEvent": "Naposledy používaná akce",
-    "createEvent": "Založit akci",
+    "createEvent": "Založit novou akci",
     "chooseOrganizer": "Pod kterým pořadatelem chcete akci založit?",
     "resumeSetup": "Pokračujte v rozpracované akci",
     "untitledEvent": "Akce bez názvu",

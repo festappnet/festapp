@@ -2586,6 +2586,7 @@
     "organizationAccess": "Доступ до організації",
     "otherEvents": "Інші доступні події",
     "noMatches": "Відповідних подій немає.",
-    "clearSearch": "Очистити пошук"
+    "clearSearch": "Очистити пошук",
+    "createEvent": "Створити нову подію"
   }
 }

@@ -56,8 +56,9 @@ class ProjectPicker<T> extends StatefulWidget {
 }
 
 class _PickerGroupHeading {
-  const _PickerGroupHeading(this.title);
+  const _PickerGroupHeading(this.title, {this.separated = false});
   final String title;
+  final bool separated;
 }
 
 class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
@@ -99,9 +100,12 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
           return groupTitle(a.value.first).compareTo(groupTitle(b.value.first));
         });
       display = [
-        for (final group in entries) ...[
-          _PickerGroupHeading(groupTitle(group.value.first)),
-          ..._datedItems(group.value, now),
+        for (var i = 0; i < entries.length; i++) ...[
+          _PickerGroupHeading(
+            groupTitle(entries[i].value.first),
+            separated: i > 0,
+          ),
+          ..._datedItems(entries[i].value, now),
         ],
       ];
     }
@@ -266,18 +270,38 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                       final entry = _displayItems[index];
 
                       if (entry is _PickerGroupHeading) {
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                          child: Semantics(
-                            header: true,
-                            child: Text(
-                              entry.title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (entry.separated)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 24),
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                entry.separated ? 12 : 20,
+                                16,
+                                0,
+                              ),
+                              child: Semantics(
+                                header: true,
+                                child: Text(
+                                  entry.title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         );
                       }
                       if (entry is String) {
