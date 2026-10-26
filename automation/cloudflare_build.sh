@@ -620,7 +620,8 @@ export default {
     const headers = new Headers(response.headers);
     // Prevent a zone-wide automatic beacon from bypassing the public-only owner.
     // Cloudflare documents no-transform as suppressing automatic RUM injection.
-    if (headers.get('content-type')?.includes('text/html')) {
+    const isHtml = headers.get('content-type')?.includes('text/html');
+    if (isHtml) {
       const cache = headers.get('cache-control') || 'no-cache';
       headers.set('cache-control', cache + (/(?:^|,)\s*no-transform\b/i.test(cache) ? '' : ', no-transform'));
       if (!headers.has('referrer-policy')) headers.set('referrer-policy', 'origin');
@@ -628,7 +629,30 @@ export default {
     if (!headers.has("content-security-policy")) headers.set("content-security-policy", CSP_BASE);
     headers.set("x-content-type-options", "nosniff");
     if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
-    return new Response(request.method === "HEAD" ? null : response.body, { status: response.status, statusText: response.statusText, headers });
+    let body = request.method === "HEAD" ? null : response.body;
+    let encodeBody = 'automatic';
+    // no-transform also disables edge compression. Compress at the response
+    // owner so public-only analytics protection does not inflate HTML transfers.
+    if (isHtml && response.status === 200 && !headers.has('content-encoding')) {
+      const vary = headers.get('vary');
+      if (!vary?.split(',').some(value => ['*', 'accept-encoding'].includes(value.trim().toLowerCase()))) {
+        headers.set('vary', vary ? vary + ', Accept-Encoding' : 'Accept-Encoding');
+      }
+      const encodings = new Map((request.headers.get('accept-encoding') || '').split(',').map(value => {
+        const [name, ...parameters] = value.trim().toLowerCase().split(';');
+        const quality = parameters.map(parameter => parameter.trim()).find(parameter => parameter.startsWith('q='));
+        return [name, quality ? Number(quality.slice(2)) : 1];
+      }));
+      if ((encodings.get('gzip') ?? encodings.get('*') ?? 0) > 0) {
+        headers.set('content-encoding', 'gzip');
+        headers.delete('content-length');
+        const etag = headers.get('etag');
+        if (etag && !etag.startsWith('W/')) headers.set('etag', 'W/' + etag);
+        if (body) body = body.pipeThrough(new CompressionStream('gzip'));
+        encodeBody = 'manual';
+      }
+    }
+    return new Response(body, { status: response.status, statusText: response.statusText, headers, encodeBody });
   },
 };
 WORKER
