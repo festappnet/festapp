@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-10-26",
+  "scope": "Clarify precedence of the local WordPress appearance override; no render/default behavior change",
+  "package": {
+    "slug": "vstupenky-online",
+    "version": "1.0.1",
+    "sha256": "5d8a605eb7f2663e420768d6ec5f3588181fa8ac42fc7b8462aa896ba358ca75",
+    "priorSubmittedVersion": "1.0.0",
+    "newDirectorySubmission": false
+  },
+  "realWordPressContract": [
+    {
+      "wordpress": "7.1.3",
+      "php": "8.5.12",
+      "assertions": 39,
+      "pass": true
+    },
+    {
+      "wordpress": "6.6.4",
+      "php": "7.4.33",
+      "assertions": 39,
+      "pass": true
+    }
+  ],
+  "nativeEditor": {
+    "host": "http://localhost:59851",
+    "isolatedProject": "wp-env-wordpress-912f34aa",
+    "draftPost": 4,
+    "czechLabel": "Použít vzhled WordPressu místo vzhledu z aplikace",
+    "englishLabel": "Use the WordPress theme instead of the app appearance",
+    "enabledHelpExplicitlyOverridesAppFontBackgroundColors": true,
+    "disabledHelpUsesAppAppearance": true,
+    "falseSavedAndReloaded": true,
+    "trueRestoredAndSaved": true,
+    "noRemoteFormLoaded": true
+  },
+  "webHelpTests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "screenshots": [
+    {
+      "path": "automation/release/help/media/cs/wordpress/02-block-editor.png",
+      "sha256": "ca296b3a6a4a6bac8e2d7f6307dd5cd78b6a2952ccc15e570220634051d9af10"
+    },
+    {
+      "path": "automation/release/help/media/en/wordpress/02-block-editor.png",
+      "sha256": "097505e94c121ccf0b1140cb04cc1c8f8e52d0cdc69bb3ae42289df5b284b0de"
+    }
+  ],
+  "productionDatabaseChanged": false,
+  "existingPublicBlockAndShortcodeAttributesPreserved": true,
+  "internationalPackageReleased": false,
+  "review": "PASS",
+  "cleanup": {
+    "ownBrowserClosed": true,
+    "ownWordPressEnvironmentStopped": true,
+    "originalWordPressEnvironmentUntouched": true
+  }
+}

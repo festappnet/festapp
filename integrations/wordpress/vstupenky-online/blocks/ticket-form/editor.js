@@ -22,8 +22,10 @@
                     help: __('Describe this form for visitors using screen readers. This does not rename the event.', 'vstupenky-online')}),
                 el(components.SelectControl, {label: __('Form height', 'vstupenky-online'), value: a.mode,
                     options: [{label: __('Automatic', 'vstupenky-online'), value: 'auto'}, {label: __('Fixed', 'vstupenky-online'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
-                el(components.ToggleControl, {label: __('Match website style', 'vstupenky-online'), checked: a.inheritStyle, onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
-                    help: __('Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service.', 'vstupenky-online')}),
+                el(components.ToggleControl, {label: __('Use the WordPress theme instead of the app appearance', 'vstupenky-online'), checked: a.inheritStyle, onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
+                    help: a.inheritStyle
+                        ? __('Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance.', 'vstupenky-online')
+                        : __('Uses the appearance configured in the app.', 'vstupenky-online')}),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'vstupenky-online') : __('Fallback height without the helper (px)', 'vstupenky-online'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to vstupenky.online and enter data directly into the service. Automatic height loads its /embed.js. The remote form is not loaded in the editor.', 'vstupenky-online')),
                 el('p', null, el('a', {href: 'https://vstupenky.online/privacy/', target: '_blank', rel: 'noopener noreferrer'}, __('Service privacy policy', 'vstupenky-online')))

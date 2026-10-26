@@ -373,7 +373,7 @@
     "embedAutomatic": "Automatyczna wysokość (zalecana)",
     "embedFixed": "Stała wysokość bez skryptu",
     "embedInheritStyle": "Dopasuj wygląd do strony",
-    "embedInheritStyleHelp": "Użyj czcionki, tła i kolorów swojej strony.",
+    "embedInheritStyleHelp": "Zastąp czcionkę, tło i kolory aplikacji wyglądem strony tylko dla tego osadzenia.",
     "embedInheritStyleRequiresScript": "Wybierz automatyczną wysokość, aby dopasować wygląd do strony.",
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
     "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
