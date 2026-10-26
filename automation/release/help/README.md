@@ -3,7 +3,7 @@
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
 The implementation shares the homepage header/footer fragments, canonical
 organizer CSS and account-header startup. The current outline supersedes the
-initial ordering: eight areas and sixteen task guides, with matching English
+initial ordering: eight areas and task guides, with matching English
 preview routes and stable topic IDs. Start with the new-event wizard, then
 existing-event administration, tickets/seating, banking, website publication,
 order management, check-in and troubleshooting. The hub has separate entry
@@ -159,3 +159,9 @@ The signed-in handoff enters `HelpDestination` in Flutter, which owns actual
 organizer/event selection and permission checks. It is a platform adapter, not
 an alternate public login. A contract test checks both localized action sets,
 the shared web allowlist and Flutter destinations for agreement.
+
+The `unmatched-payment` task guide belongs to Orders and payments. Payment setup,
+order handling, bank account setup and troubleshooting link to it in both locales.
+It covers manual linking, wrong-order recovery, bank permissions and post-link
+balance/delivery checks. Its instructions are grounded in the transaction dialogs
+and pairing SQL; no new screenshot or live bank mutation is claimed.

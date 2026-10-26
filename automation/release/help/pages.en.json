@@ -149,6 +149,17 @@
     "preview": "en/orders/report"
   },
   {
+    "id": "unmatched-payment",
+    "category": "orders",
+    "slug": "unmatched-payment",
+    "title": "Match a bank payment with an incorrect reference",
+    "seoTitle": "Unmatched bank payment: manually link a transfer to an order",
+    "description": "Find a transfer with an incorrect or missing reference, link it to the right order and verify payment. Requires bank administration and order editing permissions.",
+    "label": "Unmatched bank payment",
+    "workflow": "administration",
+    "preview": "en/orders/report"
+  },
+  {
     "id": "check-in",
     "category": "check-in",
     "slug": "check-in",

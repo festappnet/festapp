@@ -1,0 +1,27 @@
+<p class="lead">A buyer paid by bank transfer but entered an incorrect or missing payment reference? Find the received transfer and link it to the correct order.</p>
+<h2 id="before">Before you begin</h2>
+<p>You need <strong>bank administrator access for the receiving account</strong>, including permission to manage its transactions, and <strong>permission to edit orders for the event</strong>. Viewing orders alone is insufficient. If the linking action is missing, ask the organizer administrator to check both permissions.</p>
+<p>Prepare the order symbol or contact email, transfer amount, currency, date, sender account and the reference or recipient message actually entered. The transfer must already be imported into the app. This guide covers bank transfers; card payments use a separate process.</p>
+<p class="note">Check the original transfer before asking the buyer to pay again. Do not record a bank transfer as cash or change the order reference to match a buyer's typo.</p>
+<h2 id="steps">Find and link the transfer</h2>
+<ol class="steps">
+<li><h3>Find the correct order</h3><p>Open the event and <strong>Orders</strong>. Search by order symbol, name or email. Compare the buyer, price, currency, amount already paid and remaining balance. See <a href="{{HELP_ROOT}}orders/#find">finding an order</a>.<span class="guide-step-link">{{APP_LINK:orders}}</span></p></li>
+<li><h3>Open transaction search</h3><p>Open the order's <strong>Transactions</strong> and choose <strong>Add payment</strong>. In the cash-payment dialog, use <strong>Find and link transaction</strong> instead of completing the cash form. The same link is available when adding payment from the <strong>Paid</strong> column.</p></li>
+<li><h3>Find the received transfer</h3><p>Search unmatched transactions by recipient message, account number, entered reference, sender name or amount. Use a decimal point for an amount such as <code>1200.50</code>. Only unassigned transactions on the receiving account saved with this order are listed. Try the sender account or message when the reference is wrong.</p></li>
+<li><h3>Compare details and confirm</h3><p>Verify the date, amount, currency, sender account, sender name and message. An amount match alone is insufficient. Select the correct transaction and confirm adding it. This links an existing transfer; the buyer does not pay again.</p></li>
+<li><h3>Check the result</h3><p>The transaction appears on the order. Close the dialog and refresh the order list if necessary. Check the paid amount, remaining balance and payment state. A smaller transfer leaves a balance due. Link each verified transfer separately if the buyer split payment. For a deposit order, also check the remaining amount.</p></li>
+</ol>
+<h2 id="delivery">Check ticket delivery too</h2>
+<p>Linking recalculates the paid amount and order payment state. It does not prove that an email was delivered. Check the current sending state and follow <a href="{{HELP_ROOT}}orders/#delivery">contact and ticket delivery recovery</a> if needed.</p>
+<h2 id="missing">The transfer is not listed</h2>
+<ul>
+<li><strong>Not imported yet:</strong> verify that money reached the correct account and check the bank connection. See <a href="{{HELP_ROOT}}fio-api-token/">the Fio API token guide</a>. A transfer instruction receipt alone does not prove receipt of funds.</li>
+<li><strong>A different receiving account:</strong> compare the account saved with the order to the transfer destination. Changing organizer account priority does not change old orders. Ask the bank administrator to resolve the mismatch; see <a href="{{HELP_ROOT}}bank-account/">bank account setup</a>.</li>
+<li><strong>Already linked to another order:</strong> assigned transfers do not appear in this list. A valid reference belonging to another order can cause this. Verify the existing link, then follow <a href="#wrong-link">correcting a wrong link</a>.</li>
+<li><strong>Cancelled order or different currency:</strong> this linking procedure cannot resolve those cases. Ask the administrator to resolve the order state or payment mismatch first. Do not create another order merely to replace looking for the transfer.</li>
+</ul>
+<h2 id="wrong-link">Correct a wrong link</h2>
+<p>Once you have verified which order owns the transfer, open <strong>Transactions</strong> on the order currently holding it. Click the bank transaction's bin icon and confirm unlinking. For a bank transfer this removes its order association; it does not refund money. Open the correct order, then find and link the now-unassigned transfer.</p>
+<p>You also need permission for the original order. Check <strong>both orders</strong> afterward: paid amounts, balances and ticket states. The original order may have a balance due again. If you lack access or an order is cancelled, ask the administrator to handle the correction.</p>
+<h2 id="support">Information for the administrator or support</h2>
+<p>Prepare the event name, order symbol, amount, currency, receipt date, entered reference and the step that failed. The bank administrator can also compare the sender account and recipient message. Do not guess which order owns an unclear transfer. Contact <a href="mailto:info@vstupenky.online">info@vstupenky.online</a> if needed; never send passwords, bank login credentials or API tokens.</p>

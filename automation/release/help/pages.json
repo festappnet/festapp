@@ -149,6 +149,17 @@
     "preview": "cs/orders/list"
   },
   {
+    "id": "unmatched-payment",
+    "category": "orders",
+    "slug": "nesparovana-platba",
+    "title": "Jak spárovat platbu s chybným variabilním symbolem",
+    "seoTitle": "Nespárovaná platba: ruční přiřazení převodu k objednávce",
+    "description": "Postup pro bankovního administrátora: najděte převod s chybným či chybějícím variabilním symbolem, propojte jej s objednávkou a ověřte úhradu.",
+    "label": "Nespárovaná bankovní platba",
+    "workflow": "administration",
+    "preview": "cs/orders/list"
+  },
+  {
     "id": "check-in",
     "category": "check-in",
     "slug": "odbaveni",
