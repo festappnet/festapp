@@ -1,0 +1,25 @@
+{
+  "fixture": {
+    "occasions": 1,
+    "syntheticOverrideHtmlBytes": 100007
+  },
+  "boundaries": {
+    "existingEditorBundle": {
+      "sqlCalls": 1,
+      "templates": 5,
+      "jsonBytes": 102828
+    },
+    "mcpSummary": {
+      "sqlCalls": 1,
+      "templates": 5,
+      "jsonBytes": 1544,
+      "includesHtml": false
+    },
+    "mcpInspect": {
+      "sqlCalls": 1,
+      "templates": 1,
+      "jsonBytes": 100343
+    }
+  },
+  "note": "Same disposable fixture. Existing UI editor bundle is a baseline, not a previous MCP implementation. Actual SQL results serialized as JSON; HTTP/Auth latency and overhead are not measured. Preview uses one Edge action and one permission-bound SQL read; it never reads orders, recipients, bank metadata or the email queue."
+}

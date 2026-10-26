@@ -22,7 +22,7 @@ BEGIN
       'entityType','form','entityId',v_form->>'id','operation','insert',
       'safeLabel',left(p_title,240),'changedFields',jsonb_build_array(
         'configuration','fields','products'))),'{}'::uuid[],
-    jsonb_build_object('form',v_form));
+    jsonb_build_object('form',v_form,'authoring',public.get_form_authoring_snapshot_internal((v_form->>'id')::bigint)));
 END; $$;
 REVOKE ALL ON FUNCTION public.create_form_client_sync_v1(text,text,text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_form_client_sync_v1(text,text,text,uuid) TO authenticated;

@@ -11,10 +11,10 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   IF p_unit_data IS NULL OR jsonb_typeof(p_unit_data)<>'object'
     OR EXISTS (SELECT 1 FROM jsonb_object_keys(p_unit_data) key
-      WHERE key NOT IN ('id','title','data'))
+      WHERE key NOT IN ('id','title','data','settings'))
     OR (p_unit_data->>'id')::bigint IS DISTINCT FROM p_unit
-    OR nullif(btrim(p_unit_data->>'title'),'') IS NULL
-    OR length(p_unit_data->>'title')>30
+    OR (p_unit_data ? 'title' AND (nullif(btrim(p_unit_data->>'title'),'') IS NULL OR length(p_unit_data->>'title')>30))
+    OR (p_unit_data ? 'settings' AND p_unit_data ? 'data')
     OR jsonb_typeof(COALESCE(p_unit_data->'data','{}'::jsonb))<>'object'
     OR octet_length(p_unit_data::text)>262144 THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid unit aggregate'; END IF;
@@ -38,13 +38,16 @@ BEGIN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,
       jsonb_build_object('version',v_version,'unit',v_before||
         jsonb_build_object('aggregate_version',v_version))); END IF;
-  v_after:=jsonb_build_object('id',p_unit,'title',p_unit_data->>'title',
-    'data',COALESCE(p_unit_data->'data','{}'::jsonb));
+  v_after:=jsonb_build_object('id',p_unit,'title',COALESCE(p_unit_data->>'title',v_before->>'title'),
+    'data',CASE WHEN p_unit_data ? 'settings' THEN public.merge_configuration_settings_internal_v1(v_before->'data',p_unit_data->'settings','unit')
+      ELSE COALESCE(p_unit_data->'data',v_before->'data','{}'::jsonb) END);
+  PERFORM public.merge_configuration_settings_internal_v1('{}',
+    (SELECT COALESCE(jsonb_object_agg(key,value),'{}') FROM jsonb_each(v_after->'data') WHERE public.configuration_settings_contract_internal_v1()->'unit' ? key),'unit');
   IF v_before=v_after THEN RETURN public.complete_client_mutation_outcome_v1(
     p_command_id,'unchanged',200,jsonb_build_object('version',v_version,
       'unit',v_before||jsonb_build_object('aggregate_version',v_version))); END IF;
   PERFORM public.update_unit_internal_v1(
-    p_unit,p_unit_data->>'title',COALESCE(p_unit_data->'data','{}'::jsonb));
+    p_unit,v_after->>'title',v_after->'data');
   UPDATE public.client_aggregate_versions SET version=version+1,
     updated_at=clock_timestamp() WHERE aggregate_type='unit' AND scope_type='unit'
     AND scope_id=p_unit AND aggregate_id=p_unit::text RETURNING version INTO v_version;
@@ -56,7 +59,7 @@ BEGIN
   INSERT INTO public.client_commit_items
     (commit_id,item_index,entity_type,entity_id,operation,safe_label,changed_fields)
   VALUES (v_commit.commit_id,0,'unit',p_unit::text,'update',
-    left(p_unit_data->>'title',240),ARRAY['configuration']);
+    left(v_after->>'title',240),ARRAY['configuration']);
   PERFORM public.fanout_unit_catalog_v1(v_commit.commit_id,p_unit);
   RETURN public.finish_client_mutation_v1(p_command_id,jsonb_build_object(
     'status','applied','code',200,'data',jsonb_build_object('version',v_version,

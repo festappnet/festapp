@@ -8,10 +8,17 @@ abstract interface class OccasionCommands {
   Future<OccasionModel> create(OccasionModel occasion);
   Future<OccasionModel> save(OccasionModel occasion);
   Future<OccasionModel> saveTicketLayout(
-      int occasionId, int expectedVersion, Map<String, dynamic> change,
-      {String? commandId});
-  Future<int> duplicate(int occasionId,
-      {int? targetUnitId, String locale = 'en', String? commandId});
+    int occasionId,
+    int expectedVersion,
+    Map<String, dynamic> change, {
+    String? commandId,
+  });
+  Future<int> duplicate(
+    int occasionId, {
+    int? targetUnitId,
+    String locale = 'en',
+    String? commandId,
+  });
   Future<void> delete(int occasionId);
   Future<Map<String, dynamic>> deleteService(
     int occasionId,
@@ -36,13 +43,14 @@ abstract interface class OccasionCommands {
   Future<Map<String, dynamic>> updateGameSettings(
     int occasionId,
     DateTime? start,
-    DateTime? end,
-  );
+    DateTime? end, {
+    required int expectedVersion,
+  });
 }
 
 class SupabaseOccasionCommands implements OccasionCommands {
   SupabaseOccasionCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+    : _transport = ClientCommandTransport.supabase(client);
 
   SupabaseOccasionCommands.withTransport(this._transport);
 
@@ -71,13 +79,14 @@ class SupabaseOccasionCommands implements OccasionCommands {
     final id = occasion.id;
     if (id == null) {
       throw ArgumentError(
-          'The v1 occasion command updates an existing occasion');
+        'The v1 occasion command updates an existing occasion',
+      );
     }
     final response = ClientCommandResponse.from(
       await _transport.invoke('save_occasion_client_sync_v1', {
         'p_occasion': id,
         'p_expected_version': occasion.aggregateVersion,
-        'p_config': occasion.toSaveJson(),
+        'p_config': occasion.toSettingsSaveJson(),
       }),
     );
     if (response.status == 'conflict') {
@@ -94,34 +103,41 @@ class SupabaseOccasionCommands implements OccasionCommands {
 
   @override
   Future<OccasionModel> saveTicketLayout(
-      int occasionId, int expectedVersion, Map<String, dynamic> change,
-      {String? commandId}) async {
+    int occasionId,
+    int expectedVersion,
+    Map<String, dynamic> change, {
+    String? commandId,
+  }) async {
     final response = ClientCommandResponse.from(
-        await _transport.invoke('save_occasion_client_sync_v1', {
-      'p_occasion': occasionId,
-      'p_expected_version': expectedVersion,
-      'p_config': {'id': occasionId, 'ticket_layout_change': change},
-      if (commandId != null) 'p_command_id': commandId,
-    }));
+      await _transport.invoke('save_occasion_client_sync_v1', {
+        'p_occasion': occasionId,
+        'p_expected_version': expectedVersion,
+        'p_config': {'id': occasionId, 'ticket_layout_change': change},
+        if (commandId != null) 'p_command_id': commandId,
+      }),
+    );
     if (response.code != 200)
       throw StateError('Ticket layout save was rejected');
     await applyClientCommandReplacements(response);
     return OccasionModel.fromJson(
-        (response.data['occasion'] as Map).cast<String, dynamic>());
+      (response.data['occasion'] as Map).cast<String, dynamic>(),
+    );
   }
 
   @override
-  Future<int> duplicate(int occasionId,
-      {int? targetUnitId, String locale = 'en', String? commandId}) async {
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'duplicate_occasion_client_sync_v1',
-      {
+  Future<int> duplicate(
+    int occasionId, {
+    int? targetUnitId,
+    String locale = 'en',
+    String? commandId,
+  }) async {
+    final response = ClientCommandResponse.from(
+      await _transport.invoke('duplicate_occasion_client_sync_v1', {
         'p_occasion': occasionId,
         'p_target_unit': targetUnitId,
         'p_locale': locale,
-      },
-      commandId: commandId,
-    ));
+      }, commandId: commandId),
+    );
     if (response.code != 200 || response.data['occasionId'] is! num) {
       throw StateError('Occasion duplication was rejected');
     }
@@ -130,10 +146,11 @@ class SupabaseOccasionCommands implements OccasionCommands {
 
   @override
   Future<void> delete(int occasionId) async {
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'delete_occasion_client_sync_v1',
-      {'p_occasion': occasionId},
-    ));
+    final response = ClientCommandResponse.from(
+      await _transport.invoke('delete_occasion_client_sync_v1', {
+        'p_occasion': occasionId,
+      }),
+    );
     if (response.code != 200) {
       throw StateError('Occasion deletion was rejected');
     }
@@ -146,15 +163,14 @@ class SupabaseOccasionCommands implements OccasionCommands {
     String code,
     bool force,
   ) async {
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'delete_service_item_client_sync_v1',
-      {
+    final response = ClientCommandResponse.from(
+      await _transport.invoke('delete_service_item_client_sync_v1', {
         'p_occasion': occasionId,
         'p_type': type,
         'p_code': code,
         'p_force': force,
-      },
-    ));
+      }),
+    );
     await applyClientCommandReplacements(response);
     return {'code': response.code, ...response.data};
   }
@@ -166,14 +182,13 @@ class SupabaseOccasionCommands implements OccasionCommands {
     String code,
     String title,
     int? reference,
-  ) =>
-      _configurationCommand('create_service_item_client_sync_v1', {
-        'p_occasion': occasionId,
-        'p_type': type,
-        'p_code': code,
-        'p_title': title,
-        'p_reference': reference,
-      });
+  ) => _configurationCommand('create_service_item_client_sync_v1', {
+    'p_occasion': occasionId,
+    'p_type': type,
+    'p_code': code,
+    'p_title': title,
+    'p_reference': reference,
+  });
 
   @override
   Future<Map<String, dynamic>> updateService(
@@ -182,26 +197,26 @@ class SupabaseOccasionCommands implements OccasionCommands {
     String code,
     String title,
     int? reference,
-  ) =>
-      _configurationCommand('update_service_item_client_sync_v1', {
-        'p_occasion': occasionId,
-        'p_type': type,
-        'p_code': code,
-        'p_title': title,
-        'p_reference': reference,
-      });
+  ) => _configurationCommand('update_service_item_client_sync_v1', {
+    'p_occasion': occasionId,
+    'p_type': type,
+    'p_code': code,
+    'p_title': title,
+    'p_reference': reference,
+  });
 
   @override
   Future<Map<String, dynamic>> updateGameSettings(
     int occasionId,
     DateTime? start,
-    DateTime? end,
-  ) =>
-      _configurationCommand('game_update_settings_client_sync_v1', {
-        'p_occasion': occasionId,
-        'p_start': start?.toIso8601String(),
-        'p_end': end?.toIso8601String(),
-      });
+    DateTime? end, {
+    required int expectedVersion,
+  }) => _configurationCommand('game_update_settings_client_sync_v1', {
+    'p_occasion': occasionId,
+    'p_start': start?.toIso8601String(),
+    'p_end': end?.toUtc().toIso8601String(),
+    'p_expected_version': expectedVersion,
+  });
 
   Future<Map<String, dynamic>> _configurationCommand(
     String functionName,

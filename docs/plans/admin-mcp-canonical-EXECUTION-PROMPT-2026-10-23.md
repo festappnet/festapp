@@ -1,82 +1,43 @@
-# Vykonání plánu sjednocení administrace a MCP
+# Pokračování kanonické administrace a MCP
 
-Repozitář: `/Users/miakh/source/festapp`. Připravené dokumenty jsou v checkoutu
-`/private/tmp/festapp-mcp-recovery-20261022`; zachovejte cizí rozpracované soubory
-v hlavním checkoutu. Změny sdíleného kódu nakonec patří do canonical main.
-Před prací načtěte aktuální autoritativní `origin/main` z GitHubu; místní `main`
-a remote ref nezávislého klonu s lokálním originem nemusí být aktuální.
-Pracujte v čistém izolovaném checkoutu, nepřesouvejte hlavní checkout jiné relace.
+Aktuální pokračování: 2026-10-26. Načíst aktuální `origin/main`, AGENTS.md,
+CLAUDE.md a `docs/architecture/ai_context.md`. Cizí dirty checkout neměnit.
+Ověřování `standard`; práce patří do izolovaného worktree.
 
-Poslední potvrzený základ: `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`.
-MCP protokol `2026-07-28`, server SDK 2.3.1 a Node adaptér 2.1.1 jsou nasazeny.
-Oficiální legacy hranice obsluhuje stejný katalog. Všech 74 MCP testů prošlo
-s reálnou disposable PostgreSQL, bez skipů; tento výsledek není náhradou
-za ověření nově změněných cest. Upgrade transportu neopakujte.
+Autoritativní plán je [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
+Poslední aktuální sekce [checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md)
+je **Stage 5 complete 2026-10-26**. Etapy 0-5 jsou implementované. Etapy 0-2B
+jsou nasazené; etapy 3-5 jsou lokálně ověřené a čekají na review/rollout.
+Jejich jediné review místo je [PR #617](https://github.com/festappnet/festapp/pull/617),
+base main, branch `feat/admin-mcp-stage4-complete-20261026`. #613/#615/#616 jsou
+uzavřené jako nahrazené. Neobnovovat review stack ani duplicitní implementace.
+Při navázání znovu ověřit skutečný stav PR/headu a čerstvý main. Ochrana main
+vyžaduje review; nevydávat bez samostatného oprávnění k danému rollout cíli.
 
-Přečtěte celé autoritativní zadání:
+Další doménová etapa je **6 - lidé, role, skupiny a dobrovolníci**. Nejprve
+najít konkrétní UI handlery a existující group/profile/unit command vlastníky,
+vypsat typed predicate -> SQL owner -> UI -> nástroj. Postupovat scoped čtením,
+pak běžnými údaji a členstvím; role jako samostatný explicitní příkaz. Před
+kódem potvrdit úzký kontrakt a nejmenší smysluplný ověřovací batch.
 
-[admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md)
+Etapu 5 znovu neimplementovat: osm nástrojů sdílí původní occasion/unit/game
+receipt vlastníky. Kontrakt `packages/festapp_contracts/configuration-settings.json`
+generuje SQL a MCP strict schemas. Současný UI producer posílá named metadata;
+sloučení až po původním hashi/version locku. Game UI/MCP vyžaduje původní verzi,
+organizer settings vlastní manager oprávnění a explicitní whole-unit souhlas.
+Současný přesun mimo scope je otestovaný přes skutečný row-lock wait; nesmí
+přežít ani vrátit čtení nebo commit. Důkazy:
+[admin-configuration-evidence-2026-10-26.json](../reports/admin-configuration-evidence-2026-10-26.json).
 
-Respektujte AGENTS.md, CLAUDE.md, docs/architecture/ai_context.md a ověřování
-`standard`. Výsledkem mají být skutečné operace běžné administrace přes MCP
-na stejných doménových vlastnících jako UI, bez driftu a paralelních implementací.
-Jeden související databázový záměr má jeden transakční příkaz a jednu vlastněnou
-receipt hranici. Pouhá obálka nad třemi nezávislými příkazy tento cíl nesplňuje.
+Publikované migrace neměnit. Aktuální konfiguraci sestavuje
+`automation/assemble-configuration-migration.py`, pak generátory canonical source
+contract a katalogu. Změna occasion save owneru vyžaduje též přegenerovat runtime
+ticket-layout kontrakt a zahrnout jej do nové migrace; samotné změnění source
+souboru nestačí. Striktní vstupy ani nové scopes nesmí rozšířit starší souhlasy.
+Draft finalizace, provider setup a ticket artwork si ponechávají své vlastníky.
 
-Postupujte po vertikálních řezech v pořadí plánu. Začněte novým checkpointem
-etapy 0: serverové stránkování produktového read owneru a odstranění přenosu
-celého katalogu při každé MCP stránce. Doloženou baseline uchovejte a porovnejte
-s novou evidencí na stejných fixture. Potom sjednoťte nový i existující cíl cenové
-vlny na existující receipted příkaz v etapě 1. Produkty a objednávky znovu celé
-neimplementujte. Pokud uživatel omezí běh na určitou etapu, dokončete její ledger
-a ověření; jinak pokračujte postupně. Nezastavujte po první etapě pouze kvůli získání
-potvrzení k další již zadané práci. Neúplnou etapu neoznačujte za hotovou.
-Při přerušení uložte přesný checkpoint, zdrojovou revizi, výsledky kontrol
-a nejbližší další krok tak, aby další relace neopakovala hotovou práci.
-
-Součástí každého řezu je povinná datová, SQL a síťová kontrola z plánu: agregáty,
-null/default semantics, duplicity, execution plan při podezření na výkon, pořadí
-zámků, počet requestů a skutečný objem dat. Opravy patří do společných vlastníků.
-Nepřidávejte indexy ani další abstrakce bez konkrétního důvodu a evidence.
-
-Každý řez nejdřív ohraničte ownerem, kontraktem, volajícími a nejmenším smysluplným
-ověřovacím batchem. Znovu neprocházejte celý projekt. Existující doménové moduly,
-transport, permission registry a disposable SQL harness rozšiřujte pouze tam,
-kde je to pro konkrétní operaci potřeba. Nepřidávejte obecný CRUD framework,
-placeholders, spekulativní fallbacky ani duplicitní ACL a výpočty v MCP.
-
-Oprávnění, atomicitu, retry a souběh ověřte na skutečné disposable PostgreSQL.
-Testy nepouštějte po každé editaci; ověřte hotový koherentní řez. Zachovejte
-passing výsledky pro nezměněné vstupy. Nejvýše jeden Flutter task na stroji,
-testy s `--concurrency=1`, JavaScript přes pnpm 11.24.0. Browser použijte pouze
-pro skutečně změněný UI tok, izolovaně a headless.
-
-Přečtěte také [zásady MCP](../architecture/mcp-design-practices.md) a konkrétní
-katalog operací odkazovaný z plánu. Protokolová pravidla vztahujte ke skutečně
-vyjednané verzi; novější příklady nejsou automatický důvod měnit SDK. Provozní blokace
-míst, dočasné rezervace a zakoupené vstupenky mají oddělené příkazy (řez 2B).
-Starší PDF ticket-layout readiness neblokuje všechny operace nad plánkem.
-
-Neaktuální fakt opravte přímo v plánu s konkrétní evidencí a upravte zasaženou
-etapu. Každou odstraněnou cestu uzavřete v ledgeru; vydané veřejné klienty
-neodpojujte bez doloženého upgrade gate. Staré granty nerozšiřujte automaticky.
-Známý starší readiness problém layoutu neobcházejte regenerací hashe.
-
-Uživatel již zadal implementaci i nasazení a požaduje zachování čisté
-architektury. Pokračujte v tomto rozsahu bez opakovaných žádostí o totéž
-povolení: sdílený kód do autoritativního main podle pravidel repozitáře,
-produkční rollout pouze `festapptickets` / `vstupenky.online`, organizace 3,
-canonical backend `api.festapp.net`. Produkční migrace patří do samostatného
-ověřeného kroku s přesnými zdrojovými digesty, kontrolou cíle, zálohou a recovery.
-Nevytvářejte produkční testovací objednávky, skutečné platby ani zákaznické
-e-maily. Jiné tenanty nevydávejte. Autorizovaný web release má lokální build
-a přímý deploy; backend-only změna nevyžaduje nesouvisející web build.
-Rutinní release delegujte levnějšímu agentovi podle AGENTS, s frozen source
-a přesnými gates. Každý release vázejte na konkrétní ověřenou revizi;
-nevydávejte cizí rozpracované změny bez jejich validace.
-
-Po každém řezu aktualizujte checkpoint, mapu administrace a zdrojový JSON
-statického katalogu, potom přegenerujte HTML pomocí
-`node automation/reports/generate_admin_capabilities.mjs`. Při předání stručně
-uveďte hotové operace, sjednocené volající, odstraněné cesty, výsledky kontrol,
-skutečný stav publikace/nasazení a přesný další krok či blokující podmínku.
+Celkem 6/11 hlavních etap, orientačně 45 % podle velikosti (40-50 %). Nejde o
+odpracované hodiny. Další výrazné bloky jsou 6, 7, 8 a 10. Efektivita: nevytvářet
+novou ACL, writer, receipt, univerzální JSON CRUD ani paralelní cestu k existující
+operaci. Testovat skutečné běžné identity a cílené inputy; passing check neopakovat,
+pokud jeho vstupy zůstaly stejné. Flutter pouze jeden proces a concurrency=1.

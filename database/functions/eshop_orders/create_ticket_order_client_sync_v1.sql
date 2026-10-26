@@ -1,5 +1,5 @@
-CREATE OR REPLACE FUNCTION public.create_ticket_order_client_sync_v1(
-  p_order jsonb,p_command_id uuid,p_client_id uuid
+CREATE OR REPLACE FUNCTION public.create_ticket_order_command_internal(
+  p_order jsonb,p_command_id uuid,p_client_id uuid,p_context jsonb DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_result jsonb; v_symbol text; v_before_users uuid[]; v_actor_kind text;
@@ -12,8 +12,9 @@ BEGIN
     WHERE f.key=NULLIF(p_order->>'form','')::uuid;
   IF v_occasion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
-  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'occasion',v_occasion,'order',p_order-'stripePaymentSource')::text,'UTF8'),'sha256'),'hex');
+  v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
+    'occasion',v_occasion,'order',p_order-'stripePaymentSource')
+      ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END)::text,'UTF8'),'sha256'),'hex');
   IF v_actor IS NULL THEN
     v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,
       'inventory.order.create',v_occasion,p_client_id,v_hash);
@@ -46,6 +47,7 @@ BEGIN
   END IF;
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     p_command_id,v_occasion,v_result,p_order->>'lang');
+  IF p_context IS NOT NULL THEN v_result:=v_result||jsonb_build_object('adminQuote',p_context->'quote','paymentPreparationPolicy','leased_keep_pending'); END IF;
   RETURN public.complete_profile_inventory_membership_mutation_v1(
     p_command_id,v_occasion,'inventory.order.create',jsonb_build_array(jsonb_build_object(
       'entityType','order','entityId',v_result#>>'{order,id}','operation','insert',
@@ -53,7 +55,12 @@ BEGIN
         'tickets','products','allocations','membership'))),v_before_users,v_result,
     v_actor_kind);
 END; $$;
-REVOKE ALL ON FUNCTION public.create_ticket_order_client_sync_v1(
-  jsonb,uuid,uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_ticket_order_client_sync_v1(
-  jsonb,uuid,uuid) TO anon,authenticated;
+REVOKE ALL ON FUNCTION public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Released RPC signature and ordinary checkout hashes remain unchanged.
+CREATE OR REPLACE FUNCTION public.create_ticket_order_client_sync_v1(p_order jsonb,p_command_id uuid,p_client_id uuid)
+RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.create_ticket_order_command_internal(p_order,p_command_id,p_client_id,NULL);
+$$;
+REVOKE ALL ON FUNCTION public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid) TO anon,authenticated;

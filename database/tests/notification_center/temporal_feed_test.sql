@@ -35,6 +35,7 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM jsonb_array_elements(page->'items') x WHERE x->>'kind'='form_closed'),1::bigint,'old form close remains a standalone row');
  SELECT x INTO bucket FROM jsonb_array_elements(page->'items') x WHERE (x#>>'{data,count}')::int=35;
  PERFORM assert_eq((bucket->>'occasionId')::bigint,oc,'same-name occasions are separate');
+ PERFORM assert_true((bucket->>'sequence')::bigint>0 AND (bucket->>'sequence')::bigint<=snap,'period exposes snapshot delivery sequence for unread styling');
  -- Counts cover the complete authorized snapshot, regardless of row/child page limits.
  cursor:=NULL;n:=0;
  LOOP

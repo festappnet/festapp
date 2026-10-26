@@ -1,9 +1,7 @@
+import { executeWaitlistOperation } from "./executeOperation.ts";
 import { openOrderOverviewUrl } from "../_shared/customerOrderAccess.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
-import {
-  prepareWaitlistDelivery,
-  type WaitlistEmailContext,
-} from "../_shared/waitlistEmail.ts";
+import { prepareWaitlistDelivery } from "../_shared/waitlistEmail.ts";
 
 const headers = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +18,7 @@ const operations = new Set([
   "decline",
   "cancel",
   "withdraw",
+  "preview_accept",
 ]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const respond = (body: unknown, status = 200) =>
@@ -31,7 +30,8 @@ Deno.serve(async (request) => {
     return respond({ error: "method_not_allowed" }, 405);
   }
   try {
-    const { operation, payload, commandId, clientId } = await request.json();
+    const { operation, payload, commandId, clientId, administration } =
+      await request.json();
     if (
       !operations.has(operation) || !payload || Array.isArray(payload) ||
       typeof payload !== "object" || typeof commandId !== "string" ||
@@ -56,44 +56,17 @@ Deno.serve(async (request) => {
       return respond({ code: 401, error: "unauthorized" }, 401);
     }
 
-    const deliveries = [];
-    if (operation === "register" || operation === "send") {
-      const { data, error } = await supabaseAdmin.rpc(
-        "get_waitlist_email_context_v1",
-        {
-          p_operation: operation,
-          p_payload: payload,
-          p_actor: actor,
-        },
-      );
-      if (error) {
-        return respond({ code: 400, error: "waitlist_email_context_invalid" });
-      }
-      const contexts: WaitlistEmailContext[] = Array.isArray(data)
-        ? data
-        : [data];
-      for (const context of contexts) {
-        deliveries.push(
-          await prepareWaitlistDelivery(
-            context,
-            operation === "register"
-              ? "waitlist_confirmation"
-              : "waitlist_offer",
-          ),
-        );
-      }
-    }
-    const { data, error } = await supabaseAdmin.rpc(
-      "execute_waitlist_command_client_sync_v1",
-      {
-        p_operation: operation,
-        p_payload: payload,
-        p_command_id: commandId,
-        p_client_id: clientId,
-        p_actor: actor,
-        p_deliveries: deliveries,
-      },
-    );
+    const { data, error } = await executeWaitlistOperation({
+      operation,
+      payload,
+      commandId,
+      clientId,
+      actor,
+      administration,
+      userRpc: (name, args) => createUserClient(authorization!).rpc(name, args),
+      serviceRpc: (name, args) => supabaseAdmin.rpc(name, args),
+      prepareDelivery: prepareWaitlistDelivery,
+    });
     if (error) {
       // SQL domain failures contain a controlled envelope. Never echo request
       // payloads, capabilities, provider errors, or arbitrary database details.
@@ -109,14 +82,27 @@ Deno.serve(async (request) => {
       const result = data?.data || data;
       if (result?.code === 200 && result.order?.id) {
         try {
-          const source = await supabaseAdmin.rpc("get_registered_order_overview_source_v1", {
-            p_order_id: result.order.id, p_command_id: commandId,
-          });
+          const source = await supabaseAdmin.rpc(
+            "get_registered_order_overview_source_v1",
+            {
+              p_order_id: result.order.id,
+              p_command_id: commandId,
+            },
+          );
           if (!source.error) {
-            const url = await openOrderOverviewUrl(source.data, source.data.source);
-            return respond(data?.data ? { ...data, data: { ...result, orderOverviewUrl: url } } : { ...data, orderOverviewUrl: url });
+            const url = await openOrderOverviewUrl(
+              source.data,
+              source.data.source,
+            );
+            return respond(
+              data?.data
+                ? { ...data, data: { ...result, orderOverviewUrl: url } }
+                : { ...data, orderOverviewUrl: url },
+            );
           }
-        } catch { /* Registration succeeded; the queued email remains the delivery path. */ }
+        } catch {
+          /* Registration succeeded; the queued email remains the delivery path. */
+        }
       }
     }
     return respond(data);

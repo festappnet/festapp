@@ -302,7 +302,7 @@ BEGIN
  WHERE organization=p_organization AND recipient=auth.uid();
  result:=public.get_notification_center_page(p_organization,p_current_occasion,p_limit,s.last_delivery_sequence,NULL);
  feed:=public.get_notification_center_feed(p_organization,p_current_occasion,s.last_delivery_sequence,NULL,p_limit);
- RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence,'feedSupported',true,
+ RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence,'previousReadThrough',s.read_through_sequence,'feedSupported',true,
  'feedItems',feed->'items',
  'feedNextCursor',feed->'nextCursor','timelineSupported',true,'snapshotAt',clock_timestamp(),
  'oldestOrderAt',(SELECT min((event).occurred_at) FROM public.notification_center_visible_internal(p_organization,s.last_delivery_sequence,p_current_occasion)

@@ -81,7 +81,8 @@ BEGIN
         'occasion',     occasion_data,
         'unit',         unit_data,
         'organization', org_data,
-        'templates',    email_data
+        'templates',    email_data,
+        'banner', public.get_email_banner_state_internal(context)
     );
 
     RETURN final_result;

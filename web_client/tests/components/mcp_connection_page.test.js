@@ -300,3 +300,14 @@ test('seat order consent includes original ticket replacement and customer reads
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('configuration consent names four separate permissions without expanding existing grants',async()=>{
+ const permissions=['festapp:occasion-settings:read','festapp:occasion-settings:write','festapp:unit-settings:read','festapp:unit-settings:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();
+ for(const text of ['Číst nastavení akce a hry','Měnit nastavení akce','Číst nastavení pořadatele','Měnit nastavení pořadatele']) assert(f.container.textContent.includes(text));
+ f.container.querySelector('[data-occasion="99"]').click();
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+ assert.deepEqual(f.calls.at(-1).access.selection,{type:'occasions',occasionIds:[99]});
+});

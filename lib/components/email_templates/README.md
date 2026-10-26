@@ -14,7 +14,9 @@ Most specific wins. This applies to both template content AND banners/wrappers.
 - **Content** (subject, body): `email_templates` table
 - **Design** (banner, layout): `email_wrappers` table with `{{content}}` placeholder
 
-Banner upload auto-regenerates wrapper HTML via `update_entity_email_banner` RPC.
+Banner upload uses the receipted `manage_email_banner` command. Its domain owner
+regenerates wrapper HTML, and SQL returns stored, inherited and effective banner
+state. The card consumes that snapshot without rebuilding inheritance.
 
 ## Global order defaults
 
@@ -51,8 +53,11 @@ does not prove mailbox delivery. See
 ## SQL RPCs
 
 - `get_entity_email_templates` -- fetches templates with inheritance resolution
-- `update_email_template` -- persists single template changes
-- `update_entity_email_banner` -- updates banner + regenerates wrapper HTML
+- `manage_email_template` -- compare-and-set save/reset with one durable command receipt
+- `manage_email_banner` -- compare-and-set banner save/reset and authoritative snapshot
+- `get_email_template_catalog` -- bounded summaries or one full effective template
+- `get_email_template_preview_context` -- permission-bound saved template/wrapper for synthetic rendering
+- `update_email_template`, `delete_entity_email_template`, `update_entity_email_banner` -- supported released-client entries and the single existing persistence owners; current editor calls only the receipted adapters
 - `get_email_template_and_wrapper` -- resolves template + wrapper for sending
 
 ## Waitlist messages
@@ -115,7 +120,7 @@ in `automation/fixtures/email_preview/order.json`. Regenerate from the repositor
 root with:
 
 ```sh
-deno run --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write=assets/email_templates automation/generate_email_preview_examples.ts
+deno run --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write=assets/email_templates,supabase/functions/_shared automation/generate_email_preview_examples.ts
 ```
 
 Use the same command with `--check` and without `--allow-write` to check freshness.
@@ -187,3 +192,48 @@ through `get_occasion_setup_email_preview` and uses these same generated example
 composer and received-message component. Count and delivery-mode changes render
 invalid sample QR widgets and PDF attachment names locally, without calling an
 Edge Function or preparing PDFs. Draft template changes invalidate the context.
+
+## Canonical UI/MCP authoring contract
+
+`DbEmailTemplates -> EmailTemplateCommands` and MCP use the same
+`manage_email_template` / `manage_email_banner` commands. The original SQL
+snapshot token is mandatory, including when no override exists. It fingerprints
+the effective row and target override identity; returning to identical content
+is an equivalent state, not a separate historical version. Banner tokens also
+include inherited banner/wrapper state. A stale token returns a receipted 409;
+UI keeps the draft, and MCP reports a reload-required conflict. A timeout reuses
+the original UUID, token and payload through the existing durable command journal.
+Receipts precede hierarchy locks; live rights and stored tenant/organizer bindings
+are checked before replay and again after locking. No email is enqueued.
+
+The template resolver and editor visibility remain owned by
+`get_resolved_email_template` and `get_all_email_templates`. Source labels and
+snapshot tokens come from `get_email_template_state_internal`; the adapter never
+reconstructs inheritance. Ticket-block validation for ordinary saves and setup
+draft overrides has one owner, `validate_email_template_content_internal`.
+
+The read-only `authoringPreview` action of `send-custom-email` calls the same
+production `renderEmail` function as delivery. Its frozen synthetic scenarios
+are generated together with the Flutter asset by
+`automation/generate_email_preview_examples.ts`; `_shared/emailPreviewScenarios.json`
+is a generated deployment artifact, not a second source. The action accepts only
+a scenario/scope, never a recipient, order ID, arbitrary substitutions or draft
+HTML. The authenticated SQL reader binds the exact delegation hierarchy before
+returning content. No order, bank, queue, provider or capability creation is used.
+The Flutter editor may additionally overlay its permission-checked occasion
+product examples; MCP deliberately uses frozen synthetic facts. Shared cases
+cover languages, currency/payment states, substitution and inherited wrappers.
+
+The three old public mutation signatures remain for already released clients.
+They contain the same existing domain persistence used by the new commands,
+not another business engine. Remove their public grants only after all supported
+clients use the receipted commands; setup finalization still calls the banner
+owner within its own atomic receipt. Occasion copy/setup initialization and
+occasion deletion retain their distinct aggregate transactions. They do not
+become interactive per-template receipts or nested commits.
+
+Local stage-3 evidence and the exact cutover ledger are in
+[the checkpoint](../../../docs/plans/admin-mcp-canonical-checkpoint-2026-10-23.md).
+Production requires the additive SQL migration before activating the new Flutter
+client, Edge action, MCP issuer and consent clients. Earlier grants never acquire
+the two new email-template scopes automatically.

@@ -218,3 +218,6 @@ workers/*/node_modules/
 automation/release/platform_updates/node_modules/
 /web/organizers/updates/
 /web/platform-updates.json
+
+# Private browser sessions and local scanner preview evidence.
+/web_client/.private/

@@ -228,12 +228,14 @@ jobs:
           path: ${{ runner.temp }}/candidate
           if-no-files-found: error
           compression-level: 0
-          retention-days: 30
+          # Candidates are a short promotion window; rebuild after expiry.
+          retention-days: 7
       - name: Record immutable candidate identity
         shell: bash
         run: |
           {
             echo "### Android candidate"
+            echo "- Candidate retention: 7 days; rebuild after expiry."
             echo "- Candidate run ID: \`${{ github.run_id }}\`"
             echo "- Tooling: \`${{ github.sha }}\`"
             echo "- Artifact: \`android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}\`"

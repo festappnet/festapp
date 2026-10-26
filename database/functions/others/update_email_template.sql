@@ -46,9 +46,9 @@ BEGIN
     END IF;
   END IF;
 
-  IF v_code='TICKET_ORDER_PAYMENT_DONE' AND
-    (length(coalesce(p_data->>'html',''))-length(replace(coalesce(p_data->>'html',''),'{{tickets}}','')))/length('{{tickets}}')>1 THEN
-    RAISE invalid_parameter_value USING MESSAGE='Only one tickets block is allowed'; END IF;
+  PERFORM public.lock_email_template_hierarchy_internal(jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org));
+
+  PERFORM public.validate_email_template_content_internal(v_code,p_data->>'html');
 
   -- An occasion override is identified by occasion + code. Ancestors are
   -- metadata, not identity; the partial unique index also fences concurrent saves.

@@ -36,44 +36,9 @@ BEGIN
         );
     END IF;
 
-    -- Step 4: Aggregate forms and their associated fields for the occasion into a JSONB array.
-    -- For each form, a subquery aggregates its related form_fields.
-    SELECT jsonb_agg(
-        jsonb_build_object(
-            'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
-                'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
-                'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
-            'title', f.title,
-            'data', f.data,
-            'key', f.key,
-            'occasion', f.occasion,
-            'type', f.type,
-            'is_open', f.is_open,
-            'link', f.link,
-            'blueprint', f.blueprint,
-            'response_count', (
-                -- Subquery to count the number of responses (orders) for each form.
-                SELECT COUNT(*)
-                FROM eshop.orders o
-                WHERE (o.data->>'form')::uuid = f.key
-            ),
-            'fields', (
-                -- Subquery to aggregate all form_fields associated with the current form.
-                SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'id', ff.id,
-                        'type', ff.type,
-                        'is_ticket_field', ff.is_ticket_field
-                    ) ORDER BY COALESCE(ff."order", 0)
-                )
-                FROM public.form_fields ff
-                WHERE ff.form = f.id
-            )
-        ) ORDER BY f.created_at
-    )
-    INTO forms_data
-    FROM public.forms f
-    WHERE f.occasion = v_occasion_id;
+    -- Shared administrator summary projection; transport-specific secrets are
+    -- retained here for the existing UI, and removed by the bounded MCP reader.
+    forms_data := public.get_form_catalog_rows_internal(v_occasion_id);
 
     -- Step 5: If no forms were found for the occasion, return an empty JSON array.
     IF forms_data IS NULL THEN

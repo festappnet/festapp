@@ -34,8 +34,10 @@ export async function prepareFakturoidTicketOrder(args: {
   commandId: string;
   unitName: string;
   replacement: boolean;
+  durable?: boolean;
 }): Promise<FakturoidPreparation> {
-  const { client, gateway, order, commandId, replacement } = args;
+  const { client, gateway, order, commandId } = args;
+  const fenced = args.replacement === true || args.durable === true;
   const rpc = async (name: string, params: Record<string, unknown>) => {
     const { data, error } = await client.rpc(name, params);
     if (error) throw error;
@@ -58,7 +60,7 @@ export async function prepareFakturoidTicketOrder(args: {
   }
   let token: string | undefined;
   let allowCreate = true;
-  if (replacement && state === "preparing_payment") {
+  if (fenced && state === "preparing_payment") {
     const claim = await rpc("claim_replacement_invoice_preparation", {
       p_order: order.id,
       p_command: commandId,
@@ -97,7 +99,7 @@ export async function prepareFakturoidTicketOrder(args: {
           : undefined,
       });
     } catch (error) {
-      if (replacement) {
+      if (fenced) {
         if (token) {
           await rpc("release_replacement_invoice_preparation", {
             p_order: order.id,

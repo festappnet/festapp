@@ -47,8 +47,9 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(candidate, /actions\/upload-artifact@v6/);
   assert.match(candidate, /android-raw-/);
   assert.match(candidate, /retention-days: 3/);
-  assert.match(candidate, /retention-days: 30/);
-  assert.match(revalidation, /actions\/download-artifact@v7/);
+  assert.match(candidate, /retention-days: 7/);
+  assert.match(revalidation, /retention-days: 7/);
+  assert.match(revalidation, /actions\/download-artifact@v8/);
   assert.match(revalidation, /run-id: \$\{\{ needs\.plan\.outputs\.raw_run_id \}\}/);
   assert.match(revalidation, /android-raw-\$\{\{ matrix\.tenant \}\}/);
   assert.doesNotMatch(revalidation, /flutter build|macos-latest|windows-latest/);
@@ -57,7 +58,7 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(production, /artifactSha256/);
   assert.match(production, /candidateRunId/);
   assert.match(production, /toolingSha/);
-  assert.match(production, /actions\/download-artifact@v7/);
+  assert.match(production, /actions\/download-artifact@v8/);
   assert.match(candidate, /gpg[\s\S]*--symmetric --cipher-algo AES256/);
   assert.match(production, /gpg[\s\S]*--decrypt/);
   assert.match(production, /play_track_readback\.rb/);

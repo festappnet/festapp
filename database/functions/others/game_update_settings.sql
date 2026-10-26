@@ -9,9 +9,11 @@ DECLARE
   updated_game_data JSONB;
 BEGIN
   -- Check if the user is an editor on the occasion
-  IF (SELECT get_is_editor_on_occasion(oc)) <> TRUE THEN
+  IF (SELECT public.can_edit_game_settings(oc)) <> TRUE THEN
     RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
   END IF;
+
+  IF new_start_time>new_end_time THEN RAISE invalid_parameter_value USING MESSAGE='game start must precede end'; END IF;
 
   -- Retrieve existing data JSON if any
   SELECT data INTO existing_data FROM public.occasions WHERE id = oc;

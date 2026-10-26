@@ -22,9 +22,34 @@ export async function executeConfirmedSeatOrder(args: {
   } catch {
     return { code: 400, errorCode: "INVALID_CONFIRMED_REPLACEMENT" };
   }
-  const { data, error } = await args.client.rpc(
-    "create_blueprint_seat_order",
+  return executeConfirmedOrder({
+    ...args,
+    rpcName: "create_blueprint_seat_order",
     parameters,
+    editor: replacement.confirmation.editor === true,
+    replacement: true,
+  });
+}
+
+// One coordinator for confirmed seat and form orders. Persistence and invoices
+// retain their existing owners; transport recovery never creates a second intent.
+export async function executeConfirmedOrder(args: {
+  commandId: string;
+  client: RpcClient;
+  serviceClient: RpcClient;
+  gateway: Gateway;
+  rpcName:
+    | "create_blueprint_seat_order"
+    | "create_admin_form_order"
+    | "execute_admin_waitlist_command_client_sync_v1";
+  parameters: Record<string, unknown>;
+  editor: boolean;
+  replacement: boolean;
+}): Promise<Record<string, unknown>> {
+  const { commandId } = args;
+  const { data, error } = await args.client.rpc(
+    args.rpcName,
+    args.parameters,
   );
   if (error) {
     const sqlCode = String((error as { code?: string }).code ?? "");
@@ -51,7 +76,7 @@ export async function executeConfirmedSeatOrder(args: {
   ) {
     return projectConfirmedReplacementResponse(
       envelope,
-      replacement.confirmation.editor === true,
+      args.editor,
     );
   }
   const committed = envelope.data as {
@@ -83,7 +108,8 @@ export async function executeConfirmedSeatOrder(args: {
         order,
         commandId,
         unitName: String((source.occasion as { title?: unknown })?.title ?? ""),
-        replacement: true,
+        replacement: args.replacement,
+        durable: true,
       });
     } catch {
       preparation = {
@@ -96,7 +122,7 @@ export async function executeConfirmedSeatOrder(args: {
       if (!preparation.retrySameCommand) {
         return projectConfirmedReplacementResponse(
           envelope,
-          replacement.confirmation.editor === true,
+          args.editor,
           "closed",
         );
       }
@@ -105,7 +131,7 @@ export async function executeConfirmedSeatOrder(args: {
         errorCode: preparation.reason,
         committed: projectConfirmedReplacementResponse(
           envelope,
-          replacement.confirmation.editor === true,
+          args.editor,
           "pending",
         ),
       };
@@ -113,7 +139,7 @@ export async function executeConfirmedSeatOrder(args: {
   }
   return projectConfirmedReplacementResponse(
     envelope,
-    replacement.confirmation.editor === true,
+    args.editor,
     "ready",
   );
 }

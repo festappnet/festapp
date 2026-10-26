@@ -11,6 +11,10 @@ begin
             perform public.raise_error('permission_denied');
         end if;
 
+        PERFORM public.lock_email_template_hierarchy_internal(CASE WHEN p_entity_type='occasion' THEN
+          (SELECT jsonb_build_object('occasion',id,'unit',unit,'organization',organization) FROM public.occasions WHERE id=p_entity_id)
+          ELSE (SELECT jsonb_build_object('unit',id,'organization',organization) FROM public.units WHERE id=p_entity_id) END);
+
         delete from public.email_templates
         where occasion = p_entity_id 
           and code = p_code;
@@ -19,6 +23,10 @@ begin
         if (public.can_write_unit_email_templates(p_entity_id) IS NOT TRUE) then
             perform public.raise_error('permission_denied');
         end if;
+
+        PERFORM public.lock_email_template_hierarchy_internal(CASE WHEN p_entity_type='occasion' THEN
+          (SELECT jsonb_build_object('occasion',id,'unit',unit,'organization',organization) FROM public.occasions WHERE id=p_entity_id)
+          ELSE (SELECT jsonb_build_object('unit',id,'organization',organization) FROM public.units WHERE id=p_entity_id) END);
 
         delete from public.email_templates
         where unit = p_entity_id

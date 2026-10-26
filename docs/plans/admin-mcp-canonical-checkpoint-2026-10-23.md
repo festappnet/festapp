@@ -1123,3 +1123,316 @@ to the exact user-requested recovery HTML/JSON location.
 Stop after this completed/deployed stage as explicitly requested. No stage3 work
 started. Future continuation starts with fresh main, then stage3; retain evidence
 of earlier full-app browser input-method limits and historical receipt coverage.
+
+## Continuation 2026-10-26 - stage 3 locally complete
+
+The user resumed the plan and explicitly required one canonical path. Fresh
+GitHub `origin/main` base: `ddbeb11e6aa477477984da03f947f07f9f6a353a`.
+Workspace: `/private/tmp/festapp-admin-mcp-emails-20261026`, branch
+`feat/admin-mcp-emails-20261026`. The original dirty workspace is untouched.
+Verification: standard. No production change or customer mail was performed.
+
+Completed: effective template list/inspect with source and original snapshot
+token; save/reset with one durable receipt; banner read/change and authoritative
+inherited state; read-only synthetic preview through production `renderEmail`.
+Six new tools, two new explicit scopes, 41 remote tools total. A selected occasion
+never grants organizer-level template access; older grants stay unchanged.
+
+Canonical paths and removal ledger:
+
+| Boundary | Canonical owner / result | Removed or retained |
+| --- | --- | --- |
+| Current editor mutations | `DbEmailTemplates -> EmailTemplateCommands -> manage_email_template/manage_email_banner`; MCP calls the same RPCs | Removed all three direct legacy mutation RPC calls from current Dart code |
+| Effective content/source | `get_all_email_templates -> get_email_template_state_internal -> get_resolved_email_template` | No MCP inheritance resolver; UI and MCP consume SQL source/token |
+| Banner inheritance and post-save state | `get_email_banner_state_internal`, using the sending wrapper resolver | Removed Dart inheritance computation and manual entity-data mirroring |
+| Ticket-block validation | `validate_email_template_content_internal` | Removed duplicated expressions from ordinary saves and setup-draft validation |
+| Preview | `send-custom-email/authoringPreview -> renderEmail`, same synthetic scenario generator as Flutter | No second renderer, arbitrary recipient/order input or queue/provider path |
+| Legacy public write RPC signatures | Existing persistence owners used by the new receipt boundary | Retained for released clients; remove public grants only after supported-client upgrade; no parallel implementation |
+| Occasion initial copy/setup/delete | Existing aggregate lifecycle transactions; shared template validation | Retained distinct lifecycle, not an interactive save fallback or nested per-template receipt |
+
+Snapshot tokens fingerprint effective content plus override identity and reject
+stale creates/updates/resets. Equivalent restored content is an equivalent state,
+not a monotonic event revision. Banner tokens include inherited state. Receipt
+identity binds actor, stored hierarchy, original token and exact payload. Locks
+follow receipt -> organization -> unit -> occasion; parent edits serialize with
+child authoring. Authorization is checked before receipt replay and after locks.
+The existing durable journal now distinguishes entity type/ID/template code.
+A conflict retains the draft and never silently refreshes/replaces the baseline.
+
+Validation evidence:
+- 8 real disposable PostgreSQL cases, no skips, plus 2 actual executor boundary
+  cases: hierarchy/roles, source parity for all 17 changed/new SQL owners, ACL,
+  absent-override conflict, legacy-write conflict, exact retry identity, rollback
+  after persistence, two-connection creation/replay, reset and untouched queue.
+- 2 existing SQL inheritance/catalog regression files passed.
+- 23 existing remote HTTP/OAuth tests plus the new explicit scope/occasion-vs-unit
+  consent case passed; 37 web consent/connection tests passed.
+- 11 Deno tests passed, including all 54 generated template/scenario/language/tone
+  examples through the actual production renderer; Edge entrypoint typecheck passed.
+- 78 distinct email Flutter cases and 5 existing command transport cases verified.
+  The full email run retained 77 passing cases; its new banner case exposed the
+  existing decorated ListTile/Material assertion. The card now uses Material at
+  the colored surface, and that affected case passed separately. Save/retry uses
+  a real isolated journal and verifies the same UUID across UI retries.
+- Targeted Dart analysis: no errors/warnings, existing style/deprecation infos.
+  Migration assembly, source-contract generator and diff whitespace gates pass.
+
+Evidence: `docs/reports/admin-email-template-evidence-2026-10-26.json` and
+`docs/reports/admin-email-template-network-2026-10-26.json`. Same disposable fixture:
+existing full editor bundle 102828 JSON bytes; new summary 1544 bytes without
+HTML; one requested full template 100343 bytes. These are serialized actual SQL
+results, not HTTP latency measurements or a prior MCP baseline. One domain SQL
+call each; synthetic preview has one Edge action and one scoped SQL read.
+
+Efficiency lessons applied: reuse `renderEmail` and the existing scenario
+producer instead of building another renderer; share validation before adding
+adapters; prove retry/concurrency in disposable PostgreSQL; clean commit child
+rows before fixture commits. Real journal futures in widget tests must be
+created/awaited inside `tester.runAsync`, with scoped platform fixtures. Passing
+unchanged checks were retained rather than restarting full suites after each fix.
+
+Publication and production are separate states. The main branch requires one
+approving review; no bypass is authorized. Publish only after fetching current
+main and reconciling any new source overlap. SQL forward migration is
+`20261026170000_email_template_commands.sql`, generated from the listed owners.
+Deploy SQL before activating the new Flutter client; Edge action, consent clients
+and issuer need a coherent compatible release. Only an authorized selected tenant
+may be released. No unrelated dirty work or pending migrations belong in it.
+
+Next implementation boundary: stage 4, forms/fields/sales settings. Reuse its
+existing aggregate writer, permissions and receipt; do not add a second form
+engine. Start from this checkpoint and current authoritative main, preserving
+stage-3 evidence and the public-client contraction gate above.
+
+
+### Stage 3 publication receipt
+
+PR https://github.com/festappnet/festapp/pull/613 is open. Verified implementation
+head `eb7dad50b22345fccdb4eb3e92472eb711d9f1de`; refreshed authoritative main base
+`ddbeb11e6aa477477984da03f947f07f9f6a353a`. Base had not advanced; worktree was
+clean at first push. GitHub reports `REVIEW_REQUIRED` (one approving review).
+No main merge, protection bypass, production migration or release was performed.
+Subsequent documentation-only bookkeeping records this receipt; the implementation
+and its retained validation inputs are unchanged.
+
+## Stage 4A 2026-10-26
+
+Stav: lokálně ověřeno, nenasazeno. Review větev
+`feat/admin-mcp-forms-20261026`, izolovaný checkout
+`/private/tmp/festapp-admin-mcp-forms-20261026`. Autoritativní main
+`ddbeb11e6aa477477984da03f947f07f9f6a353a`; rodič etapy 3 / PR #613
+`2b73d1bea387baa2e4319f0c056585fb1b92ab8d`, při ověření OPEN / REVIEW_REQUIRED.
+Main vyžaduje schvalující review; rodič se neobchází.
+
+Šest MCP nástrojů `forms.list/inspect/create/save/duplicate/delete` používá
+společné SQL čtení a existující receipted UI příkazy. Výsledek receipt obsahuje
+zmrazený authoring snapshot, který UI přijímá bez explicitního reloadu editoru.
+Základní pole, vazby na existující typy produktů, kapacita a konfigurace čekací
+listiny jsou pokryté. Katalog i guard mazání používají jeden dávkový výpočet
+použití; FK objednávky má přednost při počítání odpovědí, historická reference
+vždy brání destruktivnímu smazání. Chybějící metadata se zachovávají.
+
+Odstraněny duplicitní count SQL, konfliktní orders-write gate, tichý update
+cizího pole, fallback aktuálního klienta bez původních verzí a privátní
+`form_catalog_read_rule(boolean,boolean)`. Zůstávají veřejné released-client
+signatury nad stejným ownerem s upgrade podmínkou odstranění. Veřejný runtime
+formuláře a checkout jsou jiný lifecycle, nikoli paralelní admin editor.
+
+Ověření `standard`: SQL/executor 18/18 bez skipů včetně šesti existujících SQL
+regresí a skutečného souběhu s checkoutem; 2048 kombinací rolí; remote 25/25;
+web souhlas 37/37; Flutter 65/65. Cílená Dart analýza: 0 errors/warnings,
+22 informačních stylových/deprecation diagnostik. Generátory projekcí,
+capabilities, policy, migrace, parity a katalogu prošly včetně diff whitespace.
+Migrace `20261026190000_form_authoring.sql`: SHA256 `26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa`,
+86 deklarací / 85 názvů funkcí včetně nezměněné části kanonického auth modulu.
+
+Naměřeno na rollback fixture 50 formulářů / 5000 objednávek: stejný výpočet
+použití po formulářích ~38.4 ms versus dávkově ~2.4 ms; dvě větve scanů běží
+1x namísto 50x. Plný UI bundle 65248 B / 126 produktů, related-only MCP detail
+1891 B / 1 produkt. Jde o lokální SQL a JSON měření, nikoli produkční latenci
+nebo tokenové úspory. Bez nového indexu, bez HTTP/auth overheadu; pomocné UI
+platební lookupy nejsou tvrzením o odstranění všech síťových volání.
+
+Trvalá evidence: [checks a source digests](../reports/admin-form-authoring-evidence-2026-10-26.json),
+[SQL plány a payload měření](../reports/admin-form-authoring-data-network-2026-10-26.json).
+Katalog má 97 úkonů / 47 nástrojů; aktuální stav etapy je odvozen ze zdrojového
+JSON bez druhé natvrdo napsané roadmap hlavičky. Produkce ani další tenant
+nebyly změněny, nebyly odeslány e-maily ani vytvořeny zákaznické objednávky.
+
+Další řez 4B: rozšířená nastavení uložená ve form.data a jejich společné úzké
+kontrakty. Inline produktové změny MCP, veřejné URL, waitlist offers a obecné
+ruční objednávky zůstávají otevřené. Etapa 4 jako celek není dokončená.
+
+Před publikací načten aktuální main `3988bb7cbaf8766068a84f49f759d5544269e325`
+(#614, integrační homepage odkazy). Změna prohlédnuta, žádné form/auth/MCP
+soubory se nepřekrývají. Main byl sloučen do rodiče #613, nový parent head
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`; větev 4A na něj navazuje.
+Source digests a generované kontrakty znovu zkontrolovány bez změny pokrytého
+chování. Obě review větve tak obsahují aktuální autoritativní main.
+
+Publikováno jako [PR #615](https://github.com/festappnet/festapp/pull/615),
+base `feat/admin-mcp-emails-20261026`, implementation head
+`b7917a129f48c8cfae2687d317374c8e45ca3942`. Před prvním pushem i vytvořením PR
+fetch potvrzuje main `3988bb7cb` a parent `6bf8b5be0` jako předky headu.
+Sloučení ani nasazení neproběhlo. Při navázání zkontrolovat oba PR a po
+sloučení rodiče přesměrovat zbývající review na aktuální main.
+
+## Stage 4B 2026-10-26
+
+Stav: lokálně ověřeno, nenasazeno. Izolovaný checkout
+`/private/tmp/festapp-admin-mcp-form-settings-20261026`, větev
+`feat/admin-mcp-form-settings-20261026`. Main `3988bb7cbaf8766068a84f49f759d5544269e325`,
+rodič #615 `7f4053be653fa3e745a5207dd7ac578f8d51c681`, jeho rodič #613
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`. Při kontrole oba PR OPEN,
+#613 REVIEW_REQUIRED. Změny nenahrazují povinné schválení main.
+
+Hotovo: `forms.save.settings` pro připomínky, platební volby/zprávy, tón,
+politiku VS, vzhled a časování prodeje. Jeden SQL merge/validation owner
+`form_settings.sql`, stejný receipted save příkaz. Missing zachová, null odstraní
+známý override, reset sekce zachová interní příznaky a cizí metadata. UI posílá
+úzký snapshot místo celého form.data. Released full-data kontrakt je pouze
+adaptér přes stejného ownera, k odstranění po upgradu klientů.
+
+Nový `forms.paymentOptions` sdílí bankovní a Stripe UI projekce. Vyžaduje
+form-author práva i forms write souhlas, výslovné live/test prostředí a skutečný
+form/occasion/unit binding. Konfliktní order-write gate v recipient readeru je
+odstraněná. Výběr existujícího účtu zachovává dosavadní ověření kompatibility a
+runtime dostupnosti, nepřipojuje účty ani neaktivuje poskytovatele. Politika VS
+nepřepisuje rezervace a nic nevydává. UI design editor nyní přebírá uloženou
+verzi před dalším save, potvrzeno dvěma widget saves bez reloadu.
+
+Ověření standard: SQL/executor/boundary 31/31 bez skipů (27 real PostgreSQL,
+4 boundary, osm existujících SQL regresí), Flutter 68/68, remote 25/25,
+web consent 37/37. Cílená analýza 0 errors/warnings, 3 informační diagnostiky.
+Migrační/source-parity/policy/katalog generátory a whitespace checks prošly.
+Doplňkové ACL a SQL/Zod key-contract kontroly jsou součástí reálných DB testů.
+Starší reminder fixture selhávala shodně na 4A i 4B kvůli skutečnému recipient
+burst limitu po opakovaném přepočtu fronty; její nezávislé deadline případy nyní
+neopakují odesílací závazky předchozího kupujícího. Produkční limity beze změny.
+
+Migrace `20261026200000_form_authoring_settings.sql`: SHA256 `13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc`,
+11 deklarací / 11 názvů funkcí, žádné nové tabulky, triggery ani receipts.
+Publikovaná migrace 4A je beze změny; společný assembler nyní generuje nejnovější
+řez 4B z kanonických zdrojů. Katalog má 99 úkonů / 48 nástrojů.
+
+Evidence: [4B checks a source digests](../reports/admin-form-settings-evidence-2026-10-26.json).
+Bez produkčních změn, připojení Stripe či doručení zpráv. Samotný save nastavení
+nevytváří platby ani VS; SQL regrese mají pouze syntetické disposable objednávky
+a reference. Další řezy: veřejné odkazy, inline produktové mutace MCP, nabídky čekací
+listiny a obecné ruční objednávky. Celá etapa 4 není dokončená.
+
+Historické root-level start/end termíny přebírá stejný metadata owner do vnořené
+schedule při admin čtení i ukládání; již se nemohou po resetu znovu uplatnit.
+Nestandardní released zápis data se překládá na explicitní okamžik se stejnou
+interpretací jako dosavadní runtime. Veřejný read fallback zůstává pouze pro
+starší záznamy před tímto převodem; úplný hromadný data cutover není tvrzen.
+Nový SQL případ ověřuje reset proti skutečnému kanonickému runtime gate.
+
+Publikováno jako [PR #616](https://github.com/festappnet/festapp/pull/616),
+base `feat/admin-mcp-forms-20261026`; počáteční implementation head
+`1970e868e9a49fef1c33b63877e01ba26675a5f4`. Před prvním pushem a vytvořením PR
+fetch potvrdil main `3988bb7cb` i parent #615 `7f4053be6` jako předky větve.
+Aktuální zdroje včetně legacy-date dokončení jsou svázané SHA256 v evidence JSON.
+Při navázání ověřit #613 -> #615 -> #616 a po sloučení rodičů upravit review base;
+neslučovat ani nevydávat automaticky přes povinné main review.
+
+## Stage 4 complete 2026-10-26
+
+Stav: etapa 4 dokončená a lokálně ověřená, nenasazená. Větev
+`feat/admin-mcp-stage4-complete-20261026`, izolovaný checkout
+`/private/tmp/festapp-admin-mcp-stage4-complete-20261026`, rodič #616
+`a525f5aa59d32d2b000159124e81c2818a9721e7`. Aktuální main
+`3988bb7cbaf8766068a84f49f759d5544269e325` je předkem větve; rodič je stále OPEN,
+navazuje na #615 / #613. Povinné main review se neobchází.
+
+Uzavřeny všechny zbývající potvrzené body etapy 4:
+
+- Výslovné čtení/změna veřejného slugu přes původní Save a rezervační historii.
+  Generické DTO dál nevrací veřejné klíče/odkazy; replay vrací zmrazený uložený slug.
+- Kompletní inline typy/produkty a současná nastavení polí (věk, doklady, popis
+  příplatků) v jednom verzovaném agregátu včetně kontroly původních child verzí,
+  nových ID a rollbacku chybného dítěte.
+- Obecná administrátorská objednávka z formuláře: skutečný command v rollbacku
+  včetně invoice/e-mail gate, potvrzený actor/form/product/account hash, původní
+  checkout receipt a společná příprava faktury. Released RPC/signature/hash se
+  zachovávají přes jediného extrahovaného command ownera.
+- Návrh/detail čekací listiny, odeslání, zrušení, odmítnutí a stažení nabídnutých
+  nebo čekajících míst i potvrzené přijetí za účastníka. Původní ticket IDs,
+  nabídky, fronta a receipts se znovu neimplementují. Stránkování před JSON
+  agregací zachovává globální FIFO výpočet a původní UI fasádu.
+- Jeden Edge fulfillment coordinator a jedno zpracování nejasné HTTP odpovědi.
+  Nové potvrzené create/accept receipts používají stávající invoice dispatch fence;
+  nejistý POST se neopakuje, retry dělá lookup se stejným UUID. Staré pending
+  receipts bez důkazu prvního dispatch zůstávají lookup-only. Žádná nová tabulka,
+  aplikační trigger nebo receipt owner. UI acceptance plus `orderDetails` je jeden
+  podporovaný intent; nezávislé kombinace módů se odmítají před účinkem.
+
+Nové explicitní scopes order-create a waitlist read/write/accept nerozšiřují staré
+souhlasy. Přijetí nabídky vyžaduje také order-create souhlas. SQL váže skutečnou
+hierarchii a aktuální práva před mutací/replay; scope check předchází i sealování.
+Customer capabilities ani access UUID se přes MCP nevracejí. Admin příkazy
+vytvářejí bankovní/fakturační objednávky, neprovádějí platbu kartou či refundaci;
+veřejný zákaznický checkout/registrace mají nadále své existující rozhraní.
+
+Ověření standard: 55 SQL/boundary případů (51 skutečná PostgreSQL, 0 skipů),
+51 HTTP/SDK/remote případů, 74 web consent/waitlist případů a 25 Deno testů -
+celkem 205 úspěšných případů. Oba Edge entrypointy prošly typecheckem. Generátory
+migrace, parity, authorization policy a katalogu i whitespace check prošly.
+Flutter/browser/release build se neopakovaly: Dart/UI layout se neměnil.
+
+Migrace `20261026210000_form_administration_completion.sql`: SHA256 `86197e5b5a8d25ba49f60b5d54a99184734b7194e71def217e94afef2273bf62`,
+34 deklarací / 34 různých názvů funkcí. Publikované migrace 4A a 4B zůstaly
+beze změny. Katalog má 100 úkonů a 60 nástrojů, žádná potvrzená položka etapy 4
+nezůstává bez mapování. Evidence včetně source digestů a skutečných SQL/JSON
+request-size vzorků: [dokončení etapy 4](../reports/admin-form-completion-evidence-2026-10-26.json).
+Měření neznamená produkční latenci, úsporu tokenů ani nižší celkové bajty při
+úplném stránkovaném průchodu; přesné limity jsou uvedeny v evidence JSON.
+
+Produkce, ostatní tenanty a paid providers se neměnily. Navazující doménová etapa
+je 5 - nastavení akce a pořadatele. Před pokračováním ověřit review stack a čerstvý
+main, neimplementovat znovu formuláře ani jejich transakce.
+
+Dokončení etapy 4 publikováno jako [PR #617](https://github.com/festappnet/festapp/pull/617),
+base `feat/admin-mcp-form-settings-20261026`, implementation head
+`0ab724bc34b0a7e10f96a35fa9364ceecdbfc724`. Bezprostřední fetch před prvním
+pushem/PR potvrdil main `3988bb7cb` a parent #616 `a525f5aa5`; oba jsou předky
+navrženého headu. Aktuální review návaznost je #613 -> #615 -> #616 -> #617.
+Sloučení ani produkční rollout neproběhly; source digests nadále odpovídají ověření.
+
+
+## Stage 5 complete 2026-10-26
+
+Etapa 5 je dokončená a lokálně ověřená, implementace `a04d18423080022700b20e1e6c1032a679850116`.
+Základ je #617 `859ab98ad571f08ded25bcd7122ccdcac5e8799d`; autoritativní main při zahájení `3988bb7cbaf8766068a84f49f759d5544269e325`.
+PR #617 byl mezitím sjednocen na base main; #613, #615 a #616 jsou uzavřené
+jako nahrazené. Pro etapy 3-5 zůstává jediné review/publikace místo
+[PR #617](https://github.com/festappnet/festapp/pull/617), větev
+`feat/admin-mcp-stage4-complete-20261026`; nevytvářet znovu starý review stack.
+Main vyžaduje review, bez obcházení ochrany a bez automatického nasazení.
+
+- Přidáno 8 nástrojů pro nastavení akce, pořadatele, hry a explicitní veřejný
+  odkaz. Všech 11 potvrzených položek etapy 5 má mapování; katalog 100/68.
+- Jeden explicitní field/type kontrakt sdílí SQL a MCP. UI posílá pojmenovaná
+  metadata místo celého opaque data. Sloučení probíhá uvnitř původních příkazů
+  po původním hashi a version locku. Žádný další writer/receipt/trigger.
+- Unit manager/souhlas zůstává samostatný. Hra zachovává occasion editor roli
+  a současný UI/MCP producent vyžaduje verzi ze čtení. Staré RPC jsou fasády.
+- Ověřený konflikt, frozen replay, revokace, dědičnost Reply-To, nezměněné
+  okamžiky při změně timezone, feature předpoklady a skutečný souběžný přesun
+  mimo scope při čtení i zápisu. Zápis se atomicky vrací zpět.
+- Prošlo 10 nových boundary/DB/SDK případů (9 reálných PostgreSQL), 27 remote,
+  56 web, 42 unikátních Flutter případů, 12 Deno a source/generator checks.
+  Dart analyze nemá errors/warnings, zůstává 6 existujících info lintů.
+
+Migrace `supabase/migrations/20261026220000_occasion_unit_configuration.sql` má SHA256
+`b89786da1b5f6e78aa4e3eb3f7e15c44e1a3ff89e2d6330742abfa82e19d60df`. Runtime ticket-layout kontrakt je přegenerovaný a v
+reálném fixture zůstává ready; historické migrace se neměnily. Přesné příkazy,
+source hashe a limity jsou v [evidence etapy 5](../reports/admin-configuration-evidence-2026-10-26.json).
+Žádné produkční/tenant nasazení ani paid provider volání neproběhlo. Další
+etapa je **6 - lidé, role, skupiny a dobrovolníci**. Celkem 6/11 hlavních
+etap, orientačně podle velikosti **45 %**, rozpětí 40-50 %.
+
+Bezprostřední publication preflight znovu fetchoval main `3988bb7cb` a review
+větev #617 `859ab98ad`; oba jsou předky navrženého headu. Etapa 5 se publikuje
+fast-forward do existujícího #617, nikoli novým stacked PR. Stav main zůstává
+review-required. Zdrojová implementace a ověření se po tomto fetchi nezměnily.

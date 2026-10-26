@@ -41,7 +41,6 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
   bool get _isOccasion => widget.response.occasion != null;
   OccasionModel? get _occasion => widget.response.occasion;
   UnitModel get _unit => widget.response.unit;
-  UnitModel get _organization => widget.response.organization;
 
   @override
   void initState() {
@@ -58,15 +57,11 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
   }
 
   void _loadUrls() {
-    if (_isOccasion) {
-      _overrideUrl = _occasion!.data?['email_banner'];
-      _inheritedUrl =
-          _unit.data?['email_banner'] ?? _organization.data?['email_banner'];
-    } else {
-      _overrideUrl = _unit.data?['email_banner'];
-      _inheritedUrl = _organization.data?['email_banner'];
-    }
-    _effectiveUrl = _overrideUrl ?? _inheritedUrl;
+    final state = widget.response.bannerState;
+    if (state == null) throw StateError('Email banner baseline required');
+    _overrideUrl = state['overrideUrl'] as String?;
+    _inheritedUrl = state['inheritedUrl'] as String?;
+    _effectiveUrl = state['effectiveUrl'] as String?;
   }
 
   Future<void> _updateBanner(String? url) async {
@@ -74,32 +69,12 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
     setState(() => _isLoading = true);
     try {
       await DbEmailTemplates.updateEntityEmailBanner(
-        occasionId: _isOccasion ? _occasion!.id : null,
-        unitId: !_isOccasion ? _unit.id : null,
+        scope: widget.response,
         bannerUrl: url,
       );
 
-      // Update local model
-      if (_isOccasion) {
-        if (_occasion!.data == null) _occasion!.data = {};
-        if (url != null) {
-          _occasion!.data!['email_banner'] = url;
-        } else {
-          _occasion!.data!.remove('email_banner');
-        }
-      } else {
-        _unit.data ??= {};
-        if (url != null) {
-          _unit.data!['email_banner'] = url;
-        } else {
-          _unit.data!.remove('email_banner');
-        }
-      }
-
-      setState(() {
-        _overrideUrl = url;
-        _effectiveUrl = _overrideUrl ?? _inheritedUrl;
-      });
+      // The SQL command owns both stored and effective inherited banner state.
+      setState(_loadUrls);
 
       if (mounted) ToastHelper.Show(context, CommonStrings.saved);
     } catch (e) {
@@ -148,14 +123,11 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
               height: headerHeight,
               color: theme.primaryColor,
             ),
-            Container(
-              decoration: BoxDecoration(
-                // Use primary color with transparency for a light overlay.
-                color: theme.primaryColor.withOpacityUniversal(context, 0.1),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(10.0),
-                  bottomRight: Radius.circular(10.0),
-                ),
+            Material(
+              color: theme.primaryColor.withOpacityUniversal(context, 0.1),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(10.0),
+                bottomRight: Radius.circular(10.0),
               ),
               child: Theme(
                 data: Theme.of(context)

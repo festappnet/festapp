@@ -41,6 +41,50 @@ abstract final class FormMetadata {
   static const String metaReplyTo = "reply_to";
   static const String metaDefaultValue = "default_value";
 
+  /// Wire projection only. SQL owns merge, validation and lifecycle flags.
+  /// Missing known settings become explicit resets; unrelated metadata is never
+  /// sent back by current editors. Null section resets preserve server-only keys.
+  static const authoringSettings = <String, List<String>?>{
+    'is_reminder_enabled': null,
+    'reminder_interval_seconds': null,
+    'communication_tone': null,
+    'variable_symbol': ['type', 'starting_number'],
+    'payment_message': ['type'],
+    'payments': ['bankEnabled', 'stripeConnectionId'],
+    'design': [
+      'is_card_design',
+      'primary_color',
+      'secondary_color',
+      'font_family',
+      'countdown_style',
+    ],
+    'schedule': [
+      'start_time',
+      'end_time',
+      'enable_countdown',
+      'show_before_start_message',
+      'before_start_message',
+      'countdown_title',
+    ],
+  };
+
+  static Map<String, dynamic> authoringSettingsSnapshot(
+    Map<String, dynamic>? data,
+  ) {
+    final result = <String, dynamic>{};
+    for (final entry in authoringSettings.entries) {
+      final value = data == null ? null : data[entry.key];
+      if (entry.value == null || value == null) {
+        result[entry.key] = value;
+      } else {
+        result[entry.key] = {
+          for (final key in entry.value!) key: (value as Map)[key],
+        };
+      }
+    }
+    return result;
+  }
+
   static const List<String> nonEditableFields = [
     fieldTypeSex,
     fieldTypeBirthYear,

@@ -1,3 +1,5 @@
+import { executeConfirmedWaitlistOrder } from "./confirmedWaitlistOrder.ts";
+import { executeConfirmedFormOrder } from "./confirmedFormOrder.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
@@ -29,6 +31,7 @@ Deno.serve(async (req) => {
     const {
       orderDetails: directOrderDetails,
       replacement,
+      administrativeOrder,
       waitlistAcceptance,
       commandId: requestedCommandId,
       clientId: requestedClientId,
@@ -37,6 +40,7 @@ Deno.serve(async (req) => {
       !hasSingleTicketOrderPayload({
         orderDetails: directOrderDetails,
         replacement,
+        administrativeOrder,
         waitlistAcceptance,
       })
     ) {
@@ -66,13 +70,35 @@ Deno.serve(async (req) => {
       );
     }
     const { commandId, clientId } = identity;
-    if (!directOrderDetails && !replacement && !waitlistAcceptance) {
+    if (
+      !directOrderDetails && !replacement && !waitlistAcceptance &&
+      !administrativeOrder
+    ) {
       return new Response(JSON.stringify({ error: "Missing order payload" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
     const authorizationHeader = req.headers.get("Authorization");
+    if (administrativeOrder) {
+      if (!authorizationHeader) {
+        return Response.json({
+          code: 401,
+          errorCode: "AUTHENTICATION_REQUIRED",
+        }, { status: 401, headers: corsHeaders });
+      }
+      return Response.json(
+        await executeConfirmedFormOrder({
+          administrativeOrder,
+          commandId,
+          client: createUserClient(authorizationHeader),
+          serviceClient: supabaseAdmin,
+          gateway: fakturoidGateway,
+        }),
+        { headers: corsHeaders },
+      );
+    }
+
     if (replacement?.inputData?.payment_method === "stripe") {
       return Response.json({ error: "STRIPE_REPLACEMENT_UNSUPPORTED" }, {
         status: 400,
@@ -130,6 +156,30 @@ Deno.serve(async (req) => {
         );
       }
       acceptanceActor = data.user.id;
+    }
+    if (waitlistAcceptance?.administration) {
+      if (!acceptanceActor) {
+        return Response.json({
+          code: 401,
+          errorCode: "AUTHENTICATION_REQUIRED",
+        }, { status: 401, headers: corsHeaders });
+      }
+      return Response.json(
+        await executeConfirmedWaitlistOrder({
+          administration: waitlistAcceptance.administration,
+          payload: {
+            offerId: waitlistAcceptance.offerId,
+            ticketIds: waitlistAcceptance.ticketIds,
+            orderDetails: directOrderDetails,
+            approvalHash: waitlistAcceptance.approvalHash,
+          },
+          actor: acceptanceActor,
+          commandId,
+          serviceClient: supabaseAdmin,
+          gateway: fakturoidGateway,
+        }),
+        { headers: corsHeaders },
+      );
     }
     const rpcParameters = waitlistAcceptance
       ? {

@@ -13,8 +13,8 @@ BEGIN
   v_occasion:=NULLIF(p_form->>'occasion','')::bigint;
   v_form:=NULLIF(p_form->>'id','')::bigint;
   IF v_actor IS NULL OR v_occasion IS NULL OR v_form IS NULL
-    OR NOT public.can_write_orders(v_occasion) THEN
-    RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+    OR NOT public.can_author_forms(v_occasion) THEN
+    RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'form',p_form)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,
@@ -87,7 +87,8 @@ BEGIN
     RETURNING version INTO v_version;
   v_result:=v_result||jsonb_build_object('aggregate_version',v_version,
     'product_versions',public.get_ticketing_product_versions_internal_v1(v_occasion,'product'),
-    'product_type_versions',public.get_ticketing_product_versions_internal_v1(v_occasion,'product_type'));
+    'product_type_versions',public.get_ticketing_product_versions_internal_v1(v_occasion,'product_type'),
+    'authoring',public.get_form_authoring_snapshot_internal(v_form));
   RETURN public.complete_private_inventory_mutation_v1(p_command_id,v_occasion,
     'inventory.form.save',jsonb_build_array(jsonb_build_object(
       'entityType','form','entityId',v_form,'operation','update',

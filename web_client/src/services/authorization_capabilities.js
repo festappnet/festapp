@@ -28,6 +28,7 @@ export const AuthorizationCapabilities = Object.freeze({
     navigationOrganizationSettings: 'navigation.organization_settings',
     navigationOccasionSettings: 'navigation.occasion_settings',
     formsCreate: 'forms.create',
+    formsWrite: 'forms.write',
     formsDelete: 'forms.delete',
     formsCatalogRead: 'forms.catalog.read',
     formsCopySource: 'forms.copy.source',

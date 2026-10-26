@@ -37,7 +37,8 @@ class CounselingFeature extends Feature {
     }
     final rawType = json[FeatureConstants.counselingEventType] as String?;
     return CounselingFeature(
-      code: json[FeatureConstants.metaCode] as String? ??
+      code:
+          json[FeatureConstants.metaCode] as String? ??
           FeatureConstants.counseling,
       isEnabled: json[FeatureConstants.metaIsEnabled] as bool? ?? false,
       counselingEventType: (rawType != null && rawType.isNotEmpty)
@@ -46,8 +47,8 @@ class CounselingFeature extends Feature {
       registrationStartTime: parsed,
       maxActiveBookings:
           (json[FeatureConstants.counselingMaxActiveBookings] as num?)
-                  ?.toInt() ??
-              1,
+              ?.toInt() ??
+          1,
     );
   }
 
@@ -61,7 +62,7 @@ class CounselingFeature extends Feature {
     };
     if (registrationStartTime != null) {
       data[FeatureConstants.counselingRegistrationStartTime] =
-          registrationStartTime!.toIso8601String();
+          registrationStartTime!.toUtc().toIso8601String();
     }
     return data;
   }

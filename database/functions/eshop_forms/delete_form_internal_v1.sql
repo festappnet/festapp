@@ -4,20 +4,17 @@ LANGUAGE plpgsql
 SET search_path = public, extensions
 AS $$
 DECLARE
-    v_response_count INT;
+    v_response_count BIGINT;
     v_form_key UUID;
     v_product_type_ids_to_check BIGINT[];
     v_deletable_product_type_ids BIGINT[];
 BEGIN
-    -- Step 1: Check if the form has any responses. If so, prevent deletion.
-    -- This part of the logic remains unchanged.
+    -- Shared current/historical reference guard, without casting untrusted
+    -- legacy data to UUID or repeating a separate definition of form usage.
     SELECT key INTO v_form_key FROM public.forms WHERE id = p_form_id;
 
     IF v_form_key IS NOT NULL THEN
-        SELECT COUNT(*)
-        INTO v_response_count
-        FROM eshop.orders
-        WHERE (data->>'form')::uuid = v_form_key;
+        v_response_count:=(public.get_form_usage_internal(p_form_id)->>'blocking_orders')::bigint;
 
         IF v_response_count > 0 THEN
             RAISE EXCEPTION 'This form cannot be deleted because it has responses.';

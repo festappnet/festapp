@@ -109,7 +109,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _linkError;
   String? _savedLink;
   bool _isLoading = true;
-  bool get _canEdit => RightsService.canEditOccasion();
+  bool get _canEdit => RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _hasChanges =>
       _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
 
@@ -221,8 +221,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     );
     if (!mounted || requestedLink != _formLink) return;
 
-    if (bundle != null) {
-      _form = bundle.form;
+    _acceptForm(bundle?.form);
+  }
+
+  void _acceptForm(FormEditorDraft? form) {
+    if (form != null) {
+      _form = form;
       final payments = _form!.definition.data?['payments'];
       _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
       _stripeConnectionId =
@@ -403,7 +407,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           _formLink = _form!.definition.link;
         });
       }
-      await _loadData();
+      _acceptForm(_form);
       if (renamed && mounted) {
         context.router.markUrlStateForReplace();
         await context.router.navigate(
@@ -1152,7 +1156,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         : null,
                                   ),
                                   const SizedBox(height: 48),
-                                  if (RightsService.canEditOccasion())
+                                  if (RightsService.hasCapability(AuthorizationCapabilities.formsWrite))
                                     Center(
                                       child: Tooltip(
                                         message: (_form?.definition.canDelete ??
@@ -1194,7 +1198,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       ),
       bottomNavigationBar: EditorActionBar(
         hasChanges: !_isLoading && _form != null && _snapshot.differs(_draft),
-        enabled: RightsService.canEditOccasion(),
+        enabled: RightsService.hasCapability(AuthorizationCapabilities.formsWrite),
         onDiscard: _cancelEdit,
         onSave: () => _saveChanges(context),
       ),

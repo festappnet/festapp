@@ -106,6 +106,11 @@ BEGIN
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Disabled form feature prevents queue');
 
+    -- The inheritance checks above are finished. Keep that buyer out of the
+    -- following independent checkout cases: each finalization rebuilds the
+    -- occasion reminder queue, which otherwise hits its real recipient quota.
+    UPDATE eshop.orders SET state='storno' WHERE id=v_order_id;
+
     -- Real order finalization must use occasion defaults, explicit form values,
     -- and zero without confusing any of them with an absent override.
     UPDATE public.occasions SET features='[{"code":"form","is_enabled":true,"deadline_duration_seconds":432000}]' WHERE id=v_occasion_id;
@@ -113,7 +118,9 @@ BEGIN
         UPDATE public.forms SET deadline_duration_seconds=CASE v_deadline_case WHEN 1 THEN NULL WHEN 2 THEN 345600 ELSE 0 END WHERE id=v_form_id;
         INSERT INTO eshop.spots (title,product,occasion,secret)
         VALUES ('Deadline precedence spot',v_product_id,v_occasion_id,gen_random_uuid()) RETURNING id INTO v_spot_id;
-        v_input_data:=jsonb_build_object('form',v_form_key,'email','deadline@example.com',
+        -- Each deadline case is a different buyer; reusing one recipient here
+        -- tests the real email burst quota instead of deadline inheritance.
+        v_input_data:=jsonb_build_object('form',v_form_key,'email','deadline-'||v_deadline_case||'@example.invalid',
             'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_id),
             'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_id)));
         v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);

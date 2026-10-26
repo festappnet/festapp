@@ -17,6 +17,7 @@ class _GameSettingsContentState extends State<GameSettingsContent> {
   DateTime? _startDateTime;
   DateTime? _endDateTime;
   bool _isLoading = true;
+  int _aggregateVersion = 0;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _GameSettingsContentState extends State<GameSettingsContent> {
     final gameSettings = await DbOccasions.loadGameSettings();
     if (gameSettings != null) {
       setState(() {
+        _aggregateVersion = gameSettings.aggregateVersion;
         _startDateTime = gameSettings.start?.toOccasionTime();
         _endDateTime = gameSettings.end?.toOccasionTime();
       });
@@ -42,23 +44,34 @@ class _GameSettingsContentState extends State<GameSettingsContent> {
     if (_startDateTime != null &&
         _endDateTime != null &&
         _startDateTime!.isAfter(_endDateTime!)) {
-      ToastHelper.Show(context, GroupsStrings.startBeforeEnd,
-          severity: ToastSeverity.NotOk);
+      ToastHelper.Show(
+        context,
+        GroupsStrings.startBeforeEnd,
+        severity: ToastSeverity.NotOk,
+      );
       return;
     }
 
     final gameSettings = GameSettingsModel(
+      aggregateVersion: _aggregateVersion,
       start: _startDateTime?.toUtcFromOccasionTime(),
       end: _endDateTime?.toUtcFromOccasionTime(),
     );
 
     final success = await DbOccasions.updateGameSettings(gameSettings);
     if (success) {
-      ToastHelper.Show(context, CommonStrings.saved,
-          severity: ToastSeverity.Ok);
+      _aggregateVersion = gameSettings.aggregateVersion;
+      ToastHelper.Show(
+        context,
+        CommonStrings.saved,
+        severity: ToastSeverity.Ok,
+      );
     } else {
-      ToastHelper.Show(context, "Failed to save game settings.",
-          severity: ToastSeverity.NotOk);
+      ToastHelper.Show(
+        context,
+        "Failed to save game settings.",
+        severity: ToastSeverity.NotOk,
+      );
     }
   }
 
@@ -128,10 +141,7 @@ class _GameSettingsContentState extends State<GameSettingsContent> {
             ],
           ),
           SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: saveData,
-            child: Text(CommonStrings.save),
-          ),
+          ElevatedButton(onPressed: saveData, child: Text(CommonStrings.save)),
         ],
       ),
     );

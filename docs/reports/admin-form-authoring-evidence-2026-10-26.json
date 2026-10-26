@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-26",
+  "stage": "4A",
+  "state": "locally_verified_not_deployed",
+  "branch": "feat/admin-mcp-forms-20261026",
+  "authoritativeMain": "3988bb7cbaf8766068a84f49f759d5544269e325",
+  "parent": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/613",
+    "head": "6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b",
+    "stateAtVerification": "OPEN / REVIEW_REQUIRED",
+    "initialHead": "2b73d1bea387baa2e4319f0c056585fb1b92ab8d"
+  },
+  "verification": "standard",
+  "tools": [
+    "forms.list",
+    "forms.inspect",
+    "forms.create",
+    "forms.save",
+    "forms.duplicate",
+    "forms.delete"
+  ],
+  "canonicalOwners": {
+    "reads": "get_form_editor_bundle_internal / get_form_catalog_rows_internal",
+    "usage": "get_form_usage_rows_internal",
+    "writeAdapter": "manage_form",
+    "writeTransactions": "Existing create/update/duplicate/delete form client-sync commands and receipts",
+    "authority": "can_author_forms / can_read_form_catalog"
+  },
+  "retired": [
+    "Duplicate admin form summary and deletion usage queries",
+    "Conflicting orders-write gate on form saves",
+    "Current-client missing-version fallback",
+    "Silent update of foreign/nonexistent field IDs",
+    "Private form_catalog_read_rule(boolean,boolean) after replacing its callers",
+    "Explicit UI full editor reload after save"
+  ],
+  "retainedBoundaries": [
+    "Released public UI RPC signatures on the same domain implementation until client upgrade",
+    "Public runtime form/checkout projection and URL reservation lifecycle",
+    "Existing inline product authoring through UI; MCP only existing type references in 4A"
+  ],
+  "migration": {
+    "path": "supabase/migrations/20261026190000_form_authoring.sql",
+    "sha256": "26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa",
+    "functionDeclarations": 86,
+    "uniqueFunctionNames": 85,
+    "note": "Includes canonical auth module definitions that are unchanged; count is not a count of changed business owners."
+  },
+  "checks": [
+    {
+      "command": "FESTAPP_MCP_TEST_DATABASE_URL=<marked-loopback-disposable-admin-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/forms-postgres.test.mjs test/forms.test.mjs",
+      "passed": 18,
+      "skipped": 0,
+      "log": "/tmp/festapp-forms-verified.log",
+      "coverage": "Real SQL and existing UI owners, receipts/replay, malformed history, pagination, capacity versus actual checkout on two connections, role revocation, source copy permission, ACL/source parity and six existing SQL regressions."
+    },
+    {
+      "command": "FESTAPP_AUTHORIZATION_DATABASE_URL=<disposable-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 --test-name-pattern='canonical truth table' test/canonical-authorization-postgres.test.mjs",
+      "passed": 1,
+      "roleCombinations": 2048,
+      "skipped": 0,
+      "log": "/tmp/festapp-forms-role-matrix.log"
+    },
+    {
+      "command": "pnpm --dir tools/festapp exec node --test test/remote.test.mjs",
+      "passed": 25,
+      "log": "/tmp/festapp-forms-remote.log"
+    },
+    {
+      "command": "pnpm --dir web_client exec node --test tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js",
+      "passed": 37,
+      "log": "/tmp/festapp-forms-web-consent.log"
+    },
+    {
+      "command": "fvm flutter test --no-pub --concurrency=1 test/components/forms/form_commands_cases.dart test/components/forms/forms_editor_widget_cases.dart test/components/forms/form_capacity_settings_cases.dart test/components/forms/public_link_settings_cases.dart",
+      "passed": 65,
+      "log": "/tmp/festapp-forms-ui-authority-final.log"
+    },
+    {
+      "command": "fvm dart analyze lib/components/forms/db_forms.dart lib/components/forms/supabase_form_commands.dart lib/components/forms/views/form_editor_content.dart lib/components/forms/views/form_settings_content.dart lib/components/forms/views/form_design_content.dart",
+      "errors": 0,
+      "warnings": 0,
+      "informationalDiagnostics": 22,
+      "log": "/tmp/festapp-forms-analyze-final.log"
+    },
+    {
+      "commands": [
+        "python3 automation/generate_authorization_projection.py --check",
+        "python3 automation/generate_authorization_capabilities.py --check",
+        "python3 automation/generate_authorization_policy_contract.py --check",
+        "python3 automation/assemble-form-authoring-migration.py --check",
+        "python3 automation/generate_canonical_source_contract.py --check",
+        "node automation/reports/generate_admin_capabilities.mjs --check",
+        "git diff --check"
+      ],
+      "result": "passed",
+      "catalogActions": 97,
+      "catalogTools": 47
+    }
+  ],
+  "measurements": "admin-form-authoring-data-network-2026-10-26.json",
+  "limits": [
+    "No production SQL, deployment, real customer fixture or message delivery",
+    "No new visual layout; tested actual Flutter widgets and SQL instead of browser/build",
+    "Existing test harness uses marked disposable local projects; rollback fixtures except explicit synthetic concurrency setup cleaned afterwards",
+    "MCP 4A excludes arbitrary form.data, public URL patches, inline product mutations, advanced settings, waitlist offer operations and general manual orders",
+    "Local SQL timing and payload bytes exclude HTTP/auth overhead and are not production latency or token-saving estimates"
+  ],
+  "sourceSha256": {
+    "assets/translations/cs.json": "51051c7f0bf8f6d5d91aa1b61d41b457729618f43ecbba3fa7226aeb1ae14139",
+    "assets/translations/de.json": "d06d8e137aa99e10bad75a858d1379a96c12a5c5e35ebd936f074304432d97ec",
+    "assets/translations/en.json": "2f8a1ecd408e5dfb594105912ee7b319bc663cc76aabdc27d69a0bb92df6d326",
+    "assets/translations/pl.json": "559b12f56f5e3b22fc386aa13dfcf67331c5cb1318c719a0a1306be257b0b909",
+    "assets/translations/sk.json": "56978dc358376d1d697a59cd936e46b7cb1e5b7de906b9b799c28e9840489553",
+    "assets/translations/uk.json": "b2d2146c3aaa58f94e99f3f5111484fcf0969fbd3c4ac6d58e0ba47108299697",
+    "automation/assemble-form-authoring-migration.py": "1233795650b8670c30e1c69d35a9d3cce38c104976a78ea3169e14acf2dd2aaf",
+    "automation/authorization/context_capabilities.sql.in": "7e22f93f93276ee96b0422d73ef721a8c190578a48e13f4b7e27e3f6dd57f4e2",
+    "automation/canonical-operation-sources.json": "49e732de22af469033a4dcde88780591680c6510b0afb992a9ff001ab3902a7f",
+    "automation/reports/generate_admin_capabilities.mjs": "d016a88aa0f0a191b68f03b107288314e3afeea800eac902bc9a95bdf715015b",
+    "database/functions/eshop_forms/admin_form_commands.sql": "052cfd89604f0f26e60a9b5248e68b21fbb8a826d76a59cd7d921e43aaa29ea0",
+    "database/functions/eshop_forms/admin_form_reads.sql": "555ce59017b105cde90d91541afe378cd74d9243ac7c9be7453030f0f85cf929",
+    "database/functions/eshop_forms/create_form_client_sync_v1.sql": "7f6b67b9d47c8a0988f4e00f0fe9077e7f501fe1a82d47a744514bf8cc176868",
+    "database/functions/eshop_forms/delete_form_client_sync_v1.sql": "0a9832c4f46057a4429f5f2e3e101486ab72ab2b1d0ccbea609d5bb0e9590520",
+    "database/functions/eshop_forms/delete_form_internal_v1.sql": "4faa230c57cfd757f085ca5f79bbdb013fb8397882bd43b837af0bb700327504",
+    "database/functions/eshop_forms/duplicate_form_to_occasion_client_sync_v1.sql": "a68d83c58cb4f738ee062169e9f7db87ebd61098d7c85c75ee207bf1b5bdc590",
+    "database/functions/eshop_forms/get_all_forms_with_fields.sql": "4646190cb21bc73ece65596867143603aa490ecf1b063278010e8ee8e968fcb0",
+    "database/functions/eshop_forms/get_form_for_edit.sql": "9a669a662ac23f024cdd984cadb1c6d8e6b85222efa6add302d9461e78b10c8e",
+    "database/functions/eshop_forms/update_form.sql": "4579c0456db9f9c707b51aa3f05f202d8585247886a12bb4d8713ff3bf5c65f8",
+    "database/functions/eshop_forms/update_form_client_sync_v1.sql": "c1ff82aaf92160f8b69caa529d36a1c1002e5463697e0ce3ec6765bddb955f5e",
+    "database/functions/user_permissions/context_capabilities.sql": "1e4577e614daa493f52838e89c6133d5158655b78cf10ef9d9bb977f34f63495",
+    "database/functions/user_permissions/feature_operations.sql": "79e2d28289d3514f9e5d447962d4014a6340f94f471e8fb469fa8b2a36b6c349",
+    "database/functions/user_permissions/operation_rules.sql": "b7575102c3013d9a30434ab2612e8a7030d0d8af74223bdc82d55ee8eae94492",
+    "database/tests/canonical_mutation_source_parity_test.sql": "bb0a3ce8915debcda627dad4606f38e5e9dce37304fba4b8a73e2bf5f9279b23",
+    "database/tests/eshop_forms/form_editor_deletion_test.sql": "346132a3315142d7468a46964d2d3d33b5c6ee340a87ba82810d09be5174e92d",
+    "database/tests/eshop_forms/get_form_for_edit_short_title_test.sql": "75ce9e4fcdbb3fe2e9ed13fcd1edc61e98d8354005a4cac686499562f35ee867",
+    "lib/components/forms/README.md": "42b0be2b48731fb4a1e6e5e93c20a60da9c5c183d8c4ca2ea36f78a9a36f2621",
+    "lib/components/forms/db_forms.dart": "31a6221bd1608b066e006880c05583638fea5a468907d1254ad1df8aa9ad358a",
+    "lib/components/forms/supabase_form_commands.dart": "7b3118c22338748f8b898bda3ac37841acf80b4b928870070bdcd04bb350311e",
+    "lib/components/forms/views/form_design_content.dart": "49aecf3038af72489f0d4bfaa6d38ec9595b91d6cc11ea5d38a6b59815652653",
+    "lib/components/forms/views/form_editor_content.dart": "baf604957eb1b7ad0a8e145f8c294b2cac882b57e14ac4676954a3544a1bfbb6",
+    "lib/components/forms/views/form_settings_content.dart": "34fdf82abd33be5e5bf1fadd5ba08126ba80515115d58698ea758cf56bc61eeb",
+    "lib/data_services/authorization_capabilities.dart": "028607430c7a0daa6bcb3365efdf63c442387a5ae14db968d791a21d96da3c0b",
+    "packages/festapp_contracts/mcp-permissions.mjs": "473a72b2c6d250ff21178144376e541760cbe7fa7a95804f3f21b6d93667a773",
+    "supabase/functions/_shared/authorizationCapabilities.ts": "3f26176b4ef33d682ac95b61f7b3bdd8562e5c4d56b475f1b962ef5c2b07ee80",
+    "supabase/migrations/20261026190000_form_authoring.sql": "26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa",
+    "test/components/forms/form_commands_cases.dart": "1c6d5eaac02520f022d68a2ebf388992fc05111655ccdad7fe7fb30639abcc09",
+    "test/components/forms/form_editor_actions_cases.dart": "b91c63cb28e532c4e26fe763472fba8048a827a3597a5ddb249d134a361aa820",
+    "test/components/forms/form_payment_defaults_cases.dart": "ab2c4f2fb843fcea10071debfa907ce6330adc6d5411a6b7879a5093388f5721",
+    "test/components/forms/form_save_snapshot_cases.dart": "d45ac7a2083a140ea5a49e7e9fa27d17a4649105a3c428550f7dd73f0585cdb9",
+    "test/components/forms/public_link_settings_cases.dart": "a62871e738a23df6fcbcf2576b1d89fed6b4071727eb5b6f3b9fa03930ebc5c5",
+    "tools/festapp/src/operations/catalog.mjs": "ef7568712fdb076f16e396c0b95838058b0fc81b094808bf5d78cf5d379aa171",
+    "tools/festapp/src/operations/forms.mjs": "d9cd67a045531c633a3f4f1440fc16292b2075a0a74f34730225b4ea250fb87e",
+    "tools/festapp/test/canonical-authorization-postgres.test.mjs": "83c7bd43c0d22cf9a5d78fa65a1d02f89745a374dd3fe50d520d822ef7b46e54",
+    "tools/festapp/test/form-fixtures.mjs": "abbbd4aa639499f92957b4be3c3ac57b99693e084651ac92890e43ccb7ee4cb3",
+    "tools/festapp/test/forms-postgres.test.mjs": "ca2e56149e21ddebee60397af4bc1e066aceecf907b9dc119d3b282e507ffb42",
+    "tools/festapp/test/forms.test.mjs": "4c4ab0570f3c3187c198f17f26b17508968c9a993ba96a1d68f8d0505c3a055c",
+    "tools/festapp/test/remote.test.mjs": "8997ca826a846790200d4ced7bfdce7ed96877e9a4aba08577fa73b471692a67",
+    "web_client/public/assets/translations/cs.json": "d98b05bac6dbef11b17f953ccab85936de7961a2426d2cc87a21475b2a969b4b",
+    "web_client/public/assets/translations/de.json": "490c912b41d6b6dba6b8cf386e29983413c8e3f3a443a8f8278d7dab13c06ad8",
+    "web_client/public/assets/translations/en.json": "7b6e9a8bb396edae3ef3a1d30512efc04fb96ee6f8396ffd7083124ee8e936f9",
+    "web_client/public/assets/translations/pl.json": "7f3ce65f82832fc95b59858437675cc8e9e0930ee3d0e2b2601f8059c90302f3",
+    "web_client/public/assets/translations/sk.json": "6a131a8eac7d8a2f8a4dde0857842b4ffce9466693f27462fd61aa2e65dbc3f1",
+    "web_client/public/assets/translations/uk.json": "c961c08a8ece0b71428a7cc25237f2881e28c29be523ab295731afdee1a95460",
+    "web_client/src/services/authorization_capabilities.js": "f5e972ef98b625e7f4340790482f9681aad4638c71a98480155600b0c92c1100"
+  },
+  "originalMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
+  "prePublication": {
+    "upstreamChange": "3988bb7cb integration homepage links (#614), 35 unrelated files; inspected, no changed form/auth/MCP sources",
+    "strategy": "Merge current main into parent #613, then fast-forward forms base onto that parent; preserves the stack and canonical main ancestry.",
+    "affectedValidation": "No covered behavioral sources changed by update; source digests verified unchanged and generated contracts checked."
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/615",
+    "base": "feat/admin-mcp-emails-20261026",
+    "implementationHead": "b7917a129f48c8cfae2687d317374c8e45ca3942",
+    "deployed": false
+  }
+}

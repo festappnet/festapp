@@ -11,6 +11,12 @@ declare
     v_new_html text;
     v_before jsonb;
 begin
+    -- Match template command lock order before wrapper/data changes.
+    IF p_entity_type IN ('occasion','unit') THEN
+      PERFORM public.lock_email_template_hierarchy_internal(CASE WHEN p_entity_type='occasion' THEN
+        (SELECT jsonb_build_object('occasion',id,'unit',unit,'organization',organization) FROM public.occasions WHERE id=p_entity_id)
+        ELSE (SELECT jsonb_build_object('unit',id,'organization',organization) FROM public.units WHERE id=p_entity_id) END);
+    END IF;
     -- 1. Validate Entity Type and Permissions
     if p_entity_type = 'occasion' then
         if (public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE) then

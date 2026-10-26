@@ -1,3 +1,4 @@
+import { authoringPreviewResponse } from "./authoringPreview.ts";
 import { emailRpc } from "../_shared/emailQueueClient.ts";
 import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import {
@@ -48,6 +49,20 @@ Deno.serve(async (req) => {
           return error?null:data?.accounts?.find((a:any)=>a.id===accountId)?.display??null;
         },
       },corsHeaders);
+    }
+
+    if (reqData.action === "authoringPreview") {
+      if (req.method !== "POST") return Response.json({error:"Method not allowed"}, {status:405,headers:corsHeaders});
+      return await authoringPreviewResponse(reqData, req.headers.get("Authorization") || "", {
+        senderAddress: _DEFAULT_EMAIL || "",
+        read: async (authorization, input) => {
+          const {data,error} = await createUserClient(authorization).rpc('get_email_template_preview_context', {
+            p_entity_type:input.entityType, p_entity_id:input.entityId,
+            p_organization:input.organizationId, p_unit:input.unitId, p_code:input.code,
+          });
+          return error ? null : data;
+        },
+      }, corsHeaders);
     }
 
     if (reqData.action === "authoringContext") {

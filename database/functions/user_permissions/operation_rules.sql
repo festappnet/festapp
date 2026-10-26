@@ -90,8 +90,8 @@ GRANT EXECUTE ON FUNCTION public.unit_users_read_rule(boolean,boolean,boolean),
 -- Feature policies consume the same verified, request-local membership facts.
 CREATE OR REPLACE FUNCTION public.form_authoring_rule(p_editor boolean,p_unit_editor boolean)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT p_editor OR p_unit_editor; $$;
-CREATE OR REPLACE FUNCTION public.form_catalog_read_rule(p_viewer boolean,p_order_reader boolean)
-RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT p_viewer OR p_order_reader; $$;
+CREATE OR REPLACE FUNCTION public.form_catalog_read_rule(p_viewer boolean,p_order_reader boolean,p_author boolean)
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT p_viewer OR p_order_reader OR p_author; $$;
 CREATE OR REPLACE FUNCTION public.form_copy_source_rule(p_viewer boolean,p_unit_viewer boolean)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT coalesce(p_viewer,false) OR coalesce(p_unit_viewer,false); $$;
 CREATE OR REPLACE FUNCTION public.scanner_settings_rule(p_authenticated boolean,p_editor boolean,p_order_writer boolean)
@@ -102,11 +102,11 @@ RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
 $$;
 CREATE OR REPLACE FUNCTION public.reception_use_rule(p_enabled boolean,p_receptionist boolean,p_manager boolean,p_admin boolean)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT p_enabled AND (coalesce(p_receptionist,false) OR p_manager OR p_admin); $$;
-REVOKE ALL ON FUNCTION public.form_authoring_rule(boolean,boolean),public.form_catalog_read_rule(boolean,boolean),
+REVOKE ALL ON FUNCTION public.form_authoring_rule(boolean,boolean),public.form_catalog_read_rule(boolean,boolean,boolean),
  public.form_copy_source_rule(boolean,boolean),public.scanner_settings_rule(boolean,boolean,boolean),
  public.reception_enabled(jsonb),public.reception_use_rule(boolean,boolean,boolean,boolean)
  FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION public.form_authoring_rule(boolean,boolean),public.form_catalog_read_rule(boolean,boolean),
+GRANT EXECUTE ON FUNCTION public.form_authoring_rule(boolean,boolean),public.form_catalog_read_rule(boolean,boolean,boolean),
  public.form_copy_source_rule(boolean,boolean),public.scanner_settings_rule(boolean,boolean,boolean),
  public.reception_enabled(jsonb),public.reception_use_rule(boolean,boolean,boolean,boolean) TO postgres;
 

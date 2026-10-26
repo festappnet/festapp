@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-10-26T21:24:05.260752+00:00",
+  "scope": "READ_ONLY_PUBLIC_RESEARCH",
+  "terms_effective_from": "2026-08-14",
+  "browser_sessions": [
+    "festapp-upgates-research-20261026",
+    "festapp-upgates-api-20261026"
+  ],
+  "registration_form_inspected": true,
+  "registration_submitted": false,
+  "gmail_domain_search_results": 0,
+  "existing_account_ruled_out": false,
+  "catalog_queries": {
+    "vstupenky": "no displayed items",
+    "ticket": "no displayed items",
+    "rezervační": "no displayed items",
+    "rezervace": "warehouse/fulfillment results; no directly comparable ticketing in displayed results"
+  },
+  "competitor_absence_proven": false,
+  "authenticated_api_calls": 0,
+  "purchases": 0,
+  "outbound_messages": 0,
+  "apiary_notice": "Rendered legacy documentation explicitly points to docs.upgates.com",
+  "local_source_snapshots": {
+    "activation.txt": "5a87ee0befe9f2feb3b9d8468a4cd12c2793a27c067349a3fb1bd2caca4934aa",
+    "api-orders.txt": "3b00c25fb1e85410e3180466c840528ea318240c59ed90765d1452bccc7aba5c",
+    "api-payments.txt": "bb03b9144aee80cb2c7f12df3023c191a61dd4ea87c9d5110f69144d075230cc",
+    "api-rate.txt": "e216a725e39959d7da50d955195216ef587680267d7bcfdb56b01925d977d6ee",
+    "deactivation.txt": "af0d43c2f2daf478864ba1968d037e7cde6ecee70dbcdb0815aefa1541af459d",
+    "development.txt": "d2d0d290690b6cef7225f2724577cc291262859340a1603def4d40ee8c70fcab",
+    "iframe.txt": "d6c69de63943f4f3f849f460ced6caf3c067e3a4a9013dac806ca59ec5da91f2",
+    "terms-addon.txt": "3a164533532e2d229f007929e792f2f0a66d4f2f9743d988e167f29798f762d4",
+    "terms-partner.txt": "036b2ff1c2a03c4dcfbab446be8d9089b53279ab2a071b7138900257ec2da9e5",
+    "testing.txt": "440ea15377865370474f83316f6a8fd4684d42703e4b5dff779bc1a3f47c4a17",
+    "verification.txt": "da613daec45cfb9a5388ba8cec44cf1a5720b269cb29a4eb297843d6c887ac63",
+    "webhooks.txt": "719a29d5907b8b239311d860893d3a52a18b79633a37856837b36e5ccf63bd1d"
+  },
+  "findings": {
+    "partner_account": "free under current general terms5.7",
+    "addon_listing": "no standard fee/revenue share under current special terms6.4, subject to stated exceptions",
+    "ordinary_webhook_timeout": "1s connection,3s overall; overall timeout can be counted as delivered without repeat",
+    "payments_endpoint": "payment methods, not settlement ledger",
+    "cart_api": "documented GET list/detail only; synchronous admission not demonstrated",
+    "installation": "signed callback with apiUser/apiKey/apiUrl; not OAuth",
+    "uninstall": "API credentials removed regardless of callback response"
+  },
+  "runtime_qualification": "NOT_PERFORMED",
+  "independent_review": "NOT_REQUESTED_OR_PERFORMED",
+  "task_owned_browsers_closed": true
+}

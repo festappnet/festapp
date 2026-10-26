@@ -59,6 +59,13 @@ class NotificationCenterController extends ChangeNotifier {
       pageFailed = false;
   bool panelOpen = false, foreground = true, refreshFailed = false;
   int snapshot = 0;
+  // Preserve the pre-open watermark while the server acknowledges this snapshot.
+  // A missing watermark on older backends must not label every row as new.
+  int? previousReadThrough;
+  bool isUnread(NotificationItem item) =>
+      previousReadThrough != null &&
+      item.sequence > previousReadThrough! &&
+      item.sequence <= snapshot;
   DateTime? snapshotAt;
   List<Map<String, dynamic>> periods = [];
   final Map<String, NotificationPeriodState> periodStates = {};
@@ -101,6 +108,7 @@ class NotificationCenterController extends ChangeNotifier {
     failed = pageFailed = loading = false;
     nextCursor = null;
     snapshot = 0;
+    previousReadThrough = null;
     snapshotAt = null;
     periods = [];
     periodStates.clear();
@@ -217,6 +225,7 @@ class NotificationCenterController extends ChangeNotifier {
         return NotificationItem.fromJson({
           'id': item.id,
           'kind': item.kind,
+          'sequence': item.sequence,
           'section': item.section,
           'occasionId': item.occasionId,
           'occasionTitle': count['occasionTitle'],
@@ -352,6 +361,7 @@ class NotificationCenterController extends ChangeNotifier {
       });
       if (generation != _generation || revision != _revision) return;
       snapshot = newSnapshot;
+      previousReadThrough = result['previousReadThrough'] as int?;
       snapshotAt = at;
       periods = calendar;
       periodStates.clear();

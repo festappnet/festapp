@@ -43,7 +43,7 @@ BEGIN
       WHERE key NOT IN (
         'id', 'start_time', 'end_time', 'is_open', 'is_hidden', 'is_promoted',
         'link', 'title', 'description', 'data', 'services', 'organization',
-        'unit', 'features', 'form_link', 'has_orders', 'stats', 'ticket_layout_change'
+        'unit', 'features', 'settings', 'feature_changes', 'form_link', 'has_orders', 'stats', 'ticket_layout_change'
       )
     )
   THEN
@@ -119,7 +119,8 @@ BEGIN
       FROM jsonb_array_elements(v_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
     UPDATE public.occasions SET features=v_features,updated_at=clock_timestamp() WHERE id=p_occasion;
   ELSE
-    PERFORM public.update_occasion_internal_v1(p_config);
+    PERFORM public.update_occasion_internal_v1(
+      public.apply_occasion_settings_intent_internal_v1(p_occasion,p_config));
   END IF;
   UPDATE public.client_aggregate_versions
   SET version = version + 1, updated_at = clock_timestamp()

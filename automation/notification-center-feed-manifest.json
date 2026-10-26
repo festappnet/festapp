@@ -1,6 +1,6 @@
 {
-  "name": "notification-center-order-periods-2026-10-26",
-  "output": "supabase/migrations/20261026150000_notification_center_order_periods.sql",
+  "name": "notification-center-unread-snapshot-2026-10-26",
+  "output": "supabase/migrations/20261026230000_notification_center_unread_snapshot.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -8,7 +8,8 @@
     "20261024120000_order_email_recovery.sql",
     "20261024220000_cancelled_order_email_alerts.sql",
     "20261024235000_notification_center_canonical_availability.sql",
-    "20261026120000_notification_center_feed.sql"
+    "20261026120000_notification_center_feed.sql",
+    "20261026150000_notification_center_order_periods.sql"
   ],
   "sources": [
     "notification_center/order_context.sql",
@@ -23,6 +24,7 @@
     "20261024120000_order_email_recovery.sql": "45fe719f65daa8eeb91c91d13eda1704f1f876a1bf7218d7652724885f0e1410",
     "20261024220000_cancelled_order_email_alerts.sql": "c1543158170e03123b72eee89a88b2905bd3309afab612204acb97c7a7887e62",
     "20261024235000_notification_center_canonical_availability.sql": "b3b2271a66c463063aaf858afb8135ea100b8ef6dc17fe95dc8ae38dfb5a1c59",
-    "20261026120000_notification_center_feed.sql": "b19fedfb5507cf7f91ed2f480d6bac1d38e94045ddf53542ba9ca5d918786984"
+    "20261026120000_notification_center_feed.sql": "b19fedfb5507cf7f91ed2f480d6bac1d38e94045ddf53542ba9ca5d918786984",
+    "20261026150000_notification_center_order_periods.sql": "58af655065a50e8f4468223d3a53c95bba766c2494a7646bb2b0ef5aaddb12b3"
   }
 }
