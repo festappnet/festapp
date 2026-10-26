@@ -1,0 +1,4 @@
+- alertdialog "Zavřít2026-10-26 11:34:53\nSYSTÉM\nStav\nOBJEDNÁNO\nZměny\nVstupenka X1X16V8Q2N\n+ Admission\n100 Kč\nVstupe" [ref=e68] focusable [tabindex]
+  - textbox [disabled, ref=e69]
+  - button "Zavřít" [ref=e70]
+  - generic [ref=e71] focusable [tabindex]

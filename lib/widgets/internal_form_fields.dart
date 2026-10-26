@@ -9,8 +9,9 @@ class InternalFormFields {
       keyboardType: TextInputType.emailAddress,
       controller: controller,
       decoration: InputDecoration(
-          border: const OutlineInputBorder(),
-          labelText: PersonFieldsStrings.email),
+        border: const OutlineInputBorder(),
+        labelText: PersonFieldsStrings.email,
+      ),
       validator: (String? value) {
         if (!EmailAddress.isValid(value)) {
           return PersonFieldsStrings.emailInvalid;

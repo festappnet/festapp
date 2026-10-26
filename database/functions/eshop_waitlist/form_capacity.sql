@@ -21,8 +21,7 @@ RETURNS text LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ext
 DECLARE f public.forms; d jsonb; c jsonb;
 BEGIN
  SELECT * INTO f FROM public.forms WHERE id=p_form; d:=public.get_effective_form_data(p_form);
- IF NOT f.is_open OR p_at < nullif(coalesce(d#>>'{schedule,start_time}',d->>'start_time'),'')::timestamptz
- OR p_at > nullif(coalesce(d#>>'{schedule,end_time}',d->>'end_time'),'')::timestamptz THEN RETURN 'closed'; END IF;
+ IF NOT (public.get_form_availability_snapshot_internal(p_form,p_at)->>'isWindowOpen')::boolean THEN RETURN 'closed'; END IF;
  IF f.blueprint IS NOT NULL AND EXISTS (
   SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
   AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')

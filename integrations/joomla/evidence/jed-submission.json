@@ -1,0 +1,15 @@
+{
+  "submitted_at": "2026-10-26T10:07:46.471461+00:00",
+  "state": "SUBMITTED_PENDING_JED_REVIEW",
+  "extension_id": 17931,
+  "name": "vstupenky.online",
+  "version": "1.0.1",
+  "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "confirmation_url": "https://extensions.joomla.org/listing-submitted/?extension_id=17931&core_title=vstupenky.online",
+  "confirmation_heading": "Listing Submission Received",
+  "confirmation_text": "Your submission has been successfully received.",
+  "public_catalog_approval_verified": false,
+  "jed_checker": "2.4.4: 0errors; intentional iframe warning, optional author metadata notice",
+  "registration_activated": true,
+  "catalog_submission_received": true
+}

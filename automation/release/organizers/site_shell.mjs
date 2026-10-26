@@ -12,11 +12,12 @@ export function expandSiteShell(template) {
     .replace('{{SITE_FOOTER}}', read('site-footer.html'));
 }
 
-export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false}) {
+export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false, platformUpdatesPath = null}) {
   const content = JSON.parse(read(locale === 'cs' ? 'content.json' : `content.${locale}.json`)).publicProjection;
   const tokens = {APP_NAME: brand, CONTACT_EMAIL: contact, PROVIDER_NAME: content.provider?.name ?? 'Michael Bujnovský',
     CTA_HREF: content.cta.href, EVENT_DIRECTORY_HREF: locale === 'cs' ? 'https://plesy.vstupenky.online' : '/events'};
   const render = template => template.replace(/{{([A-Z0-9_]+)}}/g, (_, key) => {
+    if (key === 'PLATFORM_UPDATES_LINK') return platformUpdatesPath ? `<a href="${escape(platformUpdatesPath)}">${locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
     if (key === 'TOPIC_LINKS') return renderTopicLinks(content.pages);
     if (key === 'HELP_LINK') return `<a class="header-help" href="${escape(helpPath)}">${escape(helpLabel)}</a>`;
     if (key in tokens) return escape(tokens[key]);
@@ -29,3 +30,8 @@ export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, ac
   const header = render(read('site-header.html'));
   return {header: accountHeader ? header : header.replace(' auth-pending', ''), footer: render(read('site-footer.html'))};
 }
+
+// Resolve the shared preference before stylesheets or page content can paint.
+// Storage can be unavailable in restricted browsers; auto still follows the OS.
+export const publicThemeHead = `<script>(()=>{let mode;try{mode=localStorage.getItem('theme')}catch{}document.documentElement.style.colorScheme=mode==='light'||mode==='dark'?mode:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'})()</script>`;
+export const publicThemeBody = `<script>document.body.classList.toggle('dark-mode',document.documentElement.style.colorScheme==='dark');document.body.dataset.publicTheme='initialized';document.body.style.colorScheme=document.documentElement.style.colorScheme;</script>`;

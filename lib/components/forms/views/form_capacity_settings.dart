@@ -3,8 +3,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/standard_dialog.dart';
-import 'package:fstapp/components/eshop/orders_strings.dart';
-import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import '../../features/feature_service.dart';

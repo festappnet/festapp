@@ -1,0 +1,4 @@
+- dialog "Nastavení upozorněníZavřítZatím žádná upozornění\nZde uvidíte nové události od zapnutí upozornění.Zob" [ref=e236] focusable [tabindex]
+  - button "Nastavení upozornění" [ref=e237]
+  - button "Zavřít" [ref=e238]
+  - button "Zobrazit další" [ref=e243]

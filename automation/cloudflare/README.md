@@ -99,7 +99,8 @@ there. Pages Functions are not combined with this advanced-mode Worker.
 | Scanner routes | JS scanner with `no-store` and `no-referrer` |
 | `/google-auth`, `/app/google-auth` | JS/Flutter OAuth adapters |
 | `/auth_bridge`, `/auth_bridge.html` | Auth bridge |
-| `/login`, `/admin`, `/unit` and other Flutter routes | Flutter SPA |
+| `/login` | Web client login |
+| `/admin`, `/unit` and other Flutter routes | Flutter SPA |
 | `/pro-poradatele` | Organizer page on `vstupenky.online`; 404 for other tenants |
 | `/sitemap.xml` | Public occasion catalog RPC, with a minimal fallback |
 | `/flutter`, `/webclient`, `/organizers-page` | Internal assets redirect to `/`; `?pwa-cache=1` permits app-shell caching |

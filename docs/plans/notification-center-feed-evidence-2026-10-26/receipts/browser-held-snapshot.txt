@@ -1,0 +1,8 @@
+- dialog "Nastavení upozorněníZavřítNová upozorněníOstatní akceDalší možnosti26. 10. 2026 11:29\nFormulář uzavř" [ref=e37] clickable [cursor:pointer, tabindex]
+  - button "Nastavení upozornění" [ref=e38]
+  - button "Zavřít" [ref=e39]
+  - button "Nová upozornění" [ref=e60]
+  - button "Další možnosti" [expanded=false, ref=e61]
+  - button "26. 10. 2026 11:28 Nová objednávka notification-customer-35@example.invalid Dnes v 11:28" [ref=e62]
+  - button "26. 10. 2026 11:28 Nová objednávka notification-customer-34@example.invalid Dnes v 11:28" [ref=e63]
+  - button "26. 10. 2026 11:28 Nová objednávka notification-customer-33@example.invalid Dnes v 11:28" [ref=e64]

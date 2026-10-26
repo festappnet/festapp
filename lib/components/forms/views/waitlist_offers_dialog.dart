@@ -14,6 +14,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../eshop/models/order_model.dart';
 import '../models/form_bundle.dart';
+
 import 'package:festapp_core/forms.dart';
 
 import '../waitlist_commands.dart';
@@ -64,7 +65,7 @@ class WaitlistOffersDialog extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(int)? loadProposal;
   final Future<Map<String, dynamic>> Function(int)? loadPreview;
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
-      executeCommand;
+  executeCommand;
   @override
   State<WaitlistOffersDialog> createState() => _WaitlistOffersDialogState();
 }
@@ -209,28 +210,28 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final escape = const HtmlEscape().convert;
     final participantCount =
         order?.waitlistSummary?.counts.values.fold<int>(0, (a, b) => a + b) ??
-            count;
+        count;
     final participantWord = participantCount == 1
         ? 'osobu'
         : participantCount >= 2 && participantCount <= 4
-            ? 'osoby'
-            : 'osob';
+        ? 'osoby'
+        : 'osob';
     final placeWord = count == 1
         ? 'místo'
         : count >= 2 && count <= 4
-            ? 'místa'
-            : 'míst';
+        ? 'místa'
+        : 'míst';
     final expiry = _expiresAt == null
         ? ''
         : DateFormat.yMd()
-            .add_jm()
-            .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
-            .replaceAll(RegExp(r'\s'), '\u00a0');
+              .add_jm()
+              .format(_expiresAt!.toOccasionTime(_expiryTimeZone))
+              .replaceAll(RegExp(r'\s'), '\u00a0');
     final toneSubstitutions = _preview?['toneSubstitutions'];
     String previewLabel(String key, String fallback) =>
         toneSubstitutions is Map && toneSubstitutions[key] is String
-            ? escape(toneSubstitutions[key] as String)
-            : escape(fallback);
+        ? escape(toneSubstitutions[key] as String)
+        : escape(fallback);
     final vars = <String, String>{
       for (final key in const [
         'waitlist_confirmation_heading',
@@ -264,9 +265,9 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
           '<a href="#">${previewLabel('waitlist_manage_button_label', WaitlistStrings.withdraw)}</a>',
     };
     String expand(String html) => html.replaceAllMapped(
-          RegExp(r'\{\{\s*(\w+)\s*\}\}'),
-          (m) => vars[m[1]] ?? m[0]!,
-        );
+      RegExp(r'\{\{\s*(\w+)\s*\}\}'),
+      (m) => vars[m[1]] ?? m[0]!,
+    );
     final body = expand(
       _preview?['instructionsTemplateHtml']?.toString() ??
           _preview?['template']?['html']?.toString() ??
@@ -287,7 +288,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final count = _counts[id]!;
     final limit = _eligibleCounts[id]!;
     final selected = count > 0;
-    final canIncrease = !_busy &&
+    final canIncrease =
+        !_busy &&
         count < limit &&
         _total < capacity.offerablePlaces &&
         capacity.canSendOffers;
@@ -307,7 +309,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
                 semanticLabel: label,
                 onChanged: !_busy && (selected || canIncrease)
                     ? (value) =>
-                        setState(() => _counts[id] = value == true ? 1 : 0)
+                          setState(() => _counts[id] = value == true ? 1 : 0)
                     : null,
               ),
               const SizedBox(width: 4),

@@ -1,0 +1,4 @@
+ALTER TABLE public.notification_center_source_state ADD COLUMN next_evaluation_at timestamptz;
+CREATE INDEX notification_center_feed_snapshot ON public.notification_center_deliveries(organization,recipient,sequence DESC);
+CREATE INDEX notification_center_feed_revision ON public.notification_center_deliveries(event_id,recipient,sequence DESC);
+CREATE INDEX notification_center_availability_due ON public.notification_center_source_state(next_evaluation_at,organization,source_key) WHERE next_evaluation_at IS NOT NULL;

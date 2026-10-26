@@ -66,6 +66,7 @@ BEGIN
     RETURN v_begin->'response';
   END IF;
 
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
   IF NOT (p_config ? 'ticket_layout_change' AND p_config-ARRAY['id','ticket_layout_change']='{}'::jsonb) THEN
     PERFORM 1 FROM public.forms WHERE occasion=p_occasion ORDER BY id FOR UPDATE;
   END IF;

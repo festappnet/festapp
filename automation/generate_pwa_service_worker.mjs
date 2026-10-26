@@ -611,6 +611,22 @@ self.addEventListener('fetch', (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
+  if (${JSON.stringify([...(manifest.publicUpdatePaths ?? []),...(manifest.publicFeeds ?? [])])}.includes(url.pathname)) {
+    event.respondWith((async()=>{
+      const cache=await caches.open(CACHE_NAME);
+      try {
+        const response=await fetch(request,{cache:'no-store'});
+        if (response.ok) {try {await cache.put(url.pathname,response.clone());} catch (_) {}}
+        return response;
+      } catch (_) {return (await cache.match(url.pathname)) || Response.error();}
+    })());
+    return;
+  }
+  if (/^\\/(?:co-je-nove|[a-z]{2}\\/whats-new)(?:\\/|$)/.test(url.pathname) || url.pathname==='/platform-updates.json') {
+    event.respondWith((async()=>{try {return await fetch(request);} catch (_) {return Response.error();}})());
+    return;
+  }
+
   // Public help belongs to the live website, including code and downloads.
   if (url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
     event.respondWith(fetch(request));

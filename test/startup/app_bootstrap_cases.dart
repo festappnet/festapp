@@ -1,5 +1,6 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -9,14 +10,20 @@ import 'package:fstapp/startup/startup_failure_policy.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
-  test('occasion startup retains query and fragment before alias replacement',
-      () {
-    const path = '/old/reservations/forms/f/settings?x=%2F#anchor';
-    expect(initialRouteForUri(Uri.parse('https://preview.example$path')), path);
-  });
+  test(
+    'occasion startup retains query and fragment before alias replacement',
+    () {
+      const path = '/old/reservations/forms/f/settings?x=%2F#anchor';
+      expect(
+        initialRouteForUri(Uri.parse('https://preview.example$path')),
+        path,
+      );
+    },
+  );
   test('order view fragment survives cold startup', () {
     final uri = Uri.parse(
-        'https://example.invalid/form/example#order?order_id=1&token=synthetic');
+      'https://example.invalid/form/example#order?order_id=1&token=synthetic',
+    );
     expect(Uri.parse(initialRouteForUri(uri)).fragment, uri.fragment);
   });
   test('keeps the root route when no forced occasion is configured', () {
@@ -26,7 +33,8 @@ void main() {
   test('preserves explicit web deep links', () {
     expect(
       initialRouteForUri(
-          Uri.parse('https://preview.example/sample-event/news?filter=latest')),
+        Uri.parse('https://preview.example/sample-event/news?filter=latest'),
+      ),
       '/sample-event/news?filter=latest',
     );
   });
@@ -37,10 +45,13 @@ void main() {
     expect(route, path);
     expect(Uri.parse(route).hasQuery, isFalse);
     expect(
-        Uri.parse(route).fragment, 'waitlist?offer_id=offer&token=synthetic');
+      Uri.parse(route).fragment,
+      'waitlist?offer_id=offer&token=synthetic',
+    );
     expect(
-        initialRouteForUri(Uri.parse('https://preview.example/login#section')),
-        '/login');
+      initialRouteForUri(Uri.parse('https://preview.example/login#section')),
+      '/login',
+    );
   });
 
   test('startup preserves nested tabs and both calendar query parameters', () {
@@ -48,25 +59,30 @@ void main() {
         '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10';
     expect(initialRouteForUri(Uri.parse('https://preview.example$path')), path);
     expect(
-        isUnitAdminStartupRoute(Uri.parse(
-            'https://preview.example/unit/5/edit/bank-accounts/9/users')),
-        isTrue);
+      isUnitAdminStartupRoute(
+        Uri.parse('https://preview.example/unit/5/edit/bank-accounts/9/users'),
+      ),
+      isTrue,
+    );
   });
 
   test('Google callback resumes login after its query was consumed', () {
     for (final path in [
       '/app/google-auth',
-      '/app/google-auth?google_error=provider_cancelled'
+      '/app/google-auth?google_error=provider_cancelled',
     ]) {
-      expect(initialRouteForUri(Uri.parse('https://live.festapp.net$path')),
-          '/login');
+      expect(
+        initialRouteForUri(Uri.parse('https://live.festapp.net$path')),
+        '/login',
+      );
     }
   });
 
   test('unit admin deep links own their context load', () {
     expect(
       isUnitAdminStartupRoute(
-          Uri.parse('https://vstupenky.online/unit/13/edit')),
+        Uri.parse('https://vstupenky.online/unit/13/edit'),
+      ),
       isTrue,
     );
     expect(
@@ -75,7 +91,8 @@ void main() {
     );
     expect(
       isUnitAdminStartupRoute(
-          Uri.parse('https://vstupenky.online/akh-ples/admin')),
+        Uri.parse('https://vstupenky.online/akh-ples/admin'),
+      ),
       isFalse,
     );
   });
@@ -87,71 +104,89 @@ void main() {
       '/organizationEdit/1/?tab=verification',
     ]) {
       expect(
-          isUnitAdminStartupRoute(
-              Uri.parse('https://preview.example$path')),
-          isTrue,
-          reason: path);
+        isUnitAdminStartupRoute(Uri.parse('https://preview.example$path')),
+        isTrue,
+        reason: path,
+      );
     }
     for (final path in [
       '/organizationEditOther/1',
       '/event/organizationEdit/1',
       '/form/example',
-      '/organizationEdit/not-an-id'
+      '/organizationEdit/not-an-id',
     ]) {
       expect(
-          isUnitAdminStartupRoute(
-              Uri.parse('https://preview.example$path')),
-          isFalse,
-          reason: path);
+        isUnitAdminStartupRoute(Uri.parse('https://preview.example$path')),
+        isFalse,
+        reason: path,
+      );
     }
   });
 
-  testWidgets('preserves a password-reset deep link while initialization runs',
-      (tester) async {
-    const resetRoute = '/resetPassword?token=test-token';
-    final initialization = Completer<void>();
+  testWidgets(
+    'preserves a password-reset deep link while initialization runs',
+    (tester) async {
+      const resetRoute = '/resetPassword?token=test-token';
+      final initialization = Completer<void>();
 
-    await tester.pumpWidget(FestappBootstrap(
-      initialRoute: resetRoute,
-      initialize: () => initialization.future,
-      buildReadyApp: () => const SizedBox(),
-    ));
+      await tester.pumpWidget(
+        FestappBootstrap(
+          initialRoute: resetRoute,
+          initialize: () => initialization.future,
+          buildReadyApp: () => const SizedBox(),
+        ),
+      );
 
-    final loadingContext =
-        tester.element(find.byKey(FestappBootstrap.loadingKey));
-    expect(ModalRoute.of(loadingContext)?.settings.name, resetRoute);
+      final loadingContext = tester.element(
+        find.byKey(FestappBootstrap.loadingKey),
+      );
+      expect(ModalRoute.of(loadingContext)?.settings.name, resetRoute);
 
-    initialization.complete();
-    await tester.pump();
-    await tester.pump();
-  });
+      initialization.complete();
+      await tester.pump();
+      await tester.pump();
+    },
+  );
 
-  testWidgets('renders a launch surface while initialization is still pending',
-      (tester) async {
-    final initialization = Completer<void>();
+  testWidgets(
+    'renders a launch surface while initialization is still pending',
+    (tester) async {
+      final initialization = Completer<void>();
 
-    await tester.pumpWidget(FestappBootstrap(
-      initialize: () => initialization.future,
-      buildReadyApp: () => const MaterialApp(builder: DependencyMaterialBridge.builder, home: Text('ready')),
-    ));
+      await tester.pumpWidget(
+        FestappBootstrap(
+          initialize: () => initialization.future,
+          buildReadyApp: () => const MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Text('ready'),
+          ),
+        ),
+      );
 
-    expect(find.byKey(FestappBootstrap.loadingKey), findsOneWidget);
-    expect(find.text('ready'), findsNothing);
+      expect(find.byKey(FestappBootstrap.loadingKey), findsOneWidget);
+      expect(find.text('ready'), findsNothing);
 
-    initialization.complete();
-    await tester.pump();
-    await tester.pump();
+      initialization.complete();
+      await tester.pump();
+      await tester.pump();
 
-    expect(find.byKey(FestappBootstrap.loadingKey), findsNothing);
-    expect(find.text('ready'), findsOneWidget);
-  });
+      expect(find.byKey(FestappBootstrap.loadingKey), findsNothing);
+      expect(find.text('ready'), findsOneWidget);
+    },
+  );
 
-  testWidgets('opens the app shell after an unexpected initialization error',
-      (tester) async {
-    await tester.pumpWidget(FestappBootstrap(
-      initialize: () => Future<void>.error(Exception('startup failed')),
-      buildReadyApp: () => const MaterialApp(builder: DependencyMaterialBridge.builder, home: Text('offline shell')),
-    ));
+  testWidgets('opens the app shell after an unexpected initialization error', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      FestappBootstrap(
+        initialize: () => Future<void>.error(Exception('startup failed')),
+        buildReadyApp: () => const MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Text('offline shell'),
+        ),
+      ),
+    );
 
     await tester.pump();
     await tester.pump();
@@ -161,16 +196,17 @@ void main() {
   });
 
   test(
-      'session recovery timeout does not turn a connected public startup offline',
-      () {
-    expect(
-      shouldEnterOfflineAfterSessionInitializationFailure(
-        wasAlreadyOffline: false,
-        supabaseInitialized: true,
-      ),
-      isFalse,
-    );
-  });
+    'session recovery timeout does not turn a connected public startup offline',
+    () {
+      expect(
+        shouldEnterOfflineAfterSessionInitializationFailure(
+          wasAlreadyOffline: false,
+          supabaseInitialized: true,
+        ),
+        isFalse,
+      );
+    },
+  );
 
   test('session initialization failure preserves a real offline state', () {
     expect(
@@ -189,9 +225,7 @@ void main() {
     );
   });
 
-  test(
-      'clean cold start gets a longer occasion-loading window than cached startup',
-      () {
+  test('clean cold start gets a longer occasion-loading window than cached startup', () {
     expect(
       occasionLoadTimeout(hasCachedSettings: false),
       const Duration(seconds: 15),

@@ -714,6 +714,8 @@ PY
 
     # Update Web Link
     if [ ! -z "$WEB_LINK" ]; then
+        PLATFORM_UPDATES_ENABLED=$(node "$PROJECT_ROOT/automation/release/organizers/context.mjs" --config "$CONFIG_FILE" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>process.stdout.write(String((JSON.parse(s).feeds??[]).includes("/platform-updates.json"))))')
+        sed_inplace "s|static const bool platformUpdatesEnabled = .*;|static const bool platformUpdatesEnabled = $PLATFORM_UPDATES_ENABLED;|g" "$FLUTTER_CONFIG"
         sed_inplace "s|static const String webLink = \".*\";|static const String webLink = \"$WEB_LINK\";|g" "$FLUTTER_CONFIG"
     fi
     python3 - "$FLUTTER_CONFIG" "$PRIVACY_URL" "$PRIVACY_CHOICES_URL" \

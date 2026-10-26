@@ -8,8 +8,11 @@ class OrganizationAdminGuard extends StatefulWidget {
   final Widget Function(BuildContext context, int organizationId) builder;
   final int? targetOrganizationId;
 
-  const OrganizationAdminGuard(
-      {super.key, required this.builder, this.targetOrganizationId});
+  const OrganizationAdminGuard({
+    super.key,
+    required this.builder,
+    this.targetOrganizationId,
+  });
 
   @override
   State<OrganizationAdminGuard> createState() => _OrganizationAdminGuardState();
@@ -34,7 +37,8 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
     // restore a context without capabilities. Absence is not a checked denial.
     if (Supabase.instance.client.auth.currentUser != null &&
         (RightsService.occasionLinkModel?.capabilities.containsKey(
-                    AuthorizationCapabilities.organizationSettingsWrite) !=
+                  AuthorizationCapabilities.organizationSettingsWrite,
+                ) !=
                 true ||
             RightsService.pendingContextUpdate != null)) {
       _loadingContext = true;
@@ -84,7 +88,8 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
       int? orgId = widget.targetOrganizationId;
       if (orgId == null) {
         final currentUnit = RightsService.currentUnit();
-        orgId = currentUnit?.organization ??
+        orgId =
+            currentUnit?.organization ??
             RightsService.currentUser()?.units?.firstOrNull?.organization;
       }
 
@@ -94,9 +99,11 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
         throw Exception("Could not determine context organization.");
       }
 
-      final isAdmin = AppConfig.organization == orgId &&
+      final isAdmin =
+          AppConfig.organization == orgId &&
           RightsService.hasCapability(
-              AuthorizationCapabilities.organizationSettingsWrite);
+            AuthorizationCapabilities.organizationSettingsWrite,
+          );
 
       if (isAdmin == true) {
         if (mounted) {
@@ -109,7 +116,8 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
         }
       } else {
         throw Exception(
-            "Access Denied. User is not an admin of organization $orgId.");
+          "Access Denied. User is not an admin of organization $orgId.",
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -134,8 +142,10 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text("Access Denied",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text(
+                "Access Denied",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -149,7 +159,7 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text("Go Back"),
-              )
+              ),
             ],
           ),
         ),

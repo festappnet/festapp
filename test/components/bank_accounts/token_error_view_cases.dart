@@ -158,6 +158,16 @@ void main() {
         }
         if (saving) {
           await tester.pump(const Duration(milliseconds: 100));
+          // Localization loading can schedule another frame; the spinner itself
+          // never settles, so wait for the public content boundary instead.
+          for (
+            var attempt = 0;
+            attempt < 10 &&
+                find.byType(BankAccountConnectionTab).evaluate().isEmpty;
+            attempt++
+          ) {
+            await tester.pump(const Duration(milliseconds: 20));
+          }
         } else {
           await tester.pumpAndSettle();
         }

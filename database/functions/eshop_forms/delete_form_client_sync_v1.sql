@@ -8,6 +8,7 @@ BEGIN
  hash:=encode(extensions.digest(convert_to((jsonb_build_object('formId',p_form_id)||CASE WHEN p_expected_version IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('expectedVersion',p_expected_version) END)::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'inventory.form.delete',oc,actor,hash);
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=oc));
  PERFORM 1 FROM public.forms WHERE occasion=oc ORDER BY id FOR UPDATE;
  PERFORM 1 FROM eshop.product_types WHERE occasion=oc ORDER BY id FOR UPDATE;
  SELECT t.title,t.key INTO title,original_key FROM public.forms t WHERE id=p_form_id AND occasion=oc FOR UPDATE;

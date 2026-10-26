@@ -19,6 +19,7 @@ BEGIN
       -- A closed draft can await Connect without inventing a recipient or bank.
       initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
     END IF;
+    PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion_id));
     -- Create the new form
     INSERT INTO public.forms(
         title,
@@ -72,6 +73,7 @@ BEGIN
     VALUES ('Spot', 'product_type', false, new_form_id, 2, new_product_type_id, true);
 
     -- Return the raw data of the newly created form
+    PERFORM public.notification_center_form_created_internal(new_form_id);
     RETURN new_form;
 END;
 $function$;

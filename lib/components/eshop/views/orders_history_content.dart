@@ -1,3 +1,4 @@
+import '../order_grid_filters.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:auto_route/auto_route.dart';
@@ -12,7 +13,6 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 
 import '../models/orders_history_model.dart';
-import '../order_grid_filters.dart';
 
 class OrdersHistoryContent extends StatefulWidget {
   const OrdersHistoryContent({super.key});
@@ -28,8 +28,9 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink = context.routeData.inheritedPathParams
-        .getString(AppRouter.linkFormatted);
+    final newOccasionLink = context.routeData.inheritedPathParams.getString(
+      AppRouter.linkFormatted,
+    );
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
       _initializeController();
@@ -49,8 +50,9 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
           includeOrderDetails: true,
         );
 
-        final formColumn = newController.columns
-            .firstWhere((column) => column.field == EshopColumnIds.ORDER_FORM);
+        final formColumn = newController.columns.firstWhere(
+          (column) => column.field == EshopColumnIds.ORDER_FORM,
+        );
         final hideFormColumn = bundle.forms.length <= 1;
         if (newController.isGridLoaded) {
           newController.stateManager.hideColumn(formColumn, hideFormColumn);
@@ -69,8 +71,9 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
 
           OrderHistoryModel? latestHistoryRecord;
           if (realHistory.isNotEmpty) {
-            latestHistoryRecord = realHistory
-                .reduce((a, b) => a.createdAt!.isAfter(b.createdAt!) ? a : b);
+            latestHistoryRecord = realHistory.reduce(
+              (a, b) => a.createdAt!.isAfter(b.createdAt!) ? a : b,
+            );
           }
 
           bool shouldAddCurrentStateAsHistory = false;
@@ -129,8 +132,8 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
       ]),
       firstColumnType:
           RightsService.hasCapability(AuthorizationCapabilities.ordersDelete)
-              ? DataGridFirstColumn.delete
-              : DataGridFirstColumn.check,
+          ? DataGridFirstColumn.delete
+          : DataGridFirstColumn.check,
     );
 
     if (mounted) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:material_ui/material_ui.dart';
@@ -15,11 +16,12 @@ import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 class BlueprintCreateOrderDialog extends StatefulWidget {
-  const BlueprintCreateOrderDialog(
-      {super.key,
-      required this.request,
-      required this.commands,
-      this.initialRequirements});
+  const BlueprintCreateOrderDialog({
+    super.key,
+    required this.request,
+    required this.commands,
+    this.initialRequirements,
+  });
   final BlueprintSeatOrderRequest request;
   final SeatOrderCommands commands;
   final BlueprintSeatOrderRequirements? initialRequirements;
@@ -58,12 +60,17 @@ class _BlueprintCreateOrderDialogState
   void _accept(BlueprintSeatOrderRequirements value) {
     _requirements = value;
     final definitions = value.requiredFields
-        .map((row) => FormFieldDefinition.fromJson(
-            Map<String, dynamic>.from(jsonDecode(jsonEncode(row)) as Map)))
-        .where((f) =>
-            f.isRequired == true &&
-            f.isHidden != true &&
-            !{'ticket', 'spot', 'product_type'}.contains(f.type))
+        .map(
+          (row) => FormFieldDefinition.fromJson(
+            Map<String, dynamic>.from(jsonDecode(jsonEncode(row)) as Map),
+          ),
+        )
+        .where(
+          (f) =>
+              f.isRequired == true &&
+              f.isHidden != true &&
+              !{'ticket', 'spot', 'product_type'}.contains(f.type),
+        )
         .toList();
     final customer = definitions
         .where((f) => f.isTicketField != true && f.type != 'email')
@@ -103,7 +110,7 @@ class _BlueprintCreateOrderDialogState
     var valid = _formKey.currentState?.validate() ?? false;
     for (final group in [
       if (_customerFields != null) _customerFields!,
-      ..._ticketFields.values
+      ..._ticketFields.values,
     ]) {
       if (!(group.key.currentState?.saveAndValidate() ?? false)) valid = false;
     }
@@ -116,8 +123,8 @@ class _BlueprintCreateOrderDialogState
       if (_ticketFields.isNotEmpty)
         'ticket_fields': {
           for (final entry in _ticketFields.entries)
-            entry.key.toString(): entry.value.values(ticket: true)
-        }
+            entry.key.toString(): entry.value.values(ticket: true),
+        },
     };
   }
 
@@ -188,8 +195,9 @@ class _BlueprintCreateOrderDialogState
       return CommonStrings.fieldCannotBeEmpty;
     }
     if (error is SeatOrderPreparationPending)
-      return 'FeatureBlueprint.orderPaymentPending'
-          .tr(namedArgs: {'order': '${error.orderId}'});
+      return 'FeatureBlueprint.orderPaymentPending'.tr(
+        namedArgs: {'order': '${error.orderId}'},
+      );
     if (error is StateError &&
         error.message == 'LEGACY_ORDER_RECOVERY_REQUIRES_ORIGINAL_INPUT')
       return _copy('orderLegacyRecovery');
@@ -197,153 +205,190 @@ class _BlueprintCreateOrderDialogState
   }
 
   Widget _fields(_OrderFormFields fields) => FormBuilder(
-      key: fields.key,
-      enabled: !_busy && _preview == null,
-      child: Column(
-          children:
-              FormHelper.getAllFormFields(context, fields.key, fields.holder)));
-  Widget _conflicts(List<Map<String, dynamic>> groups) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        for (final group in groups) ...[
-          const Divider(),
-          Text('${_copy('orderLabel')} #${group['orderId']}',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text((group['customer'] as Map? ?? const {})
-              .values
+    key: fields.key,
+    enabled: !_busy && _preview == null,
+    child: Column(
+      children: FormHelper.getAllFormFields(context, fields.key, fields.holder),
+    ),
+  );
+  Widget _conflicts(List<Map<String, dynamic>> groups) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final group in groups) ...[
+        const Divider(),
+        Text(
+          '${_copy('orderLabel')} #${group['orderId']}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Text(
+          (group['customer'] as Map? ?? const {}).values
               .whereType<String>()
               .where((s) => s.isNotEmpty)
-              .join(' ')),
-          for (final ticket in group['tickets'] as List) ...[
+              .join(' '),
+        ),
+        for (final ticket in group['tickets'] as List) ...[
+          Text(
+            '${CommonStrings.ticket} ${ticket['ticketSymbol'] ?? ticket['ticketId']}',
+          ),
+          for (final product in ticket['products'] as List)
             Text(
-                '${CommonStrings.ticket} ${ticket['ticketSymbol'] ?? ticket['ticketId']}'),
-            for (final product in ticket['products'] as List)
-              Text(
-                  '${product['title'] ?? ''} - ${product['amount'] ?? _copy('orderPriceUnavailable')} ${product['currencyCode'] ?? ''}'),
-          ],
-        ]
-      ]);
+              '${product['title'] ?? ''} - ${product['amount'] ?? _copy('orderPriceUnavailable')} ${product['currencyCode'] ?? ''}',
+            ),
+        ],
+      ],
+    ],
+  );
   Widget _form(BlueprintSeatOrderRequirements requirements) => Form(
-      key: _formKey,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    key: _formKey,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         for (final item in requirements.items)
           ListTile(
-              dense: true,
-              title: Text('${item['title'] ?? item['spotId']}'),
-              subtitle: Text('${item['productTitle'] ?? ''}'),
-              trailing: Text(item['amount'] == null
+            dense: true,
+            title: Text('${item['title'] ?? item['spotId']}'),
+            subtitle: Text('${item['productTitle'] ?? ''}'),
+            trailing: Text(
+              item['amount'] == null
                   ? _copy('orderPriceUnavailable')
-                  : '${item['amount']} ${item['currencyCode'] ?? ''}')),
+                  : '${item['amount']} ${item['currencyCode'] ?? ''}',
+            ),
+          ),
         _conflicts(requirements.conflicts),
         TextFormField(
-            controller: _email,
-            enabled: !_busy && _preview == null,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(labelText: OrdersStrings.gridEmail),
-            validator: (value) => value == null || value.isEmpty
-                ? CommonStrings.fieldCannotBeEmpty
-                : !EmailAddress.isValid(value)
-                    ? CommonStrings.invalidFormat
-                    : null),
+          controller: _email,
+          enabled: !_busy && _preview == null,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(labelText: OrdersStrings.gridEmail),
+          validator: (value) => value == null || value.isEmpty
+              ? CommonStrings.fieldCannotBeEmpty
+              : !EmailAddress.isValid(value)
+              ? CommonStrings.invalidFormat
+              : null,
+        ),
         if (_customerFields != null) _fields(_customerFields!),
         for (final entry in _ticketFields.entries) ...[
           Text('${CommonStrings.ticket} - ${entry.key}'),
-          _fields(entry.value)
+          _fields(entry.value),
         ],
-      ]));
-  Widget _review(BlueprintSeatOrderPreview preview) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(_copy('orderReview'),
-            style: Theme.of(context).textTheme.titleMedium),
-        Text('${OrdersStrings.gridEmail}: ${preview.inputData['email']}'),
-        Text(
-            '${OrdersStrings.newOrderTotal}: ${preview.newOrderAmount} ${preview.currencyCode}'),
-        Text(_copy('orderAffectedSeats')),
-        for (final seat in preview.seats)
-          ListTile(
-              dense: true,
-              title: Text(
-                  '${seat['title'] ?? seat['spotTitle'] ?? seat['spotId']} - ${seat['blueprintTitle'] ?? ''}'),
-              subtitle: Text(
-                  '${seat['productTitle'] ?? ''} - ${_state(seat['stateBefore'])} → ${_state(seat['stateAfter'])}')),
-        _conflicts(preview.conflicts),
-        for (final order in preview.orders)
-          Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                  '${_copy('orderLabel')} #${order.orderId}: ${order.beforeAmount} → ${order.afterAmount} ${order.currencyCode} (${order.delta}) - ${OrderModel.stateToLocale(order.beforeState)} → ${OrderModel.stateToLocale(order.afterState)}')),
-        if (preview.orders.isNotEmpty) Text(_copy('orderNoAutomaticRefund')),
-      ]);
+      ],
+    ),
+  );
+  Widget _review(BlueprintSeatOrderPreview preview) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        _copy('orderReview'),
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      Text('${OrdersStrings.gridEmail}: ${preview.inputData['email']}'),
+      Text(
+        '${OrdersStrings.newOrderTotal}: ${preview.newOrderAmount} ${preview.currencyCode}',
+      ),
+      Text(_copy('orderAffectedSeats')),
+      for (final seat in preview.seats)
+        ListTile(
+          dense: true,
+          title: Text(
+            '${seat['title'] ?? seat['spotTitle'] ?? seat['spotId']} - ${seat['blueprintTitle'] ?? ''}',
+          ),
+          subtitle: Text(
+            '${seat['productTitle'] ?? ''} - ${_state(seat['stateBefore'])} → ${_state(seat['stateAfter'])}',
+          ),
+        ),
+      _conflicts(preview.conflicts),
+      for (final order in preview.orders)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            '${_copy('orderLabel')} #${order.orderId}: ${order.beforeAmount} → ${order.afterAmount} ${order.currencyCode} (${order.delta}) - ${OrderModel.stateToLocale(order.beforeState)} → ${OrderModel.stateToLocale(order.afterState)}',
+          ),
+        ),
+      if (preview.orders.isNotEmpty) Text(_copy('orderNoAutomaticRefund')),
+    ],
+  );
   String _state(Object? state) => switch (state) {
-        'available' => BlueprintStrings.swapSummaryAvailable,
-        'selected' => BlueprintStrings.swapSummarySelected,
-        'ordered' => BlueprintStrings.swapSummaryOccupied,
-        'used' => BlueprintStrings.swapSummaryUsed,
-        _ => ''
-      };
+    'available' => BlueprintStrings.swapSummaryAvailable,
+    'selected' => BlueprintStrings.swapSummarySelected,
+    'ordered' => BlueprintStrings.swapSummaryOccupied,
+    'used' => BlueprintStrings.swapSummaryUsed,
+    _ => '',
+  };
   @override
   Widget build(BuildContext context) => AppAlertDialog(
-          onClose: _busy ? null : () => Navigator.of(context).pop(),
-          dismissible: !_busy,
-          title: Text(BlueprintStrings.legendCreateOrder),
-          content: SizedBox(
-              width: 620,
-              child: SingleChildScrollView(
-                  child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    if (_error != null)
-                      Semantics(
-                          liveRegion: true,
-                          child: Text(_error!,
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error))),
-                    if (_requirements != null)
-                      Offstage(
-                          offstage: _preview != null,
-                          child: _form(_requirements!)),
-                    if (_preview != null) _review(_preview!),
-                    if (_busy) Text(CommonStrings.processing),
-                  ]))),
-          actions: [
-            TextButton(
-                onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                child: Text(CommonStrings.cancel)),
-            if (_preview != null && !_recoveryRequired)
-              TextButton(
-                  onPressed:
-                      _busy ? null : () => setState(() => _preview = null),
-                  child: Text(CommonStrings.back)),
-            ElevatedButton(
-                onPressed: _busy
-                    ? null
-                    : _requirements == null
-                        ? _load
-                        : _next,
-                child: Text(_recoveryRequired || _requirements == null
-                    ? CommonStrings.retry
-                    : _preview == null
-                        ? _copy('orderReview')
-                        : BlueprintStrings.confirmOrder)),
-          ]);
+    onClose: _busy ? null : () => Navigator.of(context).pop(),
+    dismissible: !_busy,
+    title: Text(BlueprintStrings.legendCreateOrder),
+    content: SizedBox(
+      width: 620,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_error != null)
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            if (_requirements != null)
+              Offstage(
+                offstage: _preview != null,
+                child: _form(_requirements!),
+              ),
+            if (_preview != null) _review(_preview!),
+            if (_busy) Text(CommonStrings.processing),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: _busy ? null : () => Navigator.of(context).pop(),
+        child: Text(CommonStrings.cancel),
+      ),
+      if (_preview != null && !_recoveryRequired)
+        TextButton(
+          onPressed: _busy ? null : () => setState(() => _preview = null),
+          child: Text(CommonStrings.back),
+        ),
+      ElevatedButton(
+        onPressed: _busy
+            ? null
+            : _requirements == null
+            ? _load
+            : _next,
+        child: Text(
+          _recoveryRequired || _requirements == null
+              ? CommonStrings.retry
+              : _preview == null
+              ? _copy('orderReview')
+              : BlueprintStrings.confirmOrder,
+        ),
+      ),
+    ],
+  );
 }
 
 class _OrderFormFields {
   _OrderFormFields(List<FormFieldDefinition> definitions, Object? prefixes)
-      : holder = FormHolder(
-            fields: definitions.map(FormHolder.createFieldHolder).toList(),
-            isCardDesign: false,
-            phonePrefixes:
-                prefixes is List ? prefixes.cast<String>() : const []) {
+    : holder = FormHolder(
+        fields: definitions.map(FormHolder.createFieldHolder).toList(),
+        isCardDesign: false,
+        phonePrefixes: prefixes is List ? prefixes.cast<String>() : const [],
+      ) {
     holder.controller = FormHolderController(globalKey: key);
   }
   final key = GlobalKey<FormBuilderState>();
   final FormHolder holder;
   List<Map<String, dynamic>> values({required bool ticket}) => [
-        for (final field in holder.fields)
-          {
-            field.id.toString(): FormHelper.getFieldData(key, field),
-            if (ticket) field.fieldType: FormHelper.getFieldData(key, field),
-          },
-      ];
+    for (final field in holder.fields)
+      {
+        field.id.toString(): FormHelper.getFieldData(key, field),
+        if (ticket) field.fieldType: FormHelper.getFieldData(key, field),
+      },
+  ];
 }

@@ -1,5 +1,7 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/offline/offline_banner.dart';
@@ -14,12 +16,14 @@ void main() {
   setUp(ConnectivityService.debugReset);
   tearDown(ConnectivityService.debugReset);
 
-  testWidgets('offline strip does not include the system top safe area',
-      (tester) async {
+  testWidgets('offline strip does not include the system top safe area', (
+    tester,
+  ) async {
     ConnectivityService.debugSetInterfaceOffline(true);
 
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: MediaQuery(
           data: MediaQueryData(
             size: Size(390, 844),
@@ -27,7 +31,8 @@ void main() {
           ),
           child: Scaffold(
             body: Column(
-                children: [OfflineBanner(loadLastSyncedAt: () async => null)]),
+              children: [OfflineBanner(loadLastSyncedAt: () async => null)],
+            ),
           ),
         ),
       ),

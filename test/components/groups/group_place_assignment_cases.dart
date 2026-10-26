@@ -1,7 +1,6 @@
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/groups/group_strings.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:festapp_core/map.dart';

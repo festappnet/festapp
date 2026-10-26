@@ -1,56 +1,73 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
 import 'package:trina_grid/trina_grid.dart';
+
 import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:festapp_core/map.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 
+
 void main() {
-  testWidgets('HTML preview stays interactive until a link click completes',
-      (tester) async {
+  testWidgets('HTML preview stays interactive until a link click completes', (
+    tester,
+  ) async {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
     const url = 'https://docs.google.com/spreadsheets/d/carpool/edit';
     final launched = <String>[];
     const channel = MethodChannel('plugins.flutter.io/url_launcher');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
-        (call) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
       if (call.method == 'launch')
         launched.add(call.arguments['url'] as String);
       return true;
     });
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, null));
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-      home: Scaffold(
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
           body: Builder(
-              builder: (context) => TrinaGrid(
-                    columns: [
-                      TrinaColumn(
-                        title: 'Content',
-                        field: 'content',
-                        type: TrinaColumnType.text(),
-                        width: 350,
-                        renderer: (renderer) =>
-                            DataGridHelper.buildHtmlEditorButton(
-                          context: context,
-                          field: 'content',
-                          rendererContext: renderer,
-                          title: 'Spolujízda',
-                          loadContent: () async =>
-                              '<p><a href="$url">Tabulka spolujízdy</a></p>',
-                        ),
-                      )
-                    ],
-                    rows: [
-                      TrinaRow(cells: {'content': TrinaCell(value: '')})
-                    ],
-                  ))),
-    ));
+            builder: (context) => TrinaGrid(
+              columns: [
+                TrinaColumn(
+                  title: 'Content',
+                  field: 'content',
+                  type: TrinaColumnType.text(),
+                  width: 350,
+                  renderer: (renderer) => DataGridHelper.buildHtmlEditorButton(
+                    context: context,
+                    field: 'content',
+                    rendererContext: renderer,
+                    title: 'Spolujízda',
+                    loadContent: () async =>
+                        '<p><a href="$url">Tabulka spolujízdy</a></p>',
+                  ),
+                ),
+              ],
+              rows: [
+                TrinaRow(cells: {'content': TrinaCell(value: '')}),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
@@ -73,8 +90,9 @@ void main() {
     expect(link, findsNothing);
   });
 
-  testWidgets('incomplete icon records fall back without throwing',
-      (tester) async {
+  testWidgets('incomplete icon records fall back without throwing', (
+    tester,
+  ) async {
     final cases = <(IconModel, String)>[
       (IconModel(id: 1, link: 'legacy-icon'), 'legacy-icon'),
       (
@@ -84,13 +102,11 @@ void main() {
     ];
     for (final (icon, expectedLabel) in cases) {
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Builder(
-            builder: (context) => DataGridHelper.iconToRow(
-              context,
-              icon.id,
-              [icon],
-            ),
+            builder: (context) =>
+                DataGridHelper.iconToRow(context, icon.id, [icon]),
           ),
         ),
       );
@@ -101,16 +117,16 @@ void main() {
     }
   });
 
-  testWidgets('malformed SVG records use the renderer fallback',
-      (tester) async {
+  testWidgets('malformed SVG records use the renderer fallback', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Builder(
-          builder: (context) => DataGridHelper.iconToRow(
-            context,
-            3,
-            [IconModel(id: 3, link: 'broken', data: '<svg><path')],
-          ),
+          builder: (context) => DataGridHelper.iconToRow(context, 3, [
+            IconModel(id: 3, link: 'broken', data: '<svg><path'),
+          ]),
         ),
       ),
     );

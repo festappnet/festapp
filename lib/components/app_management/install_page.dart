@@ -56,7 +56,8 @@ class _InstallPageState extends State<InstallPage> {
     platform = InstallPage.jsInterop.getOSInsideWeb();
     try {
       final platforms = await DbOrganizations.getAvailablePlatforms(
-          organizationId: AppConfig.organization);
+        organizationId: AppConfig.organization,
+      );
       if (mounted) {
         setState(() {
           _platforms = platforms;
@@ -65,8 +66,11 @@ class _InstallPageState extends State<InstallPage> {
     } catch (e) {
       AppLogger.error("Failed to load platforms: $e");
       if (mounted) {
-        ToastHelper.Show(context, AppManagementStrings.installOptionsLoadFailed,
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          AppManagementStrings.installOptionsLoadFailed,
+          severity: ToastSeverity.NotOk,
+        );
       }
     }
     await _loadPwaSettings();
@@ -91,12 +95,14 @@ class _InstallPageState extends State<InstallPage> {
     } catch (e) {
       final webLink =
           _platforms.firstWhereOrNull((p) => p.platform == 'web')?.link ??
-              RouterService.getCurrentUri().toString();
+          RouterService.getCurrentUri().toString();
       setState(() {
         _installFailed = true;
         _urlController.text = webLink;
         _urlController.selection = TextSelection(
-            baseOffset: 0, extentOffset: _urlController.text.length);
+          baseOffset: 0,
+          extentOffset: _urlController.text.length,
+        );
       });
     }
     await _loadPwaSettings();
@@ -119,10 +125,12 @@ class _InstallPageState extends State<InstallPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appleLink =
-        _platforms.firstWhereOrNull((p) => p.platform == 'ios')?.link;
-    final androidLink =
-        _platforms.firstWhereOrNull((p) => p.platform == 'droid')?.link;
+    final appleLink = _platforms
+        .firstWhereOrNull((p) => p.platform == 'ios')
+        ?.link;
+    final androidLink = _platforms
+        .firstWhereOrNull((p) => p.platform == 'droid')
+        ?.link;
 
     return Scaffold(
       appBar: AppBar(
@@ -138,8 +146,9 @@ class _InstallPageState extends State<InstallPage> {
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: ConstrainedBox(
-                  constraints:
-                      BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
+                  constraints: BoxConstraints(
+                    maxWidth: StylesConfig.appMaxWidth,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -155,8 +164,9 @@ class _InstallPageState extends State<InstallPage> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12.0),
                                 image: const DecorationImage(
-                                  image:
-                                      AssetImage('assets/icons/fstappicon.png'),
+                                  image: AssetImage(
+                                    'assets/icons/fstappicon.png',
+                                  ),
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -165,7 +175,8 @@ class _InstallPageState extends State<InstallPage> {
                             Expanded(
                               child: Text(
                                 AppManagementStrings.installBenefits(
-                                    title: AppConfig.appName),
+                                  title: AppConfig.appName,
+                                ),
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: ThemeConfig.blackColor(context),
@@ -221,7 +232,8 @@ class _InstallPageState extends State<InstallPage> {
     final bool hasNativeLink = link != null && link.isNotEmpty;
     return ExpansionTile(
       controller: _controllers[index],
-      initiallyExpanded: platform == "ios" && index == 0 ||
+      initiallyExpanded:
+          platform == "ios" && index == 0 ||
           platform == "android" && index == 1 ||
           platform == "web" && index == 2,
       title: Row(
@@ -243,7 +255,8 @@ class _InstallPageState extends State<InstallPage> {
             child: Text(
               notice,
               style: TextStyle(
-                  color: ThemeConfig.blackColor(context).withOpacity(0.8)),
+                color: ThemeConfig.blackColor(context).withOpacity(0.8),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -260,8 +273,8 @@ class _InstallPageState extends State<InstallPage> {
                 onPressed: hasNativeLink
                     ? () => LaunchUrlService.openExternalUrl(link)
                     : _canInstallPWA
-                        ? handleInstallButtonPress
-                        : null,
+                    ? handleInstallButtonPress
+                    : null,
                 color: (hasNativeLink || _canInstallPWA)
                     ? ThemeConfig.seed1
                     : Colors.grey,
@@ -300,10 +313,15 @@ class _InstallPageState extends State<InstallPage> {
                             TextButton.icon(
                               onPressed: () async {
                                 if (!await CopyButton.copy(
-                                        context, _urlController.text) ||
-                                    !context.mounted) return;
+                                      context,
+                                      _urlController.text,
+                                    ) ||
+                                    !context.mounted)
+                                  return;
                                 ToastHelper.Show(
-                                    context, CommonStrings.copiedToClipboard);
+                                  context,
+                                  CommonStrings.copiedToClipboard,
+                                );
                               },
                               icon: const Icon(Icons.copy),
                               label: Text(AppManagementStrings.copyLink),
@@ -322,7 +340,7 @@ class _InstallPageState extends State<InstallPage> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-              ]
+              ],
             ],
           ),
         ),

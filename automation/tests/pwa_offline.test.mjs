@@ -18,8 +18,10 @@ try {
   await mkdir(path.join(tempRoot, 'privacy'), { recursive: true });
   await writeFile(path.join(tempRoot, 'flutter'), '<html>flutter</html>');
   await writeFile(path.join(tempRoot, 'webclient'), '<html>web</html>');
-  await writeFile(path.join(tempRoot,'organizer-pages.json'),JSON.stringify({enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'},{id:'seating-reservations',path:'/reserved-seats',asset:'/organizers/seating-reservations'}]}));
+  await writeFile(path.join(tempRoot,'organizer-pages.json'),JSON.stringify({enabled:true,feeds:['/platform-updates.json'],pages:[{id:'updates-cs',type:'updates-index',path:'/co-je-nove',asset:'/organizers/updates-cs'},{id:'home',path:'/',asset:'/organizers-page'},{id:'seating-reservations',path:'/reserved-seats',asset:'/organizers/seating-reservations'}]}));
   await mkdir(path.join(tempRoot,'organizers'));
+  await writeFile(path.join(tempRoot,'organizers/updates-cs'),'<html>updates</html>');
+  await writeFile(path.join(tempRoot,'platform-updates.json'),JSON.stringify({schemaVersion:1,items:[]}));
   await writeFile(path.join(tempRoot,'organizers/seating-reservations'),'<html>seating topic</html>');
   await writeFile(path.join(tempRoot, 'organizers-page'), '<html>organizers</html>');
   await writeFile(path.join(tempRoot, 'main.dart.js'), 'main');
@@ -164,6 +166,8 @@ try {
     },
     match: async (request) => {
       const url = typeof request === 'string' ? request : request.url;
+      if (url === '/platform-updates.json') return Response.json({schemaVersion:1,items:[]});
+      if (url === '/co-je-nove') return new Response('<html>cached updates</html>');
       if (url === fontUrl) return cachedFont.clone();
       if (url.includes('/flutter?pwa-cache=1')) return cachedShell.clone();
       if (url.includes('/webclient?pwa-cache=1')) return cachedWebClient.clone();
@@ -212,6 +216,7 @@ try {
         });
       }
       if (!networkAvailable) throw new Error('offline');
+      if (url.includes('/platform-updates.json')) return Response.json({schemaVersion:1,items:[{id:'network-version'}]});
       networkCalls++;
       if (url === 'https://app.test/') return new Response('<html>live organizers</html>');
       if (url.includes('/organizers-media/') || url.includes('/web-assets/landing-')) return new Response('streamed marketing');
@@ -389,6 +394,11 @@ try {
   assert.equal(versionResponse.type, 'error');
   assert.equal(networkCalls, 0);
 
+  assert.deepEqual(await (await dispatchFetch(new Request('https://app.test/platform-updates.json'))).json(),{schemaVersion:1,items:[]});
+  const cachedUpdate=new Request('https://app.test/co-je-nove');Object.defineProperty(cachedUpdate,'mode',{value:'navigate'});
+  assert.equal(await (await dispatchFetch(cachedUpdate)).text(),'<html>cached updates</html>');
+  const unknownUpdate=new Request('https://app.test/en/whats-new/unknown');Object.defineProperty(unknownUpdate,'mode',{value:'navigate'});
+  assert.equal((await dispatchFetch(unknownUpdate)).type,'error');
   const activationRequest = new Request(
     'https://app.test/backend-activation.json?t=first',
   );
@@ -400,6 +410,9 @@ try {
   assert.equal(activationNetworkCalls, 1);
   context.self.navigator.onLine = true;
   networkAvailable = true;
+  const freshFeed=await dispatchFetch(new Request('https://app.test/platform-updates.json'));
+  assert.equal((await freshFeed.json()).items[0].id,'network-version');
+  assert.ok(cachedPuts.includes('/platform-updates.json'));cachedPuts.length=0;
   const legacyActivationResponse = await dispatchFetch(activationRequest);
   assert.match(await legacyActivationResponse.text(), /"backend":"legacy"/);
   activationDocument = '{"schemaVersion":1,"tenantId":"test","generation":1,"backend":"canonical"}\n';

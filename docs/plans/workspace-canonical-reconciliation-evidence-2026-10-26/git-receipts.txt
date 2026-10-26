@@ -1,0 +1,23 @@
+READ-ONLY RECONNAISSANCE, 2026-10-26
+Root branch: feat/occasion-setup-wizard-20261007
+Root HEAD: 353394511e7f3fae1efa52c8cc806ee459c5b4cf
+Root HEAD is ancestor of local main: 0 commits ahead / 1088 behind.
+Prepared snapshot: d4dc170b12e1e8d23029eff3fbd81680bc6e3b3e
+Snapshot already integrated by merge: 6c7b736152fb44ff28834606172d99024ca968b8
+Private pre-task backup: refs/worktree-cleanup/20261026-round2/festapp
+Backup commit: 9ea59b28d412a8adb5ca7dd79cfc1c74d2431db9
+Backup timestamp: 2026-10-26 09:51:56 +0100
+Local main: 0eff86e7b3be81f6e36273788ff8e6754ac5bb4f
+Fetched origin/main: 03aa999752d67d55869ea19dca375e643a4cbf80
+Local main vs origin/main: 1 unique local commit / 5 unique remote commits.
+merge-tree main origin/main: zero conflicts; tree 1bb7cc06d532c46760c8fd74b2cdbfffba89edef
+merge-tree --merge-base=d4dc170b12 main 9ea59b28d4: 164 distinct unresolved paths.
+Dry-run tree: 9794590e3cda9917e2bbecfef5d270a4c9bb1b40
+Actual index unmerged entries: 0. No merge/rebase in progress.
+No checkout, merge, rebase, reset, clean, stash, authored commit, push or production operation performed in the root checkout.
+A separate detached main worktree was created for disposable investigation.
+
+Recoverable current source archive: /Users/miakh/festapp-cleanup-archives/20261026-notification-reconciliation/working-source.tar.gz
+Saved paths: 4236; deleted-path manifest: 509; files changing during archive: 0.
+Archive SHA-256: 9c99bd036eb29e1f03eea633748563a5aed7ba9e7a9b6b4837ef7dcfc54c4b37
+Owned headless browser, Flutter server and disposable full-stack Supabase project were stopped.

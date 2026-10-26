@@ -1,7 +1,9 @@
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+
 import 'bank_account_dialog_scope.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -85,17 +87,19 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
     final needsAttention = !widget.isSaving && sync.state == 'degraded';
     final color = connected
         ? (Theme.of(context).brightness == Brightness.dark
-            ? Colors.green.shade300
-            : Colors.green.shade800)
+              ? Colors.green.shade300
+              : Colors.green.shade800)
         : needsAttention
-            ? colors.error
-            : colors.onSurfaceVariant;
+        ? colors.error
+        : colors.onSurfaceVariant;
 
     Widget timestamp(IconData icon, String label, DateTime? value) {
       final relative = value == null
           ? BankAccountStrings.notReceived
-          : timeago.format(value.toLocal(),
-              locale: context.locale.languageCode);
+          : timeago.format(
+              value.toLocal(),
+              locale: context.locale.languageCode,
+            );
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -107,8 +111,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               runSpacing: 2,
               children: [
                 Text(label, style: TextStyle(color: colors.onSurfaceVariant)),
-                Text(relative,
-                    style: const TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  relative,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
               ],
             ),
           ),
@@ -127,10 +133,11 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(BankAccountStrings.connectionState,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  )),
+          Text(
+            BankAccountStrings.connectionState,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: colors.onSurfaceVariant),
+          ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -142,15 +149,16 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ExcludeSemantics(
-                    child: Icon(Icons.circle, size: 9, color: color)),
+                  child: Icon(Icons.circle, size: 9, color: color),
+                ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     widget.isChangingSynchronization
                         ? BankAccountStrings.synchronizationChanging
                         : widget.isSaving
-                            ? BankAccountStrings.tokenVerifying
-                            : BankAccountStrings.connectionStatus(sync.state),
+                        ? BankAccountStrings.tokenVerifying
+                        : BankAccountStrings.connectionStatus(sync.state),
                     style: TextStyle(color: color, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -170,10 +178,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 style: TextStyle(color: Theme.of(context).hintColor),
               ),
               value: sync.state == 'connected' || sync.state == 'degraded',
-              onChanged: !widget.isReadOnly &&
+              onChanged:
+                  !widget.isReadOnly &&
                       !widget.isSaving &&
-                      RightsService.hasBankCapability(widget.account.id,
-                          AuthorizationCapabilities.bankSyncManage) &&
+                      RightsService.hasBankCapability(
+                        widget.account.id,
+                        AuthorizationCapabilities.bankSyncManage,
+                      ) &&
                       [
                         'connected',
                         'degraded',
@@ -184,11 +195,17 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
             ),
           ),
           const SizedBox(height: 16),
-          timestamp(Icons.account_balance_outlined, BankAccountStrings.bankPull,
-              sync.bankPullAt),
+          timestamp(
+            Icons.account_balance_outlined,
+            BankAccountStrings.bankPull,
+            sync.bankPullAt,
+          ),
           const SizedBox(height: 8),
-          timestamp(Icons.sync_alt, BankAccountStrings.receiverCommit,
-              sync.receiverCommitAt),
+          timestamp(
+            Icons.sync_alt,
+            BankAccountStrings.receiverCommit,
+            sync.receiverCommitAt,
+          ),
         ],
       ),
     );
@@ -224,8 +241,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               OutlinedButton(
                 onPressed:
                     widget.account.supportsEmailConnection && !widget.isSaving
-                        ? widget.onConnectEmail
-                        : null,
+                    ? widget.onConnectEmail
+                    : null,
                 child: Text(BankAccountStrings.connectEmail),
               ),
               if (!widget.account.supportsEmailConnection)
@@ -341,8 +358,11 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                           icon: const Icon(Icons.copy),
                           onPressed: () async {
                             if (!await CopyButton.copy(
-                                    context, forwardingEmail) ||
-                                !context.mounted) return;
+                                  context,
+                                  forwardingEmail,
+                                ) ||
+                                !context.mounted)
+                              return;
                             ToastHelper.Show(
                               context,
                               BankAccountStrings.copyEmail,
@@ -508,7 +528,7 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
           child: Text(
             widget.expiryDate != null
                 ? DateFormat.yMd(context.locale.toString())
-                    .format(widget.expiryDate!)
+                      .format(widget.expiryDate!)
                 : BankAccountStrings.setDate,
           ),
         ),
@@ -523,9 +543,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                       const SizedBox(width: 12),
                       Flexible(child: Text(BankAccountStrings.tokenVerifying)),
                     ],
@@ -535,8 +556,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
         ),
       if (widget.isSaving) ...[
         const SizedBox(height: 12),
-        Text(BankAccountStrings.tokenVerificationWait,
-            textAlign: TextAlign.center),
+        Text(
+          BankAccountStrings.tokenVerificationWait,
+          textAlign: TextAlign.center,
+        ),
       ],
     ];
   }

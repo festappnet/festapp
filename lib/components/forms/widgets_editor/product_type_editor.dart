@@ -1,4 +1,5 @@
 import 'product_detail_editor_dialog.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:festapp_core/forms.dart';
@@ -13,14 +14,19 @@ import 'description_with_edit.dart';
 import 'form_fields_generator.dart';
 import 'ticket_editor_widgets.dart';
 import 'ticket_product_editor_row.dart';
+
 import 'package:fstapp/components/_shared/common_strings.dart';
+
 import 'description_tooltip.dart';
 
 class ProductTypeEditorWidgets {
   /// Builds the read-only view for a product type group.
   static Widget buildProductTypeReadOnly(
-      BuildContext context, FormFieldDraft ptField) {
-    final group = ptField.definition.productType ??
+    BuildContext context,
+    FormFieldDraft ptField,
+  ) {
+    final group =
+        ptField.definition.productType ??
         ProductTypeModel(title: ptField.definition.title, products: []);
     final products = group.products ?? const <ProductModel>[];
     final groupHidden = ptField.definition.isHidden ?? false;
@@ -29,7 +35,7 @@ class ProductTypeEditorWidgets {
 
     final isSelectMany =
         ptField.definition.data?[FormMetadata.metaSelectionType] ==
-            FormMetadata.metaSelectionTypeMany;
+        FormMetadata.metaSelectionTypeMany;
 
     final requiredStar = (ptField.definition.isRequired ?? false)
         ? TextSpan(
@@ -39,12 +45,13 @@ class ProductTypeEditorWidgets {
         : null;
 
     final groupTitleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          decoration: groupHidden ? TextDecoration.lineThrough : null,
-        );
+      fontWeight: FontWeight.bold,
+      decoration: groupHidden ? TextDecoration.lineThrough : null,
+    );
 
-    final showCapacityColumn =
-        products.any((product) => (product.maximum ?? 0) != 0);
+    final showCapacityColumn = products.any(
+      (product) => (product.maximum ?? 0) != 0,
+    );
 
     return Opacity(
       opacity: groupHidden ? kHiddenOpacity : 1.0,
@@ -60,7 +67,8 @@ class ProductTypeEditorWidgets {
                 children: [
                   RichText(
                     text: TextSpan(
-                      text: ptField.definition.productType?.title ??
+                      text:
+                          ptField.definition.productType?.title ??
                           group.title ??
                           '',
                       style: groupTitleStyle,
@@ -68,7 +76,8 @@ class ProductTypeEditorWidgets {
                     ),
                   ),
                   if (!HtmlHelper.isHtmlEmptyOrNull(
-                      ptField.definition.productType?.description))
+                    ptField.definition.productType?.description,
+                  ))
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0, right: 4.0),
                       child: DescriptionTooltip(
@@ -91,31 +100,33 @@ class ProductTypeEditorWidgets {
                       const SizedBox(width: 48), // Space for selection control
                       Expanded(
                         flex: 8,
-                        child: Text(CommonStrings.title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          CommonStrings.title,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       Expanded(
                         flex: 3,
-                        child: Text(CommonStrings.price,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          CommonStrings.price,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       if (showCapacityColumn)
                         Expanded(
                           flex: 3,
                           child: Tooltip(
                             message: FormStrings.productQuantity,
-                            child: Icon(Icons.stacked_bar_chart,
-                                size: 16,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color),
+                            child: Icon(
+                              Icons.stacked_bar_chart,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color,
+                            ),
                           ),
                         ),
                     ],
@@ -127,19 +138,22 @@ class ProductTypeEditorWidgets {
                     // UPDATED: Logic to handle hidden product style
                     final productHidden = product.isHidden ?? false;
                     final rowStyle = TextStyle(
-                      decoration:
-                          productHidden ? TextDecoration.lineThrough : null,
+                      decoration: productHidden
+                          ? TextDecoration.lineThrough
+                          : null,
                     );
 
                     return Opacity(
                       opacity: productHidden ? kHiddenOpacity : 1.0,
                       child: InkWell(
                         onTap: () => showDialog<void>(
-                            context: context,
-                            builder: (_) => ProductDetailEditorDialog(
-                                readProduct: () => product,
-                                replaceProduct: (_) {},
-                                readOnly: true)),
+                          context: context,
+                          builder: (_) => ProductDetailEditorDialog(
+                            readProduct: () => product,
+                            replaceProduct: (_) {},
+                            readOnly: true,
+                          ),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2.0),
                           child: Row(
@@ -152,7 +166,8 @@ class ProductTypeEditorWidgets {
                                     : Radio<String>(
                                         value: product.id.toString(),
                                         groupValue: null,
-                                        onChanged: null),
+                                        onChanged: null,
+                                      ),
                               ),
                               // Product title and description icon
                               Expanded(
@@ -168,14 +183,19 @@ class ProductTypeEditorWidgets {
                                       ),
                                     ),
                                     if (!HtmlHelper.isHtmlEmptyOrNull(
-                                        product.description))
+                                      product.description,
+                                    ))
                                       Padding(
                                         padding: const EdgeInsets.only(
-                                            left: 8.0, right: 4.0),
+                                          left: 8.0,
+                                          right: 4.0,
+                                        ),
                                         child: DescriptionTooltip(
                                           description: product.description!,
-                                          child: const Icon(Icons.description,
-                                              size: 16),
+                                          child: const Icon(
+                                            Icons.description,
+                                            size: 16,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -186,8 +206,10 @@ class ProductTypeEditorWidgets {
                                 flex: 3,
                                 child: Text(
                                   Utilities.formatPrice(
-                                      context, product.price ?? 0,
-                                      currencyCode: product.currencyCode),
+                                    context,
+                                    product.price ?? 0,
+                                    currencyCode: product.currencyCode,
+                                  ),
                                   style: rowStyle, // Apply style
                                 ),
                               ),
@@ -197,7 +219,9 @@ class ProductTypeEditorWidgets {
                                   flex: 3,
                                   child: Text(
                                     TicketEditorWidgets.formatOrderedCount(
-                                        product.orderedCount, product.maximum),
+                                      product.orderedCount,
+                                      product.maximum,
+                                    ),
                                     textAlign: TextAlign.center,
                                     style: rowStyle, // Apply style
                                   ),
@@ -218,8 +242,12 @@ class ProductTypeEditorWidgets {
   }
 
   /// Builds the editor for a product type group.
-  static Widget buildProductTypeEditor(BuildContext context,
-      FormEditorDraft form, FormFieldDraft ptField, VoidCallback refresh) {
+  static Widget buildProductTypeEditor(
+    BuildContext context,
+    FormEditorDraft form,
+    FormFieldDraft ptField,
+    VoidCallback refresh,
+  ) {
     // This static method now delegates to the new StatefulWidget.
     // A key is used to ensure Flutter correctly identifies the widget.
     return ProductTypeEditor(
@@ -232,7 +260,10 @@ class ProductTypeEditorWidgets {
 
   // Helper for building compact controls
   static Widget _buildControl(
-      BuildContext context, String label, Widget control) {
+    BuildContext context,
+    String label,
+    Widget control,
+  ) {
     return Column(
       children: [
         Text(label, style: Theme.of(context).textTheme.bodySmall),
@@ -244,8 +275,11 @@ class ProductTypeEditorWidgets {
   static void _removeProductFromDefault(FormFieldDraft field, int? productId) {
     if (productId == null) return;
     field.definition = field.definition.copyWith(
-        data: DefaultValueHelper.remove(
-            field.definition.data, productId.toString()));
+      data: DefaultValueHelper.remove(
+        field.definition.data,
+        productId.toString(),
+      ),
+    );
   }
 
   /// Edits the stored default product selection.
@@ -261,14 +295,18 @@ class ProductTypeEditorWidgets {
       return const SizedBox(width: 48);
     }
     if (isSelectMany) {
-      final selected =
-          DefaultValueHelper.readList(ptField.definition.data).contains(key);
+      final selected = DefaultValueHelper.readList(ptField.definition.data)
+          .contains(key);
       return Checkbox(
         value: selected,
         onChanged: (value) {
           ptField.definition = ptField.definition.copyWith(
-              data: DefaultValueHelper.toggleInList(
-                  ptField.definition.data, key, value ?? false));
+            data: DefaultValueHelper.toggleInList(
+              ptField.definition.data,
+              key,
+              value ?? false,
+            ),
+          );
           onChanged();
         },
       );
@@ -285,7 +323,8 @@ class ProductTypeEditorWidgets {
         toggleable: true,
         onChanged: (value) {
           ptField.definition = ptField.definition.copyWith(
-              data: DefaultValueHelper.write(ptField.definition.data, value));
+            data: DefaultValueHelper.write(ptField.definition.data, value),
+          );
           onChanged();
         },
       ),
@@ -321,17 +360,25 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
     super.initState();
     // Initialize the controller in initState to prevent re-creation on build.
     widget.ptField.definition = widget.ptField.definition.copyWith(
-        productType: widget.ptField.definition.productType ??
-            ProductTypeModel(
-                title: widget.ptField.definition.title, products: []));
+      productType:
+          widget.ptField.definition.productType ??
+          ProductTypeModel(
+            title: widget.ptField.definition.title,
+            products: [],
+          ),
+    );
     if (widget.ptField.definition.productType!.products == null) {
       widget.ptField.definition = widget.ptField.definition.copyWith(
-          productType: widget.ptField.definition.productType!
-              .copyWith(products: <ProductModel>[]));
+        productType: widget.ptField.definition.productType!.copyWith(
+          products: <ProductModel>[],
+        ),
+      );
     }
     groupTitleController = TextEditingController(
-        text: widget.ptField.definition.title ??
-            widget.ptField.definition.productType!.title);
+      text:
+          widget.ptField.definition.title ??
+          widget.ptField.definition.productType!.title,
+    );
   }
 
   @override
@@ -358,7 +405,7 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
     final groupIsHidden = ptField.definition.isHidden ?? false;
     final canSelectMany =
         ptField.definition.data?[FormMetadata.metaSelectionType] ==
-            FormMetadata.metaSelectionTypeMany;
+        FormMetadata.metaSelectionTypeMany;
 
     return Opacity(
       opacity: groupIsHidden ? kHiddenOpacity : 1.0,
@@ -377,82 +424,100 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                       controller:
                           groupTitleController, // Use the stateful controller
                       decoration: InputDecoration(
-                          labelText: FormStrings.productTypeTitle,
-                          border: const UnderlineInputBorder()),
+                        labelText: FormStrings.productTypeTitle,
+                        border: const UnderlineInputBorder(),
+                      ),
                       onChanged: (val) {
                         // Update the model, but DO NOT call refresh().
                         // The controller handles the UI update.
-                        ptField.definition =
-                            ptField.definition.copyWith(title: val);
                         ptField.definition = ptField.definition.copyWith(
-                            productType: ptField.definition.productType!
-                                .copyWith(title: val));
+                          title: val,
+                        );
+                        ptField.definition = ptField.definition.copyWith(
+                          productType: ptField.definition.productType!.copyWith(
+                            title: val,
+                          ),
+                        );
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   ProductTypeEditorWidgets._buildControl(
-                      context,
-                      FormStrings.requiredLabel,
-                      Checkbox(
-                          value: groupIsRequired,
-                          onChanged: (val) {
-                            ptField.definition =
-                                ptField.definition.copyWith(isRequired: val);
-                            refresh();
-                          })),
+                    context,
+                    FormStrings.requiredLabel,
+                    Checkbox(
+                      value: groupIsRequired,
+                      onChanged: (val) {
+                        ptField.definition = ptField.definition.copyWith(
+                          isRequired: val,
+                        );
+                        refresh();
+                      },
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   ProductTypeEditorWidgets._buildControl(
-                      context,
-                      FormStrings.multipleChoice,
-                      Switch(
-                          value: canSelectMany,
-                          onChanged: (val) {
-                            ptField.definition = ptField.definition
-                                .copyWith(data: ptField.definition.data ?? {});
-                            if (val) {
-                              ptField.definition =
-                                  ptField.definition.copyWith(data: {
-                                ...?ptField.definition.data,
-                                FormMetadata.metaSelectionType:
-                                    FormMetadata.metaSelectionTypeMany
-                              });
-                            } else {
-                              final data = <String, dynamic>{
-                                ...?ptField.definition.data
-                              }..remove(FormMetadata.metaSelectionType);
-                              ptField.definition =
-                                  ptField.definition.copyWith(data: data);
-                            }
-                            refresh();
-                          })),
+                    context,
+                    FormStrings.multipleChoice,
+                    Switch(
+                      value: canSelectMany,
+                      onChanged: (val) {
+                        ptField.definition = ptField.definition.copyWith(
+                          data: ptField.definition.data ?? {},
+                        );
+                        if (val) {
+                          ptField.definition = ptField.definition.copyWith(
+                            data: {
+                              ...?ptField.definition.data,
+                              FormMetadata.metaSelectionType:
+                                  FormMetadata.metaSelectionTypeMany,
+                            },
+                          );
+                        } else {
+                          final data = <String, dynamic>{
+                            ...?ptField.definition.data,
+                          }..remove(FormMetadata.metaSelectionType);
+                          ptField.definition = ptField.definition.copyWith(
+                            data: data,
+                          );
+                        }
+                        refresh();
+                      },
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   ProductTypeEditorWidgets._buildControl(
-                      context,
-                      FormStrings.show,
-                      Switch(
-                          value: !groupIsHidden,
-                          onChanged: (val) {
-                            ptField.definition =
-                                ptField.definition.copyWith(isHidden: !val);
-                            refresh();
-                          })),
+                    context,
+                    FormStrings.show,
+                    Switch(
+                      value: !groupIsHidden,
+                      onChanged: (val) {
+                        ptField.definition = ptField.definition.copyWith(
+                          isHidden: !val,
+                        );
+                        refresh();
+                      },
+                    ),
+                  ),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == "add_description") {
                         if (HtmlHelper.isHtmlEmptyOrNull(
-                            ptField.definition.productType!.description)) {
+                          ptField.definition.productType!.description,
+                        )) {
                           ptField.definition = ptField.definition.copyWith(
-                              productType: ptField.definition.productType!
-                                  .copyWith(description: defaultDescription));
+                            productType: ptField.definition.productType!
+                                .copyWith(description: defaultDescription),
+                          );
                         }
                         refresh();
                       }
                     },
                     itemBuilder: (context) => [
                       PopupMenuItem<String>(
-                          value: "add_description",
-                          child: Text(FormStrings.addDescription)),
+                        value: "add_description",
+                        child: Text(FormStrings.addDescription),
+                      ),
                     ],
                     icon: const Icon(Icons.more_vert),
                   ),
@@ -460,7 +525,8 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                     tooltip: ptField.definition.canDelete
                         ? CommonStrings.delete
                         : FormStrings.deletionReason(
-                            ptField.definition.deleteBlockedReason),
+                            ptField.definition.deleteBlockedReason,
+                          ),
                     icon: const Icon(Icons.delete),
                     onPressed: !ptField.definition.canDelete
                         ? null
@@ -473,14 +539,17 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
               ),
               // Description Editor
               if (!HtmlHelper.isHtmlEmptyOrNull(
-                  ptField.definition.productType?.description))
+                ptField.definition.productType?.description,
+              ))
                 DescriptionWithEdit(
                   description: ptField.definition.productType!.description!,
                   defaultDescription: defaultDescription,
                   onDescriptionChanged: (newDescription) {
                     ptField.definition = ptField.definition.copyWith(
-                        productType: ptField.definition.productType!
-                            .copyWith(description: newDescription));
+                      productType: ptField.definition.productType!.copyWith(
+                        description: newDescription,
+                      ),
+                    );
                     refresh();
                   },
                   occasionId: form.definition.occasionId!,
@@ -510,22 +579,24 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                               ptField.definition.productType!.products![i],
                           replaceProduct: (product) {
                             final products = [
-                              ...ptField.definition.productType!.products!
+                              ...ptField.definition.productType!.products!,
                             ]..[i] = product;
                             ptField.definition = ptField.definition.copyWith(
-                                productType: ptField.definition.productType!
-                                    .copyWith(products: products));
+                              productType: ptField.definition.productType!
+                                  .copyWith(products: products),
+                            );
                           },
                           onChanged: refresh,
                           onDelete: () {
                             final products = [
-                              ...ptField.definition.productType!.products!
+                              ...ptField.definition.productType!.products!,
                             ];
                             final removed = products.removeAt(i);
                             _productKeys.removeAt(i);
                             ptField.definition = ptField.definition.copyWith(
-                                productType: ptField.definition.productType!
-                                    .copyWith(products: products));
+                              productType: ptField.definition.productType!
+                                  .copyWith(products: products),
+                            );
                             if (removed.id != null) {
                               form.deletedProductIds.add(removed.id!);
                             }
@@ -547,27 +618,30 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                 child: TextButton.icon(
                   onPressed: () {
                     ptField.definition = ptField.definition.copyWith(
-                        productType:
-                            ptField.definition.productType!.copyWith(products: [
-                      ...ptField.definition.productType!.products!,
-                      ProductModel(
-                        title: FormStrings.newProduct,
-                        currencyCode:
-                            form.getSupportedCurrencies().firstOrNull ??
+                      productType: ptField.definition.productType!.copyWith(
+                        products: [
+                          ...ptField.definition.productType!.products!,
+                          ProductModel(
+                            title: FormStrings.newProduct,
+                            currencyCode:
+                                form.getSupportedCurrencies().firstOrNull ??
                                 group.products!
                                     .map((p) => p.currencyCode)
                                     .whereType<String>()
                                     .where((c) => c.isNotEmpty)
                                     .firstOrNull ??
                                 'CZK',
-                        price: 0.0,
-                        isHidden: false,
-                        order: (group.products!.isNotEmpty
-                                ? group.products!.last.order ?? 0
-                                : 0) +
-                            1,
+                            price: 0.0,
+                            isHidden: false,
+                            order:
+                                (group.products!.isNotEmpty
+                                    ? group.products!.last.order ?? 0
+                                    : 0) +
+                                1,
+                          ),
+                        ],
                       ),
-                    ]));
+                    );
                     refresh();
                   },
                   icon: const Icon(Icons.add),

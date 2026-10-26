@@ -66,7 +66,6 @@ dependencies:
   sembast: "^3.8.11"
   sembast_web: "^2.4.6"
   path_provider: "^2.1.5"
-  select_dialog: "^2.0.1"
   onesignal_flutter: "^5.3.5"
   package_info_plus: "^10.2.2"
   easy_localization: "^3.0.8"
@@ -99,7 +98,8 @@ dependencies:
     path: vendor/blueprint/venue_seat_picker
   cached_network_image: "^4.0.5"
   cached_network_image_platform_interface: "^5.0.3"
-  image: "^4.10.1"
+  # image 4.11 requires archive APIs outside the current pdf constraint.
+  image: ">=4.10.1 <4.11.0"
   cross_file: "^0.4.0"
   flutter_cache_manager: "^3.4.5"
   url_launcher: "^6.3.3"
@@ -112,8 +112,8 @@ dependencies:
   material_ui: "^1.8.0"
   cupertino_ui: "^1.0.0"
 
+  shared_preferences: any
 dev_dependencies:
-  shared_preferences: 2.5.6
   supabase: 2.16.5
   test: "^1.31.1"
   auto_route_generator: "^10.3.0"
@@ -126,6 +126,9 @@ dev_dependencies:
   cross_file_io: "^1.0.0"
   plugin_platform_interface: "^2.1.8"
 
+  shared_preferences_platform_interface: any
+  file_picker_platform_interface: any
+  easy_logger: any
 dependency_overrides:
   venue_layout_core:
     path: vendor/blueprint/venue_layout_core

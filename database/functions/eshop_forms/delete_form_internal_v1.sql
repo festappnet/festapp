@@ -60,6 +60,7 @@ BEGIN
     END IF;
 
     -- Step 5: Finally, delete the form itself.
+    DELETE FROM public.notification_center_source_state WHERE source_key='form-availability:'||p_form_id;
     DELETE FROM public.forms WHERE id = p_form_id;
 END;
 $$;

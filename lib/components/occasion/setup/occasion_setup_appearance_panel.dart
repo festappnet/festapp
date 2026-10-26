@@ -1,4 +1,5 @@
 import 'occasion_setup_strings.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -59,8 +60,12 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
   final TextStyle Function(String family, TextStyle base)? fontStyle;
   final String? customLabel;
 
-  Widget _colorControl(BuildContext context, String label, Color color,
-      ValueChanged<Color> onChanged) {
+  Widget _colorControl(
+    BuildContext context,
+    String label,
+    Color color,
+    ValueChanged<Color> onChanged,
+  ) {
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
       onPressed: () => showDialog<void>(
@@ -77,19 +82,21 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Hotovo'))
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hotovo'),
+            ),
           ],
         ),
       ),
       icon: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
-          )),
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
+        ),
+      ),
       label: Text(label),
     );
   }
@@ -112,149 +119,191 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return LayoutBuilder(builder: (context, constraints) {
-      final narrow = constraints.maxWidth < 700;
-      final columns = (constraints.maxWidth / 220).floor().clamp(2, 6);
-      final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        DropdownButtonFormField<String>(
-          key: ValueKey('appearance-font-$fontFamily'),
-          initialValue: fontFamilies.contains(fontFamily) ? fontFamily : null,
-          isExpanded: true,
-          itemHeight: null,
-          selectedItemBuilder: (context) => [
-            for (final family in fontFamilies)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(family,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _fontStyle(family, theme.textTheme.bodyLarge)),
-              ),
-          ],
-          decoration: InputDecoration(
-              labelText: OccasionSetupStrings.ui('font'),
-              border: OutlineInputBorder()),
-          items: [
-            for (final family in fontFamilies)
-              DropdownMenuItem(
-                  value: family,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(family,
-                        style: _fontStyle(family, theme.textTheme.bodyLarge)),
-                  ))
-          ],
-          onChanged: (value) {
-            if (value != null) onFontChanged(value);
-          },
-        ),
-        const SizedBox(height: 24),
-        Wrap(spacing: 12, runSpacing: 12, children: [
-          for (final preset in presets)
-            SizedBox(
-              width: largeText
-                  ? constraints.maxWidth
-                  : narrow
-                      ? (constraints.maxWidth < 320
-                          ? constraints.maxWidth
-                          : (constraints.maxWidth - 12) / 2)
-                      : (constraints.maxWidth - (columns - 1) * 12) / columns,
-              child: Semantics(
-                selected: selectedPresetId == preset.id,
-                child: OutlinedButton(
-                  key: ValueKey('appearance-preset-${preset.id}'),
-                  onPressed: () => onPresetSelected(preset.id),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    padding: const EdgeInsets.all(12),
-                    side: BorderSide(
-                        color: selectedPresetId == preset.id
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline,
-                        width: selectedPresetId == preset.id ? 2 : 1),
-                  ),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          constraints: const BoxConstraints(minHeight: 82),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: preset.gradient
-                                ? null
-                                : _previewColor(preset.primaryColor),
-                            gradient: preset.gradient
-                                ? LinearGradient(colors: [
-                                    _previewColor(preset.primaryColor),
-                                    _previewColor(preset.secondaryColor),
-                                  ])
-                                : null,
-                          ),
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Text(
-                              OccasionSetupStrings.ui('our_event_story'),
-                              style: _fontStyle(preset.fontFamily,
-                                      theme.textTheme.titleLarge)
-                                  .copyWith(
-                                      color: Colors.white,
-                                      fontSize: narrow ? 18 : 22)),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(children: [
-                          Expanded(
-                              child: Text(preset.label,
-                                  style: _fontStyle(preset.fontFamily,
-                                      theme.textTheme.titleSmall))),
-                          SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: selectedPresetId == preset.id
-                                  ? const Icon(Icons.check, size: 20)
-                                  : null),
-                        ]),
-                      ]),
-                ),
-              ),
-            ),
-        ]),
-        const SizedBox(height: 16),
-        ExpansionTile(
-          key: ValueKey('appearance-custom-${selectedPresetId == null}'),
-          initiallyExpanded: selectedPresetId == null,
-          tilePadding: EdgeInsets.zero,
-          title:
-              Text(customLabel ?? OccasionSetupStrings.ui('custom_appearance')),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 700;
+        final columns = (constraints.maxWidth / 220).floor().clamp(2, 6);
+        final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(OccasionSetupStrings.ui('two_color_gradient')),
-              value: gradient,
-              onChanged: onGradientChanged,
+            DropdownButtonFormField<String>(
+              key: ValueKey('appearance-font-$fontFamily'),
+              initialValue: fontFamilies.contains(fontFamily)
+                  ? fontFamily
+                  : null,
+              isExpanded: true,
+              itemHeight: null,
+              selectedItemBuilder: (context) => [
+                for (final family in fontFamilies)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      family,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _fontStyle(family, theme.textTheme.bodyLarge),
+                    ),
+                  ),
+              ],
+              decoration: InputDecoration(
+                labelText: OccasionSetupStrings.ui('font'),
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (final family in fontFamilies)
+                  DropdownMenuItem(
+                    value: family,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        family,
+                        style: _fontStyle(family, theme.textTheme.bodyLarge),
+                      ),
+                    ),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) onFontChanged(value);
+              },
             ),
-            Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Wrap(spacing: 12, runSpacing: 8, children: [
-                  _colorControl(
-                      context,
-                      OccasionSetupStrings.ui('primary_color'),
-                      primaryColor,
-                      onPrimaryChanged),
-                  if (gradient)
-                    _colorControl(
-                        context,
-                        OccasionSetupStrings.ui('secondary_color'),
-                        secondaryColor,
-                        onSecondaryChanged),
-                ])),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final preset in presets)
+                  SizedBox(
+                    width: largeText
+                        ? constraints.maxWidth
+                        : narrow
+                        ? (constraints.maxWidth < 320
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth - 12) / 2)
+                        : (constraints.maxWidth - (columns - 1) * 12) / columns,
+                    child: Semantics(
+                      selected: selectedPresetId == preset.id,
+                      child: OutlinedButton(
+                        key: ValueKey('appearance-preset-${preset.id}'),
+                        onPressed: () => onPresetSelected(preset.id),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          side: BorderSide(
+                            color: selectedPresetId == preset.id
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outline,
+                            width: selectedPresetId == preset.id ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              constraints: const BoxConstraints(minHeight: 82),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: preset.gradient
+                                    ? null
+                                    : _previewColor(preset.primaryColor),
+                                gradient: preset.gradient
+                                    ? LinearGradient(
+                                        colors: [
+                                          _previewColor(preset.primaryColor),
+                                          _previewColor(preset.secondaryColor),
+                                        ],
+                                      )
+                                    : null,
+                              ),
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                OccasionSetupStrings.ui('our_event_story'),
+                                style:
+                                    _fontStyle(
+                                      preset.fontFamily,
+                                      theme.textTheme.titleLarge,
+                                    ).copyWith(
+                                      color: Colors.white,
+                                      fontSize: narrow ? 18 : 22,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    preset.label,
+                                    style: _fontStyle(
+                                      preset.fontFamily,
+                                      theme.textTheme.titleSmall,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: selectedPresetId == preset.id
+                                      ? const Icon(Icons.check, size: 20)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 16),
+            ExpansionTile(
+              key: ValueKey('appearance-custom-${selectedPresetId == null}'),
+              initiallyExpanded: selectedPresetId == null,
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                customLabel ?? OccasionSetupStrings.ui('custom_appearance'),
+              ),
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(OccasionSetupStrings.ui('two_color_gradient')),
+                  value: gradient,
+                  onChanged: onGradientChanged,
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      _colorControl(
+                        context,
+                        OccasionSetupStrings.ui('primary_color'),
+                        primaryColor,
+                        onPrimaryChanged,
+                      ),
+                      if (gradient)
+                        _colorControl(
+                          context,
+                          OccasionSetupStrings.ui('secondary_color'),
+                          secondaryColor,
+                          onSecondaryChanged,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+            const SizedBox(height: 24),
+            formPreview,
           ],
-        ),
-        const SizedBox(height: 24),
-        formPreview,
-      ]);
-    });
+        );
+      },
+    );
   }
 }

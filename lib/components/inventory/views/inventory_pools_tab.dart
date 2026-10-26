@@ -8,7 +8,9 @@ import 'package:fstapp/styles/styles_config.dart';
 import '../models/inventory_pool_model.dart';
 import 'inventory_pool_card.dart';
 import 'inventory_pool_creation_helper.dart';
+
 import 'package:fstapp/app_router.gr.dart';
+
 import 'inventory_strings.dart';
 
 @RoutePage(name: 'InventoryPoolsListRoute')
@@ -29,8 +31,10 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newOccasionLink = context.routeData.inheritedPathParams
-        .get(AppRouter.linkFormatted, null);
+    final newOccasionLink = context.routeData.inheritedPathParams.get(
+      AppRouter.linkFormatted,
+      null,
+    );
 
     if (newOccasionLink != null && newOccasionLink != _previousOccasionLink) {
       _previousOccasionLink = newOccasionLink;
@@ -38,15 +42,19 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
     }
   }
 
-  Future<void> loadData(String occasionLink,
-      {bool isRefresh = false, int? newSelectedGroupId}) async {
+  Future<void> loadData(
+    String occasionLink, {
+    bool isRefresh = false,
+    int? newSelectedGroupId,
+  }) async {
     if (!mounted) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final newBundle = await (widget.loadPools ??
-          DbInventoryPools.getInventoryPoolsByOccasionLink)(occasionLink);
+      final newBundle =
+          await (widget.loadPools ??
+              DbInventoryPools.getInventoryPoolsByOccasionLink)(occasionLink);
       if (!mounted || _previousOccasionLink != occasionLink) return;
       _bundle = newBundle;
 
@@ -56,10 +64,11 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
               'true') {
         context.router.markUrlStateForReplace();
         await context.router.replaceAll([
-          InventoryPoolDetailRoute(poolId: newBundle.pools.single.id.toString())
-              .copyWith(
-                  queryParams:
-                      context.router.root.urlState.uri.queryParametersAll)
+          InventoryPoolDetailRoute(
+            poolId: newBundle.pools.single.id.toString(),
+          ).copyWith(
+            queryParams: context.router.root.urlState.uri.queryParametersAll,
+          ),
         ]);
         return;
       }
@@ -68,8 +77,9 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(InventoryStrings.tabErrorRefresh),
-              backgroundColor: Colors.red),
+            content: Text(InventoryStrings.tabErrorRefresh),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       // On error, do not clear the bundle to avoid a full UI reset
@@ -114,21 +124,17 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final group = _bundle!.pools[index];
-                  final groupContexts = _bundle!.contextStocks
-                      .where(
-                          (stock) => stock.context.inventoryPoolId == group.id)
-                      .toList();
-                  return InventoryPoolCard(
-                    pool: group,
-                    contexts: groupContexts,
-                    onTap: () => _handleCardTap(group),
-                  );
-                },
-                childCount: _bundle!.pools.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final group = _bundle!.pools[index];
+                final groupContexts = _bundle!.contextStocks
+                    .where((stock) => stock.context.inventoryPoolId == group.id)
+                    .toList();
+                return InventoryPoolCard(
+                  pool: group,
+                  contexts: groupContexts,
+                  onTap: () => _handleCardTap(group),
+                );
+              }, childCount: _bundle!.pools.length),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -156,8 +162,9 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(StylesConfig.commonRoundness),
+                  borderRadius: BorderRadius.circular(
+                    StylesConfig.commonRoundness,
+                  ),
                 ),
               ),
             ),

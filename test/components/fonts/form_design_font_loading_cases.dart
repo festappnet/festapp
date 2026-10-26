@@ -1,5 +1,7 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import '../../support/fixtures/widget_environment_fixture.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -31,24 +33,29 @@ class _Fonts implements FormFontCatalog {
 
 void main() {
   WidgetEnvironmentFixture.register();
-  setUpAll(() => _environment = WidgetEnvironmentFixture(
+  setUpAll(
+    () => _environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
-      translations:
-          jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-              as Map<String, dynamic>));
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    ),
+  );
 
-  testWidgetsWithEnvironment(() => _environment,
-      'failed catalog download preserves design and retries before choosing a font',
-      (tester) async {
-    final first = Completer<FormFontCatalog>();
-    final retry = Completer<FormFontCatalog>();
-    final form = FormEditorDraft();
-    form.definition = form.definition.withFontFamily('Inter');
-    var loads = 0;
-    var changes = 0;
-    await _environment.pumpWidget(
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'failed catalog download preserves design and retries before choosing a font',
+    (tester) async {
+      final first = Completer<FormFontCatalog>();
+      final retry = Completer<FormFontCatalog>();
+      final form = FormEditorDraft();
+      form.definition = form.definition.withFontFamily('Inter');
+      var loads = 0;
+      var changes = 0;
+      await _environment.pumpWidget(
         tester,
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: FormDesignSettings(
               form: form,
@@ -56,34 +63,38 @@ void main() {
               loadFonts: () => ++loads == 1 ? first.future : retry.future,
             ),
           ),
-        ));
-    expect(find.byType(FontFamilyPicker), findsNothing);
-    expect(find.text(FormStrings.customColors), findsOneWidget);
-    first.completeError(StateError('temporary network failure'));
-    await tester.pump();
-    expect(find.text(FormStrings.fontLoadFailed), findsOneWidget);
-    expect(form.definition.fontFamily, 'Inter');
-    expect(changes, 0);
+        ),
+      );
+      expect(find.byType(FontFamilyPicker), findsNothing);
+      expect(find.text(FormStrings.customColors), findsOneWidget);
+      first.completeError(StateError('temporary network failure'));
+      await tester.pump();
+      expect(find.text(FormStrings.fontLoadFailed), findsOneWidget);
+      expect(form.definition.fontFamily, 'Inter');
+      expect(changes, 0);
 
-    await tester.ensureVisible(find.text(CommonStrings.retry));
-    await tester.tap(find.text(CommonStrings.retry));
-    await tester.pump();
-    expect(loads, 2);
-    retry.complete(_Fonts());
-    await tester.pumpAndSettle();
-    expect(find.byType(FontFamilyPicker), findsOneWidget);
-    expect(find.text(FormStrings.fontLoadFailed), findsNothing);
-    expect(form.definition.fontFamily, 'Inter');
+      await tester.ensureVisible(find.text(CommonStrings.retry));
+      await tester.tap(find.text(CommonStrings.retry));
+      await tester.pump();
+      expect(loads, 2);
+      retry.complete(_Fonts());
+      await tester.pumpAndSettle();
+      expect(find.byType(FontFamilyPicker), findsOneWidget);
+      expect(find.text(FormStrings.fontLoadFailed), findsNothing);
+      expect(form.definition.fontFamily, 'Inter');
 
-    final choice = find.descendant(of: find.byType(FontFamilyPicker),
-        matching: find.byType(DropdownButtonFormField<String>));
-    await tester.ensureVisible(choice);
-    await tester.tap(choice);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Roboto').last);
-    await tester.pumpAndSettle();
-    expect(form.definition.fontFamily, 'Roboto');
-    expect(changes, 1);
-    expect(tester.takeException(), isNull);
-  });
+      final choice = find.descendant(
+        of: find.byType(FontFamilyPicker),
+        matching: find.byType(DropdownButtonFormField<String>),
+      );
+      await tester.ensureVisible(choice);
+      await tester.tap(choice);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Roboto').last);
+      await tester.pumpAndSettle();
+      expect(form.definition.fontFamily, 'Roboto');
+      expect(changes, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

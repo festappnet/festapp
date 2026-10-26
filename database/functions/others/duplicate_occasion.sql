@@ -37,6 +37,7 @@ BEGIN
     RAISE check_violation USING MESSAGE='BLUEPRINT_LAYOUT_MIGRATION_REQUIRED';
   END IF;
 
+  PERFORM public.notification_center_initialized_internal(v_organization);
   ------------------------------------------------------------------
   -- 1. Duplicate the main occasion record.
   --    Modify the link to ensure uniqueness by appending a unique suffix.
@@ -405,6 +406,7 @@ BEGIN
   DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,tmp_blueprint_layout_ids,
     tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden,
     tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots,tmp_scanner_fields;
+  PERFORM public.notification_center_form_created_internal(id) FROM public.forms WHERE occasion=new_occ;
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;

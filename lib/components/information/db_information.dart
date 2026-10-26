@@ -7,7 +7,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/information/information_commands.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';

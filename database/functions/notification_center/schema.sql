@@ -37,9 +37,12 @@ CREATE TABLE public.notification_center_preferences (
 );
 CREATE TABLE public.notification_center_source_state (
  organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, source_key text NOT NULL,
- state jsonb NOT NULL, episode bigint NOT NULL DEFAULT 0, observed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ state jsonb NOT NULL, next_evaluation_at timestamptz, episode bigint NOT NULL DEFAULT 0, observed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  PRIMARY KEY(organization,source_key)
 );
+CREATE INDEX notification_center_feed_snapshot ON public.notification_center_deliveries(organization,recipient,sequence DESC);
+CREATE INDEX notification_center_feed_revision ON public.notification_center_deliveries(event_id,recipient,sequence DESC);
+CREATE INDEX notification_center_availability_due ON public.notification_center_source_state(next_evaluation_at,organization,source_key) WHERE next_evaluation_at IS NOT NULL;
 DO $$ DECLARE t text; BEGIN
  FOREACH t IN ARRAY ARRAY['organizations','events','recipients','user_state','deliveries','preferences','source_state'] LOOP
   EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY','notification_center_'||t);

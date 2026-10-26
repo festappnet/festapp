@@ -15,56 +15,71 @@ Future<void> main() async {
   final second = DateTime(2026, 11, 1, 12).toUtc();
   final products = [
     ProductModel(
-        id: 1,
-        title: 'Vstupenka Standard',
-        price: 450,
-        currencyCode: 'CZK',
-        priceChanges: [
-          ProductPriceChange(id: 1, revision: 1, price: 550, time: first),
-          ProductPriceChange(id: 2, revision: 1, price: 650, time: second)
-        ]),
+      id: 1,
+      title: 'Vstupenka Standard',
+      price: 450,
+      currencyCode: 'CZK',
+      priceChanges: [
+        ProductPriceChange(id: 1, revision: 1, price: 550, time: first),
+        ProductPriceChange(id: 2, revision: 1, price: 650, time: second),
+      ],
+    ),
     ProductModel(
-        id: 2,
-        title: 'Vstupenka VIP',
-        price: 900,
-        currencyCode: 'CZK',
-        priceChanges: [
-          ProductPriceChange(id: 3, revision: 1, price: 1100, time: first)
-        ]),
+      id: 2,
+      title: 'Vstupenka VIP',
+      price: 900,
+      currencyCode: 'CZK',
+      priceChanges: [
+        ProductPriceChange(id: 3, revision: 1, price: 1100, time: first),
+      ],
+    ),
     ProductModel(
-        id: 3,
-        title: 'Early bird',
-        price: 350,
-        currencyCode: 'CZK',
-        visibilityChanges: [
-          ProductVisibilityChange(id: 4, revision: 1, time: first, hidden: true)
-        ])
+      id: 3,
+      title: 'Early bird',
+      price: 350,
+      currencyCode: 'CZK',
+      visibilityChanges: [
+        ProductVisibilityChange(id: 4, revision: 1, time: first, hidden: true),
+      ],
+    ),
   ];
   final bundle = ProductsEditBundle(
-      products: products,
-      productTypes: [],
-      inventoryPools: [],
-      inventoryContexts: [],
-      forms: [],
-      priceWaves: [
-        ProductPriceWave(id: 1, time: first),
-        ProductPriceWave(id: 2, time: second)
-      ]);
-  runApp(EasyLocalization(
+    products: products,
+    productTypes: [],
+    inventoryPools: [],
+    inventoryContexts: [],
+    forms: [],
+    priceWaves: [
+      ProductPriceWave(id: 1, time: first),
+      ProductPriceWave(id: 2, time: second),
+    ],
+  );
+  runApp(
+    EasyLocalization(
       supportedLocales: const [Locale('cs')],
       startLocale: const Locale('cs'),
       path: 'assets/translations',
       child: Builder(
-          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
-              theme: ThemeConfig.theme(),
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
-              home: ProductPriceWavesDialog(
-                  occasionLink: 'preview',
-                  initialBundle: bundle,
-                  canEdit: true,
-                  loader: () async => bundle)))));
-  WidgetsBinding.instance
-      .addPostFrameCallback((_) => WebBootstrapBridge.markAppReady());
+        builder: (context) => MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          theme: ThemeConfig.theme(),
+          locale: context.locale,
+          supportedLocales: context.supportedLocales,
+          localizationsDelegates: [
+            ...context.localizationDelegates,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          home: ProductPriceWavesDialog(
+            occasionLink: 'preview',
+            initialBundle: bundle,
+            canEdit: true,
+            loader: () async => bundle,
+          ),
+        ),
+      ),
+    ),
+  );
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => WebBootstrapBridge.markAppReady(),
+  );
 }

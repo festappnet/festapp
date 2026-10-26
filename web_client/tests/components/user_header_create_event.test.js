@@ -18,8 +18,8 @@ test('create-event invitation respects the tenant and explicit registration perm
     ]);
     t.after(() => dom.window.close());
     t.mock.method(LocalizationService, 'tr', key => ({
-        'FeatureUser.addEvent': 'Vytvořit vlastní akci',
-        'FeatureUser.addEventShort': '+ Akce',
+        'FeatureUser.addEvent': 'Založit akci zdarma',
+        'FeatureUser.addEventShort': 'Založit zdarma',
     }[key] || key));
     const previousLink = AppConfig.webLink;
     const previousContext = RightsService._context;
@@ -51,9 +51,9 @@ test('create-event invitation respects the tenant and explicit registration perm
         assert.equal(!!button, visible, `${link}, ${JSON.stringify(organization)}`);
         assert.ok(header.querySelector('.btn-sign-in'), 'existing users can still sign in');
         if (visible) {
-            assert.equal(button.getAttribute('aria-label'), 'Vytvořit vlastní akci');
-            assert.equal(button.querySelector('.add-event-full').textContent, 'Vytvořit vlastní akci');
-            assert.equal(button.querySelector('.add-event-short').textContent, '+ Akce');
+            assert.equal(button.getAttribute('aria-label'), 'Založit akci zdarma');
+            assert.equal(button.querySelector('.add-event-full').textContent, 'Založit akci zdarma');
+            assert.equal(button.querySelector('.add-event-short').textContent, 'Založit zdarma');
         }
     }
 });

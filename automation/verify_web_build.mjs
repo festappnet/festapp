@@ -86,6 +86,8 @@ for (const [chunk] of main.toString().matchAll(/main\.dart\.[^"'\s]+\.part\.js/g
 
 await verifyMarketingBundle(buildDir, configPath);
 
+await verifyMarketingBundle(buildDir, configPath);
+
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]
   .trim()

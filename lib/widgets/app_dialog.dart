@@ -24,27 +24,25 @@ class AppDialogHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: DefaultTextStyle.merge(
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: DefaultTextStyle.of(context).style.color),
-              textAlign: TextAlign.center,
-              child: title ?? const SizedBox.shrink(),
-            ),
-          ),
-          ...actions,
-          IconButton(
-            tooltip: CommonStrings.close,
-            icon: const Icon(Icons.close),
-            onPressed: closeEnabled
-                ? onClose ?? () => Navigator.of(context).maybePop()
-                : null,
-          ),
-        ],
-      );
+    children: [
+      Expanded(
+        child: DefaultTextStyle.merge(
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(color: DefaultTextStyle.of(context).style.color),
+          textAlign: TextAlign.center,
+          child: title ?? const SizedBox.shrink(),
+        ),
+      ),
+      ...actions,
+      IconButton(
+        tooltip: CommonStrings.close,
+        icon: const Icon(Icons.close),
+        onPressed: closeEnabled
+            ? onClose ?? () => Navigator.of(context).maybePop()
+            : null,
+      ),
+    ],
+  );
 }
 
 /// Optional secondary information stays readable above actions on small screens.
@@ -71,29 +69,36 @@ class AppDialogActions extends StatelessWidget {
         children: [leading!, const SizedBox(height: 8), buttons],
       );
     }
-    return Row(children: [
-      Expanded(child: leading!),
-      const SizedBox(width: 8),
-      Expanded(child: buttons),
-    ]);
+    return Row(
+      children: [
+        Expanded(child: leading!),
+        const SizedBox(width: 8),
+        Expanded(child: buttons),
+      ],
+    );
   }
 }
 
 /// Keeps focus inside the modal, including before an input receives focus.
 /// maybePop preserves the caller's PopScope and draft confirmation.
 class AppDialogDismissal extends StatelessWidget {
-  const AppDialogDismissal(
-      {super.key,
-      required this.child,
-      this.onClose,
-      this.enabled = true,
-      this.autofocus = true});
+  const AppDialogDismissal({
+    super.key,
+    required this.child,
+    this.onClose,
+    this.enabled = true,
+    this.autofocus = true,
+  });
   final Widget child;
   final VoidCallback? onClose;
   final bool enabled, autofocus;
   @override
   Widget build(BuildContext context) => EditorDialogDismissal(
-      onClose: onClose, enabled: enabled, autofocus: autofocus, child: child);
+    onClose: onClose,
+    enabled: enabled,
+    autofocus: autofocus,
+    child: child,
+  );
 }
 
 class AppDialogAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -115,14 +120,14 @@ class AppDialogAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) => AppBar(
-        automaticallyImplyLeading: false,
-        title: AppDialogHeader(
-          title: title,
-          actions: actions,
-          onClose: onClose,
-          closeEnabled: closeEnabled,
-        ),
-      );
+    automaticallyImplyLeading: false,
+    title: AppDialogHeader(
+      title: title,
+      actions: actions,
+      onClose: onClose,
+      closeEnabled: closeEnabled,
+    ),
+  );
 }
 
 /// For custom content such as canvases, search panels and full-page editors.
@@ -154,8 +159,8 @@ class AppDialog extends Dialog {
     super.insetAnimationCurve,
     this.onClose,
     this.dismissible = true,
-  })  : _fullscreen = true,
-        super.fullscreen();
+  }) : _fullscreen = true,
+       super.fullscreen();
 
   final VoidCallback? onClose;
   final bool dismissible;
@@ -163,32 +168,32 @@ class AppDialog extends Dialog {
 
   @override
   Widget build(BuildContext context) => AppDialogDismissal(
-        onClose: onClose,
-        enabled: dismissible,
-        child: _fullscreen
-            ? Dialog.fullscreen(
-                backgroundColor: backgroundColor,
-                insetAnimationDuration: insetAnimationDuration,
-                insetAnimationCurve: insetAnimationCurve,
-                semanticsRole: semanticsRole,
-                child: child,
-              )
-            : Dialog(
-                backgroundColor: backgroundColor,
-                elevation: elevation,
-                shadowColor: shadowColor,
-                surfaceTintColor: surfaceTintColor,
-                insetAnimationDuration: insetAnimationDuration,
-                insetAnimationCurve: insetAnimationCurve,
-                insetPadding: insetPadding,
-                clipBehavior: clipBehavior,
-                shape: shape,
-                alignment: alignment,
-                constraints: constraints,
-                semanticsRole: semanticsRole,
-                child: child,
-              ),
-      );
+    onClose: onClose,
+    enabled: dismissible,
+    child: _fullscreen
+        ? Dialog.fullscreen(
+            backgroundColor: backgroundColor,
+            insetAnimationDuration: insetAnimationDuration,
+            insetAnimationCurve: insetAnimationCurve,
+            semanticsRole: semanticsRole,
+            child: child,
+          )
+        : Dialog(
+            backgroundColor: backgroundColor,
+            elevation: elevation,
+            shadowColor: shadowColor,
+            surfaceTintColor: surfaceTintColor,
+            insetAnimationDuration: insetAnimationDuration,
+            insetAnimationCurve: insetAnimationCurve,
+            insetPadding: insetPadding,
+            clipBehavior: clipBehavior,
+            shape: shape,
+            alignment: alignment,
+            constraints: constraints,
+            semanticsRole: semanticsRole,
+            child: child,
+          ),
+  );
 }
 
 /// Forms, confirmations and settings use the same title and close placement.
@@ -225,52 +230,52 @@ class AppAlertDialog extends AlertDialog {
     this.onClose,
     this.dismissible = true,
   }) : super(
-          title: AppDialogHeader(
-            title: title,
-            onClose: onClose,
-            closeEnabled: dismissible,
-          ),
-        );
+         title: AppDialogHeader(
+           title: title,
+           onClose: onClose,
+           closeEnabled: dismissible,
+         ),
+       );
 
   final VoidCallback? onClose;
   final bool dismissible;
 
   @override
   Widget build(BuildContext context) => AppDialogDismissal(
-        onClose: onClose,
-        enabled: dismissible,
-        child: AlertDialog(
-          icon: icon,
-          iconPadding: iconPadding,
-          iconColor: iconColor,
-          title: title,
-          titlePadding: titlePadding,
-          titleTextStyle: titleTextStyle,
-          // Keep scrolled content and its paint effects inside the body, below
-          // the fixed title and close button.
-          content: content == null ? null : ClipRect(child: content!),
-          contentPadding: contentPadding,
-          contentTextStyle: contentTextStyle,
-          actions: actions,
-          actionsPadding: actionsPadding,
-          actionsAlignment: actionsAlignment,
-          actionsOverflowAlignment: actionsOverflowAlignment,
-          actionsOverflowDirection: actionsOverflowDirection,
-          actionsOverflowButtonSpacing: actionsOverflowButtonSpacing,
-          buttonPadding: buttonPadding,
-          backgroundColor: backgroundColor,
-          elevation: elevation,
-          shadowColor: shadowColor,
-          surfaceTintColor: surfaceTintColor,
-          semanticLabel: semanticLabel,
-          insetPadding: insetPadding,
-          clipBehavior: clipBehavior,
-          shape: shape,
-          alignment: alignment,
-          constraints: constraints,
-          scrollable: scrollable,
-        ),
-      );
+    onClose: onClose,
+    enabled: dismissible,
+    child: AlertDialog(
+      icon: icon,
+      iconPadding: iconPadding,
+      iconColor: iconColor,
+      title: title,
+      titlePadding: titlePadding,
+      titleTextStyle: titleTextStyle,
+      // Keep scrolled content and its paint effects inside the body, below
+      // the fixed title and close button.
+      content: content == null ? null : ClipRect(child: content!),
+      contentPadding: contentPadding,
+      contentTextStyle: contentTextStyle,
+      actions: actions,
+      actionsPadding: actionsPadding,
+      actionsAlignment: actionsAlignment,
+      actionsOverflowAlignment: actionsOverflowAlignment,
+      actionsOverflowDirection: actionsOverflowDirection,
+      actionsOverflowButtonSpacing: actionsOverflowButtonSpacing,
+      buttonPadding: buttonPadding,
+      backgroundColor: backgroundColor,
+      elevation: elevation,
+      shadowColor: shadowColor,
+      surfaceTintColor: surfaceTintColor,
+      semanticLabel: semanticLabel,
+      insetPadding: insetPadding,
+      clipBehavior: clipBehavior,
+      shape: shape,
+      alignment: alignment,
+      constraints: constraints,
+      scrollable: scrollable,
+    ),
+  );
 }
 
 class AppSimpleDialog extends SimpleDialog {
@@ -295,37 +300,37 @@ class AppSimpleDialog extends SimpleDialog {
     this.onClose,
     this.dismissible = true,
   }) : super(
-          title: AppDialogHeader(
-            title: title,
-            onClose: onClose,
-            closeEnabled: dismissible,
-          ),
-        );
+         title: AppDialogHeader(
+           title: title,
+           onClose: onClose,
+           closeEnabled: dismissible,
+         ),
+       );
 
   final VoidCallback? onClose;
   final bool dismissible;
 
   @override
   Widget build(BuildContext context) => AppDialogDismissal(
-        onClose: onClose,
-        enabled: dismissible,
-        child: SimpleDialog(
-          title: title,
-          titlePadding: titlePadding,
-          titleTextStyle: titleTextStyle,
-          contentPadding: contentPadding,
-          contentTextStyle: contentTextStyle,
-          backgroundColor: backgroundColor,
-          elevation: elevation,
-          shadowColor: shadowColor,
-          surfaceTintColor: surfaceTintColor,
-          semanticLabel: semanticLabel,
-          insetPadding: insetPadding,
-          clipBehavior: clipBehavior,
-          shape: shape,
-          alignment: alignment,
-          constraints: constraints,
-          children: children,
-        ),
-      );
+    onClose: onClose,
+    enabled: dismissible,
+    child: SimpleDialog(
+      title: title,
+      titlePadding: titlePadding,
+      titleTextStyle: titleTextStyle,
+      contentPadding: contentPadding,
+      contentTextStyle: contentTextStyle,
+      backgroundColor: backgroundColor,
+      elevation: elevation,
+      shadowColor: shadowColor,
+      surfaceTintColor: surfaceTintColor,
+      semanticLabel: semanticLabel,
+      insetPadding: insetPadding,
+      clipBehavior: clipBehavior,
+      shape: shape,
+      alignment: alignment,
+      constraints: constraints,
+      children: children,
+    ),
+  );
 }

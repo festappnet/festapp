@@ -1,10 +1,13 @@
 import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/services/import_file.dart';
+
 import '../../_shared/editor_file_drop_region.dart';
 import '../../_shared/editor_file_drop_strings.dart';
 import '../../images/image_upload_limits.dart';
 import '../../images/image_file_format.dart';
+
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
@@ -14,19 +17,25 @@ import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
+
 import 'ticket_canvas_color_dialog.dart';
 import '../ticket_template_order.dart';
 import '../../_shared/common_strings.dart';
+
 import 'dart:convert';
+
 import '../../fonts/font_family_picker.dart';
 import '../../fonts/ticket_font_catalog.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/services/exception_handler.dart';
+
 import '../models/ticket_layout.dart';
 import '../ticket_layout_controller.dart';
 import '../ticket_layout_service.dart';
@@ -54,40 +63,45 @@ class TicketLayoutEditor extends StatefulWidget {
   final bool showTemplatePicker;
   final bool productEditing;
   final Future<void> Function(TicketLayoutResult)? onSave;
-  const TicketLayoutEditor(
-      {super.key,
-      this.routeRouter,
-      required this.occasionId,
-      required this.type,
-      required this.resources,
-      required this.service,
-      this.showTemplatePicker = false,
-      this.productEditing = true,
-      this.onSave,
-      this.layout,
-      this.background});
+  const TicketLayoutEditor({
+    super.key,
+    this.routeRouter,
+    required this.occasionId,
+    required this.type,
+    required this.resources,
+    required this.service,
+    this.showTemplatePicker = false,
+    this.productEditing = true,
+    this.onSave,
+    this.layout,
+    this.background,
+  });
   @override
   State<TicketLayoutEditor> createState() => _TicketLayoutEditorState();
 }
 
 class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   late final TicketLayoutController controller = TicketLayoutController(
-      widget.resources.template,
-      artworkKey: widget.resources.initialArtworkKey,
-      canStoreDocument: (doc) =>
-          ticketLayoutByteSize({
-            'schemaVersion': 3,
-            'templates': {
-              ...?(widget.layout?['templates'] as Map?),
-              widget.type: doc.toJson()
-            }
-          }) <=
-          32768,
-      geometryData: () => resources.previewData(controller.document, scenario),
-      prepareDocument: (doc) => ensureTicketCodeFits(
-          doc,
-          resources.metricsFor(doc,
-              doc.elements.firstWhere((e) => e.binding == 'ticketSymbol'))));
+    widget.resources.template,
+    artworkKey: widget.resources.initialArtworkKey,
+    canStoreDocument: (doc) =>
+        ticketLayoutByteSize({
+          'schemaVersion': 3,
+          'templates': {
+            ...?(widget.layout?['templates'] as Map?),
+            widget.type: doc.toJson(),
+          },
+        }) <=
+        32768,
+    geometryData: () => resources.previewData(controller.document, scenario),
+    prepareDocument: (doc) => ensureTicketCodeFits(
+      doc,
+      resources.metricsFor(
+        doc,
+        doc.elements.firstWhere((e) => e.binding == 'ticketSymbol'),
+      ),
+    ),
+  );
   late TicketLayoutResources resources = widget.resources;
   late String? _background = widget.background;
   String? get background {
@@ -114,17 +128,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   bool saving = false;
   bool get _canAuthor => widget.service.setupDraftId != null
       ? RightsService.currentUnit()?.id == widget.service.setupUnitId &&
-          RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)
+            RightsService.hasCapability(
+              AuthorizationCapabilities.occasionsCreate,
+            )
       : RightsService.currentOccasionId() == widget.occasionId &&
-          RightsService.hasCapability(
-              AuthorizationCapabilities.ticketLayoutsWrite);
+            RightsService.hasCapability(
+              AuthorizationCapabilities.ticketLayoutsWrite,
+            );
   bool get _canChangeBackground =>
-      mounted &&
-      !saving &&
-      !imageBusy &&
-      !fontBusy &&
-      !pdfBusy &&
-      _canAuthor;
+      mounted && !saving && !imageBusy && !fontBusy && !pdfBusy && _canAuthor;
   bool get _canImport =>
       _canChangeBackground && editorFileDropIsActive(context);
   late final fontCatalog = TicketFontCatalog.load();
@@ -136,8 +148,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   String scenario = 'normal';
   String? pdfSignature;
   int imageRevision = 0;
-  String get signature => jsonEncode(
-      [controller.document.toJson(), background, scenario, imageRevision]);
+  String get signature => jsonEncode([
+    controller.document.toJson(),
+    background,
+    scenario,
+    imageRevision,
+  ]);
   bool get dirty => controller.dirty || background != widget.background;
   String? _lastArtworkKey;
   @override
@@ -148,7 +164,11 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     _lastArtworkKey = controller.artworkKey;
     controller.addListener(_refreshArtwork);
     RightsService.occasionLinkModelNotifier.addListener(_checkResourceIdentity);
-    try {_authChanges=Supabase.instance.client.auth.onAuthStateChange.listen((_)=>_checkResourceIdentity());} catch (_) {}
+    try {
+      _authChanges = Supabase.instance.client.auth.onAuthStateChange.listen(
+        (_) => _checkResourceIdentity(),
+      );
+    } catch (_) {}
     if (widget.showTemplatePicker) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) chooseStyle();
@@ -163,16 +183,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
 
   StreamSubscription? _authChanges;
   void _checkResourceIdentity() {
-    if(!mounted || resources.isValid) return;
+    if (!mounted || resources.isValid) return;
     final route = ModalRoute.of(context);
-    if(route != null) {
-      Navigator.of(context).popUntil((r)=>r==route);
+    if (route != null) {
+      Navigator.of(context).popUntil((r) => r == route);
       Navigator.of(context).pop();
     }
   }
+
   @override
   void dispose() {
-    RightsService.occasionLinkModelNotifier.removeListener(_checkResourceIdentity);
+    RightsService.occasionLinkModelNotifier.removeListener(
+      _checkResourceIdentity,
+    );
     _authChanges?.cancel();
     FocusManager.instance.removeEarlyKeyEventHandler(_globalHistoryKey);
     fontGeneration++;
@@ -185,32 +208,49 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   ModalRoute<dynamic>? _historyPanelRoute;
 
   KeyEventResult _globalHistoryKey(KeyEvent event) {
-    if (!mounted || !(ModalRoute.of(context)?.isCurrent == true ||
-        _historyPanelRoute?.isCurrent == true)) return KeyEventResult.ignored;
+    if (!mounted ||
+        !(ModalRoute.of(context)?.isCurrent == true ||
+            _historyPanelRoute?.isCurrent == true))
+      return KeyEventResult.ignored;
     final focusContext = FocusManager.instance.primaryFocus?.context;
-    final typing = focusContext?.findAncestorStateOfType<EditableTextState>() != null;
-    if (!typing && !editBackground && !editCanvas &&
-        [LogicalKeyboardKey.delete, LogicalKeyboardKey.backspace].contains(event.logicalKey)) {
-      if (!saving && !imageBusy && event is KeyDownEvent) controller.removeSelectedOptionalFields();
-      return event is KeyUpEvent ? KeyEventResult.ignored : KeyEventResult.handled;
+    final typing =
+        focusContext?.findAncestorStateOfType<EditableTextState>() != null;
+    if (!typing &&
+        !editBackground &&
+        !editCanvas &&
+        [
+          LogicalKeyboardKey.delete,
+          LogicalKeyboardKey.backspace,
+        ].contains(event.logicalKey)) {
+      if (!saving && !imageBusy && event is KeyDownEvent)
+        controller.removeSelectedOptionalFields();
+      return event is KeyUpEvent
+          ? KeyEventResult.ignored
+          : KeyEventResult.handled;
     }
     final keyboard = HardwareKeyboard.instance;
-    if (event is KeyUpEvent || keyboard.isAltPressed ||
+    if (event is KeyUpEvent ||
+        keyboard.isAltPressed ||
         !(keyboard.isControlPressed || keyboard.isMetaPressed) ||
-        ![LogicalKeyboardKey.keyZ, LogicalKeyboardKey.keyY].contains(event.logicalKey)) {
+        ![
+          LogicalKeyboardKey.keyZ,
+          LogicalKeyboardKey.keyY,
+        ].contains(event.logicalKey)) {
       return KeyEventResult.ignored;
     }
     if (!saving && !imageBusy && event is KeyDownEvent) {
       controller.endGesture();
       event.logicalKey == LogicalKeyboardKey.keyY || keyboard.isShiftPressed
-          ? controller.redo() : controller.undo();
+          ? controller.redo()
+          : controller.undo();
     }
     return KeyEventResult.handled;
   }
 
   KeyEventResult _historyKey(FocusNode node, KeyEvent event) {
     if (saving) return KeyEventResult.handled;
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
       cancel();
       return KeyEventResult.handled;
     }
@@ -218,30 +258,34 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Map<String, dynamic> get draftLayout => ticketLayoutDocument({
-        'schemaVersion': 3,
-        'templates': {
-          ...?(widget.layout?['templates'] as Map?),
-          widget.type: controller.document.toJson()
-        }
-      });
+    'schemaVersion': 3,
+    'templates': {
+      ...?(widget.layout?['templates'] as Map?),
+      widget.type: controller.document.toJson(),
+    },
+  });
   Future<void> cancel() async {
     if (saving || imageBusy) return;
     fontGeneration++;
     if (mounted) setState(() => fontBusy = false);
     if (dirty) {
       final discard = await showDialog<bool>(
-          context: editorContext,
-          builder: (c) => AppAlertDialog(
-                  onClose: () => Navigator.pop(c, false),
-                  title: Text(TicketLayoutStrings.discard),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(c, false),
-                        child: Text(TicketLayoutStrings.cancel)),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(c, true),
-                        child: Text(TicketLayoutStrings.discard))
-                  ]));
+        context: editorContext,
+        builder: (c) => AppAlertDialog(
+          onClose: () => Navigator.pop(c, false),
+          title: Text(TicketLayoutStrings.discard),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(TicketLayoutStrings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: Text(TicketLayoutStrings.discard),
+            ),
+          ],
+        ),
+      );
       if (discard != true) return;
     }
     if (mounted) Navigator.pop(context);
@@ -252,50 +296,72 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     controller.endGesture();
     if (fontBusy || saving || imageBusy) return;
     final repaired = ensureTicketCodeFits(
+      controller.document,
+      resources.metricsFor(
         controller.document,
-        resources.metricsFor(
-            controller.document,
-            controller.document.elements
-                .firstWhere((e) => e.binding == 'ticketSymbol')));
+        controller.document.elements.firstWhere(
+          (e) => e.binding == 'ticketSymbol',
+        ),
+      ),
+    );
     if (!identical(repaired, controller.document)) controller.replace(repaired);
     final errors = controller.document.validate(widget.type);
     if (widget.productEditing)
-      errors.addAll(controller.document.elements
-          .where((e) =>
-              e.binding == 'productType' &&
-              !resources.catalog.any((t) => t.id == e.productTypeId))
-          .map((e) => e.id));
-    final symbol = controller.document.elements
-        .firstWhere((e) => e.binding == 'ticketSymbol');
+      errors.addAll(
+        controller.document.elements
+            .where(
+              (e) =>
+                  e.binding == 'productType' &&
+                  !resources.catalog.any((t) => t.id == e.productTypeId),
+            )
+            .map((e) => e.id),
+      );
+    final symbol = controller.document.elements.firstWhere(
+      (e) => e.binding == 'ticketSymbol',
+    );
     try {
       validateTicketLayout(draftLayout);
-      fitTicketText('XXXX9W9W9W', symbol,
-          resources.metricsFor(controller.document, symbol));
+      fitTicketText(
+        'XXXX9W9W9W',
+        symbol,
+        resources.metricsFor(controller.document, symbol),
+      );
     } on FormatException catch (error) {
       if (error.message == 'Layout too large') {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(TicketLayoutStrings.layoutLimit)));
+          SnackBar(content: Text(TicketLayoutStrings.layoutLimit)),
+        );
         return;
       }
       errors.add(symbol.id);
     }
     if (errors.isNotEmpty) {
-      controller.select(errors.firstWhere(
+      controller.select(
+        errors.firstWhere(
           (id) => controller.document.elements.any((e) => e.id == id),
-          orElse: () => symbol.id));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          orElse: () => symbol.id,
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
-              '${TicketLayoutStrings.checkElements}: ${controller.document.elements.where((e) => errors.contains(e.id)).map(elementName).join(', ')}')));
+            '${TicketLayoutStrings.checkElements}: ${controller.document.elements.where((e) => errors.contains(e.id)).map(elementName).join(', ')}',
+          ),
+        ),
+      );
       return;
     }
     final result = TicketLayoutResult(controller.document, background);
     if (widget.onSave != null) {
       setState(() => saving = true);
       var saved = false;
-      await ExceptionHandler.guard(editorContext, futureFunction: () async {
-        await widget.onSave!(result);
-        saved = true;
-      });
+      await ExceptionHandler.guard(
+        editorContext,
+        futureFunction: () async {
+          await widget.onSave!(result);
+          saved = true;
+        },
+      );
       if (!mounted) return;
       setState(() => saving = false);
       if (!saved) return;
@@ -310,28 +376,43 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final captured = signature;
     final layout = draftLayout;
     setState(() => pdfBusy = true);
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      final result = await widget.service.preview(
-          widget.occasionId, widget.type, layout, scenario, background);
-      if (!mounted || signature != captured) return;
-      await showDialog<void>(
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final result = await widget.service.preview(
+          widget.occasionId,
+          widget.type,
+          layout,
+          scenario,
+          background,
+        );
+        if (!mounted || signature != captured) return;
+        await showDialog<void>(
           context: editorContext,
           builder: (c) => AppDialog.fullscreen(
-              child: Scaffold(
-                  appBar: AppDialogAppBar(
-                    title: Text(TicketLayoutStrings.pdf),
-                    onClose: () => Navigator.pop(c),
-                  ),
-                  body: Column(children: [
-                    if (result.warnings.isNotEmpty)
-                      Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                              '${TicketLayoutStrings.overflow}: ${result.warnings.map((id) => controller.document.elements.where((e) => e.id == id).firstOrNull).whereType<TicketElement>().map(elementName).join(', ')}')),
-                    Expanded(child: TicketPdfDocument(bytes: result.bytes)),
-                  ]))));
-      if (mounted) setState(() => pdfSignature = captured);
-    });
+            child: Scaffold(
+              appBar: AppDialogAppBar(
+                title: Text(TicketLayoutStrings.pdf),
+                onClose: () => Navigator.pop(c),
+              ),
+              body: Column(
+                children: [
+                  if (result.warnings.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        '${TicketLayoutStrings.overflow}: ${result.warnings.map((id) => controller.document.elements.where((e) => e.id == id).firstOrNull).whereType<TicketElement>().map(elementName).join(', ')}',
+                      ),
+                    ),
+                  Expanded(child: TicketPdfDocument(bytes: result.bytes)),
+                ],
+              ),
+            ),
+          ),
+        );
+        if (mounted) setState(() => pdfSignature = captured);
+      },
+    );
     if (mounted) setState(() => pdfBusy = false);
   }
 
@@ -352,8 +433,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           bytes,
           widget.occasionId,
         );
-        if (!mounted || uploaded == null || !_canAuthor)
-          return;
+        if (!mounted || uploaded == null || !_canAuthor) return;
         final resolved = await widget.service.resolve(
           widget.occasionId,
           widget.type,
@@ -419,22 +499,29 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   Future<void> removeBackground() async {
     if (!_canChangeBackground) return;
     setState(() => imageBusy = true);
-    await ExceptionHandler.guard(context, futureFunction: () async {
-      final resolved = await widget.service
-          .resolve(widget.occasionId, widget.type, draftLayout, null);
-      if (!mounted || !_canAuthor) {
-        resolved.dispose();
-        return;
-      }
-      final old = resources;
-      setState(() {
-        resolved.fonts.addAll(resources.fonts);
-        resources = resolved;
-        background = null;
-        imageRevision++;
-      });
-      old.dispose();
-    });
+    await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        final resolved = await widget.service.resolve(
+          widget.occasionId,
+          widget.type,
+          draftLayout,
+          null,
+        );
+        if (!mounted || !_canAuthor) {
+          resolved.dispose();
+          return;
+        }
+        final old = resources;
+        setState(() {
+          resolved.fonts.addAll(resources.fonts);
+          resources = resolved;
+          background = null;
+          imageRevision++;
+        });
+        old.dispose();
+      },
+    );
     if (mounted) setState(() => imageBusy = false);
   }
 
@@ -453,18 +540,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Widget canvasSettings() => TicketCanvasSettings(
-      controller: controller,
-      backgroundImage: canvas.currentState?.backgroundSize,
-      onPaperChanged: () => WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) canvas.currentState?.fit();
-          }),
-      onEditElement: (id) {
-        setState(() => editCanvas = false);
-        controller.select(id);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) canvas.currentState?.fit();
-        });
+    controller: controller,
+    backgroundImage: canvas.currentState?.backgroundSize,
+    onPaperChanged: () => WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) canvas.currentState?.fit();
+    }),
+    onEditElement: (id) {
+      setState(() => editCanvas = false);
+      controller.select(id);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) canvas.currentState?.fit();
       });
+    },
+  );
 
   Future<void> chooseStyle() async {
     final presets = resources.presets.isEmpty
@@ -511,8 +599,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             height: math.min(620, MediaQuery.sizeOf(context).height * .75),
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.sizeOf(context).width < 600 ? 500 : 360,
+                maxCrossAxisExtent: MediaQuery.sizeOf(context).width < 600
+                    ? 500
+                    : 360,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 childAspectRatio: 1.05,
@@ -604,100 +693,144 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Widget elements({VoidCallback? onSelected}) => ListenableBuilder(
-      listenable: controller,
-      builder: (c, _) => Column(mainAxisSize: MainAxisSize.min, children: [
-            Padding(
-                padding: const EdgeInsets.all(8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+    listenable: controller,
+    builder: (c, _) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              onPressed: () => pickElement(onSelected: onSelected),
+              icon: const Icon(Icons.add),
+              label: Text(TicketLayoutStrings.addElement),
+            ),
+          ),
+        ),
+        if (!widget.productEditing)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(TicketLayoutStrings.draftProducts),
+          ),
+        ...controller.document.elements
+            .map(
+              (e) => ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                minLeadingWidth: 28,
+                horizontalTitleGap: 8,
+                selected: controller.selectedIds.contains(e.id),
+                title: Text(elementName(e)),
+                subtitle: e.binding == 'productType'
+                    ? Text(
+                        resources.previewData(
+                              controller.document,
+                              scenario,
+                            )[e.id] ??
+                            TicketLayoutStrings.noExample,
+                      )
+                    : null,
+                leading: Semantics(
+                  toggled: e.visible,
+                  child: IconButton(
+                    tooltip: TicketLayoutStrings.visible,
+                    icon: Icon(
+                      e.visible ? Icons.visibility : Icons.visibility_off,
                     ),
-                    onPressed: () => pickElement(onSelected: onSelected),
-                    icon: const Icon(Icons.add),
-                    label: Text(TicketLayoutStrings.addElement),
+                    onPressed: ['qr', 'ticketSymbol'].contains(e.binding)
+                        ? null
+                        : () => controller.change(
+                            e.copyWith(visible: !e.visible),
+                          ),
                   ),
-                )),
-            if (!widget.productEditing)
-              Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(TicketLayoutStrings.draftProducts)),
-            ...controller.document.elements
-                .map((e) => ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    minLeadingWidth: 28,
-                    horizontalTitleGap: 8,
-                    selected: controller.selectedIds.contains(e.id),
-                    title: Text(elementName(e)),
-                    subtitle: e.binding == 'productType'
-                        ? Text(resources.previewData(
-                                controller.document, scenario)[e.id] ??
-                            TicketLayoutStrings.noExample)
-                        : null,
-                    leading: Semantics(
-                        toggled: e.visible,
-                        child: IconButton(
-                            tooltip: TicketLayoutStrings.visible,
-                            icon: Icon(e.visible
-                                ? Icons.visibility
-                                : Icons.visibility_off),
-                            onPressed: ['qr', 'ticketSymbol']
-                                    .contains(e.binding)
-                                ? null
-                                : () => controller
-                                    .change(e.copyWith(visible: !e.visible)))),
-                    trailing:
-                        e.locked ? const Icon(Icons.lock, size: 16) : null,
-                    onTap: () {
-                      if (editCanvas || editBackground) {
-                        setState(() {
-                          editCanvas = false;
-                          editBackground = false;
-                        });
-                      }
-                      controller.select(e.id,
-                          additive: additiveSelection ||
-                              HardwareKeyboard.instance.isShiftPressed ||
-                              HardwareKeyboard.instance.isControlPressed ||
-                              HardwareKeyboard.instance.isMetaPressed);
-                      onSelected?.call();
-                    }))
-                .toList()
-          ]));
-  bool _canAddProduct(TicketProductType type) => type.eligible &&
-      type.example != null && !controller.document.elements.any((e) => e.productTypeId == type.id);
+                ),
+                trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
+                onTap: () {
+                  if (editCanvas || editBackground) {
+                    setState(() {
+                      editCanvas = false;
+                      editBackground = false;
+                    });
+                  }
+                  controller.select(
+                    e.id,
+                    additive:
+                        additiveSelection ||
+                        HardwareKeyboard.instance.isShiftPressed ||
+                        HardwareKeyboard.instance.isControlPressed ||
+                        HardwareKeyboard.instance.isMetaPressed,
+                  );
+                  onSelected?.call();
+                },
+              ),
+            )
+            .toList(),
+      ],
+    ),
+  );
+  bool _canAddProduct(TicketProductType type) =>
+      type.eligible &&
+      type.example != null &&
+      !controller.document.elements.any((e) => e.productTypeId == type.id);
 
   Future<void> pickElement({VoidCallback? onSelected}) async {
     controller.endGesture();
     final available = resources.previewBindings(controller.document, 'normal');
     final binding = await showDialog<String>(
-        context: editorContext,
-        builder: (context) => AppAlertDialog(
-            title: Text(TicketLayoutStrings.addElement),
-            content: SizedBox(width: 420, child: SingleChildScrollView(child:
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  ListTile(title: Text(TicketLayoutStrings.binding('text')),
-                      onTap: () => Navigator.pop(context, 'text')),
-                  for (final binding in [
-                    'occasionTitle', 'occasionStartTime', 'occasionPlace',
-                    'spotGroup', 'orderName', 'note', 'price', 'logo',
-                  ])
-                    if (!controller.document.elements.any((e) => e.binding == binding) &&
-                        (binding == 'logo' ? resources.logo != null :
-                          (available[binding]?.trim().isNotEmpty ?? false)))
-                      ListTile(title: Text(TicketLayoutStrings.binding(binding)),
-                          onTap: () => Navigator.pop(context, binding)),
-                  if (widget.productEditing && resources.catalog.any(_canAddProduct)) ...[
-                    const Divider(),
-                    ListTile(title: Text(TicketLayoutStrings.productGroup),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.pop(context, 'productType')),
-                  ],
-                ])))));
+      context: editorContext,
+      builder: (context) => AppAlertDialog(
+        title: Text(TicketLayoutStrings.addElement),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Text(TicketLayoutStrings.binding('text')),
+                  onTap: () => Navigator.pop(context, 'text'),
+                ),
+                for (final binding in [
+                  'occasionTitle',
+                  'occasionStartTime',
+                  'occasionPlace',
+                  'spotGroup',
+                  'orderName',
+                  'note',
+                  'price',
+                  'logo',
+                ])
+                  if (!controller.document.elements.any(
+                        (e) => e.binding == binding,
+                      ) &&
+                      (binding == 'logo'
+                          ? resources.logo != null
+                          : (available[binding]?.trim().isNotEmpty ?? false)))
+                    ListTile(
+                      title: Text(TicketLayoutStrings.binding(binding)),
+                      onTap: () => Navigator.pop(context, binding),
+                    ),
+                if (widget.productEditing &&
+                    resources.catalog.any(_canAddProduct)) ...[
+                  const Divider(),
+                  ListTile(
+                    title: Text(TicketLayoutStrings.productGroup),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pop(context, 'productType'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
     if (!mounted || binding == null) return;
     if (binding == 'productType') {
       await pickProduct(onSelected: onSelected);
@@ -707,90 +840,126 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         ? controller.addTextField(TicketLayoutStrings.textDefault)
         : controller.addOptionalField(binding);
     if (!added) {
-      ScaffoldMessenger.of(editorContext).showSnackBar(SnackBar(content: Text(
-          controller.productAddError == 'elements' ? TicketLayoutStrings.elementLimit :
-          controller.productAddError == 'size' ? TicketLayoutStrings.layoutLimit : TicketLayoutStrings.noSpace)));
+      ScaffoldMessenger.of(editorContext).showSnackBar(
+        SnackBar(
+          content: Text(
+            controller.productAddError == 'elements'
+                ? TicketLayoutStrings.elementLimit
+                : controller.productAddError == 'size'
+                ? TicketLayoutStrings.layoutLimit
+                : TicketLayoutStrings.noSpace,
+          ),
+        ),
+      );
       return;
     }
-    setState(() { editCanvas = false; editBackground = false; });
-    if (onSelected != null) onSelected();
-    else if (MediaQuery.sizeOf(context).width < 900) showMobilePanel(1);
+    setState(() {
+      editCanvas = false;
+      editBackground = false;
+    });
+    if (onSelected != null)
+      onSelected();
+    else if (MediaQuery.sizeOf(context).width < 900)
+      showMobilePanel(1);
   }
 
   String elementName(TicketElement e) => e.binding == 'productType'
       ? resources.catalog
-              .where((t) => t.id == e.productTypeId)
-              .firstOrNull
-              ?.title ??
-          TicketLayoutStrings.missingProduct
+                .where((t) => t.id == e.productTypeId)
+                .firstOrNull
+                ?.title ??
+            TicketLayoutStrings.missingProduct
       : TicketLayoutStrings.binding(e.binding);
   Widget? productProperties() {
     final e = controller.selection;
     if (e?.binding != 'productType') return null;
-    final type =
-        resources.catalog.where((t) => t.id == e!.productTypeId).firstOrNull;
+    final type = resources.catalog
+        .where((t) => t.id == e!.productTypeId)
+        .firstOrNull;
     final theme = Theme.of(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      SizedBox(
-        width: double.infinity,
-        child: OutlinedButton(
-          key: const ValueKey('ticket-product-group'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: theme.colorScheme.onSurface,
-            padding: const EdgeInsets.all(12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: widget.productEditing && !e!.locked
-              ? () => pickProduct(element: e)
-              : null,
-          child: Row(children: [
-            Expanded(
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            key: const ValueKey('ticket-product-group'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurface,
+              padding: const EdgeInsets.all(12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: widget.productEditing && !e!.locked
+                ? () => pickProduct(element: e)
+                : null,
+            child: Row(
               children: [
-                Text(TicketLayoutStrings.productGroup,
-                    style: theme.textTheme.bodySmall),
-                const SizedBox(height: 4),
-                Text(type?.title ?? TicketLayoutStrings.missingProduct,
-                    style: theme.textTheme.titleMedium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        TicketLayoutStrings.productGroup,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        type?.title ?? TicketLayoutStrings.missingProduct,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  e!.locked ? Icons.lock_outline : Icons.edit_outlined,
+                  size: 20,
+                ),
               ],
-            )),
-            const SizedBox(width: 8),
-            Icon(e!.locked ? Icons.lock_outline : Icons.edit_outlined,
-                size: 20),
-          ]),
+            ),
+          ),
         ),
-      ),
-      if (e.locked) Text(TicketLayoutStrings.locked),
-      if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
-      if (type != null && !type.eligible)
-        Text(TicketLayoutStrings.unreferencedProduct),
-      const SizedBox(height: 20),
-      TicketProductLabelInput(
-          key: ValueKey('label-${e.id}'), controller: controller, element: e),
-      const SizedBox(height: 16),
-      Container(
-        key: const ValueKey('ticket-product-example'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
+        if (e.locked) Text(TicketLayoutStrings.locked),
+        if (!widget.productEditing) Text(TicketLayoutStrings.draftProducts),
+        if (type != null && !type.eligible)
+          Text(TicketLayoutStrings.unreferencedProduct),
+        const SizedBox(height: 20),
+        TicketProductLabelInput(
+          key: ValueKey('label-${e.id}'),
+          controller: controller,
+          element: e,
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(TicketLayoutStrings.example, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 8),
-          Text(
-              resources.previewData(controller.document, scenario)[e.id] ??
-                  TicketLayoutStrings.noExample,
-              style: theme.textTheme.bodyLarge),
-        ]),
-      ),
-      const SizedBox(height: 4),
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
+        const SizedBox(height: 16),
+        Container(
+          key: const ValueKey('ticket-product-example'),
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                TicketLayoutStrings.example,
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                resources.previewData(controller.document, scenario)[e.id] ??
+                    TicketLayoutStrings.noExample,
+                style: theme.textTheme.bodyLarge,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
             style: TextButton.styleFrom(
               foregroundColor: theme.colorScheme.onSurfaceVariant,
               textStyle: theme.textTheme.bodySmall,
@@ -798,183 +967,241 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             ),
             onPressed: e.locked ? null : () => controller.removeProductField(e),
             icon: const Icon(Icons.delete_outline, size: 18),
-            label: Text(TicketLayoutStrings.removeProduct)),
-      ),
-      const Divider(height: 16),
-    ]);
+            label: Text(TicketLayoutStrings.removeProduct),
+          ),
+        ),
+        const Divider(height: 16),
+      ],
+    );
   }
 
-  Future<void> pickProduct(
-      {TicketElement? element, VoidCallback? onSelected}) async {
+  Future<void> pickProduct({
+    TicketElement? element,
+    VoidCallback? onSelected,
+  }) async {
     controller.endGesture();
     var filter = '';
     TicketProductType? selected;
     bool catalogLoading = false;
-    String? error =
-        resources.catalogError ? TicketLayoutStrings.catalogError : null;
+    String? error = resources.catalogError
+        ? TicketLayoutStrings.catalogError
+        : null;
     final chosen = await showDialog<TicketProductType>(
-        context: editorContext,
-        builder: (dialogContext) => StatefulBuilder(builder: (context, update) {
-              final types = resources.catalog
-                  .where((t) =>
-                      (element == null ? _canAddProduct(t) :
-                          t.eligible && !controller.document.elements.any((e) =>
-                              e.id != element.id && e.productTypeId == t.id)) &&
-                      t.title.toLowerCase().contains(filter.toLowerCase()))
-                  .toList();
-              Widget dismissible(Widget child) => Focus(
-                  autofocus: true,
-                  onKeyEvent: (node, event) {
-                    if (event is KeyDownEvent &&
-                        event.logicalKey == LogicalKeyboardKey.escape) {
-                      Navigator.pop(dialogContext);
-                      return KeyEventResult.handled;
-                    }
-                    return KeyEventResult.ignored;
-                  },
-                  child: child);
-              final content = Column(children: [
-                TextField(
-                    autofocus: true,
-                    decoration: InputDecoration(
-                        labelText: TicketLayoutStrings.searchProducts),
-                    onChanged: (value) => update(() => filter = value)),
-                if (error != null) Text(error!),
-                if (types.isEmpty && error == null && !catalogLoading)
-                  Text(TicketLayoutStrings.emptyProducts),
-                if (types.isEmpty && error == null && !catalogLoading)
-                  TextButton.icon(
-                      icon: const Icon(Icons.open_in_new),
-                      label: Text(TicketLayoutStrings.manageProducts),
-                      onPressed: widget.routeRouter != null &&
-                              RightsService.currentOccasionId() ==
-                                  widget.occasionId
-                          ? () async {
-                              Navigator.pop(dialogContext);
-                              await pushRootPath(
-                                  widget.routeRouter!,
-                                  RouterService.getCurrentLink() +
-                                      '${ReservationsPage.ROUTE}/${NavigationPaths.forms}');
-                            }
-                          : null),
-                if (catalogLoading) const LinearProgressIndicator(),
-                if (resources.catalogError) TextButton(
-                    onPressed: catalogLoading
-                        ? null
-                        : () async {
-                            update(() => catalogLoading = true);
-                            try {
-                              final next = await widget.service
-                                  .catalog(widget.occasionId);
-                              if (mounted && context.mounted)
-                                update(() {
-                                  resources.catalog = next;
-                                  resources.catalogError = false;
-                                  error = null;
-                                });
-                            } catch (_) {
-                              if (mounted && context.mounted)
-                                update(() {
-                                  resources.catalogError = true;
-                                  error = TicketLayoutStrings.catalogError;
-                                });
-                            } finally {
-                              if (context.mounted)
-                                update(() => catalogLoading = false);
-                            }
-                          },
-                    child: Text(TicketLayoutStrings.retryCatalog)),
-                Expanded(
-                    child: ListView(
-                        children: types.map((t) {
-                  final existing = controller.document.elements
-                      .where(
-                          (e) => e.productTypeId == t.id && e.id != element?.id)
-                      .firstOrNull;
-                  return RadioListTile<int>(
+      context: editorContext,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) {
+          final types = resources.catalog
+              .where(
+                (t) =>
+                    (element == null
+                        ? _canAddProduct(t)
+                        : t.eligible &&
+                              !controller.document.elements.any(
+                                (e) =>
+                                    e.id != element.id &&
+                                    e.productTypeId == t.id,
+                              )) &&
+                    t.title.toLowerCase().contains(filter.toLowerCase()),
+              )
+              .toList();
+          Widget dismissible(Widget child) => Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.escape) {
+                Navigator.pop(dialogContext);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: child,
+          );
+          final content = Column(
+            children: [
+              TextField(
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: TicketLayoutStrings.searchProducts,
+                ),
+                onChanged: (value) => update(() => filter = value),
+              ),
+              if (error != null) Text(error!),
+              if (types.isEmpty && error == null && !catalogLoading)
+                Text(TicketLayoutStrings.emptyProducts),
+              if (types.isEmpty && error == null && !catalogLoading)
+                TextButton.icon(
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(TicketLayoutStrings.manageProducts),
+                  onPressed:
+                      widget.routeRouter != null &&
+                          RightsService.currentOccasionId() == widget.occasionId
+                      ? () async {
+                          Navigator.pop(dialogContext);
+                          await pushRootPath(
+                            widget.routeRouter!,
+                            RouterService.getCurrentLink() +
+                                '${ReservationsPage.ROUTE}/${NavigationPaths.forms}',
+                          );
+                        }
+                      : null,
+                ),
+              if (catalogLoading) const LinearProgressIndicator(),
+              if (resources.catalogError)
+                TextButton(
+                  onPressed: catalogLoading
+                      ? null
+                      : () async {
+                          update(() => catalogLoading = true);
+                          try {
+                            final next = await widget.service.catalog(
+                              widget.occasionId,
+                            );
+                            if (mounted && context.mounted)
+                              update(() {
+                                resources.catalog = next;
+                                resources.catalogError = false;
+                                error = null;
+                              });
+                          } catch (_) {
+                            if (mounted && context.mounted)
+                              update(() {
+                                resources.catalogError = true;
+                                error = TicketLayoutStrings.catalogError;
+                              });
+                          } finally {
+                            if (context.mounted)
+                              update(() => catalogLoading = false);
+                          }
+                        },
+                  child: Text(TicketLayoutStrings.retryCatalog),
+                ),
+              Expanded(
+                child: ListView(
+                  children: types.map((t) {
+                    final existing = controller.document.elements
+                        .where(
+                          (e) => e.productTypeId == t.id && e.id != element?.id,
+                        )
+                        .firstOrNull;
+                    return RadioListTile<int>(
                       value: t.id,
                       groupValue: selected?.id,
                       isThreeLine: true,
                       title: Text(t.title),
                       subtitle: Text(
-                          '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null ? TicketLayoutStrings.alreadyAdded : t.offered ? TicketLayoutStrings.offeredProduct : TicketLayoutStrings.hiddenFormProduct} ${t.forms.map((f) => f['title']).whereType<String>().where((title) => title != t.title).toSet().join(', ')}'.trim()),
-                      onChanged: (_) => update(() => selected = t));
-                }).toList())),
-              ]);
-              final actions = [
-                TextButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    child: Text(TicketLayoutStrings.cancel)),
-                FilledButton(
-                    onPressed: selected == null || catalogLoading
-                        ? null
-                        : () {
-                            final t = selected!;
-                            final existing = controller.document.elements
-                                .where((e) =>
-                                    e.productTypeId == t.id &&
-                                    e.id != element?.id)
-                                .firstOrNull;
-                            if (existing != null || element == null) {
-                              if (!controller.addProductField(t.id, t.title)) {
-                                update(() => error =
-                                    controller.productAddError == 'elements'
-                                        ? TicketLayoutStrings.elementLimit
-                                        : controller.productAddError == 'size'
-                                            ? TicketLayoutStrings.layoutLimit
-                                            : TicketLayoutStrings.noSpace);
-                                return;
-                              }
-                            } else
-                              controller.changeProductType(
-                                  element,
-                                  t.id,
-                                  t.title,
-                                  resources.catalog
-                                          .where((v) =>
-                                              v.id == element.productTypeId)
-                                          .firstOrNull
-                                          ?.title ??
-                                      '');
-                            Navigator.pop(dialogContext, t);
-                          },
-                    child: Text(element == null
-                        ? TicketLayoutStrings.addProduct
-                        : CommonStrings.save))
-              ];
-              if (MediaQuery.sizeOf(context).width < 600)
-                return dismissible(AppDialog.fullscreen(
-                    child: Scaffold(
-                        appBar: AppDialogAppBar(
-                            title: Text(TicketLayoutStrings.productGroup)),
-                        body: Padding(
-                            padding: const EdgeInsets.all(16), child: content),
-                        bottomNavigationBar: SafeArea(
-                            child: Wrap(
-                                alignment: WrapAlignment.end,
-                                children: actions)))));
-              return dismissible(AppAlertDialog(
-                  title: Text(TicketLayoutStrings.productGroup),
-                  content: SizedBox(width: 480, height: 450, child: content),
-                  actions: actions));
-            }));
+                        '${t.example?['value'] ?? TicketLayoutStrings.noExample}\n${existing != null
+                                ? TicketLayoutStrings.alreadyAdded
+                                : t.offered
+                                ? TicketLayoutStrings.offeredProduct
+                                : TicketLayoutStrings.hiddenFormProduct} ${t.forms.map((f) => f['title']).whereType<String>().where((title) => title != t.title).toSet().join(', ')}'
+                            .trim(),
+                      ),
+                      onChanged: (_) => update(() => selected = t),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          );
+          final actions = [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(TicketLayoutStrings.cancel),
+            ),
+            FilledButton(
+              onPressed: selected == null || catalogLoading
+                  ? null
+                  : () {
+                      final t = selected!;
+                      final existing = controller.document.elements
+                          .where(
+                            (e) =>
+                                e.productTypeId == t.id && e.id != element?.id,
+                          )
+                          .firstOrNull;
+                      if (existing != null || element == null) {
+                        if (!controller.addProductField(t.id, t.title)) {
+                          update(
+                            () =>
+                                error = controller.productAddError == 'elements'
+                                ? TicketLayoutStrings.elementLimit
+                                : controller.productAddError == 'size'
+                                ? TicketLayoutStrings.layoutLimit
+                                : TicketLayoutStrings.noSpace,
+                          );
+                          return;
+                        }
+                      } else
+                        controller.changeProductType(
+                          element,
+                          t.id,
+                          t.title,
+                          resources.catalog
+                                  .where((v) => v.id == element.productTypeId)
+                                  .firstOrNull
+                                  ?.title ??
+                              '',
+                        );
+                      Navigator.pop(dialogContext, t);
+                    },
+              child: Text(
+                element == null
+                    ? TicketLayoutStrings.addProduct
+                    : CommonStrings.save,
+              ),
+            ),
+          ];
+          if (MediaQuery.sizeOf(context).width < 600)
+            return dismissible(
+              AppDialog.fullscreen(
+                child: Scaffold(
+                  appBar: AppDialogAppBar(
+                    title: Text(TicketLayoutStrings.productGroup),
+                  ),
+                  body: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: content,
+                  ),
+                  bottomNavigationBar: SafeArea(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      children: actions,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          return dismissible(
+            AppAlertDialog(
+              title: Text(TicketLayoutStrings.productGroup),
+              content: SizedBox(width: 480, height: 450, child: content),
+              actions: actions,
+            ),
+          );
+        },
+      ),
+    );
     if (!mounted) return;
     setState(() {});
     if (chosen != null) {
       if (onSelected != null)
         onSelected();
-      else if (MediaQuery.sizeOf(context).width < 900) showMobilePanel(1);
+      else if (MediaQuery.sizeOf(context).width < 900)
+        showMobilePanel(1);
     }
   }
 
-  Future<void> selectFont(Map<String, dynamic>? asset,
-      {String? elementId}) async {
+  Future<void> selectFont(
+    Map<String, dynamic>? asset, {
+    String? elementId,
+  }) async {
     final generation = ++fontGeneration;
     setState(() => fontBusy = true);
     try {
       final id = asset?['id'] as String?;
-      final loaded =
-          id == null ? null : await widget.service.font(widget.occasionId, id);
+      final loaded = id == null
+          ? null
+          : await widget.service.font(widget.occasionId, id);
       if (!mounted || generation != fontGeneration) return;
       if (loaded != null) resources.fonts[loaded.id] = loaded;
       final document = controller.document;
@@ -996,39 +1223,40 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final entries = await fontCatalog;
     final asset = entries.firstWhere((e) => e['family'] == family);
     final id = asset['id'] as String;
-    final font = resources.fonts[id] ?? await widget.service.font(widget.occasionId, id);
+    final font =
+        resources.fonts[id] ?? await widget.service.font(widget.occasionId, id);
     return TextStyle(fontFamily: font.loaderName, fontWeight: FontWeight.w400);
   }
 
   Widget fontPicker() => FutureBuilder<List<Map<String, dynamic>>>(
-        future: fontCatalog,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const SizedBox.shrink();
-          final entries = snapshot.data!;
-          final font = resources.fontFor(controller.document);
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: FontFamilyPicker(
-              label: TicketLayoutStrings.templateFont,
-              previewStyle: fontPreviewStyle,
-              selectedStyle: TextStyle(fontFamily: font.loaderName),
-              value: font.family,
-              families: entries.map((f) => f['family'] as String).toList(),
-              extraFamilies: entries
-                  .where((f) => f['source'] == 'bundled')
-                  .map((f) => f['family'] as String)
-                  .toList(),
-              canReset: controller.document.fontId != null,
-              enabled: !imageBusy && !fontBusy,
-              onSelected: (family) => selectFont(
-                family == null
-                    ? null
-                    : entries.firstWhere((f) => f['family'] == family),
-              ),
-            ),
-          );
-        },
+    future: fontCatalog,
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) return const SizedBox.shrink();
+      final entries = snapshot.data!;
+      final font = resources.fontFor(controller.document);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: FontFamilyPicker(
+          label: TicketLayoutStrings.templateFont,
+          previewStyle: fontPreviewStyle,
+          selectedStyle: TextStyle(fontFamily: font.loaderName),
+          value: font.family,
+          families: entries.map((f) => f['family'] as String).toList(),
+          extraFamilies: entries
+              .where((f) => f['source'] == 'bundled')
+              .map((f) => f['family'] as String)
+              .toList(),
+          canReset: controller.document.fontId != null,
+          enabled: !imageBusy && !fontBusy,
+          onSelected: (family) => selectFont(
+            family == null
+                ? null
+                : entries.firstWhere((f) => f['family'] == family),
+          ),
+        ),
       );
+    },
+  );
 
   Widget? elementFontControl() {
     final element = controller.selection;
@@ -1065,10 +1293,11 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                       value: element.fontId == null
                           ? null
                           : resources
-                              .fontFor(controller.document, element)
-                              .family,
-                      families:
-                          entries.map((f) => f['family'] as String).toList(),
+                                .fontFor(controller.document, element)
+                                .family,
+                      families: entries
+                          .map((f) => f['family'] as String)
+                          .toList(),
                       extraFamilies: entries
                           .where((f) => f['source'] == 'bundled')
                           .map((f) => f['family'] as String)
@@ -1087,8 +1316,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         if (element.fontId != null)
           IconButton(
             tooltip: TicketLayoutStrings.inheritFont,
-            onPressed:
-                enabled ? () => selectFont(null, elementId: element.id) : null,
+            onPressed: enabled
+                ? () => selectFont(null, elementId: element.id)
+                : null,
             icon: const Icon(Icons.restore),
           ),
       ],
@@ -1096,323 +1326,391 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Widget panelHeading(String title) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600))));
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    ),
+  );
 
   Future<void> editCanvasColor() async {
     final original = controller.document;
     controller.beginGesture();
     final color = await showDialog<TicketCanvasColor>(
-        context: editorContext,
-        builder: (_) => TicketCanvasColorDialog(
-            value: original.canvasColor,
-            opacity: original.canvasOpacity,
-            usedColors: [
-              ...original.elements.map((e) => e.color),
-              original.canvasColor
-            ],
-            image: canvas.currentState?.backgroundImage,
-            onPreview: (color) => controller.previewDocument(original
-                .withCanvasColor(color.color, opacity: color.opacity))));
+      context: editorContext,
+      builder: (_) => TicketCanvasColorDialog(
+        value: original.canvasColor,
+        opacity: original.canvasOpacity,
+        usedColors: [
+          ...original.elements.map((e) => e.color),
+          original.canvasColor,
+        ],
+        image: canvas.currentState?.backgroundImage,
+        onPreview: (color) => controller.previewDocument(
+          original.withCanvasColor(color.color, opacity: color.opacity),
+        ),
+      ),
+    );
     if (!mounted) return;
     if (color == null) {
       controller.cancelGesture();
     } else {
       controller.previewDocument(
-          original.withCanvasColor(color.color, opacity: color.opacity));
+        original.withCanvasColor(color.color, opacity: color.opacity),
+      );
       controller.endGesture();
     }
   }
 
   Widget panel({bool includeElements = true}) => SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => TicketLayoutProperties(
-                controller: controller,
-                fontControl: elementFontControl(),
-                productControl: productProperties(),
-                defaults: propertyDefaults,
-                backgroundImage:
-                    resources.artworks.containsKey(controller.artworkKey)
-                        ? resources.artworks[controller.artworkKey]!.image
-                        : resources.background,
-                metrics: resources.metricsFor(
-                    controller.document, controller.selection),
-                data: resources.previewData(controller.document, scenario))),
+          listenable: controller,
+          builder: (context, _) => TicketLayoutProperties(
+            controller: controller,
+            fontControl: elementFontControl(),
+            productControl: productProperties(),
+            defaults: propertyDefaults,
+            backgroundImage:
+                resources.artworks.containsKey(controller.artworkKey)
+                ? resources.artworks[controller.artworkKey]!.image
+                : resources.background,
+            metrics: resources.metricsFor(
+              controller.document,
+              controller.selection,
+            ),
+            data: resources.previewData(controller.document, scenario),
+          ),
+        ),
         panelHeading(TicketLayoutStrings.canvasSection),
         ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => ListTile(
-                dense: true,
-                title: Text(TicketLayoutStrings.canvasSize),
-                subtitle: Text(
-                    '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket ? TicketLayoutStrings.paperTicket : controller.document.page == const Size(595.28, 841.89) ? TicketLayoutStrings.paperA4 : TicketLayoutStrings.paperOriginal}'),
-                trailing: const Icon(Icons.tune),
-                onTap: imageBusy
-                    ? null
-                    : () {
-                        if (MediaQuery.sizeOf(context).width < 900)
-                          Navigator.pop(context);
-                        editDimensions();
-                      })),
+          listenable: controller,
+          builder: (context, _) => ListTile(
+            dense: true,
+            title: Text(TicketLayoutStrings.canvasSize),
+            subtitle: Text(
+              '${(controller.document.area.width * 25.4 / 72).toStringAsFixed(1)} × ${(controller.document.area.height * 25.4 / 72).toStringAsFixed(1)} mm · ${controller.document.fitPageToTicket
+                  ? TicketLayoutStrings.paperTicket
+                  : controller.document.page == const Size(595.28, 841.89)
+                  ? TicketLayoutStrings.paperA4
+                  : TicketLayoutStrings.paperOriginal}',
+            ),
+            trailing: const Icon(Icons.tune),
+            onTap: imageBusy
+                ? null
+                : () {
+                    if (MediaQuery.sizeOf(context).width < 900)
+                      Navigator.pop(context);
+                    editDimensions();
+                  },
+          ),
+        ),
         Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                    icon: const Icon(Icons.aspect_ratio),
-                    label: Text(TicketLayoutStrings.resizeCanvas),
-                    onPressed: imageBusy
-                        ? null
-                        : () {
-                            editDimensions();
-                            if (MediaQuery.sizeOf(context).width < 900)
-                              Navigator.pop(context);
-                          }))),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              icon: const Icon(Icons.aspect_ratio),
+              label: Text(TicketLayoutStrings.resizeCanvas),
+              onPressed: imageBusy
+                  ? null
+                  : () {
+                      editDimensions();
+                      if (MediaQuery.sizeOf(context).width < 900)
+                        Navigator.pop(context);
+                    },
+            ),
+          ),
+        ),
         ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) {
-              final value = controller.document.canvasColor;
-              return ListTile(
-                  dense: true,
-                  title: Text(TicketLayoutStrings.canvasColor),
-                  subtitle: Text(controller.document.canvasOpacity == 0
-                      ? TicketLayoutStrings.transparent
-                      : '#${value.toUpperCase()} · ${((1 - controller.document.canvasOpacity) * 100).round()} % ${TicketLayoutStrings.transparency.toLowerCase()}'),
-                  trailing: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                          color: value == 'transparent'
-                              ? null
-                              : Color(int.parse('ff$value', radix: 16)),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: Theme.of(context).dividerColor)),
-                      child: value == 'transparent'
-                          ? const Icon(Icons.grid_on, size: 22)
-                          : null),
-                  onTap: editCanvasColor);
-            }),
+          listenable: controller,
+          builder: (context, _) {
+            final value = controller.document.canvasColor;
+            return ListTile(
+              dense: true,
+              title: Text(TicketLayoutStrings.canvasColor),
+              subtitle: Text(
+                controller.document.canvasOpacity == 0
+                    ? TicketLayoutStrings.transparent
+                    : '#${value.toUpperCase()} · ${((1 - controller.document.canvasOpacity) * 100).round()} % ${TicketLayoutStrings.transparency.toLowerCase()}',
+              ),
+              trailing: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: value == 'transparent'
+                      ? null
+                      : Color(int.parse('ff$value', radix: 16)),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: value == 'transparent'
+                    ? const Icon(Icons.grid_on, size: 22)
+                    : null,
+              ),
+              onTap: editCanvasColor,
+            );
+          },
+        ),
         panelHeading(TicketLayoutStrings.textSection),
         ListenableBuilder(
-            listenable: controller, builder: (context, _) => fontPicker()),
+          listenable: controller,
+          builder: (context, _) => fontPicker(),
+        ),
         const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Divider()),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Divider(),
+        ),
         if (includeElements) elements(),
         panelHeading(TicketLayoutStrings.imageSection),
         Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: ImageArea(
-                imageUrl: background,
-                preview: ListenableBuilder(
-                    listenable: controller,
-                    builder: (context, _) {
-                      final image =
-                          resources.artworks[controller.artworkKey]?.image ??
-                              resources.background;
-                      if (image == null) return const SizedBox(height: 112);
-                      return SizedBox(
-                          height: 112,
-                          width: double.infinity,
-                          child: CustomPaint(
-                              painter: TicketBackgroundPreviewPainter(
-                                  image, controller.document.backgroundCrop)));
-                    }),
-                hint: TicketLayoutStrings.background,
-                enabled: _canChangeBackground,
-                dropEnabled: false,
-                allowedExtensions: editorRasterExtensions,
-                onFileSelected: upload,
-                onRemove: removeBackground)),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: ImageArea(
+            imageUrl: background,
+            preview: ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) {
+                final image =
+                    resources.artworks[controller.artworkKey]?.image ??
+                    resources.background;
+                if (image == null) return const SizedBox(height: 112);
+                return SizedBox(
+                  height: 112,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: TicketBackgroundPreviewPainter(
+                      image,
+                      controller.document.backgroundCrop,
+                    ),
+                  ),
+                );
+              },
+            ),
+            hint: TicketLayoutStrings.background,
+            enabled: _canChangeBackground,
+            dropEnabled: false,
+            allowedExtensions: editorRasterExtensions,
+            onFileSelected: upload,
+            onRemove: removeBackground,
+          ),
+        ),
         Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (background?.isNotEmpty ?? false)
-                    TextButton.icon(
-                        icon: const Icon(Icons.open_with),
-                        label: Text(TicketLayoutStrings.positionImage),
-                        onPressed: imageBusy
-                            ? null
-                            : () {
-                                setState(() {
-                                  editBackground = true;
-                                  editCanvas = false;
-                                  cropBackground = false;
-                                  pan = false;
-                                });
-                                controller.select(null);
-                                if (MediaQuery.sizeOf(context).width < 900) {
-                                  Navigator.pop(context);
-                                }
-                              }),
-                  const SizedBox(height: 12),
-                  if (background?.isNotEmpty ?? false)
-                    TextButton.icon(
-                        icon: const Icon(Icons.crop),
-                        label: Text(TicketLayoutStrings.cropImage),
-                        onPressed: imageBusy
-                            ? null
-                            : () {
-                                setState(() {
-                                  editBackground = true;
-                                  editCanvas = false;
-                                  cropBackground = true;
-                                  pan = false;
-                                });
-                                controller.select(null);
-                                if (MediaQuery.sizeOf(context).width < 900)
-                                  Navigator.pop(context);
-                              }),
-                  const Divider(height: 24),
-                  TextButton(
-                      onPressed: imageBusy
-                          ? null
-                          : () {
-                              final preset =
-                                  resources.presets[controller.artworkKey] ??
-                                      resources.preset;
-                              setState(() => propertyDefaults = preset);
-                              controller.replace(preset);
-                            },
-                      child: Text(TicketLayoutStrings.reset))
-                ])),
-      ]));
-  Widget modeBanner(
-      {required String title,
-      required String hint,
-      required IconData icon,
-      required VoidCallback onDone,
-      Widget? tools,
-      bool canvasMode = false}) {
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (background?.isNotEmpty ?? false)
+                TextButton.icon(
+                  icon: const Icon(Icons.open_with),
+                  label: Text(TicketLayoutStrings.positionImage),
+                  onPressed: imageBusy
+                      ? null
+                      : () {
+                          setState(() {
+                            editBackground = true;
+                            editCanvas = false;
+                            cropBackground = false;
+                            pan = false;
+                          });
+                          controller.select(null);
+                          if (MediaQuery.sizeOf(context).width < 900) {
+                            Navigator.pop(context);
+                          }
+                        },
+                ),
+              const SizedBox(height: 12),
+              if (background?.isNotEmpty ?? false)
+                TextButton.icon(
+                  icon: const Icon(Icons.crop),
+                  label: Text(TicketLayoutStrings.cropImage),
+                  onPressed: imageBusy
+                      ? null
+                      : () {
+                          setState(() {
+                            editBackground = true;
+                            editCanvas = false;
+                            cropBackground = true;
+                            pan = false;
+                          });
+                          controller.select(null);
+                          if (MediaQuery.sizeOf(context).width < 900)
+                            Navigator.pop(context);
+                        },
+                ),
+              const Divider(height: 24),
+              TextButton(
+                onPressed: imageBusy
+                    ? null
+                    : () {
+                        final preset =
+                            resources.presets[controller.artworkKey] ??
+                            resources.preset;
+                        setState(() => propertyDefaults = preset);
+                        controller.replace(preset);
+                      },
+                child: Text(TicketLayoutStrings.reset),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+  Widget modeBanner({
+    required String title,
+    required String hint,
+    required IconData icon,
+    required VoidCallback onDone,
+    Widget? tools,
+    bool canvasMode = false,
+  }) {
     final colors = Theme.of(editorContext).colorScheme;
     return Container(
-        key: const ValueKey('ticket-edit-mode'),
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-            color: colors.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colors.primary.withValues(alpha: .4))),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            Icon(icon, color: colors.onPrimaryContainer, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
+      key: const ValueKey('ticket-edit-mode'),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.primary.withValues(alpha: .4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: colors.onPrimaryContainer, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(title,
-                      style: Theme.of(editorContext)
-                          .textTheme
-                          .titleSmall
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(editorContext).textTheme.titleSmall
                           ?.copyWith(
-                              color: colors.onPrimaryContainer,
-                              fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Text(hint,
-                      style: Theme.of(editorContext)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: colors.onPrimaryContainer)),
-                ])),
-            const SizedBox(width: 12),
-            TweenAnimationBuilder<double>(
+                            color: colors.onPrimaryContainer,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hint,
+                      style: Theme.of(editorContext).textTheme.bodySmall
+                          ?.copyWith(color: colors.onPrimaryContainer),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              TweenAnimationBuilder<double>(
                 key: ValueKey(
-                    'mode-done-${canvasMode ? canvasElementAttempts : 0}'),
+                  'mode-done-${canvasMode ? canvasElementAttempts : 0}',
+                ),
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 650),
                 builder: (context, value, child) => Transform.scale(
-                    scale: canvasMode && canvasElementAttempts > 0
-                        ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2)
-                        : 1,
-                    child: child),
+                  scale: canvasMode && canvasElementAttempts > 0
+                      ? 1 + .08 * math.pow(math.sin(value * math.pi * 2), 2)
+                      : 1,
+                  child: child,
+                ),
                 child: FilledButton(
-                    key: canvasMode
-                        ? const ValueKey('finish-canvas-resize')
-                        : null,
-                    onPressed: onDone,
-                    child: Text(TicketLayoutStrings.doneImage))),
-          ]),
+                  key: canvasMode
+                      ? const ValueKey('finish-canvas-resize')
+                      : null,
+                  onPressed: onDone,
+                  child: Text(TicketLayoutStrings.doneImage),
+                ),
+              ),
+            ],
+          ),
           if (tools != null) ...[const SizedBox(height: 12), tools],
-        ]));
+        ],
+      ),
+    );
   }
 
   Widget backgroundTools() => ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final doc = controller.document;
-        final artwork = resources.artworks[controller.artworkKey];
-        final image = artwork != null ? artwork.image : resources.background;
-        void fitImage(bool cover) {
-          if (image == null) return;
-          final sx = doc.area.width / image.width,
-              sy = doc.area.height / image.height;
-          final scale = cover ? (sx > sy ? sx / sy : sy / sx) : 1.0;
-          controller.changeBackground(scale, Offset.zero);
-        }
+    listenable: controller,
+    builder: (context, _) {
+      final doc = controller.document;
+      final artwork = resources.artworks[controller.artworkKey];
+      final image = artwork != null ? artwork.image : resources.background;
+      void fitImage(bool cover) {
+        if (image == null) return;
+        final sx = doc.area.width / image.width,
+            sy = doc.area.height / image.height;
+        final scale = cover ? (sx > sy ? sx / sy : sy / sx) : 1.0;
+        controller.changeBackground(scale, Offset.zero);
+      }
 
-        return modeBanner(
-            title: cropBackground
-                ? TicketLayoutStrings.modeCrop
-                : TicketLayoutStrings.modeImage,
-            hint: cropBackground
-                ? TicketLayoutStrings.cropImageHint
-                : TicketLayoutStrings.dragImage,
-            icon: cropBackground ? Icons.crop : Icons.photo_size_select_large,
-            onDone: () => setState(() => editBackground = false),
-            tools: Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  SegmentedButton<bool>(
-                      segments: [
-                        ButtonSegment(
-                            value: false,
-                            label: Text(TicketLayoutStrings.positionImage)),
-                        ButtonSegment(
-                            value: true,
-                            label: Text(TicketLayoutStrings.cropImage))
-                      ],
-                      selected: {
-                        cropBackground
-                      },
-                      onSelectionChanged: (values) =>
-                          setState(() => cropBackground = values.single)),
-                  if (cropBackground)
-                    TextButton(
-                        onPressed: () => controller.replace(
-                            doc.withBackgroundCrop(
-                                const Rect.fromLTWH(0, 0, 1, 1))),
-                        child: Text(TicketLayoutStrings.resetCrop)),
-                  if (!cropBackground)
-                    TextButton(
-                        onPressed: () => fitImage(false),
-                        child: Text(TicketLayoutStrings.containImage)),
-                  if (!cropBackground)
-                    TextButton(
-                        onPressed: () => fitImage(true),
-                        child: Text(TicketLayoutStrings.coverImage)),
-                  if (!cropBackground)
-                    TextButton(
-                        onPressed: () => controller.changeBackground(
-                            doc.backgroundScale, Offset.zero),
-                        child: Text(TicketLayoutStrings.centerImage)),
-                ]));
-      });
+      return modeBanner(
+        title: cropBackground
+            ? TicketLayoutStrings.modeCrop
+            : TicketLayoutStrings.modeImage,
+        hint: cropBackground
+            ? TicketLayoutStrings.cropImageHint
+            : TicketLayoutStrings.dragImage,
+        icon: cropBackground ? Icons.crop : Icons.photo_size_select_large,
+        onDone: () => setState(() => editBackground = false),
+        tools: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  label: Text(TicketLayoutStrings.positionImage),
+                ),
+                ButtonSegment(
+                  value: true,
+                  label: Text(TicketLayoutStrings.cropImage),
+                ),
+              ],
+              selected: {cropBackground},
+              onSelectionChanged: (values) =>
+                  setState(() => cropBackground = values.single),
+            ),
+            if (cropBackground)
+              TextButton(
+                onPressed: () => controller.replace(
+                  doc.withBackgroundCrop(const Rect.fromLTWH(0, 0, 1, 1)),
+                ),
+                child: Text(TicketLayoutStrings.resetCrop),
+              ),
+            if (!cropBackground)
+              TextButton(
+                onPressed: () => fitImage(false),
+                child: Text(TicketLayoutStrings.containImage),
+              ),
+            if (!cropBackground)
+              TextButton(
+                onPressed: () => fitImage(true),
+                child: Text(TicketLayoutStrings.coverImage),
+              ),
+            if (!cropBackground)
+              TextButton(
+                onPressed: () => controller.changeBackground(
+                  doc.backgroundScale,
+                  Offset.zero,
+                ),
+                child: Text(TicketLayoutStrings.centerImage),
+              ),
+          ],
+        ),
+      );
+    },
+  );
 
   bool _panelOpen = false;
   @override
@@ -1437,58 +1735,78 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final root = widget.routeRouter;
     if (root != null)
       await DayRouteSelection.write(
-          root, 'panel', tab == 0 ? 'elements' : 'properties');
+        root,
+        'panel',
+        tab == 0 ? 'elements' : 'properties',
+      );
     if (!mounted) return;
     await showModalBottomSheet<void>(
-        context: editorContext,
-        isScrollControlled: true,
-        useSafeArea: true,
-        showDragHandle: true,
-        shape: appDialogShape,
-        builder: (context) {
-          _historyPanelRoute = ModalRoute.of(context);
-          return Focus(
-            autofocus: true,
-            onKeyEvent: _historyKey,
-            child: AppDialogDismissal(
-                child: DefaultTabController(
-                    initialIndex: tab,
-                    length: 2,
-                    child: SizedBox(
-                        height: MediaQuery.sizeOf(context).height * .72,
-                        child: Column(children: [
-                          AppDialogHeader(
-                              title: TabBar(
-                                  onTap: (index) {
-                                    if (root != null)
-                                      DayRouteSelection.write(
-                                          root,
-                                          'panel',
-                                          index == 0
-                                              ? 'elements'
-                                              : 'properties');
-                                  },
-                                  tabs: [
-                                Tab(text: TicketLayoutStrings.elements),
-                                Tab(text: TicketLayoutStrings.properties),
-                              ])),
-                          Expanded(
-                              child: TabBarView(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  children: [
-                                Builder(
-                                    builder: (tabContext) =>
-                                        SingleChildScrollView(
-                                            child: elements(onSelected: () {
-                                          DefaultTabController.of(tabContext)
-                                              .animateTo(1);
-                                          if (root != null)
-                                            DayRouteSelection.write(
-                                                root, 'panel', 'properties');
-                                        }))),
-                                panel(includeElements: false),
-                              ])),
-                        ]))))); });
+      context: editorContext,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: appDialogShape,
+      builder: (context) {
+        _historyPanelRoute = ModalRoute.of(context);
+        return Focus(
+          autofocus: true,
+          onKeyEvent: _historyKey,
+          child: AppDialogDismissal(
+            child: DefaultTabController(
+              initialIndex: tab,
+              length: 2,
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * .72,
+                child: Column(
+                  children: [
+                    AppDialogHeader(
+                      title: TabBar(
+                        onTap: (index) {
+                          if (root != null)
+                            DayRouteSelection.write(
+                              root,
+                              'panel',
+                              index == 0 ? 'elements' : 'properties',
+                            );
+                        },
+                        tabs: [
+                          Tab(text: TicketLayoutStrings.elements),
+                          Tab(text: TicketLayoutStrings.properties),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          Builder(
+                            builder: (tabContext) => SingleChildScrollView(
+                              child: elements(
+                                onSelected: () {
+                                  DefaultTabController.of(tabContext)
+                                      .animateTo(1);
+                                  if (root != null)
+                                    DayRouteSelection.write(
+                                      root,
+                                      'panel',
+                                      'properties',
+                                    );
+                                },
+                              ),
+                            ),
+                          ),
+                          panel(includeElements: false),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
     _historyPanelRoute = null;
     _panelOpen = false;
     if (root != null && mounted)
@@ -1496,103 +1814,131 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Widget mobileToolbar() => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(children: [
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    child: Row(
+      children: [
         ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => Row(children: [
-                  IconButton(
-                      tooltip: TicketLayoutStrings.undo,
-                      onPressed: controller.canUndo ? controller.undo : null,
-                      icon: const Icon(Icons.undo)),
-                  IconButton(
-                      tooltip: TicketLayoutStrings.redo,
-                      onPressed: controller.canRedo ? controller.redo : null,
-                      icon: const Icon(Icons.redo)),
-                ])),
+          listenable: controller,
+          builder: (context, _) => Row(
+            children: [
+              IconButton(
+                tooltip: TicketLayoutStrings.undo,
+                onPressed: controller.canUndo ? controller.undo : null,
+                icon: const Icon(Icons.undo),
+              ),
+              IconButton(
+                tooltip: TicketLayoutStrings.redo,
+                onPressed: controller.canRedo ? controller.redo : null,
+                icon: const Icon(Icons.redo),
+              ),
+            ],
+          ),
+        ),
         if (resources.presets.length > 1)
           Expanded(
-              child: TextButton(
-                  onPressed: imageBusy ? null : chooseStyle,
-                  child: Text(TicketLayoutStrings.styles,
-                      maxLines: 1, overflow: TextOverflow.ellipsis))),
+            child: TextButton(
+              onPressed: imageBusy ? null : chooseStyle,
+              child: Text(
+                TicketLayoutStrings.styles,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
         IconButton(
-            tooltip: TicketLayoutStrings.pdf,
-            onPressed: pdfBusy || imageBusy || fontBusy ? null : preview,
-            icon: pdfBusy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.picture_as_pdf_outlined)),
+          tooltip: TicketLayoutStrings.pdf,
+          onPressed: pdfBusy || imageBusy || fontBusy ? null : preview,
+          icon: pdfBusy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.picture_as_pdf_outlined),
+        ),
         IconButton(
-            tooltip: TicketLayoutStrings.fit,
-            onPressed: () => canvas.currentState?.fit(),
-            icon: const Icon(Icons.fit_screen)),
+          tooltip: TicketLayoutStrings.fit,
+          onPressed: () => canvas.currentState?.fit(),
+          icon: const Icon(Icons.fit_screen),
+        ),
         PopupMenuButton<String>(
-            tooltip: TicketLayoutStrings.viewOptions,
-            onSelected: (value) => setState(() {
-                  switch (value) {
-                    case 'multi':
-                      additiveSelection = !additiveSelection;
-                      pan = false;
-                    case 'pan':
-                      pan = !pan;
-                    case 'page':
-                      wholePage = !wholePage;
-                    case 'grid':
-                      grid = !grid;
-                    case 'snap':
-                      snap = !snap;
-                    case 'zoomIn':
-                      canvas.currentState?.zoomAt(1.2);
-                    case 'zoomOut':
-                      canvas.currentState?.zoomAt(1 / 1.2);
-                    default:
-                      scenario = value;
-                  }
-                }),
-            itemBuilder: (_) => [
-                  CheckedPopupMenuItem(
-                      value: 'multi',
-                      checked: additiveSelection,
-                      child: Text(TicketLayoutStrings.multiSelect)),
-                  CheckedPopupMenuItem(
-                      value: 'pan',
-                      checked: pan,
-                      child: Text(TicketLayoutStrings.pan)),
-                  CheckedPopupMenuItem(
-                      value: 'page',
-                      checked: wholePage,
-                      child: Text(TicketLayoutStrings.page)),
-                  CheckedPopupMenuItem(
-                      value: 'grid',
-                      checked: grid,
-                      child: Text(TicketLayoutStrings.grid)),
-                  CheckedPopupMenuItem(
-                      value: 'snap',
-                      checked: snap,
-                      child: Text(TicketLayoutStrings.snap)),
-                  PopupMenuItem(
-                      value: 'zoomIn', child: Text(TicketLayoutStrings.zoomIn)),
-                  PopupMenuItem(
-                      value: 'zoomOut',
-                      child: Text(TicketLayoutStrings.zoomOut)),
-                  const PopupMenuDivider(),
-                  for (final s in ['normal', 'long', 'missing'])
-                    CheckedPopupMenuItem(
-                        value: s,
-                        checked: scenario == s,
-                        child: Text(TicketLayoutStrings.binding(s))),
-                ]),
-      ]));
+          tooltip: TicketLayoutStrings.viewOptions,
+          onSelected: (value) => setState(() {
+            switch (value) {
+              case 'multi':
+                additiveSelection = !additiveSelection;
+                pan = false;
+              case 'pan':
+                pan = !pan;
+              case 'page':
+                wholePage = !wholePage;
+              case 'grid':
+                grid = !grid;
+              case 'snap':
+                snap = !snap;
+              case 'zoomIn':
+                canvas.currentState?.zoomAt(1.2);
+              case 'zoomOut':
+                canvas.currentState?.zoomAt(1 / 1.2);
+              default:
+                scenario = value;
+            }
+          }),
+          itemBuilder: (_) => [
+            CheckedPopupMenuItem(
+              value: 'multi',
+              checked: additiveSelection,
+              child: Text(TicketLayoutStrings.multiSelect),
+            ),
+            CheckedPopupMenuItem(
+              value: 'pan',
+              checked: pan,
+              child: Text(TicketLayoutStrings.pan),
+            ),
+            CheckedPopupMenuItem(
+              value: 'page',
+              checked: wholePage,
+              child: Text(TicketLayoutStrings.page),
+            ),
+            CheckedPopupMenuItem(
+              value: 'grid',
+              checked: grid,
+              child: Text(TicketLayoutStrings.grid),
+            ),
+            CheckedPopupMenuItem(
+              value: 'snap',
+              checked: snap,
+              child: Text(TicketLayoutStrings.snap),
+            ),
+            PopupMenuItem(
+              value: 'zoomIn',
+              child: Text(TicketLayoutStrings.zoomIn),
+            ),
+            PopupMenuItem(
+              value: 'zoomOut',
+              child: Text(TicketLayoutStrings.zoomOut),
+            ),
+            const PopupMenuDivider(),
+            for (final s in ['normal', 'long', 'missing'])
+              CheckedPopupMenuItem(
+                value: s,
+                checked: scenario == s,
+                child: Text(TicketLayoutStrings.binding(s)),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => Theme(
-      data: _editorTheme(Theme.of(context)),
-      child: AbsorbPointer(
-          absorbing: saving,
-          child: Builder(key: _themeKey, builder: _buildEditor)));
+    data: _editorTheme(Theme.of(context)),
+    child: AbsorbPointer(
+      absorbing: saving,
+      child: Builder(key: _themeKey, builder: _buildEditor),
+    ),
+  );
 
   ThemeData _editorTheme(ThemeData inherited) {
     final colors = ColorScheme.fromSeed(
@@ -1612,20 +1958,27 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
             onSurface: const Color(0xff202a38),
             onSurfaceVariant: const Color(0xff637083),
           );
-    final shape =
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    );
     final buttons = ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(40, 40)),
       shape: const WidgetStatePropertyAll(StadiumBorder()),
       iconSize: const WidgetStatePropertyAll(20),
-      textStyle: WidgetStatePropertyAll(inherited.textTheme.labelLarge
-          ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+      textStyle: WidgetStatePropertyAll(
+        inherited.textTheme.labelLarge?.copyWith(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
     return ThemeData(
       useMaterial3: true,
       colorScheme: palette,
-      textTheme: inherited.textTheme
-          .apply(bodyColor: palette.onSurface, displayColor: palette.onSurface),
+      textTheme: inherited.textTheme.apply(
+        bodyColor: palette.onSurface,
+        displayColor: palette.onSurface,
+      ),
       scaffoldBackgroundColor: inherited.scaffoldBackgroundColor,
       appBarTheme: AppBarTheme(
         backgroundColor: ThemeConfig.appBarColor(),
@@ -1634,34 +1987,48 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         elevation: 0,
         toolbarHeight: 64,
         titleTextStyle: inherited.textTheme.titleLarge?.copyWith(
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       iconTheme: IconThemeData(size: 20, color: palette.onSurfaceVariant),
       iconButtonTheme: IconButtonThemeData(
-          style: buttons.copyWith(
-        backgroundColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
+        style: buttons.copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
                 ? palette.primaryContainer
-                : null),
-        foregroundColor: WidgetStateProperty.resolveWith(
+                : null,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.disabled)
                 ? palette.onSurface.withValues(alpha: .3)
                 : states.contains(WidgetState.selected)
-                    ? palette.primary
-                    : palette.onSurfaceVariant),
-      )),
+                ? palette.primary
+                : palette.onSurfaceVariant,
+          ),
+        ),
+      ),
       textButtonTheme: TextButtonThemeData(style: buttons),
       outlinedButtonTheme: OutlinedButtonThemeData(
-          style: buttons.copyWith(
-              side: WidgetStatePropertyAll(
-                  BorderSide(color: palette.outlineVariant)))),
+        style: buttons.copyWith(
+          side: WidgetStatePropertyAll(
+            BorderSide(color: palette.outlineVariant),
+          ),
+        ),
+      ),
       filledButtonTheme: FilledButtonThemeData(style: buttons),
       segmentedButtonTheme: SegmentedButtonThemeData(
-          style: buttons.copyWith(
-              side: WidgetStatePropertyAll(
-                  BorderSide(color: palette.outlineVariant)))),
-      dividerTheme:
-          DividerThemeData(color: palette.outlineVariant, thickness: 1),
+        style: buttons.copyWith(
+          side: WidgetStatePropertyAll(
+            BorderSide(color: palette.outlineVariant),
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: palette.outlineVariant,
+        thickness: 1,
+      ),
       listTileTheme: ListTileThemeData(
         iconColor: palette.onSurfaceVariant,
         selectedColor: palette.primary,
@@ -1672,382 +2039,474 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: palette.outlineVariant)),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: palette.outlineVariant),
+        ),
       ),
       sliderTheme: const SliderThemeData(
-          trackHeight: 3,
-          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7)),
+        trackHeight: 3,
+        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
+      ),
     );
   }
 
-  Widget _toolToggle(String label, IconData icon, bool selected,
-          ValueChanged<bool> onChanged) =>
-      Builder(builder: (context) {
-        final colors = Theme.of(context).colorScheme;
-        return Semantics(
-            toggled: selected,
-            child: TextButton.icon(
-                style: TextButton.styleFrom(
-                    backgroundColor: selected ? colors.primaryContainer : null,
-                    foregroundColor: selected
-                        ? colors.onPrimaryContainer
-                        : colors.onSurfaceVariant),
-                onPressed: () => onChanged(!selected),
-                icon: Icon(selected ? Icons.check : icon, size: 18),
-                label: Text(label)));
-      });
+  Widget _toolToggle(
+    String label,
+    IconData icon,
+    bool selected,
+    ValueChanged<bool> onChanged,
+  ) => Builder(
+    builder: (context) {
+      final colors = Theme.of(context).colorScheme;
+      return Semantics(
+        toggled: selected,
+        child: TextButton.icon(
+          style: TextButton.styleFrom(
+            backgroundColor: selected ? colors.primaryContainer : null,
+            foregroundColor: selected
+                ? colors.onPrimaryContainer
+                : colors.onSurfaceVariant,
+          ),
+          onPressed: () => onChanged(!selected),
+          icon: Icon(selected ? Icons.check : icon, size: 18),
+          label: Text(label),
+        ),
+      );
+    },
+  );
 
   Widget _toolDivider() =>
       const SizedBox(height: 24, child: VerticalDivider(width: 20));
 
   Widget _sidebar(
-          BuildContext context, String title, Widget child, double width) =>
-      Container(
-          width: width,
-          decoration: BoxDecoration(
-            border: Border.symmetric(
-                vertical: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant)),
+    BuildContext context,
+    String title,
+    Widget child,
+    double width,
+  ) => Container(
+    width: width,
+    decoration: BoxDecoration(
+      border: Border.symmetric(
+        vertical: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+    ),
+    child: Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-          child: Material(
-              color: Theme.of(context).colorScheme.surface,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                        child: Text(title,
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant))),
-                    Expanded(child: child),
-                  ])));
+          Expanded(child: child),
+        ],
+      ),
+    ),
+  );
 
   ButtonStyle get _headerSecondaryStyle => OutlinedButton.styleFrom(
-      foregroundColor: Colors.white,
-      disabledForegroundColor: Colors.white38,
-      side: const BorderSide(color: Colors.white30));
+    foregroundColor: Colors.white,
+    disabledForegroundColor: Colors.white38,
+    side: const BorderSide(color: Colors.white30),
+  );
 
   Widget _dropRegion(Widget child) => EditorFileDropRegion(
-      enabled: _canImport,
-      active: TickerMode.valuesOf(context).enabled,
-      hint: EditorFileDropStrings.hint,
-      allowedExtensions: editorRasterExtensions,
-      onFileDropped: (file) async { await upload(file); },
-      child: AbsorbPointer(absorbing: imageBusy, child: child));
+    enabled: _canImport,
+    active: TickerMode.valuesOf(context).enabled,
+    hint: EditorFileDropStrings.hint,
+    allowedExtensions: editorRasterExtensions,
+    onFileDropped: (file) async {
+      await upload(file);
+    },
+    child: AbsorbPointer(absorbing: imageBusy, child: child),
+  );
 
   Widget _buildEditor(BuildContext context) => Focus(
-      autofocus: true,
-      onKeyEvent: _historyKey,
-      child: PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && !saving) cancel();
-          },
-          child: Scaffold(
-            appBar: AppDialogAppBar(
-                onClose: cancel,
-                closeEnabled: !saving && !imageBusy,
-                title: Text(TicketLayoutStrings.title,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                actions: [
-                  if (MediaQuery.sizeOf(context).width >= 900) ...[
-                    if (resources.presets.length > 1)
-                      OutlinedButton.icon(
-                          style: _headerSecondaryStyle,
-                          onPressed: imageBusy ? null : chooseStyle,
-                          icon: const Icon(Icons.dashboard_customize_outlined),
-                          label: Text(TicketLayoutStrings.styles)),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                        style: _headerSecondaryStyle,
-                        onPressed:
-                            pdfBusy || imageBusy || fontBusy ? null : preview,
-                        icon: pdfBusy
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.picture_as_pdf_outlined),
-                        label: Text(TicketLayoutStrings.pdf)),
-                    const SizedBox(width: 12),
-                  ],
-                  Center(
-                    child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ThemeConfig.seed2,
-                          foregroundColor: ThemeConfig.appBarColor(),
-                          disabledBackgroundColor: Colors.white12,
-                          disabledForegroundColor: Colors.white38,
-                        ),
-                        onPressed:
-                            imageBusy || fontBusy || saving ? null : apply,
-                        icon: const Icon(Icons.check),
-                        label: Text(widget.onSave == null
-                            ? TicketLayoutStrings.apply
-                            : CommonStrings.save)),
+    autofocus: true,
+    onKeyEvent: _historyKey,
+    child: PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && !saving) cancel();
+      },
+      child: Scaffold(
+        appBar: AppDialogAppBar(
+          onClose: cancel,
+          closeEnabled: !saving && !imageBusy,
+          title: Text(
+            TicketLayoutStrings.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            if (MediaQuery.sizeOf(context).width >= 900) ...[
+              if (resources.presets.length > 1)
+                OutlinedButton.icon(
+                  style: _headerSecondaryStyle,
+                  onPressed: imageBusy ? null : chooseStyle,
+                  icon: const Icon(Icons.dashboard_customize_outlined),
+                  label: Text(TicketLayoutStrings.styles),
+                ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: _headerSecondaryStyle,
+                onPressed: pdfBusy || imageBusy || fontBusy ? null : preview,
+                icon: pdfBusy
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(TicketLayoutStrings.pdf),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Center(
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: ThemeConfig.seed2,
+                  foregroundColor: ThemeConfig.appBarColor(),
+                  disabledBackgroundColor: Colors.white12,
+                  disabledForegroundColor: Colors.white38,
+                ),
+                onPressed: imageBusy || fontBusy || saving ? null : apply,
+                icon: const Icon(Icons.check),
+                label: Text(
+                  widget.onSave == null
+                      ? TicketLayoutStrings.apply
+                      : CommonStrings.save,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
+        body: _dropRegion(
+          SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                if (saving) const LinearProgressIndicator(),
+                if (resources.missingBackground &&
+                    (background?.isNotEmpty ?? false))
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(TicketLayoutStrings.missingBackground),
                   ),
-                  const SizedBox(width: 16)
-                ]),
-            body: _dropRegion(SafeArea(
-                top: false,
-                child: Column(children: [
-                  if (saving) const LinearProgressIndicator(),
-                  if (resources.missingBackground &&
-                      (background?.isNotEmpty ?? false))
-                    Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(TicketLayoutStrings.missingBackground)),
-                  if (MediaQuery.sizeOf(context).width < 900)
-                    mobileToolbar()
-                  else
-                    Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            border: Border.symmetric(
-                                horizontal: BorderSide(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outlineVariant))),
-                        child: Wrap(
-                            spacing: 4,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
+                if (MediaQuery.sizeOf(context).width < 900)
+                  mobileToolbar()
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border.symmetric(
+                        horizontal: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                    ),
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        ListenableBuilder(
+                          listenable: controller,
+                          builder: (c, _) => Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              ListenableBuilder(
-                                  listenable: controller,
-                                  builder: (c, _) => Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                                tooltip:
-                                                    TicketLayoutStrings.undo,
-                                                onPressed: controller.canUndo
-                                                    ? controller.undo
-                                                    : null,
-                                                icon: const Icon(Icons.undo)),
-                                            IconButton(
-                                                tooltip:
-                                                    TicketLayoutStrings.redo,
-                                                onPressed: controller.canRedo
-                                                    ? controller.redo
-                                                    : null,
-                                                icon: const Icon(Icons.redo))
-                                          ])),
-                              _toolDivider(),
                               IconButton(
-                                  tooltip: TicketLayoutStrings.select,
-                                  isSelected: !pan && !additiveSelection,
-                                  onPressed: () => setState(() {
-                                        pan = false;
-                                        additiveSelection = false;
-                                      }),
-                                  icon: const Icon(Icons.near_me_outlined)),
+                                tooltip: TicketLayoutStrings.undo,
+                                onPressed: controller.canUndo
+                                    ? controller.undo
+                                    : null,
+                                icon: const Icon(Icons.undo),
+                              ),
                               IconButton(
-                                  tooltip: TicketLayoutStrings.multiSelect,
-                                  isSelected: additiveSelection,
-                                  onPressed: () => setState(() {
-                                        additiveSelection = !additiveSelection;
-                                        pan = false;
-                                      }),
-                                  icon: const Icon(Icons.select_all)),
-                              IconButton(
-                                  tooltip: TicketLayoutStrings.pan,
-                                  isSelected: pan,
-                                  onPressed: () => setState(() => pan = true),
-                                  icon: const Icon(Icons.pan_tool_outlined)),
-                              _toolDivider(),
-                              IconButton(
-                                  tooltip: TicketLayoutStrings.zoomOut,
-                                  onPressed: () =>
-                                      canvas.currentState?.zoomAt(1 / 1.2),
-                                  icon: const Icon(Icons.remove)),
-                              SizedBox(
-                                  width: 64 *
-                                      MediaQuery.textScalerOf(context).scale(1),
-                                  child: ValueListenableBuilder(
-                                      valueListenable: transform,
-                                      builder: (c, m, _) => Text(
-                                          '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(fontFeatures: [
-                                            ui.FontFeature.tabularFigures()
-                                          ])))),
-                              IconButton(
-                                  tooltip: TicketLayoutStrings.zoomIn,
-                                  onPressed: () =>
-                                      canvas.currentState?.zoomAt(1.2),
-                                  icon: const Icon(Icons.add)),
-                              TextButton(
-                                  onPressed: () => canvas.currentState?.fit(),
-                                  child: Text(TicketLayoutStrings.fit)),
-                              _toolToggle(
-                                  TicketLayoutStrings.page,
-                                  Icons.crop_portrait,
-                                  wholePage,
-                                  (v) => setState(() => wholePage = v)),
-                              _toolDivider(),
-                              PopupMenuButton<String>(
-                                  tooltip: TicketLayoutStrings.sampleData,
-                                  initialValue: scenario,
-                                  onSelected: (s) =>
-                                      setState(() => scenario = s),
-                                  itemBuilder: (_) => [
-                                        'normal',
-                                        'long',
-                                        'missing'
-                                      ]
-                                          .map((s) => CheckedPopupMenuItem(
-                                              value: s,
-                                              checked: scenario == s,
-                                              child: Text(
-                                                  TicketLayoutStrings.binding(
-                                                      s))))
-                                          .toList(),
-                                  child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
-                                          border: Border.all(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .outlineVariant)),
-                                      child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                          child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(Icons.person_outline,
-                                                    size: 18),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                    TicketLayoutStrings.binding(
-                                                        scenario),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelLarge),
-                                                const SizedBox(width: 4),
-                                                const Icon(Icons.expand_more,
-                                                    size: 18),
-                                              ])))),
-                              _toolToggle(
-                                  TicketLayoutStrings.grid,
-                                  Icons.grid_4x4,
-                                  grid,
-                                  (v) => setState(() => grid = v)),
-                              _toolToggle(
-                                  TicketLayoutStrings.snap,
-                                  Icons.vertical_align_center,
-                                  snap,
-                                  (v) => setState(() => snap = v)),
-                            ])),
-                  ListenableBuilder(
-                      listenable: controller,
-                      builder: (c, _) => Column(children: [
-                            if (pdfSignature != null &&
-                                pdfSignature != signature)
-                              Text(TicketLayoutStrings.pdfStale),
-                            Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                child: Text(
-                                    widget.onSave == null
-                                        ? TicketLayoutStrings.savedLater
-                                        : TicketLayoutStrings.saveDirectHint,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall))
-                          ])),
-                  if (editCanvas)
-                    modeBanner(
-                        title: TicketLayoutStrings.modeCanvas,
-                        hint: canvasElementAttempts > 0
-                            ? TicketLayoutStrings.finishCanvasFirst
-                            : TicketLayoutStrings.resizeCanvasHint,
-                        icon: Icons.aspect_ratio,
-                        canvasMode: true,
-                        onDone: () => setState(() => editCanvas = false)),
-                  if (editBackground) backgroundTools(),
-                  Expanded(child: LayoutBuilder(builder: (c, constraints) {
-                    final narrow = constraints.maxWidth < 900;
-                    final view = ListenableBuilder(
+                                tooltip: TicketLayoutStrings.redo,
+                                onPressed: controller.canRedo
+                                    ? controller.redo
+                                    : null,
+                                icon: const Icon(Icons.redo),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _toolDivider(),
+                        IconButton(
+                          tooltip: TicketLayoutStrings.select,
+                          isSelected: !pan && !additiveSelection,
+                          onPressed: () => setState(() {
+                            pan = false;
+                            additiveSelection = false;
+                          }),
+                          icon: const Icon(Icons.near_me_outlined),
+                        ),
+                        IconButton(
+                          tooltip: TicketLayoutStrings.multiSelect,
+                          isSelected: additiveSelection,
+                          onPressed: () => setState(() {
+                            additiveSelection = !additiveSelection;
+                            pan = false;
+                          }),
+                          icon: const Icon(Icons.select_all),
+                        ),
+                        IconButton(
+                          tooltip: TicketLayoutStrings.pan,
+                          isSelected: pan,
+                          onPressed: () => setState(() => pan = true),
+                          icon: const Icon(Icons.pan_tool_outlined),
+                        ),
+                        _toolDivider(),
+                        IconButton(
+                          tooltip: TicketLayoutStrings.zoomOut,
+                          onPressed: () => canvas.currentState?.zoomAt(1 / 1.2),
+                          icon: const Icon(Icons.remove),
+                        ),
+                        SizedBox(
+                          width: 64 * MediaQuery.textScalerOf(context).scale(1),
+                          child: ValueListenableBuilder(
+                            valueListenable: transform,
+                            builder: (c, m, _) => Text(
+                              '${(math.sqrt(math.pow(m.entry(0, 0), 2) + math.pow(m.entry(1, 0), 2)) * 100).round()}%',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontFeatures: [ui.FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: TicketLayoutStrings.zoomIn,
+                          onPressed: () => canvas.currentState?.zoomAt(1.2),
+                          icon: const Icon(Icons.add),
+                        ),
+                        TextButton(
+                          onPressed: () => canvas.currentState?.fit(),
+                          child: Text(TicketLayoutStrings.fit),
+                        ),
+                        _toolToggle(
+                          TicketLayoutStrings.page,
+                          Icons.crop_portrait,
+                          wholePage,
+                          (v) => setState(() => wholePage = v),
+                        ),
+                        _toolDivider(),
+                        PopupMenuButton<String>(
+                          tooltip: TicketLayoutStrings.sampleData,
+                          initialValue: scenario,
+                          onSelected: (s) => setState(() => scenario = s),
+                          itemBuilder: (_) => ['normal', 'long', 'missing']
+                              .map(
+                                (s) => CheckedPopupMenuItem(
+                                  value: s,
+                                  checked: scenario == s,
+                                  child: Text(TicketLayoutStrings.binding(s)),
+                                ),
+                              )
+                              .toList(),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.person_outline, size: 18),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    TicketLayoutStrings.binding(scenario),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.expand_more, size: 18),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        _toolToggle(
+                          TicketLayoutStrings.grid,
+                          Icons.grid_4x4,
+                          grid,
+                          (v) => setState(() => grid = v),
+                        ),
+                        _toolToggle(
+                          TicketLayoutStrings.snap,
+                          Icons.vertical_align_center,
+                          snap,
+                          (v) => setState(() => snap = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                ListenableBuilder(
+                  listenable: controller,
+                  builder: (c, _) => Column(
+                    children: [
+                      if (pdfSignature != null && pdfSignature != signature)
+                        Text(TicketLayoutStrings.pdfStale),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          widget.onSave == null
+                              ? TicketLayoutStrings.savedLater
+                              : TicketLayoutStrings.saveDirectHint,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (editCanvas)
+                  modeBanner(
+                    title: TicketLayoutStrings.modeCanvas,
+                    hint: canvasElementAttempts > 0
+                        ? TicketLayoutStrings.finishCanvasFirst
+                        : TicketLayoutStrings.resizeCanvasHint,
+                    icon: Icons.aspect_ratio,
+                    canvasMode: true,
+                    onDone: () => setState(() => editCanvas = false),
+                  ),
+                if (editBackground) backgroundTools(),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (c, constraints) {
+                      final narrow = constraints.maxWidth < 900;
+                      final view = ListenableBuilder(
                         listenable: controller,
                         builder: (context, _) => TicketLayoutCanvas(
-                        key: canvas,
-                        onDismiss: cancel,
-                        onCanvasElementAttempt: () =>
-                            setState(() => canvasElementAttempts++),
-                        controller: controller,
-                        resources: resources,
-                        data: resources.previewData(
-                            controller.document, scenario),
-                        transform: transform,
-                        pan: pan,
-                        editBackground: editBackground,
-                        editCanvas: editCanvas,
-                        cropBackground: cropBackground,
-                        additiveSelection: additiveSelection,
-                        wholePage: wholePage,
-                        snap: snap,
-                        grid: grid));
-                    return narrow
-                        ? Column(children: [
-                            Expanded(child: view),
-                            if (editCanvas)
-                              SizedBox(
-                                  height: constraints.maxHeight * .42,
-                                  child: canvasSettings())
-                            else
-                              Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  child: Row(children: [
-                                    Expanded(
-                                        child: OutlinedButton.icon(
+                          key: canvas,
+                          onDismiss: cancel,
+                          onCanvasElementAttempt: () =>
+                              setState(() => canvasElementAttempts++),
+                          controller: controller,
+                          resources: resources,
+                          data: resources.previewData(
+                            controller.document,
+                            scenario,
+                          ),
+                          transform: transform,
+                          pan: pan,
+                          editBackground: editBackground,
+                          editCanvas: editCanvas,
+                          cropBackground: cropBackground,
+                          additiveSelection: additiveSelection,
+                          wholePage: wholePage,
+                          snap: snap,
+                          grid: grid,
+                        ),
+                      );
+                      return narrow
+                          ? Column(
+                              children: [
+                                Expanded(child: view),
+                                if (editCanvas)
+                                  SizedBox(
+                                    height: constraints.maxHeight * .42,
+                                    child: canvasSettings(),
+                                  )
+                                else
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
                                             onPressed: () => showMobilePanel(0),
                                             icon: const Icon(
-                                                Icons.layers_outlined),
+                                              Icons.layers_outlined,
+                                            ),
                                             label: Text(
-                                                TicketLayoutStrings.elements))),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                        child: FilledButton.tonalIcon(
+                                              TicketLayoutStrings.elements,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: FilledButton.tonalIcon(
                                             onPressed: () => showMobilePanel(1),
                                             icon: const Icon(Icons.tune),
-                                            label: Text(TicketLayoutStrings
-                                                .properties))),
-                                  ]))
-                          ])
-                        : Row(children: [
-                            _sidebar(
-                                context,
-                                TicketLayoutStrings.elements,
-                                SingleChildScrollView(
+                                            label: Text(
+                                              TicketLayoutStrings.properties,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                _sidebar(
+                                  context,
+                                  TicketLayoutStrings.elements,
+                                  SingleChildScrollView(
                                     child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8),
-                                        child: elements())),
-                                200),
-                            Expanded(child: view),
-                            _sidebar(
-                                context,
-                                editCanvas
-                                    ? TicketLayoutStrings.canvasSize
-                                    : TicketLayoutStrings.properties,
-                                editCanvas
-                                    ? canvasSettings()
-                                    : panel(includeElements: false),
-                                editCanvas ? 340 : 280)
-                          ]);
-                  })),
-                ]))),
-          )));
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: elements(),
+                                    ),
+                                  ),
+                                  200,
+                                ),
+                                Expanded(child: view),
+                                _sidebar(
+                                  context,
+                                  editCanvas
+                                      ? TicketLayoutStrings.canvasSize
+                                      : TicketLayoutStrings.properties,
+                                  editCanvas
+                                      ? canvasSettings()
+                                      : panel(includeElements: false),
+                                  editCanvas ? 340 : 280,
+                                ),
+                              ],
+                            );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

@@ -10,11 +10,12 @@ ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.initialize_notification_center_internal(p_organization bigint,p_timezone text DEFAULT 'Europe/Prague')
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-
+DECLARE baseline_at timestamptz;
 BEGIN
  PERFORM pg_advisory_xact_lock(hashtextextended('notification-center-organization:'||p_organization,0));
  IF NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=p_timezone) THEN RAISE EXCEPTION 'notification_timezone_invalid'; END IF;
  IF EXISTS(SELECT 1 FROM public.notification_center_organizations WHERE organization=p_organization) THEN RETURN; END IF;
+ baseline_at:=clock_timestamp();
  INSERT INTO public.notification_center_organizations(organization,timezone) VALUES(p_organization,p_timezone);
  -- Baseline once: existing incidents and capacity are not historical alerts.
   INSERT INTO public.notification_center_source_state(organization,source_key,state)
@@ -66,11 +67,12 @@ BEGIN
    LEFT JOIN eshop.spots s ON s.id=sb.spot AND s.blueprint=bp.id AND s.occasion=bp.occasion
    WHERE bp.organization=p_organization GROUP BY bp.id
    ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=clock_timestamp();
- UPDATE public.notification_center_organizations SET collection_started_at=clock_timestamp() WHERE organization=p_organization;
+ PERFORM public.notification_center_form_availability_internal(f.id,baseline_at,NULL,true) FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE oc.organization=p_organization;
+ UPDATE public.notification_center_organizations SET collection_started_at=baseline_at WHERE organization=p_organization;
 END $$;
 CREATE OR REPLACE FUNCTION public.maintain_notification_center(p_limit integer DEFAULT 100) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE m record; maximum bigint; after_id bigint; processed integer:=0; projected integer;
+DECLARE m record; maximum bigint; after_id bigint; processed integer:=0; projected integer; availability integer;
 BEGIN
  PERFORM public.notification_center_require_service();
  INSERT INTO public.notification_center_maintenance(name) VALUES('email') ON CONFLICT DO NOTHING;
@@ -85,6 +87,7 @@ BEGIN
   END LOOP;
   UPDATE public.notification_center_maintenance SET cursor=coalesce(maximum,0) WHERE name='email';
  END IF;
+ availability:=public.notification_center_evaluate_forms_internal(p_limit);
  projected:=public.project_notification_center(p_limit);
  -- Retain active incidents; cleanup is projection-only, never business/email history.
  DELETE FROM public.notification_center_deliveries WHERE (event_id,recipient,attention_revision) IN (
@@ -93,7 +96,7 @@ BEGIN
  DELETE FROM public.notification_center_events WHERE id IN(SELECT e.id FROM public.notification_center_events e
   WHERE e.occurred_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning'))
   AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision LIMIT greatest(1,least(p_limit,500)));
- RETURN jsonb_build_object('evaluated',processed,'projected',projected);
+ RETURN jsonb_build_object('evaluated',processed,'projected',projected,'availabilityEvaluated',availability);
 END $$;
 REVOKE ALL ON FUNCTION public.maintain_notification_center(integer) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.maintain_notification_center(integer) TO service_role;

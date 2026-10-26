@@ -23,22 +23,27 @@ class CsvImportHelper {
   static Future<void> importFromCsv(BuildContext context) async {
     // Replaced the direct file picker with a dialog that allows drag-and-drop.
     var file = await DialogHelper.dropFilesHere(
-        context,
-        FeaturesStrings.labelImportFromCsv,
-        CommonStrings.import,
-        CommonStrings.storno,
-        headerContent: buildCsvFormatInfo(context));
+      context,
+      FeaturesStrings.labelImportFromCsv,
+      CommonStrings.import,
+      CommonStrings.storno,
+      headerContent: buildCsvFormatInfo(context),
+    );
 
     if (file == null) return; // User canceled the dialog
 
     var users = await ImportHelper.getUsersFromFile(file);
     var addOrUpdateUsers = users
-        .where((element) =>
-            element[Tb.occasion_users.data_text4]?.toLowerCase() != "storno")
+        .where(
+          (element) =>
+              element[Tb.occasion_users.data_text4]?.toLowerCase() != "storno",
+        )
         .toList();
     var deleteUsers = users
-        .where((element) =>
-            element[Tb.occasion_users.data_text4]?.toLowerCase() == "storno")
+        .where(
+          (element) =>
+              element[Tb.occasion_users.data_text4]?.toLowerCase() == "storno",
+        )
         .toList();
 
     var proceed = await DialogHelper.showConfirmationDialog(
@@ -54,12 +59,17 @@ class CsvImportHelper {
     // PostgREST occasion_users select is capped at 1000 rows and does not
     // overlay user_info.email_readonly, so it cannot safely classify imports.
     var existingUsers = (await DbUsers.getOccasionEditorDataBundle()).users;
-    final reconciledUsers =
-        reconcileAccountEmails(addOrUpdateUsers, existingUsers);
+    final reconciledUsers = reconcileAccountEmails(
+      addOrUpdateUsers,
+      existingUsers,
+    );
     var toBeCreated = getUsersToBeCreated(reconciledUsers, existingUsers);
     var toBeUpdated = getUsersToBeUpdated(reconciledUsers, existingUsers);
-    var toBeDeleted =
-        _getUsersToBeDeleted(deleteUsers, reconciledUsers, existingUsers);
+    var toBeDeleted = _getUsersToBeDeleted(
+      deleteUsers,
+      reconciledUsers,
+      existingUsers,
+    );
 
     final createApproved = await _confirmCreateUsers(context, toBeCreated);
     final updateApproved = await _confirmUpdateUsers(context, toBeUpdated);
@@ -98,15 +108,16 @@ class CsvImportHelper {
 
   @visibleForTesting
   static List<Map<String, dynamic>> buildImportRows(
-      Iterable<Map<String, dynamic>> importedUsers,
-      List<OccasionUserModel> existingUsers) {
-    final reconciledUsers =
-        reconcileAccountEmails(importedUsers, existingUsers);
+    Iterable<Map<String, dynamic>> importedUsers,
+    List<OccasionUserModel> existingUsers,
+  ) {
+    final reconciledUsers = reconcileAccountEmails(
+      importedUsers,
+      existingUsers,
+    );
     final existingByEmail = _existingByEmail(existingUsers);
     return reconciledUsers.map((imported) {
-      final email = _normalizedEmail(
-        imported[Tb.occasion_users.data_email],
-      );
+      final email = _normalizedEmail(imported[Tb.occasion_users.data_email]);
       final existing = existingByEmail[email];
       final dataPatch = Map<String, dynamic>.from(imported)
         ..remove(ImportHelper.groupColumn)
@@ -131,13 +142,16 @@ class CsvImportHelper {
   /// partial reimport cannot update the first person who shares the address.
   @visibleForTesting
   static List<Map<String, dynamic>> reconcileAccountEmails(
-      Iterable<Map<String, dynamic>> importedUsers,
-      List<OccasionUserModel> existingUsers) {
-    final result =
-        importedUsers.map((user) => Map<String, dynamic>.from(user)).toList();
+    Iterable<Map<String, dynamic>> importedUsers,
+    List<OccasionUserModel> existingUsers,
+  ) {
+    final result = importedUsers
+        .map((user) => Map<String, dynamic>.from(user))
+        .toList();
     final usedAccountEmails = existingUsers
-        .map((user) =>
-            _normalizedEmail(user.data?[Tb.occasion_users.data_email]))
+        .map(
+          (user) => _normalizedEmail(user.data?[Tb.occasion_users.data_email]),
+        )
         .where((email) => email.isNotEmpty)
         .toSet();
     final existingByIdentity = <String, OccasionUserModel>{};
@@ -145,8 +159,9 @@ class CsvImportHelper {
       final data = existing.data ?? const <String, dynamic>{};
       final accountEmail = _normalizedEmail(data[Tb.occasion_users.data_email]);
       if (accountEmail.isEmpty) continue;
-      final explicitDelivery =
-          _normalizedEmail(data[ImportHelper.deliveryEmailField]);
+      final explicitDelivery = _normalizedEmail(
+        data[ImportHelper.deliveryEmailField],
+      );
       final deliveryEmail = explicitDelivery.isNotEmpty
           ? explicitDelivery
           : _removeNumericAlias(accountEmail);
@@ -183,8 +198,12 @@ class CsvImportHelper {
     final deliveries = unmatchedByDelivery.keys.toList()..sort();
     for (final deliveryEmail in deliveries) {
       final users = unmatchedByDelivery[deliveryEmail]!
-        ..sort((first, second) => _identityKey(deliveryEmail, first)
-            .compareTo(_identityKey(deliveryEmail, second)));
+        ..sort(
+          (first, second) => _identityKey(
+            deliveryEmail,
+            first,
+          ).compareTo(_identityKey(deliveryEmail, second)),
+        );
       var suffix = 0;
       for (final user in users) {
         var candidate = suffix == 0
@@ -206,21 +225,25 @@ class CsvImportHelper {
   // Helper to get users to be created
   @visibleForTesting
   static List<Map<String, dynamic>> getUsersToBeCreated(
-      Iterable<Map<String, dynamic>> users,
-      List<OccasionUserModel> existingUsers) {
+    Iterable<Map<String, dynamic>> users,
+    List<OccasionUserModel> existingUsers,
+  ) {
     final existingByEmail = _existingByEmail(existingUsers);
     return users
-        .where((user) => !existingByEmail.containsKey(
-              _normalizedEmail(user[Tb.occasion_users.data_email]),
-            ))
+        .where(
+          (user) => !existingByEmail.containsKey(
+            _normalizedEmail(user[Tb.occasion_users.data_email]),
+          ),
+        )
         .toList();
   }
 
   // Helper to get users to be updated
   @visibleForTesting
   static List<Map<String, dynamic>> getUsersToBeUpdated(
-      Iterable<Map<String, dynamic>> users,
-      List<OccasionUserModel> existingUsers) {
+    Iterable<Map<String, dynamic>> users,
+    List<OccasionUserModel> existingUsers,
+  ) {
     final existingByEmail = _existingByEmail(existingUsers);
     return users.where((u) {
       final existing =
@@ -231,14 +254,13 @@ class CsvImportHelper {
 
   // Helper to get users to be deleted
   static List<OccasionUserModel> _getUsersToBeDeleted(
-      Iterable<Map<String, dynamic>> deleteUsers,
-      Iterable<Map<String, dynamic>> addOrUpdateUsers,
-      List<OccasionUserModel> existingUsers) {
+    Iterable<Map<String, dynamic>> deleteUsers,
+    Iterable<Map<String, dynamic>> addOrUpdateUsers,
+    List<OccasionUserModel> existingUsers,
+  ) {
     final existingByEmail = _existingByEmail(existingUsers);
     final retainedEmails = addOrUpdateUsers
-        .map((user) => _normalizedEmail(
-              user[Tb.occasion_users.data_email],
-            ))
+        .map((user) => _normalizedEmail(user[Tb.occasion_users.data_email]))
         .toSet();
     return deleteUsers
         .map((u) {
@@ -282,19 +304,20 @@ class CsvImportHelper {
   }
 
   static Map<String, OccasionUserModel> _existingByEmail(
-      Iterable<OccasionUserModel> users) {
+    Iterable<OccasionUserModel> users,
+  ) {
     final result = <String, OccasionUserModel>{};
     for (final user in users) {
-      final email = _normalizedEmail(
-        user.data?[Tb.occasion_users.data_email],
-      );
+      final email = _normalizedEmail(user.data?[Tb.occasion_users.data_email]);
       if (email.isNotEmpty) result.putIfAbsent(email, () => user);
     }
     return result;
   }
 
   static Future<bool> _confirmCreateUsers(
-      BuildContext context, List<Map<String, dynamic>> toBeCreated) async {
+    BuildContext context,
+    List<Map<String, dynamic>> toBeCreated,
+  ) async {
     if (toBeCreated.isEmpty) return true;
 
     var proceed = await DialogHelper.showConfirmationDialog(
@@ -310,7 +333,9 @@ class CsvImportHelper {
   }
 
   static Future<bool> _confirmUpdateUsers(
-      BuildContext context, List<Map<String, dynamic>> toBeUpdated) async {
+    BuildContext context,
+    List<Map<String, dynamic>> toBeUpdated,
+  ) async {
     if (toBeUpdated.isEmpty) return true;
 
     var proceed = await DialogHelper.showConfirmationDialog(
@@ -336,28 +361,42 @@ class CsvImportHelper {
     final headers = ImportHelper.migrateColumns;
 
     final columns = <_CsvColumnInfo>[
-      _CsvColumnInfo(Tb.occasion_users.data_email, FeaturesStrings.csvColEmail,
-          isRequired: true),
-      _CsvColumnInfo(Tb.occasion_users.data_name, FeaturesStrings.csvColName,
-          isRequired: true),
       _CsvColumnInfo(
-          Tb.occasion_users.data_surname, FeaturesStrings.csvColSurname,
-          isRequired: true),
+        Tb.occasion_users.data_email,
+        FeaturesStrings.csvColEmail,
+        isRequired: true,
+      ),
+      _CsvColumnInfo(
+        Tb.occasion_users.data_name,
+        FeaturesStrings.csvColName,
+        isRequired: true,
+      ),
+      _CsvColumnInfo(
+        Tb.occasion_users.data_surname,
+        FeaturesStrings.csvColSurname,
+        isRequired: true,
+      ),
       _CsvColumnInfo(Tb.occasion_users.data_sex, FeaturesStrings.csvColSex),
       _CsvColumnInfo(Tb.occasion_users.data_phone, FeaturesStrings.csvColPhone),
       _CsvColumnInfo(Tb.occasion_users.data_text1, FeaturesStrings.csvColText1),
       _CsvColumnInfo(Tb.occasion_users.data_text2, FeaturesStrings.csvColText2),
       _CsvColumnInfo(
-          Tb.occasion_users.data_birthDate, FeaturesStrings.csvColBirthDate),
+        Tb.occasion_users.data_birthDate,
+        FeaturesStrings.csvColBirthDate,
+      ),
       _CsvColumnInfo(Tb.occasion_users.data_note, FeaturesStrings.csvColNote),
       if (FeatureService.isServiceFoodEnabled())
         _CsvColumnInfo(Tb.occasion_users.data_diet, FeaturesStrings.csvColDiet),
       if (FeatureService.isServiceFoodEnabled())
         _CsvColumnInfo(
-            Tb.occasion_users.services_food, FeaturesStrings.csvColFood),
+          Tb.occasion_users.services_food,
+          FeaturesStrings.csvColFood,
+        ),
       if (FeatureService.isServiceAccommodationEnabled())
-        _CsvColumnInfo(Tb.occasion_users.services_accommodation,
-            FeaturesStrings.csvColAccommodation),
+        _CsvColumnInfo(
+          Tb.occasion_users.services_accommodation,
+          FeaturesStrings.csvColAccommodation,
+        ),
       _CsvColumnInfo(ImportHelper.groupColumn, FeaturesStrings.csvColGroup),
     ];
 
@@ -373,8 +412,9 @@ class CsvImportHelper {
           leading: Icon(Icons.help_outline, color: theme.colorScheme.primary),
           title: Text(
             FeaturesStrings.csvFormatTitle,
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           children: [
             Text(
@@ -413,8 +453,10 @@ class CsvImportHelper {
                           message: FeaturesStrings.csvCopyTooltip,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(4),
-                            onTap: () => _copyToClipboard(context,
-                                headers[col.headerKey] ?? col.headerKey),
+                            onTap: () => _copyToClipboard(
+                              context,
+                              headers[col.headerKey] ?? col.headerKey,
+                            ),
                             child: Container(
                               padding: const EdgeInsets.fromLTRB(6, 2, 4, 2),
                               decoration: BoxDecoration(
@@ -432,9 +474,11 @@ class CsvImportHelper {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(Icons.copy,
-                                      size: 13,
-                                      color: ThemeConfig.grey700(context)),
+                                  Icon(
+                                    Icons.copy,
+                                    size: 13,
+                                    color: ThemeConfig.grey700(context),
+                                  ),
                                 ],
                               ),
                             ),
@@ -453,8 +497,9 @@ class CsvImportHelper {
                     const SizedBox(height: 2),
                     Text(
                       col.explanation,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: ThemeConfig.grey700(context)),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: ThemeConfig.grey700(context),
+                      ),
                     ),
                   ],
                 ),
@@ -467,14 +512,21 @@ class CsvImportHelper {
 
   /// Copies [text] to the clipboard and shows a confirmation toast.
   static Future<void> _copyToClipboard(
-      BuildContext context, String text) async {
+    BuildContext context,
+    String text,
+  ) async {
     if (!await CopyButton.copy(context, text) || !context.mounted) return;
-    ToastHelper.Show(context, FeaturesStrings.csvCopiedToast,
-        severity: ToastSeverity.Ok);
+    ToastHelper.Show(
+      context,
+      FeaturesStrings.csvCopiedToast,
+      severity: ToastSeverity.Ok,
+    );
   }
 
   static Future<bool> _confirmDeleteUsers(
-      BuildContext context, List<OccasionUserModel> toBeDeleted) async {
+    BuildContext context,
+    List<OccasionUserModel> toBeDeleted,
+  ) async {
     if (toBeDeleted.isEmpty) return true;
 
     var proceed = await DialogHelper.showConfirmationDialog(
@@ -499,6 +551,9 @@ class _CsvColumnInfo {
   /// Whether the import fails without this column.
   final bool isRequired;
 
-  const _CsvColumnInfo(this.headerKey, this.explanation,
-      {this.isRequired = false});
+  const _CsvColumnInfo(
+    this.headerKey,
+    this.explanation, {
+    this.isRequired = false,
+  });
 }

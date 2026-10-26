@@ -66,22 +66,20 @@ class _UsersTabState extends State<UsersTab> {
         UserColumns.RECEPTIONIST,
       UserColumns.INVITED,
       if (RightsService.hasCapability(
-          AuthorizationCapabilities.navigationEmailHistory))
+        AuthorizationCapabilities.navigationEmailHistory,
+      ))
         UserColumns.EMAIL_HISTORY,
       UserColumns.CREATED_AT,
       UserColumns.LAST_SIGN_IN_AT,
     ];
 
-    final importFeature =
-        FeatureService.getFeatureDetails(FeatureConstants.import)
-            as ImportFeature?;
+    final importFeature = FeatureService.getFeatureDetails(
+      FeatureConstants.import,
+    ) as ImportFeature?;
     if (importFeature != null &&
         importFeature.isEnabled &&
         importFeature.importFromTickets) {
-      identifiers.addAll([
-        UserColumns.ORDERED_AT,
-        UserColumns.FORM,
-      ]);
+      identifiers.addAll([UserColumns.ORDERED_AT, UserColumns.FORM]);
     }
 
     if (_hasCsmAppLinks) identifiers.add(UserColumns.APP_LINKS_SENT);
@@ -117,15 +115,17 @@ class _UsersTabState extends State<UsersTab> {
   SingleDataGridController<OccasionUserModel> _createController() {
     final headerActions = [
       if (RightsService.hasCapability(
-          AuthorizationCapabilities.participantsWrite))
+        AuthorizationCapabilities.participantsWrite,
+      ))
         DataGridAction(
           name: CommonStrings.addExisting,
           action: (SingleDataGridController p0, [_]) async {
             await UsersTabHelper.addExisting(
-                context,
-                p0,
-                (await DbUsers.getAllUsersBasics()).cast<IHasId>(),
-                refreshData);
+              context,
+              p0,
+              (await DbUsers.getAllUsersBasics()).cast<IHasId>(),
+              refreshData,
+            );
           },
         ),
       if (_hasCsmAppLinks)

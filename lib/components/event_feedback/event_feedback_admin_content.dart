@@ -20,7 +20,7 @@ class EventFeedbackAdminContent extends StatefulWidget {
   });
 
   final Future<List<Map<String, dynamic>>> Function(int occasionId)?
-      loadOverride;
+  loadOverride;
   final Future<void> Function(int occasionId, int feedbackId)? deleteOverride;
 
   @override
@@ -38,15 +38,18 @@ class _EventFeedbackAdminContentState extends State<EventFeedbackAdminContent> {
       context: context,
       loadData: _loadRows,
       fromPlutoJson: EventFeedbackAdminRow.fromPlutoJson,
-      firstColumnType: RightsService.hasCapability(
-              AuthorizationCapabilities.scheduleFeedbackDelete)
+      firstColumnType:
+          RightsService.hasCapability(
+            AuthorizationCapabilities.scheduleFeedbackDelete,
+          )
           ? DataGridFirstColumn.delete
           : DataGridFirstColumn.none,
       idColumn: EventFeedbackAdminRow.feedbackIdColumn,
       actionsExtended: DataGridActionsController(
         isAddActionPossible: () => false,
         areAllActionsEnabled: () => RightsService.hasCapability(
-            AuthorizationCapabilities.scheduleFeedbackDelete),
+          AuthorizationCapabilities.scheduleFeedbackDelete,
+        ),
       ),
       exportOptions: ExportOptions(fileName: 'event_feedback'),
       columns: [
@@ -58,22 +61,46 @@ class _EventFeedbackAdminContentState extends State<EventFeedbackAdminContent> {
           readOnly: true,
         ),
         _column(
-            EventFeedbackAdminRow.eventColumn, EventFeedbackStrings.event, 240),
+          EventFeedbackAdminRow.eventColumn,
+          EventFeedbackStrings.event,
+          240,
+        ),
         _column(
-            EventFeedbackAdminRow.fromColumn, EventFeedbackStrings.from, 130),
+          EventFeedbackAdminRow.fromColumn,
+          EventFeedbackStrings.from,
+          130,
+        ),
         _column(EventFeedbackAdminRow.toColumn, EventFeedbackStrings.to, 130),
-        _column(EventFeedbackAdminRow.ratingColumn, EventFeedbackStrings.rating,
-            110),
-        _column(EventFeedbackAdminRow.commentColumn,
-            EventFeedbackStrings.comment, 340),
-        _column(EventFeedbackAdminRow.respondentColumn,
-            EventFeedbackStrings.respondent, 180),
-        _column(EventFeedbackAdminRow.anonymousColumn,
-            EventFeedbackStrings.anonymous, 110),
-        _column(EventFeedbackAdminRow.submittedAtColumn,
-            EventFeedbackStrings.submittedAt, 145),
-        _column(EventFeedbackAdminRow.updatedAtColumn,
-            EventFeedbackStrings.updatedAt, 145),
+        _column(
+          EventFeedbackAdminRow.ratingColumn,
+          EventFeedbackStrings.rating,
+          110,
+        ),
+        _column(
+          EventFeedbackAdminRow.commentColumn,
+          EventFeedbackStrings.comment,
+          340,
+        ),
+        _column(
+          EventFeedbackAdminRow.respondentColumn,
+          EventFeedbackStrings.respondent,
+          180,
+        ),
+        _column(
+          EventFeedbackAdminRow.anonymousColumn,
+          EventFeedbackStrings.anonymous,
+          110,
+        ),
+        _column(
+          EventFeedbackAdminRow.submittedAtColumn,
+          EventFeedbackStrings.submittedAt,
+          145,
+        ),
+        _column(
+          EventFeedbackAdminRow.updatedAtColumn,
+          EventFeedbackStrings.updatedAt,
+          145,
+        ),
       ],
     );
   }

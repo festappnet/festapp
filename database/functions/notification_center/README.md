@@ -1,142 +1,91 @@
 # Organization notification center
 
-This domain is a private, personal administration projection. Existing news,
-push, the outbound email queue, BankSync ingestion and payment matching retain
-their owners. No client publishes events. No business triggers or network calls
-run in checkout transactions.
+A private personal projection, outside public sync, news/push delivery, the
+outbound email queue and BankSync. Only trusted explicit domain owners publish;
+there are no application triggers, second queues or client-side publishers.
 
-## Ownership and ordering
+## Canonical collection boundary
 
-- `create_ticket_order_internal_v1` publishes ordinary creations once, using the
-  allocated order identity. Waitlist registration/acceptance/decline/withdrawal
-  publish in the successful command transaction after its replay gate.
-- `internal_storno_tickets_221` captures only actually changed ticket IDs before
-  unlinking inventory, covering whole, partial and indirect cancellations.
-- `expire_waitlist_form_internal` captures exactly the updated offer slots and
-  original expiry timestamp, including the periodic expiry path.
-- Finalization, allocation, cancellation, form/product/blueprint settings and
-  inventory resizing observe canonical form snapshots, product link limits,
-  canonical V2 blueprint seat bindings and per-context physical/commercial inventory limits.
-  Temporary buyer holds do not generate attention. There is no invented
-  occasion total. `product_types.maximum` is not enforced by the current product
-  materializer; notifications use the actual `products.maximum` boundary.
-- Paid/sent/recalculated/Stripe and acceptance-recovery state changes update
-  existing order projections only. Acceptance never emits another creation.
-- Shared email reducers observe every supported message kind, including new
-  feedback after delivery. The bounded due evaluator covers delayed/uncertain
-  messages. Original provider timestamps exclude late preactivation facts.
-- The machine-proof health worker reads the existing authenticated BankSync
-  status transport only, never a bank API or a new import path. Scope comes from
-  explicit form accounts and actual order payment accounts, including aliases.
+The published `20261024235000_notification_center_canonical_availability.sql`
+retired activation/tenant rollout in favor of `notification_center_organizations`
+and `initialize_notification_center_internal`. Organization creation initializes
+collection once under `notification-center-organization:<id>`. Repeat
+initialization is silent and does not reset personal history. No activation
+setter, enabled column or compatibility activation helper is recreated.
+A local 2026-10-24 release receipt establishes this prerequisite and a released
+grouped client. See the [feed implementation record](../../../docs/plans/notification-center-feed-plan-2026-10-26.md).
 
-An organization advisory transaction lock serializes source initialization
-with producers, including the interval before a collection row exists. Producers
-take the shared lock before source state/event writes; initialization takes it
-exclusively. Existing form/order/product/pool lock order
-remains intact. No producer takes a personal delivery-state lock.
+## Publication, projection and acknowledgment
 
-Publication snapshots currently eligible recipients. A genuinely new attention
-revision refreshes eligibility and its verified author suppression; earlier
-self-suppression cannot hide a later automatic failure. Projection rechecks
-current rights and mute state. Recipients have per-revision processing cursors, so a
-bounded retry resumes fanout without delivering skipped/muted history later.
-The projector's transaction advisory lease prevents competing batches from
-locking personal rows in conflicting orders. Row/transaction rollback is its
-retry fence; no external delivery effect can escape it.
+Publication captures eligible recipients and suppresses a verified administrative
+author. The exclusive projector lease, bounded per-recipient revision work and
+personal state row lock retain their original ownership. Delivery allocation
+and explicit `open_notification_center` serialize on that same personal row;
+only open advances the acknowledgment watermark. Pagination, badge, mute and
+known-ID hydration are read-only with respect to acknowledgment.
 
-Delivery allocation and `open_notification_center` lock the same personal state
-row. This orders commits rather than global sequence allocation or wall time.
-Only open acknowledges, monotonically, through its captured upper sequence.
-Pagination, group expansion, updates and badge reads never acknowledge.
+All private projection tables have RLS and no client grants. Every read rechecks
+organization/context and current event-specific rights before private DTO
+hydration. The canonical bank account and program administration permission
+rules remain intact. Email reporting retains its cancellation/recovery policy.
 
-## Access and private data
+## Item feed and external serialization
 
-All projection tables have RLS and no client grants. Helpers are revoked from
-public client roles. Only trusted internal owners initialize sources; service-only entrypoints project,
-observe or clean projections; user RPCs derive their recipient from `auth.uid()`.
-Every read rechecks current tenant and domain rights, including grouped counts,
-old pages and update hydration. Current occasion changes priority only.
+`get_notification_center_feed` uses `notification_center_visible_internal` to
+select the last delivered event revision at or below the personal snapshot.
+Ordering is section ascending, historical event time descending, UUID descending.
+A base64 JSON cursor validates organization, snapshot and occasion context plus
+the exact sort tuple. Limits count items; no group preview limit truncates a page.
+A late delivery of an older event is excluded from an already open snapshot.
 
-Order/capacity access follows actual order-view rights. Email access follows the
-reporting owner: tenant admins may inspect tenant mail, occasion order viewers
-may inspect occasion-scoped mail. Organization-only security mail is never
-shown to an occasion-only organizer. Email DTOs include the recipient address
-and available order or recipient name, read from the authorized message scope
-at DTO creation. DTOs exclude bodies, provider payloads, tokens and internal
-bank mappings. Authorized order names
-and current states are read at DTO creation, not copied into the event log.
-Bank-account admins who also manage a linked unit receive their authorized account/unit target; organizers
-receive only their affected event links and a safe reason class.
+`open_notification_center` adds `feedSupported`, `feedItems`, `feedNextCursor`;
+the badge advertises capability without acknowledging. The published grouped
+page/group RPCs and `groups/nextCursor` fields are external legacy serializers
+over the same authorized selector. They are retained for the released grouped
+client, never called by the new Flutter. Retirement requires a separate release
+inventory and forward contraction of those RPCs, group columns and indexes.
 
-## App participant and program attention
+Order contacts are hydrated from the authorized current order in the same tenant
+and occasion. They are absent from the event log. Creation/waitlist counts are
+captured from distinct actual ticket identities; cancellation/offer producers
+supply their actual affected counts. Safe configured multiple-ticket context is
+captured at publication, never inferred from remaining capacity or price.
 
-`add_user_to_occasion_internal_v1` publishes new membership once per person,
-occasion and organization-local day. Repeated ensures and same-day leave/rejoin
-reuse the event. The DTO resolves current membership and labels a departed
-participant accordingly; it does not retain names in the event log. Daily
-occasion groups hydrate five participants initially and page their details.
+## Form availability
 
-Attendance and event-save commands observe capacity under the existing event
-row lock. A program event has at most one full-capacity attention item per local
-day. Reopen/refill updates that item without allocating another unread delivery.
-Gender-split events become full only when both enforced buckets are full;
-unlimited events never do. Activation/resume silently baselines existing events.
+`eshop_forms/form_availability.sql` owns the manual/time gate and preserves the
+existing effective schedule precedence and inclusive end. Registration mode
+calls it before its unchanged blueprint/capacity/waitlist decisions. Capacity
+recovery never means a form opening and never adds a second unread episode.
 
-These two kinds are restricted to tenant administrators and occasion editors or
-managers, with current rights rechecked at projection and read. Order-only access
-does not grant access to app participants. Other notification kinds keep their
-existing authorization. No push or email is sent by these producers.
+Availability source keys are `form-availability:<id>`; capacity keys stay
+`form:<id>`. Before-save draining consumes overdue OLD schedule boundaries;
+only then does the same reducer compare the successful new configuration at the
+same captured instant. Counter and event commit atomically. A missed start and
+end produce both historical transitions at their configured times. End is due
+one microsecond after its inclusive boundary. Manual changes outside a valid
+window do not falsely open a form.
 
-## Baseline, monitoring and retention
+Lock order is organization gate, domain form/product/inventory locks, source,
+then event/recipient snapshot. Existing save/delete/occasion command owners take
+the gate before their form locks. Maintenance skips locked forms and rotates a
+bounded cursor so a busy early form does not starve later due forms. It uses the
+existing maintenance cron and separate family budgets; email, bank and projector
+owners remain unchanged.
 
-Notification availability follows administration access without tenant or email
-rollout flags. `initialize_notification_center_internal` silently baselines sources
-once for each organization. The cutover initializes every existing organization;
-`seed_org_with_admin` initializes new organizations in their creation transaction.
-Repeated initialization is a no-op. Organization day grouping defaults to
-Europe/Prague; the internal initialization boundary accepts a valid IANA timezone.
+Initialization, upgrade, create, copy and same-transaction wizard authoring take
+a silent baseline. A creation transaction marker prevents a later step of that
+same authoring command from fabricating an opening. Deletion retires due state
+without a close event. Existing events retain their historical facts and time.
 
-Capacity uses 90% attention with an 85% reset and one full/reopen episode.
-A full transition supersedes a warning from the same transaction; a later full
-transition can add one attention revision to the same item. Cancellation carries
-its form capacity consequence. Recovery does not add unread attention.
+## Migration and verification
 
-Bank status runs every five minutes, claims four connections per worker call,
-uses the shared 20-second transport timeout, a two-minute fenced lease and a
-ten-minute transport backoff. Confirmed token failure is immediate; transient
-failures require at least two observations spanning fifteen minutes. Staleness
-uses a conservative thirty-minute threshold; successful pull time proves
-recovery. The local BankSync source defaults to a 30-second minimum fetch interval
-and a minute scheduler. Production interval/rate limits still require release
-verification. Suspend is not a new failure.
+The explicit forward manifest is
+`automation/notification-center-feed-manifest.json`; the assembler verifies
+historical prerequisite digests and canonical table parity. It never regenerates
+applied history. Only the new delta is generated. The restored 2026-10-24
+prerequisite files are byte-for-byte copies of their published Git source.
 
-Email uncertainty/delay uses thirty minutes from the original due time, captured
-before retry scheduling can move the queue target, with earlier attention
-near an offer deadline. Existing recipient suppression is expected; a new
-suppression is an incident. Complaint means provider-confirmed recipient spam
-feedback. It makes no claim about automatic spam-folder placement or inbox
-arrival. Repeated same-class feedback does not add attention; a new class can
-advance the existing item's revision once. Bulk incidents group the same cause,
-authorized scope and local calendar day while retaining one row per message.
-
-Cleanup removes safe projections/deliveries older than ninety days in bounded
-batches, preserving active problems and minimal source dedupe/baseline state.
-Business records and email audit remain owned by their existing domains.
-
-## Installation and verification
-
-`automation/assemble-app-activity-migration.py --check` verifies the additive
-public-news/app-activity migration against its current canonical owners.
-
-`automation/assemble-notification-center-migration.py` produces the explicit
-forward migration; `--check` verifies parity. Production jobs are installed explicitly in the postgres scheduler using
-`cron.schedule_in_database`, targeting the verified canonical application
-database. The application database does not own pg_cron.
-Release must verify the health job, proof route and scoped worker credentials.
-
-Run the discoverable `database/tests/notification_center/*_test.sql` via the
-normal SQL runner, plus the real two-connection Node tests in that directory.
-The Flutter owner documents personal polling, snapshot hydration and navigation
-in `lib/components/notification_center/README.md`. Actual execution receipts and
-remaining release steps are in the dated plan; local implementation does not
-activate production.
+Actual SQL, concurrency, Flutter, clean/upgrade rehearsal and isolated full-app
+receipts live in the [execution evidence](../../../docs/plans/notification-center-feed-evidence-2026-10-26/README.md).
+Local implementation is separate from production migration and release.

@@ -1,0 +1,12 @@
+{
+  "evidence": "Local signed-off release receipt; no production connection in this task",
+  "receiptPath": "/Users/miakh/.config/festapp/local-release/20261024-notification-canonical/receipt.json",
+  "sourceMainSha": "cebaf0f65b89e8fb7459a41befe070cd39756414",
+  "appliedMigration": "20261024235000_notification_center_canonical_availability.sql",
+  "migrationSha256": "b3b2271a66c463063aaf858afb8135ea100b8ef6dc17fe95dc8ae38dfb5a1c59",
+  "transactionCommitted": true,
+  "retiredActivationTableAbsent": true,
+  "retiredSetterAndHelperAbsent": true,
+  "releasedClientVersion": "0.20.263+747",
+  "currentLiveState": "Not queried; the dated local receipt proves publication, not present-day deployment state"
+}

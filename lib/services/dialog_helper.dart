@@ -9,7 +9,6 @@ import 'package:fstapp/services/dialog_helper_confirmation.dart';
 import 'package:fstapp/services/dialog_helper_input.dart';
 import 'package:fstapp/services/dialog_helper_progress.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/dialogs/responsive_search_dialog.dart';
 import 'package:fstapp/data_services/data_extensions.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -27,7 +26,10 @@ class ImportDialogChoice {
 
 class DialogHelper {
   static Widget createDialogAction(String text, void Function() onPressed) {
-    return TextButton(onPressed: onPressed, child: Text(text));
+    return TextButton(
+      onPressed: onPressed,
+      child: Text(text),
+    );
   }
 
   static Future<ImportDialogChoice?> showImportDialog(
@@ -37,26 +39,21 @@ class DialogHelper {
     required bool showTicketImport,
     String? confirmButtonMessage,
     String? cancelButtonMessage,
-  }) => InputDialogs.showImportDialog(
-    context,
-    titleMessage,
-    showCsvImport: showCsvImport,
-    showTicketImport: showTicketImport,
-    confirmButtonMessage: confirmButtonMessage,
-    cancelButtonMessage: cancelButtonMessage,
-  );
+  }) =>
+      InputDialogs.showImportDialog(
+        context,
+        titleMessage,
+        showCsvImport: showCsvImport,
+        showTicketImport: showTicketImport,
+        confirmButtonMessage: confirmButtonMessage,
+        cancelButtonMessage: cancelButtonMessage,
+      );
 
   static Future<void> showInformationDialog(
-    BuildContext context,
-    String titleMessage,
-    String textMessage, [
-    String? buttonMessage,
-  ]) => ConfirmationDialogs.showInformationDialog(
-    context,
-    titleMessage,
-    textMessage,
-    buttonMessage,
-  );
+          BuildContext context, String titleMessage, String textMessage,
+          [String? buttonMessage]) =>
+      ConfirmationDialogs.showInformationDialog(
+          context, titleMessage, textMessage, buttonMessage);
 
   static Future<bool> showScanTicketCode(
     BuildContext context,
@@ -64,13 +61,14 @@ class DialogHelper {
     String textMessage, {
     String? confirmButtonMessage,
     String? cancelButtonMessage,
-  }) => ConfirmationDialogs.showScanTicketCode(
-    context,
-    titleMessage,
-    textMessage,
-    confirmButtonMessage: confirmButtonMessage,
-    cancelButtonMessage: cancelButtonMessage,
-  );
+  }) =>
+      ConfirmationDialogs.showScanTicketCode(
+        context,
+        titleMessage,
+        textMessage,
+        confirmButtonMessage: confirmButtonMessage,
+        cancelButtonMessage: cancelButtonMessage,
+      );
 
   static Future<bool> showConfirmationDialog(
     BuildContext context,
@@ -78,13 +76,14 @@ class DialogHelper {
     String textMessage, {
     String? confirmButtonMessage,
     String? cancelButtonMessage,
-  }) => ConfirmationDialogs.showConfirmationDialog(
-    context,
-    titleMessage,
-    textMessage,
-    confirmButtonMessage: confirmButtonMessage,
-    cancelButtonMessage: cancelButtonMessage,
-  );
+  }) =>
+      ConfirmationDialogs.showConfirmationDialog(
+        context,
+        titleMessage,
+        textMessage,
+        confirmButtonMessage: confirmButtonMessage,
+        cancelButtonMessage: cancelButtonMessage,
+      );
 
   static Future<bool> showConfirmationDialogRichText(
     BuildContext context,
@@ -92,13 +91,14 @@ class DialogHelper {
     Text textMessage, {
     String? confirmButtonMessage,
     String? cancelButtonMessage,
-  }) => ConfirmationDialogs.showConfirmationDialogRichText(
-    context,
-    titleMessage,
-    textMessage,
-    confirmButtonMessage: confirmButtonMessage,
-    cancelButtonMessage: cancelButtonMessage,
-  );
+  }) =>
+      ConfirmationDialogs.showConfirmationDialogRichText(
+        context,
+        titleMessage,
+        textMessage,
+        confirmButtonMessage: confirmButtonMessage,
+        cancelButtonMessage: cancelButtonMessage,
+      );
 
   static Future<bool> showConfirmationDialogRich({
     required BuildContext context,
@@ -106,13 +106,14 @@ class DialogHelper {
     required Widget content,
     String? confirmButtonText,
     String? cancelButtonText,
-  }) => ConfirmationDialogs.showConfirmationDialogRich(
-    context: context,
-    title: title,
-    content: content,
-    confirmButtonText: confirmButtonText,
-    cancelButtonText: cancelButtonText,
-  );
+  }) =>
+      ConfirmationDialogs.showConfirmationDialogRich(
+        context: context,
+        title: title,
+        content: content,
+        confirmButtonText: confirmButtonText,
+        cancelButtonText: cancelButtonText,
+      );
 
   static Future<bool> showNotificationPermissionDialog(BuildContext context) =>
       ConfirmationDialogs.showNotificationPermissionDialog(context);
@@ -123,13 +124,14 @@ class DialogHelper {
     String hint, [
     String? confirmButtonMessage,
     String? cancelButtonMessage,
-  ]) => InputDialogs.showPasswordInputDialog(
-    context,
-    titleMessage,
-    hint,
-    confirmButtonMessage,
-    cancelButtonMessage,
-  );
+  ]) =>
+      InputDialogs.showPasswordInputDialog(
+        context,
+        titleMessage,
+        hint,
+        confirmButtonMessage,
+        cancelButtonMessage,
+      );
 
   static Future<ImportFile?> dropFilesHere(
     BuildContext context,
@@ -138,26 +140,32 @@ class DialogHelper {
     String cancelButtonMessage, {
     Widget? headerContent,
     List<String>? allowedExtensions,
-  }) => InputDialogs.dropFilesHere(
-    context,
-    titleMessage,
-    confirmButtonMessage,
-    cancelButtonMessage,
-    headerContent: headerContent,
-    allowedExtensions: allowedExtensions,
-  );
+    bool singleFileOnly = false,
+    VoidCallback? onInvalidDrop,
+  }) =>
+      InputDialogs.dropFilesHere(
+        context,
+        titleMessage,
+        confirmButtonMessage,
+        cancelButtonMessage,
+        headerContent: headerContent,
+        allowedExtensions: allowedExtensions,
+        singleFileOnly: singleFileOnly,
+        onInvalidDrop: onInvalidDrop,
+      );
 
   static Future<String?> showInputDialog({
     required BuildContext context,
     String? initialValue,
     required String dialogTitle,
     required String labelText,
-  }) => InputDialogs.showInputDialog(
-    context: context,
-    initialValue: initialValue,
-    dialogTitle: dialogTitle,
-    labelText: labelText,
-  );
+  }) =>
+      InputDialogs.showInputDialog(
+        context: context,
+        initialValue: initialValue,
+        dialogTitle: dialogTitle,
+        labelText: labelText,
+      );
 
   static Future<bool> showProgressDialogAsync(
     BuildContext context,
@@ -166,34 +174,35 @@ class DialogHelper {
     List<Future<void> Function()>? futures,
     Duration? delay,
     bool isBasic = false,
-  }) => ProgressDialogs.showProgressDialogAsync(
-    context,
-    title,
-    total,
-    futures: futures,
-    delay: delay,
-    isBasic: isBasic,
-  );
+  }) =>
+      ProgressDialogs.showProgressDialogAsync(
+        context,
+        title,
+        total,
+        futures: futures,
+        delay: delay,
+        isBasic: isBasic,
+      );
 
   static Future<T?> showFutureProgressDialog<T>({
     required BuildContext context,
     required String title,
     required Future<T> Function() futureCallback,
-  }) => ProgressDialogs.showFutureProgressDialog<T>(
-    context: context,
-    title: title,
-    futureCallback: futureCallback,
-  );
+  }) =>
+      ProgressDialogs.showFutureProgressDialog<T>(
+        context: context,
+        title: title,
+        futureCallback: futureCallback,
+      );
 
   static Future<void> chooseUser(
-    BuildContext context,
-    void Function(UserInfoModel) onPressedAction,
-    List<UserInfoModel> allUsers,
-    String setText, {
-    bool useRootNavigator = true,
-    String? emptyMessage,
-    String? description,
-  }) async {
+      BuildContext context,
+      void Function(UserInfoModel) onPressedAction,
+      List<UserInfoModel> allUsers,
+      String setText,
+      {bool useRootNavigator = true,
+      String? emptyMessage,
+      String? description}) async {
     await showDialog(
       useRootNavigator: useRootNavigator,
       context: context,
@@ -221,13 +230,15 @@ class DialogHelper {
         searchLabel: CommonStrings.searchParticipants,
         filter: (person, query) {
           final q = query.toLowerCase().withoutDiacriticalMarks;
-          return (person.name?.toLowerCase().withoutDiacriticalMarks.contains(
-                    q,
-                  ) ??
+          return (person.name
+                      ?.toLowerCase()
+                      .withoutDiacriticalMarks
+                      .contains(q) ??
                   false) ||
-              (person.surname?.toLowerCase().withoutDiacriticalMarks.contains(
-                    q,
-                  ) ??
+              (person.surname
+                      ?.toLowerCase()
+                      .withoutDiacriticalMarks
+                      .contains(q) ??
                   false) ||
               (person.email?.toLowerCase().contains(q) ?? false);
         },
@@ -238,12 +249,11 @@ class DialogHelper {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onPressedAction(person);
-                },
-                child: Text(setText),
-              ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onPressedAction(person);
+                  },
+                  child: Text(setText)),
               Text(person.email ?? ""),
             ],
           ),
@@ -274,19 +284,19 @@ class DialogHelper {
     );
   }
 
-  static Future<LanguageModel?> chooseLanguage(BuildContext context) async {
+  static Future<LanguageModel?> chooseLanguage(
+    BuildContext context,
+  ) async {
     var locales = AppConfig.availableLanguages();
     final selectedLocale = await showDialog<LanguageModel>(
       context: context,
       builder: (dialogContext) => AppSimpleDialog(
         title: Text(CommonStrings.chooseLanguage),
         children: locales
-            .map(
-              (language) => SimpleDialogOption(
-                onPressed: () => Navigator.of(dialogContext).pop(language),
-                child: Text(language.name),
-              ),
-            )
+            .map((language) => SimpleDialogOption(
+                  onPressed: () => Navigator.of(dialogContext).pop(language),
+                  child: Text(language.name),
+                ))
             .toList(),
       ),
     );
@@ -294,9 +304,7 @@ class DialogHelper {
     if (selectedLocale != null) {
       context.setLocale(selectedLocale.locale);
       ToastHelper.Show(
-        context,
-        CommonStrings.languageSetTo(language: selectedLocale.name),
-      );
+          context, CommonStrings.languageSetTo(language: selectedLocale.name));
     }
     return selectedLocale;
   }

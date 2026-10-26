@@ -1,0 +1,16 @@
+{
+  "base": "85c655137c9c2472b402aaed6fdbf0fe24501d24",
+  "archiveSha256": "2ae586d1634117db025ab0f31daa23e630cc743ab2a9fb961257833e67c6b592",
+  "sourceFiles": 7599,
+  "sourceParity": true,
+  "archivedObsoletePaths": 812,
+  "changedPaths": 4026,
+  "publication": "none",
+  "ignoredCredentials": "preserved",
+  "pubspecGet": "offline; four dependency classification labels normalized; versions and hashes unchanged",
+  "finalSourceFiles": 7600,
+  "sourceInventorySha256": "f55dd5e739a45c0a4affa373cc91d08c7040636cf5f5dc0fc4689bbe0a71e2b9",
+  "relocatedFlutterSmoke": "389 passed; 0 failed",
+  "localEnvironment": "owned browser, Flutter server and disposable Supabase stopped",
+  "sourceInventoryScope": "before final receipt update"
+}

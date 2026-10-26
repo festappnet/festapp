@@ -38,5 +38,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify restricted WebViews and production module identity
         run: bash automation/test_web_startup.sh
+      - name: Install public renderer dependencies
+        working-directory: automation/release/platform_updates
+        run: pnpm install --frozen-lockfile
       - name: Verify deployment gates
         run: bash automation/tests/deploy_workflow.test.sh

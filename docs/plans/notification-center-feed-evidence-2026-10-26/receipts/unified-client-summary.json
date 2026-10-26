@@ -1,0 +1,39 @@
+{
+  "architectureSuccess": true,
+  "core": {
+    "exitCode": 0,
+    "success": true,
+    "seconds": 4.555117667012382,
+    "testSeconds": 4.093,
+    "cases": 251,
+    "skipped": 0,
+    "failed": 0,
+    "suites": 40
+  },
+  "adapters": {
+    "exitCode": 0,
+    "success": true,
+    "seconds": 13.305359624995617,
+    "testSeconds": 12.426,
+    "cases": 87,
+    "skipped": 1,
+    "failed": 0,
+    "suites": 25
+  },
+  "flutter": {
+    "exitCode": 0,
+    "success": true,
+    "seconds": 205.53880579199176,
+    "testSeconds": 204.686,
+    "cases": 2002,
+    "skipped": 1,
+    "failed": 0,
+    "suites": 92
+  },
+  "mode": "all",
+  "concurrency": 1,
+  "schedule": "Dart+VM then Flutter",
+  "inventorySuccess": true,
+  "success": true,
+  "seconds": 218.95283112500329
+}

@@ -1,5 +1,6 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/foundation.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -27,14 +28,14 @@ const _connection = '12345678-1234-4234-8234-123456789abc';
 late WidgetEnvironmentFixture _environment;
 
 Map<String, dynamic> _recipient({bool paused = false}) => {
-      'connectionId': _connection,
-      'name': 'Test organizer',
-      'state': paused ? 'restricted' : 'connected',
-      'modelVerified': true,
-      'paused': paused,
-      'chargesEnabled': !paused,
-      'cardPaymentsActive': !paused,
-    };
+  'connectionId': _connection,
+  'name': 'Test organizer',
+  'state': paused ? 'restricted' : 'connected',
+  'modelVerified': true,
+  'paused': paused,
+  'chargesEnabled': !paused,
+  'cardPaymentsActive': !paused,
+};
 
 FormEditBundle _bundle(String link, int unit, Map<String, dynamic>? payments) =>
     FormEditBundle(
@@ -43,15 +44,20 @@ FormEditBundle _bundle(String link, int unit, Map<String, dynamic>? payments) =>
         title: 'Payment test',
         occasionId: unit * 10,
         occasionModel: OccasionModel(
-            unit: unit, isOpen: true, isHidden: false, isPromoted: false),
+          unit: unit,
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+        ),
         data: {
-          if (payments != null) 'payments': {...payments}
+          if (payments != null) 'payments': {...payments},
         },
         relatedFields: [
           FormFieldDraft(
-              productType: ProductTypeModel(products: [
-            ProductModel(currencyCode: 'CZK'),
-          ])),
+            productType: ProductTypeModel(
+              products: [ProductModel(currencyCode: 'CZK')],
+            ),
+          ),
         ],
         availableBankAccounts: [],
       ),
@@ -74,49 +80,72 @@ Future<void> _choose(WidgetTester tester, FormPaymentMethod method) async {
 
 void main() {
   WidgetEnvironmentFixture.register();
-  setUpAll(() => _environment = WidgetEnvironmentFixture(
+  setUpAll(
+    () => _environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
-      translations:
-          jsonDecode(File('assets/translations/cs.json').readAsStringSync())));
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ),
+    ),
+  );
   setUp(() {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        occasionUser: OccasionUserModel(isEditor: true),
-        capabilities: const {'occasions.write': true},
-        occasion: OccasionModel(
-            isOpen: true,
-            isHidden: false,
-            isPromoted: false,
-            features: [FormFeature(code: 'form')]));
+      occasionUser: OccasionUserModel(isEditor: true),
+      capabilities: const {'occasions.write': true},
+      occasion: OccasionModel(
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
+        features: [FormFeature(code: 'form')],
+      ),
+    );
   });
   tearDown(() => RightsService.occasionLinkModelNotifier.value = null);
 
-  testWidgetsWithEnvironment(() => _environment,
-      'normal form settings hide cards and avoid Stripe reads while retaining saved configuration',
-      (tester) async {
-    var reads = 0;
-    await _environment.pumpWidget(tester, MaterialApp(builder: DependencyMaterialBridge.builder, home: FormSettingsContent(
-      bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
-      formLink: 'hidden-payment-test',
-      loadBundle: (link) async => _bundle(link, 5, {'bankEnabled': true, 'stripeConnectionId': _connection}),
-      loadStripeRecipient: (unit, occasion) async { reads++; return _recipient(); },
-    )));
-    await tester.pumpAndSettle();
-    expect(find.byType(PaymentMethodCards), findsNothing);
-    expect(reads, 0);
-    expect(_actions(tester).hasChanges, isFalse);
-  });
-
-  testWidgetsWithEnvironment(() => _environment,
-      'legacy defaults remain clean until a choice; all modes save and discard',
-      (tester) async {
-    Map<String, dynamic>? savedPayments;
-    var checks = 0;
-    var saves = 0;
-    await _environment.pumpWidget(
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'normal form settings hide cards and avoid Stripe reads while retaining saved configuration',
+    (tester) async {
+      var reads = 0;
+      await _environment.pumpWidget(
         tester,
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
-            showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            formLink: 'hidden-payment-test',
+            loadBundle: (link) async => _bundle(link, 5, {
+              'bankEnabled': true,
+              'stripeConnectionId': _connection,
+            }),
+            loadStripeRecipient: (unit, occasion) async {
+              reads++;
+              return _recipient();
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(PaymentMethodCards), findsNothing);
+      expect(reads, 0);
+      expect(_actions(tester).hasChanges, isFalse);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'legacy defaults remain clean until a choice; all modes save and discard',
+    (tester) async {
+      Map<String, dynamic>? savedPayments;
+      var checks = 0;
+      var saves = 0;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormSettingsContent(
+            showCardPayments: true,
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             formLink: 'payment-test',
             loadBundle: (link) async => _bundle(link, 5, savedPayments),
             loadStripeRecipient: (unit, occasion) async {
@@ -126,59 +155,70 @@ void main() {
             },
             saveForm: (draft) async {
               saves++;
-              savedPayments =
-                  Map<String, dynamic>.from(draft.definition.data!['payments']);
+              savedPayments = Map<String, dynamic>.from(
+                draft.definition.data!['payments'],
+              );
             },
           ),
-        ));
-    await tester.pumpAndSettle();
-    expect(_selection(tester), FormPaymentMethod.bank);
-    expect(_actions(tester).hasChanges, isFalse);
-    expect(checks, 1);
-    expect(_selection(tester), FormPaymentMethod.bank);
-    expect(_actions(tester).hasChanges, isFalse);
-    expect(find.text(PaymentMethodStrings.reason('paused')), findsOneWidget);
-
-    for (final mode in [
-      FormPaymentMethod.stripe,
-      FormPaymentMethod.both,
-      FormPaymentMethod.bank
-    ]) {
-      await _choose(tester, mode);
-      expect(_selection(tester), mode);
-      expect(_actions(tester).hasChanges, isTrue);
-      await _actions(tester).onSave();
+        ),
+      );
       await tester.pumpAndSettle();
-      expect(savedPayments!['bankEnabled'], mode != FormPaymentMethod.stripe);
-      expect(savedPayments!['stripeConnectionId'],
-          mode == FormPaymentMethod.bank ? null : _connection);
+      expect(_selection(tester), FormPaymentMethod.bank);
       expect(_actions(tester).hasChanges, isFalse);
-    }
-    expect(saves, 3);
-    await _choose(tester, FormPaymentMethod.both);
-    final discard = find.descendant(
-        of: find.byType(EditorActionBar), matching: find.byType(TextButton));
-    await tester.ensureVisible(discard);
-    await tester.tap(discard);
-    await tester.pumpAndSettle();
-    await tester
-        .tap(find.widgetWithText(FilledButton, 'Common.discardChanges'.tr()));
-    await tester.pumpAndSettle();
-    expect(_selection(tester), FormPaymentMethod.bank);
-    expect(_actions(tester).hasChanges, isFalse);
-    expect(saves, 3);
-    await _environment.pumpWidget(tester, const SizedBox.shrink());
-  });
+      expect(checks, 1);
+      expect(_selection(tester), FormPaymentMethod.bank);
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(find.text(PaymentMethodStrings.reason('paused')), findsOneWidget);
 
-  testWidgetsWithEnvironment(() => _environment,
-      'late recipient response from replaced form cannot change the new form',
-      (tester) async {
-    final pending = Completer<Map<String, dynamic>?>();
-    await _environment.pumpWidget(
+      for (final mode in [
+        FormPaymentMethod.stripe,
+        FormPaymentMethod.both,
+        FormPaymentMethod.bank,
+      ]) {
+        await _choose(tester, mode);
+        expect(_selection(tester), mode);
+        expect(_actions(tester).hasChanges, isTrue);
+        await _actions(tester).onSave();
+        await tester.pumpAndSettle();
+        expect(savedPayments!['bankEnabled'], mode != FormPaymentMethod.stripe);
+        expect(
+          savedPayments!['stripeConnectionId'],
+          mode == FormPaymentMethod.bank ? null : _connection,
+        );
+        expect(_actions(tester).hasChanges, isFalse);
+      }
+      expect(saves, 3);
+      await _choose(tester, FormPaymentMethod.both);
+      final discard = find.descendant(
+        of: find.byType(EditorActionBar),
+        matching: find.byType(TextButton),
+      );
+      await tester.ensureVisible(discard);
+      await tester.tap(discard);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Common.discardChanges'.tr()),
+      );
+      await tester.pumpAndSettle();
+      expect(_selection(tester), FormPaymentMethod.bank);
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(saves, 3);
+      await _environment.pumpWidget(tester, const SizedBox.shrink());
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'late recipient response from replaced form cannot change the new form',
+    (tester) async {
+      final pending = Completer<Map<String, dynamic>?>();
+      await _environment.pumpWidget(
         tester,
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
-            showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            showCardPayments: true,
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             key: const ValueKey('old-form'),
             formLink: 'old-form',
             loadBundle: (link) async => _bundle(link, 5, {
@@ -187,29 +227,34 @@ void main() {
             }),
             loadStripeRecipient: (unit, occasion) => pending.future,
           ),
-        ));
-    // Deliberately leave the old recipient request unresolved.
-    await tester.pump();
-    await tester.pump();
-    expect(_selection(tester), FormPaymentMethod.stripe);
-    await _environment.pumpWidget(
+        ),
+      );
+      // Deliberately leave the old recipient request unresolved.
+      await tester.pump();
+      await tester.pump();
+      expect(_selection(tester), FormPaymentMethod.stripe);
+      await _environment.pumpWidget(
         tester,
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: FormSettingsContent(
-            showCardPayments: true,            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            showCardPayments: true,
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             key: const ValueKey('new-form'),
             formLink: 'new-form',
             loadBundle: (link) async => _bundle(link, 9, null),
             loadStripeRecipient: (_, __) async => null,
           ),
-        ));
-    await tester.pumpAndSettle();
-    pending.complete(_recipient());
-    await tester.pumpAndSettle();
-    expect(_selection(tester), FormPaymentMethod.bank);
-    expect(_actions(tester).hasChanges, isFalse);
-    expect(find.textContaining('Test organizer'), findsNothing);
-    expect(tester.takeException(), isNull);
-    await _environment.pumpWidget(tester, const SizedBox.shrink());
-  });
+        ),
+      );
+      await tester.pumpAndSettle();
+      pending.complete(_recipient());
+      await tester.pumpAndSettle();
+      expect(_selection(tester), FormPaymentMethod.bank);
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(find.textContaining('Test organizer'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await _environment.pumpWidget(tester, const SizedBox.shrink());
+    },
+  );
 }

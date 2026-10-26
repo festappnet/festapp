@@ -67,6 +67,19 @@ async function verifyOnce() {
     verifyMarketingHtml(await response.text(),page,marketing);
   }
 
+  if (marketing.updates) {
+    const feed = await fetchFresh('/platform-updates.json');
+    assert.equal(feed.status,200,'platform updates feed');
+    assert.deepEqual(await feed.json(),marketing.updates.feed,'public update projection');
+    for (const pathname of ['/co-je-nove/unknown-update','/en/whats-new/unknown-update','/de/whats-new']) {
+      assert.equal((await fetchFresh(pathname)).status,404,pathname);
+    }
+    for (const page of marketing.updates.pages) {
+      const response = await fetch(new URL(page.path+'/?probe=updates',origin),{redirect:'manual'});
+      assert.equal(response.status,308,'update trailing slash');
+      assert.equal(response.headers.get('location'),new URL(page.path+'?probe=updates',publicOrigin).href);
+    }
+  }
   const [htmlResponse, manifestResponse, mainResponse, workerResponse, ...legalResponses] = await Promise.all([
     fetchFresh('/admin'),
     fetchFresh('/festapp-version.json'),

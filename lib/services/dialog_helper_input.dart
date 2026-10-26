@@ -14,9 +14,8 @@ class InputDialogs {
     required String dialogTitle,
     required String labelText,
   }) async {
-    final TextEditingController controller = TextEditingController(
-      text: initialValue,
-    );
+    final TextEditingController controller =
+        TextEditingController(text: initialValue);
 
     return await showDialog<String>(
       context: context,
@@ -111,9 +110,7 @@ class InputDialogs {
             final dropFileWidget = DropFile(
               allowedExtensions: const ['csv'],
               onFilePathChanged: (file) async {
-                setState(() {
-                  filePath = file;
-                });
+                setState(() { filePath = file; });
                 await file.retain();
               },
             );
@@ -199,7 +196,9 @@ class InputDialogs {
       context: context,
       builder: (BuildContext context) {
         return AppAlertDialog(
-          title: Text(titleMessage),
+          title: Text(
+            titleMessage,
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
