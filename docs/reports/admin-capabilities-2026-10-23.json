@@ -4,7 +4,7 @@
   "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Produkční základ etapy 2B byl ověřen pro festapptickets / vstupenky.online. Etapa 3 doplňuje společnou správu e-mailových šablon, bannerů a syntetických náhledů; je lokálně ověřená v PR #613 a dosud není nasazená. Uvedená živá verze je poslední doložená baseline etapy 2B, nikoli nový live probe.",
+  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapa 3 a řez 4A jsou lokálně ověřené, jejich produkční rollout neproběhl.",
   "actions": [
     {
       "id": "action-001",
@@ -804,27 +804,39 @@
       "title": "Vytvořit, kopírovat a odstranit formulář",
       "description": "Použít existující FormCommands a jejich doménové podmínky.",
       "sources": [
-        "lib/components/forms/supabase_form_commands.dart"
+        "lib/components/forms/supabase_form_commands.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.create",
+        "forms.duplicate",
+        "forms.delete"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-047",
       "area": "Formuláře a prodej",
-      "title": "Upravit pole formuláře a produktové vazby",
-      "description": "Kompletní validní agregát místo řady nezávislých field zápisů.",
+      "title": "Upravit pole formuláře a existující produktové vazby",
+      "description": "Verzovaný agregát polí a vazby na existující typy produktů stejné akce. Inline editace produktů přes MCP je další řez; běžný UI editor ji zachovává.",
       "sources": [
-        "lib/components/forms/supabase_form_commands.dart"
+        "lib/components/forms/supabase_form_commands.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-048",
@@ -832,27 +844,37 @@
       "title": "Nastavit limit kapacity a zobrazování zbývajících míst",
       "description": "Nezaměňovat prodané vstupenky, držení a nabídky čekací listiny.",
       "sources": [
-        "lib/components/forms/views/form_capacity_settings.dart"
+        "lib/components/forms/views/form_capacity_settings.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-049",
       "area": "Formuláře a prodej",
       "title": "Zapnout čekací listinu a délku nabídky místa",
-      "description": "Nabídka má vlastní životnost a kapacitní účinky.",
+      "description": "Zapnout čekací listinu a nastavit délku nabídky přes společné ukládání. Správa konkrétních nabídek zůstává samostatnou operací.",
       "sources": [
-        "lib/components/forms/views/form_capacity_settings.dart"
+        "lib/components/forms/views/form_capacity_settings.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-050",
@@ -871,16 +893,21 @@
     {
       "id": "action-051",
       "area": "Formuláře a prodej",
-      "title": "Změnit název a veřejný odkaz formuláře",
-      "description": "Zachovat pravidla historie veřejných odkazů.",
+      "title": "Změnit název formuláře",
+      "description": "Změna názvu přes společný verzovaný příkaz. Změna veřejného odkazu je samostatná dosud nepokrytá operace.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-052",
@@ -888,13 +915,18 @@
       "title": "Nastavit splatnost platby",
       "description": "Respektovat zděděné hodnoty a explicitní override.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "tools/festapp/src/operations/forms.mjs",
+        "database/functions/eshop_forms/admin_form_commands.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-053",
@@ -1512,6 +1544,53 @@
       "effect": "read",
       "scope": "Akce",
       "certainty": "audit"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-095",
+      "title": "Vypsat a zkontrolovat formuláře",
+      "description": "Stránkovaný souhrn a omezený detail formuláře včetně původních verzí a pouze souvisejících produktů. Bez veřejných klíčů či odkazů.",
+      "sources": [
+        "database/functions/eshop_forms/admin_form_reads.sql",
+        "tools/festapp/src/operations/forms.mjs"
+      ],
+      "mcp": [
+        "forms.list",
+        "forms.inspect"
+      ],
+      "effect": "read",
+      "deploymentState": "pending"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-096",
+      "title": "Změnit veřejný odkaz formuláře",
+      "description": "Existující UI pravidla rezervace a historie veřejných odkazů. Samostatný MCP kontrakt zatím není implementovaný.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "effect": "write"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "id": "action-097",
+      "title": "Upravit produkty přímo v editoru formuláře",
+      "description": "UI ukládá související produktový agregát. MCP zatím podporuje jen reference na existující typy; inline produktové změny vyžadují další řez.",
+      "sources": [
+        "database/functions/eshop_forms/update_form.sql"
+      ],
+      "mcp": [],
+      "effect": "write"
     }
   ],
   "dataQualityReview": {
@@ -1521,7 +1600,7 @@
     "nextStep": "PR #613 vyžaduje schvalující review. Produkční rollout etapy 3 neproběhl; další doménová implementace je etapa 4 (formuláře).",
     "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
-  "progress": "Etapy 0, 1 a 2 včetně 2B jsou nasazené. Etapa 3 je lokálně ověřená a publikovaná v PR #613; čeká na povinné review, produkční rollout neproběhl. Další implementační etapa je 4. Nové scopes nerozšiřují starší souhlasy.",
+  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 je v PR #613 a čeká na povinné review. Řez 4A přidává šest nástrojů pro formuláře přes společné SQL vlastníky a receipts; je lokálně ověřený, nenasazený. Další řez 4B řeší rozšířená nastavení. Nové scopes nerozšiřují starší souhlasy.",
   "phases": [
     {
       "id": "0",
@@ -1576,12 +1655,12 @@
     {
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
-      "state": "next",
-      "status": "Další na řadě",
+      "state": "local",
+      "status": "4A lokálně hotovo, další řezy otevřené",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
-      "note": ""
+      "note": "4A: seznam/detail, vytvoření/kopie/smazání, základní pole, produktové reference, kapacita a konfigurace čekací listiny. Zbývá datově uložené rozšířené nastavení, editace produktů, operace nabídek čekací listiny a obecné ruční objednávky."
     },
     {
       "id": "5",
@@ -1643,5 +1722,6 @@
       "result": "Citlivé kroky zachovají finanční oprávnění a ověří skutečný výsledek. Výpadek nesmí způsobit dvojí externí účinek.",
       "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
     }
-  ]
+  ],
+  "phaseSummary": "Nasazeno 0-2B; etapa 3 a řez 4A lokálně ověřené, nenasazené. Etapa 4 pokračuje řezem 4B."
 }

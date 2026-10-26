@@ -8,7 +8,7 @@ Autoritativní plán:
 [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
 Aktuální stav a přesné důkazy:
 [checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md), poslední sekce
-„Continuation 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
+„Stage 4A 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
 odvoláno. Transport/SDK ani hotové etapy znovu neimplementovat.
 
 Etapy 0-2B jsou nasazené. Etapa 3 je lokálně dokončená a ověřená v izolovaném
@@ -20,7 +20,13 @@ checkoutu `/private/tmp/festapp-admin-mcp-emails-20261026`, větev
 produkční rollout etapy 3 dosud neproběhl. Main vyžaduje jedno
 schválení review, bez obcházení ochrany.
 
-Další doménová etapa je 4: formuláře, pole a prodejní nastavení. Před editací
+Řez 4A formulářů je lokálně ověřený na `feat/admin-mcp-forms-20261026`,
+navazuje na aktualizovaný head etapy 3
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b` (obsahuje main `3988bb7cb`).
+Etapa 3 zůstává rodičem (#613), dokud nebude schválená a sloučená; neslučovat
+ani nevydávat bez existující autorizace. Další řez je 4B: rozšířená datově
+uložená nastavení formuláře, jejich úzké kontrakty a společné UI/MCP vlastníky.
+Neopakovat šest nástrojů ani snapshoty a práva dokončené v 4A. Před editací
 jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
 Navázat na existující SQL pravidla a receipts; UI i MCP vést jednou cestou.
 Zvlášť zachovat draft/persisted rozdíl, původní verzi, null/default semantics,

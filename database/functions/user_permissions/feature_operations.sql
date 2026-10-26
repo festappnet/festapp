@@ -7,7 +7,7 @@ REVOKE ALL ON FUNCTION public.can_author_forms(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_author_forms(bigint) TO authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.can_read_form_catalog(p_occasion bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT public.form_catalog_read_rule(public.get_is_editor_view_on_occasion(p_occasion),public.can_read_orders(p_occasion));
+ SELECT public.form_catalog_read_rule(public.get_is_editor_view_on_occasion(p_occasion),public.can_read_orders(p_occasion),public.can_author_forms(p_occasion));
 $$;
 REVOKE ALL ON FUNCTION public.can_read_form_catalog(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_read_form_catalog(bigint) TO authenticated,service_role;

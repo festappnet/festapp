@@ -1,6 +1,6 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 je lokálně dokončená a ověřená, její produkční rollout neproběhl.
+Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 a řez 4A jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
@@ -853,3 +853,17 @@ klientský výpočet dědičnosti banneru i jeho ruční lokální zrcadlení po
 duplicitní validace ticket bloku v průvodci. Staré vydané RPC zůstávají hranicemi
 na stejné persistenci, nikoli druhou implementací. Init/copy/delete celé akce
 zachovává vlastní atomickou transakci. Další doménová etapa je 4 (formuláře).
+
+## Aktuální řez 4A (2026-10-26)
+
+Lokálně ověřeno: šest nástrojů formulářů, společné čtení editoru a souhrnů,
+kanonická práva, existující lifecycle receipts se snapshotem a přijetí výsledku
+v UI bez explicitního opakovaného načtení editoru. Změny kapacity soutěží se
+skutečným checkout ownerem v jedné transakční hranici. Přesný rozsah a odstraněné
+alternativy uvádí mapa pokrytí a poslední checkpoint „Stage 4A 2026-10-26“.
+
+Další řez 4B: rozšířená nastavení uložená ve form.data (platební metody,
+připomínky, vzhled a související validace). Nejdřív určit existující vlastníky a
+úzké kontrakty. Inline produktové změny přes MCP, změny veřejných URL, operace
+nabídek čekací listiny a obecné ruční objednávky zůstávají otevřené. Nepřidávat
+druhý editor, receipt nebo paralelní ACL. Celá etapa 4 není dokončená.

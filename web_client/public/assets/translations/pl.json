@@ -1410,6 +1410,8 @@
     "individualOnlyHint": "Można wybrać tylko poszczególne wydarzenia.",
     "orderPermissions": "Uprawnienia do zamówień",
     "orderPermissionsHint": "Dotyczy tylko wybranych organizatorów i wydarzeń. Edycja, płatności i wysyłka obejmują też odczyt zamówień.",
+    "formsRead": "Odczyt formularzy, pól i limitów sprzedaży",
+    "formsWrite": "Tworzenie, edycja, kopiowanie i usuwanie formularzy",
     "emailTemplatesRead": "Odczyt szablonów e-mail, banerów i przykładowych podglądów",
     "emailTemplatesWrite": "Edycja szablonów e-mail i banerów; przywracanie dziedziczenia",
     "productSchedulesRead": "Czytać fale cenowe i zaplanowane zmiany produktów",

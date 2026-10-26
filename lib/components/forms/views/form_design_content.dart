@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,7 +42,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
         _form?.definition.countdownStyle
       ];
   bool get _hasChanges =>
-      RightsService.canEditOccasion() &&
+      RightsService.hasCapability(AuthorizationCapabilities.formsWrite) &&
       _form != null &&
       _snapshot.differs(_draft);
 
@@ -73,7 +74,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
   }
 
   Future<void> _saveChanges() async {
-    if (_form == null || !RightsService.canEditOccasion()) return;
+    if (_form == null || !RightsService.hasCapability(AuthorizationCapabilities.formsWrite)) return;
     try {
       await DbForms.updateForm(_form!);
       if (!mounted) return;
@@ -112,13 +113,13 @@ class _FormDesignContentState extends State<FormDesignContent> {
             child: FormDesignSettings(
               key: ObjectKey(_form),
               form: _form!,
-              enabled: RightsService.canEditOccasion(),
+              enabled: RightsService.hasCapability(AuthorizationCapabilities.formsWrite),
               onChanged: () => setState(() {}),
             )),
       ),
       bottomNavigationBar: EditorActionBar(
         hasChanges: _hasChanges,
-        enabled: RightsService.canEditOccasion(),
+        enabled: RightsService.hasCapability(AuthorizationCapabilities.formsWrite),
         onSave: _saveChanges,
         onDiscard: _cancelEdit,
       ),

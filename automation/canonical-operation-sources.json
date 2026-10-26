@@ -322,6 +322,9 @@
     "others/update_email_template.sql",
     "others/delete_entity_email_template.sql",
     "others/get_entity_email_templates.sql",
-    "occasion_setup/email_templates.sql"
+    "occasion_setup/email_templates.sql",
+    "eshop_forms/admin_form_reads.sql",
+    "eshop_forms/admin_form_commands.sql",
+    "eshop_forms/get_all_forms_with_fields.sql"
   ]
 }

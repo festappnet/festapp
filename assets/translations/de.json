@@ -1931,6 +1931,8 @@
     "individualOnlyHint": "Nur einzelne Veranstaltungen können ausgewählt werden.",
     "orderPermissions": "Berechtigungen für Bestellungen",
     "orderPermissionsHint": "Gilt nur für ausgewählte Veranstalter und Veranstaltungen. Bearbeitung, Zahlungen und Versand umfassen auch das Lesen von Bestellungen.",
+    "formsRead": "Formulare, Felder und Verkaufskapazität lesen",
+    "formsWrite": "Formulare erstellen, bearbeiten, kopieren und löschen",
     "emailTemplatesRead": "E-Mail-Vorlagen, Banner und Beispielvorschauen lesen",
     "emailTemplatesWrite": "E-Mail-Vorlagen und Banner bearbeiten; Vererbung wiederherstellen",
     "productSchedulesRead": "Preiswellen und geplante Produktänderungen lesen",

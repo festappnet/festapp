@@ -203,3 +203,34 @@ retains the draft and marks the field; the form-save SQL validates the same
 contract transactionally. Partial settings saves do not revalidate omitted
 fields. Public readers tolerate legacy missing options so one malformed field
 cannot turn the whole form into an unavailable page.
+
+## Admin authoring: canonical UI/MCP path (4A, 2026-10-26)
+
+Public runtime form submission remains a separate lifecycle from administrative
+editing. Admin reads share `get_form_editor_bundle_internal`; MCP uses its
+related-only projection through `get_form_for_authoring`. Catalog rows and editor
+and deletion usage guards share `get_form_usage_rows_internal`. Current order
+form FKs own responses; UUID history is a response fallback only without an FK,
+while every historical reference still blocks destructive deletion. Paging is
+applied before summary work and usage scans are batched.
+
+`manage_form` delegates to the existing create/save/copy/delete client-sync
+commands and their receipts. It creates no second receipt or transaction owner.
+The receipt freezes the authoritative authoring snapshot; Flutter adopts it and
+updates the draft baseline without reloading the full editor. Cached unrelated
+product choices retain their original versions. Current clients must supply
+original form/product/type versions; released public RPC signatures remain
+compatibility boundaries on those same domain owners until client upgrade.
+
+Both UI and MCP use `forms.write` from the canonical `can_author_forms` rule.
+Catalog reads include actual form authors without granting access to customer
+orders. Copy rechecks both source and target permissions, including source MCP
+consent; replay never bypasses current authority. Explicit scopes require a new
+user grant and do not widen older grants.
+
+MCP 4A supports list/inspect/create/save/duplicate/delete, basic fields and
+existing product-type references, capacity and waitlist configuration. It accepts
+no arbitrary `form.data` patches or public keys/links. Advanced data-backed
+settings, inline product editing via MCP, waitlist offer operations and general
+manual orders remain subsequent cuts of stage 4. Public URL editing is also not
+exposed by this slice.

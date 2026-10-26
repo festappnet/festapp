@@ -1,3 +1,4 @@
+import {invokeFormOperation} from '../src/operations/forms.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer as httpServer } from 'node:http';
@@ -626,4 +627,22 @@ test('email template consent never expands old grants or promotes occasion acces
  assert.equal((await owner().delegatedUnitContext({},11)).unitId,11);
  assert.throws(()=>owner().authorizeOperation('email_templates.change',{entityType:'unit',entityId:12}));
  token.scope=READ_SCOPE+' festapp:email-templates:read';assert(!owner().allowedOperations.includes('email_templates.change'));
+});
+
+
+test('form scopes do not widen older grants and copy must consent both source and target',async t=>{
+ const f=await setup(t),id='form-authoring-permissions';
+ const grant={id,binding:'form-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,
+  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:products:read','festapp:products:write'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('forms.save'));assert.throws(()=>verifyPermissions(['festapp:forms:write'],MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:forms:read','festapp:forms:write']});assert(owner().allowedOperations.includes('forms.duplicate'));
+ const args={occasionId:7,sourceOccasionId:9,sourceFormId:42,locale:'cs',commandId:'00000000-0000-4000-8000-000000000099'};let calls=0;
+ const client={rpc:async(name,p)=>{calls++;assert.equal(name,'manage_form');assert.equal(p.p_payload.source_occasion_id,9);assert.equal(p.p_payload.source_unit_id,null);
+  return{error:null,data:{code:200,status:'applied',mutation:{commandId:args.commandId,receiptId:args.commandId},data:{occasionId:7,formId:88,authoring:{form:{id:88,occasion:7,aggregate_version:0},fields:[],productTypes:[],products:[],productVersions:{},productTypeVersions:{}}}}};}};
+ await assert.rejects(invokeFormOperation(owner(),client,'forms.duplicate',args),e=>e.code==='FORBIDDEN');assert.equal(calls,0);
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:forms:read','festapp:forms:write'],access:{type:'occasions',occasionIds:[7,9]}});
+ assert.equal((await invokeFormOperation(owner(),client,'forms.duplicate',args)).formId,88);assert.equal(calls,1);
+ token.scope=READ_SCOPE+' festapp:forms:read';assert(!owner().allowedOperations.includes('forms.save'));
 });

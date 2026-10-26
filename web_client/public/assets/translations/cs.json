@@ -3732,6 +3732,8 @@
     "individualOnlyHint": "K dispozici máš pouze výběr jednotlivých akcí.",
     "orderPermissions": "Oprávnění k objednávkám",
     "orderPermissionsHint": "Platí jen pro vybrané pořadatele a akce. Úpravy, platby i odesílání zahrnují také čtení objednávek.",
+    "formsRead": "Číst formuláře, pole a prodejní kapacitu",
+    "formsWrite": "Vytvářet, upravovat, kopírovat a mazat formuláře",
     "emailTemplatesRead": "Číst e-mailové šablony, bannery a ukázkové náhledy",
     "emailTemplatesWrite": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
     "productSchedulesRead": "Číst cenové vlny a plánované změny produktů",

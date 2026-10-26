@@ -1958,6 +1958,8 @@
     "individualOnlyHint": "K dispozícii máš iba výber jednotlivých akcií.",
     "orderPermissions": "Oprávnenia k objednávkam",
     "orderPermissionsHint": "Platí len pre vybraných organizátorov a akcie. Úpravy, platby aj odosielanie zahŕňajú čítanie objednávok.",
+    "formsRead": "Čítať formuláre, polia a predajnú kapacitu",
+    "formsWrite": "Vytvárať, upravovať, kopírovať a mazať formuláre",
     "emailTemplatesRead": "Čítať e-mailové šablóny, bannery a ukážkové náhľady",
     "emailTemplatesWrite": "Upravovať e-mailové šablóny a bannery, obnovovať dedičnosť",
     "productSchedulesRead": "Čítať cenové vlny a plánované zmeny produktov",

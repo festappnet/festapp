@@ -406,3 +406,31 @@ as boundaries on the same persistence implementation, with removal gated on
 client upgrade. Occasion provisioning/copy/deletion keep their own atomic
 lifecycle owners, without nested authoring receipts.
 See the current checkpoint for targeted evidence, publication and deployment.
+
+## Stage 4A: form authoring (locally verified, not deployed)
+
+- Six tools: `forms.list`, `forms.inspect`, `forms.create`, `forms.save`,
+  `forms.duplicate`, `forms.delete`. Source/target occasion and consent are both
+  bound for copy. Typed `can_author_forms` owns UI and MCP write authority;
+  `can_read_form_catalog` includes authors but grants no customer-order rights.
+- `manage_form` is a scope/DTO adapter to existing client-sync command receipts.
+  Those receipts now include a frozen authoring snapshot, adopted by the UI
+  without its former explicit post-save full editor reload.
+- One editor projection: `get_form_editor_bundle_internal`, related-only for MCP.
+  One summary/usage owner: `get_form_catalog_rows_internal` and batched
+  `get_form_usage_rows_internal`, also used by deletion and editor guards.
+- Removed: duplicate admin count queries; the conflicting orders-write gate on
+  form saves; current-client missing-baseline fallback; silent foreign-field
+  updates; obsolete private two-argument `form_catalog_read_rule` after replacing
+  its callers. Missing field metadata/type bindings preserve existing values.
+- Retained compatibility boundaries: released public form RPC signatures delegate
+  to the same owner. Remove only after client upgrade. Public checkout and URL
+  reservation remain distinct lifecycle contracts, not duplicate admin engines.
+- Not covered: arbitrary form data, public URL editing, inline MCP product edits,
+  advanced payment/reminder/design settings, waitlist offers and general manual
+  orders. Full stage 4 is not complete.
+
+Evidence: [form checks](../reports/admin-form-authoring-evidence-2026-10-26.json)
+and [actual SQL/data measurements](../reports/admin-form-authoring-data-network-2026-10-26.json).
+The measurement compares the same usage semantics per form versus batched, not
+an archived production query; no production performance claim is implied.

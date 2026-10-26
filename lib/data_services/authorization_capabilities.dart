@@ -28,6 +28,7 @@ abstract final class AuthorizationCapabilities {
   static const navigationOrganizationSettings = 'navigation.organization_settings';
   static const navigationOccasionSettings = 'navigation.occasion_settings';
   static const formsCreate = 'forms.create';
+  static const formsWrite = 'forms.write';
   static const formsDelete = 'forms.delete';
   static const formsCatalogRead = 'forms.catalog.read';
   static const formsCopySource = 'forms.copy.source';

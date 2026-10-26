@@ -1,5 +1,5 @@
--- Fix get_form_for_edit: Remove bigint = uuid comparison and add can_delete
-CREATE OR REPLACE FUNCTION public.get_form_for_edit(form_link text)
+-- Canonical editor projection shared by the checked UI and MCP boundaries.
+CREATE OR REPLACE FUNCTION public.get_form_editor_bundle_internal(p_form_id bigint,p_related_only boolean DEFAULT false)
  RETURNS jsonb
  LANGUAGE plpgsql STABLE
  SECURITY DEFINER
@@ -26,19 +26,16 @@ BEGIN
         v_unit_id
     FROM public.forms f
     JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.id = public.resolve_form_link_internal(form_link);
+    WHERE f.id = p_form_id;
 
     IF v_form_id IS NULL THEN
         RETURN jsonb_build_object('code', 404, 'message', 'Form not found for the provided link.');
     END IF;
 
-    PERFORM check_is_editor_order_view_via_form_link(form_link);
+    -- Private projection; the checked public reader/command owns authorization.
 
-    -- Calculate can_delete
-    -- FIXED: Compare form (bigint) with v_form_id (bigint) directly
-    SELECT NOT EXISTS (
-        SELECT 1 FROM eshop.orders WHERE form = v_form_id
-    ) INTO canDelete;
+    -- Use the same reference guard as deletion, including retained history.
+    canDelete := (public.get_form_usage_internal(v_form_id)->>'blocking_orders')::bigint=0;
 
     SELECT jsonb_build_object(
         'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='form' AND scope_type='occasion' AND scope_id=f.occasion AND aggregate_id=f.id::text),0),
@@ -78,7 +75,8 @@ BEGIN
     ), '[]'::jsonb)
     INTO productTypesData
     FROM eshop.product_types pt
-    WHERE pt.occasion = v_occasion_id;
+    WHERE pt.occasion = v_occasion_id
+      AND (NOT p_related_only OR pt.id IN (SELECT product_type FROM public.form_fields WHERE form=v_form_id));
 
     -- Materialize occasion history once rather than scanning it for every
     -- product and every field. Only current orders and current references determine eligibility.
@@ -125,7 +123,8 @@ BEGIN
       WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
       WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
     END AS reason) usage
-    WHERE p.product_type IN (SELECT id FROM eshop.product_types WHERE occasion = v_occasion_id);
+    WHERE p.occasion=v_occasion_id AND p.product_type IN (SELECT id FROM eshop.product_types WHERE occasion = v_occasion_id)
+      AND (NOT p_related_only OR p.product_type IN (SELECT product_type FROM public.form_fields WHERE form=v_form_id));
 
     WITH form_orders AS MATERIALIZED (
       SELECT id, data FROM eshop.orders WHERE form = v_form_id
@@ -192,7 +191,7 @@ BEGIN
     INTO availableBankAccountsData
     FROM eshop.unit_bank_accounts uba
     JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-    WHERE uba.unit = v_unit_id
+    WHERE NOT p_related_only AND uba.unit = v_unit_id
       AND (ba.type IS DISTINCT FROM 'CASH'); -- EXCLUDE CASH ACCOUNTS
 
     RETURN jsonb_build_object(
@@ -207,5 +206,18 @@ BEGIN
     );
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_form_editor_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Released link-based entry remains a checked boundary on the same projection.
+CREATE OR REPLACE FUNCTION public.get_form_for_edit(form_link text)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE form_id bigint;
+BEGIN
+ form_id:=public.resolve_form_link_internal(form_link);
+ IF form_id IS NULL THEN RETURN jsonb_build_object('code',404,'message','Form not found for the provided link.'); END IF;
+ IF public.can_read_form_catalog((SELECT occasion FROM public.forms WHERE id=form_id)) IS NOT TRUE THEN
+  RAISE insufficient_privilege USING MESSAGE='form catalog reader required'; END IF;
+ RETURN public.get_form_editor_bundle_internal(form_id);
+END $$;
 REVOKE ALL ON FUNCTION public.get_form_for_edit(text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_form_for_edit(text) TO anon,authenticated,service_role;

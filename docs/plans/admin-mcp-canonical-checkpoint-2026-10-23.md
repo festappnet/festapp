@@ -1214,3 +1214,58 @@ clean at first push. GitHub reports `REVIEW_REQUIRED` (one approving review).
 No main merge, protection bypass, production migration or release was performed.
 Subsequent documentation-only bookkeeping records this receipt; the implementation
 and its retained validation inputs are unchanged.
+
+## Stage 4A 2026-10-26
+
+Stav: lokálně ověřeno, nenasazeno. Review větev
+`feat/admin-mcp-forms-20261026`, izolovaný checkout
+`/private/tmp/festapp-admin-mcp-forms-20261026`. Autoritativní main
+`ddbeb11e6aa477477984da03f947f07f9f6a353a`; rodič etapy 3 / PR #613
+`2b73d1bea387baa2e4319f0c056585fb1b92ab8d`, při ověření OPEN / REVIEW_REQUIRED.
+Main vyžaduje schvalující review; rodič se neobchází.
+
+Šest MCP nástrojů `forms.list/inspect/create/save/duplicate/delete` používá
+společné SQL čtení a existující receipted UI příkazy. Výsledek receipt obsahuje
+zmrazený authoring snapshot, který UI přijímá bez explicitního reloadu editoru.
+Základní pole, vazby na existující typy produktů, kapacita a konfigurace čekací
+listiny jsou pokryté. Katalog i guard mazání používají jeden dávkový výpočet
+použití; FK objednávky má přednost při počítání odpovědí, historická reference
+vždy brání destruktivnímu smazání. Chybějící metadata se zachovávají.
+
+Odstraněny duplicitní count SQL, konfliktní orders-write gate, tichý update
+cizího pole, fallback aktuálního klienta bez původních verzí a privátní
+`form_catalog_read_rule(boolean,boolean)`. Zůstávají veřejné released-client
+signatury nad stejným ownerem s upgrade podmínkou odstranění. Veřejný runtime
+formuláře a checkout jsou jiný lifecycle, nikoli paralelní admin editor.
+
+Ověření `standard`: SQL/executor 18/18 bez skipů včetně šesti existujících SQL
+regresí a skutečného souběhu s checkoutem; 2048 kombinací rolí; remote 25/25;
+web souhlas 37/37; Flutter 65/65. Cílená Dart analýza: 0 errors/warnings,
+22 informačních stylových/deprecation diagnostik. Generátory projekcí,
+capabilities, policy, migrace, parity a katalogu prošly včetně diff whitespace.
+Migrace `20261026190000_form_authoring.sql`: SHA256 `26c2aa537059fa12627f8c888138abc46c387badfe045a8fd7814072e91cceaa`,
+86 deklarací / 85 názvů funkcí včetně nezměněné části kanonického auth modulu.
+
+Naměřeno na rollback fixture 50 formulářů / 5000 objednávek: stejný výpočet
+použití po formulářích ~38.4 ms versus dávkově ~2.4 ms; dvě větve scanů běží
+1x namísto 50x. Plný UI bundle 65248 B / 126 produktů, related-only MCP detail
+1891 B / 1 produkt. Jde o lokální SQL a JSON měření, nikoli produkční latenci
+nebo tokenové úspory. Bez nového indexu, bez HTTP/auth overheadu; pomocné UI
+platební lookupy nejsou tvrzením o odstranění všech síťových volání.
+
+Trvalá evidence: [checks a source digests](../reports/admin-form-authoring-evidence-2026-10-26.json),
+[SQL plány a payload měření](../reports/admin-form-authoring-data-network-2026-10-26.json).
+Katalog má 97 úkonů / 47 nástrojů; aktuální stav etapy je odvozen ze zdrojového
+JSON bez druhé natvrdo napsané roadmap hlavičky. Produkce ani další tenant
+nebyly změněny, nebyly odeslány e-maily ani vytvořeny zákaznické objednávky.
+
+Další řez 4B: rozšířená nastavení uložená ve form.data a jejich společné úzké
+kontrakty. Inline produktové změny MCP, veřejné URL, waitlist offers a obecné
+ruční objednávky zůstávají otevřené. Etapa 4 jako celek není dokončená.
+
+Před publikací načten aktuální main `3988bb7cbaf8766068a84f49f759d5544269e325`
+(#614, integrační homepage odkazy). Změna prohlédnuta, žádné form/auth/MCP
+soubory se nepřekrývají. Main byl sloučen do rodiče #613, nový parent head
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`; větev 4A na něj navazuje.
+Source digests a generované kontrakty znovu zkontrolovány bez změny pokrytého
+chování. Obě review větve tak obsahují aktuální autoritativní main.

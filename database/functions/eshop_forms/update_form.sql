@@ -84,12 +84,6 @@ BEGIN
                 JSONB_BUILD_OBJECT('code', 4002, 'message', 'Invalid or missing occasion ID')::TEXT;
         END IF;
 
-        -- Ensure user is authorized to edit this occasion
-        IF NOT COALESCE(can_write_orders(occasion_id), false) THEN
-            RAISE EXCEPTION '%',
-                JSONB_BUILD_OBJECT('code', 403, 'message', 'User is not authorized to edit this occasion')::TEXT;
-        END IF;
-
         -- Retrieve the occasion's organization and unit
         SELECT o.organization, o.unit
           INTO occasion_org, occasion_unit
@@ -245,6 +239,8 @@ BEGIN
                     END IF;
                 END IF;
                 field_id := NULLIF(field_data->>'id', '')::BIGINT;
+                IF field_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.form_fields WHERE id=field_id AND form=form_id) THEN
+                  RAISE invalid_parameter_value USING MESSAGE='Foreign form field'; END IF;
 
                 ----------------------------------------------------------------------------
                 -- product_type logic now lives here, inside each form_field
@@ -261,7 +257,12 @@ BEGIN
                 END IF;
                 field_product_type := NULL;                        -- We'll store numeric ID here if we have a product_type
 
-                IF product_type_data IS NOT NULL AND product_type_data::TEXT <> 'null' THEN
+                IF field_data ? 'product_type_id' THEN
+                    field_product_type := (field_data->>'product_type_id')::bigint;
+                    IF field_product_type IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.product_types
+                      WHERE id=field_product_type AND occasion=occasion_id) THEN
+                      RAISE invalid_parameter_value USING MESSAGE='Foreign product type'; END IF;
+                ELSIF product_type_data IS NOT NULL AND product_type_data::TEXT <> 'null' THEN
                     -- Attempt to parse the product_type.id if it exists
                     product_type_id := NULLIF(product_type_data->>'id', '')::BIGINT;
 
@@ -472,12 +473,12 @@ BEGIN
                        SET
                            title = field_data->>'title',
                            description = field_data->>'description',
-                           data = field_data->'data',
+                           data = CASE WHEN field_data ? 'data' THEN field_data->'data' ELSE data END,
                            type = field_data->>'type',
                            is_required = COALESCE((field_data->>'is_required')::BOOLEAN, false),
                            is_hidden = COALESCE((field_data->>'is_hidden')::BOOLEAN, false),
                            "order" = NULLIF(field_data->>'order','')::BIGINT,
-                           product_type = field_product_type,
+                           product_type = CASE WHEN field_data ? 'product_type' OR field_data ? 'product_type_id' THEN field_product_type ELSE product_type END,
                            is_ticket_field = COALESCE((field_data->>'is_ticket_field')::BOOLEAN, false),
                            form = form_id
                      WHERE id = field_id

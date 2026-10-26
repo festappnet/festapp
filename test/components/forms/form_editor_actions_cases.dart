@@ -56,6 +56,7 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
           RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
             capabilities: {
+          AuthorizationCapabilities.formsWrite: true,
               AuthorizationCapabilities.ordersWrite: true,
               AuthorizationCapabilities.occasionsWrite: true,
               AuthorizationCapabilities.bankAccountsUnitManage: canManage,
@@ -198,6 +199,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         capabilities: {
+          AuthorizationCapabilities.formsWrite: true,
           AuthorizationCapabilities.ordersWrite: true,
           AuthorizationCapabilities.occasionsWrite: true,
         },
@@ -293,6 +295,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
           capabilities: {
+          AuthorizationCapabilities.formsWrite: true,
             AuthorizationCapabilities.ordersWrite: true,
             AuthorizationCapabilities.occasionsWrite: true,
           },

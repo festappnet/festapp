@@ -92,8 +92,11 @@ BEGIN
   result := public.update_form_internal_v1(payload);
   PERFORM assert_eq(result->>'code','200','Older/partial payload still works');
   PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields WHERE id=late_field),'Omitted fields are never implicit deletions');
-  UPDATE public.occasion_users SET is_editor_order=false WHERE occasion=occ AND "user"=actor;
-  result:=public.update_form_internal_v1(payload || jsonb_build_object('title','Unauthorized'));
-  PERFORM assert_eq((result->>'code')::int,403,'Revoked editor permission denies save');
+  UPDATE public.occasion_users SET is_editor=false,is_editor_order=false WHERE occasion=occ AND "user"=actor;
+  BEGIN
+    PERFORM public.update_form_internal_v1(payload || jsonb_build_object('title','Unauthorized'));
+    RAISE EXCEPTION 'Revoked form author permission must deny save';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
   PERFORM assert_eq((SELECT title FROM public.forms WHERE id=form_id),'Changed','Denied save preserves metadata');
 END $$;
