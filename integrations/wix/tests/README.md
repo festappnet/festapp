@@ -109,7 +109,7 @@ The real MobileSafari26.5 simulator run is recorded separately. WebDriver typed
 no text even into a standalone input control, matching
 [WebKit322938](https://bugs.webkit.org/show_bug.cgi?id=322938). Installed AXe native HID later passed text entry on published Wix without
 foregrounding Simulator. Local cross-site summary, Safari Back and Escape also
-passed with retained fields and no submit. Full software-keyboard geometry,
+passed with retained fields and no submit. Actual402px software keyboard later passed on published Wix; native320px,
 external-provider redirect/return and physical hardware remain unqualified.
 The subsequent storage-denied bank-flow result is recorded below;
 see `../SAFARI-REMAINING-CHECKS.md`.
@@ -125,3 +125,18 @@ Restore the native toggle afterward; cross-site storage can still be denied by
 Safari independently. Do not replay buyer `wix-safari-storage-20261026@example.invalid`
 or order233. The executed receipt is `../evidence/safari-storage-bank-20261026.json`.
 Bank QR/functionality passed; the observed icon/layout limit remains open.
+
+The later hidden Simulator.app run completed its native first-use keyboard
+tutorial and qualified actual software keys on published Wix at402x874. Launch
+only the task device with `open -g -j`, explicit UDID and hardware keyboard NO;
+verify inactive app/zero visible Mac windows before and after. Restore the owned
+QA URL through Save, cold Editor readback and Publish, then verify public HTML.
+See `../evidence/software-keyboard-20261026.json`.
+
+Receipt SVG font independence was reproduced with actual OrderResult imports,
+no external font stylesheet and synthetic immutable payment data. Copy icons
+failed18px/107px before and passed18px/18px afterward; status30px/30px and full
+component320px/320px. The same minimized renderer passed native Safari visually.
+This is not another purchase. Existing QR clipboard/timer tests cover feedback
+reset and labels, and now run in the Wix compatibility CI command (51 tests).
+The reviewed fix is live; see `../evidence/live-receipt-icons-20261026.json`.

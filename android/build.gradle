@@ -19,6 +19,9 @@ subprojects {
             }
         }
     }
+}
+// Register every namespace callback before evaluating :app can evaluate plugins.
+subprojects {
     project.evaluationDependsOn(":app")
 }
 
