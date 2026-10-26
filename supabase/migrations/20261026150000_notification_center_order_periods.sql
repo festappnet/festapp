@@ -40,7 +40,7 @@ BEGIN
  END LOOP;
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_time_cursor_internal(p_cursor jsonb,p_context text)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
 BEGIN
  IF p_cursor IS NULL OR p_cursor='null'::jsonb THEN RETURN NULL; END IF;
