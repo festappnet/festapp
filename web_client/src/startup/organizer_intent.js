@@ -2,7 +2,7 @@ import { AppConfig } from '../app_config.js';
 import { RightsService } from '../services/rights_service.js';
 import { RouterService } from '../services/router_service.js';
 import { LocalizationService } from '../services/localization_service.js';
-import { helpActionFlutterPath } from '../services/help_action_routes.js';
+import { organizerCreatePath, organizerCreateFlutterPath } from '../services/organizer_entry.js';
 
 // Public login links from any page or tenant use the web client.
 // Organizer creation keeps the existing tenant and registration restrictions.
@@ -13,7 +13,7 @@ export async function handleOrganizerIntent() {
         window.history.replaceState(null, '', legacy.pathname + legacy.search);
     }
     const intent = new URLSearchParams(window.location.search);
-    const create = intent.get('create') === '1';
+    const create = organizerCreatePath(window.location.pathname + window.location.search) !== null;
     const loginRoute = ['/login', '/login/'].includes(window.location.pathname);
     const login = loginRoute || intent.get('login') === '1';
     const organizerRoute = new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
@@ -21,14 +21,21 @@ export async function handleOrganizerIntent() {
     if (!loginRoute && !organizerRoute) return false;
     const url = new URL(window.location.href);
     await RightsService.updateAppData();
-    if (!loginRoute) url.searchParams.delete('create');
+    if (create) {
+        // Keep the workflow through registration, password sign-in and reload.
+        url.searchParams.delete('redirect');
+        url.searchParams.set('create', '1');
+    }
     url.searchParams.delete('login');
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     if (RightsService.currentUser?.id) {
+        if (create) {
+            await RouterService.navigateToFlutterRoute(organizerCreateFlutterPath());
+            return 'navigated';
+        }
         const unitId = RightsService.currentUnit?.id ?? RightsService.currentUser.units?.[0]?.id;
         if (unitId) await RouterService.navigateToAdmin(unitId);
-        else await RouterService.navigateToFlutterRoute(helpActionFlutterPath('settings'));
-        return 'navigated';
+        return unitId ? 'navigated' : 'catalog';
     }
     if (login || RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
         await import('../components/users/login_modal.js');
