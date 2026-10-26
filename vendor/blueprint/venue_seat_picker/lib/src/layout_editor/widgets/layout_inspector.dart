@@ -726,12 +726,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             '${VenueLayoutStrings.text(context, labels[side])}: ${VenueLayoutStrings.text(context, direction < 0 ? 'Remove one seat' : 'Add one seat')}';
         return IconButton(
           tooltip: label,
-          constraints: const BoxConstraints.tightFor(width: 32, height: 40),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(32, 40),
-            maximumSize: const Size(32, 40),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
+          constraints: const BoxConstraints.tightFor(width: 36, height: 40),
           padding: EdgeInsets.zero,
           iconSize: 20,
           onPressed: enabled && allowed(counts[side] + direction)
@@ -2627,12 +2622,6 @@ class _PropertyFieldState extends State<_PropertyField> {
           labelText: VenueLayoutStrings.text(context, widget.label),
           border: const OutlineInputBorder(),
           isDense: true,
-          contentPadding: widget.suffixBuilder == null
-              ? null
-              : const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          suffixIconConstraints: widget.suffixBuilder == null
-              ? null
-              : const BoxConstraints.tightFor(width: 64, height: 40),
           suffixIcon: widget.suffixBuilder?.call(() {
             _save();
             _focus.unfocus();

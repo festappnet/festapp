@@ -151,9 +151,7 @@ export class UserHeader extends HTMLElement {
             const navigation = document.createElement('nav');
             navigation.className = 'header-public-navigation';
             navigation.setAttribute('aria-label', 'Hlavní navigace');
-            const onHome = window.location.pathname === '/';
-            const primaryLink = onHome ? ['/events', 'Najít akci'] : ['/', 'Pro pořadatele'];
-            for (const [href, label] of [primaryLink, ['/napoveda/', 'Nápověda']]) {
+            for (const [href, label] of [['/', 'Pro pořadatele'], ['/napoveda/', 'Nápověda']]) {
                 const link = document.createElement('a');
                 link.href = href;
                 link.textContent = label;
@@ -230,7 +228,14 @@ export class UserHeader extends HTMLElement {
                 shortLabel.setAttribute('aria-hidden', 'true');
                 addEventBtn.append(fullLabel, shortLabel);
                 addEventBtn.onclick = async () => {
-                    window.location.assign('/login?create=1');
+                    if (this.hasAttribute('data-marketing')) {
+                        window.location.assign('/login?create=1');
+                        return;
+                    }
+                    await import('./login_modal.js');
+                    const modal = document.createElement('login-modal');
+                    modal.currentView = 'register';
+                    document.body.appendChild(modal);
                 };
                 actions.appendChild(addEventBtn);
             }
