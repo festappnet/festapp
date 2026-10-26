@@ -2416,7 +2416,6 @@
     "organizationAccess": "Dostęp do organizacji",
     "otherEvents": "Inne dostępne wydarzenia",
     "noMatches": "Brak pasujących wydarzeń.",
-    "clearSearch": "Wyczyść wyszukiwanie",
-    "createEvent": "Utwórz nowe wydarzenie"
+    "clearSearch": "Wyczyść wyszukiwanie"
   }
 }
