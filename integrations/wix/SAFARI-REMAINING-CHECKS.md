@@ -15,21 +15,28 @@ cold Editor readback and public HTML. See `evidence/completion-20261026.json`.
 
 Still unqualified:
 
-- Full onscreen software-keyboard geometry and overlap while scrolling. AXe HID
-  produced real input and an accessory bar, but not the full software keys.
-- Production rollout of the receipt icon fix. A minimized actual renderer
-  reproduced overflow without its external font; local SVG status/copy icons
-  passed320px Chrome and background MobileSafari. The original Safari cold-load
-  trigger remains unproven. See `evidence/receipt-icons-20261026.json`.
+- Native320px software-keyboard coverage. Actual402px
+  software keyboard passed on the published owned Wix site, including onscreen
+  key taps, direct field changes, manual scroll and Done retaining values.
+  See `evidence/software-keyboard-20261026.json`.
 - Available-seat hold/expiry and external provider redirect/return in Safari.
   Bank instructions/QR and occupied-seat viewing are qualified only locally.
 - Physical iPhone hardware. The owner has no iPhone; no hardware pass is claimed.
 
-For a future background-capable run, first prove a full native software keyboard
-is visible, then verify the focused field remains reachable above it. Keep exact
-actual viewport dimensions. Use marked disposable checkout for summary, seats,
-orders and payment scenarios. Never submit, select seats or initiate payment on
-production. WebDriver typing returned success with an empty standalone control
-(WebKit322938); do not replace native input with synthetic DOM value assignment.
-AXe native HID succeeded in normal Safari after stopping the WebDriver session.
-Always verify the settled field value rather than command success alone.
+The successful background method launches only the task Simulator with `open -g -j`,
+explicit task UDID, `-ConnectHardwareKeyboard NO` and `-StartLastDeviceOnLaunch NO`.
+Its native first-use keyboard tutorial was completed. Simulator.app ran hidden;
+active=false and visible Mac windows=0 before and after actual Wix interaction.
+The device remains402x874; no320px or physical iPhone result is inferred.
+The temporary QA URL was cold-read, restored and republished; public HTML proves
+original synthetic URL present and temporary Country URL absent. Own browsers,
+Simulator app and task device were closed, and its keyboard preference restored.
+
+WebDriver typing returned success with an empty standalone control (WebKit322938).
+Native onscreen key taps succeeded in normal Safari. Accessory Previous did not
+show a confirmed focus change; the qualified transition uses direct field taps.
+Use marked disposable checkout for purchases or provider tests. Never submit,
+select seats or initiate payment on production.
+
+The receipt icon fix is now live in0.20.415+916; the served module and build/legal
+probes match the owner deployment. See `evidence/live-receipt-icons-20261026.json`.
