@@ -9,9 +9,14 @@ import { LocalizationService } from '../../services/localization_service.js';
 
 export const MCP_CONNECTION_PATH = '/settings/mcp-connect';
 
-export function mcpResumeUrl(value) {
+// The first-party exchange returns the issuer from its protected tenant registry.
+// Request input and the broker's continuation cannot choose this trust anchor.
+export function mcpResumeUrl(value, issuer) {
+    const expected = new URL(issuer);
+    if (expected.protocol !== 'https:' || expected.origin !== issuer)
+        throw new Error('Invalid connection issuer');
     const url = new URL(value);
-    if (url.origin !== 'https://mcp.festapp.net' || url.username || url.password || url.hash ||
+    if (url.origin !== expected.origin || url.username || url.password || url.hash ||
         !/^\/connect\/[A-Za-z0-9_-]+\/finish$/.test(url.pathname) ||
         [...url.searchParams].length !== 1 ||
         !/^[A-Za-z0-9_-]{43}$/.test(url.searchParams.get('resume') || '')) {
@@ -128,7 +133,7 @@ export class McpConnectionPage {
         try {
             const result = await this.call(operation);
             if (generation !== this.generation) { callback?.close(); return; }
-            const destination = this.resume(result.resumeUrl);
+            const destination = this.resume(result.resumeUrl, result.issuer);
             if (!callback) {
                 this.browser.location.assign(destination);
                 return;
@@ -181,6 +186,10 @@ export class McpConnectionPage {
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
             add('h2', this.text('client', { client: this.details.client }));
+            if (this.details.regionalPortal) {
+                const { name: portal, platform } = this.details.regionalPortal;
+                add('p', this.text('regionalPlatform', { portal, platform }));
+            }
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
             add('p', this.text('chooseScope'));
             const fieldset = add('fieldset', '');

@@ -33,9 +33,19 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:products:write': { label: 'productsWrite', operations: ['products.save', 'products.delete'], requires: ['festapp:products:read'] },
 });
 export const MCP_SCOPES = Object.freeze(Object.keys(MCP_PERMISSIONS));
+// These names are existing external OAuth contracts, shared by every host.
+export const READ_SCOPE = 'festapp:ticket-layouts:read';
+export const CREATE_SCOPE = 'festapp:occasions:create';
+export const READ_OPERATIONS = Object.freeze(['context.inspect', 'access.inspect', 'ticket_layouts.inspect']);
 export function scopesForOperation(operation) {
+    if (READ_OPERATIONS.includes(operation)) return [READ_SCOPE];
+    if (operation === 'occasions.create') return [READ_SCOPE, CREATE_SCOPE];
     const scope = MCP_SCOPES.find(s => MCP_PERMISSIONS[s].operations.includes(operation));
-    return scope ? [...MCP_PERMISSIONS[scope].requires, scope] : [];
+    if (!scope) return null; // Unknown hosted operations must fail closed.
+    const required = new Set([READ_SCOPE]);
+    const include = s => { MCP_PERMISSIONS[s].requires.forEach(include); required.add(s); };
+    include(scope);
+    return [...required];
 }
 export function validPermissions(permissions) {
     return Array.isArray(permissions) && permissions.every(p => Object.hasOwn(MCP_PERMISSIONS, p) &&
