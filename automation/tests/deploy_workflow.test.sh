@@ -32,7 +32,7 @@ if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/automation/
     echo "  FAIL: shared production build is missing WebView regression gate"
     fail=1
 fi
-if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/.github/workflows/web-startup-regressions.yml"; then
+if ! grep -F -q 'python3 automation/ci/run.py step web-startup' "$PROJECT_ROOT/.github/workflows/web-startup-regressions.yml"; then
     echo "  FAIL: main CI is missing WebView regressions"
     fail=1
 fi
