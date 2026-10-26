@@ -2414,6 +2414,7 @@
     "organizationAccess": "Organisationszugriff",
     "otherEvents": "Weitere zugängliche Veranstaltungen",
     "noMatches": "Keine passenden Veranstaltungen.",
-    "clearSearch": "Suche löschen"
+    "clearSearch": "Suche löschen",
+    "createEvent": "Neue Veranstaltung erstellen"
   }
 }
