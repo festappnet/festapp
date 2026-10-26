@@ -1,6 +1,8 @@
 # Consolidated release readiness - 2026-10-26
 
-Status: validated candidate, pending protected-main merge and production execution.
+Status update 2026-10-27: deployed and verified at 0.20.427+929.
+See [the release receipt](releases/festapptickets-2026-10-27.json).
+The following original readiness snapshot is retained as dated preflight evidence.
 
 Candidate implementation: `b1ac7e53025b45b731cd9d88f62cdd2d63f62539`. It contains PR #617 and #618 histories and the preserved workspace snapshot. Main remains `3988bb7cbaf8766068a84f49f759d5544269e325` until the protected merge succeeds.
 
