@@ -1,7 +1,7 @@
 # Vyhodnocení externího CRO auditu a plán úprav
 
-Datum: 26. 10. 2026  
-Stav: schválený zúžený rozsah implementován a ověřen; produkční nasazení je samostatný krok  
+Datum: 26. 10. 2026
+Stav: schválený zúžený rozsah implementován a ověřen; produkční nasazení je samostatný krok
 Ověření: standard pro autentizaci a sdílené navigační kontrakty.
 
 ## Schválený implementační rozsah
