@@ -1,6 +1,8 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import assert from 'node:assert/strict';
+import { readConfig, resolveContext, publicManifest } from '../release/organizers/context.mjs';
 import test from 'node:test';
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -26,7 +28,7 @@ const preserved = [
 const oldAdministration = ['/demo/admin', '/demo/admin/info/information', '/demo/admin/volunteers', '/demo/admin/events/schedule'];
 const redirected = [...disabled.map(path => [path, '/']), ...oldAdministration.map(path => [path, '/demo/reservations'])];
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
-const template = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const template = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource);
 const stamp = script.match(/python3 - build\/web\/_worker\.js automation\/project\.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
 const projectRoot = new URL('../../', import.meta.url).pathname;
 
@@ -34,7 +36,11 @@ async function workerFor(supported, dir, origin = 'https://tenant.invalid') {
   const file = path.join(dir, 'worker.js');
   const config = path.join(dir, 'project.conf');
   writeFileSync(file, template);
-  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=${origin}\nWEB_ORGANIZER_LANDING_ENABLED=${origin === "https://vstupenky.online"}\n`);
+  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=${new URL(origin).hostname}\nWEB_LINK=${origin}\nWEB_ORGANIZER_LANDING_ENABLED=${origin === "https://vstupenky.online"}\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\nPRIVACY_URL=${origin}/privacy/\nTERMS_URL=${origin}/terms/\nSUPPORT_URL=${origin}/support/\n`);
+  for (const page of publicManifest(resolveContext(readConfig(config))).pages) {
+    const asset = path.join(dir, page.asset.replace(/^\//,''));
+    mkdirSync(path.dirname(asset), {recursive:true}); writeFileSync(asset, '<h1>Marketing fixture</h1>');
+  }
   const stamped = spawnSync('python3', ['-', file, config], {
     input: stamp, encoding: 'utf8', cwd: projectRoot,
   });

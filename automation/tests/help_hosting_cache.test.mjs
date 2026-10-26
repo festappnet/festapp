@@ -1,8 +1,9 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read = file => readFileSync(new URL(file, import.meta.url), 'utf8');
-const template = read('../cloudflare_build.sh').match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const template = read('../cloudflare_build.sh').match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource);
 const scanner = read('../../web_client/src/services/scanner_routes.js').replaceAll('export function', 'function');
 const policy = read('../../web_client/src/services/public_occasion_routes.js').replaceAll('export function', 'function');
 const manifest = {profiles:{help:{policy:"default-src 'self'"}},documents:{'napoveda/index.html':{profile:'help'},'napoveda/objednavky/index.html':{profile:'help'}}};

@@ -14,8 +14,12 @@ parent locks, occasion copy and the additive program companion projection.
    explicitly when changing devices or saved sessions.
 2. Use the live camera; manual entry is available as a fallback. New codes keep
    being collected while tickets await confirmation. Confirm the displayed tickets; unpaid admission requires its explicit checkbox.
-3. When the event permits it, a complete matching PWA shell prepares the offline
-   cache automatically in the background. Manual preparation remains available. Readiness
+3. When the event permits it and its snapshot contains at most 1,000 tickets, a
+   complete matching PWA shell prepares the offline cache automatically in the
+   background. The count includes unpaid and stock tickets with order links, not
+   just paid/used tickets. Larger events require initial manual preparation; an
+   existing snapshot continues refreshing if the event grows. An unknown count
+   never starts an automatic download. Manual preparation remains available. Readiness
    requires persistent storage, the matching complete PWA shell, the local decoder
    and an atomically verified snapshot. Check authorization expiry.
 4. Pending means saved on this device. Accepted means a server receipt exists.

@@ -1,3 +1,4 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +7,7 @@ import { getOccasionHref } from '../../web_client/src/components/occasion/occasi
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const scannerSource = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
-const workerSource = scannerSource + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const workerSource = scannerSource + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
   .replace('// SHARED_PUBLIC_PAGE_SEO', readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('// SHARED_CATALOG_CLASSIFICATION', readFileSync(new URL('../../web_client/src/components/occasion/catalog.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = "vstupenky.online";');

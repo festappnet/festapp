@@ -155,7 +155,11 @@ export class ScanPage extends Component {
         try {
             await this.sync?.run();
             if (Date.now() - this.summaryAt >= 15000) { this.summaryAt=Date.now(); this.summary = await this.api.summary(); this.transportOffline=false; this.summaryAt = Date.now(); if (this.store) await this.store.put('preferences', { key: `${this.row.partition}:summary`, data: this.summary }); }
-            if (this.store && this.row.session.capabilities.offline && this.row.session.settings?.offline?.enabled && (!this.snapshot || Date.now()-Date.parse(this.snapshot.server_time)>60000) && !this.refreshingSnapshot && !this.authBlocked && Date.now()-(this.lastSnapshotAttempt||0)>=60000) {
+            // A prepared device keeps refreshing even when the event later grows.
+            // Initial automatic preparation needs a known count of the complete snapshot.
+            const ticketCount=this.summary?.snapshot_ticket_count;
+            const autoPrepare=this.snapshot || (Number.isSafeInteger(ticketCount) && ticketCount>=0 && ticketCount<=1000);
+            if (autoPrepare && this.store && this.row.session.capabilities.offline && this.row.session.settings?.offline?.enabled && (!this.snapshot || Date.now()-Date.parse(this.snapshot.server_time)>60000) && !this.refreshingSnapshot && !this.authBlocked && Date.now()-(this.lastSnapshotAttempt||0)>=60000) {
                 this.refreshingSnapshot = true;this.lastSnapshotAttempt=Date.now();
                 this.backgroundPreparation=this.prepare({automatic:true}).catch(()=>{}).finally(()=>{this.refreshingSnapshot=false;});
             }

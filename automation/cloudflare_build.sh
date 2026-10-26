@@ -33,6 +33,7 @@ bash "$PROJECT_ROOT/automation/build_web_bundle.sh" cloudflare
 rm -f build/web/_redirects build/web/_headers
 
 cat > build/web/_worker.js <<'WORKER'
+// HELP_ACTION_ROUTE_POLICY
 // =============================================================================
 // Cloudflare Pages worker — single routing source for the Festapp deployment.
 //
@@ -415,15 +416,10 @@ async function routeRequest(request, env) {
       });
     }
 
-    // Previously shared help-login links enter the ordinary web login modal.
-    // Keep the public allowlist aligned with help_action_routes.js and Dart.
+    // Previously shared links are a boundary adapter into the canonical web flow.
     if (path === "/login" && url.searchParams.getAll("redirect").length === 1) {
-      const help = /^\/help-action\/(forms|seating|tickets|products|orders|report|settings|scanner-settings)$/.exec(url.searchParams.get("redirect") || "");
-      if (help) {
-        const target = new URL("/events", url);
-        target.searchParams.set("help", help[1]);
-        return Response.redirect(target.href, 302);
-      }
+      const help = helpActionFromPath(url.searchParams.get("redirect"));
+      if (help) return Response.redirect(new URL(helpActionWebPath(help), url).href, 302);
     }
 
     if (path === "/pro-poradatele" || path === "/pro-poradatele/") {
@@ -635,6 +631,15 @@ const manifest = JSON.parse(await readFile('build/web/csp-manifest.json', 'utf8'
 const source = await readFile(file, 'utf8');
 await writeFile(file, source.replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => 'const CSP_MANIFEST = ' + JSON.stringify(manifest) + ';'));
 CSP
+node --input-type=module <<'HELP_ACTION_POLICY'
+import { readFileSync, writeFileSync } from 'node:fs';
+import { helpActionWorkerSource } from './automation/lib/help_action_worker_source.mjs';
+const file = 'build/web/_worker.js';
+const source = readFileSync(file, 'utf8');
+if (!source.includes('// HELP_ACTION_ROUTE_POLICY')) throw new Error('Missing help action policy marker');
+writeFileSync(file, source.replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
+HELP_ACTION_POLICY
+
 python3 - build/web/_worker.js automation/project.conf <<'PY'
 import json
 import pathlib
