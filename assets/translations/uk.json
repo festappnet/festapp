@@ -2543,7 +2543,12 @@
       "transport_unavailable": "Банківський сервіс тимчасово недоступний",
       "stale_health": "Банківський рахунок не перевірено вчасно"
     },
-    "places": "Кількість місць: {count}",
+    "places": {
+      "one": "{count} місце",
+      "few": "{count} місця",
+      "many": "{count} місць",
+      "other": "{count} місця"
+    },
     "capacity": "Доступно для продажу: {remaining} / {limit}",
     "heldForWaiting": "Зарезервовано для черги: {count}",
     "needsAttention": "Потребує уваги",

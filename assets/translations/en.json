@@ -4385,7 +4385,12 @@
       "transport_unavailable": "Bank service is temporarily unavailable",
       "stale_health": "Bank account has not been checked recently"
     },
-    "places": "Places: {count}",
+    "places": {
+      "one": "{count} place",
+      "few": "{count} places",
+      "many": "{count} places",
+      "other": "{count} places"
+    },
     "capacity": "Available for public sale: {remaining} / {limit}",
     "heldForWaiting": "Held for waiting list: {count}",
     "needsAttention": "Needs attention",
