@@ -16,3 +16,16 @@ stejně jako v dosavadním notification_center_e2e.dart.
 Browser scroll přes DOM neřídí spolehlivě Flutter canvas; kontrola poslední
 stránky použila skutečný keyboard End a tlačítko Show more. Screenshoty
 a accessibility výpisy zachycují syntetické zákazníky.
+
+Kompletní canonical client runner: 2345 případů, 2 přeskočené, 0 selhání;
+architecture a semantic inventory PASS. Viz client-summary.json.
+
+Připojen novější main c77397611: vstup do skeneru a nápověda k publikovanému
+vložení na web. Dart/test/package inputs zůstaly shodné s plným klientským
+během. Kompletní webová sada nad finální kombinací: 784 případů, 754 PASS,
+30 přeskočených, 0 selhání (web-summary.json).
+
+Finální mobilní průchod z čistého checkoutu: [zavřené skupiny](collapsed-mobile.png),
+[rozbalený týden](weekly-expanded-mobile.png). Accessibility výpis potvrzuje všech
+pět týdenních řádků. Čerstvý head prohlížeče měl viewport nastaven před spuštěním
+Flutteru; izolované browser sessions a vlastněný Flutter server byly ukončeny.

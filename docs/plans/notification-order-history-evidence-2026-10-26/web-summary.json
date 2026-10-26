@@ -1,0 +1,9 @@
+{
+  "command": "pnpm run test (web_client)",
+  "tests": 784,
+  "passed": 754,
+  "skipped": 30,
+  "failed": 0,
+  "logSha256": "5ae7f3d56ed44ed8638fc7c656e8e234d720a9ed86dad99b2421fc3f4dcc49d7",
+  "upstreamIncluded": "c773976115d9b998611397e4ad6245567aef59a8"
+}

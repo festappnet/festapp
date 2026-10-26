@@ -21,3 +21,7 @@ Ověření: 13 skutečně spuštěných SQL souborů, 6 testů skutečného soub
 19 cílených klientských testů včetně DST 23/25 hodin a identity/revocation fences.
 Další integrační receipts a skutečný lokální Flutter/Supabase průchod jsou
 v notification-order-history-evidence-2026-10-26/.
+
+Kompletní klientské ověření finálních Dart vstupů: 2345 případů bez selhání.
+Do společného vydání je připojen i pozdější main c77397611 (vstup do skeneru
+a nápověda); dotčená webová sada má 754 PASS, 30 skips, 0 failures.
