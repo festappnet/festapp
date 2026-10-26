@@ -1621,6 +1621,13 @@
     }
   },
   "Scanner": {
+    "entry_intro": "Połącz to urządzenie z wydarzeniem i rozpocznij sprawdzanie biletów.",
+    "entry_code_hint": "Kod otrzymasz od organizatora wydarzenia.",
+    "entry_code_retry": "Sprawdź kod lub poproś organizatora o nowy.",
+    "entry_device_hint": "Na przykład „Wejście główne”. Kontrole biletów będą zapisywane pod tą nazwą.",
+    "entry_offline": "Połączenie z nowym wydarzeniem wymaga dostępu do internetu.",
+    "entry_opening": "Łączenie…",
+    "entry_saved_hint": "Kontynuuj wydarzenie zapisane w tej przeglądarce.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",
@@ -2287,6 +2294,10 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "orderActivities": "Zmiany w zamówieniach",
+    "expand": "Rozwiń",
+    "collapse": "Zwiń",
+    "week": "Tydzień {range}",
     "detailUnavailable": "Nie udało się wczytać szczegółów. Spróbuj ponownie",
     "settingsEmpty": "Nie ma jeszcze dostępnych wydarzeń.",
     "groups": {
@@ -2303,6 +2314,7 @@
     "muteHelp": "Wyciszenie wydarzenia zatrzymuje nowe powiadomienia. Historia pozostaje dostępna. Pominięte zdarzenia nie zostaną odtworzone.",
     "muted": "Wycisz nowe powiadomienia",
     "saveFailed": "Nie udało się zapisać ustawień. Spróbuj ponownie.",
+    "newNotification": "Nowe powiadomienie",
     "newItems": "Nowe powiadomienia",
     "loadFailed": "Nie udało się wczytać powiadomień.",
     "refreshFailed": "Nie można odświeżyć powiadomień.",

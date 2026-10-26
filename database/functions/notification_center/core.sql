@@ -148,7 +148,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_center_events,d public.notification_center_deliveries)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text; contact jsonb;
+DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text; contact jsonb; actual_context jsonb; actual_count bigint;
 BEGIN
  IF e.kind='email_problem' AND public.notification_center_allowed(e,auth.uid()) THEN
   SELECT payload||jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'recipient',m.recipient,'customerName',coalesce(
@@ -171,10 +171,18 @@ BEGIN
    SELECT 1 FROM public.occasion_users m WHERE m.occasion=e.occasion AND m."user"=(e.data->>'userId')::uuid) THEN 'membership_active' ELSE 'membership_left' END);
  END IF;
  IF e.data ? 'orderId' AND e.occasion IS NOT NULL AND public.notification_center_allowed(e,auth.uid()) THEN
-  SELECT jsonb_build_object('name',o.data->>'name','surname',o.data->>'surname','email',o.data->>'email'),o.state INTO contact,actual_state
+  SELECT jsonb_build_object('name',o.data->>'name','surname',o.data->>'surname','email',o.data->>'email'),o.state,public.notification_center_order_form_context_internal(o.form),
+    (SELECT count(DISTINCT x.ticket) FROM eshop.order_product_ticket x WHERE x."order"=o.id)
+   INTO contact,actual_state,actual_context,actual_count
    FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=e.organization
    WHERE o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion;
   payload:=payload||jsonb_build_object('contact',coalesce(contact,'{}'),'customerName',nullif(trim(concat_ws(' ',contact->>'name',contact->>'surname')),''),'state',coalesce(actual_state,e.data->>'state'));
+  -- Legacy events have no captured form context/count; use the authorized live
+  -- order only for absent fields. Captured historical facts always win.
+  IF public.notification_center_order_activity_internal(e.kind) THEN
+   payload:=payload||jsonb_build_object('formContext',coalesce(nullif(e.data->'formContext','null'::jsonb),actual_context),
+    'count',coalesce(nullif(e.data->'count','null'::jsonb),CASE WHEN actual_count>0 THEN to_jsonb(actual_count) END));
+  END IF;
  END IF;
  IF e.kind='bank_problem' THEN
   SELECT bu.bank_account,u.id INTO account,un FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu
@@ -239,7 +247,7 @@ DECLARE s public.notification_center_user_state;
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
  SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
- RETURN jsonb_build_object('feedSupported',true,'enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
+ RETURN jsonb_build_object('feedSupported',true,'timelineSupported',true,'enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
  'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
  WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
  AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
@@ -294,9 +302,11 @@ BEGIN
  WHERE organization=p_organization AND recipient=auth.uid();
  result:=public.get_notification_center_page(p_organization,p_current_occasion,p_limit,s.last_delivery_sequence,NULL);
  feed:=public.get_notification_center_feed(p_organization,p_current_occasion,s.last_delivery_sequence,NULL,p_limit);
- RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence,'feedSupported',true,
+ RETURN result||jsonb_build_object('readThrough',s.last_delivery_sequence,'previousReadThrough',s.read_through_sequence,'feedSupported',true,
  'feedItems',feed->'items',
- 'feedNextCursor',feed->'nextCursor');
+ 'feedNextCursor',feed->'nextCursor','timelineSupported',true,'snapshotAt',clock_timestamp(),
+ 'oldestOrderAt',(SELECT min((event).occurred_at) FROM public.notification_center_visible_internal(p_organization,s.last_delivery_sequence,p_current_occasion)
+ WHERE (event).occasion IS NOT NULL AND public.notification_center_order_activity_internal((event).kind)));
 END $$;
 CREATE OR REPLACE FUNCTION public.set_notification_center_muted(p_organization bigint,p_occasion bigint,p_muted boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

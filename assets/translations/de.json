@@ -1619,6 +1619,13 @@
     }
   },
   "Scanner": {
+    "entry_intro": "Verbinden Sie dieses Gerät mit einer Veranstaltung, um Tickets zu kontrollieren.",
+    "entry_code_hint": "Den Code erhalten Sie vom Veranstalter.",
+    "entry_code_retry": "Prüfen Sie den Code oder bitten Sie den Veranstalter um einen neuen.",
+    "entry_device_hint": "Zum Beispiel „Haupteingang“. Ticketkontrollen werden unter diesem Namen erfasst.",
+    "entry_offline": "Zum Verbinden mit einer neuen Veranstaltung benötigen Sie Internet.",
+    "entry_opening": "Verbindung wird hergestellt…",
+    "entry_saved_hint": "Setzen Sie eine in diesem Browser gespeicherte Veranstaltung fort.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",
@@ -2285,6 +2292,10 @@
     "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   },
   "NotificationCenter": {
+    "orderActivities": "Bestellaktivitäten",
+    "expand": "Aufklappen",
+    "collapse": "Zuklappen",
+    "week": "Woche {range}",
     "detailUnavailable": "Details konnten nicht geladen werden. Erneut versuchen",
     "settingsEmpty": "Noch keine Veranstaltungen verfügbar.",
     "groups": {
@@ -2301,6 +2312,7 @@
     "muteHelp": "Stummgeschaltete Veranstaltungen senden keine neuen Benachrichtigungen. Der Verlauf bleibt erhalten. Verpasste Ereignisse werden nicht nachgeholt.",
     "muted": "Neue Benachrichtigungen stummschalten",
     "saveFailed": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen.",
+    "newNotification": "Neue Benachrichtigung",
     "newItems": "Neue Benachrichtigungen",
     "loadFailed": "Benachrichtigungen konnten nicht geladen werden.",
     "refreshFailed": "Benachrichtigungen konnten nicht aktualisiert werden.",

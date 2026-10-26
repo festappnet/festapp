@@ -1646,6 +1646,13 @@
     }
   },
   "Scanner": {
+    "entry_intro": "Pripojte toto zariadenie k akcii a začnite kontrolovať vstupenky.",
+    "entry_code_hint": "Kód Vám poskytne organizátor akcie.",
+    "entry_code_retry": "Skontrolujte kód alebo požiadajte organizátora o nový.",
+    "entry_device_hint": "Napríklad „Hlavný vstup“. Pod týmto názvom budú zaznamenané kontroly vstupeniek.",
+    "entry_offline": "Na pripojenie novej akcie potrebujete internet.",
+    "entry_opening": "Pripájanie…",
+    "entry_saved_hint": "Pokračujte v akcii uloženej v tomto prehliadači.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",
@@ -2312,6 +2319,10 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "orderActivities": "Zmeny objednávok",
+    "expand": "Rozbaliť",
+    "collapse": "Zbaliť",
+    "week": "Týždeň {range}",
     "detailUnavailable": "Podrobnosti sa nepodarilo načítať. Skúsiť znova",
     "settingsEmpty": "Zatiaľ nie sú k dispozícii žiadne akcie.",
     "groups": {
@@ -2328,6 +2339,7 @@
     "muteHelp": "Stlmenie akcie zastaví nové upozornenia. História zostane dostupná. Zmeškané udalosti sa po zapnutí nedoplnia.",
     "muted": "Stlmiť nové upozornenia",
     "saveFailed": "Nastavenia sa nepodarilo uložiť. Skúste znova.",
+    "newNotification": "Nové oznámenie",
     "newItems": "Nové upozornenia",
     "loadFailed": "Upozornenia sa nepodarilo načítať.",
     "refreshFailed": "Upozornenia sa nedajú aktualizovať.",

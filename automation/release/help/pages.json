@@ -120,12 +120,12 @@
   {
     "slug": "wordpress",
     "title": "Prodej vstupenek ve WordPressu",
-    "seoTitle": "WordPress: prodej vstupenek s doplňkem i bez něj",
-    "description": "Dva způsoby vložení vstupenky.online do WordPressu: doplněk s blokem a shortcode, nebo přímo blok Vlastní HTML bez instalace pluginu.",
+    "seoTitle": "WordPress: vložení prodeje vstupenek přes HTML",
+    "description": "Vložte prodej vstupenek do WordPressu přes blok Vlastní HTML. Připravte kód, vložte jej do stránky a ověřte zveřejněný formulář.",
     "label": "WordPress",
     "id": "wordpress",
     "category": "integrations",
-    "preview": "cs/wordpress/02-block-editor"
+    "preview": "cs/wordpress/03-custom-html"
   },
   {
     "slug": "webnode",

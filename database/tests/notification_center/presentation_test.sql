@@ -29,8 +29,17 @@ BEGIN
  UPDATE eshop.orders SET data='{}' WHERE id=oid;
  result:=public.get_notification_center_feed(org,oc);
  PERFORM assert_true((result#>'{items,0,data,contact,email}')='null'::jsonb,'missing contact has no identifier fallback');
+ -- Legacy rows lack a captured form context; hydrate only the missing fact.
+ UPDATE public.form_fields SET data='{"max_tickets":2}' WHERE form=f;
+ PERFORM public.notification_center_publish_internal(org,oc,'order_cancelled','legacy-single-place',
+  jsonb_build_object('orderId',oid,'count',1),NULL);
+ PERFORM public.project_notification_center(500);
+ SELECT x INTO result FROM jsonb_array_elements(public.get_notification_center_feed(org,oc)->'items') x
+  WHERE x->>'kind'='order_cancelled';
+ PERFORM assert_eq((result#>>'{data,count}')::int,1,'one cancelled place stays an exact count');
+ PERFORM assert_true((result#>>'{data,formContext,allowsMultiple}')::boolean,'legacy multi-place form displays even one place');
  UPDATE public.form_fields SET data='{"max_tickets":"invalid legacy metadata"}' WHERE form=f;
  PERFORM public.notification_center_order_internal(oid,'order_created','legacy-metadata',NULL);
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),2::bigint,'legacy invalid metadata never breaks order publication');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),3::bigint,'legacy invalid metadata never breaks order publication');
 END $$;
 ROLLBACK;

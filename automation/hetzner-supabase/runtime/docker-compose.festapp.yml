@@ -31,7 +31,7 @@ services:
   admin-tunnel:
     profiles:
       - admin-dashboard
-    image: cloudflare/cloudflared:2026.9.0@sha256:5f72bbdac390ffa27f1275218b39f658ff39b259d278f295386af36da4d3632b
+    image: cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
     container_name: festapp-supabase-admin-tunnel
     restart: unless-stopped
     network_mode: host
