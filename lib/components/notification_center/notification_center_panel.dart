@@ -156,13 +156,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         ),
                       for (final section
                           in c.items.map((g) => g.section).toSet()) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16, bottom: 8),
-                          child: Text(
-                            s('section$section'),
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
                         ..._section(
                           context,
                           c.items.where((g) => g.section == section),
@@ -233,7 +226,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       child: Text(
                         title,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                            ?.copyWith(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ),
                   ),
@@ -241,6 +237,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ],
               ),
             ),
+          if (first.occasionId != null && title != null)
+            const Divider(height: 1),
           for (final item in entry.value) _item(context, item),
         ],
       );
@@ -268,69 +266,259 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
       );
 
   Widget _item(BuildContext context, NotificationItem item) {
-    final presentation = NotificationItemPresenter(item);
-    final colors = Theme.of(context).colorScheme;
-    final error = presentation.isError;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final problem = const {'email_problem', 'bank_problem'}.contains(item.kind);
     final locale =
         (EasyLocalization.of(context)?.locale ??
                 Localizations.localeOf(context))
             .toLanguageTag();
-    return Material(
-      key: ValueKey('notification-item-${item.id}'),
-      color: error ? colors.errorContainer : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: error ? 12 : 0,
-              vertical: 8,
+    final presentation = NotificationItemPresenter(item, locale: locale);
+    final radius = BorderRadius.circular(problem ? 12 : 4);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: problem ? 8 : 0),
+      child: Material(
+        key: ValueKey('notification-item-${item.id}'),
+        color: problem ? colors.surface : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: problem
+              ? BorderSide(color: colors.outlineVariant)
+              : BorderSide.none,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              borderRadius: radius,
+              onTap: presentation.hasDetail
+                  ? () => widget.onDetail(item)
+                  : null,
+              child: problem
+                  ? _incident(context, item, presentation, locale)
+                  : _feedRow(context, item, presentation, locale),
             ),
-            textColor: error ? colors.onErrorContainer : null,
-            iconColor: error ? colors.onErrorContainer : null,
-            leading: error ? const Icon(Icons.error_outline) : null,
-            title: Text(presentation.title),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            if (item.data['affectedOccasions'] is List &&
+                item.data['bankAccountId'] == null)
+              for (final occasion in item.data['affectedOccasions'] as List)
+                ListTile(
+                  title: Text(occasion['title']?.toString() ?? ''),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => widget.onDetail(
+                    NotificationItem.fromJson({
+                      'id': item.id,
+                      'kind': item.kind,
+                      'occasionLink': occasion['link'],
+                      'data': {'relatedOrders': true},
+                    }),
+                  ),
+                ),
+            if (!problem) const Divider(height: 1),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _timestamp(
+    BuildContext context,
+    NotificationItem item,
+    String locale, {
+    bool compact = false,
+  }) {
+    final value = item.occurredAt!;
+    final local = value.toLocal();
+    return Tooltip(
+      message: NotificationCenterTime.exact(value, locale),
+      child: Text(
+        compact
+            ? '${NotificationCenterTime.day(local, locale)}\n${DateFormat.jm(locale).format(local)}'
+            : NotificationCenterTime.timestamp(value, locale),
+        textAlign: compact ? TextAlign.right : TextAlign.start,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _feedRow(
+    BuildContext context,
+    NotificationItem item,
+    NotificationItemPresenter presentation,
+    String locale,
+  ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final timeBeside =
+            constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) >=
+            320;
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 72),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
               children: [
-                for (final detail in presentation.details) Text(detail),
-                if (item.occurredAt != null)
-                  Tooltip(
-                    message: NotificationCenterTime.exact(
-                      item.occurredAt!,
-                      locale,
-                    ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        presentation.title,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colors.onSurface,
+                          fontWeight:
+                              const {
+                                'form_opened',
+                                'form_closed',
+                              }.contains(item.kind)
+                              ? FontWeight.w500
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      if (presentation.details.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          presentation.details.join(' · '),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                      if (!timeBeside && item.occurredAt != null) ...[
+                        const SizedBox(height: 6),
+                        _timestamp(context, item, locale),
+                      ],
+                    ],
+                  ),
+                ),
+                if (timeBeside && item.occurredAt != null) ...[
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 76,
+                    child: _timestamp(context, item, locale, compact: true),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 18,
+                  child: presentation.hasDetail
+                      ? Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: colors.onSurfaceVariant,
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _incident(
+    BuildContext context,
+    NotificationItem item,
+    NotificationItemPresenter presentation,
+    String locale,
+  ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final details = presentation.details;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                item.kind == 'email_problem'
+                    ? Icons.mark_email_unread_outlined
+                    : Icons.account_balance_outlined,
+                size: 20,
+                color: presentation.isError
+                    ? colors.error
+                    : colors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  presentation.title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          for (var i = 0; i < details.length; i++) ...[
+            SizedBox(height: i == 0 ? 12 : 6),
+            if (details[i] == presentation.reason)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    presentation.isError
+                        ? Icons.error_outline
+                        : Icons.check_circle_outline,
+                    size: 18,
+                    color: presentation.isError
+                        ? colors.error
+                        : colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: Text(
-                      NotificationCenterTime.timestamp(
-                        item.occurredAt!,
-                        locale,
+                      details[i],
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: presentation.isError
+                            ? colors.error
+                            : colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-              ],
-            ),
-            trailing: presentation.hasDetail
-                ? const Icon(Icons.chevron_right)
-                : null,
-            onTap: presentation.hasDetail ? () => widget.onDetail(item) : null,
-          ),
-          if (item.data['affectedOccasions'] is List &&
-              item.data['bankAccountId'] == null)
-            for (final occasion in item.data['affectedOccasions'] as List)
-              ListTile(
-                title: Text(occasion['title']?.toString() ?? ''),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => widget.onDetail(
-                  NotificationItem.fromJson({
-                    'id': item.id,
-                    'kind': item.kind,
-                    'occasionLink': occasion['link'],
-                    'data': {'relatedOrders': true},
-                  }),
-                ),
+                ],
+              )
+            else
+              Text(
+                details[i],
+                style: i == 0
+                    ? theme.textTheme.titleMedium?.copyWith(
+                        color: colors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      )
+                    : theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
               ),
-          if (!error) const Divider(height: 1),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (item.occurredAt != null) _timestamp(context, item, locale),
+              if (presentation.hasDetail)
+                TextButton.icon(
+                  onPressed: () => widget.onDetail(item),
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.arrow_forward, size: 18),
+                  label: Text(s('detail')),
+                ),
+            ],
+          ),
         ],
       ),
     );

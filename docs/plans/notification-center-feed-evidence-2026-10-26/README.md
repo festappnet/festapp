@@ -37,3 +37,18 @@ jako historický podklad s výslovnou korekcí odstraněné aktivace.
 Ignorovaný absolutní pubspec_overrides.yaml je archivován a vyřazen z aktivní
 konfigurace, aby neobcházel sledované relativní vendor overrides. Přihlašovací
 soubory zůstávají na místě. Žádné reset --hard, clean, commit, push ani release.
+
+## Oprava vizuální regrese po vydání
+
+Přepis feedu omylem nahradil novější incident UI ze zděděného main
+(commit b0f07a4f3) starším plným errorContainer. Obnovena neutrální plocha
+s jemným okrajem, zdůrazněný příjemce, červený důvod chyby a akce Detail.
+Běžné řádky nyní následují vybraný preview.html: nadpis akce s oddělovačem,
+typ a kontakt vlevo, kompaktní datum/čas vpravo, šipka pouze pro detail.
+Na úzké šířce a při velkém textu čas přechází pod obsah. Počty míst mají
+krátké CLDR tvary ve všech šesti jazycích. SQL, doručování, oprávnění a ack beze změny.
+
+Skutečný vykreslený panel se syntetickými daty a reálnými překlady/ThemeConfig:
+[světlý](restored-light.png), [tmavý](restored-dark.png), [mobil](restored-mobile.png).
+Reprodukovatelný UI fixture: test/browser/notification_visual_preview.dart.
+Zkontrolováno izolovaným headless prohlížečem; bez backendových volání.

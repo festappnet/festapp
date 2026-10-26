@@ -70,8 +70,21 @@ class NotificationCenterStrings {
       }.contains(value)
       ? text('reasons.$value')
       : text('needsAttention');
-  static String places(int count) =>
-      'NotificationCenter.places'.tr(namedArgs: {'count': '$count'});
+  static String places(int count, {String? locale}) {
+    String form(String key) =>
+        'NotificationCenter.places.$key'.tr(namedArgs: {'count': '$count'});
+    // Keep Czech/Slovak few and Polish/Ukrainian many forms even when the
+    // app's EasyLocalization default ignores those plural categories.
+    return Intl.plural(
+      count,
+      locale: locale,
+      one: form('one'),
+      few: form('few'),
+      many: form('many'),
+      other: form('other'),
+    );
+  }
+
   static String capacity(int remaining, int limit) =>
       'NotificationCenter.capacity'.tr(
         namedArgs: {'remaining': '$remaining', 'limit': '$limit'},

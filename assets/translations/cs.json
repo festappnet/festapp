@@ -4387,7 +4387,12 @@
       "transport_unavailable": "Bankovní služba je dočasně nedostupná",
       "stale_health": "Bankovní účet nebyl včas zkontrolován"
     },
-    "places": "Počet míst: {count}",
+    "places": {
+      "one": "{count} místo",
+      "few": "{count} místa",
+      "many": "{count} míst",
+      "other": "{count} míst"
+    },
     "capacity": "Volná místa pro veřejnost: {remaining} / {limit}",
     "heldForWaiting": "Drženo pro pořadník: {count}",
     "needsAttention": "Vyžaduje pozornost",

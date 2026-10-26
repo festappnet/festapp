@@ -2371,7 +2371,12 @@
       "transport_unavailable": "Bankdienst ist vorübergehend nicht verfügbar",
       "stale_health": "Bankkonto wurde nicht rechtzeitig geprüft"
     },
-    "places": "Plätze: {count}",
+    "places": {
+      "one": "{count} Platz",
+      "few": "{count} Plätze",
+      "many": "{count} Plätze",
+      "other": "{count} Plätze"
+    },
     "capacity": "Öffentlich verfügbar: {remaining} / {limit}",
     "heldForWaiting": "Für Warteliste reserviert: {count}",
     "needsAttention": "Aufmerksamkeit erforderlich",

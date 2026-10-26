@@ -6,7 +6,8 @@ import 'notification_center_strings.dart';
 
 /// Pure row presentation; transport identifiers never become visible labels.
 class NotificationItemPresenter {
-  NotificationItemPresenter(this.item);
+  NotificationItemPresenter(this.item, {this.locale});
+  final String? locale;
   final NotificationItem item;
   bool get hasDetail =>
       item.data['messageId'] is String ||
@@ -16,6 +17,13 @@ class NotificationItemPresenter {
       const {'email_problem', 'bank_problem'}.contains(item.kind) &&
       item.status != 'recovered';
   String get title => NotificationCenterStrings.kind(item.kind);
+  String? get reason {
+    final value = item.data['reason'];
+    return value is String && value.isNotEmpty
+        ? NotificationCenterStrings.reason(value)
+        : null;
+  }
+
   List<String> get details {
     final data = item.data;
     final contact = data['contact'] as Map? ?? const {};
@@ -39,11 +47,10 @@ class NotificationItemPresenter {
       else if (const {'form_opened', 'form_closed'}.contains(item.kind))
         NotificationCenterStrings.text('form'),
       if (count != null && (count > 1 || (count == 1 && multiple)))
-        NotificationCenterStrings.places(count),
+        NotificationCenterStrings.places(count, locale: locale),
       if (data['messageKind'] is String)
         EmailDeliveryStrings.kind(data['messageKind']),
-      if (data['reason'] is String && (data['reason'] as String).isNotEmpty)
-        NotificationCenterStrings.reason(data['reason']),
+      if (reason != null) reason!,
       if (data['registrationMode'] == 'full')
         NotificationCenterStrings.kind('capacity_full'),
       if (data['registrationMode'] == 'waitlist')
