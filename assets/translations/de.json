@@ -2407,5 +2407,10 @@
     "stockValue": "Wert unverkaufter Tickets",
     "receivedAmount": "Zahlungseingänge",
     "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein."
+  },
+  "HelpNavigation": {
+    "openOrganizer": "Organisation des Veranstalters auswählen",
+    "noOrganizationAccess": "Sie haben keinen Zugriff auf diesen Bereich der Organisation. Bitten Sie die Administration um die erforderlichen Berechtigungen.",
+    "organizationAccess": "Organisationszugriff"
   }
 }

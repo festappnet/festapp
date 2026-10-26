@@ -471,6 +471,26 @@ class RouterService {
     if (helpIntent != null) {
       await RightsService.updateAppData(force: true, refreshOffline: false);
       if (!context.mounted) return;
+      if (HelpDestination.isOrganization(helpIntent)) {
+        final unitId = await chooseHelpOrganization(context);
+        if (!context.mounted || unitId == null) return;
+        await RightsService.updateAppData(
+            unitId: unitId, force: true, refreshOffline: false);
+        if (!context.mounted) return;
+        final capability = helpIntent == 'bank-accounts'
+            ? AuthorizationCapabilities.bankAccountsUnitManage
+            : AuthorizationCapabilities.unitAdministrationRead;
+        if (RightsService.currentUnit()?.id != unitId ||
+            !RightsService.hasCapability(capability)) {
+          await showHelpAccess(context, organization: true);
+          return;
+        }
+        final target = HelpDestination.organizationPath(helpIntent, unitId);
+        if (target != null) {
+          await replaceRootPath(context.router.root, target);
+        }
+        return;
+      }
       final link = await chooseHelpOccasion(context);
       if (!context.mounted) return;
       if (link != null && HelpDestination.isWebClient(helpIntent)) {

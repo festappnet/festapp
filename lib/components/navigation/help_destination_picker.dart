@@ -118,13 +118,61 @@ Future<String?> chooseHelpOccasion(BuildContext context) async {
   return chooseHelpOccasion(context);
 }
 
+/// Organization tasks must not select an event or create an event draft.
+Future<int?> chooseHelpOrganization(BuildContext context) async {
+  final userId = RightsService.currentUser()?.id;
+  final units = RightsService.currentUser()?.units ?? <UnitModel>[];
+  if (units.isEmpty) {
+    if (RightsService.occasionLinkModel?.organization?.isUnitCreationEnabled !=
+        true) {
+      await showHelpAccess(context, organization: true);
+      return null;
+    }
+    final created = await UnitCreationHelper.createNewUnit(context);
+    return context.mounted && RightsService.currentUser()?.id == userId
+        ? created?.id
+        : null;
+  }
+  if (units.length == 1) return units.single.id;
+  final unit = await showDialog<UnitModel>(
+    context: context,
+    builder: (dialogContext) => AppAlertDialog(
+      title: Text('HelpNavigation.openOrganizer'.tr()),
+      content: SizedBox(
+        width: 480,
+        child: ListView(
+          shrinkWrap: true,
+          children: units
+              .map(
+                (unit) => ListTile(
+                  title: Text(unit.title ?? '${unit.id}'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(dialogContext).pop(unit),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(CommonStrings.cancel),
+        ),
+      ],
+    ),
+  );
+  return context.mounted && RightsService.currentUser()?.id == userId
+      ? unit?.id
+      : null;
+}
+
 Future<String?> _createHelpOccasion(BuildContext context) async {
   final units = RightsService.currentUser()?.units ?? <UnitModel>[];
   UnitModel? unit;
   if (units.isEmpty) {
     if (RightsService.occasionLinkModel?.organization?.isUnitCreationEnabled !=
         true) {
-      await _showHelpAccess(context);
+      await showHelpAccess(context);
       return null;
     }
     unit = await UnitCreationHelper.createNewUnit(context);
@@ -160,7 +208,7 @@ Future<String?> _createHelpOccasion(BuildContext context) async {
   if (!context.mounted) return null;
   if (RightsService.currentUnit()?.id != unit.id ||
       !RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)) {
-    await _showHelpAccess(context);
+    await showHelpAccess(context);
     return null;
   }
   final dashboard = await DbUnits.getOccasionDashboard(unit.id!);
@@ -209,13 +257,29 @@ Future<String?> _createHelpOccasion(BuildContext context) async {
   return created?.link;
 }
 
-Future<void> _showHelpAccess(BuildContext context) => showDialog<void>(
-    context: context,
-    builder: (dialogContext) => AppAlertDialog(
-            title: Text('HelpNavigation.createEvent'.tr()),
-            content: Text('HelpNavigation.noCreateAccess'.tr()),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(CommonStrings.cancel))
-            ]));
+Future<void> showHelpAccess(
+  BuildContext context, {
+  bool organization = false,
+}) => showDialog<void>(
+  context: context,
+  builder: (dialogContext) => AppAlertDialog(
+    title: Text(
+      (organization
+              ? 'HelpNavigation.organizationAccess'
+              : 'HelpNavigation.createEvent')
+          .tr(),
+    ),
+    content: Text(
+      (organization
+              ? 'HelpNavigation.noOrganizationAccess'
+              : 'HelpNavigation.noCreateAccess')
+          .tr(),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(dialogContext).pop(),
+        child: Text(CommonStrings.cancel),
+      ),
+    ],
+  ),
+);

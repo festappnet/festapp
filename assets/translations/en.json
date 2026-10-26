@@ -4430,6 +4430,9 @@
     "chooseOrganizer": "Which organizer should own the new event?",
     "resumeSetup": "Continue an event draft",
     "untitledEvent": "Untitled event",
-    "noCreateAccess": "You do not have permission to create events for this organizer. Ask an administrator for access or choose another organizer."
+    "noCreateAccess": "You do not have permission to create events for this organizer. Ask an administrator for access or choose another organizer.",
+    "openOrganizer": "Select the organizer organization",
+    "noOrganizationAccess": "You do not have access to this part of the organization. Ask its administrator for the required permissions.",
+    "organizationAccess": "Organization access"
   }
 }

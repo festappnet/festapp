@@ -1,6 +1,6 @@
 // Public documentation intents carry no event identifiers or arbitrary URLs.
 export function helpActionIntent(value) {
-    return typeof value === 'string' && /^(forms|seating|tickets|products|orders|report|settings|scanner-settings)$/.test(value) ? value : null;
+    return typeof value === 'string' && /^(organization|bank-accounts|forms|seating|tickets|products|orders|report|settings|scanner-settings)$/.test(value) ? value : null;
 }
 
 export function helpActionFromWebPath(value) {

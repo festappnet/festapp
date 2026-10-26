@@ -95,9 +95,11 @@ Results link to the relevant section. The same UI works in static file previews.
 
 Guide CTAs use `/events?help=<intent>` rather than a hard-coded occasion ID or
 link. The web entry point retains the intent through sign-in and the Flutter
-handoff to `/help-action/<intent>`, asks for an event from permission-filtered
-organizer data, then enters the normal protected administration route. Recent
-context is only a preference. The intent allowlist
+handoff to `/help-action/<intent>`. Event actions ask for an event from
+permission-filtered organizer data; `organization` opens the organizer event
+workspace, and `bank-accounts` opens organizer banking without an event chooser.
+Multiple organizers require an explicit choice. Each organization target reloads
+its current server capabilities before routing. Recent context is only a preference. The intent allowlist
 contains fixed section paths, and the application boundary reloads permissions.
 This mechanism uses the active tenant and locale and is shared with future global
 help. English production publication remains explicitly gated.

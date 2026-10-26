@@ -35,6 +35,11 @@ test('ticketing account navigation does not require administration privileges', 
         const header = new UserHeader();
         if (marketing) header.setAttribute('data-marketing', '');
         document.body.appendChild(header);
+        const navigation = header.querySelector('.header-public-navigation');
+        assert.ok(navigation, 'public navigation belongs to the shared header on catalogue and marketing pages');
+        assert.deepEqual([...navigation.querySelectorAll('a')].map(a => a.getAttribute('href')), ['/', '/napoveda/']);
+        assert.equal(header.querySelectorAll('a[href="/napoveda/"]').length, 1, 'help is not duplicated');
+        assert.equal(navigation.closest('.header-actions'), null, 'site navigation stays outside account actions');
         assert.equal(RightsService.canSeeAdmin(), false);
         assert.equal(RightsService.canSeeReservations(), false);
         const button = header.querySelector('.btn-admin');
@@ -45,6 +50,7 @@ test('ticketing account navigation does not require administration privileges', 
         RightsService._context = { organization: {} };
         RightsService._notifyListeners();
         assert.equal(header.querySelector('.btn-admin'), null, 'sign-out removes personal navigation');
+        assert.ok(header.querySelector('.header-public-navigation'), 'help stays available after sign-out');
         header.remove();
     }
     AppConfig.webLink = 'https://hvezdamorska.festapp.net';

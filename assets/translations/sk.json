@@ -2434,5 +2434,10 @@
     "stockValue": "Hodnota nepredanej zásoby",
     "receivedAmount": "Skutočne prijaté",
     "invalidEmail": "Zadajte platný e-mail."
+  },
+  "HelpNavigation": {
+    "openOrganizer": "Vyberte organizáciu usporiadateľa",
+    "noOrganizationAccess": "Do tejto časti organizácie nemáte prístup. Požiadajte jej správcu o potrebné oprávnenia.",
+    "organizationAccess": "Prístup k organizácii"
   }
 }

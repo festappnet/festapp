@@ -2409,5 +2409,10 @@
     "stockValue": "Wartość niesprzedanych biletów",
     "receivedAmount": "Otrzymane płatności",
     "invalidEmail": "Wpisz poprawny adres e-mail."
+  },
+  "HelpNavigation": {
+    "openOrganizer": "Wybierz organizację organizatora",
+    "noOrganizationAccess": "Nie masz dostępu do tej części organizacji. Poproś administratora o wymagane uprawnienia.",
+    "organizationAccess": "Dostęp do organizacji"
   }
 }

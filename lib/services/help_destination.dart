@@ -4,6 +4,19 @@ import 'package:fstapp/components/navigation/navigation_paths.dart';
 /// a destination; the ordinary administration boundary still checks access.
 abstract final class HelpDestination {
   static const prefix = '/help-action/';
+  static const organizationSections = <String, String>{
+    'organization': NavigationPaths.occasions,
+    'bank-accounts': NavigationPaths.bankAccounts,
+  };
+  static bool isOrganization(String intent) =>
+      organizationSections.containsKey(intent);
+  static String? organizationPath(String intent, int? unitId) {
+    final section = organizationSections[intent];
+    return section == null || unitId == null || unitId <= 0
+        ? null
+        : '/unit/$unitId/edit/$section';
+  }
+
   static const scannerSettings = 'scanner-settings';
 
   static bool isWebClient(String intent) => intent == scannerSettings;
@@ -29,20 +42,20 @@ abstract final class HelpDestination {
       return null;
     }
     final intent = uri.path.substring(prefix.length);
-    return sections.containsKey(intent) || isWebClient(intent) ? intent : null;
+    return sections.containsKey(intent) ||
+            isOrganization(intent) ||
+            isWebClient(intent)
+        ? intent
+        : null;
   }
 
   /// Carry only an allowlisted intent through account creation and sign-in.
   static String authenticationPath(String route, String? returnPath) {
     final intent = parse(returnPath);
     return Uri(
-            path: '/$route',
-            queryParameters: intent == null
-                ? null
-                : {
-                    'redirect': '$prefix$intent',
-                  })
-        .toString();
+      path: '/$route',
+      queryParameters: intent == null ? null : {'redirect': '$prefix$intent'},
+    ).toString();
   }
 
   static String? path(String intent, String? link, {int? occasionId}) {
@@ -54,10 +67,13 @@ abstract final class HelpDestination {
     }
     if (isWebClient(intent)) {
       if (occasionId == null || occasionId <= 0) return null;
-      return Uri(path: '/scan/settings', queryParameters: {
-        'occasion': '$occasionId',
-        'returnTo': '/$link/reservations/${NavigationPaths.tickets}',
-      }).toString();
+      return Uri(
+        path: '/scan/settings',
+        queryParameters: {
+          'occasion': '$occasionId',
+          'returnTo': '/$link/reservations/${NavigationPaths.tickets}',
+        },
+      ).toString();
     }
     return '/$link/reservations/$section';
   }

@@ -12,7 +12,7 @@ after(() => dom.window.close());
 
 test('help links retain only allowlisted intents across web auth and Flutter bootstrap', async () => {
     const { safeAuthReturnPath } = await import('../../src/services/google_auth_service.js');
-    for (const intent of ['forms','seating','tickets','products','orders','report','settings','scanner-settings']) {
+    for (const intent of ['organization','bank-accounts','forms','seating','tickets','products','orders','report','settings','scanner-settings']) {
         const web = helpActionWebPath(intent);
         assert.equal(helpActionFromWebPath(web), intent);
         assert.equal(safeAuthReturnPath(web), web);

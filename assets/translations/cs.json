@@ -4432,6 +4432,9 @@
     "chooseOrganizer": "Pod kterým pořadatelem chcete akci založit?",
     "resumeSetup": "Pokračujte v rozpracované akci",
     "untitledEvent": "Akce bez názvu",
-    "noCreateAccess": "Pro tohoto pořadatele nemáte oprávnění zakládat akce. Požádejte správce o přístup nebo vyberte jiného pořadatele."
+    "noCreateAccess": "Pro tohoto pořadatele nemáte oprávnění zakládat akce. Požádejte správce o přístup nebo vyberte jiného pořadatele.",
+    "openOrganizer": "Vyberte organizaci pořadatele",
+    "noOrganizationAccess": "Do této části organizace nemáte přístup. Požádejte jejího správce o potřebná oprávnění.",
+    "organizationAccess": "Přístup k organizaci"
   }
 }
