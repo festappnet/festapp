@@ -4,7 +4,8 @@ import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
 let dom, Page, resumeUrl;
 const request = 'R'.repeat(43);
-const resume = `https://mcp.festapp.net/connect/test/finish?resume=${'S'.repeat(43)}`;
+const issuer = 'https://mcp.vstupenky.online';
+const resume = `https://mcp.vstupenky.online/connect/test/finish?resume=${'S'.repeat(43)}`;
 before(async () => {
     dom = new JSDOM('<div id="app"></div><div id="form-page-container"></div>', { url: `https://vstupenky.online/settings/mcp-connect?request=${request}` });
     Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, customElements: dom.window.customElements });
@@ -21,7 +22,7 @@ function fixture({ native = false, authenticated = true, occasions = [{ id: 99, 
         functions: { invoke: async (name, { body }) => {
             assert.equal(name, 'mcp-session-exchange'); calls.push(body);
             if (invoke) return invoke(body);
-            return { data: body.operation === 'details' ? { client: 'Codex', applicationType: native ? 'native' : 'web', occasions } : body.operation === 'status' ? { status: 'connected' } : { resumeUrl: resume } };
+            return { data: body.operation === 'details' ? { client: 'Codex', applicationType: native ? 'native' : 'web', occasions } : body.operation === 'status' ? { status: 'connected' } : { resumeUrl: resume, issuer } };
         } } };
     const container = document.getElementById('form-page-container');
     const page = new Page(container, { client, browser, pause: async () => {} });
@@ -64,7 +65,7 @@ test('native callback is isolated and success waits for server acknowledgement',
 test('lost completion acknowledgement offers no second approval and leaves callback alive', async () => {
     const f = fixture({ native: true, invoke: async body => {
         if (body.operation === 'details') return { data: { client: 'Codex', applicationType: 'native', occasions: [{ id: 99, title: 'Ples' }] } };
-        if (body.operation === 'approve') return { data: { resumeUrl: resume } };
+        if (body.operation === 'approve') return { data: { resumeUrl: resume, issuer } };
         throw Error('offline');
     } });
     await f.page.init(); f.page.selected.add(99); await f.page.finish('approve');
@@ -77,12 +78,16 @@ test('busy state prevents changed selection and duplicate approval', async () =>
     await f.page.init(); f.page.selected.add(99); const pending = f.page.finish('approve');
     assert.equal(f.container.querySelector('fieldset').disabled, true);
     await f.page.finish('approve'); assert.equal(f.calls.length, 2);
-    release({ data: { resumeUrl: resume } }); await pending;
+    release({ data: { resumeUrl: resume, issuer } }); await pending;
 });
 test('continuation is restricted to exact trusted issuer route and unique resume proof', () => {
-    assert.equal(resumeUrl(resume), resume);
-    for (const bad of ['http://mcp.festapp.net/connect/a/finish?resume=' + 'S'.repeat(43), resume.replace('mcp.festapp.net', 'evil.example'), resume + '&resume=x', resume + '&next=x', resume + '#x', resume.replace('/finish', '/other'), resume.replace('https://', 'https://user@')]) {
-        assert.throws(() => resumeUrl(bad));
+    assert.equal(resumeUrl(resume, issuer), resume);
+    assert.throws(() => resumeUrl(resume));
+    assert.throws(() => resumeUrl(resume, 'https://mcp.festapp.net'));
+    assert.throws(() => resumeUrl(resume, issuer + '/unexpected'));
+    assert.throws(() => resumeUrl(resume, 'http://mcp.vstupenky.online'));
+    for (const bad of ['http://mcp.vstupenky.online/connect/a/finish?resume=' + 'S'.repeat(43), resume.replace('mcp.vstupenky.online', 'evil.example'), resume + '&resume=x', resume + '&next=x', resume + '#x', resume.replace('/finish', '/other'), resume.replace('https://', 'https://user@')]) {
+        assert.throws(() => resumeUrl(bad, issuer));
     }
 });
 test('router keeps MCP consent in web client even on app-supported tenants', async () => {
@@ -96,7 +101,7 @@ test('router keeps MCP consent in web client even on app-supported tenants', asy
 test('tree combines several organizers and single occasions; selecting children never grants future access', async () => {
     const f = fixture({invoke: body => ({data:body.operation === 'details'
         ? {client:'Codex',units:[{id:4,title:'Organizer',canCreateOccasions:true},{id:5,title:'Other',canCreateOccasions:false}],occasions:[{id:99,title:'Event',unitId:4},{id:100,title:'Other event',unitId:5},{id:101,title:'Single',unitId:6}],canRequestCreate:true}
-        : {resumeUrl:resume}})});
+        : {resumeUrl: resume, issuer}})});
     await f.page.init();
     assert.equal(f.container.querySelector('[data-whole-unit]'),null);
     assert.equal(f.page.canApprove,false);
@@ -187,7 +192,7 @@ test('overlapping router imports mount only the latest consent instance',async()
 
 test('one informed approval includes exactly the displayed requested capabilities',async()=>{
  const permissions=['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();
  assert.equal(f.page.canApprove,false);
  assert.equal(f.container.querySelector('[data-permission]'),null);
@@ -231,7 +236,7 @@ test('organizers start collapsed above two groups; disclosure preserves selectio
 
 test('product-only consent displays and submits exactly the new catalog scopes without requiring order access', async () => {
  const permissions=['festapp:products:read','festapp:products:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');
  assert.match(f.container.textContent,/produkty/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
@@ -240,7 +245,7 @@ test('product-only consent displays and submits exactly the new catalog scopes w
 
 test('schedule consent is explicit and preserves all registry dependencies',async()=>{
  const permissions=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');
  assert.match(f.container.textContent,/cenové vlny/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
@@ -250,7 +255,7 @@ test('schedule consent is explicit and preserves all registry dependencies',asyn
 
 test('standing preparation consent is separate from product edits',async()=>{
  const permissions=['festapp:products:read','festapp:standing-inventory:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/stání/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
@@ -258,7 +263,7 @@ test('standing preparation consent is separate from product edits',async()=>{
 
 test('inventory summaries display and persist only their explicit read consent',async()=>{
  const permissions=['festapp:inventory:read'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst sklady, kapacity, nastavení a obsazení kontextů/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
@@ -266,33 +271,33 @@ test('inventory summaries display and persist only their explicit read consent',
 
 test('stock authoring consent names stock settings and retains only requested permissions',async()=>{
  const permissions=['festapp:inventory:read','festapp:inventory:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Upravovat sklady, jejich kontexty a zdroje/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
 
 test('product choices require the requested explicit authoring-read consent',async()=>{
  const permissions=['festapp:products:read','festapp:product-options:read'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst dostupné typy produktů a skladové volby/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
 
 test('seat consent distinguishes lifecycle reads from changing blocked bindings',async()=>{
- const permissions=['festapp:seats:read','festapp:seats:block'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst místa a jejich provozní stav/);assert.match(f.container.textContent,/Blokovat a odblokovat vybraná místa/);f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+ const permissions=['festapp:seats:read','festapp:seats:block'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst místa a jejich provozní stav/);assert.match(f.container.textContent,/Blokovat a odblokovat vybraná místa/);f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
 
 test('temporary-hold release consent is distinct from blocking seats',async()=>{
- const permissions=['festapp:seats:read','festapp:seats:release-holds'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Uvolňovat dočasné rezervace vybraných míst/);assert(!f.container.textContent.includes('Blokovat a odblokovat vybraná místa'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+ const permissions=['festapp:seats:read','festapp:seats:release-holds'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Uvolňovat dočasné rezervace vybraných míst/);assert(!f.container.textContent.includes('Blokovat a odblokovat vybraná místa'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
 
 test('seat swap consent explicitly includes changing the order total',async()=>{
- const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:swap'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Prohazovat místa vstupenek a upravovat cenu objednávky/);assert(!f.container.textContent.includes('Uvolňovat dočasné rezervace vybraných míst'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+ const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:swap'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Prohazovat místa vstupenek a upravovat cenu objednávky/);assert(!f.container.textContent.includes('Uvolňovat dočasné rezervace vybraných míst'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
 
 test('seat order consent includes original ticket replacement and customer reads without broader writes',async()=>{
  const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:create-orders'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');
  assert.match(f.container.textContent,/Vytvářet objednávky z míst a nahrazovat původní vstupenky/);
  assert.match(f.container.textContent,/kontaktní údaje/);
@@ -303,11 +308,21 @@ test('seat order consent includes original ticket replacement and customer reads
 
 test('configuration consent names four separate permissions without expanding existing grants',async()=>{
  const permissions=['festapp:occasion-settings:read','festapp:occasion-settings:write','festapp:unit-settings:read','festapp:unit-settings:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();
  for(const text of ['Číst nastavení akce a hry','Měnit nastavení akce','Číst nastavení pořadatele','Měnit nastavení pořadatele']) assert(f.container.textContent.includes(text));
  f.container.querySelector('[data-occasion="99"]').click();
  await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
  assert.deepEqual(f.calls.at(-1).access.selection,{type:'occasions',occasionIds:[99]});
+});
+
+test('regional brand explanation is opt-in and absent for the global platform', async () => {
+    const global = fixture(); await global.page.init();
+    assert.doesNotMatch(global.container.textContent, /společné platformě|Toto připojení platí/);
+    const regional = fixture({ invoke: async () => ({ data: { client: 'ChatGPT',
+        regionalPortal: { name: 'vstupenky.online', platform: 'FestUp' }, occasions: [{ id: 99, title: 'Ples' }] } }) });
+    await regional.page.init();
+    assert.match(regional.container.textContent, /vstupenky.online, který běží na společné platformě FestUp/);
+    assert.match(regional.container.textContent, /Toto připojení platí pro vstupenky.online/);
 });

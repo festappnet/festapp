@@ -67,6 +67,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         }));
         const client = config.clients.find(c => c.id === flow.clientId);
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
+            ...(config.regionalPortal ? { regionalPortal: config.regionalPortal } : {}),
             tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
         const { selected, permissions } = verifyConsent(req.body.access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
         // Re-read after remote authorization so concurrent approval cannot fork a mint.

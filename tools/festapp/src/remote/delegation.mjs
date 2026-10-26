@@ -1,8 +1,9 @@
 import { SessionOwner } from '../auth/session.mjs';
 import { digest } from '../context/profile.mjs';
-import { check } from '../errors.mjs';
+import { check, OperationError } from '../errors.mjs';
+import { authChallenge } from '../mcp/protocol.mjs';
 import { operatorAccess, accessSelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE, MCP_PERMISSIONS, scopesForOperation } from './config.mjs';
+import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE, MCP_PERMISSIONS, scopesForOperation, clientAllowsScopes } from './config.mjs';
 
 export function boundOwner(config, storage, binding, options = {}) {
     return new SessionOwner(Object.freeze({ ...config.profile, binding }), {
@@ -19,15 +20,26 @@ export class DelegatedOwner {
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;
         this.root = storage.root;
-        this.allowedOperations = [...READ_OPERATIONS, ...(canCreateWithAccess(grant.access) && token.scope?.split(' ').includes(CREATE_SCOPE) ? ['occasions.create'] : [])];
-        for (const permission of Object.values(MCP_PERMISSIONS)) for (const operation of permission.operations) {
-            if (scopesForOperation(operation).every(scope => grant.permissions?.includes(scope) && token.scope?.split(' ').includes(scope))) this.allowedOperations.push(operation);
-        }
-        this.authChallenge = `Bearer resource_metadata="${config.issuer}/.well-known/oauth-protected-resource/mcp", scope="${READ_SCOPE}"`;
+        this.allowedOperations = [...READ_OPERATIONS, 'occasions.create',
+            ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)].filter(id => this.permitsOperation(id, grant));
         this.securitySchemes = [{ type: 'oauth2', scopes: [READ_SCOPE] }];
     }
+    permitsOperation(id, grant = this.current()) {
+        const scopes = scopesForOperation(id);
+        return clientAllowsScopes(this.config, this.token.clientId, scopes) && scopes.every(s =>
+            this.token.scope?.split(' ').includes(s) && (s === READ_SCOPE ||
+                (s === CREATE_SCOPE ? canCreateWithAccess(grant.access) : grant.permissions?.includes(s))));
+    }
     securitySchemesFor(id) {
-        return [{ type: 'oauth2', scopes: id === 'occasions.create' ? [READ_SCOPE, CREATE_SCOPE] : [READ_SCOPE, ...scopesForOperation(id)] }];
+        const scopes = scopesForOperation(id);
+        check(scopes, 'FORBIDDEN');
+        return [{ type: 'oauth2', scopes }];
+    }
+    challengeFor(code, id) {
+        if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
+            return authChallenge(this.config, { error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
+        if (code === 'INSUFFICIENT_SCOPE' && clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)))
+            return authChallenge(this.config, { error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
     }
     current() {
         const t = this.token;
@@ -36,12 +48,15 @@ export class DelegatedOwner {
             this.config.clients.some(c => c.id === grant.clientId) &&
             grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
             grant.expiresAt > Date.now() && t.exp * 1000 > Date.now() &&
-            t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE), 'FORBIDDEN');
+            t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
+            clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
         return grant;
     }
     authorizeOperation(id, args) {
         const access = accessSelection(this.current().access);
-        check(this.allowedOperations.includes(id), 'FORBIDDEN');
+        check(clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)), 'FORBIDDEN');
+        check(this.allowedOperations.includes(id) && this.permitsOperation(id), 'INSUFFICIENT_SCOPE');
+        this.operationId = id;
         if (['context.inspect', 'access.inspect'].includes(id)) return;
         if (id === 'occasions.create') {
             check(access.units.some(u => u.unitId === args.unitId && u.canCreateOccasions), 'FORBIDDEN');
@@ -90,8 +105,12 @@ export class DelegatedOwner {
             const result = await action(client, context);
             // Read revocation discards an in-flight private result before return.
             this.current();
+            if (this.operationId) check(this.permitsOperation(this.operationId), 'INSUFFICIENT_SCOPE');
             return result;
         }); } catch (error) {
+            const current = this.storage.get('Delegation', this.token.grantId);
+            if (!current || current.revoked || current.expiresAt <= Date.now() || this.token.exp * 1000 <= Date.now())
+                error = new OperationError('AUTHENTICATION_REQUIRED');
             if (error.code === 'AUTHENTICATION_REQUIRED' || error.code === 'MFA_REQUIRED')
                 this.storage.revoke(this.token.grantId);
             throw error;

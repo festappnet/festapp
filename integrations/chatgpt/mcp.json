@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "festapp": {
+      "type": "streamable-http",
+      "url": "https://mcp.vstupenky.online/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "provided",
+              "clientId": "festapp-chatgpt",
+              "tokenEndpointAuthMethod": "none"
+            },
+            "resource": "https://mcp.vstupenky.online/mcp",
+            "baseScopes": ["festapp:ticket-layouts:read", "festapp:orders:read"]
+          }
+        }
+      }
+    }
+  }
+}

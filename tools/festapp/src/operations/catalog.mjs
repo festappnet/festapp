@@ -129,12 +129,12 @@ const resultSchema = (id) =>
     });
 const descriptors = [
     ...[...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
-    { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
+    { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
       input: occasionCreateInput, domainReadOnly: false, idempotent: true, requiresDelegatedCreate: true },
     {
-        id: 'context.inspect',
+        id: 'context.inspect', title: 'Inspect connection capabilities',
         name: 'festapp_context_inspect',
         description:
             'Inspect the pinned tenant and authenticated ordinary-user identity. No domain changes.',
@@ -142,7 +142,7 @@ const descriptors = [
         domainReadOnly: true,
     },
     {
-        id: 'ticket_layouts.inspect',
+        id: 'ticket_layouts.inspect', title: 'Read ticket artwork',
         name: 'festapp_ticket_layouts_inspect',
         description:
             'Read scoped ticket artwork, original aggregate version, owned images, renderer presets and registered font metadata.',
@@ -202,6 +202,7 @@ export class Operations {
         this.artifacts = artifacts;
         this.layoutSave = new LayoutSave(new FileIntentStore(owner.root));
     }
+    operationIdForTool(name) { return descriptors.find(d => d.name === name)?.id; }
     get catalog() {
         return descriptors
             .filter(

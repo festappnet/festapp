@@ -7,10 +7,11 @@ import { createMcpHandler } from '@modelcontextprotocol/server';
 import { toNodeHandler } from '@modelcontextprotocol/node';
 import { Operations } from '../operations/catalog.mjs';
 import { createServer } from '../mcp/server.mjs';
+import { authChallenge } from '../mcp/protocol.mjs';
 import { check, safeError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
 import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions } from './config.mjs';
+import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
 
@@ -28,6 +29,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         adapter: model => storage.adapter(model),
         clients: config.clients.map(c => ({ client_id: c.id, client_name: c.name,
             application_type: c.applicationType,
+            ...(c.allowedScopes ? { scope: ['openid', 'offline_access', ...c.allowedScopes].join(' ') } : {}),
             redirect_uris: c.redirectUris, response_types: ['code'],
             grant_types: ['authorization_code', 'refresh_token'], token_endpoint_auth_method: 'none', })),
         cookies: { keys: cookieKeys }, jwks,
@@ -40,20 +42,32 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             resourceIndicators: { enabled: true,
                 defaultResource: () => config.resource,
                 useGrantedResource: () => true,
-                getResourceServerInfo: async (_ctx, resource) => {
+                getResourceServerInfo: async (ctx, resource) => {
                     if (resource !== config.resource) throw new errors.InvalidTarget();
-                    return { scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '), audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
+                    return { scope: (config.clients.find(c => c.id === ctx.oidc.client?.clientId)?.allowedScopes ?? [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES]).join(' '), audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
                 },
             },
         },
         ttl: { AccessToken: 300, IdToken: 300, AuthorizationCode: 60, Interaction: 600, Grant: 86400 * 7,
             RefreshToken: 86400 * 7, Session: 3600 },
         issueRefreshToken: (_ctx, client, source) => {
+            if (!clientAllowsScopes(config, client.clientId, source.scope?.split(' ') ?? []))
+                throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
             return Boolean(grant && !grant.revoked && grant.clientId === client.clientId && grant.expiresAt > Date.now());
         },
         expiresWithSession: () => false,
-        rotateRefreshToken: () => true,
+        rotateRefreshToken: ctx => {
+            // Narrowed policies invalidate older wider refresh credentials. Never
+            // mint another credential with a retired scope from a stored grant.
+            const source = ctx.oidc.entities.RefreshToken;
+            if (!clientAllowsScopes(config, ctx.oidc.client.clientId, source.scope?.split(' ') ?? []))
+                throw new errors.InvalidGrant('client scope policy changed; reconnect');
+            const grant = storage.get('Delegation', source.grantId);
+            if (!grant || grant.revoked || grant.clientId !== ctx.oidc.client.clientId || grant.expiresAt <= Date.now())
+                throw new errors.InvalidGrant('connection expired or revoked');
+            return true;
+        },
         // A new connection always requires explicit consent, never a global
         // grant inferred from an issuer browser session.
         loadExistingGrant: async ctx => {
@@ -112,6 +126,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const d = await provider.interactionDetails(req, req.res);
         check(d.uid === req.params.uid && config.clients.some(c => c.id === d.params.client_id), 'FORBIDDEN');
         check(d.params.resource === undefined || d.params.resource === config.resource, 'FORBIDDEN');
+        check(String(d.params.scope ?? '').split(' ').includes(READ_SCOPE), 'FORBIDDEN');
         return d;
     };
     const flow = (uid) => storage.get('Connect', uid);
@@ -130,6 +145,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             verifySelection(selection, await availableAccess(null, backend), canRequestCreate(d)));
         const permissions = verifyPermissions(f.permissions, String(d.params.scope ?? '').split(' '));
         const scopes = [READ_SCOPE, ...(canCreateWithAccess(access) ? [CREATE_SCOPE] : []), ...permissions].join(' ');
+        check(clientAllowsScopes(config, d.params.client_id, scopes.split(' ')), 'FORBIDDEN');
         const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
         grant.addOIDCScope(`openid offline_access ${scopes}`);
         grant.addResourceScope(config.resource, scopes);
@@ -245,18 +261,28 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return res.redirect(303, '/connections');
     });
     const challenge = res => res.status(401).set('WWW-Authenticate',
-        `Bearer resource_metadata="${config.issuer}/.well-known/oauth-protected-resource/mcp", scope="${READ_SCOPE}"`).json({ error: 'invalid_token' });
+        authChallenge(config, { error: 'invalid_token', description: 'Connect your Festapp account.' })).json({ error: 'invalid_token' });
     app.post('/mcp', express.json({ limit: '48kb' }), async (req, res) => {
-        let token;
+        let token, owner;
         try {
             const h = req.headers.authorization;
             if (typeof h !== 'string' || !/^Bearer [A-Za-z0-9_-]{20,512}$/.test(h)) return challenge(res);
             token = await provider.AccessToken.find(h.slice(7));
             if (!token) return challenge(res);
-            const grant = new DelegatedOwner(config, storage, token, { fetchImpl }).current();
+            owner = new DelegatedOwner(config, storage, token, { fetchImpl });
+            const grant = owner.current();
             if (!grant.clientConnectedAt) storage.put('Delegation', token.grantId,
                 { ...grant, clientConnectedAt: Date.now() }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
         } catch { return challenge(res); }
+        const operations = new Operations(owner);
+        if (req.body?.method === 'tools/call') {
+            const id = operations.operationIdForTool(req.body.params?.name);
+            if (id && !owner.permitsOperation(id)) {
+                const challenge = owner.challengeFor('INSUFFICIENT_SCOPE', id);
+                if (challenge) return res.status(403).set('WWW-Authenticate', challenge).json({ error: 'insufficient_scope' });
+                return res.status(403).json({ error: 'access_denied' });
+            }
+        }
         const count = active.get(token.grantId) ?? 0;
         if (count >= 2 || totalActive >= 16) return res.sendStatus(429);
         try { limit(`grant:${token.grantId}`, 60); } catch { return res.sendStatus(429); }
@@ -264,8 +290,6 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         let handler;
         const requestId = randomUUID();
         try {
-            const owner = new DelegatedOwner(config, storage, token, { fetchImpl });
-            const operations = new Operations(owner);
             const invoke = operations.invoke.bind(operations);
             operations.invoke = async (id, args) => {
                 const result = await invoke(id, args);
