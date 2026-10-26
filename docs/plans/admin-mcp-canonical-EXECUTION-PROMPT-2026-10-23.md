@@ -19,7 +19,8 @@ jedno schválení review, bez obcházení ochrany.
 
 Řez 4A je lokálně ověřený v [PR #615](https://github.com/festappnet/festapp/pull/615),
 head `7f4053be653fa3e745a5207dd7ac578f8d51c681`, stacked na #613. Řez 4B
-rozšířených nastavení je dokončený na `feat/admin-mcp-form-settings-20261026`,
+rozšířených nastavení je dokončený v [PR #616](https://github.com/festappnet/festapp/pull/616)
+na `feat/admin-mcp-form-settings-20261026`,
 navazuje na #615 a zůstává nenasazený. Při navázání ověřit aktuální stav celé
 review návaznosti a její heady; neslučovat ani nevydávat bez příslušné autorizace.
 Další řez etapy 4 jsou veřejné odkazy a inline produktové změny MCP přes

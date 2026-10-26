@@ -452,6 +452,11 @@ an archived production query; no production performance claim is implied.
   recipient projection. The latter now uses `can_author_forms`, removing its
   conflicting order-write gate. Both actual form scope and form-author rights
   are required; forms read consent alone cannot enumerate payment selection.
+- Historical root sale dates normalize into the canonical nested schedule at
+  admin read/save boundaries, using the existing runtime precedence and date
+  interpretation. Root aliases are retired on save, so resetting the schedule
+  cannot reapply an old root date. Public runtime read compatibility remains for
+  untouched legacy records until those records and clients migrate.
 - Form design saves now adopt the authoritative draft and version before the
   next save. A widget test saves twice with versions 3 then 4 and one initial
   read. No browser visual change or provider request is part of this cut.

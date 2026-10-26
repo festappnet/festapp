@@ -51,16 +51,19 @@
     "Separate editor bank-account selection SQL",
     "Conflicting order-write gate in Stripe form-recipient read",
     "Duplicate old reminder interval validation",
-    "Design editor discarding authoritative save/version result"
+    "Design editor discarding authoritative save/version result",
+    "Historical root schedule aliases on administrative read/save paths; reset no longer reactivates old dates"
   ],
   "retainedBoundary": {
     "contract": "Released full data RPC input, including historical array normalization, delegates known settings to the same private owner",
     "exitCondition": "Remove only after released clients upgrade; signatures and receipt owner preserved",
-    "newClient": "FormMetadata.authoringSettingsSnapshot is wire projection only; SQL owns merge and validation"
+    "newClient": "FormMetadata.authoringSettingsSnapshot is wire projection only; SQL owns merge and validation",
+    "runtime": "Public runtime fallback remains for untouched legacy records; retire only after those records and clients migrate. No claim of a full persisted-data cutover.",
+    "legacyTime": "Historical stored timestamps keep their existing runtime interpretation before explicit-instant serialization. Private normalizers are STABLE because this interpretation may depend on session timezone; new patches require explicit ISO instants."
   },
   "migration": {
     "path": "supabase/migrations/20261026200000_form_authoring_settings.sql",
-    "sha256": "c1d3ffddd3a2102a753a0fb78d694fa8879540fe4e4ccff93dd5279ddd8dcb79",
+    "sha256": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc",
     "functionDeclarations": 11,
     "uniqueFunctionNames": 11,
     "previousPublishedMigrationUnchanged": {
@@ -75,10 +78,10 @@
   "checks": [
     {
       "command": "FESTAPP_MCP_TEST_DATABASE_URL=<marked-loopback-disposable-admin-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/forms-settings-postgres.test.mjs test/forms-postgres.test.mjs test/forms.test.mjs",
-      "passed": 30,
+      "passed": 31,
       "failed": 0,
       "skipped": 0,
-      "realPostgresCases": 26,
+      "realPostgresCases": 27,
       "pureBoundaryCases": 4,
       "log": "/tmp/festapp-4b-sql-final.log",
       "coverage": [
@@ -88,7 +91,8 @@
         "Real saved Stripe recipient scope/compatibility and runtime restrictions; no payment/reference allocation",
         "Shared bank projection; unit editor without orders-write; wrong scope/read-only denial",
         "Private helper and public endpoint ACLs, full canonical SQL source parity",
-        "Existing capacity versus actual checkout concurrency and eight existing SQL regressions"
+        "Existing capacity versus actual checkout concurrency and eight existing SQL regressions",
+        "Legacy root and released date spelling adoption in both admin reads and saves; reset checked against actual canonical runtime gate"
       ]
     },
     {
@@ -146,24 +150,34 @@
     "automation/canonical-operation-sources.json": "78de7a31da1d91cd6e993a7dd91712587c4e028624411538e4504a79fdad1f61",
     "database/functions/eshop_forms/admin_form_commands.sql": "3acf477788a3548a9436ef0208d901d8bda6b2ba999d410c5466ca40630ec341",
     "database/functions/eshop_forms/form_payment_options.sql": "fa2b6c31395093c3d065d82f5545810a2072aff329fa69637739dc2fc9d51724",
-    "database/functions/eshop_forms/form_settings.sql": "054891e3f1c5f510e45dbc120ff43361b7e0f2d516aa308514057e619e7c0ac7",
-    "database/functions/eshop_forms/get_form_for_edit.sql": "626d9a7db039a4d1d085c083ef5008049b3a567e2c0bd08f148383aba8de7238",
+    "database/functions/eshop_forms/form_settings.sql": "e14bd20e28f4543ea9637a4d9010d35050c00aed2da69928bb6ce171c1657ab8",
+    "database/functions/eshop_forms/get_form_for_edit.sql": "7dd2cbf2239333edcc3858bf04967cc76cb43b6c8e37a9e5ca2f8bfc012b813f",
     "database/functions/eshop_forms/update_form.sql": "ddc0dfac8cc567c001aff365a4e4b10a619d87a2a4d31a23bb41adc587a76208",
     "database/functions/eshop_stripe/form_recipient.sql": "2dd102a48691f17e741bf1b107206c62e6045c190398c48de4e6378954a3c6b2",
-    "database/tests/canonical_mutation_source_parity_test.sql": "0292b174320e6c9dc8c05449526f05ae5352001bcb19004cbd7828776fccfb35",
+    "database/tests/canonical_mutation_source_parity_test.sql": "9aee1f3e095e9fe76c41b3fcecf9f2d90ba25374da2fe098efb2fff68b33720b",
     "database/tests/eshop/reminders/form_reminder_inheritance_test.sql": "861c22b36ca89583bca47216b9fa9955bd6305ac61a643d9da1f144b54da30d6",
-    "lib/components/forms/README.md": "bfe5ee4af6d7923477215db6998896b28c0873b44031eb93b2726ef8781aebc8",
+    "lib/components/forms/README.md": "2fe5c1b4bc99d1d741f17d0dfa811c024d193abb64c202631293a4c217305076",
     "lib/components/forms/models/form_editor_draft.dart": "4577d10e6cb346011573e1b13265b4e2146c5c02e2a3c6f5a9926c6a694af267",
     "lib/components/forms/views/form_design_content.dart": "de54675a2735830e6e57990e99f3617b0dd683be715b649b9db9461c03c2e94e",
     "packages/festapp_contracts/mcp-permissions.mjs": "555fb8603bbc19b2c8090034a222c37e6c6afe5078942caf2e5c2b275522f1d8",
     "packages/festapp_core/lib/src/forms/form_metadata.dart": "811385dbb720b87f30498d361be7d87dcdaf002cd2fd92a41ea3a4d4805ccdb0",
-    "supabase/migrations/20261026200000_form_authoring_settings.sql": "c1d3ffddd3a2102a753a0fb78d694fa8879540fe4e4ccff93dd5279ddd8dcb79",
+    "supabase/migrations/20261026200000_form_authoring_settings.sql": "13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc",
     "test/components/forms/form_commands_cases.dart": "356c20246299490e6a329424512b69a5a41729e7fecd98c89a546456f855c761",
     "test/components/forms/form_editor_actions_cases.dart": "715392b6f39614e1d80019880c79754970e40244d10a4c0c407140d6a5562dee",
     "tools/festapp/src/operations/forms.mjs": "4a6ee2baa992f5ddc10ff6645abc3887869b834cba66fc7b2c379e75f20f4cae",
     "tools/festapp/test/form-fixtures.mjs": "a02862956121fa0cad8b34fba5c8bca60a2f4fd4cee5a8b85230c353dadb5a03",
-    "tools/festapp/test/forms-settings-postgres.test.mjs": "807e52d397245f171cbdda8102cebe30b128d458e4826d5ea5c0fc3e50cac9c6",
+    "tools/festapp/test/forms-settings-postgres.test.mjs": "e40691dc41271954c41ed97c615ddd618d787710fd7410c1eceb3a50288bf8e9",
     "tools/festapp/test/forms.test.mjs": "6151a5816ae6415ac6c5de219da42362ac9e83049831b63fb8ae238ad4376a25",
     "tools/festapp/test/remote.test.mjs": "5a9dc1c112c2df323c8fed36db6f6a8051595be6a9d52eb74aeafc8103ced050"
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/616",
+    "base": "feat/admin-mcp-forms-20261026",
+    "initialImplementationHead": "1970e868e9a49fef1c33b63877e01ba26675a5f4",
+    "deployed": false
+  },
+  "unchangedRuntimeTestInput": {
+    "path": "database/functions/eshop_forms/form_availability.sql",
+    "sha256": "4603dc9d03e157cdfd6a8c2099740e3db216f4c064021499934cebff4afbcc4c"
   }
 }

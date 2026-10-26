@@ -779,7 +779,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_catalog_rows_internal(bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='6b52b80bf8643e5d6b4ab9c3d3d42c9c'),'current SQL source parity: public.get_form_catalog_rows_internal(bigint,bigint,integer)');
 -- supabase/migrations/20261026200000_form_authoring_settings.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_editor_bundle_internal(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='65a9246702fb6269d128ac9435d215f8'),'current SQL source parity: public.get_form_editor_bundle_internal(bigint,boolean)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_editor_bundle_internal(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d4012d937e908287b112658e72c8e881'),'current SQL source parity: public.get_form_editor_bundle_internal(bigint,boolean)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_for_authoring(bigint,bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8d93311f2c7c339ad908fc8fa7391208'),'current SQL source parity: public.get_form_for_authoring(bigint,bigint,bigint,bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1111,7 +1111,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='6c56b08f6a179fdf44f44e85b1498afc'),'current SQL source parity: public.normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean)');
 -- supabase/migrations/20261026200000_form_authoring_settings.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_form_metadata_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='62d02c1155d90bb989977186784e97ac'),'current SQL source parity: public.normalize_form_metadata_internal(jsonb)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_form_metadata_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='8b54a59749b16019602b5bf0dbe4b59c'),'current SQL source parity: public.normalize_form_metadata_internal(jsonb)');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_form_ticket_answers_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a00997f55f82b91d749050bbea2db852'),'current SQL source parity: public.normalize_form_ticket_answers_internal(bigint,jsonb)');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql

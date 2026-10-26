@@ -238,6 +238,13 @@ lifecycle flags such as `sale_preparation` and metadata owned by other modules.
 Schedule instants require explicit timezones; SQL checks their actual order.
 
 `form_settings.sql` owns metadata normalization, patch semantics and validation.
+Admin reads and saves also adopt historical root-level start/end dates into
+`schedule`, matching the runtime's nested/root precedence and retiring the root
+aliases. Released date spellings become explicit instants under their existing
+runtime interpretation; new patches still require ISO with a timezone. Clearing
+a schedule cannot resurrect a retained root date. The public runtime's read
+fallback remains intentional for unsaved legacy records; remove it after those
+records and clients have migrated.
 Current Flutter drafts send a known-settings snapshot (including null resets),
 never an opaque metadata replacement. Released clients may still send full
 `data`; that boundary normalizes historical arrays and passes known settings to

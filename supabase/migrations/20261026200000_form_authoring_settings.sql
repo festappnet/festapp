@@ -12,26 +12,44 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION public.normalize_form_metadata_internal(p_data jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE result jsonb:='{}'; item jsonb;
+RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
+DECLARE result jsonb:='{}'; item jsonb; section jsonb; k text;
 BEGIN
  IF p_data IS NULL OR p_data='null'::jsonb THEN RETURN result; END IF;
- IF jsonb_typeof(p_data)='object' THEN RETURN p_data; END IF;
- -- Released readers already normalize historical [null,{metadata}] bundles.
- IF jsonb_typeof(p_data)='array' THEN
+ IF jsonb_typeof(p_data)='object' THEN result:=p_data;
+ ELSIF jsonb_typeof(p_data)='array' THEN
+  -- Released readers already normalize historical [null,{metadata}] bundles.
   FOR item IN SELECT value FROM jsonb_array_elements(p_data) LOOP
    IF item='null'::jsonb THEN CONTINUE; END IF;
    IF jsonb_typeof(item)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid form metadata'; END IF;
    result:=result||item;
   END LOOP;
-  RETURN result;
+ ELSE RAISE invalid_parameter_value USING MESSAGE='invalid form metadata';
  END IF;
- RAISE invalid_parameter_value USING MESSAGE='invalid form metadata';
+ section:=coalesce(nullif(result->'schedule','null'::jsonb),'{}'::jsonb);
+ IF jsonb_typeof(section)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid form schedule'; END IF;
+ FOREACH k IN ARRAY ARRAY['start_time','end_time'] LOOP
+  -- Match the runtime reader's historical nested/root precedence, then retire
+  -- the root alias. Otherwise clearing a nested override resurrects old dates.
+  IF (NOT section ? k OR section->k='null'::jsonb) AND result ? k THEN
+   section:=section||jsonb_build_object(k,result->k);
+  END IF;
+  result:=result-k;
+  IF section->>k='' THEN section:=section-k;
+  ELSIF section->>k IS NOT NULL AND (section->>k) !~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$' THEN
+   -- Interpret released timestamps exactly as the existing runtime did. Emit
+   -- an explicit instant for current editors; new patches still require ISO.
+   section:=section||jsonb_build_object(k,(section->>k)::timestamptz);
+  END IF;
+ END LOOP;
+ IF section='{}'::jsonb THEN result:=result-'schedule';
+ ELSE result:=result||jsonb_build_object('schedule',section); END IF;
+ RETURN result;
 END $$;
 
 -- Full released-client metadata is translated to the same known-settings patch.
 CREATE OR REPLACE FUNCTION public.form_settings_from_metadata_internal(p_data jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:='{}'; d jsonb:=public.normalize_form_metadata_internal(p_data); spec record; k text; section jsonb;
 BEGIN
  FOR spec IN SELECT * FROM jsonb_each(public.form_settings_keys_internal()) LOOP
@@ -50,7 +68,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.apply_form_settings_internal(p_data jsonb,p_patch jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:=public.normalize_form_metadata_internal(p_data); spec jsonb:=public.form_settings_keys_internal();
  entry record; field record; section jsonb; v jsonb; k text; path text; n numeric; starts timestamptz; ends timestamptz;
 BEGIN
@@ -231,7 +249,7 @@ BEGIN
         'key', f.key,
         'is_open', f.is_open,
         'created_at', f.created_at,
-        'data', f.data,
+        'data', public.normalize_form_metadata_internal(f.data),
         'type', f.type,
         'title', f.title,
         'header', f.header,

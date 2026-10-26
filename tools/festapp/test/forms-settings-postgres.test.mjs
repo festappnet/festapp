@@ -96,3 +96,18 @@ test('MCP schemas and the private SQL settings owner expose the same supported k
  assert.equal(schema.additionalProperties,false);assert.deepEqual(Object.keys(schema.properties).sort(),Object.keys(spec).sort());
  for(const [section,keys] of Object.entries(spec))if(keys){const object=schema.properties[section].anyOf.find(s=>s.type==='object');assert.equal(object.additionalProperties,false);assert.deepEqual(Object.keys(object.properties).sort(),keys.toSorted());}
 });
+
+test('legacy sale dates normalize once in admin reads and saves; reset cannot resurrect a root alias in the actual runtime gate',options,async t=>{
+ const{db,f}=await setup(t);await db.query(await readFile(new URL('../../../database/functions/eshop_forms/form_availability.sql',import.meta.url),'utf8'));const made=await create(db,f);
+ const legacy={start_time:'2030-01-01 00:00:00+00',end_time:'2031-01-01T00:00:00Z',private_owner:7,schedule:{sale_preparation:true,end_time:null}};
+ await db.query('update forms set data=$1 where id=$2',[legacy,made.formId]);const link=(await db.query('select link from forms where id=$1',[made.formId])).rows[0].link;
+ const before=(await db.query("select get_form_availability_snapshot_internal($1,'2029-01-01T00:00:00Z') value",[made.formId])).rows[0].value;
+ await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const read=await ex.ops.invoke('forms.inspect',{occasionId:f.occasion,formId:made.formId});assert.equal(read.ok,true,JSON.stringify(read));const data=read.data.authoring.form.data;
+ assert(!Object.hasOwn(data,'start_time'));assert(!Object.hasOwn(data,'end_time'));assert.equal(Date.parse(data.schedule.start_time),Date.parse(before.startAt));assert.equal(Date.parse(data.schedule.end_time),Date.parse(before.endAt));
+ const ui=(await db.query('select get_form_for_edit($1) value',[link])).rows[0].value;assert.deepEqual(ui.data.form.data,data);
+ const reset=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(read.data.authoring,{settings:{schedule:null}})});assert.equal(reset.ok,true,JSON.stringify(reset));
+ await db.query('RESET ROLE');const persisted=await stored(db,made.formId);assert.deepEqual(persisted,{private_owner:7,schedule:{sale_preparation:true}});
+ const after=(await db.query("select get_form_availability_snapshot_internal($1,'2029-01-01T00:00:00Z') value",[made.formId])).rows[0].value;assert.equal(after.startAt,null);assert.equal(after.endAt,null);
+ // The bounded released-input adapter also retires aliases on its next save.
+ const saved=(await db.query('select update_form_client_sync_v1($1,$2) value',[{occasion:f.occasion,...formPatch(reset.data.authoring,{data:legacy})},randomUUID()])).rows[0].value;assert.equal(saved.code,200,JSON.stringify(saved));const canonical=await stored(db,made.formId);assert(!Object.hasOwn(canonical,'start_time'));assert(!Object.hasOwn(canonical,'end_time'));assert(canonical.schedule.start_time.includes('T'));
+});

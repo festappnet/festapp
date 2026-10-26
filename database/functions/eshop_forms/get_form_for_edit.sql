@@ -46,7 +46,7 @@ BEGIN
         'key', f.key,
         'is_open', f.is_open,
         'created_at', f.created_at,
-        'data', f.data,
+        'data', public.normalize_form_metadata_internal(f.data),
         'type', f.type,
         'title', f.title,
         'header', f.header,

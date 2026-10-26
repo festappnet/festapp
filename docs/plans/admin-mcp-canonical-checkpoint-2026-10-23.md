@@ -1301,7 +1301,7 @@ runtime dostupnosti, nepřipojuje účty ani neaktivuje poskytovatele. Politika 
 nepřepisuje rezervace a nic nevydává. UI design editor nyní přebírá uloženou
 verzi před dalším save, potvrzeno dvěma widget saves bez reloadu.
 
-Ověření standard: SQL/executor/boundary 30/30 bez skipů (26 real PostgreSQL,
+Ověření standard: SQL/executor/boundary 31/31 bez skipů (27 real PostgreSQL,
 4 boundary, osm existujících SQL regresí), Flutter 68/68, remote 25/25,
 web consent 37/37. Cílená analýza 0 errors/warnings, 3 informační diagnostiky.
 Migrační/source-parity/policy/katalog generátory a whitespace checks prošly.
@@ -1310,7 +1310,7 @@ Starší reminder fixture selhávala shodně na 4A i 4B kvůli skutečnému reci
 burst limitu po opakovaném přepočtu fronty; její nezávislé deadline případy nyní
 neopakují odesílací závazky předchozího kupujícího. Produkční limity beze změny.
 
-Migrace `20261026200000_form_authoring_settings.sql`: SHA256 `c1d3ffddd3a2102a753a0fb78d694fa8879540fe4e4ccff93dd5279ddd8dcb79`,
+Migrace `20261026200000_form_authoring_settings.sql`: SHA256 `13e8aa9eae8b56c691cd8966c9bc40fe858aa31d0f2acec78cc46b34483af3bc`,
 11 deklarací / 11 názvů funkcí, žádné nové tabulky, triggery ani receipts.
 Publikovaná migrace 4A je beze změny; společný assembler nyní generuje nejnovější
 řez 4B z kanonických zdrojů. Katalog má 99 úkonů / 48 nástrojů.
@@ -1320,3 +1320,18 @@ Bez produkčních změn, připojení Stripe či doručení zpráv. Samotný save
 nevytváří platby ani VS; SQL regrese mají pouze syntetické disposable objednávky
 a reference. Další řezy: veřejné odkazy, inline produktové mutace MCP, nabídky čekací
 listiny a obecné ruční objednávky. Celá etapa 4 není dokončená.
+
+Historické root-level start/end termíny přebírá stejný metadata owner do vnořené
+schedule při admin čtení i ukládání; již se nemohou po resetu znovu uplatnit.
+Nestandardní released zápis data se překládá na explicitní okamžik se stejnou
+interpretací jako dosavadní runtime. Veřejný read fallback zůstává pouze pro
+starší záznamy před tímto převodem; úplný hromadný data cutover není tvrzen.
+Nový SQL případ ověřuje reset proti skutečnému kanonickému runtime gate.
+
+Publikováno jako [PR #616](https://github.com/festappnet/festapp/pull/616),
+base `feat/admin-mcp-forms-20261026`; počáteční implementation head
+`1970e868e9a49fef1c33b63877e01ba26675a5f4`. Před prvním pushem a vytvořením PR
+fetch potvrdil main `3988bb7cb` i parent #615 `7f4053be6` jako předky větve.
+Aktuální zdroje včetně legacy-date dokončení jsou svázané SHA256 v evidence JSON.
+Při navázání ověřit #613 -> #615 -> #616 a po sloučení rodičů upravit review base;
+neslučovat ani nevydávat automaticky přes povinné main review.
