@@ -21,6 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
+  assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
   assert.equal(code.window.document.querySelector('a').rel,'noopener noreferrer');
@@ -51,6 +52,8 @@ test('changing settings invalidates stale output and fixed height does not load 
   const mode=form.querySelector('select');mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
   assert.equal(inherit.disabled,true);submit('https://vstupenky.online/form/ples');
   assert.doesNotMatch(form.querySelector('textarea').value,/<script|data-festapp-embed|data-festapp-style/);
+  const code=new JSDOM(form.querySelector('textarea').value);t.after(()=>code.window.close());
+  assert.equal(code.window.document.querySelector('iframe').getAttribute('allow'),'clipboard-write');
 });
 test('copy action copies the current prepared code',async t=>{
   const {dom,form,submit}=fixture(t);let copied;Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async value=>{copied=value;}}});

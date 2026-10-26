@@ -1,0 +1,394 @@
+{
+  "checkedAt": "2026-10-26",
+  "host": "https://moje-stranky-af13t0.webnode.cz/vstupenky-ukazka-vlozeni/",
+  "plan": {
+    "name": "Premium Standard",
+    "activatedBy": "Webnode support, existing case2001921",
+    "trialEnds": "2026-11-09",
+    "paidPlanPurchased": false
+  },
+  "sourceBase": "594cc2689c71afbb802f47ca8b9dee5f10839881",
+  "productionClientBuild": "0.20.417+919",
+  "hostWasRealWebnode": true,
+  "generator": {
+    "initial": "Actual public help generator UI",
+    "fixedCandidate": "Actual updated help.js executed with its owning DOM fixture",
+    "change": "iframe allow=clipboard-write in both automatic and fixed code",
+    "sourceSha256": "1c8d0393c972ccaffd50b560ed9748f6137e70f0f8fe0540934b9b9733f0ee51"
+  },
+  "editor": {
+    "pasteSave": true,
+    "coldReadback": true,
+    "publishConfirmed": true,
+    "scriptAndAttributesPreserved": true,
+    "nativeButtonCreatedAndPublished": true,
+    "nativeButtonTarget": "https://vstupenky.online/form/country_bal_vetrkovice",
+    "nativeButtonOpenedNewTab": true
+  },
+  "readonlyProduction": {
+    "guardedRelay": true,
+    "htmlAdapted": false,
+    "authAdapted": false,
+    "corsAdapted": false,
+    "backendRequests": [
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD,CONNECT,TRACE",
+          "headers": "apikey,authorization,content-profile,content-type,x-client-info"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_blueprint",
+        "blocked": true
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_blueprint",
+        "blocked": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_app_config_v218",
+        "blocked": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD,CONNECT,TRACE",
+          "headers": "apikey,authorization,content-profile,content-type,x-client-info"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_app_config_v218",
+        "blocked": true
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_blueprint",
+        "blocked": true
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_blueprint",
+        "blocked": true
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_app_config_v218",
+        "blocked": true
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_app_config_v218",
+        "blocked": true
+      }
+    ],
+    "productionOrderOrHoldCalls": 0
+  },
+  "chromium": {
+    "version": "156.0.8078.48",
+    "desktopViewport": 1280,
+    "mobileViewport": 320,
+    "mobileIframeWidth": 300,
+    "hostOverflow": false,
+    "automaticHeight": true,
+    "inheritedTheme": {
+      "applied": "host",
+      "font": "Futura, sans-serif",
+      "background": "rgb(255, 255, 255)",
+      "height": 1365
+    },
+    "fixedHeight": {
+      "host": {
+        "width": 320,
+        "scrollWidth": 320,
+        "frames": [
+          {
+            "src": "https://vstupenky.online/form/country_bal_vetrkovice?embed=1",
+            "allow": "clipboard-write",
+            "auto": false,
+            "height": 800,
+            "width": 300
+          }
+        ],
+        "helper": []
+      },
+      "childAfterNativeFocusAndPageDown": {
+        "viewport": {
+          "width": 300,
+          "height": 800
+        },
+        "document": {
+          "height": 1122,
+          "width": 300
+        },
+        "scrollY": 322
+      }
+    },
+    "escapePreservedInput": true,
+    "summaryBackPreservedInput": true,
+    "seatPointerReleaseAndKeyboardSelect": true,
+    "fallbackLinkOpenedNewTab": true
+  },
+  "disposableCheckout": {
+    "project": "festapp-webnode-qa-20261026",
+    "api": "http://127.0.0.1:59931",
+    "databasePort": 59932,
+    "productionNetworkDnsFenced": true,
+    "transportAdapted": true,
+    "corsAdapted": true,
+    "emailQueuePaused": true,
+    "emailWorkerNull": true,
+    "orders": [
+      {
+        "form": "webnode-qa-20261026",
+        "amount": 150.0,
+        "orderId": 166,
+        "currency": "CZK",
+        "bankAccount": "CZ7001000000000000123457",
+        "variableSymbol": 7877
+      },
+      {
+        "form": "webnode-qa-copy-20261026",
+        "amount": 150.0,
+        "orderId": 167,
+        "currency": "CZK",
+        "bankAccount": "CZ7001000000000000123457",
+        "variableSymbol": 2466
+      }
+    ],
+    "eachSubmitPostCount": [
+      1,
+      1
+    ],
+    "initialHeld": {
+      "held": 1,
+      "sold": 0,
+      "formId": 34,
+      "orders": 0,
+      "project": "festapp-webnode-qa-20261026",
+      "emailPaused": true,
+      "emailWorkerNull": true
+    },
+    "released": {
+      "held": 0,
+      "sold": 0,
+      "formId": 34,
+      "orders": 0,
+      "project": "festapp-webnode-qa-20261026",
+      "emailPaused": true,
+      "emailWorkerNull": true
+    },
+    "afterFirstParentReload": {
+      "held": 0,
+      "sold": 1,
+      "formId": 34,
+      "orders": 1,
+      "project": "festapp-webnode-qa-20261026",
+      "emailPaused": true,
+      "emailWorkerNull": true
+    },
+    "qr": {
+      "decoder": "Apple Vision VNDetectBarcodesRequest on actual rendered image",
+      "payload": "SPD*1.0*ACC:CZ7001000000000000123457*AM:150.00*CC:CZK*X-VS:7877",
+      "matchedSql": {
+        "amount": 150.0,
+        "orders": 1,
+        "currency": "CZK",
+        "bankAccount": "CZ7001000000000000123457",
+        "variableSymbol": 7877
+      },
+      "orderId": 166,
+      "secondOrderQrDecoded": false
+    },
+    "htmlTemplateSha256": "c1e035f1517e34b14cc82305364a717ad1031842ed0790983148c31126ed0c5c"
+  },
+  "clipboard": {
+    "before": {
+      "allowAttribute": false,
+      "policyAllowed": false,
+      "copied": false
+    },
+    "candidateColdPublishedReload": {
+      "policyAllowed": true
+    },
+    "afterNativeEnterOnAmountCopy": {
+      "policyAllowed": true,
+      "copiedElements": 1,
+      "observedButtonLabel": "Copied: Amount to pay"
+    },
+    "runtimeAttributeMutationDidNotQualify": true,
+    "readPermissionAdded": false
+  },
+  "mobileSafari": {
+    "device": "iPhone17Pro Simulator",
+    "udid": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+    "os": "iOS26.5",
+    "browser": "MobileSafari26.5",
+    "cssViewport": [
+      402,
+      874
+    ],
+    "actualPublishedWebnode": true,
+    "publicRendering": true,
+    "necessaryCookiesDismissed": true,
+    "nativeSwipeToBottomControls": true,
+    "purchasePerformed": false,
+    "backgroundState": [
+      {
+        "active": false,
+        "hidden": true,
+        "pid": 23490,
+        "visibleWindows": 0
+      }
+    ],
+    "terminatedAfterTest": true
+  },
+  "finalPublishedCode": {
+    "form": "country_bal_vetrkovice",
+    "automatic": true,
+    "inherit": true,
+    "clipboardWrite": true,
+    "fallbackNativeButton": true
+  },
+  "limitations": [
+    "No real transfer, external payment provider, external email delivery or physical iPhone result.",
+    "Safari qualification covers public rendering and native scrolling; the bank checkout was Chromium with adapted disposable transport.",
+    "No claim of all browser/privacy mode combinations or unchanged behavior after the trial expires.",
+    "The generator fix is tested in the actual published Webnode HTML; canonical service-help deployment is recorded separately after source merge."
+  ],
+  "artifacts": [
+    {
+      "path": "docs/development/webnode-embed-20261026/local-payment-qr.png",
+      "sha256": "b693ab44eb31b387dd19629686d79be7bf1968ce7bf18e2926401ad3ccbeb99d"
+    },
+    {
+      "path": "docs/development/webnode-embed-20261026/local-summary.png",
+      "sha256": "03bfc7d4d7a10043b40a801d6c50531b2a794ad008c4dcce254fd6b08ffefcce"
+    },
+    {
+      "path": "docs/development/webnode-embed-20261026/published-mobile.png",
+      "sha256": "68806dc159796c8c884703e09ddf01f72848f401aaee5a7bcf8db9987f19a1fd"
+    },
+    {
+      "path": "automation/release/help/media/cs/webnode/03-published-mobile.png",
+      "sha256": "7c2df1e52638e7c429e031eb4b7daa9587ecafd1c5f6d897a889e1af6c3695b4"
+    }
+  ],
+  "cleanup": {
+    "browserSessionsClosed": 4,
+    "ownedProxiesStopped": 3,
+    "edgeServeStopped": true,
+    "supabaseStoppedWithBackup": true,
+    "simulatorShutdown": true,
+    "simulatorGuiStopped": true,
+    "finalWebnodeHasNoTestSlug": true
+  },
+  "validation": {
+    "command": "pnpm --dir web_client exec node --test tests/components/help_embed_generator.test.js tests/components/help_static_preview.test.js",
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "generatedCzechAndEnglishPreviews": true
+  },
+  "review": {
+    "source": "PASS",
+    "evidenceCorrection": "Narrowed QR decoding claim explicitly to first order166/VS7877; second QR not claimed",
+    "productionDeploymentImplied": false
+  }
+}

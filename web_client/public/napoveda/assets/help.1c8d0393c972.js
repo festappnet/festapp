@@ -44,7 +44,7 @@
     }
     const automatic = mode.value === 'automatic';
     const marker = automatic ? ' data-festapp-embed' + (inherit.checked ? ' data-festapp-style="inherit"' : '') : '';
-    const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" width="100%" height="800" style="border:0;max-width:100%" loading="lazy"></iframe>`;
+    const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" width="100%" height="800" style="border:0;max-width:100%" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;
     code.value = automatic ? `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js" defer></script>` : frame + '\n' + link;
     output.hidden = false; output.querySelector('[data-form-link]').href = url.href;
