@@ -1,18 +1,22 @@
 # Pokračování kanonické administrace a MCP
 
-Aktuální pokračování: 2026-10-26. Načíst aktuální `origin/main`, AGENTS.md,
+Aktuální pokračování: 2026-10-27. Načíst aktuální `origin/main`, AGENTS.md,
 CLAUDE.md a `docs/architecture/ai_context.md`. Cizí dirty checkout neměnit.
 Ověřování `standard`; práce patří do izolovaného worktree.
 
 Autoritativní plán je [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
 Poslední aktuální sekce [checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md)
-je **Stage 5 complete 2026-10-26**. Etapy 0-5 jsou implementované. Etapy 0-2B
-jsou nasazené; etapy 3-5 jsou lokálně ověřené a čekají na review/rollout.
-Jejich jediné review místo je [PR #617](https://github.com/festappnet/festapp/pull/617),
-base main, branch `feat/admin-mcp-stage4-complete-20261026`. #613/#615/#616 jsou
-uzavřené jako nahrazené. Neobnovovat review stack ani duplicitní implementace.
-Při navázání znovu ověřit skutečný stav PR/headu a čerstvý main. Ochrana main
-vyžaduje review; nevydávat bez samostatného oprávnění k danému rollout cíli.
+je **Production rollout 2026-10-27**. Etapy 0-5 jsou implementované a pro
+`prod/festapptickets` nasazené ve verzi **0.20.427+929**. Kód release main
+`00c1da5cef9bb1e949bf230f270f221b1b9f69d8`, tenant
+`bfbc1c3c1740efe34949b688a914808f61bb9252`.
+[Release receipt](../operations/releases/festapptickets-2026-10-27.json)
+obsahuje ověřené SQL/Edge/MCP/web komponenty a limity. #617/#618/#619 jsou
+sloučené; #613/#615/#616 byly nahrazené. Neobnovovat starý review stack.
+Při navázání ověřit čerstvý main a skutečný stav služby. Admin výjimky byly
+výslovně omezené na dokončený rollout; další etapa a nasazení se řídí běžnými
+pravidly a případným novým oprávněním uživatele. Souběžný ChatGPT pilot je
+samostatná práce, nikoli další dokončená doménová etapa.
 
 Další doménová etapa je **6 - lidé, role, skupiny a dobrovolníci**. Nejprve
 najít konkrétní UI handlery a existující group/profile/unit command vlastníky,
