@@ -140,3 +140,17 @@ component320px/320px. The same minimized renderer passed native Safari visually.
 This is not another purchase. Existing QR clipboard/timer tests cover feedback
 reset and labels, and now run in the Wix compatibility CI command (51 tests).
 The reviewed fix is live; see `../evidence/live-receipt-icons-20261026.json`.
+
+
+`tests/safari-hold-fixture.sql` (relative to the Wix integration) adds a separate
+local unit/form/seat and only that unit's15s hold-duration override. It preserves
+ordinary900s policy and every existing purchase. It never resets an existing
+fixture. Inspect the effective duration before rerunning: the scoped override
+expires after one day. Apply only through the dedicated marked local container.
+
+The executed Safari case selected/released a free seat, naturally expired the
+short lease, rejected an expired native Submit, retained answers and reacquired/
+released the seat with0orders. The optional storage probe now reports passive
+completed ResourceTiming hold/order counts; those counts are not an exhaustive
+network capture. This run had available storage and does not qualify holds with
+storage denied. See `../evidence/safari-hold-expiry-20261026.json`.

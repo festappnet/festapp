@@ -227,3 +227,18 @@ owner build and the module contains the reviewed SVG path. No extra release was
 created for these verification notes. Native Wix clean-install/portal and written
 commercial approval remain external gates; this is not Marketplace submission.
 See `evidence/live-receipt-icons-20261026.json`.
+
+### Follow-up: Safari available seat and natural hold expiry
+
+A fresh marked local form37/unit34/spot531 used the supported unit-scoped
+`hold.duration.seconds=15` override; ordinary unit1 remained900. Native Safari
+selected and released A1, then a new15s lease expired naturally after a real
+wait, without clock/deadline patching. A later expired selection reached the
+summary; native Submit revalidated it and rendered reservation_changed. SQL
+orders stayed0. Back retained answers and removed A1; reselect/release worked.
+Final seat is free, unsold, secret/expiryNULL. All old orders retained and own
+processes stopped with DB backup. Passive timing counts observed0 completed
+order requests; this is not an exhaustive network-capture claim. Storage was
+available in this attempt, and no automatic map deselection at deadline is
+qualified. No production writes, Edge process, payment or external email.
+See `evidence/safari-hold-expiry-20261026.json`.

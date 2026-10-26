@@ -19,8 +19,10 @@ Still unqualified:
   software keyboard passed on the published owned Wix site, including onscreen
   key taps, direct field changes, manual scroll and Done retaining values.
   See `evidence/software-keyboard-20261026.json`.
-- Available-seat hold/expiry and external provider redirect/return in Safari.
-  Bank instructions/QR and occupied-seat viewing are qualified only locally.
+- External provider redirect/return and available-seat holds while storage is
+  denied in Safari. Normal-storage local holds/release/natural15s expiry and
+  rejected-submit recovery now pass; bank instructions/QR remain local only.
+  See `evidence/safari-hold-expiry-20261026.json`.
 - Physical iPhone hardware. The owner has no iPhone; no hardware pass is claimed.
 
 The successful background method launches only the task Simulator with `open -g -j`,
