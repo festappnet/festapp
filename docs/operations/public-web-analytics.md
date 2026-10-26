@@ -44,6 +44,7 @@ Cloudflare's chart dimension selection and the 5/10/15-item selector are local d
 
 - Pages response owners insert the bootstrap only into the public catalogue, organizer landing page and resolved public forms. Flutter, scanner, authentication, payments, PWA cache shells, static legal pages and embeds have no beacon.
 - Every HTML response uses `Cache-Control: no-transform` to prevent zone-wide automatic injection. The organizer renderer never inserts a beacon into shared app shells.
+- Because `no-transform` also prevents edge compression, the Pages response owner gzip-compresses successful HTML when accepted by the client, with `Vary: Accept-Encoding`. Already encoded assets pass through unchanged.
 - The bootstrap rejects fragments, private query parameters, framed documents and non-public referring paths. Only origin-only external referrers and same-host public referrers are accepted. This intentionally undercounts some arrivals rather than sending private URLs.
 - Existing zone-backed properties send the official beacon to their built-in same-origin `/cdn-cgi/rum` endpoint; the manual vstupenky.online and app.absolventskyvelehrad.cz properties use the default external Cloudflare collector. Browser checks must verify a successful POST, not just beacon initialization.
 - A single manual Cloudflare beacon uses `spa: false`. Measured pages cross a real document boundary for pathname changes, including history API navigation. Same-path order/waitlist fragments retain normal overlay behavior. A beacon cannot follow a public page into scanner/admin paths.

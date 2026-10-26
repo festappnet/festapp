@@ -86,6 +86,46 @@ const env = {
   SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'fixture', ORGANIZATION_ID: 1,
   ASSETS: { fetch: async () => new Response('<!doctype html><html><head></head><body>app</body></html>', { headers: { 'content-type': 'text/html' } }) },
 };
+test('HTML stays compressed without allowing automatic analytics injection', async () => {
+  const html = '<!doctype html><html><head></head><body>' + 'Public content. '.repeat(15000) + '</body></html>';
+  const assets = { ASSETS: { fetch: async () => new Response(html, { headers: {
+    'content-type': 'text/html', 'content-length': String(Buffer.byteLength(html)), etag: '"html"',
+  } }) } };
+  for (const encoding of ['gzip, br', 'gzip;q=0.8', '*']) {
+    const response = await worker.fetch(new Request('https://tenant.invalid/privacy/', {
+      headers: { 'accept-encoding': encoding },
+    }), assets);
+    assert.equal(response.headers.get('content-encoding'), 'gzip');
+    assert.match(response.headers.get('cache-control'), /no-transform/);
+    assert.match(response.headers.get('vary'), /Accept-Encoding/i);
+    assert.equal(response.headers.get('content-length'), null);
+    assert.equal(response.headers.get('etag'), 'W/"html"');
+    const compressed = await response.arrayBuffer();
+    assert.ok(compressed.byteLength < Buffer.byteLength(html) / 4);
+    const decoded = new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip')));
+    assert.equal(await decoded.text(), html);
+  }
+  for (const encoding of ['', 'br', 'gzip;q=0', 'gzip;q=0, *;q=1']) {
+    const response = await worker.fetch(new Request('https://tenant.invalid/privacy/', {
+      headers: { 'accept-encoding': encoding },
+    }), assets);
+    assert.equal(response.headers.get('content-encoding'), null);
+    assert.equal(await response.text(), html);
+  }
+  const head = await worker.fetch(new Request('https://tenant.invalid/privacy/', {
+    method: 'HEAD', headers: { 'accept-encoding': 'gzip' },
+  }), assets);
+  assert.equal(head.headers.get('content-encoding'), 'gzip');
+  assert.equal(await head.text(), '');
+  const encoded = { ASSETS: { fetch: async () => new Response('encoded bytes', {
+    headers: { 'content-type': 'text/html', 'content-encoding': 'br' },
+  }) } };
+  const passthrough = await worker.fetch(new Request('https://tenant.invalid/privacy/', {
+    headers: { 'accept-encoding': 'gzip, br' },
+  }), encoded);
+  assert.equal(passthrough.headers.get('content-encoding'), 'br');
+  assert.equal(await passthrough.text(), 'encoded bytes');
+});
 test('Pages owns public-only injection and suppresses automatic injection on every HTML route', async t => {
   t.mock.method(globalThis, 'fetch', async () => Response.json({ title: 'Public', form_link: 'public', occasions: [] }));
   for (const [path, measured] of [['/', true], ['/form/public', true], ['/scan/SECRET', false],
