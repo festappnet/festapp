@@ -23,13 +23,14 @@ rozšířených nastavení je dokončený v [PR #616](https://github.com/festapp
 na `feat/admin-mcp-form-settings-20261026`,
 navazuje na #615 a zůstává nenasazený. Při navázání ověřit aktuální stav celé
 review návaznosti a její heady; neslučovat ani nevydávat bez příslušné autorizace.
-Etapa 4 je nyní dokončená na `feat/admin-mcp-stage4-complete-20261026`,
+Etapa 4 je nyní dokončená v [PR #617](https://github.com/festappnet/festapp/pull/617)
+na `feat/admin-mcp-stage4-complete-20261026`,
 navazuje na #616 a zůstává nenasazená. Uzavřené jsou také veřejné odkazy,
 inline produkty a podporovaná pole, čekací nabídky včetně přijetí a obecné
 administrátorské objednávky. Nepřidávat další implementaci těchto operací.
 Další doménová etapa je 5: nastavení akce a pořadatele. Nejdřív dohledat její
 existující OccasionCommands/UnitCommands vlastníky a potvrzený rozsah plánu.
-Před navázáním ověřit stav review návaznosti #613 -> #615 -> #616 -> dokončení 4
+Před navázáním ověřit stav review návaznosti #613 -> #615 -> #616 -> #617
 uvedené v posledním checkpointu a případně přesměrovat base po merge rodičů.
 Před editací jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
 Navázat na existující SQL pravidla a receipts; UI i MCP vést jednou cestou.

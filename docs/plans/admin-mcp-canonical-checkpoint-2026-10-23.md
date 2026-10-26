@@ -1391,3 +1391,10 @@ Měření neznamená produkční latenci, úsporu tokenů ani nižší celkové 
 Produkce, ostatní tenanty a paid providers se neměnily. Navazující doménová etapa
 je 5 - nastavení akce a pořadatele. Před pokračováním ověřit review stack a čerstvý
 main, neimplementovat znovu formuláře ani jejich transakce.
+
+Dokončení etapy 4 publikováno jako [PR #617](https://github.com/festappnet/festapp/pull/617),
+base `feat/admin-mcp-form-settings-20261026`, implementation head
+`0ab724bc34b0a7e10f96a35fa9364ceecdbfc724`. Bezprostřední fetch před prvním
+pushem/PR potvrdil main `3988bb7cb` a parent #616 `a525f5aa5`; oba jsou předky
+navrženého headu. Aktuální review návaznost je #613 -> #615 -> #616 -> #617.
+Sloučení ani produkční rollout neproběhly; source digests nadále odpovídají ověření.

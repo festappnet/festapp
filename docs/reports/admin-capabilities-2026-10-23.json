@@ -1709,7 +1709,7 @@
     "nextStep": "Stejným způsobem prověřit rozsah a vlastníky etapy 5; rollout hotových etap zůstává samostatný krok.",
     "evidence": "admin-form-completion-evidence-2026-10-26.json"
   },
-  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 jsou publikované nebo připravené k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
+  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 (#617) jsou publikované k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
   "phases": [
     {
       "id": "0",

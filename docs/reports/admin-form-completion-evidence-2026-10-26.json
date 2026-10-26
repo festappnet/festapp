@@ -249,5 +249,14 @@
     "web_client/public/assets/translations/pl.json": "89cd0062d09e61f2a38ffae1c65bbf5956b5adc6d239d6f9e8b548544e0a593d",
     "web_client/public/assets/translations/sk.json": "4c6175090e058ae16daca20e82db148bae28de279e72c7a76bb93479701ec572",
     "web_client/public/assets/translations/uk.json": "2d3d58a79de65477f94c2883b238cdd03021a0973ab2feae55e84cc06ebf9310"
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/617",
+    "base": "feat/admin-mcp-form-settings-20261026",
+    "implementationHead": "0ab724bc34b0a7e10f96a35fa9364ceecdbfc724",
+    "mainAtFirstPush": "3988bb7cbaf8766068a84f49f759d5544269e325",
+    "parentAtFirstPush": "a525f5aa59d32d2b000159124e81c2818a9721e7",
+    "ancestryVerified": true,
+    "deployed": false
   }
 }
