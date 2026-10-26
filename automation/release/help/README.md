@@ -58,23 +58,32 @@ They require no server. The lower-level renderer owns a dedicated output
 directory named `napoveda`. Production generation accepts `--built-index` to
 include the same account header and theme assets as the homepage.
 
-## Webnode capture status (2026-10-24)
+## Webnode verification status (2026-10-26)
 
-A new free test account/project was created with synthetic content. Credentials
-are in the encrypted agent-browser profile `festapp-webnode-help`; project/session
-metadata are local-only under `.private/webnode/` (never commit these files).
-The project has not been published and no paid service was purchased.
+The existing synthetic project `moje-stranky-af13t0.webnode.cz` now has a
+support-activated Premium Standard trial until 2026-11-09 (case 2001921).
+No paid plan was purchased. Credentials remain in encrypted agent-browser profile
+`festapp-webnode-help`; this run's private state is in the task worktree's
+`.private/webnode/`.
 
-`media.json` records real Czech screenshots, dates, dimensions and accessible
-text. The renderer copies their content-addressed files into both help outputs.
-The new project's HTML action requires Premium. The package selection page
-offered purchases. Official support offers a free trial on request at
-https://www.webnode.com/support/free-trial/. A request was submitted from the
-account on 2026-10-24; support receipt 2001921 acknowledges it and activation
-is still pending as of 2026-10-25. Consequently the HTML paste,
-script preservation, automatic height and live published result are still
-unverified on Webnode. Do not describe the integration as end-to-end verified
-until a suitable Premium test project is available.
+Actual editor paste/save, cold readback, publication, script/attribute preservation,
+automatic height, inherited appearance, fixed-height inner keyboard scrolling
+and native fallback button/new-tab navigation passed. Chromium 320 px exercised
+seat hold/release, summary/back with retained fields, two local bank orders,
+QR decoding against SQL, reload without resubmission and clipboard copying.
+The published Webnode host and production client were real; purchase transport
+was adapted to a separately marked disposable localhost backend. Production
+form reads retained actual HTML/auth/CORS through the guarded relay. Real
+MobileSafari 26.5/iOS 26.5 simulator passed public render, necessary-cookie dismissal
+and scrolling to the bottom controls, with no production seat/order action.
+No real transfer, email delivery, external provider or physical iPhone pass is
+claimed. See [the receipt](../../../docs/development/webnode-embed-20261026/README.md).
+
+The original free-plan screenshots remain dated historical evidence. The new
+native mobile screenshot records the published result. The generator now emits
+`allow="clipboard-write"`; without delegation Chromium blocked payment-detail
+copying in the cross-origin iframe. Existing snippets must be regenerated and
+republished to obtain the corrected permission.
 
 ## Categories, global search and application links
 
