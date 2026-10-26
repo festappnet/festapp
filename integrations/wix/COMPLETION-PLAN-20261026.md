@@ -156,8 +156,8 @@ proof that its test was executed. Commercial/native portal gates stay separate.
   local cross-site checkout; no Submit was pressed and its order count stayed1.
   The temporary owned Editor QA URL was restored, cold-read and republished;
   public HTML confirms original QA URL and absence of temporary Country URL.
-  Full software-keyboard geometry, Safari payment handoff and physical hardware
-  remain unqualified. See the remaining-checks checklist and exact receipt.
+  At this wave, full software-keyboard geometry, Safari payment handoff and
+  physical hardware remained unqualified; bank/storage follow-up appears below. See the remaining-checks checklist and exact receipt.
 - Wave4 implemented: dedicated pinned CI job for wrapper/build plus shared
   embed/storage/hold, command identity, unknown outcome and payment handoff.
   Local43 targeted tests,4 handoff tests and15 Wix tests passed. The exact combined CI suite passes45 tests on reconciled main. GitHub
@@ -166,3 +166,22 @@ proof that its test was executed. Commercial/native portal gates stay separate.
 - Local checkout browser, Edge and backend stopped; retained volume preserves
   all3 recorded orders. No production orders/holds, external emails, billing
   changes, new support cases or other-tenant releases were performed.
+
+### Follow-up: native Safari storage and bank flow
+
+Executed in background on the same disposable device, source2e701e4de. Native
+Settings Block All Cookies enabled; the actual cross-site checkout iframe threw
+SecurityError for both storage APIs. Native input/summary succeeded, then one
+local submit created order233 (buyer0->1, form count1->2). Expanded bank QR
+decoded through native Vision and matched SQL150CZK/VS4412. Fresh parent navigation
+retained exactly that order, blanked the draft and did not resubmit. Occupied
+A1 in local form34 remained sold after native tap, with no secret/expiry.
+The settings toggle was restored OFF, task keyboard preference restored through
+the preferences API, device shut down and Vite/Edge/backend stopped with backup.
+Orders166/167/200/233 retained. No production write, transfer or external email.
+
+Software keyboard remains offscreen (AX q y898 on874px display). The initial
+local bank receipt also displayed literal icon names with overflow; later font
+diagnostics loaded the Material Icons face successfully but did not establish
+the original cause. Its layout remains unqualified; no app font fix is claimed.
+See `evidence/safari-storage-bank-20261026.json` for the exact boundary.
