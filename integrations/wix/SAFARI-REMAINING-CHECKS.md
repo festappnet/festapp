@@ -17,8 +17,10 @@ Still unqualified:
 
 - Full onscreen software-keyboard geometry and overlap while scrolling. AXe HID
   produced real input and an accessory bar, but not the full software keys.
-- Bank receipt icon/layout stability: the local run showed literal icon names
-  and overflow. A later explicit font load succeeded; original cause is unproven.
+- Production rollout of the receipt icon fix. A minimized actual renderer
+  reproduced overflow without its external font; local SVG status/copy icons
+  passed320px Chrome and background MobileSafari. The original Safari cold-load
+  trigger remains unproven. See `evidence/receipt-icons-20261026.json`.
 - Available-seat hold/expiry and external provider redirect/return in Safari.
   Bank instructions/QR and occupied-seat viewing are qualified only locally.
 - Physical iPhone hardware. The owner has no iPhone; no hardware pass is claimed.
