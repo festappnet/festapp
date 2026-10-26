@@ -122,10 +122,10 @@
     "category": "integrations",
     "slug": "wordpress",
     "title": "Sell tickets on WordPress",
-    "seoTitle": "WordPress ticket sales with or without a plugin",
-    "description": "Use the ticket form block and shortcode, or add a Custom HTML block without installing a plugin.",
+    "seoTitle": "WordPress ticket sales with a Custom HTML embed",
+    "description": "Generate the HTML embed, add it to a WordPress Custom HTML block and check the published form.",
     "label": "WordPress",
-    "preview": "en/wordpress/02-block-editor"
+    "preview": "en/wordpress/03-custom-html"
   },
   {
     "id": "webnode",

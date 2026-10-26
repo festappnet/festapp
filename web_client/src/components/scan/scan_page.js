@@ -53,14 +53,21 @@ export class ScanPage extends Component {
         }
     }
     async open(params) {
+        if (this.opening) return;
+        this.opening = true; this.error = null; this.render();
         try {
-            this.error = null; const session = await this.api.open(params);
+            const session = await this.api.open(params);
             if(this.client.scannerBackendContext)this.backend=this.client.scannerBackendContext;
             this.row = this.store ? await this.store.saveSession(session, this.backend) : { session, partition: null };
+            this.entryDraft = null;
             await this.select(this.row);
             // Secrets never survive the exchange in the URL/history.
             window.history.replaceState(null, '', this.route.page==='scan'?'/scan':'/scan/'+this.route.page);
-        } catch (err) { this.error = err.message; this.render(); }
+        } catch (err) { this.error = err.message; }
+        finally {
+            this.opening = false; this.render();
+            if (this.error && !this.row) this.host.querySelector(this.error==='invalid_scan_code'?'[name=code]':'#scan-entry-error')?.focus();
+        }
     }
     async select(row) {
         this.disposeControllers();this.batch=null;this.groupDetailController=null; this.sync?.stop(); this.summaryAt=0; this.row = row; this.api.session = row.session;
@@ -194,24 +201,24 @@ export class ScanPage extends Component {
         const percent=total ? Math.min(100,Math.round(used/total*100)) : 0;
         const needsSync=pending>0 || conflicts>0 || !navigator.onLine || this.transportOffline;
         const canPrepare=session?.settings?.offline?.enabled;
-        return `<main class="scan-shell"><header class="scan-header"><a class="scan-home" href="${e(this.returnPath || '/')}" aria-label="${tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a><h1>${e(session?.title || tr('scan'))}</h1><details class="scan-menu"><summary>${tr('options')}</summary><div class="scan-menu-panel"><p class="scan-menu-title">${tr('scanner_tools')}</p><nav aria-label="${tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${tr('sync_status')}</a>`:''}</nav><button data-theme>${icon('theme')}${tr('theme')}</button><button data-sound>${icon('sound')}${tr(this.sound?.ready?'sound_on':'sound_enable')}</button>${canPrepare?`<details class="scan-advanced"><summary>${tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details></header>
+        return `<main class="scan-shell ${session ? '' : 'scan-entry-shell'}"><header class="scan-header"><a class="scan-home" href="${e(this.returnPath || '/')}" aria-label="${tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a><h1>${e(session?.title || tr('scan'))}</h1>${session ? `<details class="scan-menu"><summary>${tr('options')}</summary><div class="scan-menu-panel"><p class="scan-menu-title">${tr('scanner_tools')}</p>${session ? `<nav aria-label="${tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${tr('sync_status')}</a>`:''}</nav>` : ''}<button data-theme>${icon('theme')}${tr('theme')}</button>${session ? `<button data-sound>${icon('sound')}${tr(this.sound?.ready?'sound_on':'sound_enable')}</button>` : ''}${canPrepare?`<details class="scan-advanced"><summary>${tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details>` : `<button data-theme aria-label="${tr('theme')}" title="${tr('theme')}">${icon('theme')}</button>`}</header>
         <div class="scan-status" role="status"><span class="scan-connection ${navigator.onLine && !this.transportOffline ? 'is-online' : 'is-offline'}"><span class="scan-dot"></span>${tr(navigator.onLine && !this.transportOffline ? 'online' : 'offline')}</span>${sum ? `<span class="scan-count">${tr('used')}: <strong>${sum.used_current.toLocaleString()} <span>/ ${sum.eligible_total.toLocaleString()}</span></strong><span class="scan-percent">${percent} %</span></span>` : ''}${pending ? `<span class="scan-pending-count">${tr('pending_count')}: ${pending}</span>` : ''}${conflicts ? `<span>${tr('conflicts')}: ${conflicts}</span>` : ''}${sum ? `<div class="scan-progress" role="progressbar" aria-label="${tr('used')}" aria-valuemin="0" aria-valuemax="${total||1}" aria-valuenow="${Math.min(used,total)}" aria-valuetext="${used} / ${total} (${percent} %)"><span style="width:${percent}%"></span></div>` : ''}</div>
-        ${!navigator.onLine || this.transportOffline ? `<p class="scan-offline-notice"><a href="/scan/offline">${tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
+        ${session && (!navigator.onLine || this.transportOffline) ? `<p class="scan-offline-notice"><a href="/scan/offline">${tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
         ${!this.storageAvailable ? `<p class="scan-warning" role="alert">${tr('storage_failed')}</p>` : ''}
         ${this.authBlocked ? `<p class="scan-warning">${tr('blocked_auth')}</p>` : ''}
         ${this.message ? `<p role="status">${e(this.message)}</p>` : ''}
-        ${this.error ? `<p class="scan-warning" role="alert">${e(reasonText(this.error))}</p>` : ''}
+        ${this.error && this.row ? `<p class="scan-warning" role="alert">${e(reasonText(this.error))}</p>` : ''}
         ${content}</main>`;
     }
     render() {
         if (this.disposed || this.settingsPage) return;
         const c = this.controller;
-        const drafts = c?.state==='ready' && this.mode==='manual' ? [...this.host.querySelectorAll('[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
+        const drafts = !this.row || c?.state==='ready' && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
+        if (!this.row && drafts.length) this.entryDraft = Object.fromEntries(drafts.map(({name,value})=>[name,value]));
         const liveVideo = this.mode==='camera' && this.route.page==='scan' && this.input?.stream ? this.input.video : null;
         if (!liveVideo) this.input?.stop();
         let content;
-        if (!this.row) content = `<section class="scan-settings"><h2>${tr('open')}</h2><form data-open><label>${tr('scan_code')}<input name="code" autocomplete="off" required maxlength="100"></label><label>${tr('device')}<input name="device" required maxlength="80" value="${tr('device')}"></label><button class="scan-primary">${tr('open')}</button></form>
-        <h3>${tr('saved_sessions')}</h3>${this.rows.map((r,i)=>`<button data-session="${i}">${e(r.session.title)} · ${e(r.session.device_name)}${r.locked ? ' ('+tr('blocked_auth')+')' : ''}</button>`).join('')}</section>`;
+        if (!this.row) content = this.entryHtml();
         else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${tr('search_more')}</button>`:''}</section>`;
         else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${tr('offline')}</h2><p>${tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
         ${this.snapshot ? `<p>${tr('prepared')}: ${this.snapshot.ticket_count} ${tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
@@ -230,6 +237,24 @@ export class ScanPage extends Component {
             if(!input)continue;input.value=draft.value;
             if(draft.focused){input.focus({preventScroll:true});input.setSelectionRange(draft.start,draft.end);}
         }
+    }
+    entryHtml() {
+        const invalidCode = this.error === 'invalid_scan_code';
+        const error = this.error ? `<div class="scan-entry-error" id="scan-entry-error" role="alert" tabindex="-1">${icon('alert')}<div><strong>${e(reasonText(this.error))}</strong>${invalidCode ? `<p>${tr('entry_code_retry')}</p>` : ''}</div></div>` : '';
+        return `<section class="scan-entry" aria-labelledby="scan-entry-title">
+            <h2 id="scan-entry-title">${tr('open')}</h2><p class="scan-entry-intro">${tr('entry_intro')}</p>
+            <form data-open aria-busy="${Boolean(this.opening)}">
+                <div class="scan-entry-field"><label for="scan-entry-code">${tr('scan_code')}</label>
+                <input id="scan-entry-code" name="code" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="100" value="${e(this.entryDraft?.code || '')}" aria-invalid="${invalidCode}" aria-describedby="scan-code-hint${invalidCode?' scan-entry-error':''}" ${this.opening?'readonly':''}>
+                ${invalidCode ? error : ''}<p class="scan-entry-hint" id="scan-code-hint">${tr('entry_code_hint')}</p></div>
+                <div class="scan-entry-field"><label for="scan-entry-device">${tr('device')}</label>
+                <input id="scan-entry-device" name="device" autocomplete="off" required maxlength="80" value="${e(this.entryDraft?.device ?? tr('this_device'))}" aria-describedby="scan-device-hint" ${this.opening?'readonly':''}>
+                <p class="scan-entry-hint" id="scan-device-hint">${tr('entry_device_hint')}</p></div>
+                ${!invalidCode ? error : ''}
+                ${!navigator.onLine ? `<p class="scan-entry-network" role="status">${tr('entry_offline')}</p>` : ''}
+                <button class="scan-primary" ${this.opening || !navigator.onLine?'disabled':''}>${this.opening?tr('entry_opening'):tr('open')}${icon(this.opening?'clock':'arrow')}</button>
+            </form>
+        </section>${this.rows.length ? `<section class="scan-saved" aria-labelledby="scan-saved-title"><h2 id="scan-saved-title">${tr('saved_sessions')}</h2><p class="scan-entry-hint">${tr('entry_saved_hint')}</p><div class="scan-saved-list">${this.rows.map((r,i)=>`<button data-session="${i}" ${this.opening?'disabled':''}><span><strong>${e(r.session.title)}</strong><span class="scan-saved-device">${e(r.session.device_name)}</span>${r.locked ? `<span class="scan-saved-locked">${tr('blocked_auth')}</span>` : ''}</span>${icon('arrow')}</button>`).join('')}</div></section>` : ''}`;
     }
     historyHtml(onlyOpen = false) {
         const rows = this.history.filter(r => !onlyOpen || !isTerminal(r.state) || r.state==='conflict').sort((a,b)=>b.payload.captured_at.localeCompare(a.payload.captured_at));
@@ -320,7 +345,7 @@ export class ScanPage extends Component {
         this.settingsPage=new ScannerSettingsPage(this.host,{api:this.api,session:this.row.session,returnPath:this.returnPath,onBack:()=>location.assign('/scan')}); await this.settingsPage.init();
     }
     clear() {
-        this.disposed=true;clearTimeout(this.advanceTimer);this.sound.dispose();this.host.removeEventListener('pointerdown',this.onGesture,true);this.host.removeEventListener('keydown',this.onGesture,true);clearInterval(this.interval);this.input?.dispose();this.disposeControllers();this.sync?.stop();this.settingsPage?.clear();
+        this.disposed=true;this.entryDraft=null;clearTimeout(this.advanceTimer);this.sound.dispose();this.host.removeEventListener('pointerdown',this.onGesture,true);this.host.removeEventListener('keydown',this.onGesture,true);clearInterval(this.interval);this.input?.dispose();this.disposeControllers();this.sync?.stop();this.settingsPage?.clear();
         window.removeEventListener('online',this.onNetwork);window.removeEventListener('offline',this.onNetwork);window.removeEventListener('beforeunload',this.onUnload);document.removeEventListener('visibilitychange',this.onVisible);this.referrerMeta?.remove();delete window.festappScannerCanReload;this.store?.close();super.clear();
     }
 }

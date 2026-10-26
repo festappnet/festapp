@@ -949,6 +949,13 @@
     "standing": "Miejsce stojące"
   },
   "Scanner": {
+    "entry_intro": "Połącz to urządzenie z wydarzeniem i rozpocznij sprawdzanie biletów.",
+    "entry_code_hint": "Kod otrzymasz od organizatora wydarzenia.",
+    "entry_code_retry": "Sprawdź kod lub poproś organizatora o nowy.",
+    "entry_device_hint": "Na przykład „Wejście główne”. Kontrole biletów będą zapisywane pod tą nazwą.",
+    "entry_offline": "Połączenie z nowym wydarzeniem wymaga dostępu do internetu.",
+    "entry_opening": "Łączenie…",
+    "entry_saved_hint": "Kontynuuj wydarzenie zapisane w tej przeglądarce.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",

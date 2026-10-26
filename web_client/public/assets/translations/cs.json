@@ -3471,6 +3471,13 @@
     "standing": "Stání"
   },
   "Scanner": {
+    "entry_intro": "Připojte toto zařízení k akci a začněte kontrolovat vstupenky.",
+    "entry_code_hint": "Kód Vám poskytne pořadatel akce.",
+    "entry_code_retry": "Zkontrolujte kód nebo požádejte pořadatele o nový.",
+    "entry_device_hint": "Například „Hlavní vstup“. Pod tímto názvem budou zaznamenány kontroly vstupenek.",
+    "entry_offline": "Pro připojení nové akce potřebujete internet.",
+    "entry_opening": "Připojování…",
+    "entry_saved_hint": "Pokračujte v akci uložené v tomto prohlížeči.",
     "manual_once": "Po potvrzení pokračujete opět kamerou.",
     "sound_on": "Zvuk zapnutý",
     "sound_off": "Zvuk vypnutý",

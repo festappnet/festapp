@@ -1791,6 +1791,13 @@
     }
   },
   "Scanner": {
+    "entry_intro": "Підключіть цей пристрій до події та почніть перевіряти квитки.",
+    "entry_code_hint": "Код надасть організатор події.",
+    "entry_code_retry": "Перевірте код або попросіть організатора надати новий.",
+    "entry_device_hint": "Наприклад, «Головний вхід». Перевірки квитків записуватимуться під цією назвою.",
+    "entry_offline": "Для підключення до нової події потрібен інтернет.",
+    "entry_opening": "Підключення…",
+    "entry_saved_hint": "Продовжіть подію, збережену в цьому браузері.",
     "manual_once": "After confirmation, continue with the camera.",
     "sound_on": "Sound on",
     "sound_off": "Sound off",

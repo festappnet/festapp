@@ -6,7 +6,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'../..');
-test('public guides render crawlable linked documents, code generator and exact plugin download',t=>{
+test('public guides render crawlable linked documents, code generator without unpublished plugin downloads',t=>{
  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
  const target=path.join(temporary,'napoveda');const config=path.join(temporary,'project.conf');
  fs.writeFileSync(config,'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
@@ -78,9 +78,8 @@ test('public guides render crawlable linked documents, code generator and exact 
  const scanner=fs.readFileSync(path.join(target,'nastaveni-skeneru/index.html'),'utf8');
  assert.match(scanner,/href="\/events\?help=scanner-settings" target="_blank"/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
- const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/vstupenky_online url=/);
- const zip=fs.readdirSync(path.join(target,'assets')).find(name=>name.endsWith('.zip'));const packageZip=fs.readFileSync(path.join(root,'integrations/wordpress/dist',zip));
- assert.equal(createHash('sha256').update(fs.readFileSync(path.join(target,'assets',zip))).digest('hex'),createHash('sha256').update(packageZip).digest('hex'));
+ const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.doesNotMatch(wordpress,/vstupenky_online url=|s-doplnkem|\.zip/);
+ assert.equal(fs.readdirSync(path.join(target,'assets')).some(name=>name.endsWith('.zip') || /wordpress-(01|02)-/.test(name)),false,'unpublished plugins and their setup captures stay out of help');
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
  const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);
