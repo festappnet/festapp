@@ -207,16 +207,16 @@ writes, preview and issued-ticket actions remain separate waves.
 
 ## Hosted OAuth pilot: connect in a browser
 
-The live regional endpoint is `https://mcp.vstupenky.online/mcp`. The former
-`mcp.festapp.net` endpoint is retired with HTTP 410. The regional cutover and
-first-party ChatGPT consent completed on 2026-10-27; the account discovers six
-read tools. See the [pilot record](../../docs/operations/chatgpt-mcp-pilot-2026-10-26.md)
-for executed acceptance cases and remaining checks.
+The currently live endpoint is `https://mcp.festapp.net/mcp`. Its replacement is
+`https://mcp.vstupenky.online/mcp`, approved for the regional portal. Complete the
+[regional cutover](../../docs/plans/chatgpt-mcp-plan-2026-10-26.md#wave-2b---regional-endpoint-cutover-added-by-user-decision-2026-10-27)
+before further ChatGPT setup or acceptance. The new host is not yet deployed.
+Public health/discovery alone does not establish a user connection.
 
-Add the regional URL as a custom remote MCP server named `vstupenky.online` in ChatGPT, choose
+After the cutover, add the new regional URL as a custom remote MCP server in ChatGPT, choose
 OAuth and the pre-registered public client `festapp-chatgpt` with no client secret.
 Register the exact callback shown by ChatGPT's server management page. The
-verified account configuration uses its stable callback
+prepared configuration uses its stable callback
 `https://chatgpt.com/connector_platform_oauth_redirect`; issuer identification is
 advertised and verified locally. Automatic/open client registration is disabled.
 
@@ -234,9 +234,9 @@ per-client issuer ceiling; omitted ceilings preserve existing clients. Configure
 `festapp-chatgpt` with base + order read for the regional pilot. Never remove this
 ceiling to make a rollback image accept old configuration.
 
-The regional account connection is named **vstupenky.online**, powered by Festapp.
+The regional account connection is named **vstupenky.online**, powered by FestUp.
 Its optional `regionalPortal` configuration explains this relationship on consent;
-global Festapp Tickets deployments omit it. The
+global FestUp Tickets deployments omit it. The
 [brand/URL decision](../../docs/plans/chatgpt-mcp-branding-and-urls-2026-10-27.md)
 distinguishes two branded listings from the shared operation implementation.
 No new global registration or public directory submission is included. The live
@@ -305,26 +305,3 @@ for a separate MCP-owned Auth session over the first-party Edge broker. No app
 refresh token is shared and no token is placed in a redirect URL. Deployment
 variables and security boundaries are documented in the
 [first-party consent contract](../../docs/architecture/operations/remote-mcp-auth.md#first-party-tenant-consent).
-
-### Per-client data profiles
-
-The protected server registration chooses `clients[].dataProfile` independently
-of OAuth scopes, model vendor, client name, and event consent:
-
-- `operator` (backwards-compatible default) preserves ordinary operator DTOs,
-  including buyer fields and registration answers when the granted scopes and
-  live event permissions allow them. Use a separate registered client for a
-  trusted private model or native operator integration.
-- `order-summary` exposes order identifiers/symbols, states, counts and monetary
-  totals, withholding buyer contacts, notes, answers, field definitions and
-  ticket/product free text. It also omits the connected user ID from context and
-  permits only exact-symbol order search. Bounded incomplete search returns an
-  explicit error rather than a false empty result.
-
-The public `festapp-chatgpt` registration must explicitly select `order-summary`
-(as recorded in `integrations/chatgpt/client-policy.json`). A request, prompt or
-OAuth scope cannot upgrade this server-owned profile. A private client selecting
-`operator` still cannot exceed its independent scope ceiling, user consent or
-live backend permissions. Existing native/operator clients retain their current
-profile and operations; this is not a system-wide MCP redaction. Event labels,
-aggregate reports and template configuration remain organizer-authored content.

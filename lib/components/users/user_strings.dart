@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import '../../app_config.dart';
 
 class UserStrings {
   static String get invitationQueued => 'FeatureUser.invitationQueued'.tr();
@@ -17,8 +16,7 @@ class UserStrings {
   static String get googleTerms => 'FeatureUser.googleTerms'.tr();
   static String get googlePrivacy => 'FeatureUser.googlePrivacy'.tr();
   static String get googleContinue => 'FeatureUser.googleContinue'.tr();
-  static String get googleSubtitle =>
-      'FeatureUser.googleSubtitle'.tr(namedArgs: {'appName': AppConfig.appName});
+  static String get googleSubtitle => 'FeatureUser.googleSubtitle'.tr();
   static String get googleOr => 'FeatureUser.googleOr'.tr();
   static String get googleClose => 'FeatureUser.googleClose'.tr();
   static String get googleOpening => 'FeatureUser.googleOpening'.tr();
