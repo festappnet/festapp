@@ -721,35 +721,20 @@ class _LayoutInspectorState extends State<LayoutInspector> {
         }
       }
 
-      Widget step(int direction, VoidCallback commit) {
-        final label =
-            '${VenueLayoutStrings.text(context, labels[side])}: ${VenueLayoutStrings.text(context, direction < 0 ? 'Remove one seat' : 'Add one seat')}';
-        return IconButton(
-          tooltip: label,
-          constraints: const BoxConstraints.tightFor(width: 32, height: 40),
-          style: IconButton.styleFrom(
-            minimumSize: const Size(32, 40),
-            maximumSize: const Size(32, 40),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          padding: EdgeInsets.zero,
-          iconSize: 20,
-          onPressed: enabled && allowed(counts[side] + direction)
-              ? () {
-                  commit();
-                  final live = c.document.nodes.firstWhere(
-                    (n) => n.id == table.id,
-                  );
-                  save(_tableEdgeValues(live)[side] + direction);
-                }
-              : null,
-          icon: Icon(
-            direction < 0
-                ? Icons.remove_circle_outline
-                : Icons.add_circle_outline,
-          ),
-        );
-      }
+      Widget step(int direction, VoidCallback commit) => _seatCountStep(
+        tooltip:
+            '${VenueLayoutStrings.text(context, labels[side])}: ${VenueLayoutStrings.text(context, direction < 0 ? 'Remove one seat' : 'Add one seat')}',
+        direction: direction,
+        onPressed: enabled && allowed(counts[side] + direction)
+            ? () {
+                commit();
+                final live = c.document.nodes.firstWhere(
+                  (n) => n.id == table.id,
+                );
+                save(_tableEdgeValues(live)[side] + direction);
+              }
+            : null,
+      );
 
       return Expanded(
         child: _field(
@@ -794,6 +779,34 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     );
   }
 
+  Widget _seatCountStep({
+    required String tooltip,
+    required int direction,
+    required VoidCallback? onPressed,
+  }) => IconButton(
+    tooltip: tooltip,
+    constraints: const BoxConstraints.tightFor(width: 32, height: 40),
+    style:
+        IconButton.styleFrom(
+          minimumSize: const Size(32, 40),
+          maximumSize: const Size(32, 40),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ).copyWith(
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            final color = Theme.of(context).colorScheme.onSurface;
+            return states.contains(WidgetState.disabled)
+                ? color.withValues(alpha: .38)
+                : Theme.of(context).colorScheme.onSurfaceVariant;
+          }),
+        ),
+    padding: EdgeInsets.zero,
+    iconSize: 20,
+    onPressed: onPressed,
+    icon: Icon(
+      direction < 0 ? Icons.remove_circle_outline : Icons.add_circle_outline,
+    ),
+  );
+
   void _stepSeatCount(LayoutNode node, int direction) {
     final count = isCouchNode(node)
         ? couchSeatCount(c.document, node.id)
@@ -833,34 +846,33 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _field(
-                couch ? 'Seats on couch' : 'Seats',
-                '$count',
-                (value) => c.setSeatCount(node.id, int.parse(value)),
-                numeric: true,
-                enabled: enabled,
-                integerMax: maximum,
-                acceptsInteger: allowed,
-              ),
-            ),
-            IconButton(
-              tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
-              onPressed: enabled && allowed(count - 1)
-                  ? () => _stepSeatCount(node, -1)
-                  : null,
-              icon: const Icon(Icons.remove_circle_outline),
-            ),
-            IconButton(
-              tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
-              onPressed: enabled && allowed(count + 1)
-                  ? () => _stepSeatCount(node, 1)
-                  : null,
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-          ],
+        _field(
+          couch ? 'Seats on couch' : 'Seats',
+          '$count',
+          (value) => c.setSeatCount(node.id, int.parse(value)),
+          numeric: true,
+          enabled: enabled,
+          integerMax: maximum,
+          acceptsInteger: allowed,
+          suffixBuilder: (commit) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final direction in [-1, 1])
+                _seatCountStep(
+                  tooltip: VenueLayoutStrings.text(
+                    context,
+                    direction < 0 ? 'Remove one seat' : 'Add one seat',
+                  ),
+                  direction: direction,
+                  onPressed: enabled && allowed(count + direction)
+                      ? () {
+                          commit();
+                          _stepSeatCount(node, direction);
+                        }
+                      : null,
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 4),
         Text(
