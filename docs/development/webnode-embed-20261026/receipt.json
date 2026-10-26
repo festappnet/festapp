@@ -292,7 +292,9 @@
         "currency": "CZK",
         "bankAccount": "CZ7001000000000000123457",
         "variableSymbol": 7877
-      }
+      },
+      "orderId": 166,
+      "secondOrderQrDecoded": false
     },
     "htmlTemplateSha256": "c1e035f1517e34b14cc82305364a717ad1031842ed0790983148c31126ed0c5c"
   },
@@ -383,5 +385,10 @@
     "passed": 7,
     "failed": 0,
     "generatedCzechAndEnglishPreviews": true
+  },
+  "review": {
+    "source": "PASS",
+    "evidenceCorrection": "Narrowed QR decoding claim explicitly to first order166/VS7877; second QR not claimed",
+    "productionDeploymentImplied": false
   }
 }

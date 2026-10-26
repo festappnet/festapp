@@ -19,7 +19,7 @@ snippets require replacement and republication.
 | Fixed height without helper | Actual published iframe 800 px; natural content 1122 px and native focus/PageDown reached inner scrollY 322. |
 | Fallbacks | Generated standalone link and native Webnode “Koupit vstupenky” button opened the correct canonical form in a new task tab. |
 | Seating and summary | Actual pointer release and keyboard select reached local SQL; Escape and summary Close retained synthetic email/name/seat. |
-| Bank checkout | Two distinct local fixtures/buyers produced one 150 CZK order each; each had exactly one send-ticket-order POST. QR decoded to the same account/amount/currency/variable symbol as SQL. |
+| Bank checkout | Two distinct local fixtures/buyers produced one 150 CZK order each; each had exactly one send-ticket-order POST. The first order’s QR decoded to the same account/amount/currency/variable symbol as SQL. |
 | Reload | First accepted order remained single and sold after parent reload; blank form, no automatic resubmit. |
 | Clipboard regression | Before: policy false, no copied state. Cold new published candidate: policy true and native copy action succeeded. |
 | Native MobileSafari | Real iOS 26.5/iPhone 17 Pro Simulator, 402x874: published form, necessary-cookie dismissal, native swipe and bottom controls passed. Simulator remained inactive/hidden with 0 visible Mac windows. |
