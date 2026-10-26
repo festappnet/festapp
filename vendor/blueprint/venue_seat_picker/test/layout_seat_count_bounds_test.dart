@@ -29,6 +29,53 @@ Future<void> mountInspector(
 }
 
 void main() {
+  testWidgets('total count groups steppers and disables both boundary states', (
+    tester,
+  ) async {
+    final original = tableLayout(
+      shape: 'rectangle',
+      count: 0,
+      width: 240,
+      height: 120,
+    );
+    final table = original.nodes.firstWhere((n) => n.kind == 'table');
+    final c = VenueLayoutController(original)..select({table.id});
+    await mountInspector(tester, c);
+    final field = find.widgetWithText(TextField, 'Seats');
+    await tester.ensureVisible(field);
+    IconButton step(String label) => tester.widget<IconButton>(
+      find
+          .ancestor(
+            of: find.byTooltip(label),
+            matching: find.byType(IconButton),
+          )
+          .first,
+    );
+    final suffix = tester.widget<TextField>(field).decoration!.suffixIcon!;
+    expect(suffix, isA<Row>());
+    expect((suffix as Row).mainAxisSize, MainAxisSize.min);
+    expect(suffix.children, hasLength(2));
+    expect(step('Remove one seat').onPressed, isNull);
+    expect(step('Add one seat').onPressed, isNotNull);
+    expect(step('Top seats: Remove one seat').onPressed, isNull);
+    final style = step('Remove one seat').style!;
+    expect(
+      style.foregroundColor!.resolve({WidgetState.disabled}),
+      isNot(style.foregroundColor!.resolve({})),
+    );
+    final maximum = tableCapacity(table);
+    await tester.enterText(field, '$maximum');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(c.document.nodes.where((n) => n.kind == 'seat'), hasLength(maximum));
+    expect(step('Add one seat').onPressed, isNull);
+    expect(step('Remove one seat').onPressed, isNotNull);
+    for (final side in ['Top', 'Right', 'Bottom', 'Left']) {
+      expect(step('$side seats: Add one seat').onPressed, isNull);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'side counts reject overflow while typing and allow clearing and replacing',
     (tester) async {

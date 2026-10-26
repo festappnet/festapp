@@ -1,5 +1,7 @@
 ## 0.4.2
 
+- Group total seat-count steppers inside the field and visibly dim unavailable actions.
+
 - Keep imported tables editable when their legacy metadata also marks them as decoration.
 - Keep seat-count digits visible beside compact circular controls in narrow localized inspectors.
 
