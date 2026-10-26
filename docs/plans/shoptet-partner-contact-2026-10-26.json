@@ -1,0 +1,18 @@
+{
+  "state": "PARTNER_INQUIRY_SENT",
+  "sent_recorded_at": "2026-10-26T21:03:41.143673+00:00",
+  "channel": "email",
+  "to": "api@shoptet.cz",
+  "reply_to": "info@festapp.net",
+  "subject": "vstupenky.online - zájem o API partnerství a doplněk pro Shoptet",
+  "gmail_message_id": "1a17a063a048fad2",
+  "gmail_thread_id": "1a17a063a048fad2",
+  "gmail_labels": [
+    "SENT"
+  ],
+  "duplicate_search_results": 0,
+  "recipient_source": "https://developers.shoptet.com/api/basic-information/",
+  "scope": "Initial technical/business inquiry using user-approved wording. Not a marketplace application, agreement, fixed-fee acceptance or addon approval.",
+  "delivery_confirmed": false,
+  "form_submitted": false
+}
