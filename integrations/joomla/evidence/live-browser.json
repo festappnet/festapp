@@ -1,0 +1,31 @@
+{
+  "boundary": "actual installed Joomla module -> actual https://vstupenky.online helper/form; no DNS override, mocks, purchase or seat selection",
+  "checks": [
+    {
+      "path": "/terms/",
+      "rendered": true
+    },
+    {
+      "path": "/privacy/",
+      "rendered": true
+    },
+    {
+      "path": "/support/",
+      "rendered": true
+    },
+    {
+      "installed_module_real_production_form": true,
+      "auto_height_mobile": {
+        "frameCount": 1,
+        "height": 1019,
+        "helperCount": 1,
+        "scrollWidth": 320,
+        "src": "https://vstupenky.online/form/country_bal_vetrkovice?embed=1",
+        "width": 320
+      },
+      "seat_map_open_and_escape": true,
+      "orders_submitted": 0,
+      "seats_selected": 0
+    }
+  ]
+}

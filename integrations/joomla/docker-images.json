@@ -1,0 +1,5 @@
+{
+  "joomla6": "joomla:6.1.4-php8.4-apache@sha256:3ee419ae27856ad06739fd854856059b5bb215a9bbc7bb2f68b6bd63638e01cd",
+  "joomla5": "joomla:5.4.10-php8.3-apache@sha256:5f98e730b5b5ce7951d2d055899d346f4ade4dfc6e1ed94dd15fbcea8f88d3a1",
+  "database": "mariadb:lts@sha256:99c125f103f5d081ebbc9ffe064e63daf7f688ac33a5f7f29af2d7260a96debf"
+}

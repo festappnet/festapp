@@ -1,0 +1,49 @@
+{
+  "status": "APPROVED",
+  "reviewed_at": "2026-10-26T08:50:10.720017+00:00",
+  "reviewer_role": "independent critic subagent",
+  "approval_scope": "Technical readiness to publish only the exact Czech vstupenky.online 1.0.1 ZIP after the repository-required external review. This is not evidence that public ZIP/feed URLs are currently available, and is not JED approval.",
+  "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "verification_sha256": "d4b8f0996cea8171ad168b8c450fcd6c59a458d4ee07557140bb5fe0ef9ca9a8",
+  "documentation_sha256": {
+    "README.md": "43c439aa71fc7ddc200eee1f65472a1fa1db0eb9d4e1e65343339a433349e586",
+    "SUBMISSION.md": "10b564102e9547befd603603873e4bfd57f4a16978d14b22f642edbbb007df33",
+    "dist/RELEASE-NOTES.md": "955567b01ac7b03d34ba1284edd58c0887d1ff000f3d717358c0677d4c1c5ec0"
+  },
+  "unresolved_release_blockers": [],
+  "findings_resolutions": [
+    {
+      "finding": "First native publication had previously been replaced by direct seed writes.",
+      "resolution": "Final full suite creates and publishes a new module using native Joomla selection/forms/controllers, reads back the public position, inserts the new ID through native article save, and restores the three-instance baseline on both CMS versions."
+    },
+    {
+      "finding": "Article cache and helper mode assertions previously had masking/coverage gaps.",
+      "resolution": "Actual article-only dispatcher pages pass all four mode/style combinations on cold and warm cache for both CMS versions; fixed/no-style has zero helper scripts."
+    },
+    {
+      "finding": "Browser checks previously did not prove modal disappearance or new-tab navigation.",
+      "resolution": "Final browser test asserts map controls disappear after Escape and keyboard fallback opens the actual expected URL in a new tab."
+    },
+    {
+      "finding": "Startup and packaging/evidence could previously race or drift.",
+      "resolution": "Bounded CLI/config/version/HTTP readiness is implemented. Immutable digest ZIPs and a successful full frozen-input verification bind 34 source/tool/test files and 13 result receipts to the exact Czech archive. Independently recomputed final hashes match."
+    },
+    {
+      "finding": "Distribution metadata and updater were previously absent or unproven.",
+      "resolution": "Only Czech1.0.1 gains the update channel. Candidate/product/tag/URL/manifest/feed cross-checks are implemented; real Joomla discovery, download, SHA-256 and installer preserve settings on both CMS versions. Public transport remains a separately recorded effect."
+    },
+    {
+      "finding": "Prior403 probes and production service compatibility were unresolved.",
+      "resolution": "Same-client header comparison records default Python-urllib403/error1010 versus descriptive probe200. Seven actual resources pass content checks. Separate unmapped headless browser confirms real legal/support pages and actual installed Joomla to real production form at320px with1019px auto-height and opening/closing the map, zero orders and zero seats selected."
+    },
+    {
+      "finding": "Release documentation needed to distinguish reviewed candidate, publication and catalog approval.",
+      "resolution": "Final README, SUBMISSION and release notes clearly identify the Czech release, updater limitations, supported verified versions, manual first upgrade from local1.0.0, GPL/service boundaries and separate public/JED steps."
+    }
+  ],
+  "external_publication_prerequisites": [
+    "Obtain the repository-required PR approval and merge the reviewed source to authoritative main; do not bypass branch protection.",
+    "Publish the sealed Czech release asset and stable feed, then pass release-gate.py --public against actual public bytes and verify the public update channel in isolated Joomla before claiming publication.",
+    "Any JED submission remains a separate authorized external/catalog process."
+  ]
+}

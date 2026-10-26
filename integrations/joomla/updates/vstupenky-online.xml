@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+  <update>
+    <name>vstupenky.online</name>
+    <description>Prodej vstupenek na webu Joomla přes uložený veřejný formulář.</description>
+    <element>mod_vstupenky_online</element>
+    <type>module</type><client>site</client>
+    <version>1.0.1</version>
+    <infourl title="vstupenky.online pro Joomla">https://github.com/festappnet/festapp/tree/main/integrations/joomla</infourl>
+    <downloads><downloadurl type="full" format="zip">https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip</downloadurl></downloads>
+    <sha256>8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f</sha256>
+    <tags><tag>stable</tag></tags>
+    <maintainer>Festapp</maintainer><maintainerurl>https://vstupenky.online/support/</maintainerurl>
+    <targetplatform name="joomla" version="(5\.4|6\.1)" />
+    <php_minimum>8.3</php_minimum>
+  </update>
+</updates>

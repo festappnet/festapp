@@ -1,0 +1,10 @@
+{
+  "joomla": "5.4.10",
+  "php": "8.3.36",
+  "version": "1.0.1",
+  "sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "manifest_registers_public_update_url": true,
+  "native_discovery_download_checksum_install": true,
+  "settings_preserved": true,
+  "boundary": "local HTTP feed with same version/checksum/package bytes, synthetic older-version metadata; public URLs require publication readback"
+}

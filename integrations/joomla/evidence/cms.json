@@ -1,0 +1,32 @@
+[
+  {
+    "joomla_major": 5,
+    "checks": [
+      "native login and save/reload",
+      "no admin iframe or external helper",
+      "CSRF rejects mutation",
+      "guest and registered ACL",
+      "invalid URL rejected by CMS",
+      "position and article",
+      "two brands, three instances",
+      "one helper per origin",
+      "global cache enabled/reload",
+      "same-version reinstall preserves settings"
+    ]
+  },
+  {
+    "joomla_major": 6,
+    "checks": [
+      "native login and save/reload",
+      "no admin iframe or external helper",
+      "CSRF rejects mutation",
+      "guest and registered ACL",
+      "invalid URL rejected by CMS",
+      "position and article",
+      "two brands, three instances",
+      "one helper per origin",
+      "global cache enabled/reload",
+      "same-version reinstall preserves settings"
+    ]
+  }
+]
