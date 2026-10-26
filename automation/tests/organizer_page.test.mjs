@@ -1,3 +1,4 @@
+import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +12,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   mkdirSync(join(root, 'web_client'), { recursive: true });
+  cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
+  cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web/organizers-media',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
@@ -112,6 +115,9 @@ test('actual build stamping uses configured canonical origin and the shared clas
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
   for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
+  for (const asset of ['organizers/updates/cs/index','organizers/updates/en/index']) {mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture');}
+  writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(publicManifest(resolveContext(readConfig(config)))));
+  writeFileSync(join(root,'platform-updates.json'),JSON.stringify({schemaVersion:1,items:[]}));
   const python = script.match(/python3 - build\/web\/_worker.js automation\/project.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
   const result = spawnSync('python3', ['-', worker, config], { input: python, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -123,6 +129,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   for (const domain of ['other.invalid', 'plesy.vstupenky.online']) {
     writeFileSync(config, `WEB_LINK=https://${domain}\nAPP_NAME=Other\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n`);
     writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
+    writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(publicManifest(resolveContext(readConfig(config)))));
     const other = spawnSync('python3', ['-', worker, config], {input:python, encoding:'utf8'});
     assert.equal(other.status,0,other.stderr);
     assert.ok(readFileSync(worker,'utf8').includes('\"enabled\": false'));
@@ -158,6 +165,7 @@ test('English uses the same template, no Czech references, and requires real Eng
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
+  cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   const mediaPath = join(root, 'automation/release/organizers/clips.en.json');
   const mediaFixture = JSON.parse(readFileSync(mediaPath, 'utf8'));
   for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';

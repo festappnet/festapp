@@ -1,8 +1,11 @@
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {renderUpdate} from '../release/platform_updates/render.mjs';
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,readFileSync} from 'node:fs';
 import { getOccasionHref } from '../../web_client/src/components/occasion/occasion_link.js';
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
@@ -423,4 +426,39 @@ test('registered marketing documents precede occasion redirects in ticketing-onl
   }
   const legacy=await ticketing.fetch(new Request(context.origin+'/legacy-occasion/event'),fixture);
   assert.equal(legacy.status,302);assert.equal(legacy.headers.get('location'),context.origin+'/');
+});
+
+test('both update locales, closed namespaces, query-preserving 308 and JSON share the public registry',async t=>{
+ t.mock.method(globalThis,'fetch',async()=>Response.json({occasions:[]}));
+ const registry=publicManifest(resolveContext(readConfig(new URL('../project.conf',import.meta.url))));
+ const assets={...env,ASSETS:{fetch:async request=>{const p=new URL(request.url).pathname;return p==='/platform-updates.json'?Response.json({schemaVersion:1,items:[]}):registry.pages.some(page=>page.asset===p)?new Response('<h1>Update</h1>'):new Response('missing',{status:404});}}};
+ for(const p of ['/co-je-nove','/en/whats-new']) {
+  const url='https://vstupenky.online'+p;
+  assert.equal((await productionWorker.fetch(new Request(url),assets)).status,200);
+  const redirect=await productionWorker.fetch(new Request(url+'/?source=mail'),assets);assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),url+'?source=mail');
+ }
+ for(const p of ['/co-je-nove/missing','/en/whats-new/missing','/de/whats-new']) assert.equal((await productionWorker.fetch(new Request('https://vstupenky.online'+p),assets)).status,404,p);
+ assert.equal((await worker.fetch(request('/co-je-nove'),assets)).status,404);
+ const feed=await productionWorker.fetch(new Request('https://vstupenky.online/platform-updates.json'),assets);assert.equal(feed.status,200);assert.match(feed.headers.get('content-type'),/application\/json/);
+ const xml=await(await productionWorker.fetch(new Request('https://vstupenky.online/sitemap.xml'),assets)).text();for(const p of ['/co-je-nove','/en/whats-new']) assert.ok(xml.includes('https://vstupenky.online'+p));
+});
+
+test('nested published details serve their own localized HTML and enter the same sitemap',async t=>{
+ const contentDir=mkdtempSync(join(tmpdir(),'updates-worker-'));t.after(()=>rmSync(contentDir,{recursive:true,force:true}));
+ const dir=join(contentDir,'stable-id');mkdirSync(dir);
+ writeFileSync(join(dir,'meta.json'),JSON.stringify({id:'stable-id',status:'published',publishedAt:'2026-10-25T12:00:00Z',kind:'fix',translations:{cs:{title:'Oprava',summary:'Přínos'},en:{title:'A fix',summary:'A benefit'}}}));
+ for(const lang of ['cs','en']) writeFileSync(join(dir,lang+'.md'),'A real paragraph.');
+ const context=resolveContext(readConfig(new URL('../project.conf',import.meta.url)),{updatesOptions:{contentDir}});
+ const registry=publicManifest(context);
+ const source=workerSource.replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};',`const MARKETING = ${JSON.stringify(registry)};`);
+ const {default:detailWorker}=await import('data:text/javascript;base64,'+Buffer.from(source.replace('const CANONICAL_ORIGIN = null;',`const CANONICAL_ORIGIN = ${JSON.stringify(context.origin)};`)).toString('base64'));
+ const documents=new Map(context.updates.pages.map(page=>[page.asset,renderUpdate(page,context)]));
+ const assets={...env,ASSETS:{fetch:async request=>documents.has(new URL(request.url).pathname)?new Response(documents.get(new URL(request.url).pathname)):new Response('missing',{status:404})}};
+ for(const page of context.updates.pages.filter(page=>page.updateId)) {
+  const response=await detailWorker.fetch(new Request(page.canonical),assets);assert.equal(response.status,200);assert.equal(await response.text(),documents.get(page.asset));
+  const redirect=await detailWorker.fetch(new Request(page.canonical+'/?from=test'),assets);assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),page.canonical+'?from=test');
+ }
+ t.mock.method(globalThis,'fetch',async()=>Response.json({occasions:[]}));
+ const xml=await(await detailWorker.fetch(request('/sitemap.xml'),assets)).text();
+ for(const page of context.updates.pages) assert.ok(xml.includes(page.canonical));
 });

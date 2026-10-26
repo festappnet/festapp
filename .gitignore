@@ -213,3 +213,8 @@ workers/*/node_modules/
 /.private/
 /.artifacts/
 /output/
+
+# Platform updates are repository content with generated public documents.
+automation/release/platform_updates/node_modules/
+/web/organizers/updates/
+/web/platform-updates.json

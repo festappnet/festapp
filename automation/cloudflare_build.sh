@@ -463,6 +463,11 @@ async function routeRequest(request, env) {
       }
     }
 
+    if (MARKETING.feeds?.includes(path)) {
+      const response=await serveAsset(env,request,path);
+      return new Response(response.body,{status:response.status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-cache"}});
+    }
+    if (/^\/(?:co-je-nove|[a-z]{2}\/whats-new)(?:\/|$)/.test(path) || path === "/platform-updates.json") return notFound();
     if (path === "/sitemap.xml") return handleSitemap(request, env);
 
     if (path === "/" && FORCED_OCCASION_PATH) {
@@ -683,7 +688,11 @@ if analytics_site and analytics_site.get('collector') not in (None, '/cdn-cgi/ru
     raise SystemExit('Invalid public Web Analytics collector')
 source = source.replace('const PUBLIC_WEB_ANALYTICS = null;', 'const PUBLIC_WEB_ANALYTICS = ' + json.dumps(analytics_site) + ';', 1)
 import subprocess
-marketing = json.loads(subprocess.check_output(['node','automation/release/organizers/context.mjs','--config',config_path],text=True))
+expected = json.loads(subprocess.check_output(['node','automation/release/organizers/context.mjs','--config',config_path],text=True))
+marketing = json.loads(pathlib.Path(worker_path).parent.joinpath('organizer-pages.json').read_text(encoding='utf-8'))
+if marketing != expected: raise SystemExit('Rendered public registry differs from current source/configuration')
+for feed in marketing.get('feeds', []):
+    if not pathlib.Path(worker_path).parent.joinpath(feed.lstrip('/')).is_file(): raise SystemExit('Missing registered public feed: ' + feed)
 for page in marketing['pages']:
     if not pathlib.Path(worker_path).parent.joinpath(page['asset'].lstrip('/')).is_file():
         raise SystemExit('Missing registered marketing asset: ' + page['asset'])

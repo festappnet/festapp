@@ -475,6 +475,7 @@
     "foodCreateHint": "Um Essen zu erstellen, füllen Sie den Titel, den eindeutigen Code und die Referenz des Programms aus."
   },
   "Common": {
+    "platformUpdates": "Neuigkeiten",
     "contextLoadFailed": "Zugriff konnte nicht überprüft werden. Bitte erneut versuchen.",
     "add": "Hinzufügen",
     "addExisting": "Bestehendes hinzufügen",

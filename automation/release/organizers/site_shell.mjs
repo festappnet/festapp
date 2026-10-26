@@ -12,11 +12,12 @@ export function expandSiteShell(template) {
     .replace('{{SITE_FOOTER}}', read('site-footer.html'));
 }
 
-export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false}) {
+export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false, platformUpdatesPath = null}) {
   const content = JSON.parse(read(locale === 'cs' ? 'content.json' : `content.${locale}.json`)).publicProjection;
   const tokens = {APP_NAME: brand, CONTACT_EMAIL: contact, PROVIDER_NAME: content.provider?.name ?? 'Michael Bujnovský',
     CTA_HREF: content.cta.href, EVENT_DIRECTORY_HREF: locale === 'cs' ? 'https://plesy.vstupenky.online' : '/events'};
   const render = template => template.replace(/{{([A-Z0-9_]+)}}/g, (_, key) => {
+    if (key === 'PLATFORM_UPDATES_LINK') return platformUpdatesPath ? `<a href="${escape(platformUpdatesPath)}">${locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
     if (key === 'TOPIC_LINKS') return renderTopicLinks(content.pages);
     if (key === 'HELP_LINK') return `<a class="header-help" href="${escape(helpPath)}">${escape(helpLabel)}</a>`;
     if (key in tokens) return escape(tokens[key]);

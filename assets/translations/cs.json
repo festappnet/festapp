@@ -1954,6 +1954,7 @@
     "noExistingParticipants": "Žádní další účastníci nejsou k dispozici. Jednotka zatím nemá účastníky, nebo už jsou všichni přidaní. Vraťte se do seznamu a tlačítkem Přidat vytvořte nového účastníka."
   },
   "Common": {
+    "platformUpdates": "Co je nového",
     "fieldCannotBeEmpty": "Pole nemůže být prázdné",
     "invalidFormat": "Neplatný formát",
     "back": "Zpět",

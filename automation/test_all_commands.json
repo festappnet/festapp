@@ -197,5 +197,17 @@
     "node",
     "--test",
     "automation/tests/email_worker_cpu_budget.test.mjs"
+  ],
+  [
+    "pnpm",
+    "--dir",
+    "automation/release/platform_updates",
+    "install",
+    "--frozen-lockfile"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/platform_updates.test.mjs"
   ]
 ]

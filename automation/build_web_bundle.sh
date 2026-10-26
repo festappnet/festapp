@@ -56,6 +56,8 @@ if [ "$ACTUAL_FLUTTER_VERSION" != "$FLUTTER_VERSION" ]; then
     exit 1
 fi
 
+(cd automation/release/platform_updates && pnpm install --frozen-lockfile)
+
 # project.conf is the sole tenant-identity owner. Apply it immediately before
 # compilation so stale generated files can never leak between production apps.
 bash automation/apply_config.sh
