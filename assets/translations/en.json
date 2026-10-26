@@ -1442,6 +1442,8 @@
     "fontFamily": "Layout font",
     "productsTitle": "Products and prices",
     "manageSeats": "Manage seats",
+    "backToGroup": "Back to group {name}",
+    "seatLabel": "Seat",
     "emptyGroup": "This group has no seats yet.",
     "inheritedProduct": "Matches the group default",
     "productOverride": "Individual product override",
@@ -1763,7 +1765,9 @@
     "invalidEmailAddress": "The email address does not exist or is invalid. Your order was created; contact the organizer to correct the address.",
     "reservation_state_unknown": "We could not verify your seat reservation. Check your internet connection, return to the form and try submitting again. Your entered details have been kept.",
     "reservation_expired": "Your seat reservation has expired. Return to the form and review your seat selection. Your entered details have been kept.",
-    "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept."
+    "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
+    "outcomeUnknownTitle": "Order outcome is unconfirmed",
+    "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page."
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Pregenerated tickets",
@@ -4422,10 +4426,16 @@
     "chooseEvent": "Which event would you like to manage?",
     "noEvents": "No events are available yet. Create your first event and we will open the section from the guide. To manage someone else’s event, ask its administrator for access.",
     "recentEvent": "Recently used event",
-    "createEvent": "Create event",
+    "createEvent": "Create new event",
     "chooseOrganizer": "Which organizer should own the new event?",
     "resumeSetup": "Continue an event draft",
     "untitledEvent": "Untitled event",
-    "noCreateAccess": "You do not have permission to create events for this organizer. Ask an administrator for access or choose another organizer."
+    "noCreateAccess": "You do not have permission to create events for this organizer. Ask an administrator for access or choose another organizer.",
+    "openOrganizer": "Select the organizer organization",
+    "noOrganizationAccess": "You do not have access to this part of the organization. Ask its administrator for the required permissions.",
+    "organizationAccess": "Organization access",
+    "otherEvents": "Other accessible events",
+    "noMatches": "No matching events.",
+    "clearSearch": "Clear search"
   }
 }

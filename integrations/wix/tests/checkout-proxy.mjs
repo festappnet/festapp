@@ -7,19 +7,31 @@ const [cdpFile, statusFile, templateFile, receiptFile, ...flags] = process.argv.
 if (![cdpFile, statusFile, templateFile, receiptFile].every(Boolean)) {
   throw Error('Usage: node tests/checkout-proxy.mjs <cdp-url-file> <local-backend-status> <production-html-template> <private-receipt> [--local-helper]');
 }
-if (flags.some(flag => !['--local-helper', '--canonical-seats', '--canonical-bank', '--lose-first-order-response'].includes(flag))) throw Error('Unknown helper option');
+if (flags.some(flag => !['--local-helper', '--canonical-seats', '--canonical-bank', '--canonical-reload', '--local-client', '--lose-first-order-response'].includes(flag))) throw Error('Unknown helper option');
 const canonicalSeats = flags.includes('--canonical-seats');
 const canonicalBank = flags.includes('--canonical-bank');
-if (canonicalSeats && canonicalBank) throw Error('Choose one exact canonical fixture');
-const canonicalBackend = canonicalSeats || canonicalBank;
+const canonicalReload = flags.includes('--canonical-reload');
+const localClient = flags.includes('--local-client');
+if (localClient && !canonicalReload) throw Error('Candidate client requires the dedicated reload fixture');
+const clientRoot = new URL('../../../web_client/dist/', import.meta.url);
+const clientAssets = new Map();
+if (localClient) {
+  for (const name of fs.readdirSync(new URL('web-assets/',clientRoot))) {
+    if (/^[\w.+-]+\.(js|css|ttf|woff2?|png|svg)$/.test(name)) clientAssets.set('/web-assets/'+name,new URL('web-assets/'+name,clientRoot));
+  }
+  for (const lang of ['cs','en','sk','pl','de','uk']) clientAssets.set('/assets/translations/'+lang+'.json',new URL('assets/translations/'+lang+'.json',clientRoot));
+}
+
+if ([canonicalSeats,canonicalBank,canonicalReload].filter(Boolean).length > 1) throw Error('Choose one exact canonical fixture');
+const canonicalBackend = canonicalSeats || canonicalBank || canonicalReload;
 const loseFirstOrderResponse = flags.includes('--lose-first-order-response');
-if (loseFirstOrderResponse && !canonicalSeats) throw Error('Response-loss test requires dedicated canonical fixture');
+if (loseFirstOrderResponse && !(canonicalSeats || canonicalReload)) throw Error('Response-loss test requires dedicated canonical fixture');
 let orderResponseLost = false;
 const localHelper = flags.includes('--local-helper') ? fs.readFileSync(new URL('../../../web_client/public/embed.js', import.meta.url)) : null;
 const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
 const api = canonicalBackend ? 'http://127.0.0.1:59921' : 'http://127.0.0.1:59821';
 const container = canonicalBackend ? 'supabase_db_festapp-wix-qa-20261025' : 'supabase_db_festapp-vo-wordpress-20261023';
-const formSlug = canonicalBank ? 'wix-qa-bank-20261025' : canonicalSeats ? 'wix-qa-seats-20261025' : 'wix-qa-20261025';
+const formSlug = canonicalReload ? 'wix-qa-reload-20261026' : canonicalBank ? 'wix-qa-bank-20261025' : canonicalSeats ? 'wix-qa-seats-20261025' : 'wix-qa-20261025';
 if (status.API_URL !== api || !status.ANON_KEY) throw Error('Disposable backend required');
 const guardSql = canonicalBackend
   ? `select exists(select 1 from festapp_test_support.disposable_environment where singleton and project='festapp-wix-qa-20261025') and (select title='Test Organization' from public.organizations where id=1); select count(*)=1 from public.forms where link='${formSlug}';`
@@ -36,6 +48,7 @@ const receipt = {
   formSlug,
   templateSha256: createHash('sha256').update(template).digest('hex'),
   clientVersion: /__FESTAPP_BUILD_VERSION__\s*=\s*"([^"]+)"/.exec(template.toString())?.[1],
+  clientSource: localClient ? 'reviewed candidate local build' : 'public service assets',
   helperSource: localHelper ? 'repository candidate, not deployed' : 'live service',
   helperOverrideSha256: localHelper ? createHash('sha256').update(localHelper).digest('hex') : null,
   transportAdapted: true, productionCorsQualified: false, requests: [], networkFenceProbes: [],
@@ -83,6 +96,7 @@ async function configure(sessionId) {
     {urlPattern:'https://api.festapp.net/*', requestStage:'Request'},
     {urlPattern:'https://*.supabase.co/*', requestStage:'Request'},
     {urlPattern:`https://vstupenky.online/form/${formSlug}*`, requestStage:'Request'},
+    ...(localClient ? [{urlPattern:'https://vstupenky.online/web-assets/*',requestStage:'Request'},{urlPattern:'https://vstupenky.online/assets/translations/*',requestStage:'Request'}] : []),
     ...(localHelper ? [{urlPattern:'https://vstupenky.online/embed.js', requestStage:'Request'}] : []),
   ]}, sessionId);
   await call('Target.setAutoAttach', {autoAttach:true, waitForDebuggerOnStart:true, flatten:true,
@@ -92,6 +106,18 @@ async function configure(sessionId) {
 async function intercept({requestId, request}, sessionId) {
   const url = new URL(request.url);
   try {
+    if (localClient && url.origin === 'https://vstupenky.online' &&
+        (url.pathname.startsWith('/web-assets/') || url.pathname.startsWith('/assets/translations/'))) {
+      const file = clientAssets.get(url.pathname);
+      if (!file || url.search) throw Error('Unknown candidate asset blocked');
+      const bytes = fs.readFileSync(file);
+      const ext = url.pathname.split('.').at(-1);
+      const type = {js:'application/javascript',css:'text/css',ttf:'font/ttf',woff:'font/woff',woff2:'font/woff2',svg:'image/svg+xml',png:'image/png',json:'application/json'}[ext];
+      await call('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[
+        {name:'Content-Type',value:type},{name:'Cache-Control',value:'no-store'}],body:bytes.toString('base64')},sessionId);
+      receipt.requests.push({method:request.method,path:url.pathname,status:200,candidateAsset:true,sha256:createHash('sha256').update(bytes).digest('hex')});
+      persist(); return;
+    }
     if (localHelper && url.origin === 'https://vstupenky.online' && url.pathname === '/embed.js') {
       await call('Fetch.fulfillRequest', {requestId, responseCode:200, responseHeaders:[
         {name:'Content-Type', value:'application/javascript; charset=utf-8'},
@@ -109,7 +135,8 @@ async function intercept({requestId, request}, sessionId) {
       receipt.requests.push({method:request.method, path:url.pathname, status:200, documentAdapted:true});
       persist(); return;
     }
-    if (url.origin !== 'https://api.festapp.net' || !/^\/(rest|auth|functions)\/v1\//.test(url.pathname)) {
+    const candidateLegacy = localClient && url.origin === 'https://kjdpmixlnhntmxjedpxh.supabase.co';
+    if ((url.origin !== 'https://api.festapp.net' && !candidateLegacy) || !/^\/(rest|auth|functions)\/v1\//.test(url.pathname)) {
       throw Error('Unexpected backend blocked');
     }
     const headers = new Headers(request.headers);

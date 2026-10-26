@@ -1,3 +1,8 @@
+## 0.4.2
+
+- Keep imported tables editable when their legacy metadata also marks them as decoration.
+- Keep seat-count digits visible beside compact circular controls in narrow localized inspectors.
+
 ## 0.4.1
 
 - Keep seat-count edits within physical and reservation constraints while allowing temporary empty fields and multi-digit input.

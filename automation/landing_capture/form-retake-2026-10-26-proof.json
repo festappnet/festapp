@@ -1,0 +1,58 @@
+{
+  "sourceTake": "/Users/miakh/Downloads/festapp-form-retake-20261026/take3/form-unbroken-cs-1792975523",
+  "cues": [
+    {
+      "cue": "unbroken-form-build",
+      "sourceStart": 1792975523.828303,
+      "sourceEnd": 1792975555.2660952,
+      "speed": 1,
+      "encodedDuration": 31.433333
+    }
+  ],
+  "outputs": {
+    "form-build.mp4": {
+      "width": 1200,
+      "height": 804,
+      "duration": 31.433333,
+      "decode": "PASS"
+    },
+    "form-build-mobile.mp4": {
+      "width": 720,
+      "height": 638,
+      "duration": 31.433333,
+      "decode": "PASS"
+    }
+  },
+  "internalCuts": 0,
+  "speed": 1,
+  "leadingSetupTrim": 0.0,
+  "mobilePresentation": "scaled desktop authoring, not native mobile UI",
+  "fixture": {
+    "project": "festapp-form-retake-20261026",
+    "organization": 1,
+    "occasion": 1,
+    "form": 1,
+    "orders": 0
+  },
+  "savedDinners": [
+    {
+      "title": "Kuřecí večeře",
+      "price": 180
+    },
+    {
+      "title": "Vegetariánská večeře",
+      "price": 160
+    },
+    {
+      "title": "Veganská večeře",
+      "price": 160
+    }
+  ],
+  "fieldEntryPolicy": "Focus and settle, one fill, assert active value, then blur. No on-camera retry.",
+  "sourceRevision": "353394511",
+  "locale": "cs",
+  "viewport": {
+    "width": 1000,
+    "height": 1000
+  }
+}

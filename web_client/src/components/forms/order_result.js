@@ -7,6 +7,7 @@ import { PublicOrderStrings } from './public_order_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { renderCardPaymentStatus } from './card_payment_status.js';
 import { paymentMethodText } from './payment_method_strings.js';
+import { orderIcon } from './order_icons.js';
 
 export class OrderResult {
     static render(container, success, resultData, formModel, onClose, paymentActions = {}) {
@@ -66,6 +67,11 @@ export class OrderResult {
             title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+        } else if (resultData?.errorCode === 'ORDER_OUTCOME_UNKNOWN') {
+            title = PublicOrderStrings.text('PublicOrder.outcomeUnknownTitle', tone);
+            subtitle = PublicOrderStrings.text('PublicOrder.outcomeUnknownHint', tone);
+            icon = 'info';
+            colorClass = 'error-color';
         } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
             title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
         } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {
@@ -97,7 +103,7 @@ export class OrderResult {
         container.innerHTML = `
             <div class="result-container">
                 <div class="result-icon-wrapper ${colorClass}">
-                    <i class="material-icons result-icon">${icon}</i>
+                    <span class="result-icon" aria-hidden="true">${orderIcon(icon)}</span>
                 </div>
                 <p class="result-occasion-title"></p>
                 <h2 class="result-title ${colorClass}"></h2>
@@ -151,7 +157,9 @@ export class OrderResult {
                     color: white;
                 }
                 .result-icon {
-                    font-size: 30px;
+                    display: block;
+                    width: 30px;
+                    height: 30px;
                 }
                 .result-title {
                     font-size: 1.4rem;

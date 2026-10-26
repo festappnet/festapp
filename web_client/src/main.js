@@ -60,7 +60,9 @@ class Main {
                 return;
             }
 
-            const entryIntent = isEmbed() ? null :
+            // The callback owns the current dialog, including recoverable errors.
+            // Do not mount a second organizer dialog after restoring its URL.
+            const entryIntent = isEmbed() || googleCallback ? null :
                 await handleHelpAction() || await handleOrganizerIntent();
             if (entryIntent === 'navigated') {
                 window.markFestappAppReady?.();

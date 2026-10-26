@@ -146,12 +146,25 @@ export class UserHeader extends HTMLElement {
 
         const actions = document.createElement('div');
         actions.className = 'header-actions';
-        if (this.hasAttribute('data-marketing') && new URL(AppConfig.webLink).hostname === 'vstupenky.online') {
-            const help = document.createElement('a');
-            help.className = 'header-help'; help.href = '/napoveda/'; help.textContent = 'Nápověda';
-            actions.appendChild(help);
+        if (ticketBrand) {
+            container.classList.add('has-public-navigation');
+            const navigation = document.createElement('nav');
+            navigation.className = 'header-public-navigation';
+            navigation.setAttribute('aria-label', 'Hlavní navigace');
+            const onHome = window.location.pathname === '/';
+            const primaryLink = onHome ? ['/events', 'Najít akci'] : ['/', 'Pro pořadatele'];
+            for (const [href, label] of [primaryLink, ['/napoveda/', 'Nápověda']]) {
+                const link = document.createElement('a');
+                link.href = href;
+                link.textContent = label;
+                if (href === '/napoveda/' && window.location.pathname.startsWith('/napoveda/')) {
+                    link.setAttribute('aria-current', 'location');
+                }
+                navigation.appendChild(link);
+            }
+            container.appendChild(navigation);
         }
-        
+
         // If context isn't loaded yet, don't show anything here to avoid blinking "Sign In"
         // RightsService.context is null initially.
         if (!this.context && !this.user) {
@@ -217,14 +230,7 @@ export class UserHeader extends HTMLElement {
                 shortLabel.setAttribute('aria-hidden', 'true');
                 addEventBtn.append(fullLabel, shortLabel);
                 addEventBtn.onclick = async () => {
-                    if (this.hasAttribute('data-marketing')) {
-                        window.location.assign('/login');
-                        return;
-                    }
-                    await import('./login_modal.js');
-                    const modal = document.createElement('login-modal');
-                    modal.currentView = 'register';
-                    document.body.appendChild(modal);
+                    window.location.assign('/login?create=1');
                 };
                 actions.appendChild(addEventBtn);
             }
@@ -246,6 +252,7 @@ export class UserHeader extends HTMLElement {
             actions.appendChild(signInBtn);
 
             // Settings Icon (for guests)
+            if (ticketBrand) container.classList.add('has-header-settings');
             const settingsBtn = document.createElement('button');
             settingsBtn.type = 'button';
             settingsBtn.setAttribute('aria-label', CommonStrings.settings);

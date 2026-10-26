@@ -119,6 +119,15 @@
       "údaje při skenování",
       "interní poznámka",
       "skrýt cenu"
+    ],
+    "unmatched-payment": [
+      "chybný variabilní symbol",
+      "špatný VS",
+      "chybějící variabilní symbol",
+      "nespárovaná platba",
+      "ruční párování",
+      "najít a propojit transakci",
+      "platba u jiné objednávky"
     ]
   },
   "en": {
@@ -225,6 +234,14 @@
       "what to show",
       "hide prices",
       "internal note"
+    ],
+    "unmatched-payment": [
+      "incorrect payment reference",
+      "wrong reference",
+      "missing reference",
+      "unmatched bank payment",
+      "manual matching",
+      "link a transaction"
     ]
   }
 }

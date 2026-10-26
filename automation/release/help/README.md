@@ -3,7 +3,7 @@
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
 The implementation shares the homepage header/footer fragments, canonical
 organizer CSS and account-header startup. The current outline supersedes the
-initial ordering: eight areas and sixteen task guides, with matching English
+initial ordering: eight areas and task guides, with matching English
 preview routes and stable topic IDs. Start with the new-event wizard, then
 existing-event administration, tickets/seating, banking, website publication,
 order management, check-in and troubleshooting. The hub has separate entry
@@ -95,9 +95,11 @@ Results link to the relevant section. The same UI works in static file previews.
 
 Guide CTAs use `/events?help=<intent>` rather than a hard-coded occasion ID or
 link. The web entry point retains the intent through sign-in and the Flutter
-handoff to `/help-action/<intent>`, asks for an event from permission-filtered
-organizer data, then enters the normal protected administration route. Recent
-context is only a preference. The intent allowlist
+handoff to `/help-action/<intent>`. Event actions ask for an event from
+permission-filtered organizer data; `organization` opens the organizer event
+workspace, and `bank-accounts` opens organizer banking without an event chooser.
+Multiple organizers require an explicit choice. Each organization target reloads
+its current server capabilities before routing. Recent context is only a preference. The intent allowlist
 contains fixed section paths, and the application boundary reloads permissions.
 This mechanism uses the active tenant and locale and is shared with future global
 help. English production publication remains explicitly gated.
@@ -136,3 +138,30 @@ media identity. The renderer uses existing content-addressed assets. Optional
 `previewCrop` on the media entry selects the curated detail/upper thumbnail crop
 without changing the full screenshot. Keep previews relevant to the article and
 its workflow, localized, and decorative within the descriptive guide link.
+
+## Repeatability and capture theme
+
+All Festapp help screenshots use light mode. The canonical scenario catalogue
+and repeat procedure are documented in `automation/help_capture/README.md`.
+`automation/help_capture/scanner_light.py` regenerates twelve real CS/EN scanner
+error/settings screenshots and updates hashes in both provenance registries.
+Other catalogue chapters currently have manual replay steps, not an automated
+end-to-end runner. Private interaction logs are supplementary evidence.
+
+## Canonical action routing
+
+All CS/EN article `APP_LINK` tokens use `helpActionWebPath` from
+`web_client/src/services/help_action_routes.js`. This same pure policy owns web
+login return paths and is embedded in the Cloudflare worker at build time.
+Legacy `/login?redirect=/help-action/<intent>` links are a thin redirect into
+`/events?help=<intent>`; they do not implement another allowlist or login flow.
+The signed-in handoff enters `HelpDestination` in Flutter, which owns actual
+organizer/event selection and permission checks. It is a platform adapter, not
+an alternate public login. A contract test checks both localized action sets,
+the shared web allowlist and Flutter destinations for agreement.
+
+The `unmatched-payment` task guide belongs to Orders and payments. Payment setup,
+order handling, bank account setup and troubleshooting link to it in both locales.
+It covers manual linking, wrong-order recovery, bank permissions and post-link
+balance/delivery checks. Its instructions are grounded in the transaction dialogs
+and pairing SQL; no new screenshot or live bank mutation is claimed.

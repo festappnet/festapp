@@ -24,7 +24,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   for (const key of ['languageTag','ogLocale','contact','serviceName','serviceType','referencesHeading','catalogLabel']) if (!projection[key]?.trim()) throw new Error(`Marketing requires ${key}`);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(projection.contact)) throw new Error('Invalid marketing contact');
   for (const key of ['title','description','image','imageAlt','catalogTitle','catalogDescription']) if (!projection.seo?.[key]?.trim()) throw new Error(`Marketing SEO requires ${key}`);
-  if (!projection.provider?.name || !projection.provider?.identifier || !projection.provider?.identifierLabel || !projection.cta?.label || !projection.cta?.note || projection.cta.href !== '/login') throw new Error('Missing provider/CTA');
+  if (!projection.provider?.name || !projection.provider?.identifier || !projection.provider?.identifierLabel || !projection.cta?.label || !projection.cta?.note || !['/login', '/events?create=1'].includes(projection.cta.href)) throw new Error('Missing provider/CTA');
   for (const key of ['play','pause','retry','replay','failed','download','referenceLabel','previous','next','position','total','imagePrefix','catalogNav','organizers','related','home','contactAction','legalNav','closing','priceNote']) if (!projection.ui?.[key]?.trim()) throw new Error(`Marketing UI requires ${key}`);
   for (const [key, expected] of [['PRIVACY_URL','/privacy/'],['TERMS_URL','/terms/'],['SUPPORT_URL','/support/']]) {
     if (config[key] !== context.origin + expected) throw new Error(`Invalid ${key}`);

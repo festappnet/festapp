@@ -289,7 +289,7 @@ test('RouterService.handleInitialLoad', async (t) => {
         assert.strictEqual(handled, false);
     });
 
-    await t.test('should redirect /login to flutter.html always', async () => {
+    await t.test('should leave /login to the web client startup', async () => {
         AppConfig.isAppSupported = false;
         global.window.location.pathname = '/login';
         global.window.location.href = 'https://vstupenky.online/login';
@@ -299,9 +299,9 @@ test('RouterService.handleInitialLoad', async (t) => {
 
         const handled = await RouterService.handleInitialLoad();
 
-        assert.strictEqual(handled, true);
-        assert.ok(redirectUrl.includes('auth_bridge.html'));
-        assert.ok(redirectUrl.includes('redirect=%2Flogin'));
+        assert.strictEqual(handled, false);
+        assert.strictEqual(redirectUrl, '');
+        assert.strictEqual(RouterService.getLoginUrl(), '/login');
     });
 
     for (const path of [

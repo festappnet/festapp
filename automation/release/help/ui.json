@@ -13,7 +13,7 @@
     "breadcrumb": "Drobečková navigace",
     "skip": "Přejít k obsahu",
     "categories": {
-      "basics": "Průvodce založením akce",
+      "basics": "Založení akce",
       "administration": "Úpravy hotové akce",
       "tickets": "Vstupenky a plánek",
       "banking": "Bankovní účty a platby",
@@ -56,7 +56,9 @@
       "orders": "Otevřít objednávky v aplikaci",
       "settings": "Otevřít nastavení akce",
       "report": "Otevřít report v aplikaci",
-      "scanner-settings": "Otevřít nastavení skeneru"
+      "scanner-settings": "Otevřít nastavení skeneru",
+      "organization": "Otevřít akce organizace",
+      "bank-accounts": "Otevřít bankovní účty pořadatele"
     },
     "opensNewTab": "nová karta",
     "workflows": {
@@ -81,7 +83,7 @@
     "breadcrumb": "Breadcrumb",
     "skip": "Skip to content",
     "categories": {
-      "basics": "Event setup wizard",
+      "basics": "Event setup",
       "administration": "Edit an existing event",
       "tickets": "Tickets and seating",
       "banking": "Bank accounts and payments",
@@ -124,7 +126,9 @@
       "orders": "Open orders in the app",
       "settings": "Open event settings",
       "report": "Open the report in the app",
-      "scanner-settings": "Open scanner display settings"
+      "scanner-settings": "Open scanner display settings",
+      "organization": "Open organizer events",
+      "bank-accounts": "Open organizer bank accounts"
     },
     "opensNewTab": "new tab",
     "workflows": {

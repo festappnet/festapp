@@ -2,8 +2,11 @@ import { helpActionFromWebPath, helpActionWebPath } from './help_action_routes.j
 import { AppConfig } from '../app_config.js';
 import { SupabaseService } from './supabase_service.js';
 import { AuthService } from './auth_service.js';
+import { organizerCreatePath } from './organizer_entry.js';
 
 export function safeAuthReturnPath(value) {
+    const organizer = organizerCreatePath(value);
+    if (organizer) return organizer;
     const help = helpActionFromWebPath(value);
     if (help) return helpActionWebPath(help);
     // Other query continuations must match their own exact first-party contract.
@@ -40,7 +43,10 @@ export class GoogleAuthService {
         const destination = new URL(data.url);
         const backend = new URL(SupabaseService._backend.supabaseUrl);
         if (destination.origin !== backend.origin || destination.pathname !== '/functions/v1/google-auth-start') throw new Error('invalid_provider_proof');
-        sessionStorage.setItem(key, JSON.stringify({ attempt: data.attempt, verifier, expires: Date.now() + 600000, returnPath: safeAuthReturnPath(window.location.pathname === '/settings/mcp-connect' || helpActionFromWebPath(window.location.pathname + window.location.search) ? window.location.pathname + window.location.search : window.location.pathname) }));
+        const path = window.location.pathname + window.location.search;
+        const returnPath = organizerCreatePath(path) ||
+            (window.location.pathname === '/settings/mcp-connect' || helpActionFromWebPath(path) ? path : window.location.pathname);
+        sessionStorage.setItem(key, JSON.stringify({ attempt: data.attempt, verifier, expires: Date.now() + 600000, returnPath: safeAuthReturnPath(returnPath) }));
         window.location.assign(destination.href);
     }
     static takeCallback() {
@@ -48,7 +54,16 @@ export class GoogleAuthService {
         if (!url.searchParams.has('google_code') && !url.searchParams.has('google_error')) return null;
         const callback = { code: url.searchParams.get('google_code'), attempt: url.searchParams.get('google_attempt'), error: url.searchParams.get('google_error') };
         for (const name of ['google_code', 'google_attempt', 'google_error']) url.searchParams.delete(name);
-        history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+        let organizer;
+        try {
+            const pending = JSON.parse(sessionStorage.getItem(key));
+            if (pending?.attempt === callback.attempt && pending.expires > Date.now()) {
+                organizer = organizerCreatePath(pending.returnPath);
+            }
+        } catch { /* Missing or invalid tab state cannot select a continuation. */ }
+        // Keep the known workflow even if Google is cancelled or account proof
+        // fails and the user switches to ordinary email sign-in in this dialog.
+        history.replaceState(history.state, '', organizer || url.pathname + url.search + url.hash);
         return callback;
     }
     static complete(callback) {

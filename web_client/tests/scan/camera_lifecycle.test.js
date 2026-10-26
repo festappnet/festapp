@@ -182,8 +182,27 @@ test('device preferences cannot override the shared event field visibility',()=>
 test('allowed offline preparation runs automatically without a snapshot; disabled events do not download',async()=>{
  const previous=Object.getOwnPropertyDescriptor(globalThis,'navigator');Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  try{
-  let preparations=0;const page={row:{partition:'p',session:{capabilities:{offline:true},settings:{offline:{enabled:true}}}},store:{put:async()=>{},get:async()=>null},api:{summary:async()=>({used_current:0,eligible_total:1})},summaryAt:Date.now(),summary:{},render(){},async prepare({automatic}){assert.equal(automatic,true);preparations++;}};
+  let preparations=0;const page={row:{partition:'p',session:{capabilities:{offline:true},settings:{offline:{enabled:true}}}},store:{put:async()=>{},get:async()=>null},api:{summary:async()=>({used_current:0,eligible_total:1})},summaryAt:Date.now(),summary:{snapshot_ticket_count:1},render(){},async prepare({automatic}){assert.equal(automatic,true);preparations++;}};
   await ScanPage.prototype.recover.call(page);await page.backgroundPreparation;assert.equal(preparations,1);
   page.row.session.capabilities.offline=false;page.lastSnapshotAttempt=0;await ScanPage.prototype.recover.call(page);assert.equal(preparations,1);
+ }finally{if(previous)Object.defineProperty(globalThis,'navigator',previous);else delete globalThis.navigator;}
+});
+
+
+test('automatic offline preparation uses complete snapshot size, includes 1000, and refreshes manually prepared large events',async()=>{
+ const previous=Object.getOwnPropertyDescriptor(globalThis,'navigator');Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
+ try {
+  for(const [count,expected] of [[0,true],[999,true],[1000,true],[1001,false],[undefined,false],[-1,false],['1000',false]]) {
+   let preparations=0;
+   const page={row:{partition:'p',session:{capabilities:{offline:true},settings:{offline:{enabled:true}}}},store:{put:async()=>{},get:async()=>null},api:{summary:async()=>({eligible_total:1,snapshot_ticket_count:count})},summaryAt:0,render(){},async prepare({automatic}){assert.equal(automatic,true);preparations++;}};
+   await ScanPage.prototype.recover.call(page);await page.backgroundPreparation;
+   assert.equal(preparations,Number(expected),`snapshot size ${count}`);
+   page.snapshot={server_time:new Date(Date.now()-120000).toISOString()};page.lastSnapshotAttempt=0;
+   await ScanPage.prototype.recover.call(page);await page.backgroundPreparation;
+   assert.equal(preparations,Number(expected)+1,'existing large-event preparation is refreshed');
+   page.row.session.settings.offline.enabled=false;page.lastSnapshotAttempt=0;
+   await ScanPage.prototype.recover.call(page);await page.backgroundPreparation;
+   assert.equal(preparations,Number(expected)+1,'explicit disabled setting is respected');
+  }
  }finally{if(previous)Object.defineProperty(globalThis,'navigator',previous);else delete globalThis.navigator;}
 });

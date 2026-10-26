@@ -6,6 +6,40 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { JSDOM } from 'jsdom';
 
+for (const failed of [false, true]) test(`Google continuation owns one dialog after URL recovery, failed=${failed}`, async t => {
+    const dom = new JSDOM('<body><div id="app"><div id="events-grid"></div></div></body>', {url:'https://vstupenky.online/login?create=1'});
+    t.after(() => dom.window.close());
+    const views = [];
+    class CallbackModal extends dom.window.HTMLElement {
+        _setView(view) { views.push(view); }
+        showGoogleResult(result) { views.push(result.status); }
+    }
+    dom.window.customElements.define('fixture-google-callback', CallbackModal);
+    const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\r?\n/gm, '')
+        .replace(/\/\/ Start[\s\S]*$/, 'Main.init();');
+    const noop = {init() {}};
+    dom.window.failFestappWebClientStartup = reason => assert.fail(reason);
+    await runInNewContext(source, {
+        window:dom.window, document:dom.window.document, console,
+        isEmbed:()=>false, applyEmbedContext() {}, resolveScannerRoute:()=>null,
+        GoogleAuthService:{takeCallback:()=>({attempt:'fixture'}),complete:async()=>{
+            if (failed) throw Error('provider_cancelled');
+            return {status:'needs_profile'};
+        }},
+        LoginModal:CallbackModal,
+        initializeCoreServices:async()=>{},
+        handleHelpAction:async()=>assert.fail('callback owns its continuation'),
+        handleOrganizerIntent:async()=>assert.fail('must not append a second registration dialog'),
+        AppConfig:{organization:3}, LocalizationService:{}, SupabaseService:{}, RightsService:{},
+        ThemeService:noop, ImageLoader:noop, FeedbackFab:noop,
+        UnitPage:class {init() {} async loadOccasions() {}},
+        RouterService:{normalizeUrl:url=>new URL(url).pathname,handleInitialLoad:async()=>false,initPopStateListener() {}},
+    });
+    assert.equal(dom.window.document.querySelectorAll('fixture-google-callback').length,1);
+    assert.deepEqual(views,['google_completing',failed?'login':'needs_profile']);
+});
+
 test('catalogue stays hidden while cards load, then startup reveals cards', async t => {
     const dom = new JSDOM('<div id="web-client-startup"></div><div id="app" style="display:none"><div id="events-grid"><ul><li>SEO event</li></ul></div></div>', { url: 'https://tickets.invalid/' });
     for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) {

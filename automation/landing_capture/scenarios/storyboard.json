@@ -297,7 +297,7 @@
       }
     },
     "form-build": {
-      "version": 1,
+      "version": 2,
       "fixture": "clean-ticket-form",
       "camera": {
         "viewport": [
@@ -344,8 +344,46 @@
         "dinnerProducts": 3,
         "noteFields": 1
       },
-      "notes": "Stay inside the same expanded ticket. Add three priced products, then a separate optional Note. Save/read back after the take.",
+      "notes": "Stay inside the same expanded ticket. Add three priced products, then a separate optional Note. Save/read back after the take. Focus and settle each input, enter its value once and verify it before blur. Abort failed takes; never clear and re-enter the same value on camera.",
       "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/form-build.mp4",
+            "sha256": "1953040e4041ba9cd51c4c489b2605c9ecaf8800e5b242de056ad9a089a8ee56"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/form-build-mobile.mp4",
+            "sha256": "081003290ea30131eb2933d0624939249991d51359163f71cddb17b5a72e16d1"
+          },
+          "poster": {
+            "path": "/organizers-media/form-build.webp",
+            "sha256": "fa74a8f1c7e2419261439cbb367eda48139f854935fb7b4110f66ec3da7c198a"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/form-build-mobile.webp",
+            "sha256": "96d52532f6e4f0600214755c317310703b1b3014483c9ebd3f3c96d0f8ed177b"
+          }
+        },
+        "desktopDuration": 31.433333,
+        "mobileDuration": 31.433333,
+        "revisionEvidence": "automation/landing_capture/form-retake-2026-10-26-proof.json"
+      },
+      "data": {
+        "baseAdmissionPrice": 450,
+        "currency": "CZK",
+        "dinnerPrices": [
+          180,
+          160,
+          160
+        ],
+        "optionalNote": true
+      },
+      "edit": {
+        "speed": 1,
+        "internalCuts": 0,
+        "leadingTechnicalTrimOnly": true
+      },
+      "historicalReference": {
         "assets": {
           "src": {
             "path": "/organizers-media/form-build.mp4",
@@ -366,21 +404,6 @@
         },
         "desktopDuration": 45.833333,
         "mobileDuration": 45.833333
-      },
-      "data": {
-        "baseAdmissionPrice": 450,
-        "currency": "CZK",
-        "dinnerPrices": [
-          180,
-          160,
-          160
-        ],
-        "optionalNote": true
-      },
-      "edit": {
-        "speed": 1,
-        "internalCuts": 0,
-        "leadingTechnicalTrimOnly": true
       }
     },
     "ticket-design": {

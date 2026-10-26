@@ -76,3 +76,34 @@ test('blocked persistent storage preserves order identity across in-page retries
     await DbOrders.sendOrder(order);
     assert.notEqual(bodies[1].commandId, bodies[2].commandId, 'a completed order must clear its pending command');
 });
+
+test('uncertain order outcomes retain the same intent through the actual form network boundary', async t => {
+    const { FormNetwork } = await import('../../src/components/forms/form_network.js');
+    let failure;
+    const bodies = [];
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: { getSession: async () => ({ data: { session: null }, error: null }) },
+        functions: { invoke: async (_, { body }) => {
+            bodies.push(body);
+            if (failure === 'throw') throw new TypeError('Failed to fetch');
+            if (failure === 'error') return {data:null,error:new Error('Connection lost')};
+            if (failure === 'missing') return {data:null,error:null};
+            if (failure === 'server') return {data:{code:503},error:null};
+            return {data:{code:200},error:null};
+        } },
+    }));
+    for (const kind of ['throw','error','missing','server']) {
+        const payload = {form:`uncertain-${kind}`,secret:`synthetic-${kind}`,ticket:[]};
+        failure = kind;
+        const result = await FormNetwork.submitOrder(payload);
+        assert.equal(result.success,false);
+        assert.equal(result.data.code,503);
+        assert.equal(result.data.errorCode,'ORDER_OUTCOME_UNKNOWN');
+        failure = null;
+        assert.equal((await FormNetwork.submitOrder(payload)).success,true);
+        const [first,retry] = bodies.slice(-2);
+        assert.equal(first.commandId,retry.commandId);
+        assert.equal(first.clientId,retry.clientId);
+        assert.deepEqual(first.orderDetails,retry.orderDetails);
+    }
+});

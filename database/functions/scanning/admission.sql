@@ -134,6 +134,9 @@ BEGIN
  AND NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket z JOIN eshop.orders o ON o.id=z."order" WHERE z.ticket=t.id AND (o.state IN ('stock','storno','waitlisted','preparing_payment') OR o.occasion<>s.occasion_id)))
  SELECT jsonb_build_object('used_current',count(*) FILTER(WHERE state='used'),'unused_eligible',count(*) FILTER(WHERE state IN ('paid','sent')),
  'eligible_total',count(*) FILTER(WHERE state IN ('used','paid','sent')),'unpaid_conditional',count(*) FILTER(WHERE state='ordered'),
+ -- Count the same ticket population as the offline projection, including unpaid/stock records.
+ 'snapshot_ticket_count',(SELECT count(*) FROM eshop.tickets t WHERE t.occasion=s.occasion_id
+ AND EXISTS(SELECT 1 FROM eshop.order_product_ticket z JOIN eshop.orders o ON o.id=z."order" WHERE z.ticket=t.id)),
  'definition_version',1,'definition','used + paid/sent; excludes conditional unpaid, cancelled and waitlisted',
  'server_time',now(),'settings_revision',(SELECT revision FROM public.scanner_settings WHERE occasion_id=s.occasion_id)) INTO result FROM eligible;
  RETURN jsonb_build_object('code',200,'data',result,'server_time',now());

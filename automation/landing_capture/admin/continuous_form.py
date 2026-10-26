@@ -90,16 +90,20 @@ const r=e.getBoundingClientRect();return {{x:r.x+r.width/2,y:r.y+r.height/2}};
         wheel(position['y'] - 760)
         position = js("(()=>{const r=document.querySelector('[data-take-input]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()")
     ab('mouse', 'move', round(position['x']), round(position['y']))
-    fill('input[data-take-input="active"]', value)
-    hold(.5)
-    # Reacquire after Flutter paints the new row's semantics. Some builds
-    # replace its first input during focus, losing the first editing event.
-    js(f'''(()=>{{
-document.querySelectorAll('[data-take-input]').forEach(e=>e.removeAttribute('data-take-input'));
-Array.from(document.querySelectorAll({json.dumps(selector)})).at(-1).setAttribute('data-take-input','active');
-}})()''')
-    fill('input[data-take-input="active"]', value)
-    hold(.5)
+    # Focus first and let Flutter mount its native editing input. Filling the
+    # semantics node before focus settles can lose the first editing event.
+    # Never repair that on camera by clearing and entering the same value again.
+    ab('focus', 'input[data-take-input="active"]')
+    hold(.45)
+    js("document.querySelectorAll('[data-take-editing]').forEach(e=>e.removeAttribute('data-take-editing'));document.activeElement.setAttribute('data-take-editing','active')")
+    ab('fill', 'input[data-take-editing="active"]', value)
+    # Flutter clears inactive semantics inputs. Inspect the active editing
+    # input before blur; saved fixture data is checked after the completed take.
+    actual = js('document.activeElement.value')
+    if actual != value:
+        raise RuntimeError(f'Recorded input did not persist: expected {value!r}, got {actual!r}; discard this take')
+    ab('press', 'Tab')
+    hold(.45)
 
 
 def record():

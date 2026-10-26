@@ -25,8 +25,13 @@ test('payment copy preserves its size and restores its icon and tooltip after th
     OrderResult.render(host, true, {
       payment_qr: { account_number: '2300409288/2010', reference: '2802', amount: 100, currency_code: 'CZK' },
     }, { communicationTone: 'formal', visibleFields: [] }, () => {});
+    assert.ok(host.querySelector('.result-icon svg'));
+    assert.equal(host.querySelector('.result-icon').textContent, '');
     const button = host.querySelectorAll('.result-copy')[1];
-    const icon = button.querySelector('.material-icons');
+    const icon = button.querySelector('.result-copy-icon');
+    const copyMarkup = icon.innerHTML;
+    assert.ok(icon.querySelector('svg'));
+    assert.equal(icon.textContent, '');
     const tooltip = button.querySelector('.result-copy-tooltip');
     const size = () => {
       const style = dom.window.getComputedStyle(button);
@@ -38,17 +43,19 @@ test('payment copy preserves its size and restores its icon and tooltip after th
     button.click();
     await Promise.resolve();
     assert.deepEqual(copied, ['2802']);
-    assert.equal(icon.textContent, 'check');
+    const copiedMarkup = icon.innerHTML;
+    assert.notEqual(copiedMarkup, copyMarkup);
+    assert.ok(icon.querySelector('svg'));
     assert.equal(tooltip.textContent, 'Zkopírováno');
     assert.deepEqual(size(), initialSize);
     t.mock.timers.tick(1500);
     button.click();
     await Promise.resolve();
     t.mock.timers.tick(500);
-    assert.equal(icon.textContent, 'check');
+    assert.equal(icon.innerHTML, copiedMarkup);
     t.mock.timers.tick(1500);
-    assert.equal(button.querySelector('.material-icons'), icon);
-    assert.equal(icon.textContent, 'content_copy');
+    assert.equal(button.querySelector('.result-copy-icon'), icon);
+    assert.equal(icon.innerHTML, copyMarkup);
     assert.equal(tooltip.textContent, 'Kopírovat');
     assert.equal(button.classList.contains('is-copied'), false);
     assert.equal(button.getAttribute('aria-label'), 'Kopírovat: Variabilní symbol');

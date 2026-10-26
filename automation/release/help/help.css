@@ -41,9 +41,9 @@ body[data-page=help]{--help-error:#a62a2a;--help-control-line:#708197;background
 .guide-toc summary,.help-mobile-menu summary{cursor:pointer;font-weight:500;padding:8px 0;min-height:44px}
 .help-main .guide-toc ul{margin:12px 0;padding-left:22px}
 .help-main .guide-toc li{margin-bottom:6px}
-.guide-related{border-top:1px solid var(--line);margin-top:48px;padding-top:22px;font-size:18px}
-.help-main .guide-related p{margin-bottom:10px}
-.guide-related a{margin-right:20px}
+.guide-related{display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid var(--line);margin-top:48px;padding-top:22px;font-size:18px}
+.help-main .guide-related p{flex-basis:100%;margin-bottom:2px}
+.guide-related a{display:inline-flex;align-items:center;min-height:44px}
 .embed-generator{margin:28px 0 36px;padding:24px;background:var(--paper);border-radius:14px}
 .embed-generator label{display:block;font-size:18px;font-weight:500;margin-bottom:7px}
 .embed-generator :is(input[type=url],select){width:100%;max-width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--help-control-line);border-radius:10px;color:var(--ink);font:inherit}

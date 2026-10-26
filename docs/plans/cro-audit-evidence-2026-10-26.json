@@ -1,0 +1,486 @@
+{
+  "date": "2026-10-26",
+  "sourceMain": "e5d5b2f30b9545de0a97e6c16e93ee2161e111c7",
+  "productionVersion": "0.20.410+911",
+  "auditSha256": "585de68a2354c0ab15d9810c4ec5e8103d4eb31df705a2b80bdaaf3cd3d11657",
+  "browser": {
+    "home": {
+      "url": "https://vstupenky.online/",
+      "lang": "cs",
+      "height": 7614,
+      "metaReferrer": "no-referrer",
+      "outputCards": 0,
+      "technicalSection": false,
+      "continue": [],
+      "inputs": [],
+      "organizerLinks": [
+        {
+          "href": "/events?create=1",
+          "text": "Založit akci zdarma",
+          "visible": true
+        },
+        {
+          "href": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+          "text": "Domluvit ukázku",
+          "visible": true
+        },
+        {
+          "href": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+          "text": "Domluvit ukázku",
+          "visible": true
+        },
+        {
+          "href": "/events?create=1",
+          "text": "Založit akci zdarma",
+          "visible": true
+        },
+        {
+          "href": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+          "text": "Domluvit ukázku",
+          "visible": true
+        }
+      ]
+    },
+    "signup": {
+      "url": "https://vstupenky.online/login?create=1",
+      "lang": "cs",
+      "height": 11795,
+      "metaReferrer": "no-referrer",
+      "outputCards": 0,
+      "technicalSection": false,
+      "continue": [
+        {
+          "describedBy": null,
+          "disabled": false,
+          "text": "Vytvořit účet"
+        }
+      ],
+      "inputs": [
+        {
+          "id": "event-search",
+          "name": "",
+          "required": false,
+          "type": "search"
+        },
+        {
+          "id": "email",
+          "name": "email",
+          "required": true,
+          "type": "email"
+        },
+        {
+          "id": "firstName",
+          "name": "firstName",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "id": "lastName",
+          "name": "lastName",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "organizerLinks": [
+        {
+          "href": "/",
+          "text": "Pro pořadatele",
+          "visible": true
+        }
+      ],
+      "publicOrganizationFlags": {
+        "APP_NAME": "vstupenky.online",
+        "IS_REGISTRATION_ENABLED": true,
+        "IS_UNIT_CREATION_ENABLED": true
+      }
+    },
+    "formCountry": {
+      "url": "https://vstupenky.online/form/country_bal_vetrkovice",
+      "lang": "cs",
+      "height": 1094,
+      "metaReferrer": "no-referrer",
+      "outputCards": 0,
+      "technicalSection": false,
+      "continue": [
+        {
+          "describedBy": null,
+          "disabled": true,
+          "text": "POKRAČOVAT"
+        }
+      ],
+      "inputs": [
+        {
+          "id": "event-search",
+          "name": "",
+          "required": false,
+          "type": "search"
+        },
+        {
+          "id": "form-input-1882",
+          "name": "1882",
+          "required": true,
+          "type": "email"
+        },
+        {
+          "id": "form-input-1883",
+          "name": "1883",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "id": "form-input-1875",
+          "name": "1875",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "id": "form-input-1876",
+          "name": "1876",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "organizerLinks": [
+        {
+          "href": "/",
+          "text": "Pro pořadatele",
+          "visible": false
+        }
+      ],
+      "publicEventFields": {
+        "id": 32316,
+        "start_time": "2026-11-14T18:00:00+00:00",
+        "title": "Country bál 2026"
+      },
+      "publicSeoFields": {
+        "end_time": "2026-11-14T22:59:00+00:00",
+        "form_link": "country_bal_vetrkovice",
+        "form_title": null,
+        "occasion_link": "skautskyples2026-copy-ae6d7140",
+        "org_title": "vstupenky.online",
+        "start_time": "2026-11-14T18:00:00+00:00",
+        "title": "Country bál 2026",
+        "unit_title": "Country Cloverleaf Kostival"
+      }
+    },
+    "catalogProposal": {
+      "url": "https://plesy.vstupenky.online/navrhnout",
+      "lang": "cs",
+      "height": 2172,
+      "outputCards": 0,
+      "technicalSection": false,
+      "continue": [
+        {
+          "describedBy": null,
+          "disabled": true,
+          "text": "Odeslat k ověření"
+        }
+      ],
+      "inputs": [
+        {
+          "id": "contact_email",
+          "name": "contact_email",
+          "required": true,
+          "type": "email"
+        }
+      ],
+      "organizerLinks": [
+        {
+          "href": "https://vstupenky.online/",
+          "text": "Pro pořadatele",
+          "visible": false
+        }
+      ]
+    },
+    "catalogCity": {
+      "url": "https://plesy.vstupenky.online/mista/breclav",
+      "lang": "cs",
+      "height": 3350,
+      "outputCards": 0,
+      "technicalSection": false,
+      "continue": [],
+      "inputs": [],
+      "organizerLinks": [
+        {
+          "href": "https://vstupenky.online/",
+          "text": "Pro pořadatele",
+          "visible": false
+        }
+      ]
+    }
+  },
+  "authReproduction": {
+    "input": "/login?create=1",
+    "storedReturnPath": "/login",
+    "completedReturnPath": "/login",
+    "fullQueryAllowlistResult": "/",
+    "brokerCalls": [
+      {
+        "endpoint": "start"
+      },
+      {
+        "endpoint": "complete",
+        "operation": "claim"
+      }
+    ],
+    "externalProviderExecuted": false,
+    "realAccountCreated": false
+  },
+  "performance": {
+    "conditions": {
+      "width": 412,
+      "height": 844,
+      "dpr": 2.625,
+      "latencyMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "cpuSlowdown": 4,
+      "coldCache": true,
+      "serviceWorkerBypassed": true
+    },
+    "runs": [
+      {
+        "lcp": {
+          "ms": 2056,
+          "size": 24192,
+          "url": "",
+          "tag": "SPAN",
+          "id": "",
+          "classes": "ink",
+          "text": "Všechno na svém místě."
+        },
+        "cls": 0.014531226906624515,
+        "fcp": 624,
+        "height": 7500,
+        "metaReferrer": "no-referrer",
+        "resources": [
+          {
+            "name": "https://vstupenky.online/organizers-media/ticket-ball.jpg",
+            "bytes": 88210,
+            "decoded": 87910,
+            "type": "img"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/initialize_core_services-DcHb0f9j.js",
+            "bytes": 70960,
+            "decoded": 270916,
+            "type": "script"
+          },
+          {
+            "name": "https://vstupenky.online/assets/translations/cs.json",
+            "bytes": 69207,
+            "decoded": 215093,
+            "type": "fetch"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/GillSansBold-BTBG3NhQ.otf",
+            "bytes": 53648,
+            "decoded": 131444,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/layout-build-start.jpg?v=1e108cf1247f",
+            "bytes": 42776,
+            "decoded": 42476,
+            "type": "video"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTMedium-Blo3J6Ks.ttf",
+            "bytes": 41699,
+            "decoded": 98136,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTBook-CllV_rS_.ttf",
+            "bytes": 40969,
+            "decoded": 94816,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/orders-overview.webp",
+            "bytes": 38542,
+            "decoded": 38242,
+            "type": "video"
+          }
+        ]
+      },
+      {
+        "lcp": {
+          "ms": 2056,
+          "size": 24192,
+          "url": "",
+          "tag": "SPAN",
+          "id": "",
+          "classes": "ink",
+          "text": "Všechno na svém místě."
+        },
+        "cls": 0.014531226906624515,
+        "fcp": 640,
+        "height": 7500,
+        "metaReferrer": "no-referrer",
+        "resources": [
+          {
+            "name": "https://vstupenky.online/organizers-media/ticket-ball.jpg",
+            "bytes": 88210,
+            "decoded": 87910,
+            "type": "img"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/initialize_core_services-DcHb0f9j.js",
+            "bytes": 70960,
+            "decoded": 270916,
+            "type": "script"
+          },
+          {
+            "name": "https://vstupenky.online/assets/translations/cs.json",
+            "bytes": 69268,
+            "decoded": 215093,
+            "type": "fetch"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/GillSansBold-BTBG3NhQ.otf",
+            "bytes": 53648,
+            "decoded": 131444,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/layout-build-start.jpg?v=1e108cf1247f",
+            "bytes": 42776,
+            "decoded": 42476,
+            "type": "video"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTMedium-Blo3J6Ks.ttf",
+            "bytes": 41699,
+            "decoded": 98136,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTBook-CllV_rS_.ttf",
+            "bytes": 40969,
+            "decoded": 94816,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/orders-overview.webp",
+            "bytes": 38542,
+            "decoded": 38242,
+            "type": "video"
+          }
+        ]
+      },
+      {
+        "lcp": {
+          "ms": 2048,
+          "size": 24192,
+          "url": "",
+          "tag": "SPAN",
+          "id": "",
+          "classes": "ink",
+          "text": "Všechno na svém místě."
+        },
+        "cls": 0.014531226906624515,
+        "fcp": 612,
+        "height": 7500,
+        "metaReferrer": "no-referrer",
+        "resources": [
+          {
+            "name": "https://vstupenky.online/organizers-media/ticket-ball.jpg",
+            "bytes": 88210,
+            "decoded": 87910,
+            "type": "img"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/initialize_core_services-DcHb0f9j.js",
+            "bytes": 70960,
+            "decoded": 270916,
+            "type": "script"
+          },
+          {
+            "name": "https://vstupenky.online/assets/translations/cs.json",
+            "bytes": 69268,
+            "decoded": 215093,
+            "type": "fetch"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/GillSansBold-BTBG3NhQ.otf",
+            "bytes": 53648,
+            "decoded": 131444,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/layout-build-start.jpg?v=1e108cf1247f",
+            "bytes": 42776,
+            "decoded": 42476,
+            "type": "video"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTMedium-Blo3J6Ks.ttf",
+            "bytes": 41699,
+            "decoded": 98136,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/web-assets/FuturaPTBook-CllV_rS_.ttf",
+            "bytes": 40969,
+            "decoded": 94816,
+            "type": "css"
+          },
+          {
+            "name": "https://vstupenky.online/organizers-media/orders-overview.webp",
+            "bytes": 38542,
+            "decoded": 38242,
+            "type": "video"
+          }
+        ]
+      }
+    ]
+  },
+  "verification": {
+    "targetedJavaScriptTests": 17,
+    "flutterSetupStoryTests": 23,
+    "catalogTests": 9,
+    "sqlInstalledSuitePassed": 3,
+    "canonicalSqlSuite": [
+      {
+        "test": "drafts",
+        "passed": true,
+        "canonicalFinalizerInstalledInsideTransaction": true
+      },
+      {
+        "test": "finalize",
+        "passed": true,
+        "canonicalFinalizerInstalledInsideTransaction": true
+      },
+      {
+        "test": "sales",
+        "passed": true,
+        "canonicalFinalizerInstalledInsideTransaction": true
+      }
+    ],
+    "installedSqlComparison": [
+      {
+        "function": "create_occasion_setup_draft",
+        "canonicalBodyMatchesInstalled": true,
+        "variants": 1
+      },
+      {
+        "function": "save_occasion_setup_draft",
+        "canonicalBodyMatchesInstalled": true,
+        "variants": 1
+      },
+      {
+        "function": "finalize_occasion_setup_draft",
+        "canonicalBodyMatchesInstalled": false,
+        "variants": 1
+      }
+    ]
+  },
+  "limits": [
+    "No production registration, email delivery, reservation or payment performed.",
+    "Google broker and session finalizer mocked in reproduction; real client continuation executed.",
+    "SQL used marked disposable local database and rolled back canonical finalizer installation and fixtures.",
+    "Existing local finalizer differed in email banner handling; final tests explicitly loaded canonical source transactionally.",
+    "Performance is controlled laboratory data on this workstation, not real-user p75.",
+    "No private production analytics or revenue data inspected."
+  ]
+}

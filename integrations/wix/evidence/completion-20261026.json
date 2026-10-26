@@ -1,0 +1,426 @@
+{
+  "verifiedAt": "2026-10-26",
+  "plan": "../COMPLETION-PLAN-20261026.md",
+  "fullTechnicalQualification": false,
+  "production": {
+    "status": "PASS_GUARDED_RELAYED_PUBLIC_READ",
+    "host": "https://info9468674.wixsite.com/my-site-3",
+    "publicForm": "country_bal_vetrkovice",
+    "htmlAdapted": false,
+    "authAdapted": false,
+    "corsAdapted": false,
+    "corsEnforcementBypassAbsent": true,
+    "requests": [
+      {
+        "method": "OPTIONS",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD,CONNECT,TRACE",
+          "headers": "apikey,authorization,content-profile,content-type,x-client-info"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/get_form_by_link",
+        "status": 200,
+        "applicationCode": 200,
+        "requestOrigin": "https://vstupenky.online",
+        "cors": {
+          "origin": "https://vstupenky.online",
+          "methods": null,
+          "headers": null
+        }
+      }
+    ],
+    "networkFenceProbes": [
+      {
+        "host": "api.festapp.net",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      },
+      {
+        "host": "kjdpmixlnhntmxjedpxh.supabase.co",
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    ],
+    "ui": {
+      "build": "0.20.409+910",
+      "formPresent": true,
+      "width": 642,
+      "scrollWidth": 642
+    },
+    "mobile": {
+      "formPresent": true,
+      "width": 281,
+      "scrollWidth": 281,
+      "build": "0.20.409+910"
+    },
+    "hostSizing": {
+      "frameHeight": 1167,
+      "frameStyleHeight": "1167px",
+      "helperLoaded": true,
+      "widgetWidth": 280.625
+    },
+    "restored": {
+      "restoredUrl": "https://vstupenky.online/form/wix-qa-20261025"
+    },
+    "orderOrHoldRequests": 0,
+    "limit": "Actual production API/HTML/assets and browser CORS, reached through an exact readonly allowlist relay. No production purchase or unguarded direct browser API access claimed."
+  },
+  "reload": {
+    "status": "PASS_DOCUMENTED_STORAGE_LIMITS",
+    "host": "Published Harmony QA",
+    "candidateBuild": "0.20.1+485",
+    "candidateTemplateSha256": "44676782cc08b68a1f1bf5bfb55c5250b687b0cbf8007b20f394c775b6b27109",
+    "candidateRuntimeMatchesCanonicalCommit": "5436b9f80ac14f9f3964fd8419305df3d16c9a96",
+    "runtimeFiles": {
+      "web_client/src/components/eshop/db_orders.js": "1d06663f5787afadf6a9769c615ea23de55a8c06d38fe1d2a061983835f9add5",
+      "web_client/src/components/forms/order_result.js": "7fd57907896cd830b369d31a259f31dde8452c18d464d5a427050153e98b2c55"
+    },
+    "htmlBackendAuthCorsAdapted": true,
+    "candidateBuildDefaults": "Unconfigured main client legacy API origin is redirected only to the isolated backend; no legacy production access.",
+    "fixture": "wix-qa-reload-20261026",
+    "preservesEarlierOrders": [
+      166,
+      167
+    ],
+    "bothNativeStorageApis": "SecurityError",
+    "draftAfterIframeReload": {
+      "values": [
+        "",
+        "",
+        ""
+      ],
+      "form": true
+    },
+    "draftAfterParentReload": {
+      "values": [
+        "",
+        "",
+        ""
+      ],
+      "form": true
+    },
+    "draftRetentionPromised": false,
+    "hold": {
+      "selected": true,
+      "expiresAt": "2026-10-26T00:07:40.392599+00:00",
+      "secondsRemaining": 900
+    },
+    "holdPolicySecondsObserved": 900,
+    "formPaymentDeadlineNotUsedAsHoldTtl": true,
+    "orderPosts": [
+      {
+        "method": "POST",
+        "path": "/functions/v1/send-ticket-order",
+        "status": 200,
+        "applicationCode": 200,
+        "payloadSha256": "6cb15f7e3b7a5725c52aeb36207e56618062d0499734f4ef765ba61b593952a4",
+        "responseDeliberatelyLost": true
+      }
+    ],
+    "uncertainResultUi": {
+      "title": "Order outcome is unconfirmed",
+      "hint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page.",
+      "buttons": [
+        "event_seatSeat selection",
+        "Continue",
+        "\n                        Back to Form\n                    "
+      ]
+    },
+    "beforeSubmitCount": 0,
+    "afterLostResponse": {
+      "count": 1,
+      "orderId": 200,
+      "state": "ordered",
+      "price": 150.0
+    },
+    "afterParentReload": {
+      "count": 1,
+      "orderId": 200,
+      "state": "ordered"
+    },
+    "afterParentUi": {
+      "values": [
+        "",
+        "",
+        ""
+      ],
+      "receipt": false,
+      "storage": [
+        "SecurityError",
+        "SecurityError"
+      ]
+    },
+    "purchasedSeatUi": {
+      "seats": [
+        {
+          "text": "A1 - occupied",
+          "pressed": "false",
+          "disabled": false,
+          "ariaDisabled": null
+        }
+      ]
+    },
+    "finalSql": {
+      "orders": 1,
+      "seatSold": true,
+      "holdSecretAbsent": true,
+      "holdExpiryAbsent": true
+    },
+    "nativeSettingsRestored": {
+      "formUrl": "https://vstupenky.online/form/wix-qa-20261025"
+    },
+    "limit": "Full reload with denied storage loses the draft and original in-memory intent. It does not automatically submit another order or restore a sold seat. Recovery of the prior receipt across this reload is not claimed; UI instructs checking email and same-page retry.",
+    "fixLiveVerification": {
+      "version": "0.20.410+911",
+      "main": "e5d5b2f30b9545de0a97e6c16e93ee2161e111c7",
+      "productionBranch": "prod/festapptickets",
+      "productionSource": "8e2775420acea8f8c220960ec8aeef6b35b1cc2b",
+      "module": "https://vstupenky.online/web-assets/form_page-BM5Ei_IM.js",
+      "moduleSha256": "9a7cb6aac55f1de98f1ab5ebd4628a8d92b9cb5edc4737bb661d0f7a46c41005",
+      "viteManifestSha256": "21f1e8853feb3e86d5267d7d4c24b298f78991a4987746cc7bf901122d7a9c1b",
+      "runtimeMarkers": [
+        "ORDER_OUTCOME_UNKNOWN",
+        "outcomeUnknownTitle",
+        "outcomeUnknownHint"
+      ],
+      "allSixLiveTranslationsContainNewKeys": true,
+      "mainAndProductionImplementationAndTestsMatch": true,
+      "newDeploymentNeeded": false,
+      "note": "Concurrent approved release incorporated the pending fix; readonly live verification avoided a duplicate release."
+    }
+  },
+  "safari": {
+    "status": "PARTIAL_REAL_MOBILESAFARI_NATIVE_INPUT_AND_LOCAL_NAVIGATION_PASSED",
+    "device": {
+      "safari:deviceName": "Festapp Wix QA 20261026",
+      "safari:platformVersion": "26.5",
+      "safari:automaticInspection": false,
+      "webkit:WebRTC": {
+        "DisableICECandidateFiltering": false,
+        "DisableInsecureMediaCapture": false
+      },
+      "webkit:alwaysAllowAutoplay": false,
+      "browserVersion": "26.5",
+      "safari:deviceType": "iPhone",
+      "strictFileInteractability": false,
+      "browserName": "Safari",
+      "safari:deviceUDID": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+      "safari:useSimulator": true,
+      "safari:platformBuildVersion": "23F77",
+      "setWindowRect": false,
+      "safari:automaticProfiling": false,
+      "acceptInsecureCerts": false,
+      "safari:experimentalWebSocketUrl": false,
+      "platformName": "iOS",
+      "safari:diagnose": false
+    },
+    "productionForm": {
+      "scrollWidth": 353,
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+      "visualHeight": 1028,
+      "inputs": [
+        {
+          "type": "email",
+          "name": "1882",
+          "id": "form-input-1882"
+        },
+        {
+          "type": "text",
+          "name": "1883",
+          "id": "form-input-1883"
+        },
+        {
+          "type": "text",
+          "name": "1875",
+          "id": "form-input-1875"
+        },
+        {
+          "type": "text",
+          "name": "1876",
+          "id": "form-input-1876"
+        }
+      ],
+      "width": 353,
+      "build": "0.20.409+910",
+      "capabilities": {
+        "safari:deviceName": "Festapp Wix QA 20261026",
+        "safari:platformVersion": "26.5",
+        "safari:automaticInspection": false,
+        "webkit:WebRTC": {
+          "DisableICECandidateFiltering": false,
+          "DisableInsecureMediaCapture": false
+        },
+        "webkit:alwaysAllowAutoplay": false,
+        "browserVersion": "26.5",
+        "safari:deviceType": "iPhone",
+        "strictFileInteractability": false,
+        "browserName": "Safari",
+        "safari:deviceUDID": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+        "safari:useSimulator": true,
+        "safari:platformBuildVersion": "23F77",
+        "setWindowRect": false,
+        "safari:automaticProfiling": false,
+        "acceptInsecureCerts": false,
+        "safari:experimentalWebSocketUrl": false,
+        "platformName": "iOS",
+        "safari:diagnose": false
+      }
+    },
+    "nativeInputControl": {
+      "value": "",
+      "visualHeight": 714,
+      "innerHeight": 714,
+      "href": "data:",
+      "focused": true
+    },
+    "nativeInputControlAlternatePayload": {
+      "value": "",
+      "visualHeight": 714,
+      "innerHeight": 714,
+      "focused": true
+    },
+    "keyboardCaseQualified": false,
+    "nativeTypingQualified": true,
+    "upstreamReference": "https://bugs.webkit.org/show_bug.cgi?id=322938",
+    "limit": "WebDriver text input failed its standalone control. Native AXe HID input subsequently passed in normal MobileSafari. Full onscreen software-keyboard geometry and physical iPhone remain unqualified.",
+    "hardwareKeyboardDisabledControl": {
+      "value": "",
+      "visualHeight": 714,
+      "innerHeight": 714,
+      "focused": true
+    },
+    "foregroundWindowPermission": "DECLINED by owner; all native HID interaction remained in background.",
+    "nativeHid": {
+      "method": "Installed AXe native simulator HID; normal Safari after stopping WebDriver test session",
+      "actualPublishedWix": {
+        "nativeEmailInputAndVisibleCaret": true,
+        "nativeNameInput": true,
+        "productionSeatSelection": false,
+        "productionOrderSubmit": false,
+        "settingsTemporarilyChanged": true,
+        "settingsRestoredColdReadbackAndPublished": true,
+        "originalUrl": "https://vstupenky.online/form/wix-qa-20261025",
+        "temporaryUrl": "https://vstupenky.online/form/country_bal_vetrkovice",
+        "restoredPublicHtml": {
+          "originalQaUrlPresent": true,
+          "temporaryCountryUrlAbsent": true
+        }
+      },
+      "localCrossSiteFixture": {
+        "parent": "http://localhost:59802/tests/fixtures/embedded-checkout/host.html?form=wix-qa-bank-20261025",
+        "child": "http://127.0.0.1:59802/form/wix-qa-bank-20261025?embed=1",
+        "nativeEmailNameAndSurname": true,
+        "summary150Czk": true,
+        "nativeSafariBackRetainedFields": true,
+        "escapeRetainedFields": true,
+        "closeXQualified": false,
+        "submitPressed": false,
+        "bankFormOrderCountBeforeAndAfter": 1
+      },
+      "backgroundProof": {
+        "simulatorActive": false,
+        "visibleSimulatorWindows": 0
+      },
+      "softwareKeyboardGeometryQualified": false,
+      "note": "Hardware HID input displayed the iOS input accessory bar. Full software keys were not shown; no geometry pass inferred. Screenshot taken after native typing settled."
+    },
+    "screenshots": {
+      "integrations/wix/evidence/screenshots/safari-wix-native-input.png": "b6e3eeb25e0de70d30fed34f30f656bacef14d792a3d67553b0dbe482301b8ca",
+      "integrations/wix/evidence/screenshots/safari-local-summary.png": "9548ae8754c3bfc1760f7089aea856b361f9997079e5abda764fe0dd00a11a9b",
+      "integrations/wix/evidence/screenshots/safari-local-back.png": "e7d25eab10ca3fc0a367d12cb2843f683dca6734a2cb29aa95cdab8d57e09353",
+      "integrations/wix/evidence/screenshots/safari-local-escape.png": "ed38e9c60622b469714f68570582024351eb5abbd49fbf9ec116078e10f33caa"
+    }
+  },
+  "compatibility": {
+    "workflow": "../../../.github/workflows/wix-checkout-compatibility.yml",
+    "localTargetedTestsPassed": 43,
+    "paymentHandoffTestsPassed": 4,
+    "wixTestsPassed": 15,
+    "candidateWebBuild": "PASS",
+    "ciStatus": "Authoritative result is the GitHub required checks for branch test/wix-completion-20261026",
+    "reconciledCiSuitePassed": 45
+  },
+  "cleanup": {
+    "testBrowsersClosed": true,
+    "localBackendStoppedWithVolumeRetained": true,
+    "emailCapacityPaused": true,
+    "emailWorkerUrlNull": true,
+    "externalEmailDeliveryClaimed": false,
+    "preservedOrderIds": [
+      166,
+      167,
+      200
+    ],
+    "productionDataWrites": false,
+    "paidCommitment": false,
+    "newSupportCase": false,
+    "safariFollowupInProgress": false,
+    "safariSessionClosed": true,
+    "taskSimulatorShutDown": true,
+    "taskKeyboardPreferenceRestored": true
+  },
+  "nativeEditorInstallDiagnostic": {
+    "firstFailure": {
+      "message": "TypeError: Cannot read properties of undefined (reading 'id')",
+      "stack": [
+        "    at Ao.SHOUTOUT.APP_DEF_ID.o.callback (https://static.parastorage.com/services/santa-editor/dist/esbuild-prod/chunks/chunk.7LCPLFY2.js:475:160737)",
+        "    at Hc (https://static.parastorage.com/services/santa-editor/dist/esbuild-prod/lodash-es.O37MQBTK.js:1:5116)",
+        "    at l (https://static.parastorage.com/services/santa-editor/dist/esbuild-prod/lodash-es.O37MQBTK.js:3:3213)",
+        "    at e.saveManager.saveInBackground.sourceOfStart (https://static.parastorage.com/services/santa-editor/dist/esbuild-prod/chunks/chunk.7LCPLFY2.js:475:138623)",
+        "    at https://static.parastorage.com/services/santa-editor/dist/esbuild-prod/chunks/chunk.7LCPLFY2.js:206:13380"
+      ]
+    },
+    "saveHttpStatuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "widgetAbsentAtFailure": {
+      "customElements": 0,
+      "previewFrames": [],
+      "rootWidgetResources": 0
+    },
+    "sourceExpression": "fr.reportTpaAddedBiEvent(e,t,o.widgetId,d,c.comp.id,g,n,i)",
+    "sourceOwner": "Wix santa-editor, chunk.7LCPLFY2.js:475:160737",
+    "configurationUnchanged": true,
+    "newSupportCase": false,
+    "reviewedByIndependentCritic": true,
+    "conclusion": "Concrete failure is a native Wix callback dereferencing c.comp.id; our runtime had not run. Why comp is missing remains unproven; no violation of our self-managed contract was found.",
+    "restoration": {
+      "coldEditor": {
+        "widgets": [
+          {
+            "url": "https://vstupenky.online/form/wix-qa-20261025",
+            "title": "Wix Editor QA - prodej vstupenek",
+            "inherit": "false",
+            "checkoutFrames": 0
+          }
+        ]
+      },
+      "publicCachedPage": {
+        "helperLoaded": true,
+        "newComponentPresent": false,
+        "widgets": [
+          {
+            "checkoutFrames": 1,
+            "inherit": "false",
+            "parent": "comp-mvof3ay7",
+            "title": "Wix Editor QA - prodej vstupenek",
+            "url": "https://vstupenky.online/form/wix-qa-20261025"
+          }
+        ]
+      },
+      "publicCacheBypassHtmlContainsNewComponent": true,
+      "publicCacheBypassHtmlContainsOldComponent": false,
+      "componentId": "comp-mvogdis6",
+      "browserClosed": true,
+      "configurationChanged": false,
+      "ordersSubmitted": 0
+    }
+  }
+}

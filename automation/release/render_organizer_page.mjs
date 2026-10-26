@@ -26,8 +26,7 @@ if (fs.existsSync(index)) {
 const html = fs.readFileSync(index, 'utf8')
     .replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
     .replace(/(<meta[^>]*property="(?:og:url|twitter:url)"[^>]*content=")[^"]*/gi, (_, prefix) => prefix + canonical);
-  const nav = enabled ? `\n<nav class="catalog-navigation" aria-label="${escape(projection.ui.catalogNav)}"><a href="/">${escape(projection.ui.organizers)}</a>${projection.helpLink ? `<a href="${escape(projection.helpLink.href)}">${escape(projection.helpLink.label)}</a>` : ''}</nav>\n` : '\n';
-  let catalog = html.replace(/(<!-- ORGANIZERS_NAV_START -->)[\s\S]*?(<!-- ORGANIZERS_NAV_END -->)/, (_, start, end) => start + nav + end);
+  let catalog = html;
   if (enabled && seo) {
     const esc = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     catalog = catalog.replace(/<title>.*?<\/title>/s, () => `<title>${esc(seo.catalogTitle)}</title>`)

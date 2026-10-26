@@ -3,10 +3,10 @@
   "verifiedAt": "2026-10-26",
   "sourceBase": "1723fefcd",
   "adoptedSourceCommit": "449942c0b",
-  "state": "LIVE_HELPER_FIXED_CURRENT_CHECKOUT_VERIFIED_SUBMISSION_GATED",
+  "state": "LIVE_RECEIPT_FIXED_SAFARI_KEYBOARD_VERIFIED_WIX_SUBMISSION_GATED",
   "localTests": {
-    "count": 14,
-    "passed": 14,
+    "count": 15,
+    "passed": 15,
     "failed": 0
   },
   "build": "PASS: pinned official Wix SDK bundled; SHA-256 asset manifest generated",
@@ -101,10 +101,11 @@
   },
   "editorQualification": {
     "receipt": "evidence/uninstall-reinstall-20261025.json",
-    "componentId": "comp-mvof3ay7",
+    "componentId": "comp-mvogdis6",
     "syntheticFormUrl": "https://vstupenky.online/form/wix-qa-20261025",
     "nativeCleanSetupQualified": false,
-    "latestReceipt": "evidence/editor-install-ab-20261025.json"
+    "latestReceipt": "evidence/editor-install-ab-20261025.json",
+    "latestDiagnosticReceipt": "evidence/completion-20261026.json"
   },
   "checkoutHtmlTemplateVersion": "0.20.401+902",
   "galleryAssetsVerified": true,
@@ -136,5 +137,40 @@
     "0.20.406+907"
   ],
   "technicalFollowupDelivered": false,
-  "recoveryFixesReceipt": "evidence/recovery-fixes-20261026.json"
+  "recoveryFixesReceipt": "evidence/recovery-fixes-20261026.json",
+  "completionReceipt": "evidence/completion-20261026.json",
+  "completionPlan": "COMPLETION-PLAN-20261026.md",
+  "productionPublicReadBoundaryQualified": true,
+  "productionPublicReadScope": "Actual production HTML/assets/anon SELECT and original CORS through strict readonly relay; no production purchase",
+  "reloadWithoutStorage": {
+    "noAutomaticResubmit": true,
+    "committedOrderPreserved": true,
+    "soldSeatNotRestoredAsOwned": true,
+    "draftRetention": false,
+    "crossReloadReceiptRecoveryQualified": false
+  },
+  "safari": {
+    "realMobileSafariSimulatorRendering": true,
+    "platformVersion": "26.5",
+    "nativeKeyboardQualified": true,
+    "nativeTypingQualified": true,
+    "physicalIphoneQualified": false,
+    "localCrossSiteSummaryBackEscapeQualified": true,
+    "actualWixNativeInputQualified": true,
+    "latestReceipt": "evidence/safari-storage-bank-20261026.json",
+    "localNativeStorageDenialQualified": true,
+    "localBankOrderAndDecodedQrQualified": true,
+    "localOccupiedSeatMapQualified": true,
+    "bankReceiptLayoutQualified": false,
+    "receiptIconFontIndependenceLocallyVerified": true,
+    "receiptIconFixReceipt": "evidence/receipt-icons-20261026.json",
+    "receiptIconFixLive": true,
+    "softwareKeyboardReceipt": "evidence/software-keyboard-20261026.json",
+    "softwareKeyboardWidth": 402,
+    "liveReceipt": "evidence/live-receipt-icons-20261026.json",
+    "localAvailableSeatHoldReleaseExpiryQualified": true,
+    "holdExpiryPolicySeconds": 15,
+    "holdWithStorageDeniedQualified": false,
+    "holdReceipt": "evidence/safari-hold-expiry-20261026.json"
+  }
 }

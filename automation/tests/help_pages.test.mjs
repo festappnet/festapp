@@ -36,6 +36,13 @@ test('public guides render crawlable linked documents, code generator and exact 
    assert.ok(fs.existsSync(file),`Missing guide/asset ${match[1]}`);
   }
  }
+ const creation = fs.readFileSync(path.join(target,'zaciname/index.html'),'utf8');
+ assert.match(creation, /href="\/events\?help=organization" target="_blank"/);
+ assert.doesNotMatch(creation, /href="\/events" target="_blank"[^>]*>seznam akcí/);
+ for (const slug of ['bankovni-ucet', 'fio-api-token']) {
+   const guide = fs.readFileSync(path.join(target,slug,'index.html'),'utf8');
+   assert.match(guide, /href="\/events\?help=bank-accounts" target="_blank"/);
+ }
  const home=fs.readFileSync(path.join(target,'index.html'),'utf8');
  for (const route of ['/rezervacni-system-s-planem-salu']) {
   assert.ok(home.slice(0,home.indexOf('<footer')).includes(`href="${route}"`),'topic is discoverable from help overview');
