@@ -28,7 +28,7 @@ BEGIN
  PERFORM public.notification_center_form_capacity_internal(p_form,NULL);
  RETURN n;
 END $$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_offer_proposal(p_form_id bigint)
+CREATE OR REPLACE FUNCTION public.get_waitlist_offer_proposal_internal(p_form_id bigint,p_after bigint DEFAULT NULL,p_limit integer DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE f public.forms; c jsonb; proposals jsonb; available integer;
 BEGIN
@@ -39,15 +39,30 @@ BEGIN
  c:=public.get_form_capacity_snapshot_internal(f.id); available:=(c->>'offerablePlaces')::integer;
  -- count is the suggested allocation; waitingCount is the authoritative recipient limit.
  -- Keep unallocated eligible recipients so editors can adjust the allocation safely.
- SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',order_id,'count',offered,'waitingCount',total) ORDER BY first_queue,order_id),'[]') INTO proposals
- FROM (SELECT order_id,min(waitlist_queue_at) first_queue,count(*) total,
-  count(*) FILTER(WHERE position<=available) offered FROM
-  (SELECT p.*,o.id order_id,row_number() OVER(ORDER BY p.waitlist_queue_at,p.created_at,p.id) position FROM eshop.tickets p
-   JOIN LATERAL(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p.id) x ON true
-   JOIN eshop.orders o ON o.id=x."order" WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(p.id)='waiting' ) ranked GROUP BY order_id) grouped;
+ WITH ranked AS (
+  SELECT p.*,o.id order_id,row_number() OVER(ORDER BY p.waitlist_queue_at,p.created_at,p.id) position
+  FROM eshop.tickets p
+  JOIN LATERAL(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p.id) x ON true
+  JOIN eshop.orders o ON o.id=x."order" WHERE o.form=f.id AND o.state='waitlisted'
+   AND public.get_effective_waitlist_ticket_lifecycle_internal(p.id)='waiting'
+ ), grouped AS (
+  SELECT order_id,min(waitlist_queue_at) first_queue,count(*) total,count(*) FILTER(WHERE position<=available) offered
+  FROM ranked GROUP BY order_id
+ ), page AS (
+  SELECT * FROM grouped WHERE p_after IS NULL OR order_id>p_after
+  ORDER BY CASE WHEN p_limit IS NULL THEN first_queue END,order_id LIMIT p_limit
+ )
+ SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',order_id,'count',offered,'waitingCount',total)
+  ORDER BY CASE WHEN p_limit IS NULL THEN first_queue END,order_id),'[]') INTO proposals FROM page;
  RETURN jsonb_build_object('code',200,'formId',f.id,'revision',c->'revision','capacity',c,'recipients',proposals,
- 'offerDurationSeconds',f.waitlist_offer_duration_seconds,'serverTime',clock_timestamp());
+ 'offerDurationSeconds',f.waitlist_offer_duration_seconds,'serverTime',clock_timestamp(),
+ 'nextCursor',CASE WHEN p_limit IS NOT NULL AND jsonb_array_length(proposals)=p_limit THEN (SELECT max((r->>'orderId')::bigint) FROM jsonb_array_elements(proposals) r) END);
 END $$;
+REVOKE ALL ON FUNCTION public.get_waitlist_offer_proposal_internal(bigint,bigint,integer) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.get_waitlist_offer_proposal(p_form_id bigint)
+RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_waitlist_offer_proposal_internal(p_form_id,NULL,NULL);
+$$;
 CREATE OR REPLACE FUNCTION public.enqueue_waitlist_email_internal(p_order bigint,p_offer uuid,p_command uuid,p_delivery jsonb)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; occ public.occasions; result jsonb; expiry timestamptz; code text; kind text;

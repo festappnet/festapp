@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-26",
+  "stage": "5 complete",
+  "state": "locally_verified_not_deployed",
+  "verification": "standard",
+  "implementationCommit": "a04d18423080022700b20e1e6c1032a679850116",
+  "authoritativeMainAtStart": "3988bb7cbaf8766068a84f49f759d5544269e325",
+  "baseReviewHead": "859ab98ad571f08ded25bcd7122ccdcac5e8799d",
+  "localBranch": "feat/admin-mcp-stage5-20261026",
+  "reviewEntryPoint": "https://github.com/festappnet/festapp/pull/617",
+  "publicationBranch": "feat/admin-mcp-stage4-complete-20261026",
+  "newTools": [
+    "occasions.settings.inspect",
+    "occasions.settings.save",
+    "units.settings.inspect",
+    "units.settings.save",
+    "occasions.publicLink",
+    "occasions.setPublicLink",
+    "occasions.game.inspect",
+    "occasions.game.save"
+  ],
+  "newScopes": [
+    "festapp:occasion-settings:read",
+    "festapp:occasion-settings:write",
+    "festapp:unit-settings:read",
+    "festapp:unit-settings:write"
+  ],
+  "closure": {
+    "confirmedStage5CatalogActionsWithoutTools": [],
+    "catalogActions": 100,
+    "catalogTools": 68,
+    "nextStage": "6: people, roles, groups and volunteers"
+  },
+  "contract": "packages/festapp_contracts/configuration-settings.json",
+  "canonicalOwners": {
+    "occasion": "save_occasion_domain_command_internal_v1 -> update_occasion_internal_v1",
+    "unit": "save_unit_client_sync_v1 -> update_unit_internal_v1",
+    "game": "save_game_settings_command_internal_v1 -> game_update_settings_internal_v1",
+    "publicLink": "Existing occasion receipt and reserve_public_link_internal/history owner"
+  },
+  "invariants": [
+    "Current UI metadata uses named settings rather than replacing opaque occasions.data or units.data.",
+    "SQL and MCP validate one generated, explicit field/type contract; no arbitrary paths, provider setup, ownership patch or ticket artwork patch.",
+    "Metadata/feature merging occurs after original intent receipt hashing, replay and version locking; replay returns frozen snapshots.",
+    "Null metadata removes the override; timezone-only edits preserve stored start/end instants.",
+    "Unit reads/writes require whole-unit consent and the live canonical unit manager operation; occasion editor rights do not promote.",
+    "Scope reads lock/recheck binding. Save scope is rechecked after the existing domain owner; a concurrent move rolls back the entire write.",
+    "Feature prerequisites include app support, required form, unimplemented program notifications, map bundle manifest and promotion image.",
+    "Image attachment references an existing occasion/unit gallery image; no new Storage uploader.",
+    "Game read freezes occasion version; current UI and MCP require it when saving. Four-argument released RPC remains a facade of the same owner.",
+    "Draft creation/finalization and Stripe/provider setup remain their independent owners and stages."
+  ],
+  "checks": {
+    "configurationPostgres": {
+      "passed": 10,
+      "skipped": 0,
+      "realPostgresTests": 9,
+      "schemaTests": 1,
+      "file": "tools/festapp/test/configuration-postgres.test.mjs",
+      "database": "Marked loopback festapp-db-tests-pg15, port 55432",
+      "proofs": [
+        "Opaque metadata/feature preservation",
+        "Timezone instant preservation",
+        "Read/receipt projection equality",
+        "Frozen replay after later change",
+        "Version conflicts",
+        "Tenant/real authenticated role/revocation fences",
+        "Public link history",
+        "Versioned game interval",
+        "Actual SDK list/inspect/save/conflict",
+        "Concurrent read and write outside consent, observed pg_stat_activity row-lock waits",
+        "No private helper or anonymous write grant",
+        "Ticket layout write readiness remains true"
+      ]
+    },
+    "remoteConsent": {
+      "passed": 27,
+      "file": "tools/festapp/test/remote.test.mjs",
+      "includes": "New configuration scopes and exact unit selection; unchanged OAuth/SDK transport regression cases"
+    },
+    "web": {
+      "passed": 56,
+      "files": [
+        "web_client/tests/components/mcp_connection_page.test.js",
+        "web_client/tests/components/account_connections_page.test.js",
+        "web_client/tests/core/public_translations.test.js"
+      ]
+    },
+    "flutter": {
+      "uniquePassed": 42,
+      "batches": [
+        {
+          "passed": 13,
+          "files": [
+            "test/components/occasion/occasion_commands_cases.dart",
+            "test/components/unit/unit_commands_cases.dart",
+            "test/components/occasion_settings/advanced_link_visibility_cases.dart"
+          ]
+        },
+        {
+          "passed": 39,
+          "files": [
+            "test/components/occasion/occasion_commands_cases.dart",
+            "test/components/features/features_unit_cases.dart",
+            "test/components/features/feature_settings_editor_cases.dart",
+            "test/components/features/map_feature_cases.dart"
+          ]
+        }
+      ],
+      "overlap": 10,
+      "concurrency": 1
+    },
+    "dartAnalyze": {
+      "errors": 0,
+      "warnings": 0,
+      "existingInfos": 6,
+      "scope": "Eight modified Dart implementation files"
+    },
+    "denoSessionExchange": {
+      "passed": 12,
+      "command": "deno test --allow-read --allow-env supabase/functions/mcp-session-exchange"
+    },
+    "canonicalSources": {
+      "nodePassed": 8,
+      "pythonPassed": 9,
+      "command": "node --test automation/tests/canonical_operation_sources.test.mjs"
+    },
+    "generators": [
+      "python3 automation/assemble-configuration-migration.py --check",
+      "python3 automation/generate_canonical_source_contract.py --check",
+      "python3 automation/generate_ticket_layout_write_contract.py --check",
+      "node automation/reports/generate_admin_capabilities.mjs --check",
+      "git diff --check"
+    ],
+    "supplementalRegressionBatch": {
+      "passed": 43,
+      "skipped": 24,
+      "scope": "Earlier targeted Node operations/forms/organizer/remote/configuration batch. The 24 authorization benchmark cases require their separate 61022 project; they are not counted as validation. New authenticated role/race cases ran on the marked 55432 fixture."
+    }
+  },
+  "deployment": {
+    "performed": false,
+    "productionOrTenantWrites": false,
+    "paidProviderCalls": false,
+    "requiredReleaseOrder": "Existing stage 3/4 migrations, then stage 5 migration before coordinated Flutter/consent/MCP client activation. Normal tenant, backup, source digest and release gates remain."
+  },
+  "measurementLimits": "Test durations are local fixture timings, not production latency or token savings. No new exact performance claim.",
+  "migration": {
+    "path": "supabase/migrations/20261026220000_occasion_unit_configuration.sql",
+    "sha256": "b89786da1b5f6e78aa4e3eb3f7e15c44e1a3ff89e2d6330742abfa82e19d60df"
+  },
+  "sourceSha256": {
+    "assets/translations/cs.json": "d1047af31f4118b02fbb3de19aa9c43d72899f04d83315210fe0c30c86936f58",
+    "assets/translations/de.json": "c7d2325a81594a12d401ffc043c5881967d306c03ef5554f65f35faf419bd558",
+    "assets/translations/en.json": "4de4d1fcee84128a5249181e17216f35112126a115e29a9896aaeb3908e114e5",
+    "assets/translations/pl.json": "93e6649269dfec396ebdad7b32f63ba50f5cb32601b094cd95d9262bbb0eb733",
+    "assets/translations/sk.json": "1a5710b7a684c2a3bcdf6820d5d561318651af17f3ba66e4b2ff6e07ccf7c510",
+    "assets/translations/uk.json": "a66677824136e05da7eadb00c582f043bd031e5572afd8c9bb81c96a28d0dcc1",
+    "automation/assemble-configuration-migration.py": "a3eb89ec5b18244af58683be3792fedc9fc1dd0f9dc293fc1cdb9dbbf557af56",
+    "automation/canonical-operation-sources.json": "5ad7121f6f0cb6ce852fcb22065134089f85a09b3e595a1fc623c87b5607e459",
+    "database/functions/others/configuration_authoring.sql": "9666f83dea71c95103736149eaee1d7267398d5c79fad72cfbb900d94d7e4ee1",
+    "database/functions/others/configuration_settings.sql": "8c4c959f1284f90101c66759fd8f15a75322d6e2afa2d05e1ac2fd54003d46bf",
+    "database/functions/others/configuration_settings_contract.sql": "c547c6ec5f5461a47694e78c380738a82f0e3d29f485ed3af3612f1887922ff2",
+    "database/functions/others/game_update_settings.sql": "33e458a651f409aba2d41c7312ded2fe03eb668c9077df275c29ee7c61a4fa9f",
+    "database/functions/others/game_update_settings_client_sync_v1.sql": "a6407568c6a024850bb139d5579601259b11d73824bbde2cb83fcdae5cfeb751",
+    "database/functions/others/get_ticket_layout_write_contract_v1.sql": "7abd79889011d7bdba680613f69b35b2c9de8d061c8eca2e77a500e7069801ff",
+    "database/functions/others/save_occasion_client_sync_v1.sql": "fe62d3b308ba435011cecd3e89764339ee4986e2ee81c776927c6a890120c2cc",
+    "database/functions/others/save_occasion_domain_command_internal_v1.sql": "e74f51a55ea8091eb215b9dab75f4eca817877dbf51ea8acace5ace22605fd7f",
+    "database/functions/units/save_unit_client_sync_v1.sql": "6ec2666f481f7ffa3c1c46e546f6582c66ea0e95c4318bb934a6bea872e02908",
+    "database/functions/units/update_unit_internal_v1.sql": "c2f68087a8aaf74521d35f563e3dae3177decc9904bbc8e4909688b559ded737",
+    "database/functions/user_permissions/game_settings.sql": "cbd8612a4a031489970e8180f5db59dc65f82ca5c908976b9e793cc38d70f83f",
+    "database/tests/canonical_mutation_source_parity_test.sql": "cde73994eb9706972f82e5c6a963928a5d89cd5601abc9664e91c4328e4c61aa",
+    "docs/reports/admin-capabilities-2026-10-23.html": "a9065b835d466680677ef6c8f16e9a7390b38bd34d307eb6a382aa9ddcc6e2c0",
+    "docs/reports/admin-capabilities-2026-10-23.json": "2906764d0795e49c5671aee24e76546e8588efeb6319b110e0380f39b767d952",
+    "lib/components/features/counseling_feature.dart": "bb0045e58e8ca0bded621eafd4f128129458167198abb55b4ed1372fd9f4b7af",
+    "lib/components/features/workshop_feature.dart": "7b20407fdedadb17c8986b7a33519cf1a1ca48ebebc0809ae3e747b1f2175f00",
+    "lib/components/groups/game_settings_content.dart": "acb88e353af0ad4a013e66120c6057749fd9c928d70263d12b11099286b35a96",
+    "lib/components/information/game/game_settings_model.dart": "2ba061bc984a7510fe92f127f2b62fabc3d641bd94e09244350201c486c5915b",
+    "lib/components/occasion/db_occasions.dart": "bdbfc1e2bba4fe70fa03c9ab19b0e211b15faf3147f2653b3cfe06735a072435",
+    "lib/components/occasion/occasion_commands.dart": "c810f0e0c49341abcdbc338222a651794dcbba63b0e4688ee2d967dda7f87e38",
+    "lib/components/occasion/occasion_model.dart": "3e533de63856c52bc13b463d842b080bc7e29f241c1e63a04d027c21d8dbd1dc",
+    "lib/components/unit/unit_commands.dart": "94da20a354423e95eab39ba99879ab267c205a98bdf57b7debb7d15cac6ee4b0",
+    "packages/festapp_contracts/configuration-settings.json": "98b761f03162e2c420aca73b193f88a784576c5ba277162f272252257b79f706",
+    "packages/festapp_contracts/mcp-permissions.mjs": "5c26cebfb0f53d03302daa9f7b4498477b714740afaf2cdc32acf85fa09cb0f5",
+    "supabase/migrations/20261026220000_occasion_unit_configuration.sql": "b89786da1b5f6e78aa4e3eb3f7e15c44e1a3ff89e2d6330742abfa82e19d60df",
+    "test/components/occasion/occasion_commands_cases.dart": "238e5066c751f5b4f99053aa05f3ef8ed6473c98f3eebc08796d3eaa2a3a3fb5",
+    "test/components/unit/unit_commands_cases.dart": "a1ee935f2a5a0b976eabfde50297ec2a64aa4d0e18490661585e7f88d06dc039",
+    "tools/festapp/src/operations/catalog.mjs": "38754f8ff38aac30c67437e645550dfed1cd79e45db4f6ded43d7cd8b8e15be6",
+    "tools/festapp/src/operations/configuration.mjs": "1aac0a8a9f14f3e24ca0761bf25b0718cece0cc46fdd0f445e07d876b0a41f0f",
+    "tools/festapp/src/remote/delegation.mjs": "b500032c4d237f57566e5fdbcc9456c253691c044c27ed78638d054cfca0d57f",
+    "tools/festapp/test/configuration-postgres.test.mjs": "3953dcfd9f328accc2f41bf734178b741851d165325bcb814530fd884db65b37",
+    "tools/festapp/test/remote.test.mjs": "91ed19ae1c43920d86380e0be58b5c180d85bda90f8ce8a74ae46e93fb88e678",
+    "web_client/public/assets/translations/cs.json": "e70fa53d73f1adf9c2649a1a48a22215e9f9803bb1d4f4637f7b0f2202821bc2",
+    "web_client/public/assets/translations/de.json": "35ea2b2938823a46d130ad7f57d2f823000ec55e2aaa9b84f1e006d92800a604",
+    "web_client/public/assets/translations/en.json": "f786f6c06a1f1aad365e2d2fde7e665a6a747637c31ee194cf222d6db5d584fe",
+    "web_client/public/assets/translations/pl.json": "196790889ce689910751dae336428af03a685c8b722615206615b5d7c6e4075a",
+    "web_client/public/assets/translations/sk.json": "ffd356921e5371a2c46a198c2d39e288bdb14459248fb0d909bafa07cd80d7c0",
+    "web_client/public/assets/translations/uk.json": "b560d5c70d2c61d4818d2416aeb1ce98f8790287fffcd72f2490efeacbd6c088",
+    "web_client/tests/components/mcp_connection_page.test.js": "d803a3d53423819a186dbdf64af80deb54e9b5b9520c5b9236778f8809d7c698"
+  },
+  "publicationPreflight": {
+    "authoritativeMain": "3988bb7cbaf8766068a84f49f759d5544269e325",
+    "reviewBranchBeforePush": "859ab98ad571f08ded25bcd7122ccdcac5e8799d",
+    "bothAreAncestors": true,
+    "reviewRequired": true,
+    "strategy": "Fast-forward existing canonical PR #617, do not create another review stack or merge protected main"
+  }
+}

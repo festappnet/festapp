@@ -1,5 +1,12 @@
+import 'package:flutter/services.dart';
+
+import 'dart:async';
+
+import '../../support/fixtures/local_app_storage_fixture.dart';
+
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -11,94 +18,189 @@ import 'package:fstapp/components/email_templates/email_preview_examples.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_settings_page.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
+
 import '../../support/fixtures/root_supabase_fixture.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'email_template_dialog_cases.dart' show openTemplate;
 
 void main() {
   late RootSupabaseFixture backend;
+  late LocalAppStorageFixture storage;
   var failSave = true;
   var failContext = false;
+  const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   setUpAll(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(toastChannel, (_) async => true);
+    storage = await LocalAppStorageFixture.open();
     backend = await RootSupabaseFixture.open((request) {
       if (request.url.path == '/functions/v1/send-custom-email') {
         return http.Response(
-            jsonEncode(failContext
+          jsonEncode(
+            failContext
                 ? {'error': 'unavailable'}
                 : {
                     'senderAddress': 'sender@organizer.test',
-                    'wrapperHtml':
-                        '<div style="padding:24px;font-family:sans-serif;font-size:16px">{{content}}</div>'
-                  }),
-            failContext ? 403 : 200,
-            request: request,
-            headers: {'content-type': 'application/json'});
+                    'wrapperHtml': '<div style="padding:24px;font-family:sans-serif;font-size:16px">{{content}}</div>',
+                  },
+          ),
+          failContext ? 403 : 200,
+          request: request,
+          headers: {'content-type': 'application/json'},
+        );
       }
-      expect(request.url.path, '/rest/v1/rpc/update_email_template');
+      expect(request.url.path, '/rest/v1/rpc/manage_email_template');
       return failSave
           ? http.Response(
-              '{"message":"Save unavailable","code":"fixture"}', 500,
-              request: request, headers: {'content-type': 'application/json'})
-          : http.Response('{}', 200,
-              request: request, headers: {'content-type': 'application/json'});
+              '{"message":"Save unavailable","code":"fixture"}',
+              500,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            )
+          : http.Response(
+              jsonEncode({
+                'status': 'applied',
+                'code': 200,
+                'data': {
+                  'templates': [
+                    {'id': 10, 'revision': 'b' * 64},
+                  ],
+                },
+                'sync': {'replacements': []},
+                'mutation': {
+                  'commandId': jsonDecode(request.body)['p_command_id'],
+                  'receiptId': jsonDecode(request.body)['p_command_id'],
+                  'replayed': false,
+                  'occurredAt': '2026-10-26T12:00:00Z',
+                },
+              }),
+              200,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
     });
   });
-  tearDownAll(() async => backend.dispose());
-  testWidgets(
-      'one save submits subject and body; failed save retains both for retry',
-      (tester) async {
-    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
-    addTearDown(logs.dispose);
-    await openTemplate(tester, occasionTitle: 'Festival',
-        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
-        authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'sender@organizer.test'));
-    expect(find.byKey(const ValueKey('email-automatic-completion')), findsNothing);
-    final editors =
-        tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).toList();
-    for (final widget in editors) {
-      final node = widget.controller.editor.document.first as TextNode;
-      widget.controller.editor.execute([
-        InsertTextRequest(
-            documentPosition: DocumentPosition(
-                nodeId: node.id,
-                nodePosition: const TextNodePosition(offset: 0)),
-            textToInsert: 'Draft ',
-            attributions: {})
-      ]);
-    }
-    await tester.pump();
-    expect(find.text(CommonStrings.save), findsOneWidget);
-    await tester.tap(find.text(CommonStrings.save));
-    await tester.pumpAndSettle();
-    expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
-    expect(editors.first.controller.plainText, 'Draft Subject');
-    expect(editors.last.controller.plainText, 'Draft Content');
-    expect(editors.first.controller.hasUserChanges, isTrue);
-    expect(editors.last.controller.hasUserChanges, isTrue);
-    final sent = jsonDecode(backend.requests.last.body)['p_data'];
-    expect(sent['subject'], 'Draft Subject');
-    expect(sent['html'], '<p>Draft Content</p>');
-    failSave = false;
-    await tester.tap(find.text(CommonStrings.save));
-    await tester.pumpAndSettle();
-    expect(find.byType(EmailTemplateSettingsPage), findsNothing);
-    expect(
-        backend.requests
-            .where((r) => r.url.path == '/rest/v1/rpc/update_email_template')
-            .length,
-        2);
+  tearDownAll(() async {
+    await backend.dispose();
+    await storage.dispose();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(toastChannel, null);
   });
-  testWidgets('authoritative sender and wrapper retry preserves the draft',
-      (tester) async {
+  testWidgets(
+    'one save submits subject and body; failed save retains both for retry',
+    (tester) async {
+      final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+      addTearDown(logs.dispose);
+      late Completer<void> started;
+      late Future<void> save;
+      await openTemplate(
+        tester,
+        occasionTitle: 'Festival',
+        saveTemplate: (template) {
+          save = DbEmailTemplates.updateEmailTemplate(template);
+          started.complete();
+          return save;
+        },
+        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
+          jsonDecode(
+            File('assets/email_templates/preview_examples.json')
+                .readAsStringSync(),
+          ),
+        ),
+        authoringContextLoader: () async =>
+            const EmailAuthoringContext(senderAddress: 'sender@organizer.test'),
+      );
+      expect(
+        find.byKey(const ValueKey('email-automatic-completion')),
+        findsNothing,
+      );
+      final editors = tester
+          .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .toList();
+      for (final widget in editors) {
+        final node = widget.controller.editor.document.first as TextNode;
+        widget.controller.editor.execute([
+          InsertTextRequest(
+            documentPosition: DocumentPosition(
+              nodeId: node.id,
+              nodePosition: const TextNodePosition(offset: 0),
+            ),
+            textToInsert: 'Draft ',
+            attributions: {},
+          ),
+        ]);
+      }
+      await tester.pump();
+      expect(find.text(CommonStrings.save), findsOneWidget);
+      await tester.runAsync(() async {
+        started = Completer<void>();
+        await tester.tap(find.text(CommonStrings.save));
+        await started.future.timeout(const Duration(seconds: 3));
+        try {
+          await save;
+        } catch (_) {
+          /* The dialog owns the error presentation. */
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
+      expect(editors.first.controller.plainText, 'Draft Subject');
+      expect(editors.last.controller.plainText, 'Draft Content');
+      expect(editors.first.controller.hasUserChanges, isTrue);
+      expect(editors.last.controller.hasUserChanges, isTrue);
+      final sent = jsonDecode(backend.requests.last.body)['p_payload'];
+      expect(sent['subject'], 'Draft Subject');
+      expect(sent['html'], '<p>Draft Content</p>');
+      final firstCommand = jsonDecode(
+        backend.requests.last.body,
+      )['p_command_id'];
+      failSave = false;
+      await tester.runAsync(() async {
+        started = Completer<void>();
+        await tester.tap(find.text(CommonStrings.save));
+        await started.future.timeout(const Duration(seconds: 3));
+        try {
+          await save;
+        } catch (_) {
+          /* The dialog owns the error presentation. */
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailTemplateSettingsPage), findsNothing);
+      expect(
+        jsonDecode(backend.requests.last.body)['p_command_id'],
+        firstCommand,
+      );
+      expect(
+        backend.requests
+            .where((r) => r.url.path == '/rest/v1/rpc/manage_email_template')
+            .length,
+        2,
+      );
+    },
+  );
+  testWidgets('authoritative sender and wrapper retry preserves the draft', (
+    tester,
+  ) async {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
     failContext = true;
-    await openTemplate(tester, previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
-      jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())), authoringContextLoader: () async {
-      if (failContext) throw StateError('Metadata unavailable');
-      return const EmailAuthoringContext(senderAddress: 'sender@organizer.test',
-        wrapperHtml: '<div style="padding:24px;font-family:sans-serif;font-size:16px">{{content}}</div>');
-    });
+    await openTemplate(
+      tester,
+      previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
+        jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync(),
+        ),
+      ),
+      authoringContextLoader: () async {
+        if (failContext) throw StateError('Metadata unavailable');
+        return const EmailAuthoringContext(
+          senderAddress: 'sender@organizer.test',
+          wrapperHtml: '<div style="padding:24px;font-family:sans-serif;font-size:16px">{{content}}</div>',
+        );
+      },
+    );
     final editor = tester
         .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
         .first
@@ -106,26 +208,34 @@ void main() {
     final node = editor.editor.document.first as TextNode;
     editor.editor.execute([
       InsertTextRequest(
-          documentPosition: DocumentPosition(
-              nodeId: node.id, nodePosition: const TextNodePosition(offset: 0)),
-          textToInsert: 'Draft ',
-          attributions: {})
+        documentPosition: DocumentPosition(
+          nodeId: node.id,
+          nodePosition: const TextNodePosition(offset: 0),
+        ),
+        textToInsert: 'Draft ',
+        attributions: {},
+      ),
     ]);
     await tester.pump();
     await tester.tap(find.text(EmailTemplatesStrings.previewShort));
     await tester.pumpAndSettle();
-    expect(find.text(EmailTemplatesStrings.authoringContextUnavailable),
-        findsOneWidget);
+    expect(
+      find.text(EmailTemplatesStrings.authoringContextUnavailable),
+      findsOneWidget,
+    );
     expect(find.byType(EmailReceivedMessage), findsNothing);
     failContext = false;
     await tester.tap(find.text(CommonStrings.retry));
     await tester.pumpAndSettle();
-    final received =
-        tester.widget<EmailReceivedMessage>(find.byType(EmailReceivedMessage));
+    final received = tester.widget<EmailReceivedMessage>(
+      find.byType(EmailReceivedMessage),
+    );
     expect(received.senderAddress, 'sender@organizer.test');
     expect(received.subject, 'Draft Subject');
-    expect(received.html,
-        '<div style="padding:24px;font-family:sans-serif;font-size:16px"><p>Content</p></div>');
+    expect(
+      received.html,
+      '<div style="padding:24px;font-family:sans-serif;font-size:16px"><p>Content</p></div>',
+    );
     expect(editor.plainText, 'Draft Subject');
     expect(editor.hasUserChanges, isTrue);
     await tester.pumpWidget(const SizedBox());

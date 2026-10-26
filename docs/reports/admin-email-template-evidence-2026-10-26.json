@@ -1,0 +1,163 @@
+{
+  "date": "2026-10-26",
+  "status": "locally-verified-not-deployed",
+  "baseMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
+  "branch": "feat/admin-mcp-emails-20261026",
+  "verification": "standard",
+  "productionMutations": false,
+  "customerEmails": false,
+  "migration": "supabase/migrations/20261026170000_email_template_commands.sql",
+  "migrationSha256": "3b9fdfcef665c6de24370dcee3621b591f8047bfe1d9def83b54001d96919115",
+  "checks": [
+    {
+      "command": "FESTAPP_MCP_TEST_DATABASE_URL=<marked-local-db> pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/email-templates-postgres.test.mjs test/email-templates.test.mjs",
+      "passed": 10,
+      "skipped": 0,
+      "sqlOwnersVerified": 17,
+      "log": "/tmp/festapp-email-sql-canonical.log"
+    },
+    {
+      "command": "DATABASE_URL=<marked-local-db> pnpm --dir web_client exec node scripts/run_db_tests.js get_email_templates_tenant_scope_test.sql emails/get_all_email_templates_test.sql",
+      "passed": 2,
+      "log": "/tmp/festapp-email-regression.log"
+    },
+    {
+      "command": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/remote.test.mjs; new consent case selected separately after adding it",
+      "existingPassed": 23,
+      "newPassed": 1,
+      "skipped": 0,
+      "logs": [
+        "/tmp/festapp-email-remote.log",
+        "/tmp/festapp-email-consent.log"
+      ]
+    },
+    {
+      "command": "pnpm --dir web_client exec node --test tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js",
+      "passed": 37,
+      "log": "/tmp/festapp-email-web-consent.log"
+    },
+    {
+      "command": "deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/send-custom-email/authoringPreview_test.ts supabase/functions/send-custom-email/authoringContext_test.ts",
+      "passed": 11,
+      "syntheticScenarios": 54,
+      "log": "/tmp/festapp-email-deno.log"
+    },
+    {
+      "command": "deno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-custom-email/index.ts",
+      "passed": true,
+      "log": "/tmp/festapp-email-edge-check.log"
+    },
+    {
+      "command": "fvm flutter test --no-pub --concurrency=1 test/components/email_templates/email_templates_cases.dart; affected banner case checked separately after Material fix",
+      "distinctEmailCasesVerified": 78,
+      "retainedPassing": 77,
+      "affectedBannerPassed": 1,
+      "logs": [
+        "/tmp/festapp-email-flutter-canonical2.log",
+        "/tmp/festapp-email-banner-final.log"
+      ],
+      "note": "The initial new banner case exposed an existing ink-surface assertion. Its Material boundary was corrected and the affected case passed. The remaining 77 cases have unchanged covered behavior."
+    },
+    {
+      "command": "fvm flutter test --no-pub --concurrency=1 test/data_services/client_sync/client_command_transport_cases.dart",
+      "passed": 5,
+      "log": "/tmp/festapp-email-flutter-canonical.log"
+    },
+    {
+      "command": "fvm dart analyze <six affected production Dart files>",
+      "errors": 0,
+      "warnings": 0,
+      "note": "Existing style/deprecation infos retained.",
+      "log": "/tmp/festapp-email-analyze-final2.log"
+    },
+    {
+      "command": "python3 automation/assemble-email-template-migration.py --check; python3 automation/generate_canonical_source_contract.py --check; git diff --check",
+      "passed": true
+    }
+  ],
+  "canonicalCutover": {
+    "sharedCommands": [
+      "manage_email_template",
+      "manage_email_banner"
+    ],
+    "sharedReadOwners": [
+      "get_all_email_templates",
+      "get_email_template_state_internal",
+      "get_resolved_email_template",
+      "get_email_banner_state_internal"
+    ],
+    "sharedValidation": "validate_email_template_content_internal",
+    "sharedRenderer": "renderEmail",
+    "removed": [
+      "current Dart direct legacy mutation RPC calls",
+      "Dart banner inheritance calculation",
+      "Dart post-save banner entity mirroring",
+      "duplicate ticket-block validation expression in setup"
+    ],
+    "retainedBoundaries": {
+      "legacyMutationRpc": "Same persistence implementation; public contraction requires all supported released clients to upgrade.",
+      "occasionLifecycle": "Initial copy/setup and deletion retain their own atomic aggregate transaction; no nested per-template authoring receipt."
+    }
+  },
+  "networkEvidence": "docs/reports/admin-email-template-network-2026-10-26.json",
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/613",
+    "state": "open-review-required",
+    "implementationHead": "eb7dad50b22345fccdb4eb3e92472eb711d9f1de",
+    "refreshedBase": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
+    "requiredApprovingReviews": 1
+  },
+  "deployment": "not-performed",
+  "sourceSha256": {
+    "assets/email_templates/preview_examples.json": "99774e32d474010bfd3e48a6403d1889b8e52b346a4fb014bac350dddef630d4",
+    "assets/translations/cs.json": "b037c9fa42e590e62d72ed29f9187d9decc38901ad2506712b702bdeb30720b2",
+    "assets/translations/de.json": "9feb9f8617e4c1fe8b9d6fff939f153c06d0a0cd1ba53b5bd3be66bdf3fcdbea",
+    "assets/translations/en.json": "72e3f0a531547eaa357b4c6e168ff0978c4a30d01ed52e87a67f43ff5229cd69",
+    "assets/translations/pl.json": "cddf01c1b0c6108b0453c1cf9ad97220a22e896682cc1d79ce3c80fe4d0720cd",
+    "assets/translations/sk.json": "950a95f93d675b2a168d0303c1276cb9997074172e65f987ac3685c588ac9842",
+    "assets/translations/uk.json": "a4657e6afca5cd0288076b0f890350c0c58778456f7ad9ecc345370459e5cf86",
+    "automation/assemble-email-template-migration.py": "19eb5f50998312643233fd706fe12439e56345c98759c7764ddbe8bb4afbf861",
+    "automation/canonical-operation-sources.json": "5767735a854281c48242192b1bfe69bf407fc0e967d01cdf9869d04b2298ca18",
+    "automation/generate_email_preview_examples.ts": "9f06b17f5763c1dff2c15fff2a8cb645cca651538b8b78fbcbe989af2e074e94",
+    "automation/reports/generate_admin_capabilities.mjs": "b0c27636b57d4784e232a7ec61e27d7fec2d92826ed24e596de93b57daa280e0",
+    "database/functions/occasion_setup/email_templates.sql": "e9af678fb44a799ce4e7023db95646936998269b06ce81274fef6b969711a268",
+    "database/functions/others/delete_entity_email_template.sql": "12f879bc47197ba71c17e1cacdea8368b50bf8f31dfb33334dd9284ed10f5bc2",
+    "database/functions/others/email_template_commands.sql": "85f9d6a32a4fc5698fe4ce2671b2d547616e372b45ce5d7d8126219283b99999",
+    "database/functions/others/get_all_email_templates.sql": "90fd662a39ee960c5fca7e9b79fb34cc7a9963660e9ed9da5eda4b575e84f1b1",
+    "database/functions/others/get_entity_email_templates.sql": "f740e924e3de1ebd504b51e9ecf61a225c0a5f026a9a93eab1e751855e02bc65",
+    "database/functions/others/update_email_template.sql": "bb22b6a7aa7012cf653979c7e4d82ab5ba2c48a256184e2e3fcc6c462055c30b",
+    "database/functions/others/update_entity_email_banner.sql": "44406127b33f098584e73d66672cb61a4a93a93f4967c4873004ff66a03893b8",
+    "database/functions/units/begin_unit_client_mutation_v1.sql": "16db49b449de4bdb33a884671b1e3722a440bab69df96da0ef46da2a36835de2",
+    "database/tests/canonical_mutation_source_parity_test.sql": "9cf6d7146b975c94c904d5254f75ca27a0b81c3b724766052d656c15ed7adfaa",
+    "lib/components/email_templates/README.md": "a2c61773a80eacf0be81350a9dc8f731484695f1c03bb42219c1d9f6babcf3e7",
+    "lib/components/email_templates/db_email_templates.dart": "750d4c1b72c4165cf841469711a401808816c7031a0abb822bdcc6ae6800e449",
+    "lib/components/email_templates/email_template_commands.dart": "9c34b2053f659f4f2642a6280f7726bfef466e3e6c6f4a8a72cc6e452c9ed3ba",
+    "lib/components/email_templates/email_template_model.dart": "ab768fe0fcada9a9532e3a9b64ac2a1b998378a1679ea6f97e0dd9adf500a819",
+    "lib/components/email_templates/views/email_banner_settings_card.dart": "f6fda4f3e4985889c132f397b21407be4c1f7281816c2b0e1c69f113b0e63d77",
+    "lib/components/email_templates/views/email_templates_settings_page.dart": "f7e4737024eb9f722b75dfd469a221e07f8e93d8dcff3270118e3b9e668750ef",
+    "lib/data_services/client_sync/client_command_transport.dart": "e74a36feae6415384407286eb253b31c5bb51d6bc24312372a6ce23a1066f9e4",
+    "packages/festapp_contracts/mcp-permissions.mjs": "3b2d20985e65484a7659fbdf52b1e172a29a6452b4221c520333ee81e181d6aa",
+    "supabase/functions/_shared/emailPreviewScenarios.json": "562dc32f0526ce6f0e53c9d144994ea20079de5c5fc3fca67b6a78144a626aeb",
+    "supabase/functions/send-custom-email/authoringPreview.ts": "36d18a31f32f1ae3e1fa7971f13fa81458cd702f597a07eb1517b5ab02e0dfc8",
+    "supabase/functions/send-custom-email/authoringPreview_test.ts": "2cb455b9a59222e4a440beb528c7761c1e861160c0ebd0e52360dd70ff81bfdc",
+    "supabase/functions/send-custom-email/index.ts": "ad577958333a7b38303468a181a0adbf8a053af82a1e775992f9f65f0d3199d8",
+    "supabase/migrations/20261026170000_email_template_commands.sql": "3b9fdfcef665c6de24370dcee3621b591f8047bfe1d9def83b54001d96919115",
+    "test/components/email_templates/email_banner_snapshot_cases.dart": "e562156f1be776f29de889b93a9215c24d56bd65ed68704a2a8c4aa06b77a7ba",
+    "test/components/email_templates/email_template_commands_cases.dart": "b67cec0045043553af0cc7fe08097857a2a7a05ca936107ba27d8b70ef34f897",
+    "test/components/email_templates/email_template_dialog_cases.dart": "95d16a2727a486bab3e26096bcccfc65f2b39a275a3bfc57677df5bfb0ddde84",
+    "test/components/email_templates/email_template_save_cases.dart": "e1d44be9384fa1336ff528289db421443870dcfe6de4ce5f7734451b4a84752a",
+    "test/components/email_templates/email_templates_cases.dart": "fb228030e05dbe85b417447dbd85ad13adf1accbb17dfbff3c38ce2cc221d7dd",
+    "tools/festapp/src/operations/catalog.mjs": "e9375241d84114169236d1219a5b63f67a07c13229e38da921c94d4bf23ff6d7",
+    "tools/festapp/src/operations/email-templates.mjs": "6923f4dd60116495b7bfc726320669b0ff001ee001ca11d846df9f9a8774d5ff",
+    "tools/festapp/src/remote/delegation.mjs": "94d33f674aa789006375bb4a8a872019bb4d5da1d1de051b0d8cd09c2f01b494",
+    "tools/festapp/test/email-templates-postgres.test.mjs": "668d04c77716892910390070138780b581adea7d355a19ece363ab0e3a7917c0",
+    "tools/festapp/test/email-templates.test.mjs": "dbb24af8d6abe5ef3a9b37e08b2c2649d5a4595275d4bd9879fc657f0e92800d",
+    "tools/festapp/test/remote.test.mjs": "702a7c49f5f3983d6f34c81fffe1222c50a7ea4c34fb528ef2830892b6f8e510",
+    "web_client/public/assets/translations/cs.json": "cbcaf7354745eddd7a05c17030af67d722b9c040f7202cf45ba8b1a774c8131e",
+    "web_client/public/assets/translations/de.json": "b82d419f2823b192f824ae0c3ad0e63f5e5b21cebdd9ef7a509beb25745aaa64",
+    "web_client/public/assets/translations/en.json": "58e2083ce61b1d00e44a16ca5b1f0a2737ce861a766c21febd731b10016d4634",
+    "web_client/public/assets/translations/pl.json": "72767bae592f36e620c9168f296aef1ac3becc60756edcf82f518c839adb9d1c",
+    "web_client/public/assets/translations/sk.json": "4abd729a9837e3edd3f7cc24c4070ccfe055caa59346f67d632f42b0b52447c3",
+    "web_client/public/assets/translations/uk.json": "2899061c11972d2cd780c8380ca53c135b826d518cc3c5733b31c5517bbd82a2"
+  }
+}

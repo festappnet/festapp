@@ -1,4 +1,5 @@
 import 'occasion_sale_status.dart';
+
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -123,11 +124,11 @@ class OccasionModel {
           : null,
       startTime: json[Tb.occasions.start_time] != null
           ? DateTime.parse(json[Tb.occasions.start_time])
-              .toOccasionTime(data[Tb.occasions.data_timezone])
+                .toOccasionTime(data[Tb.occasions.data_timezone])
           : null,
       endTime: json[Tb.occasions.end_time] != null
           ? DateTime.parse(json[Tb.occasions.end_time])
-              .toOccasionTime(data[Tb.occasions.data_timezone])
+                .toOccasionTime(data[Tb.occasions.data_timezone])
           : null,
       isOpen: json[Tb.occasions.is_open] ?? false,
       isHidden: json[Tb.occasions.is_hidden] ?? false,
@@ -142,21 +143,24 @@ class OccasionModel {
       services: servicesData is Map<String, dynamic>
           ? servicesData
           : (servicesData is Map
-              ? Map<String, dynamic>.from(servicesData)
-              : null),
+                ? Map<String, dynamic>.from(servicesData)
+                : null),
 
       organization: json[Tb.occasions.organization],
       unit: json[Tb.occasions.unit],
       saleForms: (json['sale_forms'] as List?)
           ?.map((f) => OccasionSaleForm.fromJson(Map<String, dynamic>.from(f)))
           .toList(),
-      saleOccasionEndUtc:
-          DateTime.tryParse(json[Tb.occasions.end_time] as String? ?? '')
-              ?.toUtc(),
+      saleOccasionEndUtc: DateTime.tryParse(
+        json[Tb.occasions.end_time] as String? ?? '',
+      )?.toUtc(),
       form: json["form"] != null ? FormBundle.fromJson(json["form"]) : null,
       features: json[Tb.occasions.features] is List
-          ? List<Feature>.from((json[Tb.occasions.features] as List)
-              .map((featureJson) => Feature.fromJson(featureJson)))
+          ? List<Feature>.from(
+              (json[Tb.occasions.features] as List).map(
+                (featureJson) => Feature.fromJson(featureJson),
+              ),
+            )
           : [],
       stats: json['stats'] != null ? StatsModel.fromJson(json['stats']) : null,
       aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
@@ -170,6 +174,20 @@ class OccasionModel {
         result['ticket_layout_change'] = ticket.layoutChange;
       }
     }
+    return result;
+  }
+
+  /// Settings metadata is a named patch; unrelated data belongs to its domain owner.
+  Map<String, dynamic> toSettingsSaveJson() {
+    final result = toSaveJson()
+      ..remove('data')
+      ..remove('stats')
+      ..remove('has_orders')
+      ..remove('sale_forms');
+    result['settings'] = {
+      for (final key in ['place_name', 'reply_to', 'timezone', 'image'])
+        key: data?[key],
+    };
     return result;
   }
 
@@ -210,14 +228,17 @@ class OccasionModel {
   ///
   /// This method now uses the top-level [services] field.
   ServiceItemModel? getReferenceToService(
-      String serviceType, Map<String, dynamic>? userServices) {
+    String serviceType,
+    Map<String, dynamic>? userServices,
+  ) {
     // Retrieve the list of services for the specified service type
     // This now uses the 'services' field
     var servs = services?[serviceType] ?? [];
 
     var serviceRecords = userServices?[serviceType] as Map? ?? {};
-    var userCode =
-        serviceRecords.keys.firstWhereOrNull((key) => key.isNotEmpty);
+    var userCode = serviceRecords.keys.firstWhereOrNull(
+      (key) => key.isNotEmpty,
+    );
     if (userCode == null) {
       return null;
     }

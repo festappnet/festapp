@@ -38,6 +38,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 Future<void> openTemplate(
   WidgetTester tester, {
   String? occasionTitle,
+  Future<void> Function(EmailTemplateModel)? saveTemplate,
   TicketFeature? ticketFeature,
   String? code,
   String html = '<p>Content</p>',
@@ -62,6 +63,7 @@ Future<void> openTemplate(
             onPressed: () => showDialog<void>(
               context: context,
               builder: (_) => EmailTemplateSettingsPage(
+                saveTemplate: saveTemplate,
                 authoringContextLoader: authoringContextLoader,
                 previewExamplesLoader: previewExamplesLoader,
                 template: EmailTemplateModel(
@@ -70,6 +72,7 @@ Future<void> openTemplate(
                       (occasionTitle == null
                           ? 'SIGN_IN_CODE'
                           : 'TICKET_ORDER_CONFIRMATION'),
+                  revision: 'a' * 64,
                   subject: 'Subject',
                   html: html,
                 ),

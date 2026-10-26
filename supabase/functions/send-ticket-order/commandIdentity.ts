@@ -109,6 +109,7 @@ export function projectConfirmedReplacementResponse(
         orderId: order.id,
         orderSymbol: order.order_symbol,
         quote,
+        ...(data.adminScope ? { adminScope: data.adminScope } : {}),
       };
     }
   }
@@ -122,8 +123,17 @@ export function hasSingleTicketOrderPayload(
     orderDetails?: unknown;
     replacement?: unknown;
     waitlistAcceptance?: unknown;
+    administrativeOrder?: unknown;
   },
 ): boolean {
-  return [payload.orderDetails, payload.replacement, payload.waitlistAcceptance]
+  if (payload.waitlistAcceptance != null) {
+    return payload.orderDetails != null && payload.replacement == null &&
+      payload.administrativeOrder == null;
+  }
+  return [
+    payload.orderDetails,
+    payload.replacement,
+    payload.administrativeOrder,
+  ]
     .filter((value) => value !== undefined && value !== null).length === 1;
 }

@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.get_form_stripe_recipient(p_unit bigint,p_occa
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT coalesce(public.can_write_orders(p_occasion),false)
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_author_forms(p_occasion),false)
   OR NOT EXISTS(SELECT 1 FROM public.occasions o JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
     JOIN public.user_info actor ON actor.organization=o.organization AND actor.id=auth.uid()
     WHERE o.id=p_occasion AND u.id=p_unit) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
