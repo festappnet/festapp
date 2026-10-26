@@ -2411,6 +2411,9 @@
   "HelpNavigation": {
     "openOrganizer": "Organisation des Veranstalters auswählen",
     "noOrganizationAccess": "Sie haben keinen Zugriff auf diesen Bereich der Organisation. Bitten Sie die Administration um die erforderlichen Berechtigungen.",
-    "organizationAccess": "Organisationszugriff"
+    "organizationAccess": "Organisationszugriff",
+    "otherEvents": "Weitere zugängliche Veranstaltungen",
+    "noMatches": "Keine passenden Veranstaltungen.",
+    "clearSearch": "Suche löschen"
   }
 }

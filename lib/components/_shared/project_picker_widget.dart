@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 class ProjectPicker<T> extends StatefulWidget {
   final VoidCallback onDismiss;
   final List<T> items;
-  final T selectedItem;
+  final T? selectedItem;
   final String Function(T item) itemTitleBuilder;
   final void Function(T item) onItemSelected;
   final VoidCallback? onCreateNew;
@@ -21,12 +21,18 @@ class ProjectPicker<T> extends StatefulWidget {
   final String? happeningNowText;
   final String? upcomingText;
   final String? pastText;
+  final Object? Function(T item)? itemGroupIdBuilder;
+  final String Function(T item)? itemGroupTitleBuilder;
+  final String Function(T item)? itemSearchTextBuilder;
+  final String? Function(T item)? itemDetailBuilder;
+  final String? emptyText;
+  final String? clearSearchText;
 
   const ProjectPicker({
     super.key,
     required this.onDismiss,
     required this.items,
-    required this.selectedItem,
+    this.selectedItem,
     required this.itemTitleBuilder,
     required this.onItemSelected,
     this.onCreateNew,
@@ -37,10 +43,21 @@ class ProjectPicker<T> extends StatefulWidget {
     this.happeningNowText,
     this.upcomingText,
     this.pastText,
+    this.itemGroupIdBuilder,
+    this.itemGroupTitleBuilder,
+    this.itemSearchTextBuilder,
+    this.itemDetailBuilder,
+    this.emptyText,
+    this.clearSearchText,
   });
 
   @override
   State<ProjectPicker<T>> createState() => _ProjectPickerState<T>();
+}
+
+class _PickerGroupHeading {
+  const _PickerGroupHeading(this.title);
+  final String title;
 }
 
 class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
@@ -64,14 +81,35 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
   }
 
   void _processItems(List<T> sourceItems) {
-    if (widget.itemDateBuilder == null) {
-      setState(() {
-        _displayItems = sourceItems;
-      });
-      return;
-    }
-
     final now = DateTime.now();
+    final groupId = widget.itemGroupIdBuilder;
+    final groupTitle = widget.itemGroupTitleBuilder;
+    final List<dynamic> display;
+    if (groupId == null || groupTitle == null) {
+      display = _datedItems(sourceItems, now);
+    } else {
+      final groups = <Object?, List<T>>{};
+      for (final item in sourceItems) {
+        groups.putIfAbsent(groupId(item), () => []).add(item);
+      }
+      final entries = groups.entries.toList()
+        ..sort((a, b) {
+          if (a.key == null && b.key != null) return 1;
+          if (b.key == null && a.key != null) return -1;
+          return groupTitle(a.value.first).compareTo(groupTitle(b.value.first));
+        });
+      display = [
+        for (final group in entries) ...[
+          _PickerGroupHeading(groupTitle(group.value.first)),
+          ..._datedItems(group.value, now),
+        ],
+      ];
+    }
+    setState(() => _displayItems = display);
+  }
+
+  List<dynamic> _datedItems(List<T> sourceItems, DateTime now) {
+    if (widget.itemDateBuilder == null) return sourceItems;
     final List<T> presentItems = [];
     final List<T> upcomingItems = [];
     final List<T> pastItems = [];
@@ -83,8 +121,9 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
         datelessItems.add(item);
         continue;
       }
-      final endTime =
-          (item is OccasionModel) ? (item.endTime ?? startTime) : startTime;
+      final endTime = (item is OccasionModel)
+          ? (item.endTime ?? startTime)
+          : startTime;
 
       if (startTime.isBefore(now) && endTime.isAfter(now)) {
         presentItems.add(item);
@@ -113,8 +152,9 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
 
     List<dynamic> newDisplayList = [];
     if (presentItems.isNotEmpty) {
-      if (widget.happeningNowText != null)
+      if (widget.happeningNowText != null) {
         newDisplayList.add(widget.happeningNowText!);
+      }
       newDisplayList.addAll(presentItems);
     }
     if (upcomingItems.isNotEmpty) {
@@ -129,9 +169,7 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
       newDisplayList.addAll(datelessItems);
     }
 
-    setState(() {
-      _displayItems = newDisplayList;
-    });
+    return newDisplayList;
   }
 
   void _filterItems() {
@@ -142,8 +180,16 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     } else {
       final normalizedQuery = Utilities.removeDiacritics(query.toLowerCase());
       filtered = widget.items.where((item) {
+        final date = widget.itemDateBuilder?.call(item);
+        final searchable = [
+          widget.itemTitleBuilder(item),
+          if (date != null) DateFormat.yMd().format(date),
+          if (widget.itemSearchTextBuilder != null)
+            widget.itemSearchTextBuilder!(item),
+        ].join(' ');
         final normalizedTitle = Utilities.removeDiacritics(
-            widget.itemTitleBuilder(item).toLowerCase());
+          searchable.toLowerCase(),
+        );
         return normalizedTitle.contains(normalizedQuery);
       }).toList();
     }
@@ -160,7 +206,9 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     final iconColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
     final titleTextStyle = baseTextStyle?.copyWith(color: textColor);
     final hintTextStyle = baseTextStyle?.copyWith(
-        color: hintColor, fontWeight: FontWeight.normal);
+      color: hintColor,
+      fontWeight: FontWeight.normal,
+    );
     const iconSize = 20.0;
 
     return SizedBox(
@@ -187,6 +235,15 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
+                        suffixIcon:
+                            _searchController.text.isNotEmpty &&
+                                widget.clearSearchText != null
+                            ? IconButton(
+                                tooltip: widget.clearSearchText,
+                                icon: const Icon(Icons.close, size: iconSize),
+                                onPressed: _searchController.clear,
+                              )
+                            : null,
                       ),
                     ),
                   ),
@@ -196,63 +253,105 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
             const Divider(height: 1),
           ],
           Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: _displayItems.length,
-              itemBuilder: (context, index) {
-                final entry = _displayItems[index];
+            child: _displayItems.isEmpty && widget.emptyText != null
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(widget.emptyText!),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: _displayItems.length,
+                    itemBuilder: (context, index) {
+                      final entry = _displayItems[index];
 
-                if (entry is String) {
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                    child: Text(
-                      entry,
-                      style: (ResponsiveService.isMobile(context)
-                              ? theme.textTheme.labelMedium
-                              : theme.textTheme.labelLarge)
-                          ?.copyWith(
-                        color: theme.primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  );
-                }
+                      if (entry is _PickerGroupHeading) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                          child: Semantics(
+                            header: true,
+                            child: Text(
+                              entry.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      if (entry is String) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            16.0,
+                            16.0,
+                            16.0,
+                            8.0,
+                          ),
+                          child: Text(
+                            entry,
+                            style:
+                                (ResponsiveService.isMobile(context)
+                                        ? theme.textTheme.labelMedium
+                                        : theme.textTheme.labelLarge)
+                                    ?.copyWith(
+                                      color: theme.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                          ),
+                        );
+                      }
 
-                final item = entry as T;
-                final isSelected = widget.itemIdBuilder(item) ==
-                    widget.itemIdBuilder(widget.selectedItem);
+                      final item = entry as T;
+                      final selected = widget.selectedItem;
+                      final isSelected =
+                          selected != null &&
+                          widget.itemIdBuilder(item) ==
+                              widget.itemIdBuilder(selected);
 
-                Widget? subtitle;
-                if (widget.itemDateBuilder != null) {
-                  final date = widget.itemDateBuilder!(item);
-                  if (date != null) {
-                    subtitle = Text(
-                      DateFormat.yMd().format(date),
-                      style:
-                          theme.textTheme.bodySmall?.copyWith(color: hintColor),
-                    );
-                  }
-                }
+                      final date = widget.itemDateBuilder?.call(item);
+                      final detail = widget.itemDetailBuilder?.call(item);
+                      final labels = [
+                        if (date != null) DateFormat.yMd().format(date),
+                        if (detail != null && detail.isNotEmpty) detail,
+                      ];
+                      final subtitle = labels.isEmpty
+                          ? null
+                          : Text(
+                              labels.join(' · '),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: hintColor,
+                              ),
+                            );
 
-                return ListTile(
-                  dense: true,
-                  contentPadding:
-                      const EdgeInsets.only(left: 16.0, right: 16.0),
-                  title: Text(widget.itemTitleBuilder(item),
-                      style: titleTextStyle),
-                  subtitle: subtitle,
-                  trailing: isSelected
-                      ? Icon(Icons.check,
-                          color: theme.primaryColor, size: iconSize)
-                      : null,
-                  onTap: () {
-                    widget.onItemSelected(item);
-                    widget.onDismiss();
-                  },
-                );
-              },
-            ),
+                      return Semantics(
+                        selected: isSelected,
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.only(
+                            left: 16.0,
+                            right: 16.0,
+                          ),
+                          title: Text(
+                            widget.itemTitleBuilder(item),
+                            style: titleTextStyle,
+                          ),
+                          subtitle: subtitle,
+                          trailing: isSelected
+                              ? Icon(
+                                  Icons.check,
+                                  color: theme.primaryColor,
+                                  size: iconSize,
+                                )
+                              : null,
+                          onTap: () {
+                            widget.onItemSelected(item);
+                            widget.onDismiss();
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
           if (widget.onCreateNew != null)
             Column(
@@ -261,8 +360,10 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                 const Divider(height: 1),
                 ListTile(
                   dense: true,
-                  contentPadding:
-                      const EdgeInsets.only(left: 16.0, right: 16.0),
+                  contentPadding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                  ),
                   onTap: () {
                     widget.onCreateNew!();
                     widget.onDismiss();
@@ -271,7 +372,12 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                     children: [
                       Icon(Icons.add, color: iconColor, size: iconSize),
                       const SizedBox(width: 12),
-                      Text(widget.createNewText, style: titleTextStyle),
+                      Expanded(
+                        child: Text(
+                          widget.createNewText,
+                          style: titleTextStyle,
+                        ),
+                      ),
                     ],
                   ),
                 ),

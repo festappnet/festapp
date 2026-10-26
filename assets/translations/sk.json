@@ -2438,6 +2438,9 @@
   "HelpNavigation": {
     "openOrganizer": "Vyberte organizáciu usporiadateľa",
     "noOrganizationAccess": "Do tejto časti organizácie nemáte prístup. Požiadajte jej správcu o potrebné oprávnenia.",
-    "organizationAccess": "Prístup k organizácii"
+    "organizationAccess": "Prístup k organizácii",
+    "otherEvents": "Ďalšie dostupné akcie",
+    "noMatches": "Žiadne zodpovedajúce akcie.",
+    "clearSearch": "Vymazať hľadanie"
   }
 }

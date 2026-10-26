@@ -4435,6 +4435,9 @@
     "noCreateAccess": "Pro tohoto pořadatele nemáte oprávnění zakládat akce. Požádejte správce o přístup nebo vyberte jiného pořadatele.",
     "openOrganizer": "Vyberte organizaci pořadatele",
     "noOrganizationAccess": "Do této části organizace nemáte přístup. Požádejte jejího správce o potřebná oprávnění.",
-    "organizationAccess": "Přístup k organizaci"
+    "organizationAccess": "Přístup k organizaci",
+    "otherEvents": "Další dostupné akce",
+    "noMatches": "Žádné odpovídající akce.",
+    "clearSearch": "Vymazat hledání"
   }
 }

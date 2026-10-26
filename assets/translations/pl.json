@@ -2413,6 +2413,9 @@
   "HelpNavigation": {
     "openOrganizer": "Wybierz organizację organizatora",
     "noOrganizationAccess": "Nie masz dostępu do tej części organizacji. Poproś administratora o wymagane uprawnienia.",
-    "organizationAccess": "Dostęp do organizacji"
+    "organizationAccess": "Dostęp do organizacji",
+    "otherEvents": "Inne dostępne wydarzenia",
+    "noMatches": "Brak pasujących wydarzeń.",
+    "clearSearch": "Wyczyść wyszukiwanie"
   }
 }
