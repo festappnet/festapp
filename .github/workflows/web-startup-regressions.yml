@@ -20,26 +20,16 @@ jobs:
           version: 11.24.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: web_client/pnpm-lock.yaml
       - name: Install isolated Chromium test runner
-        run: |
-          # pnpm 11 places global executables in PNPM_HOME/bin.
-          export PATH="$PNPM_HOME/bin:$PATH"
-          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
-          pnpm add --global --allow-build=agent-browser agent-browser@0.39.4
-          # The hosted runner already provides Chrome and its system libraries.
-          # Avoid fetching optional font packages from the Ubuntu mirror.
-          browser_path="$(command -v google-chrome)"
-          echo "AGENT_BROWSER_EXECUTABLE_PATH=$browser_path" >> "$GITHUB_ENV"
+        run: bash automation/ci/browser.sh
       - name: Install web test dependencies
-        working-directory: web_client
-        run: pnpm install --frozen-lockfile
+        run: python3 automation/ci/run.py step web-install
       - name: Verify restricted WebViews and production module identity
-        run: bash automation/test_web_startup.sh
+        run: python3 automation/ci/run.py step web-startup
       - name: Install public renderer dependencies
-        working-directory: automation/release/platform_updates
-        run: pnpm install --frozen-lockfile
+        run: python3 automation/ci/run.py step renderer-install
       - name: Verify deployment gates
-        run: bash automation/tests/deploy_workflow.test.sh
+        run: python3 automation/ci/run.py step deploy-contract

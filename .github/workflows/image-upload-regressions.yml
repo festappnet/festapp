@@ -14,6 +14,7 @@ on:
       - 'test/components/images/**'
       - 'test/components/html/**'
       - 'test/components/ticket_layout/**'
+      - 'automation/ci/**'
       - '.github/workflows/image-upload-regressions.yml'
   push:
     branches: [main]
@@ -30,6 +31,7 @@ on:
       - 'test/components/images/**'
       - 'test/components/html/**'
       - 'test/components/ticket_layout/**'
+      - 'automation/ci/**'
       - '.github/workflows/image-upload-regressions.yml'
 permissions:
   contents: read
@@ -43,13 +45,12 @@ jobs:
           version: 11.24.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: workers/image-worker/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        working-directory: workers/image-worker
-      - run: pnpm run typecheck && pnpm run test:unit
-        working-directory: workers/image-worker
+      - run: python3 automation/ci/run.py step image-server-install
+      - run: python3 automation/ci/run.py step image-server-policy
+
   client-contract:
     runs-on: ubuntu-latest
     env:
@@ -68,16 +69,7 @@ jobs:
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
-      - run: fvm flutter pub get
-      - run: fvm dart test test_dart/adapters/image_control_client_test.dart
-      - run: >-
-          fvm flutter test --no-pub --concurrency=1
-          test/components/images/image_upload_contract_test.dart
-          test/components/html/html_media_service_cases.dart
-          test/components/ticket_layout/ticket_layout_cases.dart
-          test/components/ticket_layout/ticket_layout_saver_cases.dart
-          test/components/ticket_layout/ticket_canvas_selection_cases.dart
-          test/widgets/app_text_selection_cases.dart
-      - run: >-
-          fvm flutter test --no-pub --concurrency=1 --platform chrome
-          test/components/html/html_image_preview_cases.dart
+      - run: python3 automation/ci/run.py step image-client-install
+      - run: python3 automation/ci/run.py step image-client-adapter
+      - run: python3 automation/ci/run.py step image-client-widgets
+      - run: python3 automation/ci/run.py step image-client-browser

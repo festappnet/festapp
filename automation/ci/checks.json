@@ -1,0 +1,112 @@
+{
+  "jobs": {
+    "image-contract": {
+      "workflow": "image-service-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "image-install",
+        "image-policy",
+        "image-preflight",
+        "image-storage"
+      ]
+    },
+    "web-startup": {
+      "workflow": "web-startup-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "web-install",
+        "web-startup",
+        "renderer-install",
+        "deploy-contract"
+      ]
+    },
+    "wix-checkout-compatibility": {
+      "workflow": "wix-checkout-compatibility.yml",
+      "node": "24.22.1",
+      "steps": [
+        "wix-install",
+        "wix-contract"
+      ]
+    },
+    "navigation-interactions": {
+      "workflow": "navigation-interactions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "navigation-install",
+        "navigation-contract"
+      ]
+    },
+    "server-policy": {
+      "workflow": "image-upload-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "image-server-install",
+        "image-server-policy"
+      ]
+    },
+    "client-contract": {
+      "workflow": "image-upload-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "image-client-install",
+        "image-client-adapter",
+        "image-client-widgets",
+        "image-client-browser"
+      ]
+    },
+    "seat-checkout": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "seat-install",
+        "seat-database",
+        "seat-authorization",
+        "seat-google-auth",
+        "seat-contract",
+        "seat-notifications",
+        "seat-browser"
+      ]
+    },
+    "ticket-preview-and-delivery": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.3",
+      "steps": [
+        "ticket-edge",
+        "ticket-install",
+        "ticket-core",
+        "ticket-client"
+      ]
+    }
+  },
+  "steps": {
+    "image-install": "cd workers/image-worker\npnpm install --frozen-lockfile",
+    "image-policy": "cd workers/image-worker\npnpm run typecheck && pnpm run test:unit",
+    "image-preflight": "node --test automation/tests/image_service_preflight.test.mjs",
+    "image-storage": "python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'\npython3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'\npython3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'\nnode --check automation/image-migration/copy-assets.mjs\nnode automation/generate_storage_asset_migration.mjs --check\nnode --test automation/image-migration/tests/verified-copy.test.js\nnode --test automation/image-migration/tests/remote-r2.test.js\npython3 automation/ci/test_contract.py\n",
+    "web-install": "cd web_client\npnpm install --frozen-lockfile",
+    "web-startup": "bash automation/test_web_startup.sh",
+    "renderer-install": "cd automation/release/platform_updates\npnpm install --frozen-lockfile",
+    "deploy-contract": "bash automation/tests/deploy_workflow.test.sh",
+    "wix-install": "pnpm --dir integrations/wix install --frozen-lockfile\npnpm --dir web_client install --frozen-lockfile\n",
+    "wix-contract": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\n",
+    "navigation-install": "fvm flutter pub get",
+    "navigation-contract": "fvm flutter test --no-pub --concurrency=1 test/components/navigation/routed_tab_navigation_cases.dart test/components/navigation/admin_breadcrumb_navigation_test.dart test/components/schedule/light_timeline_initial_day_cases.dart test/components/schedule/schedule_initial_day_cases.dart test/components/breadcrumb_row_cases.dart",
+    "image-server-install": "cd workers/image-worker\npnpm install --frozen-lockfile",
+    "image-server-policy": "cd workers/image-worker\npnpm run typecheck && pnpm run test:unit",
+    "image-client-install": "fvm flutter pub get",
+    "image-client-adapter": "fvm dart test test_dart/adapters/image_control_client_test.dart",
+    "image-client-widgets": "fvm flutter test --no-pub --concurrency=1 test/components/images/image_upload_contract_test.dart test/components/html/html_media_service_cases.dart test/components/ticket_layout/ticket_layout_cases.dart test/components/ticket_layout/ticket_layout_saver_cases.dart test/components/ticket_layout/ticket_canvas_selection_cases.dart test/widgets/app_text_selection_cases.dart",
+    "image-client-browser": "fvm flutter test --no-pub --concurrency=1 --platform chrome test/components/html/html_image_preview_cases.dart",
+    "seat-install": "cd web_client\npnpm install --frozen-lockfile",
+    "seat-database": "bash automation/bootstrap_local_db.sh",
+    "seat-authorization": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs",
+    "seat-google-auth": "export GOOGLE_AUTH_DATABASE_URL=\"$DATABASE_URL\"\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts",
+    "seat-contract": "node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test blueprint/resource_admission_test",
+    "seat-notifications": "python3 automation/assemble-notification-center-migration.py --check\nnode --test automation/tests/notification_feed_migration.test.mjs\nnode web_client/scripts/run_db_tests.js notification_center delete_order_history_permissions_test\nnode --test database/tests/notification_center/*concurrency.test.mjs\n",
+    "seat-browser": "pnpm --dir web_client run test:seat-checkout-browser --offline-recovery",
+    "ticket-edge": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts\n",
+    "ticket-install": "fvm flutter pub get",
+    "ticket-core": "cd packages/festapp_core\nfvm dart pub get\nfvm dart test test/eshop/customer_label_test.dart\n",
+    "ticket-client": "fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart test/components/notification_center/notification_center_cases.dart test/components/notification_center/notification_center_time_test.dart"
+  }
+}

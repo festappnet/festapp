@@ -24,9 +24,37 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
   ./automation/test_all.sh
 ```
 
+The GitHub web regression jobs have a native local mirror:
+
+```bash
+./automation/test_ci.sh                    # All eight GitHub regression jobs
+./automation/test_ci.sh seat-checkout      # Partial: SQL + real checkout browser
+python3 automation/ci/run.py list          # Available job names
+```
+
+GitHub and the mirror read the same ordered commands from
+`automation/ci/checks.json`; change that contract instead of copying test lists.
+The mirror runs sequentially, pins Node per job through pnpm, uses frozen JS
+lockfiles, and waits for an existing workstation Flutter task. Install pnpm
+11.24.0, FVM with the project SDK, Deno 2.9.0, Supabase CLI 2.111.0,
+Docker, psql, Chrome and agent-browser 0.39.4 first. PyYAML 6.0.3 is installed
+in an isolated cached Python environment. No production environment file is loaded.
+
+The SQL lane rebuilds its own `festapp-ci-mirror` project on loopback port 55442
+(shadow 55440), reuses Docker's downloaded image layers, and stops that project
+on exit. It does not reuse migrated database contents. Concurrent mirrors are
+blocked across worktrees. Keep these ports free. Logs and a source/platform/timing
+receipt are under `~/Library/Caches/festapp-ci` on macOS or
+`~/.cache/festapp-ci` on Linux. A dirty receipt describes a development run,
+not a release attestation. The native mirror does not reproduce Ubuntu itself;
+required GitHub checks and existing release/live-version gates still apply.
+Android publishing and production deployment are separate authorized operations.
+
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
-`pnpm add --global agent-browser@0.33.1 && agent-browser install`.
+`pnpm add --global --allow-build=agent-browser agent-browser@0.39.4`.
+Use installed Chrome through `AGENT_BROWSER_EXECUTABLE_PATH` (or run
+`agent-browser install` when no system browser is available).
 `pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin

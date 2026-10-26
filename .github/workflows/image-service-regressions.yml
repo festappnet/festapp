@@ -20,26 +20,16 @@ jobs:
           version: 11.24.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: workers/image-worker/pnpm-lock.yaml
       - name: Install image test dependencies
-        working-directory: workers/image-worker
-        run: pnpm install --frozen-lockfile
+        run: python3 automation/ci/run.py step image-install
       - name: Verify every active origin, project and authorization contract
-        working-directory: workers/image-worker
-        run: pnpm run typecheck && pnpm run test:unit
+        run: python3 automation/ci/run.py step image-policy
       - name: Verify production deployment probe regressions
-        run: node --test automation/tests/image_service_preflight.test.mjs
+        run: python3 automation/ci/run.py step image-preflight
+      - name: Install Python YAML parser
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
       - name: Verify storage inventory, immutable copy and archive contracts
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
-          python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'
-          python3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'
-          python3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'
-          python3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'
-          python3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'
-          node --check automation/image-migration/copy-assets.mjs
-          node automation/generate_storage_asset_migration.mjs --check
-          node --test automation/image-migration/tests/verified-copy.test.js
-          node --test automation/image-migration/tests/remote-r2.test.js
+        run: python3 automation/ci/run.py step image-storage
