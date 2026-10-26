@@ -12,6 +12,44 @@ import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
   group('form_save_snapshot', form_save_snapshot.main);
+  test('current editor sends a known-settings snapshot with explicit resets, never opaque metadata', () {
+    final draft = FormEditorDraft(
+      id: 1,
+      occasionId: 7,
+      data: {
+        'communication_tone': 'informal',
+        'schedule': {
+          'start_time': '2030-01-01T00:00:00Z',
+          'sale_preparation': true,
+        },
+        'design': {'primary_color': '#123456', 'background_mode': 'pattern'},
+        'private_owner': {'keep': true},
+      },
+    );
+    final command = draft.toEditedJson();
+    expect(command.containsKey('data'), isFalse);
+    final settings = command['settings'] as Map;
+    expect(settings.containsKey('private_owner'), isFalse);
+    expect(
+      (settings['schedule'] as Map).containsKey('sale_preparation'),
+      isFalse,
+    );
+    expect((settings['design'] as Map).containsKey('background_mode'), isFalse);
+    expect((settings['schedule'] as Map)['start_time'], '2030-01-01T00:00:00Z');
+    expect((settings['schedule'] as Map).containsKey('end_time'), isTrue);
+    expect((settings['schedule'] as Map)['end_time'], isNull);
+    draft.definition = draft.definition.copyWith(data: {});
+    expect(
+      (draft.toEditedJson()['settings'] as Map)['communication_tone'],
+      isNull,
+    );
+    expect(
+      (draft.toEditedJson()['settings'] as Map).containsKey(
+        'communication_tone',
+      ),
+      isTrue,
+    );
+  });
   test('current form adapter refuses a save without original versions', () {
     final commands = SupabaseFormCommands.withTransport(
       ClientCommandTransport((_, __) async {

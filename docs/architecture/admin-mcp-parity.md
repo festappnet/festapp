@@ -434,3 +434,31 @@ Evidence: [form checks](../reports/admin-form-authoring-evidence-2026-10-26.json
 and [actual SQL/data measurements](../reports/admin-form-authoring-data-network-2026-10-26.json).
 The measurement compares the same usage semantics per form versus batched, not
 an archived production query; no production performance claim is implied.
+
+## Stage 4B: advanced form settings (locally verified, not deployed)
+
+- `forms.save.settings` and current Flutter drafts reach one private metadata
+  merge/validation owner in `eshop_forms/form_settings.sql`, within the existing
+  form save transaction/receipt. Supports reminders, communication tone,
+  payment-method selection/message, VS policy, design and sale schedule.
+- Missing patch keys preserve values. Null removes a known override; section
+  reset preserves server lifecycle and unrelated metadata. No arbitrary form data
+  or public slug/key mutation is exposed through MCP.
+- Current Flutter opaque metadata writes are removed. Released full-data RPC
+  inputs remain a bounded compatibility adapter into the same owner until client
+  upgrade. Historical arrays normalize once. Duplicate old reminder validation
+  is removed; payment/recipient/queue/allocation owners are reused.
+- `forms.paymentOptions` shares the UI bank projection and existing Stripe
+  recipient projection. The latter now uses `can_author_forms`, removing its
+  conflicting order-write gate. Both actual form scope and form-author rights
+  are required; forms read consent alone cannot enumerate payment selection.
+- Form design saves now adopt the authoritative draft and version before the
+  next save. A widget test saves twice with versions 3 then 4 and one initial
+  read. No browser visual change or provider request is part of this cut.
+- The current migration assembler seals `20261026200000_form_authoring_settings.sql`.
+  Published stage 4A SQL stays frozen; only the newest canonical source cut is
+  regenerated. No trigger, table, receipt, sender or payment allocator is added.
+
+Evidence: [4B checks and source digests](../reports/admin-form-settings-evidence-2026-10-26.json).
+Public URL changes, inline MCP product edits, waitlist offers and general manual
+orders still remain. Stage 4 as a whole is not complete.

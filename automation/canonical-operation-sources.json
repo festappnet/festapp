@@ -325,6 +325,9 @@
     "occasion_setup/email_templates.sql",
     "eshop_forms/admin_form_reads.sql",
     "eshop_forms/admin_form_commands.sql",
-    "eshop_forms/get_all_forms_with_fields.sql"
+    "eshop_forms/get_all_forms_with_fields.sql",
+    "eshop_forms/form_settings.sql",
+    "eshop_forms/form_payment_options.sql",
+    "eshop_stripe/form_recipient.sql"
   ]
 }

@@ -176,23 +176,8 @@ BEGIN
     ) END AS reason) usage
     WHERE ff.form = v_form_id;
 
-    -- FIX: Exclude CASH accounts and ensure deterministic sorting by Priority
-    SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
-            'id', ba.id,
-            'account_number', ba.account_number,
-            'account_number_human_readable', ba.account_number_human_readable,
-            'title', ba.title,
-            'supported_currencies', ba.supported_currencies,
-            'type', ba.type,
-            'bank_sync_warning', public.bank_sync_warning(ba.id)
-        ) ORDER BY uba.priority ASC, ba.id ASC
-    ), '[]'::jsonb)
-    INTO availableBankAccountsData
-    FROM eshop.unit_bank_accounts uba
-    JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-    WHERE NOT p_related_only AND uba.unit = v_unit_id
-      AND (ba.type IS DISTINCT FROM 'CASH'); -- EXCLUDE CASH ACCOUNTS
+    availableBankAccountsData:=CASE WHEN p_related_only THEN '[]'::jsonb
+        ELSE public.get_form_bank_accounts_internal(v_unit_id) END;
 
     RETURN jsonb_build_object(
         'code', 200,

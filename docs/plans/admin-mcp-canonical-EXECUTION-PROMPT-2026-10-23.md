@@ -8,27 +8,24 @@ Autoritativní plán:
 [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
 Aktuální stav a přesné důkazy:
 [checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md), poslední sekce
-„Stage 4A 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
+„Stage 4B 2026-10-26“. Historické stop po 2B bylo novým pokynem uživatele
 odvoláno. Transport/SDK ani hotové etapy znovu neimplementovat.
 
-Etapy 0-2B jsou nasazené. Etapa 3 je lokálně dokončená a ověřená v izolovaném
-checkoutu `/private/tmp/festapp-admin-mcp-emails-20261026`, větev
-`feat/admin-mcp-emails-20261026`, základ
-`ddbeb11e6aa477477984da03f947f07f9f6a353a`. Etapa 3 je publikovaná v PR #613
-(https://github.com/festappnet/festapp/pull/613), implementation head
-`eb7dad50b22345fccdb4eb3e92472eb711d9f1de`. Ověřit aktuální GitHub stav;
-produkční rollout etapy 3 dosud neproběhl. Main vyžaduje jedno
-schválení review, bez obcházení ochrany.
+Etapy 0-2B jsou nasazené. Etapa 3 je lokálně ověřená v
+[PR #613](https://github.com/festappnet/festapp/pull/613), head
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`, obsahuje main `3988bb7cb`.
+Ověřit aktuální GitHub stav; produkční rollout etapy 3 neproběhl. Main vyžaduje
+jedno schválení review, bez obcházení ochrany.
 
-Řez 4A formulářů je lokálně ověřený v [PR #615](https://github.com/festappnet/festapp/pull/615)
-na `feat/admin-mcp-forms-20261026`,
-navazuje na aktualizovaný head etapy 3
-`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b` (obsahuje main `3988bb7cb`).
-Etapa 3 zůstává rodičem (#613), dokud nebude schválená a sloučená; neslučovat
-ani nevydávat bez existující autorizace. Další řez je 4B: rozšířená datově
-uložená nastavení formuláře, jejich úzké kontrakty a společné UI/MCP vlastníky.
-Neopakovat šest nástrojů ani snapshoty a práva dokončené v 4A. Před editací
-jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
+Řez 4A je lokálně ověřený v [PR #615](https://github.com/festappnet/festapp/pull/615),
+head `7f4053be653fa3e745a5207dd7ac578f8d51c681`, stacked na #613. Řez 4B
+rozšířených nastavení je dokončený na `feat/admin-mcp-form-settings-20261026`,
+navazuje na #615 a zůstává nenasazený. Při navázání ověřit aktuální stav celé
+review návaznosti a její heady; neslučovat ani nevydávat bez příslušné autorizace.
+Další řez etapy 4 jsou veřejné odkazy a inline produktové změny MCP přes
+existující vlastníky. Nabídky čekací listiny a obecné ruční objednávky zůstávají
+otevřené. Neopakovat šest nástrojů 4A ani metadata/platební volby dokončené v 4B.
+Před editací jednou určit owner, kontrakt, volající a nejmenší smysluplný ověřovací batch.
 Navázat na existující SQL pravidla a receipts; UI i MCP vést jednou cestou.
 Zvlášť zachovat draft/persisted rozdíl, původní verzi, null/default semantics,
 práva, atomicitu a retry stejným command UUID. Nepřidávat univerzální CRUD

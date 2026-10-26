@@ -1276,3 +1276,47 @@ base `feat/admin-mcp-emails-20261026`, implementation head
 fetch potvrzuje main `3988bb7cb` a parent `6bf8b5be0` jako předky headu.
 Sloučení ani nasazení neproběhlo. Při navázání zkontrolovat oba PR a po
 sloučení rodiče přesměrovat zbývající review na aktuální main.
+
+## Stage 4B 2026-10-26
+
+Stav: lokálně ověřeno, nenasazeno. Izolovaný checkout
+`/private/tmp/festapp-admin-mcp-form-settings-20261026`, větev
+`feat/admin-mcp-form-settings-20261026`. Main `3988bb7cbaf8766068a84f49f759d5544269e325`,
+rodič #615 `7f4053be653fa3e745a5207dd7ac578f8d51c681`, jeho rodič #613
+`6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`. Při kontrole oba PR OPEN,
+#613 REVIEW_REQUIRED. Změny nenahrazují povinné schválení main.
+
+Hotovo: `forms.save.settings` pro připomínky, platební volby/zprávy, tón,
+politiku VS, vzhled a časování prodeje. Jeden SQL merge/validation owner
+`form_settings.sql`, stejný receipted save příkaz. Missing zachová, null odstraní
+známý override, reset sekce zachová interní příznaky a cizí metadata. UI posílá
+úzký snapshot místo celého form.data. Released full-data kontrakt je pouze
+adaptér přes stejného ownera, k odstranění po upgradu klientů.
+
+Nový `forms.paymentOptions` sdílí bankovní a Stripe UI projekce. Vyžaduje
+form-author práva i forms write souhlas, výslovné live/test prostředí a skutečný
+form/occasion/unit binding. Konfliktní order-write gate v recipient readeru je
+odstraněná. Výběr existujícího účtu zachovává dosavadní ověření kompatibility a
+runtime dostupnosti, nepřipojuje účty ani neaktivuje poskytovatele. Politika VS
+nepřepisuje rezervace a nic nevydává. UI design editor nyní přebírá uloženou
+verzi před dalším save, potvrzeno dvěma widget saves bez reloadu.
+
+Ověření standard: SQL/executor/boundary 30/30 bez skipů (26 real PostgreSQL,
+4 boundary, osm existujících SQL regresí), Flutter 68/68, remote 25/25,
+web consent 37/37. Cílená analýza 0 errors/warnings, 3 informační diagnostiky.
+Migrační/source-parity/policy/katalog generátory a whitespace checks prošly.
+Doplňkové ACL a SQL/Zod key-contract kontroly jsou součástí reálných DB testů.
+Starší reminder fixture selhávala shodně na 4A i 4B kvůli skutečnému recipient
+burst limitu po opakovaném přepočtu fronty; její nezávislé deadline případy nyní
+neopakují odesílací závazky předchozího kupujícího. Produkční limity beze změny.
+
+Migrace `20261026200000_form_authoring_settings.sql`: SHA256 `c1d3ffddd3a2102a753a0fb78d694fa8879540fe4e4ccff93dd5279ddd8dcb79`,
+11 deklarací / 11 názvů funkcí, žádné nové tabulky, triggery ani receipts.
+Publikovaná migrace 4A je beze změny; společný assembler nyní generuje nejnovější
+řez 4B z kanonických zdrojů. Katalog má 99 úkonů / 48 nástrojů.
+
+Evidence: [4B checks a source digests](../reports/admin-form-settings-evidence-2026-10-26.json).
+Bez produkčních změn, připojení Stripe či doručení zpráv. Samotný save nastavení
+nevytváří platby ani VS; SQL regrese mají pouze syntetické disposable objednávky
+a reference. Další řezy: veřejné odkazy, inline produktové mutace MCP, nabídky čekací
+listiny a obecné ruční objednávky. Celá etapa 4 není dokončená.

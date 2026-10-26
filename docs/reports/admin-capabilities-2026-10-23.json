@@ -4,7 +4,7 @@
   "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapa 3 a řez 4A jsou lokálně ověřené, jejich produkční rollout neproběhl.",
+  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapa 3 a řezy 4A/4B jsou lokálně ověřené, jejich produkční rollout neproběhl.",
   "actions": [
     {
       "id": "action-001",
@@ -934,27 +934,37 @@
       "title": "Zapnout upomínky a nastavit interval",
       "description": "Změna konfigurace není pokynem k okamžitému odeslání.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-054",
       "area": "Formuláře a prodej",
       "title": "Nastavit bankovní a kartovou platební metodu",
-      "description": "Zachovat ověřeného příjemce a dostupnost měn; bankovní oprávnění se neobcházejí.",
+      "description": "Vybrat již existující ověřený Stripe účet a povolit bankovní převod. Stejný SQL owner ověří skutečného pořadatele, měny a kompatibilitu. Neprovádí připojení nového účtu ani aktivaci poskytovatele.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-055",
@@ -962,13 +972,18 @@
       "title": "Vybrat platební účet a zprávu pro příjemce",
       "description": "Konkrétní bankovní účet musí být pro formulář způsobilý.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-056",
@@ -976,41 +991,56 @@
       "title": "Nastavit formální nebo neformální komunikaci",
       "description": "Podporovat explicitní hodnotu i dědičnost.",
       "sources": [
-        "lib/components/forms/views/form_settings_content.dart"
+        "lib/components/forms/views/form_settings_content.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-057",
       "area": "Formuláře a prodej",
       "title": "Nastavit typ a počáteční číslo variabilního symbolu",
-      "description": "Náhodný symbol nebo posloupnost; zachovat unikátnost.",
+      "description": "Náhodný symbol nebo posloupnost s počátkem 1-9999999999. Pouze politika pro budoucí objednávky; stávající rezervace a unikátnost vlastní dosavadní allocator, ukládání nastavení žádný symbol nevydává.",
       "sources": [
-        "lib/components/forms/views/form_variable_symbol_settings.dart"
+        "lib/components/forms/views/form_variable_symbol_settings.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-058",
       "area": "Formuláře a prodej",
       "title": "Upravit barvy, typografii a vzhled formuláře",
-      "description": "Nastavení designu není změna obchodních pravidel.",
+      "description": "Karetní vzhled, barvy, název fontu a styl odpočtu. Uložení nepřepisuje jiné interní designové hodnoty, nenahrává font ani neupravuje geometrii plánku.",
       "sources": [
-        "lib/components/forms/views/form_design_settings.dart"
+        "lib/components/forms/views/form_design_settings.dart",
+        "database/functions/eshop_forms/form_settings.sql",
+        "tools/festapp/src/operations/forms.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "forms.save"
+      ],
       "phase": "4",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-059",
@@ -1591,6 +1621,42 @@
       ],
       "mcp": [],
       "effect": "write"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending",
+      "id": "action-098",
+      "title": "Zkontrolovat existující platební možnosti formuláře",
+      "description": "Sdílený UI přehled propojených bezhotovostních bankovních účtů a ověřeného Stripe příjemce pro výslovné live/test prostředí. Vyžaduje form-author práva a forms write souhlas; čte uložená fakta a aktuální dostupnost bez dotazu poskytovateli.",
+      "sources": [
+        "database/functions/eshop_forms/form_payment_options.sql",
+        "database/functions/eshop_stripe/form_recipient.sql"
+      ],
+      "mcp": [
+        "forms.paymentOptions"
+      ],
+      "effect": "read"
+    },
+    {
+      "area": "Formuláře a prodej",
+      "phase": "4",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deploymentState": "pending",
+      "id": "action-099",
+      "title": "Nastavit období prodeje a odpočet formuláře",
+      "description": "Začátek a konec jako ISO okamžiky s časovou zónou, zapnutí odpočtu a text před zahájením. SQL ověří pořadí okamžiků. Reset veřejných nastavení zachová interní příznak přípravy prodeje.",
+      "sources": [
+        "database/functions/eshop_forms/form_settings.sql",
+        "lib/components/forms/views/form_editor_content.dart"
+      ],
+      "mcp": [
+        "forms.save"
+      ],
+      "effect": "write"
     }
   ],
   "dataQualityReview": {
@@ -1600,7 +1666,7 @@
     "nextStep": "PR #613 vyžaduje schvalující review. Produkční rollout etapy 3 neproběhl; další doménová implementace je etapa 4 (formuláře).",
     "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
-  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 je v PR #613 a čeká na povinné review. Řez 4A přidává šest nástrojů pro formuláře přes společné SQL vlastníky a receipts; je lokálně ověřený, nenasazený. Další řez 4B řeší rozšířená nastavení. Nové scopes nerozšiřují starší souhlasy.",
+  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613) a řez 4A (#615) čekají na dokončení review. Řez 4B přidává společný úzký kontrakt rozšířených nastavení a čtení platebních voleb; je lokálně ověřený, nenasazený. Zbývají veřejné odkazy, inline produktové změny MCP, nabídky čekací listiny a obecné ruční objednávky.",
   "phases": [
     {
       "id": "0",
@@ -1656,11 +1722,11 @@
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
       "state": "local",
-      "status": "4A lokálně hotovo, další řezy otevřené",
+      "status": "4A/4B lokálně hotovo, další řezy otevřené",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
-      "note": "4A: seznam/detail, vytvoření/kopie/smazání, základní pole, produktové reference, kapacita a konfigurace čekací listiny. Zbývá datově uložené rozšířené nastavení, editace produktů, operace nabídek čekací listiny a obecné ruční objednávky."
+      "note": "4A: správa formulářů, pole a kapacita. 4B: připomínky, platební volby, zpráva pro příjemce, tón, pravidla VS, vzhled a časování prodeje. Zbývají veřejné URL, inline produktové mutace MCP, operace nabídek čekací listiny a obecné ruční objednávky."
     },
     {
       "id": "5",
@@ -1723,5 +1789,5 @@
       "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
     }
   ],
-  "phaseSummary": "Nasazeno 0-2B; etapa 3 a řez 4A lokálně ověřené, nenasazené. Etapa 4 pokračuje řezem 4B."
+  "phaseSummary": "Nasazeno 0-2B; etapa 3 a řezy 4A/4B lokálně ověřené, nenasazené. Etapa 4 má další otevřené řezy."
 }

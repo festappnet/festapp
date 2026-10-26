@@ -10,6 +10,7 @@ DECLARE
     ----------------------------------------------------------------------------
     result JSONB;
     availability_at timestamptz;
+    form_metadata jsonb;
     availability_new boolean;
     deleted_fields BIGINT[];
     deleted_products BIGINT[];
@@ -65,6 +66,8 @@ BEGIN
 
         ----------------------------------------------------------------------------
         -- Begin main logic
+
+
         ----------------------------------------------------------------------------
 
         -- Validate that input_data and essential fields exist
@@ -113,6 +116,18 @@ BEGIN
           IF NOT EXISTS (SELECT 1 FROM public.forms WHERE id=form_id AND occasion=occasion_id) THEN
             RAISE invalid_parameter_value USING MESSAGE='Form does not match occasion'; END IF;
           link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',false);
+        END IF;
+
+        IF input_data ? 'settings' AND input_data ? 'data' THEN
+          RAISE invalid_parameter_value USING MESSAGE='choose settings patch or released metadata, not both'; END IF;
+        SELECT data INTO form_metadata FROM public.forms WHERE id=form_id;
+        IF input_data ? 'settings' THEN
+          form_metadata:=public.apply_form_settings_internal(form_metadata,input_data->'settings');
+        ELSIF input_data ? 'data' THEN
+          -- Released full-metadata boundary, same settings owner/validation.
+          form_metadata:=public.normalize_form_metadata_internal(input_data->'data');
+          form_metadata:=public.apply_form_settings_internal(form_metadata,
+            public.form_settings_from_metadata_internal(form_metadata));
         END IF;
 
         -- Explicit removals are part of this save transaction, never inferred from
@@ -532,9 +547,6 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Validate that deadline_duration_seconds is zero, positive, or null
         ----------------------------------------------------------------------------
-        IF (input_data->'data'->>'reminder_interval_seconds')::bigint < 0 THEN
-            RAISE EXCEPTION 'reminder_interval_seconds must be zero or higher or null';
-        END IF;
         deadline_val := NULLIF(input_data->>'deadline_duration_seconds','')::BIGINT;
         IF deadline_val IS NOT NULL AND deadline_val < 0 THEN
             RAISE EXCEPTION '%',
@@ -594,10 +606,10 @@ BEGIN
                -- Opening the real form ends its initial preparation phase.
                -- Later closing it is a pause, irrespective of test orders.
                data = CASE WHEN coalesce((input_data->>'is_open')::boolean,is_open) THEN
-                 jsonb_set(coalesce(CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END,'{}'::jsonb),'{schedule}',
-                  coalesce((CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END)->'schedule','{}'::jsonb)
+                 jsonb_set(coalesce(form_metadata,'{}'::jsonb),'{schedule}',
+                  coalesce((form_metadata)->'schedule','{}'::jsonb)
                    ||'{"sale_preparation":false}'::jsonb)
-                 ELSE CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END END,
+                 ELSE form_metadata END,
                header = CASE WHEN input_data ? 'header' THEN input_data->>'header' ELSE header END,
                header_off = CASE WHEN input_data ? 'header_off' THEN input_data->>'header_off' ELSE header_off END,
                link = link_param,

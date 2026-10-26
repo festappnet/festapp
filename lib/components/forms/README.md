@@ -204,7 +204,7 @@ contract transactionally. Partial settings saves do not revalidate omitted
 fields. Public readers tolerate legacy missing options so one malformed field
 cannot turn the whole form into an unavailable page.
 
-## Admin authoring: canonical UI/MCP path (4A, 2026-10-26)
+## Admin authoring: canonical UI/MCP path
 
 Public runtime form submission remains a separate lifecycle from administrative
 editing. Admin reads share `get_form_editor_bundle_internal`; MCP uses its
@@ -228,9 +228,33 @@ orders. Copy rechecks both source and target permissions, including source MCP
 consent; replay never bypasses current authority. Explicit scopes require a new
 user grant and do not widen older grants.
 
-MCP 4A supports list/inspect/create/save/duplicate/delete, basic fields and
-existing product-type references, capacity and waitlist configuration. It accepts
-no arbitrary `form.data` patches or public keys/links. Advanced data-backed
-settings, inline product editing via MCP, waitlist offer operations and general
-manual orders remain subsequent cuts of stage 4. Public URL editing is also not
-exposed by this slice.
+MCP supports list/inspect/paymentOptions/create/save/duplicate/delete, basic
+fields and existing product-type references, capacity and waitlist configuration.
+`settings` is the shared narrow patch for reminders, communication tone, payment
+method selection/message, VS policy, design and sale schedule. Omitted keys
+preserve stored values; explicit null removes a known override and restores
+inherited/default behavior. Null sections reset only their known keys, preserving
+lifecycle flags such as `sale_preparation` and metadata owned by other modules.
+Schedule instants require explicit timezones; SQL checks their actual order.
+
+`form_settings.sql` owns metadata normalization, patch semantics and validation.
+Current Flutter drafts send a known-settings snapshot (including null resets),
+never an opaque metadata replacement. Released clients may still send full
+`data`; that boundary normalizes historical arrays and passes known settings to
+the same owner. Retire this boundary after client upgrade. Mixing both transports
+is rejected. MCP accepts no arbitrary form data, public key or URL writes.
+
+`get_form_bank_accounts_internal` owns the editor and MCP bank choice projection.
+`forms.paymentOptions` requires current form-author rights and forms write consent;
+it returns linked non-cash accounts, the persisted Stripe recipient for an explicit
+live/test environment, and current configured/available methods. Reads are bounded
+to 100 accounts / 1 MiB. Bank management, Stripe onboarding and live activation
+remain separate operations. Selecting a method delegates existing same-unit and
+payment compatibility validation; temporary runtime restrictions do not erase the
+saved selection. VS settings change only future allocation policy, never issue a
+reference or rewrite existing orders. Reminder changes reuse the existing queue
+owner, not a new sender. Authoring patches are bounded to 128 KiB.
+
+Inline product editing via MCP, public URL changes, waitlist offer operations and
+general manual orders remain subsequent cuts of stage 4. Public checkout and
+URL reservation retain their own lifecycle owners.

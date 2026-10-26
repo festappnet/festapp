@@ -1,6 +1,6 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 a řez 4A jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
+Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 a řezy 4A/4B jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
@@ -867,3 +867,17 @@ připomínky, vzhled a související validace). Nejdřív určit existující vl
 úzké kontrakty. Inline produktové změny přes MCP, změny veřejných URL, operace
 nabídek čekací listiny a obecné ruční objednávky zůstávají otevřené. Nepřidávat
 druhý editor, receipt nebo paralelní ACL. Celá etapa 4 není dokončená.
+
+## Aktuální řez 4B (2026-10-26)
+
+Dokončeno a lokálně ověřeno: společný úzký settings patch pro připomínky,
+platební volby/zprávy, tón komunikace, politiku VS, vzhled a časování prodeje.
+UI již neposílá celé neprůhledné form.data; SQL zachovává metadata jiných ownerů
+včetně přípravy prodeje. Sedmý formulářový MCP nástroj čte existující platební
+možnosti přes stejné UI projekce a aktuální form-author práva. Výběr platební
+metody nepřipojuje účty, neaktivuje poskytovatele ani nemění existující platby.
+Published migrace 4A zůstává beze změny, assembler teď vlastní aktuální řez 4B.
+
+Další řez etapy 4: veřejné odkazy a inline produktové mutace formuláře přes
+existující vlastníky. Nabídky čekací listiny a obecné ruční objednávky zůstávají
+otevřené. Neopakovat transport, e-maily ani hotová nastavení 4A/4B.

@@ -56,7 +56,7 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
           RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
             capabilities: {
-          AuthorizationCapabilities.formsWrite: true,
+              AuthorizationCapabilities.formsWrite: true,
               AuthorizationCapabilities.ordersWrite: true,
               AuthorizationCapabilities.occasionsWrite: true,
               AuthorizationCapabilities.bankAccountsUnitManage: canManage,
@@ -284,6 +284,61 @@ void main() {
       expect(find.byType(FormEditorContent), findsOneWidget);
     },
   );
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'design adopts authoritative receipt and uses its new version on the next save without a reload',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      var reads = 0;
+      final savedVersions = <int>[];
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormDesignContent(
+            formLink: 'test',
+            loadBundle: (_) async {
+              reads++;
+              return FormEditBundle(
+                form: FormEditorDraft(
+                  id: 1,
+                  occasionId: 7,
+                  aggregateVersion: 3,
+                ),
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [],
+              );
+            },
+            saveForm: (draft) async {
+              savedVersions.add(draft.aggregateVersion);
+              return FormEditorDraft(
+                aggregateVersion: draft.aggregateVersion + 1,
+              )..definition = draft.definition;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.byType(Switch).first);
+        await tester.pumpAndSettle();
+        final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
+        await tester.tap(save);
+        await tester.pumpAndSettle();
+        expect(tester.widget<FilledButton>(save).onPressed, isNull);
+      }
+      expect(savedVersions, [3, 4]);
+      expect(reads, 1);
+    },
+  );
   for (final design in [true, false]) {
     testWidgetsWithEnvironment(
       () => _environment,
@@ -295,7 +350,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
           capabilities: {
-          AuthorizationCapabilities.formsWrite: true,
+            AuthorizationCapabilities.formsWrite: true,
             AuthorizationCapabilities.ordersWrite: true,
             AuthorizationCapabilities.occasionsWrite: true,
           },
