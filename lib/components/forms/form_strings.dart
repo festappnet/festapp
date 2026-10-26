@@ -16,6 +16,12 @@ class FormStrings {
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
+  static String get embedInheritStyle =>
+      'FeatureFormSettings.embedInheritStyle'.tr();
+  static String get embedInheritStyleHelp =>
+      'FeatureFormSettings.embedInheritStyleHelp'.tr();
+  static String get embedInheritStyleRequiresScript =>
+      'FeatureFormSettings.embedInheritStyleRequiresScript'.tr();
 
   static String get savedPublicLink =>
       'FeatureFormSettings.savedPublicLink'.tr();
