@@ -14,7 +14,8 @@ const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
 await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false }));
-const session = `form-access-${process.pid}`;
+let browserIndex = 0;
+let session = `fa-${process.pid}`;
 async function browser(...args) {
     const { stdout } = await execute('agent-browser', ['--config', config, '--namespace', session,
         '--session', session, '--headed', 'false', '--allowed-domains', '127.0.0.1', '--json', ...args],
@@ -78,6 +79,7 @@ try {
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
     for (const scenario of ['guest-open', 'editor-open', 'editor-closed', 'unit-editor-open', 'unit-editor-closed', 'visitor-closed']) {
+        session = `fa-${process.pid}-${++browserIndex}`;
         await browser('open', `${origin}/form/account-access?scenario=${scenario}`);
         assert.equal((await browser('session', 'info')).runtime.pageCount, 1, 'isolated local Chromium required');
         await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
@@ -96,11 +98,12 @@ try {
         }
         if (scenario === 'guest-open') await browser('set', 'viewport', '390', '844');
         console.log(`PASS: ${scenario} - visible form, hidden site header and permitted editor access`);
-        // Each identity gets a fresh browser context. This also avoids reusing a
-        // detached CDP target while installing network controls on navigation.
+        // Each identity gets a fresh browser and daemon namespace. Avoid both
+        // detached navigation targets and reconnecting to a closing daemon.
         await browser('close');
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
+    session = `fa-${process.pid}-${++browserIndex}`;
     await browser('open', `${origin}/?scenario=guest-login`);
     await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
     await browser('wait', '--fn', visible('#universal-header'));
