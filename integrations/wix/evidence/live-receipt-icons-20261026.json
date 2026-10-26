@@ -1,0 +1,38 @@
+{
+  "verifiedAt": "2026-10-26T01:52:23.610942+00:00",
+  "status": "PASS_LIVE_RECEIPT_SVG_FIX",
+  "tenant": "festapptickets",
+  "organization": 3,
+  "productionUrl": "https://vstupenky.online",
+  "version": "0.20.415+916",
+  "sourceMainSha": "b0e0dcf517bcd81cd3f84466c90f19c785543f50",
+  "productionSha": "0c205732c5737f775dc18c2701c96f3e3483c6fa",
+  "previousProductionSha": "1ddf3e8efdd3e9bfb1a57ae727091bb3aa5df2fe",
+  "deploymentUrl": "https://e3271c65.vstupenkyonline.pages.dev",
+  "cloudflareProject": "vstupenkyonline",
+  "verification": {
+    "canonicalBuildAndLegalVerifier": "PASS, 3 consecutive probes",
+    "manifestUrl": "https://vstupenky.online/.vite/manifest.json",
+    "manifestSha256": "996842b689001b2b425c66b78d7cf2a47a9ef3a33603a34c7e0a6c963daf9dca",
+    "formModule": "web-assets/form_page-NltuImjF.js",
+    "formModuleSha256": "7c744414bad69d3390dfe90b27894fd26ec45e6a067227757245de14bf648204",
+    "status": 200,
+    "contentType": "application/javascript",
+    "matchesOwnerBuild": true,
+    "inlineSvgMarkerPresent": true,
+    "reviewedCopyPathPresent": "M16 8V4H4v12h4",
+    "resultCopyMarkerPresent": true
+  },
+  "sourceSha256": {
+    "web_client/src/components/forms/order_icons.js": "1fd886dc567976c7a7a62fa6d56a0e383238e1afa9e1d0ed172d7afc44d0cca3",
+    "web_client/src/components/forms/order_result.js": "27621966d668e8e10967e975442c3a1bb3ad6bc53a7a0b54436dcec3287391ac",
+    "web_client/src/components/forms/payment_details.js": "272ce181b8f56ff3bcd8ee1edbc41fe757b8832666dc3601eefd8a87649086ec"
+  },
+  "releaseCoordination": {
+    "deploymentOwner": "Concurrent approved pending-ready release",
+    "thisWixRun": "Independent readonly live verification; duplicate candidate retained locally, never pushed/deployed",
+    "scope": "Only vstupenky.online live verification; other tenant builds left untouched",
+    "protectedInputTransfer": "Existing approved festapptickets manifest sealed unchanged via local-release-input.yml run40255113145; no backend mutation or new secret created",
+    "primaryMergeMistake": "Initial worktree-add&&merge ran in old cwd; verified own pending primary merge was backed up/aborted, original clean state restored. Correct release candidate used explicit path; no production effect from the mistake."
+  }
+}

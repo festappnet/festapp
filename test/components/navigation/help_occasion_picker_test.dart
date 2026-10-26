@@ -305,7 +305,6 @@ void main() {
           UnitModel(id: 2, title: 'Druhá organizace'),
         ],
         onSelected: (_) {},
-        onCreateNew: () {},
         onDismiss: () {},
       );
       await tester.pumpWidget(
@@ -325,7 +324,19 @@ void main() {
                 ),
                 content: SizedBox(width: 480, height: 320, child: picker()),
                 actions: [
-                  TextButton(onPressed: () {}, child: const Text('Zrušit')),
+                  AppDialogActions(
+                    leading: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: FilledButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.add),
+                        label: const Text('Založit novou akci'),
+                      ),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () {}, child: const Text('Zrušit')),
+                    ],
+                  ),
                 ],
               ),
             ),

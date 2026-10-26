@@ -109,6 +109,48 @@ The real MobileSafari26.5 simulator run is recorded separately. WebDriver typed
 no text even into a standalone input control, matching
 [WebKit322938](https://bugs.webkit.org/show_bug.cgi?id=322938). Installed AXe native HID later passed text entry on published Wix without
 foregrounding Simulator. Local cross-site summary, Safari Back and Escape also
-passed with retained fields and no submit. Full software-keyboard geometry,
-Safari payment handoff/storage denial and physical hardware remain unqualified;
+passed with retained fields and no submit. Actual402px software keyboard later passed on published Wix; native320px,
+external-provider redirect/return and physical hardware remain unqualified.
+The subsequent storage-denied bank-flow result is recorded below;
 see `../SAFARI-REMAINING-CHECKS.md`.
+
+
+For native Safari storage denial, enable Block All Cookies in the disposable
+device's Settings > Apps > Safari > Advanced, confirming Block All. With the
+explicit disposable fixture Vite running, open the localhost host with
+`?form=wix-qa-bank-20261025&storage=1`. The Vite-only `qaStorage` script probes
+real local/session storage inside the checkout iframe and reports native errors
+to the exact localhost parent. The host checks origin and frame identity.
+Restore the native toggle afterward; cross-site storage can still be denied by
+Safari independently. Do not replay buyer `wix-safari-storage-20261026@example.invalid`
+or order233. The executed receipt is `../evidence/safari-storage-bank-20261026.json`.
+Bank QR/functionality passed; the observed icon/layout limit remains open.
+
+The later hidden Simulator.app run completed its native first-use keyboard
+tutorial and qualified actual software keys on published Wix at402x874. Launch
+only the task device with `open -g -j`, explicit UDID and hardware keyboard NO;
+verify inactive app/zero visible Mac windows before and after. Restore the owned
+QA URL through Save, cold Editor readback and Publish, then verify public HTML.
+See `../evidence/software-keyboard-20261026.json`.
+
+Receipt SVG font independence was reproduced with actual OrderResult imports,
+no external font stylesheet and synthetic immutable payment data. Copy icons
+failed18px/107px before and passed18px/18px afterward; status30px/30px and full
+component320px/320px. The same minimized renderer passed native Safari visually.
+This is not another purchase. Existing QR clipboard/timer tests cover feedback
+reset and labels, and now run in the Wix compatibility CI command (51 tests).
+The reviewed fix is live; see `../evidence/live-receipt-icons-20261026.json`.
+
+
+`tests/safari-hold-fixture.sql` (relative to the Wix integration) adds a separate
+local unit/form/seat and only that unit's15s hold-duration override. It preserves
+ordinary900s policy and every existing purchase. It never resets an existing
+fixture. Inspect the effective duration before rerunning: the scoped override
+expires after one day. Apply only through the dedicated marked local container.
+
+The executed Safari case selected/released a free seat, naturally expired the
+short lease, rejected an expired native Submit, retained answers and reacquired/
+released the seat with0orders. The optional storage probe now reports passive
+completed ResourceTiming hold/order counts; those counts are not an exhaustive
+network capture. This run had available storage and does not qualify holds with
+storage denied. See `../evidence/safari-hold-expiry-20261026.json`.

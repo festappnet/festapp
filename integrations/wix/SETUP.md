@@ -98,7 +98,7 @@ The draft was restored; no new app version was released.
 
 Provider redirect/return is conditional on offering such a provider. The current
 bank transfer flow was checked through its instructions and decoded QR without
-activating Stripe or transferring funds. Native Safari payment handoff remains untested.
+activating Stripe or transferring funds. Native Safari bank instructions/QR later passed on the local fixture; external provider redirect/return remains unqualified.
 Payment-return qualification must cover supported browsers and mobile Safari;
 third-party iframe storage and payment-provider redirects cannot be established
 by DOM unit tests. Preserve duplicate-order/idempotency checks from the canonical
@@ -218,6 +218,24 @@ receipt retention after a full reload with storage denied.
 Real MobileSafari26.5/iOS26.5 passed production rendering and native HID text entry
 in published Wix, plus summary/Back/Escape with retained inputs in a local
 cross-site checkout. All interactions stayed in the background. WebDriver typing
-failed its standalone control, but installed AXe native HID succeeded. Full
-software-keyboard geometry, Safari payment handoff and physical iPhone remain
-unqualified. The temporarily saved QA URL was restored and republished.
+failed its standalone control, but installed AXe native HID succeeded. Full software-keyboard geometry subsequently passed at402px in the owned Wix
+site; native320px, provider redirect/return and physical iPhone remain unqualified. The temporarily saved QA URL was restored and republished.
+
+Follow-up [MobileSafari storage/bank evidence](evidence/safari-storage-bank-20261026.json)
+proves native Block All Cookies storage denial inside the actual local checkout,
+one new local bank order233, decoded QR matching SQL and no resubmit after fresh navigation.
+Occupied-seat rendering/tap also passed. The local receipt showed literal icon
+names and overflow; a later minimized-renderer SVG fix removed the font dependency
+and is now live. The original Safari cold-load trigger remains unproven.
+No production purchase, real transfer or external email was performed.
+
+[Actual Wix software-keyboard evidence](evidence/software-keyboard-20261026.json)
+now qualifies the402px simulator case: full native onscreen keys, direct field
+changes, content scrolling and Done with retained text. Simulator.app ran hidden
+with zero visible Mac windows. Native320px, current cached build identity and
+physical iPhone are not covered. The owned QA URL was restored and republished.
+
+[Live receipt verification](evidence/live-receipt-icons-20261026.json) confirms the
+reviewed SVG fix in the actual0.20.415+916 production form module. Canonical
+build/legal verification passed three probes. Native Wix clean setup, portal
+Contact/Security pages and written commercial approval remain separate gates.

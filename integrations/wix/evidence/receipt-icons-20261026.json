@@ -1,0 +1,86 @@
+{
+  "verifiedAt": "2026-10-26T01:22:52.737017+00:00",
+  "status": "PASS_LOCAL_AND_LIVE_VERIFIED",
+  "problem": "Receipt Material Icon names become visible and copy controls overflow when external icon font is unavailable. Original Safari cold-load trigger remains unproven.",
+  "redControl": {
+    "renderer": "Actual OrderResult/payment_details imports; synthetic immutable payment data, no backend or order",
+    "externalFontStylesheet": false,
+    "copyIconClientWidth": 18,
+    "copyIconScrollWidth": 107,
+    "statusFontFamily": "Futura, sans-serif",
+    "copyFontFamily": "Arial",
+    "command": "agent-browser eval: assert exactly five receipt icons and every scrollWidth <= clientWidth + 1",
+    "result": "FAIL: Receipt icon text overflows"
+  },
+  "fontPresentControl": {
+    "externalStylesheet": "https://fonts.googleapis.com/icon?family=Material+Icons",
+    "fontLoad": "document.fonts.load resolved",
+    "computedFamily": "Material Icons",
+    "features": "liga",
+    "ligatures": "normal",
+    "statusWidthAndScrollWidth": [
+      30,
+      30
+    ],
+    "copyWidthAndScrollWidth": [
+      18,
+      18
+    ],
+    "result": "PASS"
+  },
+  "fix": "Five fixed local SVG paths for receipt status and copy/check feedback; no scanner dependency or external font required. Button labels, clipboard payload and feedback/reset timing retained.",
+  "fixedChrome": {
+    "actualViewportWidth": 320,
+    "componentWidth": 320,
+    "componentScrollWidth": 320,
+    "statusWidthAndScrollWidth": [
+      30,
+      30
+    ],
+    "copyWidthAndScrollWidth": [
+      18,
+      18
+    ],
+    "iconCount": 5,
+    "iconText": "empty",
+    "result": "PASS"
+  },
+  "fixedMobileSafari": {
+    "runtime": "iOS26.5/MobileSafari26.5",
+    "device": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+    "background": true,
+    "scope": "Minimized actual OrderResult renderer with synthetic fixture data; not a new purchase, actual Wix host or full checkout retest",
+    "statusSvgVisible": true,
+    "copySvgsVisible": true,
+    "ibanWrapVisible": true
+  },
+  "checks": {
+    "affectedOrderResultQrReferenceUncertainReservationImmediateAndHandoffTests": 21,
+    "critic": "PASS: source/design and both native screenshots",
+    "noFontBrowserRegression": "FAIL before, PASS after",
+    "temporaryHarness": "Saved privately and removed from repository working tree"
+  },
+  "priorSafariDownload": {
+    "fileName": "wix-bankovni-test-objednavka-6l3w6q1p4v-qr.png",
+    "bytes": 8054,
+    "sha256": "802fd8a8d24629527426a324ae7a2a466098e14c1dd611a676b1ba3aff85250c",
+    "decodedPayload": "SPD*1.0*ACC:CZ7001000000000000123457*AM:150.00*CC:CZK*X-VS:4412",
+    "matchesDisplayedQrAndSql": true,
+    "inspection": "Offline read of task simulator own downloaded PNG; no browser/device restart",
+    "notIncludedInFrozenPr": 598
+  },
+  "cleanup": {
+    "ownedChromeClosed": true,
+    "ownViteStopped": true,
+    "taskSimulatorShutdown": true,
+    "backendStartedThisRun": false,
+    "newOrdersThisRun": 0,
+    "productionWritesThisRun": false,
+    "foregroundWindowUsed": false
+  },
+  "screenshots": {
+    "integrations/wix/evidence/screenshots/receipt-icons-safari-after.png": "fa82a7c628f814140227f9e35692131eac6e3b7f5fa4fbb411cb3fd2e8d3a70d",
+    "integrations/wix/evidence/screenshots/receipt-icons-safari-payment-after.png": "5376265117cb6c31b0dd2b974dea235231aeec1c0d0b54009a428186ff65d0e2"
+  },
+  "liveReceipt": "live-receipt-icons-20261026.json"
+}

@@ -1,0 +1,83 @@
+{
+  "verifiedAt": "2026-10-26T01:51:09.766550+00:00",
+  "status": "PASS_ACTUAL_PUBLISHED_WIX_SOFTWARE_KEYBOARD_402PX_BACKGROUND",
+  "device": {
+    "name": "Festapp Wix QA 20261026",
+    "udid": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+    "runtime": "iOS26.5/MobileSafari26.5",
+    "nativeApplicationFrame": {
+      "width": 402,
+      "height": 874
+    },
+    "screenshotPixels": [
+      1206,
+      2622
+    ],
+    "physicalIphone": false
+  },
+  "backgroundMethod": {
+    "launch": "open -g -j -a Simulator.app --args -CurrentDeviceUDID <own task device> -ConnectHardwareKeyboard NO -StartLastDeviceOnLaunch NO",
+    "simulatorAppLaunched": true,
+    "simulatorActive": false,
+    "visibleSimulatorWindows": 0,
+    "firstUseKeyboardTutorial": "Continue completed on this disposable device before full keyboard appeared",
+    "hardwareKeyboardPreferenceRestored": true
+  },
+  "host": {
+    "url": "https://dev-sitex-1268240078.wix-dev-sites.org/",
+    "editorQaComponent": "comp-mvogdis6",
+    "temporaryPublicForm": "https://vstupenky.online/form/country_bal_vetrkovice",
+    "originalForm": "https://vstupenky.online/form/wix-qa-20261025",
+    "savedTitle": "Wix Editor QA - prodej vstupenek",
+    "inheritHostTheme": false,
+    "temporaryNativeSettingSavedColdReadbackAndPublished": true,
+    "productionPublicRead": true,
+    "localBackendStarted": false,
+    "productionHoldOrOrder": false,
+    "nativeVersionRead": false
+  },
+  "observations": {
+    "fullSoftwareKeyboardVisible": true,
+    "qKeyY": 590,
+    "qKeyHeight": 54,
+    "returnKeyY": 752,
+    "returnKeyHeight": 54,
+    "nameValue": "Jana",
+    "nameInputMethod": "Native taps on actual onscreen J/a/n/a keys, no DOM assignment or HID text injection",
+    "nameCaretVisibleAboveKeyboard": true,
+    "surnameValue": "N",
+    "surnameInputMethod": "Direct input-field tap followed by native onscreen N key tap",
+    "surnameAutoScrollAndCaretVisibleAboveKeyboard": true,
+    "manualContentSwipeWhileKeyboardRemainedVisible": true,
+    "doneDismissedKeyboardRetainedBothValues": true,
+    "horizontalClippingObserved": false,
+    "accessoryPreviousFocusMoveQualified": false,
+    "note": "Manual scrolling can intentionally move a focused field offscreen; no guarantee that every scroll keeps focus visible is inferred."
+  },
+  "restoration": {
+    "originalUrlColdEditorReadback": true,
+    "titleColdEditorReadback": true,
+    "originalUrlRepublished": true,
+    "publicHtmlOriginalPresent": true,
+    "publicHtmlTemporaryCountryAbsent": true,
+    "ownedChromeClosed": true,
+    "mobileSafariTerminated": true,
+    "taskDeviceShutdown": true,
+    "ownedHiddenSimulatorAppStopped": true,
+    "taskKeyboardPreferenceRestored": true
+  },
+  "limits": {
+    "native320pxKeyboardQualified": false,
+    "currentProductionClientBuildQualified": false,
+    "newOrderOrPaymentTest": false,
+    "physicalIphoneQualified": false,
+    "allSafariKeyboardNavigationQualified": false
+  },
+  "critic": "PASS: actual screenshots/background proof; restoration and cleanup subsequently verified",
+  "screenshots": {
+    "integrations/wix/evidence/screenshots/software-keyboard-wix-name-typed.png": "dcec3a7899869411c58b8a8c82eeb74b20374675c06e368f34b95ee5669addee",
+    "integrations/wix/evidence/screenshots/software-keyboard-wix-surname-typed.png": "1c01a0bb6b0fe4d5c29d684db5d50fad1bce1b619ff355749c0b900b138a510b",
+    "integrations/wix/evidence/screenshots/software-keyboard-wix-scroll.png": "0b6cf5355f62e77dbbc156574115d40a8b30b0b06553652e2ee9153f612e25ca",
+    "integrations/wix/evidence/screenshots/software-keyboard-wix-dismissed.png": "0e9d23c63a6178cc42e6eb27104ac3b2eae50c69722f6a0335feea6bd35a6bbb"
+  }
+}

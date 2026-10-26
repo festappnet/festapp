@@ -2441,6 +2441,7 @@
     "organizationAccess": "Prístup k organizácii",
     "otherEvents": "Ďalšie dostupné akcie",
     "noMatches": "Žiadne zodpovedajúce akcie.",
-    "clearSearch": "Vymazať hľadanie"
+    "clearSearch": "Vymazať hľadanie",
+    "createEvent": "Založiť novú akciu"
   }
 }

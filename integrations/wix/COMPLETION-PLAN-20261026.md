@@ -1,7 +1,7 @@
 # Complete Wix checkout verification
 
 Date: 2026-10-26
-Status: Executed in background-only scope; full software-keyboard gate remains open
+Status: Background software-keyboard case passed; remaining external gates retained
 Verification: standard (production reads, order retry and shared behavior)
 
 ## Outcome and completion
@@ -87,9 +87,10 @@ Exit: actual browser/SQL proof of safe reload behavior, demonstrated defects fix
 ### 3. Real Safari/iPhone
 
 Do one bounded capability investigation: native Safari automation, existing iOS
-simulator and existing installed inspection tooling. Do not launch/focus desktop
-Safari or Simulator.app under the no-window constraint. A background simulator
-may be used if it actually runs MobileSafari and can be controlled/inspected.
+simulator and existing installed inspection tooling. Do not foreground desktop
+Safari or Simulator. A task-only hidden Simulator.app may run when inactive and
+zero visible Mac windows are verified. The background simulator must actually
+run MobileSafari and be controlled/inspected.
 No new paid provider or unapproved account setup. A desktop WebKit or Chrome
 mobile user-agent is not a Safari/iPhone pass.
 
@@ -156,8 +157,8 @@ proof that its test was executed. Commercial/native portal gates stay separate.
   local cross-site checkout; no Submit was pressed and its order count stayed1.
   The temporary owned Editor QA URL was restored, cold-read and republished;
   public HTML confirms original QA URL and absence of temporary Country URL.
-  Full software-keyboard geometry, Safari payment handoff and physical hardware
-  remain unqualified. See the remaining-checks checklist and exact receipt.
+  At this wave, full software-keyboard geometry, Safari payment handoff and
+  physical hardware remained unqualified; bank/storage follow-up appears below. See the remaining-checks checklist and exact receipt.
 - Wave4 implemented: dedicated pinned CI job for wrapper/build plus shared
   embed/storage/hold, command identity, unknown outcome and payment handoff.
   Local43 targeted tests,4 handoff tests and15 Wix tests passed. The exact combined CI suite passes45 tests on reconciled main. GitHub
@@ -166,3 +167,78 @@ proof that its test was executed. Commercial/native portal gates stay separate.
 - Local checkout browser, Edge and backend stopped; retained volume preserves
   all3 recorded orders. No production orders/holds, external emails, billing
   changes, new support cases or other-tenant releases were performed.
+
+### Follow-up: native Safari storage and bank flow
+
+Executed in background on the same disposable device, source2e701e4de. Native
+Settings Block All Cookies enabled; the actual cross-site checkout iframe threw
+SecurityError for both storage APIs. Native input/summary succeeded, then one
+local submit created order233 (buyer0->1, form count1->2). Expanded bank QR
+decoded through native Vision and matched SQL150CZK/VS4412. Fresh parent navigation
+retained exactly that order, blanked the draft and did not resubmit. Occupied
+A1 in local form34 remained sold after native tap, with no secret/expiry.
+The settings toggle was restored OFF, task keyboard preference restored through
+the preferences API, device shut down and Vite/Edge/backend stopped with backup.
+Orders166/167/200/233 retained. No production write, transfer or external email.
+
+At that follow-up, the software keyboard remained offscreen (AX q y898 on874px display). The initial
+local bank receipt also displayed literal icon names with overflow; later font
+diagnostics loaded the Material Icons face successfully but did not establish
+the original cause. Its layout remains unqualified; no app font fix is claimed.
+See `evidence/safari-storage-bank-20261026.json` for the exact boundary.
+
+### Follow-up: receipt icon independence
+
+A minimized actual OrderResult renderer reproduced literal glyph text and
+copy overflow without the external icon stylesheet (18px control,107px content).
+The same renderer with Google font CSS and explicit load passed18/18, with
+Material Icons/liga/normal ligatures. This proves the dependency's failure mode,
+not the original Safari cold-load trigger. Fixed status/copy/check SVG paths
+remove that dependency in this receipt layer. Actual320px Chrome measured
+component320/scroll320 and icon30/30,18/18; background MobileSafari screenshots
+show proper icons and wrapped IBAN. Existing clipboard/reset/accessibility
+behavior retained. No backend, purchase or foreground window was used.
+Local fix verified; PR599 passed all five checks and was merged. The concurrent
+approved pending-ready release shipped the same reviewed files in0.20.415+916.
+Independent live module/build/legal verification passed; no duplicate deployment.
+See `evidence/receipt-icons-20261026.json`.
+
+### Follow-up: actual Wix software keyboard
+
+Hidden task-only Simulator.app (`open -g -j`, explicit UDID, hardware keyboard NO)
+plus completion of the native first-use keyboard tutorial exposed full software
+keys. Actual published Editor QA/Country form passed onscreen J/a/n/a input,
+direct surname focus with onscreen N, manual content scroll while keys stayed
+visible, and Done retaining both values. Focused fields were above the keyboard.
+Native application frame402x874; Q y590 and return y752 are inside the display.
+Simulator active=false, visible Mac windows0 before and after. No production
+hold/order, payment or local backend start. Actual public form/API reads occurred.
+Native cached client version was not read; no current-build or320px claim.
+The original synthetic URL/title were cold-read and republished, public HTML
+confirmed rollback, and owned browsers/device/app were closed. Keyboard preference
+restored. See `evidence/software-keyboard-20261026.json`.
+
+### Final live readback
+
+Live0.20.415+916 maps to prod0c205732c (base mainb0e0dcf51), containing the exact
+reviewed receipt SVG source. Canonical deployment verification passed three
+consecutive build/legal probes. Live manifest and form module SHA256 match the
+owner build and the module contains the reviewed SVG path. No extra release was
+created for these verification notes. Native Wix clean-install/portal and written
+commercial approval remain external gates; this is not Marketplace submission.
+See `evidence/live-receipt-icons-20261026.json`.
+
+### Follow-up: Safari available seat and natural hold expiry
+
+A fresh marked local form37/unit34/spot531 used the supported unit-scoped
+`hold.duration.seconds=15` override; ordinary unit1 remained900. Native Safari
+selected and released A1, then a new15s lease expired naturally after a real
+wait, without clock/deadline patching. A later expired selection reached the
+summary; native Submit revalidated it and rendered reservation_changed. SQL
+orders stayed0. Back retained answers and removed A1; reselect/release worked.
+Final seat is free, unsold, secret/expiryNULL. All old orders retained and own
+processes stopped with DB backup. Passive timing counts observed0 completed
+order requests; this is not an exhaustive network-capture claim. Storage was
+available in this attempt, and no automatic map deselection at deadline is
+qualified. No production writes, Edge process, payment or external email.
+See `evidence/safari-hold-expiry-20261026.json`.

@@ -1080,6 +1080,6 @@
     "count": "Complete offline snapshot population, including linked unpaid, stock and cancelled tickets",
     "authorization": "Explicit organizer disable and session capability remain authoritative",
     "largerEvents": "Initial manual preparation; existing snapshots keep refreshing",
-    "verification": "Threshold and disable behavior covered by scanner tests; summary count compared with actual snapshot in a rolled-back local database test. Production migration not applied."
+    "verification": "Threshold and disable behavior covered by scanner tests; summary count compared with actual snapshot in a rolled-back local database test. Canonical production migration 20261026020000 applied atomically on 2026-10-26; migration ledger and count field verified; function owner, ACL and security configuration preserved."
   }
 }
