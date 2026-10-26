@@ -404,7 +404,8 @@ async function routeRequest(request, env) {
     const marketingPage = ORGANIZERS_ENABLED ? MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path)) : null;
     const marketingRedirect = ORGANIZERS_ENABLED ? (MARKETING.redirects ?? []).find(redirect=>path === redirect.from || path === redirect.from + '/') : null;
     if (marketingRedirect) return Response.redirect(new URL(marketingRedirect.to + url.search,url).href,308);
-    const appRedirect = !IS_APP_SUPPORTED && !marketingPage ? unsupportedOccasionAppRedirect(path) : null;
+    const updateNamespace = /^\/(?:co-je-nove|[a-z]{2}\/whats-new)(?:\/|$)/.test(path) || path === "/platform-updates.json";
+    const appRedirect = !IS_APP_SUPPORTED && !marketingPage && !updateNamespace ? unsupportedOccasionAppRedirect(path) : null;
     if (appRedirect) {
       return Response.redirect(new URL(appRedirect, url).toString(), 302);
     }
@@ -467,7 +468,7 @@ async function routeRequest(request, env) {
       const response=await serveAsset(env,request,path);
       return new Response(response.body,{status:response.status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-cache"}});
     }
-    if (/^\/(?:co-je-nove|[a-z]{2}\/whats-new)(?:\/|$)/.test(path) || path === "/platform-updates.json") return notFound();
+    if (updateNamespace) return notFound();
     if (path === "/sitemap.xml") return handleSitemap(request, env);
 
     if (path === "/" && FORCED_OCCASION_PATH) {

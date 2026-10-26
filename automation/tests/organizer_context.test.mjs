@@ -1,7 +1,8 @@
+import {fileURLToPath} from 'node:url';
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { symlinkSync, mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -15,6 +16,7 @@ function fixture(t) {
   t.after(()=>rmSync(root,{recursive:true,force:true}));
   mkdirSync(join(root,'automation/release'),{recursive:true});
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
+  symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
   cpSync(source,join(root,'automation/release/organizers'),{recursive:true});
   cpSync(new URL('../release/render_organizer_page.mjs',import.meta.url),join(root,'automation/release/render_organizer_page.mjs'));

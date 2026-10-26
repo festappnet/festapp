@@ -1,8 +1,9 @@
+import {fileURLToPath} from 'node:url';
 import {readConfig,resolveContext,publicManifest} from '../release/organizers/context.mjs';
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { symlinkSync, mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -13,6 +14,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   mkdirSync(join(root, 'web_client'), { recursive: true });
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
+  symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
@@ -166,6 +168,7 @@ test('English uses the same template, no Czech references, and requires real Eng
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
+  symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   const mediaPath = join(root, 'automation/release/organizers/clips.en.json');
   const mediaFixture = JSON.parse(readFileSync(mediaPath, 'utf8'));
   for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';

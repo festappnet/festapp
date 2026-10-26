@@ -292,3 +292,7 @@ nahrazené, aby nedošlo k regresi aktuální aplikace.
 Vydání je autorizované pouze pro `prod/festapptickets` / `vstupenky.online`,
 lokálním buildem a `deploy_direct.sh`. Main vyžaduje schválený PR; ochrana se
 neobchází. Neprovádí se databázová změna, EN rollout ani rozesílání.
+
+Release hranice parseru: CI web-startup i archivovaný tenant replay explicitně
+instalují frozen pnpm závislosti rendereru před resolvováním publikovaného obsahu.
+Tím první skutečný příspěvek nezávisí na node_modules z původního worktree.

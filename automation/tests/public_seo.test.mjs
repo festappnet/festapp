@@ -459,6 +459,9 @@ test('nested published details serve their own localized HTML and enter the same
   const redirect=await detailWorker.fetch(new Request(page.canonical+'/?from=test'),assets);assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),page.canonical+'?from=test');
  }
  t.mock.method(globalThis,'fetch',async()=>Response.json({occasions:[]}));
+ const {default:ticketingWorker}=await import('data:text/javascript;base64,'+Buffer.from(source.replace('const IS_APP_SUPPORTED = true;','const IS_APP_SUPPORTED = false;')).toString('base64'));
+ for(const path of ['/co-je-nove','/en/whats-new']) assert.equal((await ticketingWorker.fetch(request(path),assets)).status,200,path);
+ for(const path of ['/co-je-nove/event','/co-je-nove/news','/co-je-nove/admin','/en/whats-new/event']) assert.equal((await ticketingWorker.fetch(request(path),assets)).status,404,path);
  const xml=await(await detailWorker.fetch(request('/sitemap.xml'),assets)).text();
  for(const page of context.updates.pages) assert.ok(xml.includes(page.canonical));
 });
