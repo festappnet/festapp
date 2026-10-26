@@ -38,12 +38,14 @@ void main() {
   test('embed code uses tenant, escaped attributes and one public saved URL',
       () {
     for (final automatic in [true, false]) {
+      for (final inheritStyle in [true, false]) {
       final code = formEmbedCode(
           tenantUrl: 'https://tenant.example/',
           savedLink: 'Legacy &/č',
           title: 'Order "tickets"',
           fallbackLabel: 'Open <order>',
-          automatic: automatic);
+          automatic: automatic,
+          inheritStyle: inheritStyle);
       expect(
           code,
           contains(
@@ -52,8 +54,12 @@ void main() {
       expect(code, contains('Open &lt;order&gt;'));
       expect(code.contains('data-festapp-embed'), automatic);
       expect(code.contains('<script'), automatic);
+      expect(code.contains('data-festapp-style="inherit"'),
+          automatic && inheritStyle);
+      expect(code, contains('allow="clipboard-write"'));
       expect(code, contains('height="800"'));
       expect(code, isNot(contains('sandbox')));
+      }
     }
     expect(
         () => formEmbedCode(
@@ -63,6 +69,52 @@ void main() {
             fallbackLabel: 'Open'),
         throwsArgumentError);
   });
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'embed appearance defaults to the host and updates the copied code',
+    (tester) async {
+      await _environment.pumpWidget(
+        tester,
+        const MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: FormPublicLink(link: 'saved', savedLink: 'saved'),
+          ),
+        ),
+      );
+      await tester.tap(find.text(FormStrings.embedAction));
+      await tester.pumpAndSettle();
+      String copiedCode() => tester
+          .widgetList<CopyButton>(find.byType(CopyButton))
+          .singleWhere((button) => button.value.contains('<iframe'))
+          .value;
+      CheckboxListTile appearance() =>
+          tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
+      expect(appearance().value, isTrue);
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
+      await tester.tap(find.text(FormStrings.embedInheritStyle));
+      await tester.pumpAndSettle();
+      expect(copiedCode(), isNot(contains('data-festapp-style')));
+      await tester.tap(find.text(FormStrings.embedInheritStyle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButton<bool>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.embedFixed).last);
+      await tester.pumpAndSettle();
+      expect(appearance().onChanged, isNull);
+      expect(appearance().value, isFalse);
+      expect(copiedCode(), isNot(contains('data-festapp-style')));
+      expect(copiedCode(), isNot(contains('<script')));
+      expect(copiedCode(), contains('allow="clipboard-write"'));
+      await tester.tap(find.byType(DropdownButton<bool>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.embedAutomatic).last);
+      await tester.pumpAndSettle();
+      expect(appearance().value, isTrue);
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
+    },
+  );
 
   testWidgetsWithEnvironment(() => _environment,
       'embed action copies only saved address and is absent for a new form',
