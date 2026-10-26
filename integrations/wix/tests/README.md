@@ -110,5 +110,18 @@ no text even into a standalone input control, matching
 [WebKit322938](https://bugs.webkit.org/show_bug.cgi?id=322938). Installed AXe native HID later passed text entry on published Wix without
 foregrounding Simulator. Local cross-site summary, Safari Back and Escape also
 passed with retained fields and no submit. Full software-keyboard geometry,
-Safari payment handoff/storage denial and physical hardware remain unqualified;
+external-provider redirect/return and physical hardware remain unqualified.
+The subsequent storage-denied bank-flow result is recorded below;
 see `../SAFARI-REMAINING-CHECKS.md`.
+
+
+For native Safari storage denial, enable Block All Cookies in the disposable
+device's Settings > Apps > Safari > Advanced, confirming Block All. With the
+explicit disposable fixture Vite running, open the localhost host with
+`?form=wix-qa-bank-20261025&storage=1`. The Vite-only `qaStorage` script probes
+real local/session storage inside the checkout iframe and reports native errors
+to the exact localhost parent. The host checks origin and frame identity.
+Restore the native toggle afterward; cross-site storage can still be denied by
+Safari independently. Do not replay buyer `wix-safari-storage-20261026@example.invalid`
+or order233. The executed receipt is `../evidence/safari-storage-bank-20261026.json`.
+Bank QR/functionality passed; the observed icon/layout limit remains open.

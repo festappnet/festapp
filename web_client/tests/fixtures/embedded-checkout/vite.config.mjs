@@ -11,7 +11,10 @@ if (status.API_URL === 'http://127.0.0.1:59921') {
 export default {
     root: new URL('../../..', import.meta.url).pathname,
     server: { host: '127.0.0.1', port: 59801, strictPort: true },
-    plugins: [{name:'embedded-checkout-disposable-backend', configureServer(server) {
+    plugins: [{name:'embedded-checkout-disposable-backend', transformIndexHtml(html, context) {
+        if (!new URL(context.originalUrl, 'http://localhost').searchParams.has('qaStorage')) return;
+        return [{tag:'script', attrs:{type:'module',src:'/tests/fixtures/embedded-checkout/storage-probe.js'}, injectTo:'body'}];
+    }, configureServer(server) {
         server.middlewares.use((req, res, next) => {
             const match = /^\/assets\/translations\/(cs|en|sk|de|pl|uk)\.json$/.exec(req.url);
             if (!match) return next();

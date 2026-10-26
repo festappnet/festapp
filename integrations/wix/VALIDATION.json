@@ -156,6 +156,11 @@
     "nativeTypingQualified": true,
     "physicalIphoneQualified": false,
     "localCrossSiteSummaryBackEscapeQualified": true,
-    "actualWixNativeInputQualified": true
+    "actualWixNativeInputQualified": true,
+    "latestReceipt": "evidence/safari-storage-bank-20261026.json",
+    "localNativeStorageDenialQualified": true,
+    "localBankOrderAndDecodedQrQualified": true,
+    "localOccupiedSeatMapQualified": true,
+    "bankReceiptLayoutQualified": false
   }
 }
