@@ -1,4 +1,5 @@
 import 'package:fstapp/services/help_destination.dart';
+import 'package:fstapp/services/organizer_destination.dart';
 import 'package:fstapp/components/navigation/help_destination_picker.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/services/public_link_path.dart';
@@ -467,6 +468,22 @@ class RouterService {
 
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    if (OrganizerDestination.isCreate(fallbackPath)) {
+      await RightsService.updateAppData(force: true, refreshOffline: false);
+      if (!context.mounted) return;
+      final link = await createOrganizerOccasion(context);
+      if (!context.mounted) return;
+      if (link != null) {
+        await replaceRootPath(
+          context.router.root,
+          HelpDestination.path('forms', link)!,
+        );
+      } else {
+        // Cancelling retains the persisted draft and returns to administration.
+        await handlePostLoginNavigation(context, useReplacement: true);
+      }
+      return;
+    }
     final helpIntent = HelpDestination.parse(fallbackPath);
     if (helpIntent != null) {
       await RightsService.updateAppData(force: true, refreshOffline: false);

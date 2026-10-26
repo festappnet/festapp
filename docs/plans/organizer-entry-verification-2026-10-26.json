@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-26",
+  "scope": [
+    "organizer creation continuation",
+    "catalogue organizer entries",
+    "existing Cloudflare verification"
+  ],
+  "excluded": [
+    "public purchase form",
+    "pricing",
+    "new analytics or attribution persistence"
+  ],
+  "tests": {
+    "webUniquePassed": 87,
+    "flutterPassed": 7,
+    "cataloguePassed": 10,
+    "typescript": "passed",
+    "dartAnalyzeErrors": 0,
+    "dartAnalyzeWarnings": 0
+  },
+  "cloudflare": {
+    "ticketing": {
+      "beacons": 1,
+      "navigations": 1,
+      "origin": "https://vstupenky.online",
+      "path": "/"
+    },
+    "catalogue": {
+      "beacons": 1,
+      "navigations": 1,
+      "origin": "https://plesy.vstupenky.online",
+      "path": "/"
+    },
+    "catalogueCity": {
+      "beacons": 1,
+      "navigations": 1,
+      "path": "/mista/praha"
+    },
+    "rumEvents": [
+      {
+        "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+        "status": 204
+      },
+      {
+        "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+        "status": 204
+      },
+      {
+        "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+        "status": 204
+      },
+      {
+        "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+        "status": 204
+      }
+    ],
+    "acceptedRUM": true
+  },
+  "browser": [
+    {
+      "page": "home",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            }
+          ],
+          "text": "Pořádáte ples? Založit akci zdarma",
+          "visible": true,
+          "width": 358
+        }
+      ],
+      "overflow": false,
+      "width": 390
+    },
+    {
+      "page": "home",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            }
+          ],
+          "text": "Pořádáte ples? Založit akci zdarma",
+          "visible": true,
+          "width": 1200
+        }
+      ],
+      "overflow": false,
+      "width": 1280
+    },
+    {
+      "page": "city",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            }
+          ],
+          "text": "Pořádáte ples v Praze?\n\nPřipravte vlastní plánek sálu a prodej vstupenek na vstupenky.online.\n\nZaložit akci zdarma",
+          "visible": true,
+          "width": 358
+        }
+      ],
+      "overflow": false,
+      "width": 390
+    },
+    {
+      "page": "city",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            }
+          ],
+          "text": "Pořádáte ples v Praze?\n\nPřipravte vlastní plánek sálu a prodej vstupenek na vstupenky.online.\n\nZaložit akci zdarma",
+          "visible": true,
+          "width": 1100
+        }
+      ],
+      "overflow": false,
+      "width": 1280
+    },
+    {
+      "page": "detail",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            },
+            {
+              "height": 44,
+              "href": "?path=%2Fnavrhnout%3Fkind%3Dcorrection%26edition%3Dorganizer-fixture",
+              "text": "Opravit údaje o plese"
+            }
+          ],
+          "text": "Pořádáte tento ples?\n\nPřipravte vlastní plánek sálu a prodej vstupenek na vstupenky.online.\n\nZaložit akci zdarma\nOpravit údaje o plese\n\nOpravu údajů můžete poslat i bez založení prodeje. Před zveřejněním ji ověříme.",
+          "visible": true,
+          "width": 358
+        }
+      ],
+      "overflow": false,
+      "width": 390
+    },
+    {
+      "page": "detail",
+      "entry": [
+        {
+          "links": [
+            {
+              "height": 44,
+              "href": "https://vstupenky.online/login?create=1",
+              "text": "Založit akci zdarma"
+            },
+            {
+              "height": 44,
+              "href": "?path=%2Fnavrhnout%3Fkind%3Dcorrection%26edition%3Dorganizer-fixture",
+              "text": "Opravit údaje o plese"
+            }
+          ],
+          "text": "Pořádáte tento ples?\n\nPřipravte vlastní plánek sálu a prodej vstupenek na vstupenky.online.\n\nZaložit akci zdarma\nOpravit údaje o plese\n\nOpravu údajů můžete poslat i bez založení prodeje. Před zveřejněním ji ověříme.",
+          "visible": true,
+          "width": 1100
+        }
+      ],
+      "overflow": false,
+      "width": 1280
+    }
+  ],
+  "productionDeploymentPerformed": false,
+  "realGoogleProviderPerformed": false,
+  "systemDnsModified": false
+}

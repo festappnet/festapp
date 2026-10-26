@@ -17,14 +17,17 @@ test('organizer intent uses current rights, existing registration and signed-in 
     let context = { organization: { IS_REGISTRATION_ENABLED: false } };
     t.mock.method(RightsService, 'updateAppData', async () => { RightsService._context = context; return true; });
     const admin = t.mock.method(RouterService, 'navigateToAdmin', async () => {});
+    const handoff = t.mock.method(RouterService, 'navigateToFlutterRoute', async () => {});
     assert.equal(await handleOrganizerIntent(), 'catalog');
     assert.match(document.querySelector('[role=status]').textContent, /info@festapp.net/);
     assert.equal(locationHash(), '#auth-fragment');
-    assert.equal(window.location.search, '?utm_source=organizers');
+    assert.equal(window.location.search, '?create=1&utm_source=organizers');
     context = { user_info: { id: 'user', units: [{ id: 27 }] }, organization: { IS_REGISTRATION_ENABLED: true } };
     window.history.replaceState(null, '', '/events?create=1');
     assert.equal(await handleOrganizerIntent(), 'navigated');
-    assert.deepEqual(admin.mock.calls[0].arguments, [27]);
+    assert.equal(admin.mock.calls.length, 0, 'explicit creation bypasses the generic unit dashboard');
+    const login = new URL(new URL(handoff.mock.calls.at(-1).arguments[0], window.location.origin).searchParams.get('redirect'), window.location.origin);
+    assert.equal(login.searchParams.get('redirect'), '/organizer-action/create');
     context = { organization: { IS_REGISTRATION_ENABLED: true } };
     window.history.replaceState(null, '', '/events?create=1');
     assert.equal(await handleOrganizerIntent(), 'catalog');
@@ -62,9 +65,14 @@ test('organizer intent uses current rights, existing registration and signed-in 
     assert.equal(await handleOrganizerIntent(), 'catalog');
     assert.equal(document.querySelector('login-modal').currentView, 'register');
     assert.equal(window.location.search, '?create=1', 'reload after registration preserves the create intent');
-    const handoff = t.mock.method(RouterService, 'navigateToFlutterRoute', async () => {});
     context = { user_info: { id: 'new-user', units: [] } };
     assert.equal(await handleOrganizerIntent(), 'navigated');
     assert.ok(handoff.mock.calls.at(-1).arguments[0].startsWith('/flutter?redirect='), 'first-event setup uses the authenticated administration boundary without a /login loop');
+    context = { organization: { IS_REGISTRATION_ENABLED: true } };
+    document.querySelector('login-modal')?.remove();
+    window.history.replaceState(null, '', '/login?redirect=%2Forganizer-action%2Fcreate');
+    assert.equal(await handleOrganizerIntent(), 'catalog');
+    assert.equal(window.location.search, '?create=1');
+    assert.equal(document.querySelector('login-modal').currentView, 'register');
     function locationHash() { return window.location.hash; }
 });

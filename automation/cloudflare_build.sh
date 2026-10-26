@@ -418,6 +418,9 @@ async function routeRequest(request, env) {
     // Previously shared help-login links enter the ordinary web login modal.
     // Keep the public allowlist aligned with help_action_routes.js and Dart.
     if (path === "/login" && url.searchParams.getAll("redirect").length === 1) {
+      if (url.searchParams.get("redirect") === "/organizer-action/create") {
+        return Response.redirect(new URL("/login?create=1", url).href, 302);
+      }
       const help = /^\/help-action\/(forms|seating|tickets|products|orders|report|settings|scanner-settings)$/.exec(url.searchParams.get("redirect") || "");
       if (help) {
         const target = new URL("/events", url);
