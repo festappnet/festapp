@@ -653,3 +653,22 @@ test('completed form sales require explicit new order and waitlist consent with 
  const permissions=[...grant.permissions,'festapp:orders:create','festapp:waitlist:read','festapp:waitlist:write','festapp:waitlist:accept'];verifyPermissions(permissions,MCP_SCOPES);f.storage.put('Delegation',id,{...grant,permissions});assert(owner().allowedOperations.includes('forms.createOrder'));assert(owner().allowedOperations.includes('waitlist.accept'));assert.throws(()=>owner().authorizeOperation('waitlist.accept',{occasionId:8,formId:42}));
  token.scope=READ_SCOPE+' festapp:forms:read festapp:orders:read';assert(!owner().allowedOperations.includes('forms.publicLink'));assert(!owner().allowedOperations.includes('forms.createOrder'));assert(!owner().allowedOperations.includes('waitlist.accept'));
 });
+
+
+test('configuration scopes and whole-unit selection stay separate from occasion-only grants',async t=>{
+ const f=await setup(t),id='configuration-permissions';
+ const grant={id,binding:'settings-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('occasions.settings.save'));
+ const permissions=['festapp:occasion-settings:read','festapp:occasion-settings:write','festapp:unit-settings:read','festapp:unit-settings:write'];
+ f.storage.put('Delegation',id,{...grant,permissions});
+ owner().authorizeOperation('occasions.settings.save',{occasionId:7});
+ assert.throws(()=>owner().authorizeOperation('occasions.settings.save',{occasionId:8}));
+ assert.throws(()=>owner().authorizeOperation('units.settings.save',{unitId:11}));
+ await assert.rejects(owner().delegatedUnitContext({},11));
+ f.storage.put('Delegation',id,{...grant,permissions,access:{type:'selection',occasionIds:[7],units:[{unitId:11,canCreateOccasions:false}]}});
+ owner().authorizeOperation('units.settings.save',{unitId:11});assert.throws(()=>owner().authorizeOperation('units.settings.save',{unitId:12}));
+ token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
+});

@@ -334,6 +334,10 @@
     "eshop_orders/create_ticket_order_client_sync_v1.sql",
     "eshop_waitlist/offers.sql",
     "eshop_waitlist/email_context.sql",
-    "eshop_forms/admin_waitlist_acceptance.sql"
+    "eshop_forms/admin_waitlist_acceptance.sql",
+    "others/configuration_settings_contract.sql",
+    "others/configuration_settings.sql",
+    "user_permissions/game_settings.sql",
+    "others/configuration_authoring.sql"
   ]
 }

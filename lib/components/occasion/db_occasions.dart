@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
@@ -7,10 +8,7 @@ import 'package:fstapp/components/occasion/occasion_commands.dart';
 import 'package:fstapp/components/occasion/occasion_duplication.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
-import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbOccasions {
@@ -24,12 +22,13 @@ class DbOccasions {
   static const String serviceTypeAccommodation = "accommodation";
 
   static Future<List<ServiceItemModel>> getAllServices(String type) async {
-    var data = await _supabase.rpc("get_all_service_items", params: {
-      'oc': RightsService.currentOccasionId(),
-      'type': type,
-    });
+    var data = await _supabase.rpc(
+      "get_all_service_items",
+      params: {'oc': RightsService.currentOccasionId(), 'type': type},
+    );
     var items = List<ServiceItemModel>.from(
-        data["data"].map((x) => ServiceItemModel.fromJson(x)));
+      data["data"].map((x) => ServiceItemModel.fromJson(x)),
+    );
     return items;
   }
 
@@ -37,7 +36,9 @@ class DbOccasions {
   /// distinguish the outcome: 200 = created, 400 = duplicate code,
   /// 403 = not a manager on the occasion.
   static Future<Map<String, dynamic>> createService(
-      String type, ServiceItemModel item) async {
+    String type,
+    ServiceItemModel item,
+  ) async {
     return _commands.createService(
       RightsService.currentOccasionId()!,
       type,
@@ -58,37 +59,29 @@ class DbOccasions {
     return result['code'] == 200;
   }
 
-  static Future<bool> deleteService(String type, ServiceItemModel item,
-      [bool force = false]) async {
+  static Future<bool> deleteService(
+    String type,
+    ServiceItemModel item, [
+    bool force = false,
+  ]) async {
     final occasionId = RightsService.currentOccasionId()!;
-    final result =
-        await _commands.deleteService(occasionId, type, item.code, force);
+    final result = await _commands.deleteService(
+      occasionId,
+      type,
+      item.code,
+      force,
+    );
     return result["code"] == 200;
   }
 
   static Future<GameSettingsModel?> loadGameSettings() async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final data = (await ClientSyncProjection.occasionConfig())['data'];
-      if (data is Map && data[Tb.occasions.data_game] is Map) {
-        return GameSettingsModel.fromJson(
-          (data[Tb.occasions.data_game] as Map).cast<String, dynamic>(),
-        );
-      }
-      return null;
-    }
-    final response = await _supabase
-        .from(Tb.occasions.table)
-        .select(Tb.occasions.data)
-        .eq(Tb.occasions.id, RightsService.currentOccasionId()!)
-        .maybeSingle();
-
-    if (response != null) {
-      final data = response[Tb.occasions.data];
-      if (data != null && data[Tb.occasions.data_game] != null) {
-        return GameSettingsModel.fromJson(data[Tb.occasions.data_game]);
-      }
-    }
-    return null;
+    final response = await _supabase.rpc(
+      'get_game_settings_for_authoring_v1',
+      params: {'p_occasion': RightsService.currentOccasionId()!},
+    );
+    return GameSettingsModel.fromJson(
+      (response['game'] as Map).cast<String, dynamic>(),
+    )..aggregateVersion = (response['version'] as num).toInt();
   }
 
   static Future<bool> updateGameSettings(GameSettingsModel settings) async {
@@ -96,19 +89,27 @@ class DbOccasions {
       RightsService.currentOccasionId()!,
       settings.start,
       settings.end,
+      expectedVersion: settings.aggregateVersion,
     );
+    if (response['code'] == 200 && response['version'] is num) {
+      settings.aggregateVersion = (response['version'] as num).toInt();
+    }
     return response['code'] == 200;
   }
 
   static Future<OccasionModel> getOccasion(int oc) async {
-    final data = await _supabase
-        .rpc('get_occasion_for_authoring_v1', params: {'p_occasion': oc});
+    final data = await _supabase.rpc(
+      'get_occasion_for_authoring_v1',
+      params: {'p_occasion': oc},
+    );
     return OccasionModel.fromJson(data);
   }
 
   static Future<OccasionModel> getOccasionByLink(String link) async {
-    final data = await _supabase
-        .rpc('get_occasion_for_edit_v1', params: {'p_link': link});
+    final data = await _supabase.rpc(
+      'get_occasion_for_edit_v1',
+      params: {'p_link': link},
+    );
 
     if (data == null) {
       throw const PostgrestException(message: 'Occasion not found');
@@ -118,17 +119,22 @@ class DbOccasions {
   }
 
   static Future<List<OccasionModel>> getAllOccasionsForEdit(int unitId) async {
-    var data = await _supabase.rpc("get_all_occasions_for_edit_v212", params: {
-      "unit_id": unitId,
-    });
+    var data = await _supabase.rpc(
+      "get_all_occasions_for_edit_v212",
+      params: {"unit_id": unitId},
+    );
     return List<OccasionModel>.from(data.map((x) => OccasionModel.fromJson(x)));
   }
 
   static Future<OccasionModel> getTicketLayoutForEdit(
-      OccasionModel current) async {
-    final snapshot = Map<String, dynamic>.from(await _supabase.rpc(
+    OccasionModel current,
+  ) async {
+    final snapshot = Map<String, dynamic>.from(
+      await _supabase.rpc(
         'get_ticket_layout_for_authoring_v1',
-        params: {'p_occasion': current.id}));
+        params: {'p_occasion': current.id},
+      ),
+    );
     return OccasionModel(
       id: (snapshot['occasion'] as num).toInt(),
       link: current.link,
@@ -140,38 +146,53 @@ class DbOccasions {
         TicketFeature.fromJson({
           'code': 'ticket',
           ...Map<String, dynamic>.from(snapshot['appearance'] as Map),
-        })
+        }),
       ],
     );
   }
 
   static Future<void> updateTicketLayout(OccasionModel occasion) async {
     final ticket = occasion.features.whereType<TicketFeature>().single;
-    final change = Map<String, dynamic>.from(jsonDecode(jsonEncode({
-      'expected': ticket.layoutChange != null
-          ? ticket.layoutChange!['expected']
-          : ticket.layout,
-      'next': ticket.layout,
-      'appearance': {
-        'background': ticket.ticketBackground,
-        'ticket_type': ticket.ticketType
-      },
-    })) as Map);
+    final change = Map<String, dynamic>.from(
+      jsonDecode(
+        jsonEncode({
+          'expected': ticket.layoutChange != null
+              ? ticket.layoutChange!['expected']
+              : ticket.layout,
+          'next': ticket.layout,
+          'appearance': {
+            'background': ticket.ticketBackground,
+            'ticket_type': ticket.ticketType,
+          },
+        }),
+      ) as Map,
+    );
     final id = occasion.id!;
     final version = occasion.aggregateVersion;
     final payload = {
       'occasion': id,
       'expectedVersion': version,
-      'change': change
+      'change': change,
     };
     final principal = '${_supabase.rest.url}:${_supabase.auth.currentUser!.id}';
     final commandId = await ClientCommandIdentity.claimIntent(
-        'ticket_layout.save', payload,
-        principalBinding: principal, scopeBinding: id.toString());
-    final saved = await _commands.saveTicketLayout(id, version, change,
-        commandId: commandId);
-    await ClientCommandIdentity.completeIntent('ticket_layout.save', payload,
-        commandId: commandId, principalBinding: principal);
+      'ticket_layout.save',
+      payload,
+      principalBinding: principal,
+      scopeBinding: id.toString(),
+    );
+    final saved = await _commands.saveTicketLayout(
+      id,
+      version,
+      change,
+      commandId: commandId,
+    );
+    await ClientCommandIdentity.completeIntent(
+      'ticket_layout.save',
+      payload,
+      commandId: commandId,
+      principalBinding: principal,
+    );
     occasion.aggregateVersion = saved.aggregateVersion;
     occasion.features = saved.features;
     occasion.markTicketLayoutSaved();
@@ -197,21 +218,31 @@ class DbOccasions {
   );
 
   /// Returns false only when the event exists but its media could not be copied.
-  static Future<bool> duplicateOccasion(int oc,
-      {int? targetUnitId, String locale = 'en'}) async {
-    final result = await _duplicator.duplicate(oc,
-        targetUnitId: targetUnitId, locale: locale);
+  static Future<bool> duplicateOccasion(
+    int oc, {
+    int? targetUnitId,
+    String locale = 'en',
+  }) async {
+    final result = await _duplicator.duplicate(
+      oc,
+      targetUnitId: targetUnitId,
+      locale: locale,
+    );
     return result.mediaCopied;
   }
 
   /// Keeps the committed result visible even if the following media work fails.
   static Future<({int occasionId, bool mediaCopied})> duplicateDemoOccasion(
-          int source,
-          {required int targetUnitId,
-          required String commandId,
-          String locale = 'en'}) =>
-      _duplicator.duplicate(source,
-          targetUnitId: targetUnitId, commandId: commandId, locale: locale);
+    int source, {
+    required int targetUnitId,
+    required String commandId,
+    String locale = 'en',
+  }) => _duplicator.duplicate(
+    source,
+    targetUnitId: targetUnitId,
+    commandId: commandId,
+    locale: locale,
+  );
 
   static Future<void> deleteOccasion(int oc) async {
     await _commands.delete(oc);

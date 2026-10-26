@@ -45,6 +45,8 @@ export class DelegatedOwner {
         if (['context.inspect', 'access.inspect'].includes(id)) return;
         if (id === 'occasions.create') {
             check(access.units.some(u => u.unitId === args.unitId && u.canCreateOccasions), 'FORBIDDEN');
+        } else if (id.startsWith('units.settings.')) {
+            check(access.units.some(u => u.unitId === args.unitId), 'FORBIDDEN');
         } else if (id.startsWith('email_templates.') && args.entityType === 'unit') {
             check(access.units.some(u => u.unitId === args.entityId), 'FORBIDDEN');
         } else if (!access.units.length) {

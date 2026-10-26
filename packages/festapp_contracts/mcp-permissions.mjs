@@ -1,6 +1,10 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
+    'festapp:occasion-settings:read': {label:'occasionSettingsRead',operations:['occasions.settings.inspect','occasions.game.inspect'],requires:[]},
+    'festapp:occasion-settings:write': {label:'occasionSettingsWrite',operations:['occasions.settings.save','occasions.publicLink','occasions.setPublicLink','occasions.game.save'],requires:['festapp:occasion-settings:read']},
+    'festapp:unit-settings:read': {label:'unitSettingsRead',operations:['units.settings.inspect'],requires:[]},
+    'festapp:unit-settings:write': {label:'unitSettingsWrite',operations:['units.settings.save'],requires:['festapp:unit-settings:read']},
     'festapp:forms:read': { label: 'formsRead', operations: ['forms.list','forms.inspect'], requires: [] },
     'festapp:forms:write': { label: 'formsWrite', operations: ['forms.publicLink','forms.setPublicLink','forms.paymentOptions','forms.create','forms.save','forms.duplicate','forms.delete'], requires: ['festapp:forms:read'] },
     'festapp:email-templates:read': { label: 'emailTemplatesRead', operations: ['email_templates.list','email_templates.inspect','email_templates.banner.inspect','email_templates.preview'], requires: [] },
