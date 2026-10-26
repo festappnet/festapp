@@ -316,6 +316,12 @@
     "blueprint/order_rejection.sql",
     "eshop_orders/replacement_invoice_preparation.sql",
     "blueprint/order_conflicts.sql",
-    "blueprint/ticket_cancellation.sql"
+    "blueprint/ticket_cancellation.sql",
+    "others/email_template_commands.sql",
+    "others/get_all_email_templates.sql",
+    "others/update_email_template.sql",
+    "others/delete_entity_email_template.sql",
+    "others/get_entity_email_templates.sql",
+    "occasion_setup/email_templates.sql"
   ]
 }

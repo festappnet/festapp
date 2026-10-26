@@ -1,6 +1,6 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Stav: etapy 0, 0B, 1 a řez 2A lokálně dokončeny; pokračují další řezy etapy 2.
+Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapa 3 je lokálně dokončená a ověřená, její produkční rollout neproběhl.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
@@ -838,3 +838,18 @@ Doklad: `docs/reports/admin-seats-2b-release-2026-10-23.json`; cílené ověřen
 evidenci. Živé zdroje, ACL a zdraví Edge/MCP i webové verze jsou ověřené.
 Dle posledního pokynu uživatele zde skončit; neotevírat etapy3-10. Při pozdějším
 pokračování nejprve načíst aktuální autoritativní main a navázat etapou3.
+
+
+### Pokračování 2026-10-26 - etapa 3
+
+Uživatel obnovil práci a výslovně připomněl jednu kanonickou cestu.
+Etapa 3 implementuje čtení zdroje/dědičnosti, receipted save/reset, bannery a
+syntetický náhled přes produkční renderer. Aktuální checkpoint a evidence jsou
+v navazujícím souboru; historické „stop after 2B“ výše popisuje tehdejší pokyn,
+nikoli nové pokračování. Nové produkční změny zatím neproběhly.
+
+Při sjednocování se odstranilo přímé mutační RPC volání aktuálního editoru,
+klientský výpočet dědičnosti banneru i jeho ruční lokální zrcadlení po zápisu a
+duplicitní validace ticket bloku v průvodci. Staré vydané RPC zůstávají hranicemi
+na stejné persistenci, nikoli druhou implementací. Init/copy/delete celé akce
+zachovává vlastní atomickou transakci. Další doménová etapa je 4 (formuláře).

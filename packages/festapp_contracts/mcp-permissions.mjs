@@ -1,6 +1,8 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
+    'festapp:email-templates:read': { label: 'emailTemplatesRead', operations: ['email_templates.list','email_templates.inspect','email_templates.banner.inspect','email_templates.preview'], requires: [] },
+    'festapp:email-templates:write': { label: 'emailTemplatesWrite', operations: ['email_templates.change','email_templates.banner.change'], requires: ['festapp:email-templates:read'] },
     'festapp:orders:read': { label: 'ordersRead', operations: ['orders.report', 'orders.list', 'orders.inspect'], requires: [] },
     'festapp:orders:write': { label: 'ordersWrite', operations: ['orders.update', 'orders.cancel'], requires: ['festapp:orders:read'] },
     'festapp:payments:write': { label: 'paymentsWrite', operations: ['orders.mark_paid', 'payments.record'], requires: ['festapp:orders:read'] },

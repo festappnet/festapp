@@ -1123,3 +1123,83 @@ to the exact user-requested recovery HTML/JSON location.
 Stop after this completed/deployed stage as explicitly requested. No stage3 work
 started. Future continuation starts with fresh main, then stage3; retain evidence
 of earlier full-app browser input-method limits and historical receipt coverage.
+
+## Continuation 2026-10-26 - stage 3 locally complete
+
+The user resumed the plan and explicitly required one canonical path. Fresh
+GitHub `origin/main` base: `ddbeb11e6aa477477984da03f947f07f9f6a353a`.
+Workspace: `/private/tmp/festapp-admin-mcp-emails-20261026`, branch
+`feat/admin-mcp-emails-20261026`. The original dirty workspace is untouched.
+Verification: standard. No production change or customer mail was performed.
+
+Completed: effective template list/inspect with source and original snapshot
+token; save/reset with one durable receipt; banner read/change and authoritative
+inherited state; read-only synthetic preview through production `renderEmail`.
+Six new tools, two new explicit scopes, 41 remote tools total. A selected occasion
+never grants organizer-level template access; older grants stay unchanged.
+
+Canonical paths and removal ledger:
+
+| Boundary | Canonical owner / result | Removed or retained |
+| --- | --- | --- |
+| Current editor mutations | `DbEmailTemplates -> EmailTemplateCommands -> manage_email_template/manage_email_banner`; MCP calls the same RPCs | Removed all three direct legacy mutation RPC calls from current Dart code |
+| Effective content/source | `get_all_email_templates -> get_email_template_state_internal -> get_resolved_email_template` | No MCP inheritance resolver; UI and MCP consume SQL source/token |
+| Banner inheritance and post-save state | `get_email_banner_state_internal`, using the sending wrapper resolver | Removed Dart inheritance computation and manual entity-data mirroring |
+| Ticket-block validation | `validate_email_template_content_internal` | Removed duplicated expressions from ordinary saves and setup-draft validation |
+| Preview | `send-custom-email/authoringPreview -> renderEmail`, same synthetic scenario generator as Flutter | No second renderer, arbitrary recipient/order input or queue/provider path |
+| Legacy public write RPC signatures | Existing persistence owners used by the new receipt boundary | Retained for released clients; remove public grants only after supported-client upgrade; no parallel implementation |
+| Occasion initial copy/setup/delete | Existing aggregate lifecycle transactions; shared template validation | Retained distinct lifecycle, not an interactive save fallback or nested per-template receipt |
+
+Snapshot tokens fingerprint effective content plus override identity and reject
+stale creates/updates/resets. Equivalent restored content is an equivalent state,
+not a monotonic event revision. Banner tokens include inherited state. Receipt
+identity binds actor, stored hierarchy, original token and exact payload. Locks
+follow receipt -> organization -> unit -> occasion; parent edits serialize with
+child authoring. Authorization is checked before receipt replay and after locks.
+The existing durable journal now distinguishes entity type/ID/template code.
+A conflict retains the draft and never silently refreshes/replaces the baseline.
+
+Validation evidence:
+- 8 real disposable PostgreSQL cases, no skips, plus 2 actual executor boundary
+  cases: hierarchy/roles, source parity for all 17 changed/new SQL owners, ACL,
+  absent-override conflict, legacy-write conflict, exact retry identity, rollback
+  after persistence, two-connection creation/replay, reset and untouched queue.
+- 2 existing SQL inheritance/catalog regression files passed.
+- 23 existing remote HTTP/OAuth tests plus the new explicit scope/occasion-vs-unit
+  consent case passed; 37 web consent/connection tests passed.
+- 11 Deno tests passed, including all 54 generated template/scenario/language/tone
+  examples through the actual production renderer; Edge entrypoint typecheck passed.
+- 78 distinct email Flutter cases and 5 existing command transport cases verified.
+  The full email run retained 77 passing cases; its new banner case exposed the
+  existing decorated ListTile/Material assertion. The card now uses Material at
+  the colored surface, and that affected case passed separately. Save/retry uses
+  a real isolated journal and verifies the same UUID across UI retries.
+- Targeted Dart analysis: no errors/warnings, existing style/deprecation infos.
+  Migration assembly, source-contract generator and diff whitespace gates pass.
+
+Evidence: `docs/reports/admin-email-template-evidence-2026-10-26.json` and
+`docs/reports/admin-email-template-network-2026-10-26.json`. Same disposable fixture:
+existing full editor bundle 102828 JSON bytes; new summary 1544 bytes without
+HTML; one requested full template 100343 bytes. These are serialized actual SQL
+results, not HTTP latency measurements or a prior MCP baseline. One domain SQL
+call each; synthetic preview has one Edge action and one scoped SQL read.
+
+Efficiency lessons applied: reuse `renderEmail` and the existing scenario
+producer instead of building another renderer; share validation before adding
+adapters; prove retry/concurrency in disposable PostgreSQL; clean commit child
+rows before fixture commits. Real journal futures in widget tests must be
+created/awaited inside `tester.runAsync`, with scoped platform fixtures. Passing
+unchanged checks were retained rather than restarting full suites after each fix.
+
+Publication and production are separate states. The main branch requires one
+approving review; no bypass is authorized. Publish only after fetching current
+main and reconciling any new source overlap. SQL forward migration is
+`20261026170000_email_template_commands.sql`, generated from the listed owners.
+Deploy SQL before activating the new Flutter client; Edge action, consent clients
+and issuer need a coherent compatible release. Only an authorized selected tenant
+may be released. No unrelated dirty work or pending migrations belong in it.
+
+Next implementation boundary: stage 4, forms/fields/sales settings. Reuse its
+existing aggregate writer, permissions and receipt; do not add a second form
+engine. Start from this checkpoint and current authoritative main, preserving
+stage-3 evidence and the public-client contraction gate above.

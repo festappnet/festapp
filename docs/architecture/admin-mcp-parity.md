@@ -70,7 +70,7 @@ that every row is exposed by the current MCP catalog.
 | Payments and ticket delivery | payment pairing and canonical mail queue | Manual payment and queued tickets available; no implied provider refund |
 | Products, stock assignments | product catalog and client-sync product owners | First slice: read/create/update/delete and combined stock save |
 | Scheduled product prices/visibility, waves | shared schedule command adapter and existing wave/plan owners | Local: wave list, ensure/target/move/cancel and standalone price changes; explicit new consent |
-| Email templates, previews, inheritance | email template domain and shared renderer; unit/occasion template tabs | Next area after products; retain exact inheritance and rendering rules |
+| Email templates, previews, inheritance | email template domain and shared renderer; unit/occasion template tabs | Stage 3 implemented locally: shared save/reset/banner commands and production-rendered synthetic preview; production rollout pending |
 | Forms, fields, form access/sales | form aggregate commands; forms tab | Pending, audit draft/save/publication boundaries together |
 | Seating plans, spots and ticket artwork | blueprint aggregate, seating/capacity commands and canonical PDF renderer | Artwork read available; full editor operations pending |
 | Stock pools, contexts, resources | inventory domain commands; pools tab | Catalog assignments included; pool/resource administration pending |
@@ -387,3 +387,22 @@ used-unit restrictions still apply. Scope/permissions are checked before replay
 and after the operation. A new explicit cancel-tickets consent requires seat and
 order reads, and does not expand prior grants. Optional order-update email remains
 an explicit follow-up; the cancellation does not execute a payment-provider refund.
+
+
+## Stage 3 - canonical email authoring (2026-10-26)
+
+Six MCP operations cover list, inspect, save/reset, banner inspect/change and
+synthetic preview. Current Flutter mutations and MCP both use
+`manage_email_template` / `manage_email_banner`; `get_all_email_templates` and
+the sending resolver remain the sole inheritance/visibility owners. The card's
+client-side banner inheritance and local post-save data mirroring are removed.
+Setup/editor ticket-block validation is consolidated into one SQL invariant.
+`authoringPreview` reuses production `renderEmail` and the existing scenario
+generator; there is no MCP renderer or mail sender.
+
+Occasion-only grants cannot read/write a unit template. New explicit read/write
+scopes do not widen old grants. Supported released-client RPC signatures remain
+as boundaries on the same persistence implementation, with removal gated on
+client upgrade. Occasion provisioning/copy/deletion keep their own atomic
+lifecycle owners, without nested authoring receipts.
+See the current checkpoint for targeted evidence, publication and deployment.

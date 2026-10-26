@@ -3730,6 +3730,8 @@
     "individualOnlyHint": "Only individual occasions are available for selection.",
     "orderPermissions": "Order permissions",
     "orderPermissionsHint": "Applies only to selected organizers and occasions. Editing, payments and sending also include reading orders.",
+    "emailTemplatesRead": "Read email templates, banners and synthetic previews",
+    "emailTemplatesWrite": "Edit email templates and banners; restore inheritance",
     "productSchedulesRead": "Read product price waves and scheduled changes",
     "productSchedulesWrite": "Schedule, move and cancel product prices and visibility",
     "standingInventoryWrite": "Prepare standing admission inventory",

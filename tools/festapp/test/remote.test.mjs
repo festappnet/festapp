@@ -605,3 +605,25 @@ test('seat cancellation requires fresh explicit consent and both semantic reads'
  assert(!owner().allowedOperations.includes('seats.swap'));
  token.scope=READ_SCOPE+' festapp:seats:read festapp:orders:read';assert(!owner().allowedOperations.includes('seats.cancel_tickets'));
 });
+
+test('email template consent never expands old grants or promotes occasion access into organizer access',async t=>{
+ const f=await setup(t),id='email-template-permissions';
+ const grant={id,binding:'email-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,
+  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('email_templates.inspect'));
+ assert.throws(()=>verifyPermissions(['festapp:email-templates:write'],MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:email-templates:read','festapp:email-templates:write']});
+ assert(owner().allowedOperations.includes('email_templates.change'));assert(owner().allowedOperations.includes('email_templates.preview'));
+ await owner().authorizeOperation('email_templates.inspect',{entityType:'occasion',entityId:7});
+ assert.throws(()=>owner().authorizeOperation('email_templates.inspect',{entityType:'occasion',entityId:8}));
+ assert.throws(()=>owner().authorizeOperation('email_templates.change',{entityType:'unit',entityId:1}));
+ await assert.rejects(owner().delegatedUnitContext({},1));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:email-templates:read','festapp:email-templates:write'],access:{type:'selection',occasionIds:[7],units:[{unitId:11,canCreateOccasions:false}]}});
+ await owner().authorizeOperation('email_templates.change',{entityType:'unit',entityId:11});
+ assert.equal((await owner().delegatedUnitContext({},11)).unitId,11);
+ assert.throws(()=>owner().authorizeOperation('email_templates.change',{entityType:'unit',entityId:12}));
+ token.scope=READ_SCOPE+' festapp:email-templates:read';assert(!owner().allowedOperations.includes('email_templates.change'));
+});

@@ -502,7 +502,13 @@ const destination = new URL(
 );
 const runtimeDestination = new URL('supabase/functions/_shared/emailPreviewDefaults.json', root);
 const runtimeDefaults = JSON.stringify(scalar) + '\n';
+const scenariosDestination = new URL('supabase/functions/_shared/emailPreviewScenarios.json', root);
+const runtimeScenarios = JSON.stringify({version:1, sourceDigest, records:records.map(r => ({
+  templateCode:r.templateCode, scenario:r.scenario, locale:r.locale, tone:r.tone,
+  values:r.values, richCodes:r.richCodes, requiredLinks:r.requiredLinks,
+}))}) + '\n';
 if (Deno.args.includes("--check")) {
+  if (await Deno.readTextFile(scenariosDestination) !== runtimeScenarios) throw new Error('Runtime email preview scenarios are stale');
   if (await Deno.readTextFile(runtimeDestination) !== runtimeDefaults) throw new Error('Runtime email preview defaults are stale');
   if (await Deno.readTextFile(destination) !== output) {
     throw new Error(
@@ -514,6 +520,7 @@ if (Deno.args.includes("--check")) {
   }
   console.log(`Email preview examples fresh (${records.length} scenarios)`);
 } else {
+  await Deno.writeTextFile(scenariosDestination, runtimeScenarios);
   await Deno.writeTextFile(runtimeDestination, runtimeDefaults);
   await Deno.writeTextFile(destination, output);
   await Deno.writeTextFile(referenceDestination, referenceHtml);

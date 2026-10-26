@@ -776,7 +776,7 @@
       "title": "Povolit nebo zakázat ruční skenování",
       "description": "Nastavení TicketFeature, ne samotné provedení check-in.",
       "sources": [
-        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+        "lib/components/features/ticket_feature.dart"
       ],
       "mcp": [],
       "phase": "5",
@@ -790,7 +790,7 @@
       "title": "Zobrazovat skrytou poznámku při skenování",
       "description": "Samostatná viditelnost interních informací při kontrole vstupenek.",
       "sources": [
-        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+        "lib/components/features/ticket_feature.dart"
       ],
       "mcp": [],
       "phase": "5",
@@ -986,13 +986,19 @@
       "title": "Zobrazit efektivní šablonu a její dědičnost",
       "description": "Odlišit zdroj unit, occasion a systémovou šablonu.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.list",
+        "email_templates.inspect"
+      ],
       "phase": "3",
       "effect": "read",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-060",
@@ -1000,13 +1006,18 @@
       "title": "Upravit předmět a obsah šablony",
       "description": "Původní verze a zachování placeholderů.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-061",
@@ -1014,13 +1025,18 @@
       "title": "Odstranit override a obnovit dědičnost",
       "description": "Není to smazání nadřazené šablony.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-062",
@@ -1028,13 +1044,19 @@
       "title": "Nastavit nebo odstranit e-mailový banner",
       "description": "Změna může mít účinek v podřízených akcích.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.banner.inspect",
+        "email_templates.banner.change"
+      ],
       "phase": "3",
       "effect": "write",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-063",
@@ -1042,13 +1064,18 @@
       "title": "Zobrazit náhled šablony",
       "description": "Bez skutečných zákazníků a bez rozesílky.",
       "sources": [
-        "lib/components/email_templates/db_email_templates.dart"
+        "lib/components/email_templates/db_email_templates.dart",
+        "database/functions/others/email_template_commands.sql",
+        "tools/festapp/src/operations/email-templates.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "email_templates.preview"
+      ],
       "phase": "3",
       "effect": "read",
       "scope": "Pořadatel / akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-064",
@@ -1491,10 +1518,10 @@
     "date": "2026-10-23",
     "status": "Celá provozní etapa 2B ověřena a nasazena.",
     "finding": "68 PostgreSQL testů prošlo bez skipů; dále 31 vzdálených/SDK testů, 37 testů souhlasu, 14 testů obnovy klienta a 3 cílené UI testy. Produkční kontrola potvrdila atomický ledger, shodu SQL zdrojů a ACL, zdravé Edge/MCP a koherentní web build869. Původní PWA limity zůstaly zachované. Historická PDF readiness evidence není důkazem živé PDF připravenosti; PDF editor není součástí tohoto řezu.",
-    "nextStep": "Práce zastavena po dokončené etapě 2B. Při pozdějším pokračování začít etapou 3 podle aktuálního main.",
+    "nextStep": "Publikovat ověřenou etapu 3; produkční SQL/Edge/klient/issuer nasadit jen v autorizovaném scope. Další implementační etapa 4: formuláře.",
     "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
-  "progress": "Etapy 0, 1 a 2 včetně provozního řezu 2B jsou nasazené. Poslední vydání: 0.20.371+869. Práce je zastavená po etapě 2B; další v pořadí je etapa 3. Starší čekání na review PR #571 už neplatí.",
+  "progress": "Etapy 0, 1 a 2 včetně 2B jsou nasazené. Etapa 3 (šablony, dědičnost, bannery a syntetické náhledy) je lokálně ověřená; zatím není nasazená. Následuje publikace a etapa 4. Nové scopes nerozšiřují starší souhlasy.",
   "phases": [
     {
       "id": "0",
@@ -1534,13 +1561,13 @@
       "purpose": "Obsloužit existující plánek při prodeji a řešení rezervací či objednávek.",
       "example": "Zablokovat místo, uvolnit dočasnou rezervaci, prohodit místa, vytvořit objednávku nebo zrušit vybrané vstupenky.",
       "result": "Před potvrzením jsou vidět skutečně dotčená místa, vstupenky a finanční dopady. Jeden související zápis je atomický a lze jej bezpečně obnovit se stejným ID.",
-      "note": "Tady jsme skončili. Etapa 2B řeší provoz existujícího plánku; etapa 7 bude řešit jeho pokročilou tvorbu a vzhled vstupenek."
+      "note": "Etapa 2B je nasazená. Etapa 7 bude řešit pokročilou tvorbu plánků a vzhled vstupenek."
     },
     {
       "id": "3",
       "title": "E-mailové šablony a dědičnost",
-      "state": "next",
-      "status": "Další na řadě",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Sjednotit úpravy šablon pořadatele a akce, bannery a náhled výsledného e-mailu.",
       "example": "Upravit potvrzení objednávky pro konkrétní akci nebo vrátit šablonu k výchozí podobě pořadatele.",
       "result": "UI i MCP ukážou, odkud výsledná šablona pochází, a použijí stejné ukládání a renderer náhledu.",
@@ -1549,8 +1576,8 @@
     {
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "next",
+      "status": "Další na řadě",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
