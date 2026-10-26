@@ -91,26 +91,14 @@ Future<String?> chooseHelpOccasion(BuildContext context) async {
           selectedLink: selected?.link,
           recentLink: preferred,
           onSelected: (occasion) => pendingChoice = occasion.link,
+          onCreateNew: () => pendingChoice = _HelpChoice.create,
           onDismiss: () => Navigator.of(dialogContext).pop(pendingChoice),
         ),
       ),
       actions: [
-        AppDialogActions(
-          leading: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: FilledButton.icon(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(_HelpChoice.create),
-              icon: const Icon(Icons.add),
-              label: Text('HelpNavigation.createEvent'.tr()),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(CommonStrings.cancel),
-            ),
-          ],
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(CommonStrings.cancel),
         ),
       ],
     ),
