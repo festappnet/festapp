@@ -6,11 +6,9 @@ BEGIN
  IF NOT FOUND OR o.state='stock' THEN RETURN; END IF;
  SELECT organization INTO org FROM public.occasions WHERE id=o.occasion;
  SELECT count(DISTINCT ticket) INTO ticket_count FROM eshop.order_product_ticket WHERE "order"=o.id;
- SELECT jsonb_build_object('formId',f.id,'allowsMultiple',least(public.ticket_order_limit(),coalesce(min(CASE WHEN ff.data->>'max_tickets' ~ '^[0-9]{1,9}$' THEN greatest(1,(ff.data->>'max_tickets')::integer) ELSE 1 END),1))>1)
- INTO form_context FROM public.forms f LEFT JOIN public.form_fields ff ON ff.form=f.id AND ff.type='ticket' WHERE f.id=o.form GROUP BY f.id;
+ form_context:=public.notification_center_order_form_context_internal(o.form);
  event:=public.notification_center_publish_internal(org,o.occasion,p_kind,p_kind||':'||p_order||':'||p_transition,
- jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'state',o.state,'formContext',form_context)||
- CASE WHEN p_kind IN ('order_created','waitlist_registered') THEN jsonb_build_object('count',ticket_count) ELSE '{}'::jsonb END||p_extra,p_actor);
+ jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'state',o.state,'formContext',form_context,'count',ticket_count)||p_extra,p_actor);
  UPDATE public.notification_center_events SET status=o.state WHERE id=event;
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_order_state_internal(p_order bigint)

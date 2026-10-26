@@ -2312,6 +2312,10 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "orderActivities": "Zmeny objednávok",
+    "expand": "Rozbaliť",
+    "collapse": "Zbaliť",
+    "week": "Týždeň {range}",
     "detailUnavailable": "Podrobnosti sa nepodarilo načítať. Skúsiť znova",
     "settingsEmpty": "Zatiaľ nie sú k dispozícii žiadne akcie.",
     "groups": {

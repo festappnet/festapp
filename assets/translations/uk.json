@@ -2457,6 +2457,10 @@
     "duplicateBlock": "Блок {{tickets}} можна використовувати лише один раз."
   },
   "NotificationCenter": {
+    "orderActivities": "Зміни замовлень",
+    "expand": "Розгорнути",
+    "collapse": "Згорнути",
+    "week": "Тиждень {range}",
     "detailUnavailable": "Не вдалося завантажити подробиці. Спробувати ще раз",
     "settingsEmpty": "Подій поки немає.",
     "groups": {
