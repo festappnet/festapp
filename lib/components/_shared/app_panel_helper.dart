@@ -779,7 +779,6 @@ class AppPanelHelper {
         },
       ),
       actions: [
-        NotificationCenterBell(color: iconColor),
         ValueListenableBuilder<OccasionLinkModel?>(
           valueListenable: RightsService.occasionLinkModelNotifier,
           builder: (listenableContext, _, __) {
@@ -859,6 +858,7 @@ class AppPanelHelper {
             );
           },
         ),
+        NotificationCenterBell(color: iconColor),
         Padding(
           padding: const EdgeInsets.only(right: 4.0),
           child: UserHeaderWidget(appBarIconColor: ThemeConfig.lllBackground),

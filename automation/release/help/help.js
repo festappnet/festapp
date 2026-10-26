@@ -1,6 +1,31 @@
 (() => {
  const initialized = new WeakSet();
+ function initCodeExamples() {
+  document.querySelectorAll('[data-code-example]').forEach(example => {
+    if (initialized.has(example)) return;
+    initialized.add(example);
+    const code = example.querySelector('code');
+    const status = example.querySelector('[role="status"]');
+    const english = document.documentElement.lang === 'en';
+    example.querySelector('[data-copy-code]').addEventListener('click', async () => {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(code.textContent);
+        status.textContent = english ? 'Code copied.' : 'Kód byl zkopírován.';
+      } catch {
+        code.focus({preventScroll: true});
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        status.textContent = english ? 'Code selected. Copy it with Ctrl+C or ⌘C.' : 'Kód je označený. Zkopírujte ho pomocí Ctrl+C nebo ⌘C.';
+      }
+    });
+  });
+ }
  function init() {
+  initCodeExamples();
   const form = document.querySelector('[data-embed-generator]');
   if (!form || initialized.has(form)) return;
   initialized.add(form);

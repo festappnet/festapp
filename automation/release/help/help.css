@@ -30,6 +30,13 @@ body[data-page=help]{--help-error:#a62a2a;--help-control-line:#708197;background
 .help-main code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78em;overflow-wrap:anywhere}
 .help-main pre{background:var(--paper);border-radius:12px;padding:20px;overflow:auto;max-width:100%;white-space:pre-wrap}
 .help-main pre code{line-height:1.65}
+.help-code-example{margin:24px 0 36px}
+.help-code-example pre{color:var(--ink);scrollbar-color:var(--line) var(--paper)}
+.help-code-example code{display:block;tab-size:2}
+.help-code-example code::selection,.help-code-example code *::selection{background:var(--accent);color:var(--surface)}
+.help-code-example :is(code,button):focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.help-code-example button{font:inherit;cursor:pointer}
+.help-main .help-code-example [role=status]{margin:12px 0 0;color:var(--muted);font-size:17px}
 .breadcrumb{font-size:16px;color:var(--muted);margin-bottom:24px}
 .breadcrumb a{color:inherit}
 .guide-list{border-top:1px solid var(--line);margin:24px 0 44px}
