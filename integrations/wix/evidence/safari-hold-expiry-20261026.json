@@ -1,0 +1,138 @@
+{
+  "verifiedAt": "2026-10-26T02:26:41.315769+00:00",
+  "status": "PASS_LOCAL_NATIVE_SAFARI_HOLD_RELEASE_NATURAL_EXPIRY_RECOVERY",
+  "sourceAtExecution": "82520067b0124d75cddaeabeeddaa98a180cfe30 plus passive fixture counters",
+  "device": {
+    "name": "Festapp Wix QA 20261026",
+    "runtime": "iOS26.5/MobileSafari26.5",
+    "udid": "4461E1A8-0F62-482A-8251-400231D6ECB9",
+    "backgroundOnly": true,
+    "simulatorActive": false,
+    "visibleMacWindows": 0
+  },
+  "boundary": {
+    "actualWixHost": false,
+    "parentOrigin": "http://localhost:59802",
+    "checkoutOrigin": "http://127.0.0.1:59802",
+    "backend": "http://127.0.0.1:59921",
+    "project": "festapp-wix-qa-20261025",
+    "newForm": 37,
+    "newUnit": 34,
+    "newBlueprint": 36,
+    "newSpot": 531,
+    "slug": "wix-qa-safari-hold-20261026",
+    "productionWrites": false,
+    "edgeFunctionProcessStarted": false
+  },
+  "policy": {
+    "rule": "hold.duration.seconds",
+    "target": "new disposable unit34 only",
+    "baseLimitSeconds": 15,
+    "hardCapSeconds": 900,
+    "ordinaryUnit1SecondsBeforeAndAfter": 900,
+    "naturalExpiry": true,
+    "clockOrExistingLeaseDeadlinePatched": false,
+    "paymentDeadlineUsedAsHoldTtl": false,
+    "default900SecondNaturalWaitQualified": false
+  },
+  "observations": {
+    "nativeSelection": {
+      "seat": 531,
+      "held": true,
+      "remainingSeconds": 15,
+      "expiresAt": "2026-10-26T02:09:56.071573+00:00",
+      "ordered": false
+    },
+    "nativeRelease": {
+      "seat": 531,
+      "secretNull": true,
+      "expiryNull": true,
+      "ordered": false
+    },
+    "secondNativeSelection": {
+      "seat": 531,
+      "held": true,
+      "remainingSeconds": 15,
+      "expiresAt": "2026-10-26T02:10:07.326812+00:00",
+      "ordered": false
+    },
+    "afterRealWait": {
+      "seat": 531,
+      "held": false,
+      "pastDeadline": true,
+      "ordered": false
+    },
+    "checkoutLease": {
+      "held": true,
+      "remainingSeconds": 15,
+      "expiresAt": "2026-10-26T02:17:39.801268+00:00"
+    },
+    "beforeExpiredSubmit": {
+      "held": false,
+      "expired": true,
+      "orders": 0
+    },
+    "afterExpiredSubmit": {
+      "orders": 0,
+      "held": false,
+      "sold": false
+    },
+    "uiRejection": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
+    "nativeBackRetainedFields": true,
+    "expiredSeatRemovedFromFormAfterRecovery": true,
+    "reacquireAfterRecovery": {
+      "held": true,
+      "remainingSeconds": 15,
+      "ordered": false
+    },
+    "finalRelease": {
+      "orders": 0,
+      "secretNull": true,
+      "expiryNull": true,
+      "sold": false
+    }
+  },
+  "networkObservation": {
+    "kind": "Passive browser ResourceTiming entries, no fetch wrapping or response substitution",
+    "observedCompletedHoldRequestsAtRejectedSubmit": 1,
+    "observedCompletedOrderRequestsAtRejectedSubmit": 0,
+    "limit": "Counts are observed completed timing entries, not proof that every possible network attempt was captured. UI rejection and SQL orders0 are independent evidence."
+  },
+  "limits": {
+    "automaticVisualDeselectionAtLeaseDeadlineQualified": false,
+    "note": "The map kept the candidate selection visible after expiry; actual submit revalidated and rejected it, and recovery removed the stale candidate.",
+    "holdWithStorageDeniedQualified": false,
+    "storageAtCheckoutAttempt": {
+      "localStorage": "available",
+      "sessionStorage": "available"
+    },
+    "providerRedirectOrPaymentQualified": false,
+    "physicalIphoneQualified": false
+  },
+  "cleanup": {
+    "newFormOrders": 0,
+    "preservedOrders": [
+      166,
+      167,
+      200,
+      233
+    ],
+    "emailPaused": true,
+    "emailWorkerNull": true,
+    "seatSecretAndExpiryNull": true,
+    "seatUnsold": true,
+    "localBackendStoppedWithBackup": true,
+    "ownViteStopped": true,
+    "mobileSafariTerminated": true,
+    "taskDeviceShutdown": true,
+    "ownedHiddenSimulatorAppStopped": true,
+    "taskKeyboardPreferenceRestored": true
+  },
+  "critic": "PASS with explicit ResourceTiming and expiry-scope qualifications",
+  "screenshots": {
+    "integrations/wix/evidence/screenshots/safari-hold-selected.png": "80e84f87f2d415aa1c7bccda82373ac85d68a607e43a52032729a2acaffafc3d",
+    "integrations/wix/evidence/screenshots/safari-hold-expired-submit-result.png": "eb6cece3de285f75f51d9d683d234c3d986e35f5245db91a0f7007bc134930b5",
+    "integrations/wix/evidence/screenshots/safari-hold-recovered-form.png": "0aa6f6a91a8c3ba594af7e18940a132999232ee7e787d5efdb6417b3746b7be6",
+    "integrations/wix/evidence/screenshots/safari-hold-final-map-free.png": "295d8e23a0c74e09ff3c3e5395bf1c067ea8ef1ddea294bb53f7387122369d35"
+  }
+}

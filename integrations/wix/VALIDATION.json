@@ -167,6 +167,10 @@
     "receiptIconFixLive": true,
     "softwareKeyboardReceipt": "evidence/software-keyboard-20261026.json",
     "softwareKeyboardWidth": 402,
-    "liveReceipt": "evidence/live-receipt-icons-20261026.json"
+    "liveReceipt": "evidence/live-receipt-icons-20261026.json",
+    "localAvailableSeatHoldReleaseExpiryQualified": true,
+    "holdExpiryPolicySeconds": 15,
+    "holdWithStorageDeniedQualified": false,
+    "holdReceipt": "evidence/safari-hold-expiry-20261026.json"
   }
 }
