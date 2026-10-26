@@ -53,17 +53,17 @@
     {
       "id": "form-build",
       "label": "Pole",
-      "src": "/organizers-media/form-build.mp4?v=8ae1987ae895",
-      "poster": "/organizers-media/form-build.webp?v=798ceeb1d9a9",
+      "src": "/organizers-media/form-build.mp4?v=1953040e4041",
+      "poster": "/organizers-media/form-build.webp?v=fa74a8f1c7e2",
       "width": 1200,
       "height": 804,
-      "duration": 45.833333,
+      "duration": 31.433333,
       "description": "Nastavte tři večeře s cenami a přidejte pole pro poznámku.",
-      "mobileSrc": "/organizers-media/form-build-mobile.mp4?v=f9566ce3c148",
-      "mobilePoster": "/organizers-media/form-build-mobile.webp?v=dcb0fcc4e89f",
+      "mobileSrc": "/organizers-media/form-build-mobile.mp4?v=081003290ea3",
+      "mobilePoster": "/organizers-media/form-build-mobile.webp?v=96d52532f6e4",
       "mobileWidth": 720,
       "mobileHeight": 638,
-      "mobileDuration": 45.833333
+      "mobileDuration": 31.433333
     },
     {
       "id": "form-style",

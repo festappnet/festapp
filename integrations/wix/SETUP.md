@@ -98,7 +98,7 @@ The draft was restored; no new app version was released.
 
 Provider redirect/return is conditional on offering such a provider. The current
 bank transfer flow was checked through its instructions and decoded QR without
-activating Stripe or transferring funds. Native Safari remains untested.
+activating Stripe or transferring funds. Native Safari payment handoff remains untested.
 Payment-return qualification must cover supported browsers and mobile Safari;
 third-party iframe storage and payment-provider redirects cannot be established
 by DOM unit tests. Preserve duplicate-order/idempotency checks from the canonical
@@ -205,3 +205,19 @@ records a deliberately blocked helper request on the published Editor QA site.
 After network recovery, a presentation attribute update loaded exactly one
 helper while preserving the iframe. The change was temporary and original
 settings were verified after reload; no checkout was submitted.
+
+
+[Completion verification](evidence/completion-20261026.json) adds a real production
+public form/API read inside published Harmony with original auth/CORS and a
+strict readonly relay. The iframe rendered at281px inside a320px host without
+overflow. This qualifies the read boundary only, never production purchases.
+The candidate blocked-storage reload case retained exactly one committed order
+and displayed the new unconfirmed-outcome message. It does not promise draft or
+receipt retention after a full reload with storage denied.
+
+Real MobileSafari26.5/iOS26.5 passed production rendering and native HID text entry
+in published Wix, plus summary/Back/Escape with retained inputs in a local
+cross-site checkout. All interactions stayed in the background. WebDriver typing
+failed its standalone control, but installed AXe native HID succeeded. Full
+software-keyboard geometry, Safari payment handoff and physical iPhone remain
+unqualified. The temporarily saved QA URL was restored and republished.
