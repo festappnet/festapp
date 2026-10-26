@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs';
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import { JSDOM } from 'jsdom';
-import { helpActionIntent, helpActionFromWebPath, helpActionWebPath, helpActionFlutterPath } from '../../src/services/help_action_routes.js';
+import { helpActionIntent, helpActionFromPath, helpActionPath, helpActionFromWebPath, helpActionWebPath, helpActionFlutterPath } from '../../src/services/help_action_routes.js';
 register('../css_loader.mjs', import.meta.url);
 const dom = new JSDOM('<!doctype html><body><div id="app"><main></main></div></body>', { url: 'https://tenant.invalid/events?help=orders' });
 for (const key of ['window','document','HTMLElement','customElements','Event','CustomEvent','DOMParser']) globalThis[key] = key === 'window' ? dom.window : dom.window[key];
@@ -50,4 +51,23 @@ test('help login uses the standard web modal and hands authenticated users to ex
     assert.deepEqual(navigate.mock.calls[0].arguments, [helpActionFlutterPath('orders')]);
     window.history.replaceState(null, '', '/events?help=unknown');
     assert.equal(await handleHelpAction(), false);
+});
+
+
+test('help actions agree across localized generators, web and Flutter destinations',()=>{
+    const ui=JSON.parse(readFileSync(new URL('../../../automation/release/help/ui.json',import.meta.url),'utf8'));
+    const dart=readFileSync(new URL('../../../lib/services/help_destination.dart',import.meta.url),'utf8');
+    const destinations=[...dart.matchAll(/static const (?:sections|organizationSections) = <String, String>\{([\s\S]*?)\n  \};/g)]
+        .flatMap(match=>[...match[1].matchAll(/'([a-z-]+)':/g)].map(key=>key[1]));
+    destinations.push(dart.match(/static const scannerSettings = '([a-z-]+)'/)[1]);
+    const intents=Object.keys(ui.cs.appActions).sort();
+    assert.deepEqual(Object.keys(ui.en.appActions).sort(),intents);
+    assert.deepEqual(destinations.sort(),intents);
+    for(const intent of intents){
+        assert.equal(helpActionIntent(intent),intent);
+        assert.equal(helpActionFromPath(helpActionPath(intent)),intent);
+    }
+    for(const path of ['/help-action/orders?next=x','/help-action/orders#x','/help-action/../orders','https://evil.invalid/help-action/orders','//evil.invalid/help-action/orders','/help-action/unknown',null]){
+        assert.equal(helpActionFromPath(path),null);
+    }
 });

@@ -1,9 +1,10 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const script=readFileSync(new URL('../cloudflare_build.sh',import.meta.url),'utf8');
 const scannerRoutes=readFileSync(new URL('../../web_client/src/services/scanner_routes.js',import.meta.url),'utf8').replaceAll('export function','function');
-const workerSource=scannerRoutes+'\n'+script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const workerSource=scannerRoutes+'\n'+script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource);
 const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(workerSource).toString('base64'));
 test('Flutter map documents allow OSM identification without overriding callback protection',async()=>{
  const html=readFileSync(new URL('../../web/index.html',import.meta.url),'utf8');

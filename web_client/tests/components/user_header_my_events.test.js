@@ -26,7 +26,8 @@ test('ticketing account navigation does not require administration privileges', 
     });
     let navigations = 0;
     t.mock.method(RouterService, 'navigateToAdmin', () => { navigations++; });
-    for (const marketing of [false, true]) {
+    for (const [marketing, path] of [[false, '/events'], [true, '/'], [true, '/rezervace-mist/'], [false, '/napoveda/odbaveni/']]) {
+        window.history.replaceState(null, '', path);
         AppConfig.webLink = 'https://vstupenky.online';
         RightsService._context = {
             user_info: { id: 'signed-in-account', name: 'Test', units: [] },
@@ -37,15 +38,17 @@ test('ticketing account navigation does not require administration privileges', 
         document.body.appendChild(header);
         const navigation = header.querySelector('.header-public-navigation');
         assert.ok(navigation, 'public navigation belongs to the shared header on catalogue and marketing pages');
-        assert.deepEqual([...navigation.querySelectorAll('a')].map(a => a.getAttribute('href')), ['/', '/napoveda/']);
+        assert.deepEqual([...navigation.querySelectorAll('a')].map(a => a.getAttribute('href')), [path === '/' ? '/events' : '/', '/napoveda/']);
+        assert.equal(navigation.querySelector('a').textContent, path === '/' ? 'Najít akci' : 'Pro pořadatele');
         assert.equal(header.querySelectorAll('a[href="/napoveda/"]').length, 1, 'help is not duplicated');
         assert.equal(navigation.closest('.header-actions'), null, 'site navigation stays outside account actions');
         assert.equal(RightsService.canSeeAdmin(), false);
         assert.equal(RightsService.canSeeReservations(), false);
         const button = header.querySelector('.btn-admin');
         assert.ok(button, 'signed-in accounts can enter My events even without privileged capabilities');
+        const before = navigations;
         button.click();
-        assert.equal(navigations, marketing ? 2 : 1, 'use the existing signed-in routing and access checks');
+        assert.equal(navigations, before + 1, 'use the existing signed-in routing and access checks');
         assert.equal(RightsService.canSeeAdmin(), false, 'navigation grants no administration rights');
         RightsService._context = { organization: {} };
         RightsService._notifyListeners();

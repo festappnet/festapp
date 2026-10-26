@@ -8,7 +8,8 @@
     "flutter": "real app, local Auth and REST",
     "webClient": "real Vite source, local runtime configuration",
     "data": "synthetic; one customer order; no external email provider configured; bank synchronization disabled",
-    "fontStorage": "local immutable transport cache with actual canonical font bytes"
+    "fontStorage": "local immutable transport cache with actual canonical font bytes",
+    "captureTheme": "light, explicitly persisted through ThemeService before screenshots"
   },
   "sourceBase": "0fe72638e99ade218e6e72a3144106a1c3f1e096",
   "sharedTopicIds": true,
@@ -437,110 +438,122 @@
     {
       "mediaId": "cs/scanner-advanced/invalid-access",
       "file": "cs/scanner-advanced/invalid-access.png",
-      "sha256": "f1af0c70ab73a27ecbf41ebf474cabd9aa23740b7ff03f2af454168b485593b2",
-      "capturedAt": "2026-10-25T08:38:55.884878+00:00",
+      "sha256": "b906e30b8c15a044206c0c744739735f1cdcf30c66a5c329f7b107c764462f86",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Chybný přístupový kód skeneru s hlášením Kód skeneru není platný.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/not-found",
       "file": "cs/scanner-advanced/not-found.png",
-      "sha256": "c2e7662c0fc312b119e12fd07500f68743feba5e169183c042d6f8030ecd3a78",
-      "capturedAt": "2026-10-25T08:39:09.381497+00:00",
+      "sha256": "ee847bf60cb1c4db2264572ace0e41799ff51ad7f3906a8644e1aa6a1244ea22",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Mobilní webový skener hlásí Vstupenka nenalezena.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/settings",
       "file": "cs/scanner-advanced/settings.png",
-      "sha256": "b05f6454c0dc9ad98fb4b6dd691d55a7219bcfb9b5574fc0dcfb2df1b07b3799",
-      "capturedAt": "2026-10-25T08:39:40.068168+00:00",
+      "sha256": "0c0d5e336d9de66023e4f8d3ad47edd63f600071ff6f2819adb4d7f22043841b",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Nastavení mobilního webového skeneru se základními údaji a výběrem produktů.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/field-options",
       "file": "cs/scanner-advanced/field-options.png",
-      "sha256": "95ddceef5a05f6ede9bc5bd316329b9d5f9990d6fef9c69bde385a4d61d56f57",
-      "capturedAt": "2026-10-25T08:39:48.980160+00:00",
+      "sha256": "7444b1b8960c5bbf02c24fafd73c30ed66e0e9132741a5736d10ec4704057ef5",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Nastavení e-mailu z formuláře: popisek, skrytí prázdných hodnot a pořadí.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/advanced",
       "file": "cs/scanner-advanced/advanced.png",
-      "sha256": "b3abd4487b69e1089907ba77561f21f5b6a240fd945e4dcdd52eb64595e40202",
-      "capturedAt": "2026-10-25T08:40:03.579930+00:00",
+      "sha256": "4dd37620547785495acf7dda1a3a0988cefe7e757ae0d4f751d87e399d863a27",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Chování skeneru s volbami hledání, cen, interní poznámky a offline přípravy.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/preview",
       "file": "cs/scanner-advanced/preview.png",
-      "sha256": "1414753b6b15aa7d63f31e76f8f97211adb9b6144e965709469a8f695e1c878f",
-      "capturedAt": "2026-10-25T08:40:14.614825+00:00",
+      "sha256": "4df7b25988e9586b6f8549ebbc3309dbb3c6f660ed2fd7e6ce188daea1ffc668",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Náhled ukázkové použité vstupenky v nastavení webového skeneru.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/invalid-access",
       "file": "en/scanner-advanced/invalid-access.png",
-      "sha256": "1531816da154d6465be84ed19a4a600cb08a271d0277f37c95bc107cfb5d3560",
-      "capturedAt": "2026-10-25T08:38:43.518623+00:00",
+      "sha256": "13522947b328cf5ad422d054acc52d3b9d15a9c651d3474e1c62d02849ddcafe",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Invalid scanner code message in the mobile web scanner.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/not-found",
       "file": "en/scanner-advanced/not-found.png",
-      "sha256": "d39b09412c40cbb3534531e39ab02a8a25f3899510c4234cd0545dfcd8529f8d",
-      "capturedAt": "2026-10-25T08:38:27.752465+00:00",
+      "sha256": "e347317b9c2d0da678e4e82f4cce2c5d1035bb2d1f0ea0448815484804caf8f1",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Mobile web scanner showing Ticket not found.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/settings",
       "file": "en/scanner-advanced/settings.png",
-      "sha256": "ef5e0cf82b834a4122c0a43efefd6c87e962f34b53b81cd75acbc2c0a56facb8",
-      "capturedAt": "2026-10-25T08:40:42.982908+00:00",
+      "sha256": "ed3a77e383bc5069441f6d333846afe5553428a9e5b90a0d2740b7c5de3c55c9",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Mobile web scanner display settings with fixed core details and product selection.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/field-options",
       "file": "en/scanner-advanced/field-options.png",
-      "sha256": "a638eaa75cae22584f01cbb1ff410ebb2b0e5694ecebbb7684525e55396cfc64",
-      "capturedAt": "2026-10-25T08:40:43.794585+00:00",
+      "sha256": "20a30e72d3836071b508c1f7245fdbed5aa68f42787d06087c7984cbbde56370",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Form email display options including label, empty values and ordering.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/advanced",
       "file": "en/scanner-advanced/advanced.png",
-      "sha256": "d3e76fb222147debdced24f73c3a37afa379c520485d67ae99d606564bd6446c",
-      "capturedAt": "2026-10-25T08:40:44.613208+00:00",
+      "sha256": "15f6aa008134f795ccd77dbfbeadca6e6a9035d5b7ebfa9ac00ef4fe1094512f",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "Scanner behavior options for search, prices, internal notes and offline preparation.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/scanner-advanced/preview",
       "file": "en/scanner-advanced/preview.png",
-      "sha256": "9dae92e720fdba07eba36b84e61ae356afeade19786c36622db1bda233e88182",
-      "capturedAt": "2026-10-25T08:40:52.529090+00:00",
+      "sha256": "a42a333718faadb196721b6f2c184da1c4a1293816e3b0687bfd60c66d18dd45",
+      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
       "alt": "A previously used sample ticket in the web scanner settings preview.",
       "platform": "web-client",
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/banking/accounts",
@@ -1056,5 +1069,17 @@
     ],
     "evidence": ".private/help-critique-20261025/evidence-b.json",
     "validation": "28 help/search/public-SEO tests; 100 page/locale/viewport/theme cases; final scoped detector no findings."
+  },
+  "replay": {
+    "scanner": "automation/help_capture/scanner_light.py",
+    "instructions": "automation/help_capture/README.md"
+  },
+  "offlinePreparationPolicy": {
+    "automaticSnapshotTicketLimit": 1000,
+    "inclusive": true,
+    "count": "Complete offline snapshot population, including linked unpaid, stock and cancelled tickets",
+    "authorization": "Explicit organizer disable and session capability remain authoritative",
+    "largerEvents": "Initial manual preparation; existing snapshots keep refreshing",
+    "verification": "Threshold and disable behavior covered by scanner tests; summary count compared with actual snapshot in a rolled-back local database test. Production migration not applied."
   }
 }

@@ -138,3 +138,24 @@ media identity. The renderer uses existing content-addressed assets. Optional
 `previewCrop` on the media entry selects the curated detail/upper thumbnail crop
 without changing the full screenshot. Keep previews relevant to the article and
 its workflow, localized, and decorative within the descriptive guide link.
+
+## Repeatability and capture theme
+
+All Festapp help screenshots use light mode. The canonical scenario catalogue
+and repeat procedure are documented in `automation/help_capture/README.md`.
+`automation/help_capture/scanner_light.py` regenerates twelve real CS/EN scanner
+error/settings screenshots and updates hashes in both provenance registries.
+Other catalogue chapters currently have manual replay steps, not an automated
+end-to-end runner. Private interaction logs are supplementary evidence.
+
+## Canonical action routing
+
+All CS/EN article `APP_LINK` tokens use `helpActionWebPath` from
+`web_client/src/services/help_action_routes.js`. This same pure policy owns web
+login return paths and is embedded in the Cloudflare worker at build time.
+Legacy `/login?redirect=/help-action/<intent>` links are a thin redirect into
+`/events?help=<intent>`; they do not implement another allowlist or login flow.
+The signed-in handoff enters `HelpDestination` in Flutter, which owns actual
+organizer/event selection and permission checks. It is a platform adapter, not
+an alternate public login. A contract test checks both localized action sets,
+the shared web allowlist and Flutter destinations for agreement.
