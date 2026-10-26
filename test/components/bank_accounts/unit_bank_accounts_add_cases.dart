@@ -1,4 +1,5 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -42,8 +43,12 @@ void main() {
           default:
             throw StateError('Unexpected request: ${request.url.path}');
         }
-        return http.Response(jsonEncode(response), 200,
-            headers: {'content-type': 'application/json'}, request: request);
+        return http.Response(
+          jsonEncode(response),
+          200,
+          headers: {'content-type': 'application/json'},
+          request: request,
+        );
       }),
     );
   });
@@ -51,35 +56,42 @@ void main() {
   tearDownAll(() => Supabase.instance.dispose());
 
   for (final width in [1200.0, 400.0]) {
-    testWidgets('empty bank list can add an account under admin FAB ($width)',
-        (tester) async {
+    testWidgets('empty bank list can add an account under admin FAB ($width)', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(Size(width, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       var previewOpened = false;
-      await tester.pumpWidget(EasyLocalization(
-        supportedLocales: const [Locale('cs')],
-        path: 'unused',
-        startLocale: const Locale('cs'),
-        assetLoader: _Translations(),
-        child: Builder(
-          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
-            locale: context.locale,
-            localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
-            supportedLocales: context.supportedLocales,
-            home: Scaffold(
-              appBar: AppBar(title: const Text('Administration')),
-              body: const Padding(
-                padding: EdgeInsets.only(left: 60),
-                child: UnitBankAccountsScreen(unitId: 1),
-              ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () => previewOpened = true,
-                child: const Icon(Icons.remove_red_eye_rounded),
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('cs')],
+          path: 'unused',
+          startLocale: const Locale('cs'),
+          assetLoader: _Translations(),
+          child: Builder(
+            builder: (context) => MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              locale: context.locale,
+              localizationsDelegates: [
+                ...context.localizationDelegates,
+                ...GlobalMaterialLocalizations.delegates,
+              ],
+              supportedLocales: context.supportedLocales,
+              home: Scaffold(
+                appBar: AppBar(title: const Text('Administration')),
+                body: const Padding(
+                  padding: EdgeInsets.only(left: 60),
+                  child: UnitBankAccountsScreen(unitId: 1),
+                ),
+                floatingActionButton: FloatingActionButton(
+                  onPressed: () => previewOpened = true,
+                  child: const Icon(Icons.remove_red_eye_rounded),
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       // The outer admin preview must not intercept the account creation action.

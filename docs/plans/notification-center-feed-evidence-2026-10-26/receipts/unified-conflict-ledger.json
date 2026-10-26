@@ -1,0 +1,622 @@
+[
+  [
+    ".gitignore",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/client_test_classification.json",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/client_test_inventory.json",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/cloudflare_build.sh",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/generate_pwa_service_worker.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/image-migration/package.json",
+    "merged package additions and version upgrades"
+  ],
+  [
+    "automation/landing_capture/review/build_preview.py",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/lib/pwa_shell_manifest.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/project.conf",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/README.md",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/content.json",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/context.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/page.css",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/page.html",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/page_definitions.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/profiles.json",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/render_content.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/organizers/verify.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/release/render_organizer_page.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tenant-overlays/generated.paths",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/fixtures/tenants/festapptickets.conf",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/organizer_context.test.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/organizer_page.test.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/public_seo.test.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/pwa_manifest.test.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/tests/pwa_offline.test.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "automation/verify_web_deployment.mjs",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "database/functions/eshop_orders/delete_order_history.sql",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "database/tests/eshop/orders/cancelled_order_read_only_test.sql",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "docs/architecture/ai_context.md",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "docs/plans/integration-distribution-and-help-2026-10-24.md",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "docs/plans/tickets-festapp-en-EXECUTION-PROMPT-2026-10-23.md",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "docs/plans/tickets-festapp-en-plan-2026-10-23.md",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "lib/app_router.gr.dart",
+    "regenerate after routes"
+  ],
+  [
+    "lib/components/app_management/install_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/bank_accounts/views/bank_account_connection_tab.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/blueprint/seat_reservation/widgets/seat_reservation_widget.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_controls_bar.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_create_order_dialog.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_editor_tab.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_groups_panel.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_legend.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_mobile_scroll_view.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/blueprint/views/blueprint_viewport.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/email_templates/views/email_templates_settings_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/eshop/ticket_code_helper.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/eshop/views/orders_history_content.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/eshop/views/product_price_waves_dialog.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/eshop/views/waitlist_order_detail.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/event_feedback/event_feedback_admin_content.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/feedback/feedack_floating_button.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/fonts/font_family_picker.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/forms/models/holder_models/form_ticket_model.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/forms/views/waitlist_offers_dialog.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/forms/widgets_editor/product_type_editor.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/forms/widgets_view/payment_qr_card.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/import/csv_import_helper.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/inventory/views/inventory_pool_card.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/inventory/views/inventory_pools_tab.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/navigation/routed_day_tabs.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/demo/demo_occasions_section.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_appearance_panel.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_blueprint.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_communication_settings.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_due_settings.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_form_link.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_form_preview.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_sales.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion/setup/occasion_setup_story_shell.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion_services/service_tab.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/occasion_settings/occasion_advanced_settings.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/organization/organization_admin_guard.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/reception/login_qr_scanner_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/scan/check_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/schedule/event_page.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_canvas_color_dialog.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_canvas_settings.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_email_preview.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_layout_canvas.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_layout_editor.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/ticket_layout/views/ticket_template_gallery.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/components/unit/verification/unit_legal_profile_section.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/unit/views/occasion_edit_card.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/unit/views/unit_users_screen.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/users/views/users_tab.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/users/views/users_tab_helper.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/components/users/widgets/google_account_link_setting.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "lib/data_services/auth_service.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/main.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/services/dialog_helper.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/services/dialog_helper_input.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/widgets/app_dialog.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "lib/widgets/internal_form_fields.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "packages/festapp_core/test/eshop/product_price_scheduling_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/browser/product_price_waves_preview.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/bank_accounts/synchronization_control_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/bank_accounts/token_error_view_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/bank_accounts/unit_bank_accounts_add_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/blueprint/blueprint_draft_product_cases.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "test/components/blueprint/blueprint_editor_actions_cases.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "test/components/blueprint/blueprint_mobile_scroll_view_test.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "test/components/email_templates/email_template_dialog_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/eshop/product_grid_record_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/eshop/product_price_scheduling_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/eshop/ticket_batch_presentation_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/event_feedback/event_feedback_admin_content_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/fonts/font_family_picker_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/fonts/form_design_font_loading_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/form_blueprint_capacity_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/form_editor_actions_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/form_payment_defaults_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/form_validation_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/organization_identity_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/forms/public_link_settings_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/html/html_editor_document_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/html/html_media_service_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/html/html_media_upload_contract_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/html/html_view_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/html/rich_html_editor_lifecycle_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/information/information_save_legacy_reader_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/navigation/object_route_dirty_dialog_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/news/news_page_render_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/notification_center/notification_center_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/occasion/occasion_setup_appearance_panel_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/occasion/occasion_setup_settings_test.dart",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "test/components/occasion/occasion_setup_ticket_gallery_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/offline/offline_banner_layout_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/schedule/event_commands_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/schedule/saved_program_commands_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/single_data_grid/data_grid_helper_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/stripe_payments/form_payment_settings_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/stripe_payments/payment_method_preview_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/stripe_payments/unit_card_payments_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/ticket_layout/editor_preview.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/ticket_layout/ticket_layout_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/components/unit/unit_context_switch_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/data_services/rights_explicit_occasion_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/data_services/sign_in_code_login_test.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/startup/app_bootstrap_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "test/theme_config_cases.dart",
+    "canonical logic plus standalone UI/import boundary"
+  ],
+  [
+    "web/organizer-pages.json",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web/organizers-page",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web/organizers/seating-reservations",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/index.html",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/package.json",
+    "merged package additions and version upgrades"
+  ],
+  [
+    "web_client/public/_redirects",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/src/services/router_service.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/src/startup/organizer_intent.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/tests/core/embed.test.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/tests/core/gesture_controller.test.js",
+    "canonical deletion, replacement owners retained"
+  ],
+  [
+    "web_client/tests/core/organizer_intent.test.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/tests/core/release_entry.test.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "web_client/tests/core/router_service.test.js",
+    "canonical newer owner; obsolete private stage not reinstated"
+  ],
+  [
+    "workers/self-hosted-monitor/package.json",
+    "merged package additions and version upgrades"
+  ]
+]

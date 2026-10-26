@@ -1,6 +1,8 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_admin_content.dart';
@@ -45,7 +47,8 @@ void main() {
       ),
       occasionUser: OccasionUserModel(isEditor: true, isEditorView: true),
     );
-    return MaterialApp(builder: DependencyMaterialBridge.builder,
+    return MaterialApp(
+      builder: DependencyMaterialBridge.builder,
       home: Scaffold(
         body: EventFeedbackAdminContent(
           loadOverride: loadOverride ?? (_) async => [feedbackRow],
@@ -60,35 +63,40 @@ void main() {
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
 
-  testWidgets('admin feedback grid shows the program-style delete action',
-      (tester) async {
+  testWidgets('admin feedback grid shows the program-style delete action', (
+    tester,
+  ) async {
     await tester.pumpWidget(app(isAdmin: true));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_forever), findsOneWidget);
   });
 
-  testWidgets('occasion editor without isAdmin does not get a delete action',
-      (tester) async {
+  testWidgets('occasion editor without isAdmin does not get a delete action', (
+    tester,
+  ) async {
     await tester.pumpWidget(app(isAdmin: false));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_forever), findsNothing);
   });
 
-  testWidgets('admin delete is deferred until changes are saved',
-      (tester) async {
+  testWidgets('admin delete is deferred until changes are saved', (
+    tester,
+  ) async {
     final deletedIds = <int>[];
     var deleted = false;
-    await tester.pumpWidget(app(
-      isAdmin: true,
-      loadOverride: (_) async => deleted ? [] : [feedbackRow],
-      deleteOverride: (occasionId, feedbackId) async {
-        expect(occasionId, 7);
-        deletedIds.add(feedbackId);
-        deleted = true;
-      },
-    ));
+    await tester.pumpWidget(
+      app(
+        isAdmin: true,
+        loadOverride: (_) async => deleted ? [] : [feedbackRow],
+        deleteOverride: (occasionId, feedbackId) async {
+          expect(occasionId, 7);
+          deletedIds.add(feedbackId);
+          deleted = true;
+        },
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.delete_forever));
@@ -102,10 +110,12 @@ void main() {
     expect(deletedIds, isEmpty);
     expect(find.byType(AlertDialog), findsOneWidget);
 
-    await tester.tap(find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.widgetWithText(ElevatedButton, 'Common.delete'),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(ElevatedButton, 'Common.delete'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(deletedIds, [41]);

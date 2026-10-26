@@ -13,6 +13,7 @@ const { CheckBoxFieldBuilder } = await import('../../src/components/forms/fields
 const { DateFieldBuilder } = await import('../../src/components/forms/fields/date_field_builder.js');
 const { IdDocumentFieldBuilder } = await import('../../src/components/forms/fields/id_document_field_builder.js');
 const { TicketFieldBuilder } = await import('../../src/components/forms/fields/ticket_field_builder.js');
+const { FormSession } = await import('../../src/components/forms/form_session.js');
 const { FormRenderer } = await import('../../src/components/forms/form_renderer.js');
 const { LocalizationService } = await import('../../src/services/localization_service.js');
 LocalizationService.currentLocale = 'cs';
@@ -107,7 +108,8 @@ test('ticket seat name stays literal and its price remains visible', () => {
 
 test('existing form header and description callers sanitize without losing LCP image priority', () => {
     const node = document.createElement('div');
-    FormRenderer.render(node, null, { header: description, description, visibleFields: [] }, false, {});
+    const model = { key: 'test', secret: 'test', header: description, description, visibleFields: [], relatedFields: [] };
+    FormRenderer.render(node, new FormSession(model), model, false, {});
     assertSafeDescription(node.querySelector('.form-header'));
     assertSafeDescription(node.querySelector('.form-description'));
     assert.equal(node.querySelector('.form-header img').getAttribute('fetchpriority'), 'high');

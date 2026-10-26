@@ -1,5 +1,12 @@
 [
   [
+    "pnpm",
+    "--dir",
+    "automation/release/platform_updates",
+    "install",
+    "--frozen-lockfile"
+  ],
+  [
     "bash",
     "automation/tests/apply_config.test.sh"
   ],
@@ -197,5 +204,10 @@
     "node",
     "--test",
     "automation/tests/email_worker_cpu_budget.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/platform_updates.test.mjs"
   ]
 ]

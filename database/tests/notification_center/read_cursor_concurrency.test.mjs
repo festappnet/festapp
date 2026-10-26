@@ -1,3 +1,4 @@
+import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../../../web_client/tests/database/disposable_database.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -5,8 +6,12 @@ import {createRequire} from 'node:module';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
 const connectionString=process.env.DATABASE_URL;
-if(!connectionString || new URL(connectionString).hostname!=='127.0.0.1' || !['55432','57732'].includes(new URL(connectionString).port)) throw Error('Disposable local DB required');
-async function connect(){const c=new Client({connectionString});await c.connect();await c.query("SET statement_timeout='10s'");return c;}
+assertLocalDatabaseUrl(connectionString);
+async function connect(){
+ const c=new Client({connectionString});await c.connect();
+ try{await assertDisposableDatabase(c);await c.query("SET statement_timeout='10s'");return c;}
+ catch(error){await c.end();throw error;}
+}
 async function fixture(c){
  const user=randomUUID();await c.query('INSERT INTO auth.users(id) VALUES($1)',[user]);
  const {rows:[org]}=await c.query("INSERT INTO public.organizations(title) VALUES('Read cursor concurrency') RETURNING id");

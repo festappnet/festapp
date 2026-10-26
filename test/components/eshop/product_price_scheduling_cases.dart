@@ -27,41 +27,44 @@ class _Loader extends AssetLoader {
 }
 
 Widget app(Widget child) => EasyLocalization(
-      supportedLocales: const [Locale('cs')],
-      startLocale: const Locale('cs'),
-      path: 'assets/translations',
-      assetLoader: const _Loader(),
-      child: Builder(
-        builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
-          locale: context.locale,
-          supportedLocales: context.supportedLocales,
-          localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
-          home: Scaffold(body: child),
-        ),
-      ),
-    );
+  supportedLocales: const [Locale('cs')],
+  startLocale: const Locale('cs'),
+  path: 'assets/translations',
+  assetLoader: const _Loader(),
+  child: Builder(
+    builder: (context) => MaterialApp(
+      builder: DependencyMaterialBridge.builder,
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: [
+        ...context.localizationDelegates,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
+      home: Scaffold(body: child),
+    ),
+  ),
+);
 ProductPriceChange change(
   int id,
   int days, {
   bool applied = false,
   String? failure,
-}) =>
-    ProductPriceChange(
-      id: id,
-      revision: 1,
-      price: 450 + id * 50,
-      time: DateTime.now().toUtc().add(Duration(days: days)),
-      applied: applied,
-      failureCode: failure,
-    );
+}) => ProductPriceChange(
+  id: id,
+  revision: 1,
+  price: 450 + id * 50,
+  time: DateTime.now().toUtc().add(Duration(days: days)),
+  applied: applied,
+  failureCode: failure,
+);
 ProductModel product(List<ProductPriceChange> changes) => ProductModel(
-      id: 1,
-      title: 'Vstupenka',
-      isUsedInBlueprint: false,
-      price: 450,
-      currencyCode: 'CZK',
-      priceChanges: changes,
-    );
+  id: 1,
+  title: 'Vstupenka',
+  isUsedInBlueprint: false,
+  price: 450,
+  currencyCode: 'CZK',
+  priceChanges: changes,
+);
 void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -69,23 +72,29 @@ void main() {
     tzdata.OccasionTimeContext.initializeTimeZones();
   });
   for (final dirty in [false, true]) {
-    testWidgets('opening price waves closes the small dialog, dirty=$dirty',
-        (tester) async {
+    testWidgets('opening price waves closes the small dialog, dirty=$dirty', (
+      tester,
+    ) async {
       var opened = false;
       var p = product([]);
-      await tester.pumpWidget(app(Builder(
-          builder: (context) => TextButton(
-                onPressed: () => showDialog<bool>(
-                  context: context,
-                  builder: (_) => ProductPriceChangesDialog(
-                    product: p,
-                    canEdit: true,
-                    reload: () async => p,
-                    onOpenWaves: () => opened = true,
-                  ),
+      await tester.pumpWidget(
+        app(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDialog<bool>(
+                context: context,
+                builder: (_) => ProductPriceChangesDialog(
+                  product: p,
+                  canEdit: true,
+                  reload: () async => p,
+                  onOpenWaves: () => opened = true,
                 ),
-                child: const Text('Open plans'),
-              ))));
+              ),
+              child: const Text('Open plans'),
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Open plans'));
       await tester.pumpAndSettle();
@@ -103,7 +112,8 @@ void main() {
         await tester.tap(find.text('Cenové vlny'));
         await tester.pumpAndSettle();
         await tester.tap(
-            find.widgetWithText(FilledButton, CommonStrings.discardChanges));
+          find.widgetWithText(FilledButton, CommonStrings.discardChanges),
+        );
         await tester.pumpAndSettle();
       }
       expect(opened, isTrue);
@@ -271,85 +281,117 @@ void main() {
   });
 
   testWidgets(
-      'visibility-only wave sends no price and retains typed state on error',
-      (tester) async {
-    double? savedPrice;
-    bool? savedHidden;
-    int calls = 0;
-    final pending = Completer<void>();
-    await tester.pumpWidget(app(WaveProductTargetDialog(
-        wave: ProductPriceWave(
-            id: 1, time: DateTime.now().toUtc().add(const Duration(days: 1))),
-        product: product([]),
-        save: (price, hidden) {
-          savedPrice = price;
-          savedHidden = hidden;
-          calls++;
-          return pending.future;
-        })));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(OrdersStrings.waveAvailabilityNoChange).last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(OrdersStrings.waveHidden).last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Uložit'));
-    await tester.pump();
-    expect(savedPrice, isNull);
-    expect(savedHidden, isTrue);
-    expect(calls, 1);
-    expect(
+    'visibility-only wave sends no price and retains typed state on error',
+    (tester) async {
+      double? savedPrice;
+      bool? savedHidden;
+      int calls = 0;
+      final pending = Completer<void>();
+      await tester.pumpWidget(
+        app(
+          WaveProductTargetDialog(
+            wave: ProductPriceWave(
+              id: 1,
+              time: DateTime.now().toUtc().add(const Duration(days: 1)),
+            ),
+            product: product([]),
+            save: (price, hidden) {
+              savedPrice = price;
+              savedHidden = hidden;
+              calls++;
+              return pending.future;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(OrdersStrings.waveAvailabilityNoChange).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(OrdersStrings.waveHidden).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Uložit'));
+      await tester.pump();
+      expect(savedPrice, isNull);
+      expect(savedHidden, isTrue);
+      expect(calls, 1);
+      expect(
         tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
-        isNull);
-    pending.completeError(Exception('simulated failure'));
-    await tester.pumpAndSettle();
-    expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
-        isEmpty);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+        isNull,
+      );
+      pending.completeError(Exception('simulated failure'));
+      await tester.pumpAndSettle();
+      expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        isEmpty,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets(
-      'wave timeline starts with current state and needs no horizontal scrolling',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final instant = DateTime.now().toUtc().add(const Duration(days: 5));
-    var p = product(
-        [ProductPriceChange(id: 1, revision: 1, price: 550, time: instant)]);
-    p = p.copyWith(visibilityChanges: [
-      ProductVisibilityChange(id: 2, revision: 1, time: instant, hidden: true)
-    ]);
-    final bundle = ProductsEditBundle(
+    'wave timeline starts with current state and needs no horizontal scrolling',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final instant = DateTime.now().toUtc().add(const Duration(days: 5));
+      var p = product([
+        ProductPriceChange(id: 1, revision: 1, price: 550, time: instant),
+      ]);
+      p = p.copyWith(
+        visibilityChanges: [
+          ProductVisibilityChange(
+            id: 2,
+            revision: 1,
+            time: instant,
+            hidden: true,
+          ),
+        ],
+      );
+      final bundle = ProductsEditBundle(
         products: [p],
         productTypes: [],
         inventoryPools: [],
         inventoryContexts: [],
         forms: [],
-        priceWaves: [ProductPriceWave(id: 1, time: instant)]);
-    await tester.pumpWidget(app(MediaQuery(
-        data: const MediaQueryData(
-            size: Size(390, 844), textScaler: TextScaler.linear(1.5)),
-        child: ProductPriceWavesDialog(
-            occasionLink: 'test',
-            initialBundle: bundle,
-            canEdit: false,
-            loader: () async => bundle))));
-    await tester.pumpAndSettle();
-    expect(find.text('Cenové vlny'), findsOneWidget);
-    expect(find.text('Aktuálně'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('Aktuálně')).dy,
-        lessThan(tester.getTopLeft(find.textContaining('550')).dy));
-    expect(
+        priceWaves: [ProductPriceWave(id: 1, time: instant)],
+      );
+      await tester.pumpWidget(
+        app(
+          MediaQuery(
+            data: const MediaQueryData(
+              size: Size(390, 844),
+              textScaler: TextScaler.linear(1.5),
+            ),
+            child: ProductPriceWavesDialog(
+              occasionLink: 'test',
+              initialBundle: bundle,
+              canEdit: false,
+              loader: () async => bundle,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Cenové vlny'), findsOneWidget);
+      expect(find.text('Aktuálně'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Aktuálně')).dy,
+        lessThan(tester.getTopLeft(find.textContaining('550')).dy),
+      );
+      expect(
         tester
             .widgetList<Scrollable>(find.byType(Scrollable))
             .every((s) => s.axisDirection == AxisDirection.down),
-        isTrue);
-    expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
-    expect(find.textContaining('550'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+        isTrue,
+      );
+      expect(find.text(OrdersStrings.waveHidden), findsOneWidget);
+      expect(find.textContaining('550'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets('narrow viewport and larger text keep actions usable', (
     tester,
   ) async {

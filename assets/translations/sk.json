@@ -495,6 +495,7 @@
     "foodCreateHint": "Na vytvorenie jedla vyplňte názov, jedinečný kód a referenciu na program."
   },
   "Common": {
+    "platformUpdates": "Čo je nové",
     "contextLoadFailed": "Oprávnenia sa nepodarilo overiť. Skúste to znova.",
     "add": "Pridať",
     "addExisting": "Pridať existujúci",
@@ -2337,18 +2338,22 @@
     "section2": "Ostatné akcie",
     "more": "Zobraziť ďalšie",
     "unavailable": "Detail už nie je dostupný alebo nemáte oprávnenie.",
+    "form": "Formulár",
+    "acceptingWaitlist": "Príjem náhradníkov",
     "kinds": {
+      "form_closed": "Formulár uzavretý",
+      "form_opened": "Formulár otvorený",
       "occasion_joined": "Noví účastníci akcie",
       "event_capacity_full": "Udalosť je plne obsadená",
-      "order_created": "Nové objednávky",
-      "waitlist_registered": "Nové registrácie do poradovníka",
-      "order_cancelled": "Stornované objednávky",
+      "order_created": "Nová objednávka",
+      "waitlist_registered": "Nový náhradník",
+      "order_cancelled": "Storno objednávky",
       "offer_accepted": "Ponuka prijatá",
       "offer_declined": "Ponuka odmietnutá",
       "offer_expired": "Ponuka vypršala",
       "capacity_warning": "Kapacita nad 90 %",
-      "capacity_full": "Vypredané",
-      "capacity_reopened": "Predaj znova otvorený",
+      "capacity_full": "Kapacita naplnená",
+      "capacity_reopened": "Miesta opäť dostupné",
       "bank_problem": "Bankové spojenie vyžaduje pozornosť",
       "email_problem": "Doručenie e-mailu vyžaduje pozornosť"
     },
@@ -2375,6 +2380,10 @@
       "used": "Použité"
     },
     "reasons": {
+      "schedule_changed": "Zmena termínu",
+      "schedule_end": "Koniec termínu",
+      "schedule_start": "Začiatok termínu",
+      "manual": "Ručná zmena",
       "complaint": "Príjemca označil e-mail ako spam",
       "bounce": "E-mail sa nepodarilo doručiť",
       "reject": "E-mail bol odmietnutý",

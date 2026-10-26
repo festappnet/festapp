@@ -1,35 +1,52 @@
 #!/usr/bin/env python3
-"""Generate the forward-only notification availability cutover from canonical owners.
-
-The installed additive rollout migration remains immutable history.
-"""
+"""Assemble the feed forward migration. Historical migrations are immutable inputs."""
 from pathlib import Path
 import argparse
-root=Path(__file__).resolve().parents[1]
-SOURCES=['notification_center/capacity.sql', 'notification_center/app_activity.sql', 'notification_center/core.sql', 'notification_center/email.sql', 'notification_center/bank.sql', 'notification_center/maintenance.sql', 'users/occasion_enrolment_internal.sql', 'events/save_event_domain_command_internal_v1.sql', 'events/set_event_attendance_client_sync_v1.sql', 'seed/seed_org_with_admin.sql']
-PREFIX="-- Notification availability follows administration permissions, never tenant rollout.\n-- Preserve personal history and active source snapshots. Inactive organizations\n-- baseline once at this cutover; future creation initializes through its owner.\nLOCK TABLE public.notification_center_activation IN ACCESS EXCLUSIVE MODE;\nCREATE TEMP TABLE notification_center_initialization_timezones ON COMMIT DROP AS\n SELECT o.id organization,coalesce(a.timezone,'Europe/Prague') timezone\n FROM public.organizations o LEFT JOIN public.notification_center_activation a ON a.organization=o.id\n WHERE a.organization IS NULL OR NOT a.enabled;\nDELETE FROM public.notification_center_activation WHERE NOT enabled;\nALTER TABLE public.notification_center_activation RENAME TO notification_center_organizations;\nALTER TABLE public.notification_center_organizations RENAME COLUMN activated_at TO initialized_at;\nALTER TABLE public.notification_center_organizations DROP COLUMN enabled;\nDROP FUNCTION public.set_notification_center_activation(bigint,boolean,text);\n"
-SUFFIX="\nDROP FUNCTION public.notification_center_active_internal(bigint);\nDO $$DECLARE item record; BEGIN\n FOR item IN SELECT * FROM notification_center_initialization_timezones ORDER BY organization LOOP\n  PERFORM public.initialize_notification_center_internal(item.organization,item.timezone);\n END LOOP;\nEND $$;\nNOTIFY pgrst, 'reload schema';\n"
-p=argparse.ArgumentParser();p.add_argument('--check',action='store_true');args=p.parse_args()
-out=root/'supabase/migrations/20261024235000_notification_center_canonical_availability.sql'
-parts=[]
-for source in SOURCES:
-    text=(root/'database/functions'/source).read_text()
-    if source=='notification_center/maintenance.sql':
-        text=text[text.index('CREATE OR REPLACE FUNCTION'):]
-    parts.append('-- Canonical source: database/functions/'+source+'\n'+text)
-text=PREFIX+'\n'.join(parts)+SUFFIX
-tables=root/'database/tables/tables.sql'
-start='\n-- Organization notification center private projections.\n'
-end='-- End organization notification center private projections.\n'
-block=start+(root/'database/functions/notification_center/schema.sql').read_text()+(root/'database/functions/notification_center/maintenance.sql').read_text().split('CREATE OR REPLACE FUNCTION')[0]+end
-current=tables.read_text()
-before,tail=current.split(start,1)
-canonical_tables=before+block+tail.split(end,1)[1]
+import json
+import hashlib
+
+root = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser()
+parser.add_argument('--check', action='store_true')
+parser.add_argument('--output', type=Path)
+args = parser.parse_args()
+manifest = json.loads((root / 'automation/notification-center-feed-manifest.json').read_text())
+canonical = root / manifest['output']
+out = args.output.resolve() if args.output else canonical
+historical = root / 'supabase/migrations/20261023210000_organization_notification_center.sql'
+if out == historical or out.name in manifest['prerequisites']:
+    raise SystemExit('Refusing to overwrite historical prerequisite migration')
+for prerequisite in manifest['prerequisites']:
+    if not (root / 'supabase/migrations' / prerequisite).is_file():
+        raise SystemExit('Missing prerequisite: ' + prerequisite)
+    if hashlib.sha256((root / 'supabase/migrations' / prerequisite).read_bytes()).hexdigest() != manifest['prerequisiteSha256'][prerequisite]:
+        raise SystemExit('Historical prerequisite digest differs: ' + prerequisite)
+text = '-- Generated forward migration: ' + manifest['name'] + '\n'
+text += '-- Prerequisites: ' + ', '.join(manifest['prerequisites']) + '\nBEGIN;\n'
+text += "DO $$ BEGIN IF to_regclass('public.notification_center_organizations') IS NULL OR to_regclass('public.notification_center_activation') IS NOT NULL OR to_regclass('public.notification_center_source_state') IS NULL OR to_regprocedure('public.get_notification_center_updates(bigint,bigint,uuid[])') IS NULL THEN RAISE EXCEPTION 'notification_feed_prerequisites_missing'; END IF; END $$;\n"
+for source in manifest['sources']:
+    content = (root / 'database/functions' / source).read_text()
+    if source == 'notification_center/maintenance.sql':
+        # Its table prefix belongs to the immutable prerequisite, functions to this delta.
+        content = 'CREATE OR REPLACE FUNCTION' + content.split('CREATE OR REPLACE FUNCTION', 1)[1]
+    text += '\n-- SOURCE: ' + source + '\n' + content + '\n'
+text += 'COMMIT;\n'
+tables = root / 'database/tables/tables.sql'
+start = '\n-- Organization notification center private projections.\n'
+end = '-- End organization notification center private projections.\n'
+block = start + (root/'database/functions/notification_center/schema.sql').read_text() + (root/'database/functions/notification_center/maintenance.sql').read_text().split('CREATE OR REPLACE FUNCTION')[0] + end
+current = tables.read_text()
+before, tail = current.split(start, 1)
+canonical_tables = before + block + tail.split(end, 1)[1]
 if args.check:
-    if current!=canonical_tables: raise SystemExit('Notification table definitions differ from canonical schema')
-    if out.read_text()!=text: raise SystemExit('Notification cutover differs from canonical sources')
-    print('Notification cutover matches canonical sources')
+    if current != canonical_tables:
+        raise SystemExit('Notification table definitions differ from canonical schema')
+    if not out.is_file() or out.read_text() != text:
+        raise SystemExit('Notification forward migration differs from manifest sources')
+    print('Notification feed migration and canonical tables match')
 else:
+    if args.output and out.exists() and out.read_text() != text:
+        raise SystemExit('Refusing to overwrite an existing different output')
     out.write_text(text)
     tables.write_text(canonical_tables)
-    print(out.relative_to(root))
+    print(out)

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -22,8 +23,12 @@ abstract final class DayRouteSelection {
     return index >= 0 ? index : fallback.clamp(0, days.length - 1);
   }
 
-  static Future<void> write(StackRouter root, String parameter, String? value,
-      {bool replace = false}) async {
+  static Future<void> write(
+    StackRouter root,
+    String parameter,
+    String? value, {
+    bool replace = false,
+  }) async {
     final uri = root.urlState.uri;
     final query = Map<String, List<String>>.of(uri.queryParametersAll);
     if (value == null) {
@@ -36,8 +41,9 @@ abstract final class DayRouteSelection {
         .toString();
     if (target == root.urlState.uri.toString()) return;
     if (replace) root.markUrlStateForReplace();
-    await root
-        .navigate(root.buildPageRoute(target, includePrefixMatches: false)!);
+    await root.navigate(
+      root.buildPageRoute(target, includePrefixMatches: false)!,
+    );
   }
 }
 
@@ -47,20 +53,25 @@ class RoutedDayTabs extends StatelessWidget {
   final int initialIndex;
   final String parameter;
   final Widget child;
-  const RoutedDayTabs(
-      {super.key,
-      required this.days,
-      required this.child,
-      this.initialIndex = 0,
-      this.parameter = 'day'});
+  const RoutedDayTabs({
+    super.key,
+    required this.days,
+    required this.child,
+    this.initialIndex = 0,
+    this.parameter = 'day',
+  });
   @override
   Widget build(BuildContext context) => days.isEmpty
       ? const Center(child: CircularProgressIndicator())
       : DefaultTabController(
           length: days.length,
           initialIndex: initialIndex.clamp(0, days.length - 1),
-          child:
-              RoutedDayBinding(days: days, parameter: parameter, child: child));
+          child: RoutedDayBinding(
+            days: days,
+            parameter: parameter,
+            child: child,
+          ),
+        );
 }
 
 class RoutedDayBinding extends StatefulWidget {
@@ -68,12 +79,13 @@ class RoutedDayBinding extends StatefulWidget {
   final TabController? controller;
   final String parameter;
   final Widget child;
-  const RoutedDayBinding(
-      {super.key,
-      required this.days,
-      required this.child,
-      this.controller,
-      this.parameter = 'day'});
+  const RoutedDayBinding({
+    super.key,
+    required this.days,
+    required this.child,
+    this.controller,
+    this.parameter = 'day',
+  });
   @override
   State<RoutedDayBinding> createState() => _RoutedDayBindingState();
 }
@@ -130,8 +142,11 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
       return;
     _pendingDay = null;
     _dayBeforeWrite = null;
-    final index =
-        DayRouteSelection.resolve(widget.days, value, _controller!.index);
+    final index = DayRouteSelection.resolve(
+      widget.days,
+      value,
+      _controller!.index,
+    );
     _lastDay = DayRouteSelection.format(widget.days[index]);
     _fromRoute = true;
     _controller!.index = index;
@@ -139,8 +154,14 @@ class _RoutedDayBindingState extends State<RoutedDayBinding> {
     if (value != _lastDay) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _active)
-          unawaited(DayRouteSelection.write(_root!, widget.parameter, _lastDay,
-              replace: true));
+          unawaited(
+            DayRouteSelection.write(
+              _root!,
+              widget.parameter,
+              _lastDay,
+              replace: true,
+            ),
+          );
       });
     }
   }

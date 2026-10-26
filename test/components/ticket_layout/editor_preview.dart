@@ -1,8 +1,12 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 // The actual editor with local fixtures. No production connection or writes.
 import 'dart:convert';
+
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
+
 import 'dart:ui' as ui;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -15,48 +19,67 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   final fixture = jsonDecode(
-      (await http.get(Uri.base.resolve('fixtures/ticket_layout/resolve.json')))
-          .body) as Map;
-  fixture['historical'] = jsonDecode((await http.get(
-          Uri.base.resolve('fixtures/ticket_layout/historical/catalog.json')))
-      .body);
-  final resolved = await previewRequest(
-      {'occasionId': 1, 'mode': 'resolve', 'type': 'wide', 'background': null});
+    (await http.get(Uri.base.resolve('fixtures/ticket_layout/resolve.json')))
+        .body,
+  ) as Map;
+  fixture['historical'] = jsonDecode(
+    (await http.get(
+      Uri.base.resolve('fixtures/ticket_layout/historical/catalog.json'),
+    )).body,
+  );
+  final resolved = await previewRequest({
+    'occasionId': 1,
+    'mode': 'resolve',
+    'type': 'wide',
+    'background': null,
+  });
   for (final key in ['scenarios', 'metrics', 'qrMatrix', 'catalog']) {
     fixture[key] = resolved[key];
   }
-  await (FontLoader('TicketLayoutFont')
-        ..addFont(rootBundle.load('fonts/Futura PT Book.ttf')))
-      .load();
-  runApp(EasyLocalization(
+  await (FontLoader(
+    'TicketLayoutFont',
+  )..addFont(rootBundle.load('fonts/Futura PT Book.ttf'))).load();
+  runApp(
+    EasyLocalization(
       supportedLocales: const [Locale('cs'), Locale('en')],
       path: 'assets/translations',
       startLocale: const Locale('cs'),
       child: Builder(
-          builder: (context) => MaterialApp(builder: DependencyMaterialBridge.builder,
-              theme: ThemeData(fontFamily: 'TicketLayoutFont'),
-              localizationsDelegates: [...context.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              home: _Preview(fixture: fixture)))));
-  WidgetsBinding.instance
-      .addPostFrameCallback((_) => WebBootstrapBridge.markAppReady());
+        builder: (context) => MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          theme: ThemeData(fontFamily: 'TicketLayoutFont'),
+          localizationsDelegates: [
+            ...context.localizationDelegates,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          home: _Preview(fixture: fixture),
+        ),
+      ),
+    ),
+  );
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => WebBootstrapBridge.markAppReady(),
+  );
 }
 
 Future<Map<String, dynamic>> previewRequest(Map<String, dynamic> body) async {
   final background = body['background'] as String?;
-  final response = await http.post(Uri.base.resolve('api/ticket-preview'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer local-preview'
-      },
-      body: jsonEncode({
-        'fontProtocol': 2,
-        ...body,
-        'background': background == null
-            ? null
-            : 'https://img.festapp.net/__local_preview__/${Uri.encodeComponent(background)}'
-      }));
+  final response = await http.post(
+    Uri.base.resolve('api/ticket-preview'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer local-preview',
+    },
+    body: jsonEncode({
+      'fontProtocol': 2,
+      ...body,
+      'background': background == null
+          ? null
+          : 'https://img.festapp.net/__local_preview__/${Uri.encodeComponent(background)}',
+    }),
+  );
   final result = jsonDecode(response.body) as Map<String, dynamic>;
   if (response.statusCode != 200) {
     throw StateError(result['error'] ?? 'PDF preview failed');
@@ -69,9 +92,14 @@ class _PreviewService extends TicketLayoutService {
   final List artworkCatalog;
   _PreviewService(this.artworkCatalog) : super(transport: previewRequest);
   @override
-  Future<TicketLayoutResources> resolve(int occasionId, String type,
-      Map<String, dynamic>? layout, String? background,
-      {bool borrowResourcesOnly = false, bool readOnly = false}) async {
+  Future<TicketLayoutResources> resolve(
+    int occasionId,
+    String type,
+    Map<String, dynamic>? layout,
+    String? background, {
+    bool borrowResourcesOnly = false,
+    bool readOnly = false,
+  }) async {
     final result = await super.resolve(occasionId, type, layout, background);
     if (type != 'wide') return result;
     try {
@@ -99,7 +127,10 @@ class _PreviewService extends TicketLayoutService {
         }
         result.artworks.remove(item['id'])?.image?.dispose();
         result.artworks[item['id']] = TicketLayoutArtwork(
-            label: item['label'], background: path, image: image);
+          label: item['label'],
+          background: path,
+          image: image,
+        );
         result.presets[item['id']] = TicketTemplate.fromJson(item['template']);
       }
       return result;
@@ -111,8 +142,11 @@ class _PreviewService extends TicketLayoutService {
 
   @override
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) async {
-    final response = await http.post(Uri.base.resolve('api/ticket-background'),
-        headers: {'Content-Type': 'application/octet-stream'}, body: bytes);
+    final response = await http.post(
+      Uri.base.resolve('api/ticket-background'),
+      headers: {'Content-Type': 'application/octet-stream'},
+      body: bytes,
+    );
     if (response.statusCode != 200) {
       throw StateError('Obrázek se nepodařilo nahrát.');
     }
@@ -136,8 +170,10 @@ class _PreviewState extends State<_Preview> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) =>
-        edit(Uri.base.queryParameters['type'] == 'named' ? 'named' : 'wide'));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) =>
+          edit(Uri.base.queryParameters['type'] == 'named' ? 'named' : 'wide'),
+    );
   }
 
   Future<ui.Image> loadImage(String path) async {
@@ -169,9 +205,10 @@ class _PreviewState extends State<_Preview> {
               ? null
               : 'fixtures/ticket_layout/historical/${item['image']}';
           artworks[key] = TicketLayoutArtwork(
-              label: item['label'],
-              background: path,
-              image: path == null ? null : await loadImage(path));
+            label: item['label'],
+            background: path,
+            image: path == null ? null : await loadImage(path),
+          );
           presets[key] = TicketTemplate.fromJson(item['template']);
         }
       } else {
@@ -179,59 +216,63 @@ class _PreviewState extends State<_Preview> {
           'occasionId': 1,
           'mode': 'resolve',
           'type': type,
-          'background': null
+          'background': null,
         });
-        presets.addAll((choices['presets'] as Map).map((key, value) =>
-            MapEntry(key as String, TicketTemplate.fromJson(value))));
+        presets.addAll(
+          (choices['presets'] as Map).map(
+            (key, value) =>
+                MapEntry(key as String, TicketTemplate.fromJson(value)),
+          ),
+        );
       }
       if (type == 'wide' && uploadedBackground != null) {
         artworks['uploaded'] = TicketLayoutArtwork(
-            label: 'Vlastní pozadí',
-            background: uploadedBackground,
-            image: await loadImage(uploadedBackground!));
+          label: 'Vlastní pozadí',
+          background: uploadedBackground,
+          image: await loadImage(uploadedBackground!),
+        );
         presets['uploaded'] = drafts[type]!;
         selectedArtwork = 'uploaded';
       }
       final initialKey = type == 'wide' ? selectedArtwork : 'classic';
-      final prepared =
-          await TicketLayoutService(transport: previewRequest).resolve(
-              1,
-              type,
-              {
-                'schemaVersion': 3,
-                'templates': {
-                  type: (drafts[type] ?? presets[initialKey]!).toJson()
-                }
-              },
-              null);
+      final prepared = await TicketLayoutService(transport: previewRequest)
+          .resolve(1, type, {
+            'schemaVersion': 3,
+            'templates': {
+              type: (drafts[type] ?? presets[initialKey]!).toJson(),
+            },
+          }, null);
       resources = TicketLayoutResources(
-          catalog: prepared.catalog,
-          fonts: prepared.fonts,
-          template: drafts[type] ?? presets[initialKey]!,
-          preset: presets[initialKey]!,
-          presets: presets,
-          artworks: artworks,
-          initialArtworkKey: type == 'wide' ? initialKey : null,
-          scenarios: prepared.scenarios,
-          metrics: prepared.metrics,
-          qrSize: prepared.qrSize,
-          qrModules: prepared.qrModules);
+        catalog: prepared.catalog,
+        fonts: prepared.fonts,
+        template: drafts[type] ?? presets[initialKey]!,
+        preset: presets[initialKey]!,
+        presets: presets,
+        artworks: artworks,
+        initialArtworkKey: type == 'wide' ? initialKey : null,
+        scenarios: prepared.scenarios,
+        metrics: prepared.metrics,
+        qrSize: prepared.qrSize,
+        qrModules: prepared.qrModules,
+      );
       if (!mounted) {
         resources.dispose();
         return;
       }
       final result = await showDialog<TicketLayoutResult>(
-          context: context,
-          useSafeArea: false,
-          builder: (_) => Dialog.fullscreen(
-              child: TicketLayoutEditor(
-                  showTemplatePicker: !drafts.containsKey(type),
-                  occasionId: 1,
-                  type: type,
-                  background: artworks[initialKey]?.background,
-                  resources: resources!,
-                  service:
-                      _PreviewService(widget.fixture['historical'] as List))));
+        context: context,
+        useSafeArea: false,
+        builder: (_) => Dialog.fullscreen(
+          child: TicketLayoutEditor(
+            showTemplatePicker: !drafts.containsKey(type),
+            occasionId: 1,
+            type: type,
+            background: artworks[initialKey]?.background,
+            resources: resources!,
+            service: _PreviewService(widget.fixture['historical'] as List),
+          ),
+        ),
+      );
       // The editor owns/disposes resources once mounted.
       if (result != null) {
         drafts[type] = result.template;
@@ -262,19 +303,29 @@ class _PreviewState extends State<_Preview> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Editor vstupenek')),
-      body: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-        FilledButton(
+    appBar: AppBar(title: const Text('Editor vstupenek')),
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FilledButton(
             onPressed: busy ? null : () => edit('wide'),
-            child: const Text('Otevřít editor vstupenky')),
-        const SizedBox(height: 16),
-        TextButton(
+            child: const Text('Otevřít editor vstupenky'),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
             onPressed: busy ? null : () => edit('named'),
-            child: const Text('Jmenná vstupenka')),
-        const SizedBox(height: 24),
-        const Text('Předlohy vyberete uvnitř editoru přes Šablony vstupenek.'),
-        const Text(
-            'Lokální ukázka. Původní názvy a data jsou součástí obrázků.'),
-      ])));
+            child: const Text('Jmenná vstupenka'),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Předlohy vyberete uvnitř editoru přes Šablony vstupenek.',
+          ),
+          const Text(
+            'Lokální ukázka. Původní názvy a data jsou součástí obrázků.',
+          ),
+        ],
+      ),
+    ),
+  );
 }

@@ -9,6 +9,7 @@ import 'package:fstapp/startup/startup_failure_screen.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/services/auth_session_storage.dart';
+
 import 'dart:async';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -60,37 +61,46 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await GoogleAuthService.initializeLinks()
-        .timeout(const Duration(seconds: 3));
+    await GoogleAuthService.initializeLinks().timeout(
+      const Duration(seconds: 3),
+    );
   } catch (_) {
     // A missing native link/storage plugin must not block existing sign-in.
   }
   try {
-    await StripePaymentLinkService.initialize()
-        .timeout(const Duration(seconds: 3));
+    await StripePaymentLinkService.initialize().timeout(
+      const Duration(seconds: 3),
+    );
   } catch (_) {
     // Missing native link support must not block startup. Never log link data.
   }
-  final initialRoute = StripePaymentLinkService.inbox.pendingRoute ??
+  final initialRoute =
+      StripePaymentLinkService.inbox.pendingRoute ??
       (GoogleAuthService.hasCallback
           ? "/login"
           : kIsWeb
-              ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-              : nativeInitialRoute(
-                  WidgetsBinding.instance.platformDispatcher.defaultRouteName));
-  runApp(FestappBootstrap(
-    initialRoute: initialRoute,
-    initialize: initialize ?? initializeEverything,
-    buildReadyApp: () => EasyLocalization(
-      supportedLocales:
-          AppConfig.availableLanguages().map((e) => e.locale).toList(),
-      path: "assets/translations",
-      fallbackLocale: AppConfig.availableLanguages().map((e) => e.locale).first,
-      useOnlyLangCode: true,
-      saveLocale: true,
-      child: MyApp(initialRoute: initialRoute),
+          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+          : nativeInitialRoute(
+              WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+            ));
+  runApp(
+    FestappBootstrap(
+      initialRoute: initialRoute,
+      initialize: initialize ?? initializeEverything,
+      buildReadyApp: () => EasyLocalization(
+        supportedLocales: AppConfig.availableLanguages()
+            .map((e) => e.locale)
+            .toList(),
+        path: "assets/translations",
+        fallbackLocale: AppConfig.availableLanguages()
+            .map((e) => e.locale)
+            .first,
+        useOnlyLangCode: true,
+        saveLocale: true,
+        child: MyApp(initialRoute: initialRoute),
+      ),
     ),
-  ));
+  );
 }
 
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
@@ -111,7 +121,8 @@ String initialRouteForUri(Uri uri) {
   // Public aliases retain their fragment during cold startup as well as later
   // canonical replacements. Standalone auth/settings routes keep their contract.
   final segments = Uri.parse(path).pathSegments;
-  final publicPath = path.startsWith('/form/') ||
+  final publicPath =
+      path.startsWith('/form/') ||
       (segments.isNotEmpty &&
           !AppRouter.getRootLinks().contains(segments.first));
   final fragment = publicPath && uri.hasFragment ? '#${uri.fragment}' : '';
@@ -121,7 +132,8 @@ String initialRouteForUri(Uri uri) {
 bool isUnitAdminStartupRoute(Uri uri) {
   if (StripePaymentLinkInbox.routeForPath(uri.path) != null ||
       uri.path == '/stripe/connect/callback' ||
-      uri.path == '/app/stripe/connect/callback') return true;
+      uri.path == '/app/stripe/connect/callback')
+    return true;
   if (RegExp(r'^/organizationEdit(?:/[1-9][0-9]*)?/?$').hasMatch(uri.path)) {
     return true;
   }
@@ -221,7 +233,8 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
     if (_isReady) return widget.buildReadyApp();
     final baseTheme = ThemeConfig.theme();
     if (_startupFailed) {
-      return MaterialApp(builder: DependencyMaterialBridge.builder,
+      return MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         theme: baseTheme,
         darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
         debugShowCheckedModeBanner: false,
@@ -230,12 +243,14 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
           phase: WebBootstrapBridge.startupPhase,
           language: _failureLanguage!,
           storageOpenFailed: _storageOpenFailed,
-          onRetry: widget.onRetry ??
+          onRetry:
+              widget.onRetry ??
               (kIsWeb ? WebBootstrapBridge.retryStartup : null),
         ),
       );
     }
-    return MaterialApp(builder: DependencyMaterialBridge.builder,
+    return MaterialApp(
+      builder: DependencyMaterialBridge.builder,
       theme: baseTheme,
       darkTheme: ThemeConfig.theme(brightness: Brightness.dark),
       key: const ValueKey('festapp-startup-material-app'),
@@ -255,7 +270,8 @@ Future<void> initializeEverything() async {
 
   // Unit editors and Google returns own their context. A default occasion
   // fetch can outlive startup and block their work in the serialized queue.
-  final skipInitialOccasion = kIsWeb &&
+  final skipInitialOccasion =
+      kIsWeb &&
       (isUnitAdminStartupRoute(RouterService.getCurrentBrowserUri()) ||
           RouterService.getCurrentBrowserUri().path == '/app/google-auth');
 
@@ -373,8 +389,9 @@ Future<void> initializeEverything() async {
         AppLogger.debug('Stored session recovery completed');
       }
       if (AuthService.isLoggedIn()) {
-        await AuthService.validateCurrentOrganization()
-            .timeout(const Duration(seconds: 2));
+        await AuthService.validateCurrentOrganization().timeout(
+          const Duration(seconds: 2),
+        );
       }
     } else {
       AppLogger.debug('Offline start: skipped remote session validation');
@@ -412,22 +429,25 @@ Future<void> initializeEverything() async {
           ? await OfflineDataService.getUserInfo()
           : null;
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          code: 200,
-          clientSyncV1: cachedSyncModel != null,
-          userInfo: cachedUser,
-          occasionUser: cachedUser?.occasionUser,
-          occasion: OccasionModel(
-              id: cachedSyncModel?.occasion?.id,
-              link: cachedSyncModel?.occasion?.link,
-              organization: cachedSyncModel?.occasion?.organization,
-              features: settings.features,
-              isOpen: true,
-              isHidden: false,
-              isPromoted: false,
-              data: settings.data,
-              services: settings.services));
+        code: 200,
+        clientSyncV1: cachedSyncModel != null,
+        userInfo: cachedUser,
+        occasionUser: cachedUser?.occasionUser,
+        occasion: OccasionModel(
+          id: cachedSyncModel?.occasion?.id,
+          link: cachedSyncModel?.occasion?.link,
+          organization: cachedSyncModel?.occasion?.organization,
+          features: settings.features,
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+          data: settings.data,
+          services: settings.services,
+        ),
+      );
       TimeHelper.setTimeZoneLocation(
-          RightsService.currentOccasion()?.data?["timezone"]);
+        RightsService.currentOccasion()?.data?["timezone"],
+      );
       final cachedLink =
           AppConfig.forceOccasionLink ?? cachedSyncModel?.occasion?.link;
       if (cachedLink != null) {
@@ -449,17 +469,26 @@ Future<void> initializeEverything() async {
       RightsService.useOfflineVersion = true;
       AppLogger.debug('Offline start: using cached occasion data');
     } else if (!skipInitialOccasion) {
-      await RightsService.updateAppData(force: true, refreshOffline: false)
-          .timeout(occasionLoadTimeout(
-        hasCachedSettings: hasCachedOccasionSettings,
-      ));
+      await RightsService.updateAppData(
+        force: true,
+        refreshOffline: false,
+      ).timeout(
+        occasionLoadTimeout(hasCachedSettings: hasCachedOccasionSettings),
+      );
       AppLogger.debug('Occasion loaded');
       if (AuthService.isLoggedIn() && !ClientSyncRuntime.isV1Selected) {
-        unawaited(SynchroService.refreshUserOfflineData().then((_) {
-          AppLogger.debug('Private offline snapshot refreshed');
-        }, onError: (Object error) {
-          AppLogger.error('Private offline snapshot refresh failed: $error');
-        }));
+        unawaited(
+          SynchroService.refreshUserOfflineData().then(
+            (_) {
+              AppLogger.debug('Private offline snapshot refreshed');
+            },
+            onError: (Object error) {
+              AppLogger.error(
+                'Private offline snapshot refresh failed: $error',
+              );
+            },
+          ),
+        );
       }
     } else {
       AppLogger.debug('Unit admin route: occasion preload skipped');
@@ -478,18 +507,25 @@ Future<void> initializeEverything() async {
     );
     _notificationReconnectCoordinator = reconnect;
     ConnectivityService.isOfflineNotifier.addListener(() {
-      unawaited(reconnect
-          .connectivityChanged(ConnectivityService.isOfflineNotifier.value)
-          .catchError((Object error) {
-        AppLogger.error('Notification reconnect initialization failed: $error');
-      }));
+      unawaited(
+        reconnect
+            .connectivityChanged(ConnectivityService.isOfflineNotifier.value)
+            .catchError((Object error) {
+              AppLogger.error(
+                'Notification reconnect initialization failed: $error',
+              );
+            }),
+      );
     });
   }
-  NotificationHelper.initialize().then((_) {
-    AppLogger.debug('Notification helper initialized');
-  }, onError: (Object error) {
-    AppLogger.error('Notification helper initialization failed: $error');
-  });
+  NotificationHelper.initialize().then(
+    (_) {
+      AppLogger.debug('Notification helper initialized');
+    },
+    onError: (Object error) {
+      AppLogger.error('Notification helper initialization failed: $error');
+    },
+  );
 
   AppLogger.debug('Initialization completed');
 
@@ -517,8 +553,10 @@ class _MyAppState extends State<MyApp> {
       if (!mounted) return;
       StripePaymentLinkService.attachNavigator((path) async {
         if (!mounted || RouterService.router.currentPath == path) return;
-        if (await RetainedDraftGuard.instance
-            .confirmPath(RouterService.router, Uri.parse(path))) {
+        if (await RetainedDraftGuard.instance.confirmPath(
+          RouterService.router,
+          Uri.parse(path),
+        )) {
           await RouterService.router.pushPath(path);
         }
       }, widget.initialRoute);
@@ -533,8 +571,9 @@ class _MyAppState extends State<MyApp> {
 
   Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
     if (StripePaymentLinkService.isNativeMobile) {
-      final stripeRoute =
-          StripePaymentLinkInbox.routeForPath(platformDeepLink.uri.path);
+      final stripeRoute = StripePaymentLinkInbox.routeForPath(
+        platformDeepLink.uri.path,
+      );
       if (stripeRoute != null) {
         StripePaymentLinkService.capture(platformDeepLink.uri);
         if (!platformDeepLink.initial &&
@@ -542,8 +581,10 @@ class _MyAppState extends State<MyApp> {
           return DeepLink.none;
         }
         if (!platformDeepLink.initial &&
-            !await RetainedDraftGuard.instance
-                .confirmPath(RouterService.router, Uri.parse(stripeRoute))) {
+            !await RetainedDraftGuard.instance.confirmPath(
+              RouterService.router,
+              Uri.parse(stripeRoute),
+            )) {
           return DeepLink.none;
         }
         return DeepLink.path(stripeRoute, includePrefixMatches: false);
@@ -553,17 +594,17 @@ class _MyAppState extends State<MyApp> {
       return DeepLink.path('/login', includePrefixMatches: false);
     }
     if (platformDeepLink.initial) {
-      final canonical =
-          RouterService.consumeCanonicalInitialPath(widget.initialRoute);
+      final canonical = RouterService.consumeCanonicalInitialPath(
+        widget.initialRoute,
+      );
       if (canonical != widget.initialRoute)
         RouterService.router.markUrlStateForReplace();
-      return DeepLink.path(
-        canonical,
-        includePrefixMatches: false,
-      );
+      return DeepLink.path(canonical, includePrefixMatches: false);
     }
-    if (!await RetainedDraftGuard.instance
-        .confirmPath(RouterService.router, platformDeepLink.uri)) {
+    if (!await RetainedDraftGuard.instance.confirmPath(
+      RouterService.router,
+      platformDeepLink.uri,
+    )) {
       RouterService.router.markUrlStateForReplace();
       RouterService.router.notifyAll(forceUrlRebuild: true);
       return DeepLink.none;
@@ -620,7 +661,8 @@ class _MyAppState extends State<MyApp> {
                   top: _offset.dy,
                   child: GestureDetector(
                     onPanUpdate: (d) => setState(
-                        () => _offset += Offset(d.delta.dx, d.delta.dy)),
+                      () => _offset += Offset(d.delta.dx, d.delta.dy),
+                    ),
                     child: Visibility(
                       visible: widget.isTimeTravelVisible,
                       child: TimeTravelWidget(),

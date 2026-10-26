@@ -475,6 +475,7 @@
     "foodCreateHint": "Um Essen zu erstellen, füllen Sie den Titel, den eindeutigen Code und die Referenz des Programms aus."
   },
   "Common": {
+    "platformUpdates": "Neuigkeiten",
     "contextLoadFailed": "Zugriff konnte nicht überprüft werden. Bitte erneut versuchen.",
     "add": "Hinzufügen",
     "addExisting": "Bestehendes hinzufügen",
@@ -2310,18 +2311,22 @@
     "section2": "Andere Veranstaltungen",
     "more": "Mehr anzeigen",
     "unavailable": "Dieses Detail ist nicht mehr verfügbar oder Sie haben keinen Zugriff.",
+    "form": "Formular",
+    "acceptingWaitlist": "Aufnahme in die Warteliste",
     "kinds": {
+      "form_closed": "Formular geschlossen",
+      "form_opened": "Formular geöffnet",
       "occasion_joined": "Neue Veranstaltungsteilnehmer",
       "event_capacity_full": "Programmpunkt ist ausgebucht",
-      "order_created": "Neue Bestellungen",
-      "waitlist_registered": "Neue Wartelistenanmeldungen",
-      "order_cancelled": "Stornierte Bestellungen",
+      "order_created": "Neue Bestellung",
+      "waitlist_registered": "Neuer Wartelisteneintrag",
+      "order_cancelled": "Bestellung storniert",
       "offer_accepted": "Angebot angenommen",
       "offer_declined": "Angebot abgelehnt",
       "offer_expired": "Angebot abgelaufen",
       "capacity_warning": "Kapazität über 90 %",
-      "capacity_full": "Ausverkauft",
-      "capacity_reopened": "Verkauf wieder geöffnet",
+      "capacity_full": "Kapazität erreicht",
+      "capacity_reopened": "Plätze wieder verfügbar",
       "bank_problem": "Bankverbindung erfordert Aufmerksamkeit",
       "email_problem": "E-Mail-Zustellung erfordert Aufmerksamkeit"
     },
@@ -2348,6 +2353,10 @@
       "used": "Verwendet"
     },
     "reasons": {
+      "schedule_changed": "Zeitplan geändert",
+      "schedule_end": "Geplantes Ende",
+      "schedule_start": "Geplanter Beginn",
+      "manual": "Manuelle Änderung",
       "complaint": "Empfänger hat die E-Mail als Spam markiert",
       "bounce": "E-Mail konnte nicht zugestellt werden",
       "reject": "E-Mail abgelehnt",

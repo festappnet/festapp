@@ -17,11 +17,17 @@ import 'package:fstapp/services/launch_url_service.dart';
 
 class TicketCodeHelper {
   /// Both administration entry points use the web scanner's shared settings.
-  static Uri scannerSettingsUri({required int occasionId, required Uri returnUri}) {
-    return Uri.parse('${AppConfig.webLink}/scan/settings').replace(queryParameters: {
-      'occasion': '$occasionId',
-      'returnTo': '${returnUri.path}${returnUri.hasQuery ? '?${returnUri.query}' : ''}${returnUri.hasFragment ? '#${returnUri.fragment}' : ''}',
-    });
+  static Uri scannerSettingsUri({
+    required int occasionId,
+    required Uri returnUri,
+  }) {
+    return Uri.parse('${AppConfig.webLink}/scan/settings').replace(
+      queryParameters: {
+        'occasion': '$occasionId',
+        'returnTo':
+            '${returnUri.path}${returnUri.hasQuery ? '?${returnUri.query}' : ''}${returnUri.hasFragment ? '#${returnUri.fragment}' : ''}',
+      },
+    );
   }
 
   static String generateRandomCode(int length) {
@@ -55,11 +61,8 @@ class TicketCodeHelper {
     final returnPath =
         '${source.path}${source.hasQuery ? '?${source.query}' : ''}${source.hasFragment ? '#${source.fragment}' : ''}';
     Future<bool> openScanner(String path) {
-      final target = Uri.parse('${AppConfig.webLink}$path').replace(
-        queryParameters: {
-          'returnTo': returnPath,
-        },
-      );
+      final target = Uri.parse('${AppConfig.webLink}$path')
+          .replace(queryParameters: {'returnTo': returnPath});
       return LaunchUrlService.openExternalUrl(
         target.toString(),
         inCurrentWindow: true,
@@ -120,16 +123,20 @@ class TicketCodeHelper {
                         ],
                       ),
                       if (occasionId != null &&
-                          (RightsService.hasCapability(AuthorizationCapabilities
-                              .scannerSettingsWrite))) ...[
+                          (RightsService.hasCapability(
+                            AuthorizationCapabilities.scannerSettingsWrite,
+                          ))) ...[
                         const SizedBox(height: 20),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.tune),
                           label: Text(ScanStrings.displaySettings),
-                          onPressed: () =>
-                              LaunchUrlService.openExternalUrl(
-                                  scannerSettingsUri(occasionId: occasionId, returnUri: source).toString(),
-                                  inCurrentWindow: true),
+                          onPressed: () => LaunchUrlService.openExternalUrl(
+                            scannerSettingsUri(
+                              occasionId: occasionId,
+                              returnUri: source,
+                            ).toString(),
+                            inCurrentWindow: true,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 10),

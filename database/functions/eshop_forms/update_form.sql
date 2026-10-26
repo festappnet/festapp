@@ -9,6 +9,8 @@ DECLARE
     -- Declarations
     ----------------------------------------------------------------------------
     result JSONB;
+    availability_at timestamptz;
+    availability_new boolean;
     deleted_fields BIGINT[];
     deleted_products BIGINT[];
     deletion_reason TEXT;
@@ -101,7 +103,15 @@ BEGIN
         END IF;
 
         IF NOT public.is_service_role() AND NOT public.can_author_forms(occasion_id) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
+        PERFORM public.notification_center_initialized_internal(occasion_org);
+        availability_at:=clock_timestamp();
         form_id := NULLIF(input_data->>'id','')::bigint;
+        availability_new:=form_id IS NULL;
+        IF form_id IS NOT NULL THEN
+          IF NOT EXISTS(SELECT 1 FROM public.forms WHERE id=form_id AND occasion=occasion_id) THEN RAISE invalid_parameter_value USING MESSAGE='Form does not match occasion'; END IF;
+          PERFORM 1 FROM public.forms WHERE id=form_id AND occasion=occasion_id FOR UPDATE;
+          PERFORM public.notification_center_form_availability_internal(form_id,availability_at);
+        END IF;
         IF form_id IS NULL THEN
           INSERT INTO public.forms(created_at,occasion) VALUES(now_ts,occasion_id) RETURNING id INTO form_id;
           link_param := public.reserve_public_link_internal('form',form_id,input_data->>'link',true);
@@ -624,6 +634,12 @@ BEGIN
             'form_fields', form_fields_data
         );
 
+        IF availability_new THEN
+          PERFORM public.notification_center_form_created_internal(form_id);
+        ELSE
+          PERFORM public.notification_center_form_availability_internal(form_id,availability_at);
+        END IF;
+        PERFORM public.notification_center_form_capacity_internal(form_id);
     EXCEPTION WHEN raise_exception THEN
         -- Catch any exception and attempt to parse it as JSON; if not JSON, wrap it in our own JSON.
         result := CASE
@@ -632,7 +648,6 @@ BEGIN
         END;
     END;
 
-    PERFORM public.notification_center_form_capacity_internal(form_id);
     RETURN result;
 END;
 $$;

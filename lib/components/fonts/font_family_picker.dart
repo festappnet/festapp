@@ -58,24 +58,26 @@ class FontFamilyPicker extends StatefulWidget {
   }) {
     if (onPreview != null) {
       return showDialog<void>(
-          context: context,
-          barrierColor: Colors.transparent,
-          builder: (_) => Dialog(
-                alignment: Alignment.centerRight,
-                insetPadding: const EdgeInsets.all(16),
-                child: SizedBox(
-                    width: 360,
-                    child: _FontChoices(
-                      families: families,
-                      extraFamilies: extraFamilies,
-                      value: value,
-                      title: title,
-                      onSelected: onSelected,
-                      previewStyle: previewStyle,
-                      onPreview: onPreview,
-                      onPreviewEnd: onPreviewEnd,
-                    )),
-              )).whenComplete(() => onPreviewEnd?.call());
+        context: context,
+        barrierColor: Colors.transparent,
+        builder: (_) => Dialog(
+          alignment: Alignment.centerRight,
+          insetPadding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: 360,
+            child: _FontChoices(
+              families: families,
+              extraFamilies: extraFamilies,
+              value: value,
+              title: title,
+              onSelected: onSelected,
+              previewStyle: previewStyle,
+              onPreview: onPreview,
+              onPreviewEnd: onPreviewEnd,
+            ),
+          ),
+        ),
+      ).whenComplete(() => onPreviewEnd?.call());
     }
     return showModalBottomSheet<void>(
       context: context,
@@ -159,42 +161,51 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                   ? InkWell(
                       onTap: !widget.enabled || busy
                           ? null
-                          : () => FontFamilyPicker.showChoices(context,
+                          : () => FontFamilyPicker.showChoices(
+                              context,
                               families: widget.families,
                               extraFamilies: widget.extraFamilies,
                               value: widget.value,
                               onSelected: choose,
                               previewStyle: widget.previewStyle,
                               onPreview: widget.onPreview,
-                              onPreviewEnd: widget.onPreviewEnd),
+                              onPreviewEnd: widget.onPreviewEnd,
+                            ),
                       child: InputDecorator(
-                          decoration: InputDecoration(
-                              labelText: widget.label ?? FormStrings.typography,
-                              border: const OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 14)),
-                          child: Row(children: [
+                        decoration: InputDecoration(
+                          labelText: widget.label ?? FormStrings.typography,
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
                             Expanded(
-                                child: Text(
-                                    widget.value == null
-                                        ? FormStrings.defaultFont
-                                        : _displayFont(widget.value!),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis)),
-                            const Icon(Icons.arrow_drop_down)
-                          ])),
+                              child: Text(
+                                widget.value == null
+                                    ? FormStrings.defaultFont
+                                    : _displayFont(widget.value!),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down),
+                          ],
+                        ),
+                      ),
                     )
                   : DropdownButtonFormField<String>(
                       key: ValueKey(widget.value),
                       initialValue: widget.value,
                       isExpanded: true,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyLarge
+                      style: Theme.of(context).textTheme.bodyLarge
                           ?.merge(widget.selectedStyle)
                           .copyWith(
-                              color: Theme.of(context).colorScheme.onSurface),
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                       decoration: InputDecoration(
                         labelText: widget.label ?? FormStrings.typography,
                         border: const OutlineInputBorder(),
@@ -205,11 +216,17 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                         ),
                       ),
                       selectedItemBuilder: (context) => [
-                        Text(FormStrings.defaultFont,
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          FormStrings.defaultFont,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         for (final family in choices)
-                          Text(_displayFont(family),
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            _displayFont(family),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                       items: [
                         DropdownMenuItem<String>(
@@ -220,9 +237,10 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
                           (f) => DropdownMenuItem(
                             value: f,
                             child: _FontPreview(
-                                key: ValueKey(f),
-                                family: f,
-                                load: widget.previewStyle),
+                              key: ValueKey(f),
+                              family: f,
+                              load: widget.previewStyle,
+                            ),
                           ),
                         ),
                       ],
@@ -264,15 +282,15 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
             ),
             onPressed: widget.enabled && !busy
                 ? () => FontFamilyPicker.showChoices(
-                      context,
-                      families: widget.families,
-                      extraFamilies: widget.extraFamilies,
-                      value: widget.value,
-                      onSelected: choose,
-                      previewStyle: widget.previewStyle,
-                      onPreview: widget.onPreview,
-                      onPreviewEnd: widget.onPreviewEnd,
-                    )
+                    context,
+                    families: widget.families,
+                    extraFamilies: widget.extraFamilies,
+                    value: widget.value,
+                    onSelected: choose,
+                    previewStyle: widget.previewStyle,
+                    onPreview: widget.onPreview,
+                    onPreviewEnd: widget.onPreviewEnd,
+                  )
                 : null,
           ),
       ],
@@ -358,98 +376,122 @@ class _FontChoicesState extends State<_FontChoices> {
         ? {
             if (widget.value != null) widget.value!,
             ...widget.extraFamilies,
-            ...popularFontFamilies
+            ...popularFontFamilies,
           }.where(widget.families.contains).toList()
         : widget.families
-            .where((f) => f.toLowerCase().contains(query))
-            .take(60)
-            .toList();
+              .where((f) => f.toLowerCase().contains(query))
+              .take(60)
+              .toList();
     final media = MediaQuery.of(context);
-    final height =
-        ((media.size.height - media.viewInsets.bottom) * .85).clamp(0.0, 560.0);
+    final height = ((media.size.height - media.viewInsets.bottom) * .85).clamp(
+      0.0,
+      560.0,
+    );
     return AppDialogDismissal(
-        enabled: !busy,
-        child: PopScope(
-            canPop: !busy,
-            child: Padding(
-                padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-                child: SizedBox(
-                    height: height,
-                    child: Column(children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
-                          child: AppDialogHeader(
-                            title: Text(widget.title ?? FormStrings.moreFonts),
-                            closeEnabled: !busy,
-                          )),
-                      Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TextField(
-                              controller: search,
-                              enabled: !busy,
-                              textInputAction: TextInputAction.done,
-                              decoration: InputDecoration(
-                                  labelText: FormStrings.customFontNameLabel,
-                                  hintText: 'Roboto Slab',
-                                  border: const OutlineInputBorder(),
-                                  prefixIcon: const Icon(Icons.search),
-                                  errorText: error),
-                              onChanged: (_) => setState(() => error = null),
-                              onSubmitted: submit)),
-                      Expanded(
-                          child: CustomScrollView(slivers: [
-                        if (query.isEmpty)
-                          SliverToBoxAdapter(
-                              child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                                  child: Text(FormStrings.fontSearchHint,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium))),
-                        if (query.isEmpty)
-                          SliverToBoxAdapter(
-                              child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 8),
-                                  child: HtmlView(
-                                      html:
-                                          '<a href="https://fonts.google.com/">${FormStrings.browseGoogleFonts}</a>',
-                                      isSelectable: false))),
-                        SliverList.builder(
-                            itemCount: options.length,
-                            itemBuilder: (context, index) {
-                              final family = options[index];
-                              return MouseRegion(
-                                  onEnter: (_) => preview(family),
-                                  onExit: (_) => widget.onPreviewEnd?.call(),
-                                  child: Focus(
-                                      onFocusChange: (focused) {
-                                        if (focused) preview(family);
-                                      },
-                                      child: ListTile(
-                                          title: _FontPreview(
-                                              key: ValueKey(family),
-                                              family: family,
-                                              load: widget.previewStyle),
-                                          selected: widget.value == family,
-                                          trailing: busy && loading == family
-                                              ? const SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 2))
-                                              : widget.value == family
-                                                  ? const Icon(Icons.check,
-                                                      size: 20)
-                                                  : null,
-                                          onTap: busy
-                                              ? null
-                                              : () => choose(family))));
-                            }),
-                      ])),
-                    ])))));
+      enabled: !busy,
+      child: PopScope(
+        canPop: !busy,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+          child: SizedBox(
+            height: height,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+                  child: AppDialogHeader(
+                    title: Text(widget.title ?? FormStrings.moreFonts),
+                    closeEnabled: !busy,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: TextField(
+                    controller: search,
+                    enabled: !busy,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      labelText: FormStrings.customFontNameLabel,
+                      hintText: 'Roboto Slab',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.search),
+                      errorText: error,
+                    ),
+                    onChanged: (_) => setState(() => error = null),
+                    onSubmitted: submit,
+                  ),
+                ),
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      if (query.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                            child: Text(
+                              FormStrings.fontSearchHint,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      if (query.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            child: HtmlView(
+                              html:
+                                  '<a href="https://fonts.google.com/">${FormStrings.browseGoogleFonts}</a>',
+                              isSelectable: false,
+                            ),
+                          ),
+                        ),
+                      SliverList.builder(
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final family = options[index];
+                          return MouseRegion(
+                            onEnter: (_) => preview(family),
+                            onExit: (_) => widget.onPreviewEnd?.call(),
+                            child: Focus(
+                              onFocusChange: (focused) {
+                                if (focused) preview(family);
+                              },
+                              child: ListTile(
+                                title: _FontPreview(
+                                  key: ValueKey(family),
+                                  family: family,
+                                  load: widget.previewStyle,
+                                ),
+                                selected: widget.value == family,
+                                trailing: busy && loading == family
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : widget.value == family
+                                    ? const Icon(Icons.check, size: 20)
+                                    : null,
+                                onTap: busy ? null : () => choose(family),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -468,23 +510,31 @@ class _FontPreviewState extends State<_FontPreview> {
       : Future<TextStyle>.sync(() => widget.load!(widget.family));
   @override
   Widget build(BuildContext context) => FutureBuilder<TextStyle>(
-      future: style,
-      builder: (context, snapshot) => Row(children: [
-            Expanded(
-                child: Text(_displayFont(widget.family),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: (snapshot.data ?? const TextStyle()).copyWith(
-                        color: Theme.of(context).colorScheme.onSurface))),
-            if (style != null &&
-                snapshot.connectionState != ConnectionState.done)
-              const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 1.5)),
-            if (snapshot.hasError)
-              Tooltip(
-                  message: FormStrings.fontLoadFailed,
-                  child: const Icon(Icons.error_outline, size: 16)),
-          ]));
+    future: style,
+    builder: (context, snapshot) => Row(
+      children: [
+        Expanded(
+          child: Text(
+            _displayFont(widget.family),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: (snapshot.data ?? const TextStyle()).copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        if (style != null && snapshot.connectionState != ConnectionState.done)
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          ),
+        if (snapshot.hasError)
+          Tooltip(
+            message: FormStrings.fontLoadFailed,
+            child: const Icon(Icons.error_outline, size: 16),
+          ),
+      ],
+    ),
+  );
 }

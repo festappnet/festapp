@@ -2,7 +2,6 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/_shared/async_reload_coordinator.dart';

@@ -428,33 +428,7 @@ class OrderModel extends ITrinaRowModel {
     ].join(' - ');
   }
 
-  String toCustomerData() {
-    final name = data?['name'] as String?;
-    final surname = data?['surname'] as String?;
-
-    bool hasName = name != null && name.isNotEmpty;
-    bool hasSurname = surname != null && surname.isNotEmpty;
-
-    if (hasName || hasSurname) {
-      List<String> nameParts = [];
-      if (hasName) {
-        nameParts.add(name);
-      }
-      if (hasSurname) {
-        nameParts.add(surname);
-      }
-      return nameParts.join(" ");
-    } else {
-      final email = data?['email'] as String?;
-      bool hasEmail = email != null && email.isNotEmpty;
-
-      if (hasEmail) {
-        return email;
-      }
-    }
-
-    return "";
-  }
+  String toCustomerData() => formatCustomerLabel(name: data?['name'] as String?, surname: data?['surname'] as String?, email: data?['email'] as String?);
 
   String toCustomerNote() => "${data?["note"] ?? ""}";
   String toCustomerNoteHidden() => "${data?["note_hidden"] ?? ""}";

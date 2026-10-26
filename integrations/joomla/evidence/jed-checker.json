@@ -1,0 +1,304 @@
+{
+  "state": "COMPLETED_WITH_WARNING",
+  "verified_at": "2026-10-26T10:06:24.211459+00:00",
+  "checker": {
+    "name": "JEDChecker",
+    "version": "2.4.4",
+    "repository": "https://github.com/joomla-extensions/jedchecker",
+    "tag": "2.4.4",
+    "commit": "fd18a27cdd8dbb22a6ef7dab997c49bfe6d00cea"
+  },
+  "subject": {
+    "release_tag": "joomla-vstupenky-online-v1.0.1",
+    "zip_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+    "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f"
+  },
+  "execution": {
+    "mode": "Direct invocation of the official rule classes, matching JEDChecker controller class discovery, rule instantiation, and check() calls.",
+    "environment": {
+      "joomla": "5.4.10",
+      "php": "8.3.36"
+    },
+    "rules_found": 12,
+    "rules_run": 12,
+    "runtime_errors": [],
+    "summary": {
+      "error": 0,
+      "warning": 1,
+      "compatibility": 0,
+      "notice": 1,
+      "info": 1,
+      "passed": 6
+    }
+  },
+  "joomla6_compatibility_probe": {
+    "environment": {
+      "joomla": "6.1.4",
+      "php": "8.4.27"
+    },
+    "rules_completed": 1,
+    "rules_found": 12,
+    "remaining_rules_runtime_error": "Class Joomla\\CMS\\Filesystem\\Folder not found",
+    "note": "JEDChecker 2.4.4 declares Joomla 5.0 as its target platform; complete official rule run used pinned Joomla 5.4.10."
+  },
+  "analyst_annotation": "The single JAMSS iframe warning points to the extension’s intended public booking embed markup.",
+  "results": [
+    {
+      "rule": "xmlinfo",
+      "id": "INFO_XML",
+      "title": "Information about extension xml files",
+      "counts": {
+        "total": 1,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 1,
+        "passed": 0
+      },
+      "findings": [
+        {
+          "level": "info",
+          "subtype": "",
+          "location": "/mod_vstupenky_online.xml",
+          "message": "The name tag in this file is: <b>vstupenky.online</b><br />Version tag has the value: 1.0.1<br />The creationDate tag has the value: 2026-10",
+          "line": null,
+          "code": null
+        }
+      ]
+    },
+    {
+      "rule": "xmllicense",
+      "id": "PH3",
+      "title": "License tag missing or incorrect in XML install file",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "xmlmanifest",
+      "id": "MANIFEST",
+      "title": "XML Manifests",
+      "counts": {
+        "total": 1,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 1,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": [
+        {
+          "level": "notice",
+          "subtype": "",
+          "location": "/mod_vstupenky_online.xml",
+          "message": "Node &lt;extension&gt; doesn't contain optional &lt;authorEmail&gt; element<br />Node &lt;extension&gt; doesn't contain optional &lt;authorUrl&gt; element",
+          "line": null,
+          "code": null
+        }
+      ]
+    },
+    {
+      "rule": "xmlfiles",
+      "id": "XMLFILES",
+      "title": "XML Files references",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "xmlupdateserver",
+      "id": "US1",
+      "title": "Update Server Requirement",
+      "counts": {
+        "total": 1,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 1
+      },
+      "findings": [
+        {
+          "level": "passed",
+          "subtype": "US1",
+          "location": "/mod_vstupenky_online.xml",
+          "message": "The Update Server link in this XML file is: https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+          "line": null,
+          "code": null
+        }
+      ]
+    },
+    {
+      "rule": "gpl",
+      "id": "PH1",
+      "title": "PHP Headers missing GPL License Notice",
+      "counts": {
+        "total": 5,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 5
+      },
+      "findings": [
+        {
+          "level": "passed",
+          "subtype": "PH1",
+          "location": "/services/provider.php",
+          "message": "GPL license was found",
+          "line": 2,
+          "code": "/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */"
+        },
+        {
+          "level": "passed",
+          "subtype": "PH1",
+          "location": "/src/Dispatcher/Dispatcher.php",
+          "message": "GPL license was found",
+          "line": 2,
+          "code": "/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */"
+        },
+        {
+          "level": "passed",
+          "subtype": "PH1",
+          "location": "/src/Helper/EmbedHelper.php",
+          "message": "GPL license was found",
+          "line": 2,
+          "code": "/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */"
+        },
+        {
+          "level": "passed",
+          "subtype": "PH1",
+          "location": "/src/Rule/PublicformRule.php",
+          "message": "GPL license was found",
+          "line": 2,
+          "code": "/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */"
+        },
+        {
+          "level": "passed",
+          "subtype": "PH1",
+          "location": "/tmpl/default.php",
+          "message": "GPL license was found",
+          "line": 2,
+          "code": "/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */"
+        }
+      ]
+    },
+    {
+      "rule": "jexec",
+      "id": "PH2",
+      "title": "PHP Files missing JEXEC security",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "framework",
+      "id": "Framework",
+      "title": "Joomla Framework deprecated and unsafe",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "errorreporting",
+      "id": "errorreporting",
+      "title": "error_reporting(0) in the files",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "encoding",
+      "id": "encoding",
+      "title": "Base64 or other type of encoding in the files",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    },
+    {
+      "rule": "jamss",
+      "id": "Jamss",
+      "title": "JAMSS - Joomla! Anti-Malware Scan Script",
+      "counts": {
+        "total": 1,
+        "error": 0,
+        "warning": 1,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": [
+        {
+          "level": "warning",
+          "subtype": "",
+          "location": "/src/Helper/EmbedHelper.php",
+          "message": "<span class='jamss_tooltip info badge bg-warning me-1 mb-1' title='Found IFRAME element in code. It&#039;s mostly benevolent, but often used for bad stuff, so please check if it&#039;s a valid code.' data-bs-toggle=tooltip>?</span> Pattern found#18 - IFRAME element",
+          "line": 46,
+          "code": "            '<div class=\"mod_vstupenky_online\" data-festapp-embed-host><iframe%s src=\"%s\" title=\"%s\" width=\"100%%\" height=\"%d\" style=\"border:0;max-width:100%%\" loading=\"lazy\"></iframe><p><a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">%s</a></p></div>',"
+        }
+      ]
+    },
+    {
+      "rule": "language",
+      "id": "LANG",
+      "title": "Language files",
+      "counts": {
+        "total": 0,
+        "error": 0,
+        "warning": 0,
+        "compatibility": 0,
+        "notice": 0,
+        "info": 0,
+        "passed": 0
+      },
+      "findings": []
+    }
+  ]
+}

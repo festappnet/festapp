@@ -477,6 +477,7 @@
     "foodCreateHint": "Aby utworzyć jedzenie, wypełnij tytuł, unikalny kod i odniesienie do programu."
   },
   "Common": {
+    "platformUpdates": "Co nowego",
     "contextLoadFailed": "Nie udało się sprawdzić dostępu. Spróbuj ponownie.",
     "add": "Dodaj",
     "addExisting": "Dodaj istniejący",
@@ -2312,18 +2313,22 @@
     "section2": "Pozostałe wydarzenia",
     "more": "Pokaż więcej",
     "unavailable": "Szczegóły są niedostępne lub nie masz uprawnień.",
+    "form": "Formularz",
+    "acceptingWaitlist": "Zapisy na listę rezerwową",
     "kinds": {
+      "form_closed": "Formularz zamknięty",
+      "form_opened": "Formularz otwarty",
       "occasion_joined": "Nowi uczestnicy wydarzenia",
       "event_capacity_full": "Brak wolnych miejsc na zajęciach",
-      "order_created": "Nowe zamówienia",
-      "waitlist_registered": "Nowe wpisy na listę oczekujących",
-      "order_cancelled": "Anulowane zamówienia",
+      "order_created": "Nowe zamówienie",
+      "waitlist_registered": "Nowy wpis na listę rezerwową",
+      "order_cancelled": "Anulowanie zamówienia",
       "offer_accepted": "Oferta przyjęta",
       "offer_declined": "Oferta odrzucona",
       "offer_expired": "Oferta wygasła",
       "capacity_warning": "Pojemność powyżej 90%",
-      "capacity_full": "Wyprzedane",
-      "capacity_reopened": "Sprzedaż wznowiona",
+      "capacity_full": "Osiągnięto limit miejsc",
+      "capacity_reopened": "Miejsca ponownie dostępne",
       "bank_problem": "Połączenie bankowe wymaga uwagi",
       "email_problem": "Dostarczenie e-maila wymaga uwagi"
     },
@@ -2350,6 +2355,10 @@
       "used": "Wykorzystane"
     },
     "reasons": {
+      "schedule_changed": "Zmiana terminu",
+      "schedule_end": "Planowane zamknięcie",
+      "schedule_start": "Planowane otwarcie",
+      "manual": "Zmiana ręczna",
       "complaint": "Odbiorca oznaczył e-mail jako spam",
       "bounce": "Nie udało się dostarczyć e-maila",
       "reject": "E-mail odrzucony",

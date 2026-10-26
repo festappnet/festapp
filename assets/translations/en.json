@@ -1953,6 +1953,7 @@
     "noExistingParticipants": "No more participants are available. This unit has no participants yet, or everyone has already been added. Return to the list and use Add to create a new participant."
   },
   "Common": {
+    "platformUpdates": "What's new",
     "fieldCannotBeEmpty": "Field cannot be empty",
     "invalidFormat": "Invalid format",
     "back": "Back",
@@ -4324,18 +4325,22 @@
     "section2": "Other events",
     "more": "Show more",
     "unavailable": "This detail is no longer available or you do not have access.",
+    "form": "Form",
+    "acceptingWaitlist": "Accepting waiting list entries",
     "kinds": {
+      "form_closed": "Form closed",
+      "form_opened": "Form opened",
       "occasion_joined": "New occasion participants",
       "event_capacity_full": "Event is full",
-      "order_created": "New orders",
-      "waitlist_registered": "New waiting list registrations",
-      "order_cancelled": "Cancelled orders",
+      "order_created": "New order",
+      "waitlist_registered": "New waiting list entry",
+      "order_cancelled": "Order cancellation",
       "offer_accepted": "Offer accepted",
       "offer_declined": "Offer declined",
       "offer_expired": "Offer expired",
       "capacity_warning": "Capacity above 90%",
-      "capacity_full": "Sold out",
-      "capacity_reopened": "Sales reopened",
+      "capacity_full": "Capacity reached",
+      "capacity_reopened": "Places available again",
       "bank_problem": "Bank connection needs attention",
       "email_problem": "Email delivery needs attention"
     },
@@ -4362,6 +4367,10 @@
       "used": "Used"
     },
     "reasons": {
+      "schedule_changed": "Schedule changed",
+      "schedule_end": "Scheduled end",
+      "schedule_start": "Scheduled start",
+      "manual": "Manual change",
       "complaint": "Recipient marked this email as spam",
       "bounce": "Email could not be delivered",
       "reject": "Email rejected",

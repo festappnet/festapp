@@ -1,0 +1,31 @@
+{
+  "status": "SUBMITTED_PENDING_JED_REVIEW",
+  "name": "vstupenky.online",
+  "version": "1.0.1",
+  "developer": "Festapp - Michael Bujnovský",
+  "category": "Calendars & Events > Events",
+  "category_url": "https://extensions.joomla.org/category/calendars-a-events/events/",
+  "extension_type": "Module (site)",
+  "license": "GPLv2 or later",
+  "distribution_type": "Paid service / SaaS integration; ZIP download is free. Do not claim a permanently free service tier.",
+  "compatibility": [
+    "Joomla 5.4",
+    "Joomla 6.1"
+  ],
+  "php_minimum": "8.3",
+  "uses_joomla_update_system": true,
+  "website_url": "https://vstupenky.online/pro-poradatele",
+  "download_page_url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.1",
+  "direct_zip_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+  "documentation_url": "https://github.com/festappnet/festapp/tree/main/integrations/joomla",
+  "support_url": "https://vstupenky.online/support/",
+  "update_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+  "logo": "logo.png",
+  "logo_source": "https://vstupenky.online/android-chrome-512x512.png",
+  "description": "description.en.txt",
+  "demo_url": null,
+  "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "submission_instructions": "After account activation, open Submit Extension in JED, use these fields, upload the exact reviewed ZIP and existing logo, leave demo URL empty; record actual submission receipt/extension ID before claiming submitted. Catalog editorial approval remains external.",
+  "extension_id": 17931,
+  "confirmation_url": "https://extensions.joomla.org/listing-submitted/?extension_id=17931&core_title=vstupenky.online"
+}

@@ -31,6 +31,7 @@ BEGIN
 
     PERFORM public.check_occasion_writable(target_occasion_id);
 
+    PERFORM public.notification_center_initialized_internal(target_organization_id);
     -- Step 2: Get the source occasion and unit IDs for permission checking.
     SELECT f.occasion, o.unit
     INTO source_occasion_id, source_unit_id
@@ -122,6 +123,7 @@ BEGIN
     END LOOP;
 
     -- Step 8: Return the ID of the newly created form.
+    PERFORM public.notification_center_form_created_internal(new_form_id);
     RETURN new_form_id;
 END;
 $$;

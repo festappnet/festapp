@@ -1,6 +1,11 @@
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:cross_file/cross_file.dart';
+import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:html/parser.dart' as html_parser;
+
 import '../../support/fixtures/localization_log_fixture.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -41,6 +46,44 @@ void insert(RichHtmlEditorController controller, String text) {
 
 void _ignoreHtml(String _) {}
 
+class _LazyImagePicker extends Fake
+    with MockPlatformInterfaceMixin
+    implements FilePickerPlatform {
+  PlatformFile? selected;
+  int calls = 0;
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    if (invocation.memberName == #pickFile) {
+      calls++;
+      expect(invocation.namedArguments[#type], FileType.custom);
+      expect(invocation.namedArguments[#allowedExtensions], contains('png'));
+      return Future<PlatformFile?>.value(selected);
+    }
+    return super.noSuchMethod(invocation);
+  }
+}
+
+base class _LazyImageFile extends PlatformFile {
+  _LazyImageFile(this.content);
+  final Future<Uint8List> content;
+  @override
+  String get name => 'picked.png';
+  @override
+  Uri get uri => Uri.parse('memory:picked.png');
+  @override
+  XFile get xFile => throw UnsupportedError('Read the platform file lazily');
+  @override
+  Future<Uint8List> readAsBytes() => content;
+  @override
+  int? lengthSync() => null;
+  @override
+  Future<int?> length() async => (await content).length;
+  @override
+  Stream<Uint8List> readAsByteStream() async* {
+    yield await content;
+  }
+}
+
 void main() {
   for (final scenario in [
     (name: 'caret inside', start: 10, end: 10),
@@ -49,12 +92,17 @@ void main() {
     (name: 'partial selection', start: 9, end: 12),
   ]) {
     testWidgets('edit existing link from ${scenario.name}', (tester) async {
-      final controller = await mountLinkEditor(tester,
-          start: scenario.start, end: scenario.end);
+      final controller = await mountLinkEditor(
+        tester,
+        start: scenario.start,
+        end: scenario.end,
+      );
       await tester.tap(find.byIcon(Icons.link).first);
       await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
-          oldLinkUrl);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        oldLinkUrl,
+      );
       await tester.enterText(find.byType(TextField), newLinkUrl);
       await tester.tap(find.widgetWithText(TextButton, CommonStrings.save));
       await tester.pumpAndSettle();
@@ -68,23 +116,27 @@ void main() {
       expect(controller.html, linkEditorHtml);
       controller.redo();
       expect(
-          html_parser
-              .parseFragment(controller.html)
-              .querySelector('a')!
-              .attributes['href'],
-          newLinkUrl);
+        html_parser
+            .parseFragment(controller.html)
+            .querySelector('a')!
+            .attributes['href'],
+        newLinkUrl,
+      );
       await tester.pumpWidget(const SizedBox());
       controller.dispose();
     });
   }
-  testWidgets('cancel and unchanged save preserve existing link',
-      (tester) async {
+  testWidgets('cancel and unchanged save preserve existing link', (
+    tester,
+  ) async {
     final controller = await mountLinkEditor(tester);
     for (final action in [CommonStrings.storno, CommonStrings.save]) {
       await tester.tap(find.byIcon(Icons.link).first);
       await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
-          oldLinkUrl);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        oldLinkUrl,
+      );
       await tester.tap(find.widgetWithText(TextButton, action));
       await tester.pumpAndSettle();
       expect(controller.html, linkEditorHtml);
@@ -93,8 +145,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
-  testWidgets('remove link keeps text and bold and supports undo',
-      (tester) async {
+  testWidgets('remove link keeps text and bold and supports undo', (
+    tester,
+  ) async {
     final controller = await mountLinkEditor(tester);
     await tester.tap(find.byIcon(Icons.link).first);
     await tester.pumpAndSettle();
@@ -111,78 +164,151 @@ void main() {
     controller.dispose();
   });
   for (final collapsed in [false, true]) {
-    testWidgets('create link with collapsed=$collapsed and reject invalid URL',
-        (tester) async {
-      final controller = await mountLinkEditor(tester,
+    testWidgets(
+      'create link with collapsed=$collapsed and reject invalid URL',
+      (tester) async {
+        final controller = await mountLinkEditor(
+          tester,
           start: 7,
           end: collapsed ? 7 : 14,
-          initialHtml: '<p>Before Carpool after</p>');
-      await tester.tap(find.byIcon(Icons.link).first);
-      await tester.pumpAndSettle();
-      final field = find.byType(TextField);
-      expect(tester.widget<TextField>(field).controller!.text, isEmpty);
-      await tester.enterText(field, 'not a URL');
-      await tester.pump();
-      expect(
+          initialHtml: '<p>Before Carpool after</p>',
+        );
+        await tester.tap(find.byIcon(Icons.link).first);
+        await tester.pumpAndSettle();
+        final field = find.byType(TextField);
+        expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+        await tester.enterText(field, 'not a URL');
+        await tester.pump();
+        expect(
           tester
               .widget<TextButton>(
-                  find.widgetWithText(TextButton, CommonStrings.save))
+                find.widgetWithText(TextButton, CommonStrings.save),
+              )
               .onPressed,
-          isNull);
-      await tester.enterText(field, newLinkUrl);
-      await tester.pump();
-      await tester.tap(find.widgetWithText(TextButton, CommonStrings.save));
-      await tester.pumpAndSettle();
-      final anchor =
-          html_parser.parseFragment(controller.html).querySelector('a')!;
-      expect(anchor.attributes['href'], newLinkUrl);
-      expect(anchor.text, collapsed ? newLinkUrl : 'Carpool');
-      controller.undo();
-      expect(controller.html, '<p>Before Carpool after</p>');
-      await tester.pumpWidget(const SizedBox());
-      controller.dispose();
-    });
+          isNull,
+        );
+        await tester.enterText(field, newLinkUrl);
+        await tester.pump();
+        await tester.tap(find.widgetWithText(TextButton, CommonStrings.save));
+        await tester.pumpAndSettle();
+        final anchor = html_parser
+            .parseFragment(controller.html)
+            .querySelector('a')!;
+        expect(anchor.attributes['href'], newLinkUrl);
+        expect(anchor.text, collapsed ? newLinkUrl : 'Carpool');
+        controller.undo();
+        expect(controller.html, '<p>Before Carpool after</p>');
+        await tester.pumpWidget(const SizedBox());
+        controller.dispose();
+      },
+    );
   }
   testWidgets(
-      'countdown renders live inside the editor and moves with controls',
-      (tester) async {
-    final target = DateTime.now().add(const Duration(days: 2));
-    final controller = RichHtmlEditorController(
-      initialHtml: '<p>Before</p>$countdownBlockHtml<p>After</p>',
-      owner: const HtmlMediaOwner.none(),
-      embeddedBlock: countdownBlock(target, () {}),
-    );
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
-      body:
-          SingleChildScrollView(child: RichHtmlEditor(controller: controller)),
-    )));
-    await tester.pump();
-    expect(find.byType(CountdownWidget), findsOneWidget);
-    await tester.tap(find.byTooltip(HtmlStrings.moveUp));
-    await tester.pump();
-    expect(controller.html, startsWith(countdownBlockHtml));
-    await tester.tap(find.byTooltip(HtmlStrings.moveDown));
-    await tester.pump();
-    expect(controller.html, '<p>Before</p>$countdownBlockHtml<p>After</p>');
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        home: Scaffold(
+    'image picker reads lazy bytes, cancels and ignores disposed editor',
+    (tester) async {
+      final original = FilePickerPlatform.instance;
+      final picker = _LazyImagePicker();
+      FilePickerPlatform.instance = picker;
+      addTearDown(() => FilePickerPlatform.instance = original);
+      final controller = RichHtmlEditorController(
+        owner: const HtmlMediaOwner.unit(3),
+      );
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(body: RichHtmlEditor(controller: controller)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final bytes = Uint8List.fromList(
+        test_image.encodePng(test_image.Image(width: 1, height: 1)),
+      );
+      // Native image decoding must complete outside the fake widget clock.
+      await tester.runAsync(
+        () => controller.media.addBytes(bytes, controller.owner),
+      );
+      final pending = Completer<Uint8List>();
+      picker.selected = _LazyImageFile(pending.future);
+      await tester.tap(find.byTooltip(HtmlStrings.image));
+      await tester.pump();
+      expect(controller.html, isNot(contains('<img')));
+      pending.complete(bytes);
+      await tester.pumpAndSettle();
+      expect(controller.html, contains('<img'));
+      final saved = controller.html;
+      picker.selected = null;
+      await tester.tap(find.byTooltip(HtmlStrings.image));
+      await tester.pumpAndSettle();
+      expect(controller.html, saved);
+      final lateBytes = Completer<Uint8List>();
+      picker.selected = _LazyImageFile(lateBytes.future);
+      await tester.tap(find.byTooltip(HtmlStrings.image));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox.shrink());
+      lateBytes.complete(bytes);
+      await tester.pumpAndSettle();
+      expect(controller.html, saved);
+      expect(picker.calls, 3);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'countdown renders live inside the editor and moves with controls',
+    (tester) async {
+      final target = DateTime.now().add(const Duration(days: 2));
+      final controller = RichHtmlEditorController(
+        initialHtml: '<p>Before</p>$countdownBlockHtml<p>After</p>',
+        owner: const HtmlMediaOwner.none(),
+        embeddedBlock: countdownBlock(target, () {}),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RichHtmlEditor(controller: controller),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(CountdownWidget), findsOneWidget);
+      await tester.tap(find.byTooltip(HtmlStrings.moveUp));
+      await tester.pump();
+      expect(controller.html, startsWith(countdownBlockHtml));
+      await tester.tap(find.byTooltip(HtmlStrings.moveDown));
+      await tester.pump();
+      expect(controller.html, '<p>Before</p>$countdownBlockHtml<p>After</p>');
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
             body: CountdownContent(
-      targetTime: target,
-      onFinished: () {},
-      html: controller.html,
-    ))));
-    await tester.pump();
-    expect(find.byType(CountdownWidget), findsOneWidget);
-    expect(find.text('Before', findRichText: true), findsOneWidget);
-    expect(find.text('After', findRichText: true), findsOneWidget);
-    expect(tester.getTopLeft(find.text('Before', findRichText: true)).dy,
-        lessThan(tester.getTopLeft(find.byType(CountdownWidget)).dy));
-    expect(tester.getTopLeft(find.text('After', findRichText: true)).dy,
-        greaterThan(tester.getBottomLeft(find.byType(CountdownWidget)).dy));
-    await tester.pumpWidget(const SizedBox());
-    controller.dispose();
-  });
+              targetTime: target,
+              onFinished: () {},
+              html: controller.html,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(CountdownWidget), findsOneWidget);
+      expect(find.text('Before', findRichText: true), findsOneWidget);
+      expect(find.text('After', findRichText: true), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Before', findRichText: true)).dy,
+        lessThan(tester.getTopLeft(find.byType(CountdownWidget)).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('After', findRichText: true)).dy,
+        greaterThan(tester.getBottomLeft(find.byType(CountdownWidget)).dy),
+      );
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    },
+  );
 
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {
@@ -190,10 +316,13 @@ void main() {
     addTearDown(logs.dispose);
   });
   for (final html in ['<br>', '<span></span>']) {
-    testWidgets('empty inline markup accepts text and undo: $html',
-        (tester) async {
+    testWidgets('empty inline markup accepts text and undo: $html', (
+      tester,
+    ) async {
       final controller = RichHtmlEditorController(
-          initialHtml: html, owner: const HtmlMediaOwner.none());
+        initialHtml: html,
+        owner: const HtmlMediaOwner.none(),
+      );
       addTearDown(controller.dispose);
       final original = controller.html;
       expect(controller.editor.document.first, isA<TextNode>());
@@ -208,15 +337,22 @@ void main() {
     '<br>',
     '<span></span>',
     '<table></table>',
-    '<table><tr><td>Text</td></tr></table><span></span>'
+    '<table><tr><td>Text</td></tr></table><span></span>',
   ]) {
-    testWidgets('decorations never offer a nested editor: $html',
-        (tester) async {
+    testWidgets('decorations never offer a nested editor: $html', (
+      tester,
+    ) async {
       final controller = RichHtmlEditorController(
-          initialHtml: html, owner: const HtmlMediaOwner.none());
+        initialHtml: html,
+        owner: const HtmlMediaOwner.none(),
+      );
       final original = controller.html;
-      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-          home: Scaffold(body: RichHtmlEditor(controller: controller))));
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(body: RichHtmlEditor(controller: controller)),
+        ),
+      );
       await tester.pump();
       expect(find.widgetWithIcon(TextButton, Icons.edit), findsNothing);
       expect(controller.html, original);
@@ -225,25 +361,29 @@ void main() {
     });
   }
 
-  testWidgets('HTML typography survives inline and fullscreen editing',
-      (tester) async {
+  testWidgets('HTML typography survives inline and fullscreen editing', (
+    tester,
+  ) async {
     for (final fontSize in [18.0, 24.0]) {
-      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          textTheme: const TextTheme(
-            bodyMedium: TextStyle(fontFamily: 'Futura'),
-            bodyLarge: TextStyle(fontFamily: 'Roboto', letterSpacing: 0.5),
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(fontFamily: 'Futura'),
+              bodyLarge: TextStyle(fontFamily: 'Roboto', letterSpacing: 0.5),
+            ),
+          ),
+          home: Scaffold(
+            body: EditableHtmlField(
+              html: '<p>Original</p>',
+              fontSize: fontSize,
+              onChanged: _ignoreHtml,
+            ),
           ),
         ),
-        home: Scaffold(
-          body: EditableHtmlField(
-            html: '<p>Original</p>',
-            fontSize: fontSize,
-            onChanged: _ignoreHtml,
-          ),
-        ),
-      ));
+      );
       final displayed = tester
           .widget<HtmlWithAppLinksWidget>(find.byType(HtmlWithAppLinksWidget))
           .textStyle!;
@@ -272,43 +412,53 @@ void main() {
   });
 
   testWidgets(
-      'caret follows light and dark theme in inline and fullscreen editor',
-      (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final controller = RichHtmlEditorController(
-      initialHtml: '<p>Text</p>',
-      owner: const HtmlMediaOwner.none(),
-    );
-    addTearDown(controller.dispose);
-    for (final fullscreen in [false, true]) {
-      for (final brightness in [Brightness.light, Brightness.dark]) {
-        await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-          theme: ThemeData(brightness: brightness),
-          home: Scaffold(
-            body:
-                RichHtmlEditor(controller: controller, fullscreen: fullscreen),
-          ),
-        ));
-        await tester.pump();
-        controller.focusNode.requestFocus();
-        await tester.pump(const Duration(milliseconds: 300));
-        final caret = tester
-            .widget<CaretDocumentOverlay>(find.byType(CaretDocumentOverlay));
-        expect(caret.caretStyle.color,
-            brightness == Brightness.dark ? Colors.white : Colors.black);
+    'caret follows light and dark theme in inline and fullscreen editor',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final controller = RichHtmlEditorController(
+        initialHtml: '<p>Text</p>',
+        owner: const HtmlMediaOwner.none(),
+      );
+      addTearDown(controller.dispose);
+      for (final fullscreen in [false, true]) {
+        for (final brightness in [Brightness.light, Brightness.dark]) {
+          await tester.pumpWidget(
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              theme: ThemeData(brightness: brightness),
+              home: Scaffold(
+                body: RichHtmlEditor(
+                  controller: controller,
+                  fullscreen: fullscreen,
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+          controller.focusNode.requestFocus();
+          await tester.pump(const Duration(milliseconds: 300));
+          final caret = tester.widget<CaretDocumentOverlay>(
+            find.byType(CaretDocumentOverlay),
+          );
+          expect(
+            caret.caretStyle.color,
+            brightness == Brightness.dark ? Colors.white : Colors.black,
+          );
+        }
       }
-    }
-    await tester.pumpWidget(const SizedBox());
-    debugDefaultTargetPlatformOverride = null;
-  });
+      await tester.pumpWidget(const SizedBox());
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets(
     'inline actions share the toolbar on desktop and Save tracks changes',
     (tester) async {
       var writes = 0;
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: EditableHtmlField(
@@ -324,8 +474,9 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pump();
-      final controller =
-          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      final controller = tester
+          .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .controller;
       final save = find.widgetWithText(FilledButton, 'Common.save');
       expect(tester.widget<FilledButton>(save).onPressed, isNull);
       final tools = find.byIcon(Icons.format_bold).first;
@@ -339,8 +490,10 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.binding.setSurfaceSize(const Size(320, 600));
       await tester.pump();
-      expect(tester.getBottomLeft(save).dy,
-          lessThanOrEqualTo(tester.getTopLeft(tools).dy));
+      expect(
+        tester.getBottomLeft(save).dy,
+        lessThanOrEqualTo(tester.getTopLeft(tools).dy),
+      );
       expect(tester.takeException(), isNull);
       await tester.binding.setSurfaceSize(null);
       await tester.pump();
@@ -367,7 +520,8 @@ void main() {
     (tester) async {
       var html = '<p>Original</p>';
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: EditableHtmlField(
               html: html,
@@ -378,8 +532,9 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pump();
-      final controller =
-          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      final controller = tester
+          .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .controller;
       insert(controller, ' changed');
       controller.focusNode.requestFocus();
       await tester.pump();
@@ -406,7 +561,8 @@ void main() {
     'fullscreen Save tracks edits and Escape confirms before cancelling',
     (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(builder: DependencyMaterialBridge.builder,
+        const MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: EditableHtmlField(
               html: '<p>Original</p>',
@@ -417,8 +573,9 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pump();
-      final controller =
-          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      final controller = tester
+          .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .controller;
       await tester.tap(find.byIcon(Icons.open_in_full));
       await tester.pumpAndSettle();
       final save = find.widgetWithText(FilledButton, 'Common.save');
@@ -448,7 +605,8 @@ void main() {
     );
     addTearDown(controller.dispose);
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: RichHtmlEditor(controller: controller)),
       ),
     );
@@ -536,7 +694,8 @@ void main() {
     addTearDown(controller.dispose);
     addTearDown(media.dispose);
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Scaffold(body: RichHtmlEditor(controller: controller)),
       ),
     );
@@ -555,7 +714,8 @@ void main() {
     late StateSetter rebuild;
     var changes = 0;
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: HtmlEditingScope(
             coordinator: coordinator,
@@ -577,8 +737,9 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pump();
-    final controller =
-        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    final controller = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
     insert(controller, ' saved');
     await tester.pump();
     await tester.tap(find.text('Common.save'));
@@ -600,7 +761,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Navigator(
             onGenerateRoute: (_) => MaterialPageRoute<void>(
@@ -617,8 +779,9 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pump();
-    final controller =
-        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    final controller = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
     insert(controller, ' draft');
     await tester.pump();
     controller.focusNode.requestFocus();
@@ -690,7 +853,8 @@ void main() {
         var html = '<p>Original</p>';
         var writes = 0;
         await tester.pumpWidget(
-          MaterialApp(builder: DependencyMaterialBridge.builder,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
@@ -743,29 +907,38 @@ void main() {
       },
     );
   }
-  testWidgets('modal Escape works before editor focus and close stays right',
-      (tester) async {
+  testWidgets('modal Escape works before editor focus and close stays right', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => RichHtmlEditorDialog.show(context,
-                initialHtml: '<p>Original</p>'),
-            child: const Text('Open'),
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => RichHtmlEditorDialog.show(
+                context,
+                initialHtml: '<p>Original</p>',
+              ),
+              child: const Text('Open'),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    expect(tester.getCenter(find.byIcon(Icons.close)).dx,
-        greaterThan(tester.getCenter(find.byIcon(Icons.open_in_full)).dx));
-    final controller =
-        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    expect(
+      tester.getCenter(find.byIcon(Icons.close)).dx,
+      greaterThan(tester.getCenter(find.byIcon(Icons.open_in_full)).dx),
+    );
+    final controller = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
     expect(controller.focusNode.hasFocus, isFalse);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
@@ -773,8 +946,9 @@ void main() {
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    final draft =
-        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    final draft = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
     insert(draft, ' draft');
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -795,7 +969,8 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     String? saved;
     await tester.pumpWidget(
-      MaterialApp(builder: DependencyMaterialBridge.builder,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -815,8 +990,9 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(find.byType(Dialog), findsOneWidget);
-    final controller =
-        tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+    final controller = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
     controller.focusNode.requestFocus();
     await tester.pump();
     final selection = controller.editor.composer.selection;
@@ -862,7 +1038,8 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final html = List.generate(80, (i) => '<p>Paragraph $i</p>').join();
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
               child: EditableHtmlField(html: html, onChanged: _ignoreHtml),
@@ -918,7 +1095,8 @@ void main() {
           );
           tester.view.devicePixelRatio = 1;
           await tester.pumpWidget(
-            MaterialApp(builder: DependencyMaterialBridge.builder,
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
               theme: ThemeData(brightness: brightness),
               home: Scaffold(
                 body: SingleChildScrollView(
@@ -954,7 +1132,8 @@ void main() {
       var html = '<p>Original</p>';
       var writes = 0;
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: HtmlEditingScope(
               coordinator: coordinator,
@@ -984,8 +1163,9 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pump();
-      final controller =
-          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      final controller = tester
+          .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .controller;
       insert(controller, ' changed');
       await tester.pump();
       expect(coordinator.hasDraft, isTrue);
@@ -1014,7 +1194,8 @@ void main() {
       var attempts = 0;
       var html = '<p>Original</p>';
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) => SingleChildScrollView(
@@ -1034,8 +1215,9 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pump();
-      final controller =
-          tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller;
+      final controller = tester
+          .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .controller;
       insert(controller, ' retry');
       await tester.pump();
       await tester.tap(find.text('Common.save'));
@@ -1060,24 +1242,42 @@ const linkEditorHtml =
     '<p>Before <a href="$oldLinkUrl"><strong>Carpool</strong></a>'
     ' after <a href="$otherLinkUrl">Other</a></p>';
 
-Future<RichHtmlEditorController> mountLinkEditor(WidgetTester tester,
-    {int start = 10, int end = 10, String initialHtml = linkEditorHtml}) async {
+Future<RichHtmlEditorController> mountLinkEditor(
+  WidgetTester tester, {
+  int start = 10,
+  int end = 10,
+  String initialHtml = linkEditorHtml,
+}) async {
   final controller = RichHtmlEditorController(
-      initialHtml: initialHtml, owner: const HtmlMediaOwner.none());
-  await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+    initialHtml: initialHtml,
+    owner: const HtmlMediaOwner.none(),
+  );
+  await tester.pumpWidget(
+    MaterialApp(
+      builder: DependencyMaterialBridge.builder,
       home: Scaffold(
-          body: SingleChildScrollView(
-              child: RichHtmlEditor(controller: controller)))));
+        body: SingleChildScrollView(
+          child: RichHtmlEditor(controller: controller),
+        ),
+      ),
+    ),
+  );
   final node = controller.editor.document.first as TextNode;
   controller.editor.execute([
     ChangeSelectionRequest(
-        DocumentSelection(
-            base: DocumentPosition(
-                nodeId: node.id, nodePosition: TextNodePosition(offset: start)),
-            extent: DocumentPosition(
-                nodeId: node.id, nodePosition: TextNodePosition(offset: end))),
-        SelectionChangeType.placeCaret,
-        SelectionReason.userInteraction)
+      DocumentSelection(
+        base: DocumentPosition(
+          nodeId: node.id,
+          nodePosition: TextNodePosition(offset: start),
+        ),
+        extent: DocumentPosition(
+          nodeId: node.id,
+          nodePosition: TextNodePosition(offset: end),
+        ),
+      ),
+      SelectionChangeType.placeCaret,
+      SelectionReason.userInteraction,
+    ),
   ]);
   await tester.pumpAndSettle();
   return controller;

@@ -3,3 +3,9 @@ enableGlobalVirtualStore: false
 allowBuilds:
   esbuild: true
   workerd: true
+
+# Miniflare pins an affected HTTP client; retain its API-compatible security patch.
+overrides:
+  "miniflare>undici": "^7.30.1"
+  vite: "^8.3.5"
+  source-map-js: "^1.2.2"

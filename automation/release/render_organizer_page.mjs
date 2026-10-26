@@ -1,4 +1,6 @@
-import { expandSiteShell } from './organizers/site_shell.mjs';
+import { expandSiteShell, publicThemeHead, publicThemeBody } from './organizers/site_shell.mjs';
+import { renderUpdate } from './platform_updates/render.mjs';
+import {updatePaths} from './platform_updates/context.mjs';
 import { renderLandingContent } from './organizers/render_content.mjs';
 import { readConfig, resolveContext, publicManifest, marketingMedia } from './organizers/context.mjs';
 import { pageDefinitions, retiredPageAssets } from './organizers/page_definitions.mjs';
@@ -40,6 +42,9 @@ const html = fs.readFileSync(index, 'utf8')
 }
 const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
 const cleanOutputs = () => {
+  fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
+  fs.rmSync(path.join(path.dirname(target),'platform-updates.json'),{force:true});
+  if (process.argv.includes('--built-index')) fs.rmSync(path.join(path.dirname(target),'platform-updates-media'),{recursive:true,force:true});
   for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
 if (!enabled) {
@@ -64,6 +69,7 @@ const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.
 const primary = /^#[0-9a-f]{6}$/i.test(value('THEME_SEED_3')) ? value('THEME_SEED_3') : '#4465a6';
 const socialImage = new URL(seo.image, context.origin).href;
 const outputs = [];
+const updateAssets=(context.updates?.assets ?? []).map(asset=>({asset,bytes:fs.readFileSync(path.join(process.argv.includes('--built-index')?path.dirname(target):path.join(root,'web'),asset))}));
 // Validate actual media bytes before accepting any generated document.
 const mediaPaths = marketingMedia(context);
 for (const media of process.argv.includes("--preview") ? [] : mediaPaths) {
@@ -85,8 +91,10 @@ if (builtIndexArg >= 0) {
   if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
 }
   for (const page of context.pages) {
-  const richTokens = renderLandingContent(contentData, clipsData, page, context.pages);
+  if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks,primary,entryScript})});continue;}
+  const richTokens = renderLandingContent(contentData, clipsData, page, context.pages.filter(other=>!other.type));
   const substitute = text => text.replace(/{{([A-Z_0-9]+)}}/g, (_, key) => {
+    if (key === 'PLATFORM_UPDATES_LINK') return context.updates ? `<a href="${updatePaths[context.locale]}">${context.locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
     if (key === 'HELP_LINK') return projection.helpLink ? `<a class="header-help" href="${escape(projection.helpLink.href)}">${escape(projection.helpLink.label)}</a>` : '';
     if (key in richTokens) return richTokens[key];
     if (!(key in tokens) || tokens[key] === '') throw new Error(`Missing marketing text ${key}`);
@@ -117,7 +125,7 @@ if (builtIndexArg >= 0) {
   ]};
 const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">${publicThemeHead}
 <title>${escape(title)}</title><meta name="description" content="${escape(description)}">
 <meta name="robots" content="index,follow,max-image-preview:large"><link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website"><meta property="og:locale" content="${escape(projection.ogLocale)}"><meta property="og:site_name" content="${escape(seo.siteName)}">
@@ -125,7 +133,7 @@ const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
 
 outputs.push({asset:page.asset, html});
 }
@@ -137,7 +145,10 @@ try {
     const file = path.join(staging, output.asset.slice(1));
     fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
   }
+  if (context.updates) fs.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
   cleanOutputs();
+  if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
+  if (process.argv.includes('--built-index')) for (const {asset,bytes} of updateAssets) {const file=path.join(path.dirname(target),asset);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   for (const {asset} of outputs) {
     const destination = asset === '/organizers-page' ? target : path.join(path.dirname(target), asset.slice(1));
     fs.mkdirSync(path.dirname(destination), {recursive:true});

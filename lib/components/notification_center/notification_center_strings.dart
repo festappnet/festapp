@@ -3,9 +3,12 @@ import 'package:easy_localization/easy_localization.dart';
 class NotificationCenterStrings {
   static String text(String key) => 'NotificationCenter.$key'.tr();
   static String get title => text('title');
-  static String kind(String kind) => const {
+  static String kind(String kind) =>
+      const {
         'occasion_joined',
         'event_capacity_full',
+        'form_opened',
+        'form_closed',
         'order_created',
         'waitlist_registered',
         'order_cancelled',
@@ -18,9 +21,10 @@ class NotificationCenterStrings {
         'bank_problem',
         'email_problem',
       }.contains(kind)
-          ? text('kinds.$kind')
-          : title;
-  static String status(String status) => const {
+      ? text('kinds.$kind')
+      : title;
+  static String status(String status) =>
+      const {
         'membership_active',
         'membership_left',
         'active',
@@ -42,9 +46,14 @@ class NotificationCenterStrings {
         'preparing_payment',
         'used',
       }.contains(status)
-          ? text('states.$status')
-          : '';
-  static String reason(String value) => const {
+      ? text('states.$status')
+      : '';
+  static String reason(String value) =>
+      const {
+        'manual',
+        'schedule_start',
+        'schedule_end',
+        'schedule_changed',
         'complaint',
         'bounce',
         'reject',
@@ -59,13 +68,14 @@ class NotificationCenterStrings {
         'transport_unavailable',
         'stale_health',
       }.contains(value)
-          ? text('reasons.$value')
-          : text('needsAttention');
+      ? text('reasons.$value')
+      : text('needsAttention');
   static String places(int count) =>
       'NotificationCenter.places'.tr(namedArgs: {'count': '$count'});
   static String capacity(int remaining, int limit) =>
-      'NotificationCenter.capacity'
-          .tr(namedArgs: {'remaining': '$remaining', 'limit': '$limit'});
+      'NotificationCenter.capacity'.tr(
+        namedArgs: {'remaining': '$remaining', 'limit': '$limit'},
+      );
   static String held(int count) =>
       'NotificationCenter.heldForWaiting'.tr(namedArgs: {'count': '$count'});
 }

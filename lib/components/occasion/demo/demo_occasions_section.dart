@@ -3,7 +3,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
+
 import 'demo_occasion_navigation.dart';
+
 import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 
 /// Unit administration supplies its unfiltered occasion state; the public
@@ -14,13 +16,14 @@ class DemoOccasionsSection extends StatefulWidget {
   final Future<DemoCatalog> Function() load;
   final Future<void> Function(DemoOccasion)? onOpen;
   final Future<void> Function(DemoOccasion)? onCreateCopy;
-  const DemoOccasionsSection(
-      {super.key,
-      this.hasOwnOccasions,
-      this.initialCatalog,
-      this.load = DemoCatalog.load,
-      this.onOpen,
-      this.onCreateCopy});
+  const DemoOccasionsSection({
+    super.key,
+    this.hasOwnOccasions,
+    this.initialCatalog,
+    this.load = DemoCatalog.load,
+    this.onOpen,
+    this.onCreateCopy,
+  });
   @override
   State<DemoOccasionsSection> createState() => _DemoOccasionsSectionState();
 }
@@ -75,27 +78,35 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
   Widget build(BuildContext context) {
     if (_failed)
       return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(children: [
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
             Expanded(child: Text(DemoOccasionStrings.unavailable)),
-            TextButton(onPressed: _load, child: Text(CommonStrings.retry))
-          ]));
+            TextButton(onPressed: _load, child: Text(CommonStrings.retry)),
+          ],
+        ),
+      );
     final catalog = _catalog;
     if (catalog == null) return const SizedBox.shrink();
     if (catalog.items.isEmpty) return const SizedBox.shrink();
     final hasOwnOccasions = widget.hasOwnOccasions ?? catalog.hasOwnWork;
     final showCards = !hasOwnOccasions || _expanded;
     return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           if (hasOwnOccasions)
             TextButton.icon(
-                onPressed: () => setState(() => _expanded = !_expanded),
-                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-                label: Text(DemoOccasionStrings.heading))
+              onPressed: () => setState(() => _expanded = !_expanded),
+              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+              label: Text(DemoOccasionStrings.heading),
+            )
           else
-            Text(DemoOccasionStrings.heading,
-                style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              DemoOccasionStrings.heading,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
           if (showCards) ...[
             const SizedBox(height: 16),
             GridView.builder(
@@ -122,17 +133,23 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
                       await widget.onCreateCopy!(item);
                     } else {
                       await OccasionCreationHelper.createCopy(
-                          context, item.occasion);
+                        context,
+                        item.occasion,
+                      );
                     }
                     if (mounted) await _load();
                   },
                   badge: DemoOccasionStrings.badge,
                   backgroundColor: Color.alphaBlend(
-                      theme.colorScheme.primary.withValues(alpha: .06), base),
+                    theme.colorScheme.primary.withValues(alpha: .06),
+                    base,
+                  ),
                 );
               },
             ),
-          ]
-        ]));
+          ],
+        ],
+      ),
+    );
   }
 }

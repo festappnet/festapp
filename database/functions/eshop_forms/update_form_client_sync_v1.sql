@@ -21,6 +21,7 @@ BEGIN
     'inventory.form.save',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   IF NOT EXISTS(SELECT 1 FROM public.forms WHERE id=v_form AND occasion=v_occasion) THEN RAISE insufficient_privilege USING MESSAGE='foreign form'; END IF;
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=v_occasion));
   -- Parent order matches checkout: form, product, blueprint, then seats.
   PERFORM 1 FROM public.forms WHERE id=v_form AND occasion=v_occasion FOR UPDATE;
   PERFORM 1 FROM eshop.product_types WHERE occasion=v_occasion ORDER BY id FOR UPDATE;

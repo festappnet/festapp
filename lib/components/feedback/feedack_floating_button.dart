@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/launch_url_service.dart';
+
 import 'feedback_strings.dart';
 
 class FeedbackFloatingButton extends StatefulWidget {
@@ -65,8 +66,13 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     );
   }
 
-  Widget _buildOptionBadge(String label, IconData icon, String subject,
-      String bodyHint, Color color) {
+  Widget _buildOptionBadge(
+    String label,
+    IconData icon,
+    String subject,
+    String bodyHint,
+    Color color,
+  ) {
     // Use cardColor for background to ensure it looks good in dark mode
     final bgColor = Theme.of(context).cardColor;
     final textColor = Theme.of(context).textTheme.bodyMedium?.color;
@@ -95,9 +101,10 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
               Text(
                 label,
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: textColor),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: textColor,
+                ),
               ),
               const SizedBox(width: 8),
               Icon(icon, size: 20, color: color),
@@ -155,29 +162,33 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
                     ),
                   ),
                   _buildOptionBadge(
-                      FeedbackStrings.requestFeature,
-                      Icons.lightbulb_outline,
-                      FeedbackStrings.subjectFeature(appName),
-                      FeedbackStrings.hintFeature,
-                      Colors.amber[700]!),
+                    FeedbackStrings.requestFeature,
+                    Icons.lightbulb_outline,
+                    FeedbackStrings.subjectFeature(appName),
+                    FeedbackStrings.hintFeature,
+                    Colors.amber[700]!,
+                  ),
                   _buildOptionBadge(
-                      FeedbackStrings.reportBug,
-                      Icons.bug_report_outlined,
-                      FeedbackStrings.subjectBug(appName),
-                      FeedbackStrings.hintBug,
-                      Colors.red[400]!),
+                    FeedbackStrings.reportBug,
+                    Icons.bug_report_outlined,
+                    FeedbackStrings.subjectBug(appName),
+                    FeedbackStrings.hintBug,
+                    Colors.red[400]!,
+                  ),
                   _buildOptionBadge(
-                      FeedbackStrings.support,
-                      Icons.help_outline,
-                      FeedbackStrings.subjectSupport(appName),
-                      FeedbackStrings.hintSupport,
-                      Colors.blue[400]!),
+                    FeedbackStrings.support,
+                    Icons.help_outline,
+                    FeedbackStrings.subjectSupport(appName),
+                    FeedbackStrings.hintSupport,
+                    Colors.blue[400]!,
+                  ),
                   _buildOptionBadge(
-                      FeedbackStrings.other,
-                      Icons.chat_bubble_outline,
-                      FeedbackStrings.subjectGeneral(appName),
-                      FeedbackStrings.hintGeneral,
-                      Colors.grey[600]!),
+                    FeedbackStrings.other,
+                    Icons.chat_bubble_outline,
+                    FeedbackStrings.subjectGeneral(appName),
+                    FeedbackStrings.hintGeneral,
+                    Colors.grey[600]!,
+                  ),
                 ],
               ),
             ),
@@ -185,8 +196,9 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         FloatingActionButton(
           heroTag: "feedback_fab",
           onPressed: _toggleMenu,
-          backgroundColor:
-              _isOpen ? Colors.grey[200] : Theme.of(context).primaryColor,
+          backgroundColor: _isOpen
+              ? Colors.grey[200]
+              : Theme.of(context).primaryColor,
           foregroundColor: _isOpen ? Colors.black : Colors.white,
           elevation: 4,
           shape: const CircleBorder(),
@@ -221,12 +233,15 @@ class _EmailOptionDialog extends StatelessWidget {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: toEmail,
-      query: _encodeQueryParameters(
-          <String, String>{'subject': subject, 'body': body}),
+      query: _encodeQueryParameters(<String, String>{
+        'subject': subject,
+        'body': body,
+      }),
     );
 
-    final launched =
-        await LaunchUrlService.openExternalUrl(emailLaunchUri.toString());
+    final launched = await LaunchUrlService.openExternalUrl(
+      emailLaunchUri.toString(),
+    );
     if (!launched) {
       AppLogger.error("Could not launch email client");
     }
@@ -234,8 +249,10 @@ class _EmailOptionDialog extends StatelessWidget {
 
   String? _encodeQueryParameters(Map<String, String> params) {
     return params.entries
-        .map((e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
   }
 
@@ -249,9 +266,7 @@ class _EmailOptionDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.all(16),
       titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       title: Row(
-        children: [
-          Expanded(child: SelectableText(FeedbackStrings.helpTitle)),
-        ],
+        children: [Expanded(child: SelectableText(FeedbackStrings.helpTitle))],
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -286,7 +301,10 @@ class _EmailOptionDialog extends StatelessWidget {
             _CopyableRow(label: FeedbackStrings.emailSubject, value: subject),
             const SizedBox(height: 8),
             _CopyableRow(
-                label: FeedbackStrings.emailBody, value: body, maxLines: 5),
+              label: FeedbackStrings.emailBody,
+              value: body,
+              maxLines: 5,
+            ),
           ],
         ),
       ),
@@ -329,8 +347,9 @@ class _CopyableRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        crossAxisAlignment:
-            maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment: maxLines > 1
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(

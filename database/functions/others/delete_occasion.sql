@@ -16,6 +16,8 @@ BEGIN
 
   IF NOT public.can_delete_occasion_in_unit(unit_id) THEN RAISE EXCEPTION 'User is not manager.'; END IF;
 
+  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=oc));
+
 -- ***********************************************************
   -- 0. SAFETY CHECK: Strict Order Check
   --    Prevent deletion if ANY order exists (even storno).
@@ -71,6 +73,8 @@ BEGIN
   DELETE FROM public.form_fields
     WHERE form IN (SELECT id FROM public.forms WHERE occasion = oc);
 
+  DELETE FROM public.notification_center_source_state WHERE source_key LIKE 'form-availability:%'
+    AND (state->>'formId')::bigint IN (SELECT id FROM public.forms WHERE occasion=oc);
   DELETE FROM public.forms
     WHERE occasion = oc;
 

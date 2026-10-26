@@ -40,9 +40,7 @@ class OccasionAdvancedSettings extends StatelessWidget {
     return ExpansionTile(
       title: Text(
         OccasionSettingsStrings.advancedSettings,
-        style: Theme.of(context)
-            .textTheme
-            .titleMedium
+        style: Theme.of(context).textTheme.titleMedium
             ?.copyWith(fontWeight: FontWeight.bold),
       ),
       initiallyExpanded: initiallyExpanded,
@@ -55,29 +53,34 @@ class OccasionAdvancedSettings extends StatelessWidget {
             children: [
               if (AppConfig.isAppSupported) ...[
                 TextFormField(
-                    controller: linkController,
-                    enabled: isEditingEnabled,
-                    decoration: InputDecoration(
-                      labelText: OccasionSettingsStrings.link,
-                      helperText: FormStrings.publicLinkHistoryHelp,
-                      helperMaxLines: 3,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return OccasionSettingsStrings.linkIsRequired;
-                      }
-                      if (value != savedLink && !isValidPublicSlug(value)) {
-                        return FormStrings.validationLinkInvalidChars;
-                      }
-                      return null;
-                    },
-                    onChanged: onLinkChanged,
-                    onSaved: onLinkSaved),
+                  controller: linkController,
+                  enabled: isEditingEnabled,
+                  decoration: InputDecoration(
+                    labelText: OccasionSettingsStrings.link,
+                    helperText: FormStrings.publicLinkHistoryHelp,
+                    helperMaxLines: 3,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return OccasionSettingsStrings.linkIsRequired;
+                    }
+                    if (value != savedLink && !isValidPublicSlug(value)) {
+                      return FormStrings.validationLinkInvalidChars;
+                    }
+                    return null;
+                  },
+                  onChanged: onLinkChanged,
+                  onSaved: onLinkSaved,
+                ),
                 const SizedBox(height: 12),
                 ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: linkController,
-                    builder: (_, value, __) => PublicLink(
-                        link: value.text, savedLink: savedLink, isForm: false)),
+                  valueListenable: linkController,
+                  builder: (_, value, __) => PublicLink(
+                    link: value.text,
+                    savedLink: savedLink,
+                    isForm: false,
+                  ),
+                ),
                 const SizedBox(height: 24),
               ],
               TextFormField(
@@ -86,8 +89,11 @@ class OccasionAdvancedSettings extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: OccasionSettingsStrings.labelReplyToEmail,
                   floatingLabelBehavior: FloatingLabelBehavior.always,
-                  hintText: (RightsService.currentUnit()
-                                  ?.data?[Tb.units.data_reply_to] as String?)
+                  hintText:
+                      (RightsService.currentUnit()?.data?[Tb
+                                      .units
+                                      .data_reply_to]
+                                  as String?)
                               ?.isNotEmpty ==
                           true
                       ? "${OccasionSettingsStrings.defaultValue}: ${RightsService.currentUnit()?.data?[Tb.units.data_reply_to]}"
@@ -100,8 +106,8 @@ class OccasionAdvancedSettings extends StatelessWidget {
                 validator: (val) {
                   if (val == null || val.isEmpty) return null;
                   return EmailValidation.validator(
-                      errorText:
-                          OccasionSettingsStrings.validationEmailInvalid)(val);
+                    errorText: OccasionSettingsStrings.validationEmailInvalid,
+                  )(val);
                 },
               ),
               const SizedBox(height: 16),
@@ -144,8 +150,8 @@ class _TimezoneAutocomplete extends StatelessWidget {
     return Autocomplete<String>(
       initialValue:
           selectedTimezone != null && allTimezones.contains(selectedTimezone)
-              ? TextEditingValue(text: selectedTimezone!)
-              : null,
+          ? TextEditingValue(text: selectedTimezone!)
+          : null,
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (!isEditingEnabled) {
           return const Iterable<String>.empty();
@@ -154,25 +160,29 @@ class _TimezoneAutocomplete extends StatelessWidget {
           return allTimezones.take(50);
         }
         return allTimezones.where((String option) {
-          return option
-              .toLowerCase()
-              .contains(textEditingValue.text.toLowerCase());
+          return option.toLowerCase().contains(
+            textEditingValue.text.toLowerCase(),
+          );
         });
       },
       onSelected: onTimezoneSelected,
-      fieldViewBuilder: (BuildContext context,
-          TextEditingController fieldTextEditingController,
-          FocusNode fieldFocusNode,
-          VoidCallback onFieldSubmitted) {
-        return TextFormField(
-          controller: fieldTextEditingController,
-          focusNode: fieldFocusNode,
-          enabled: isEditingEnabled,
-          decoration: InputDecoration(
-            labelText: OccasionSettingsStrings.timezone,
-            border: const OutlineInputBorder(),
-            suffixIcon:
-                fieldTextEditingController.text.isNotEmpty && isEditingEnabled
+      fieldViewBuilder:
+          (
+            BuildContext context,
+            TextEditingController fieldTextEditingController,
+            FocusNode fieldFocusNode,
+            VoidCallback onFieldSubmitted,
+          ) {
+            return TextFormField(
+              controller: fieldTextEditingController,
+              focusNode: fieldFocusNode,
+              enabled: isEditingEnabled,
+              decoration: InputDecoration(
+                labelText: OccasionSettingsStrings.timezone,
+                border: const OutlineInputBorder(),
+                suffixIcon:
+                    fieldTextEditingController.text.isNotEmpty &&
+                        isEditingEnabled
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
@@ -181,54 +191,59 @@ class _TimezoneAutocomplete extends StatelessWidget {
                         },
                       )
                     : null,
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return OccasionSettingsStrings.timezoneIsRequired;
-            }
-            if (!allTimezones.contains(value)) {
-              if (selectedTimezone != value) {
-                return OccasionSettingsStrings.invalidTimezone;
-              }
-            }
-            return null;
-          },
-          onFieldSubmitted: (_) => onFieldSubmitted(),
-        );
-      },
-      optionsViewBuilder: (BuildContext context,
-          AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4.0,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxHeight: 300,
-                  maxWidth: MediaQuery.of(context).size.width - 40 > 0
-                      ? MediaQuery.of(context).size.width - 40
-                      : 300),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: options.length,
-                shrinkWrap: true,
-                itemBuilder: (BuildContext context, int index) {
-                  final String option = options.elementAt(index);
-                  return InkWell(
-                    onTap: () {
-                      onSelected(option);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(option),
-                    ),
-                  );
-                },
               ),
-            ),
-          ),
-        );
-      },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return OccasionSettingsStrings.timezoneIsRequired;
+                }
+                if (!allTimezones.contains(value)) {
+                  if (selectedTimezone != value) {
+                    return OccasionSettingsStrings.invalidTimezone;
+                  }
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => onFieldSubmitted(),
+            );
+          },
+      optionsViewBuilder:
+          (
+            BuildContext context,
+            AutocompleteOnSelected<String> onSelected,
+            Iterable<String> options,
+          ) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4.0,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: 300,
+                    maxWidth: MediaQuery.of(context).size.width - 40 > 0
+                        ? MediaQuery.of(context).size.width - 40
+                        : 300,
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: options.length,
+                    shrinkWrap: true,
+                    itemBuilder: (BuildContext context, int index) {
+                      final String option = options.elementAt(index);
+                      return InkWell(
+                        onTap: () {
+                          onSelected(option);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(option),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
     );
   }
 }

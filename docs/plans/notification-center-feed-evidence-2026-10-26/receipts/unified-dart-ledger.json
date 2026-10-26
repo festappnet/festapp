@@ -1,0 +1,222 @@
+[
+  {
+    "path": "lib/components/blueprint/views/blueprint_editor_tab.dart",
+    "hunks": 5,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/components/eshop/views/orders_history_content.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/components/occasion/setup/occasion_setup_appearance_panel.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/components/occasion/setup/occasion_setup_page.dart",
+    "hunks": 5,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/components/ticket_layout/views/ticket_layout_editor.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/data_services/auth_service.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "lib/main.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "packages/festapp_core/test/eshop/product_price_scheduling_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/bank_accounts/synchronization_control_cases.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/bank_accounts/unit_bank_accounts_add_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/email_templates/email_template_dialog_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/eshop/product_grid_record_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/eshop/product_price_scheduling_cases.dart",
+    "hunks": 6,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/eshop/ticket_batch_presentation_test.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/event_feedback/event_feedback_admin_content_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/fonts/form_design_font_loading_cases.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/form_blueprint_capacity_cases.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/form_editor_actions_cases.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/form_payment_defaults_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/form_validation_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/organization_identity_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/forms/public_link_settings_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/html/html_editor_document_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/html/html_media_service_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/html/html_media_upload_contract_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/html/html_view_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/html/rich_html_editor_lifecycle_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/information/information_save_legacy_reader_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/news/news_page_render_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/notification_center/notification_center_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/occasion/occasion_setup_appearance_panel_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/occasion/occasion_setup_ticket_gallery_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/offline/offline_banner_layout_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/schedule/event_commands_cases.dart",
+    "hunks": 3,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/schedule/saved_program_commands_cases.dart",
+    "hunks": 2,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/single_data_grid/data_grid_helper_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/stripe_payments/form_payment_settings_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/stripe_payments/payment_method_preview_test.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/ticket_layout/editor_preview.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/ticket_layout/ticket_layout_cases.dart",
+    "hunks": 7,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/components/unit/unit_context_switch_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/data_services/rights_explicit_occasion_test.dart",
+    "hunks": 3,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/startup/app_bootstrap_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  },
+  {
+    "path": "test/theme_config_cases.dart",
+    "hunks": 1,
+    "resolution": "canonical owner/coverage retained; standalone Material bridge and API changes applied separately"
+  }
+]

@@ -37,10 +37,21 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
+# Keep the notification extension on the same native SDK as the Flutter plugin.
+# Flutter's pod helper has created the plugin symlinks above.
+onesignal_spec = Pod::Specification.from_file(
+  File.join(__dir__, '.symlinks', 'plugins', 'onesignal_flutter', 'ios', 'onesignal_flutter.podspec')
+)
+onesignal_dependency = onesignal_spec.dependencies.find do |dependency|
+  dependency.name.split('/').first == 'OneSignalXCFramework'
+end
+raise 'onesignal_flutter must declare its OneSignalXCFramework version' unless onesignal_dependency
+onesignal_sdk_version = onesignal_dependency.requirement.to_s
+
 target 'OneSignalNotificationServiceExtension' do
   use_frameworks!
-  pod 'OneSignalXCFramework/OneSignal', '5.5.5'
-  pod 'OneSignalXCFramework/OneSignalInAppMessages', '5.5.5'
+  pod 'OneSignalXCFramework/OneSignal', onesignal_sdk_version
+  pod 'OneSignalXCFramework/OneSignalInAppMessages', onesignal_sdk_version
 end
 
 

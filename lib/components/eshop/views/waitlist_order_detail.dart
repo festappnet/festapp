@@ -10,11 +10,12 @@ import '../../forms/waitlist_commands.dart';
 import '../../forms/waitlist_strings.dart';
 import '../../forms/services/admin_offer_form_link.dart';
 import '../../forms/models/form_bundle.dart';
+
 import 'package:fstapp/components/eshop/order_item_strings.dart';
+
 import '../../forms/views/waitlist_offers_dialog.dart';
 import '../models/waitlist_summary_model.dart';
 import '../models/order_model.dart';
-import '../orders_strings.dart';
 
 class WaitlistOrderDetail extends StatefulWidget {
   const WaitlistOrderDetail({
@@ -30,7 +31,7 @@ class WaitlistOrderDetail extends StatefulWidget {
   final Future<void> Function(String offerId)? openOfferForm;
   final Future<Map<String, dynamic>> Function(int)? loadDetail;
   final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)?
-      executeCommand;
+  executeCommand;
   final Future<void> Function()? onChanged;
   final Widget Function(FormBundle, List<OrderModel>)? offerDialogBuilder;
   @override
@@ -67,8 +68,9 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
           }
           _selected.clear();
           _error = null;
-          final eligible =
-              (detail['tickets'] as List? ?? []).where(_isSelectable).toList();
+          final eligible = (detail['tickets'] as List? ?? [])
+              .where(_isSelectable)
+              .toList();
           if (eligible.length == 1) {
             _selected.add(eligible.single['id'] as int);
           }
@@ -134,8 +136,8 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   bool get _hasEligibleTickets =>
       (_detail?['tickets'] as List? ?? []).any(_isSelectable);
   bool get _hasWaitingTickets => (_detail?['tickets'] as List? ?? []).any(
-        (ticket) => ticket['lifecycle'] == 'waiting',
-      );
+    (ticket) => ticket['lifecycle'] == 'waiting',
+  );
 
   bool get _canOffer =>
       !_busy &&
@@ -166,12 +168,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   bool _isSelectable(dynamic ticket) => const {
-        'waiting',
-        'offered',
-        'offer_expired',
-        'offer_declined',
-        'offer_cancelled',
-      }.contains(ticket['lifecycle']);
+    'waiting',
+    'offered',
+    'offer_expired',
+    'offer_declined',
+    'offer_cancelled',
+  }.contains(ticket['lifecycle']);
 
   String _ticketLabel(dynamic ticket, int index) {
     final name = ticket['displayName']?.toString().trim();
@@ -182,13 +184,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
         : '${OrderItemStrings.itemSingular} ${index + 1}';
   }
 
-  String _ticketStatus(dynamic ticket) => WaitlistStrings.text(
-        switch (ticket['lifecycle'] as String) {
-          'waiting' => 'waitingForPlace',
-          'offered' => 'awaitingOfferAcceptance',
-          final String lifecycle => lifecycle,
-        },
-      );
+  String _ticketStatus(dynamic ticket) =>
+      WaitlistStrings.text(switch (ticket['lifecycle'] as String) {
+        'waiting' => 'waitingForPlace',
+        'offered' => 'awaitingOfferAcceptance',
+        final String lifecycle => lifecycle,
+      });
 
   String _slotLabel(dynamic slot) {
     final tickets = _detail?['tickets'] as List? ?? [];
@@ -223,9 +224,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       if (widget.openOfferForm != null) {
         await widget.openOfferForm!(offer['id'] as String);
       } else {
-        if (!await AdminOfferFormLink.open(
-          offerId: offer['id'] as String,
-        )) {
+        if (!await AdminOfferFormLink.open(offerId: offer['id'] as String)) {
           throw StateError('Offer form could not be opened');
         }
       }
@@ -243,27 +242,27 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   Widget _withdrawalAction() => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            OutlinedButton(
-              onPressed: !_busy && _error == null && _selected.isNotEmpty
-                  ? _withdraw
-                  : null,
-              child: Text(WaitlistStrings.text('adminWithdraw')),
-            ),
-            if (_selected.isEmpty && !_busy && _error == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  WaitlistStrings.text('withdrawSelection'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-          ],
+    padding: const EdgeInsets.only(top: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton(
+          onPressed: !_busy && _error == null && _selected.isNotEmpty
+              ? _withdraw
+              : null,
+          child: Text(WaitlistStrings.text('adminWithdraw')),
         ),
-      );
+        if (_selected.isEmpty && !_busy && _error == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              WaitlistStrings.text('withdrawSelection'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _offerContext(dynamic offer, {required bool active}) {
     final theme = Theme.of(context);
@@ -310,8 +309,9 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
           if (active && RightsService.canUpdateOrders()) ...[
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed:
-                  _busy || _error != null ? null : () => _openOffer(offer),
+              onPressed: _busy || _error != null
+                  ? null
+                  : () => _openOffer(offer),
               icon: const Icon(Icons.open_in_new, size: 18),
               label: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -390,18 +390,16 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                               controlAffinity: ListTileControlAffinity.leading,
                               value: _selected.contains(entry.$2['id']),
                               title: Text(_ticketLabel(entry.$2, entry.$1)),
-                              subtitle: Text(
-                                _ticketStatus(entry.$2),
-                              ),
+                              subtitle: Text(_ticketStatus(entry.$2)),
                               onChanged: _busy || _error != null
                                   ? null
                                   : (value) => setState(() {
-                                        if (value == true) {
-                                          _selected.add(entry.$2['id']);
-                                        } else {
-                                          _selected.remove(entry.$2['id']);
-                                        }
-                                      }),
+                                      if (value == true) {
+                                        _selected.add(entry.$2['id']);
+                                      } else {
+                                        _selected.remove(entry.$2['id']);
+                                      }
+                                    }),
                             )
                           else
                             Padding(
