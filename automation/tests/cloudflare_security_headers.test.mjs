@@ -1,10 +1,11 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
-const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
  .replace('// SHARED_PUBLIC_PAGE_SEO',readFileSync(new URL('../../web_client/src/services/public_page_seo.js',import.meta.url),'utf8').replaceAll('export function','function'));
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const origin = 'https://tenant.invalid';
@@ -21,7 +22,7 @@ function assertPolicy(response) {
 test('generated Pages worker secures HTML and assets while preserving route bodies', async () => {
   for (const [path, body] of [
     ['/', '/webclient'],
-    ['/login', '/flutter'], ['/auth_bridge', '/auth_bridge'], ['/unknown', '/unknown'],
+    ['/login', '/webclient'], ['/auth_bridge', '/auth_bridge'], ['/unknown', '/unknown'],
     ['/web-assets/app.js', '/web-assets/app.js'], ['/main.dart.js', '/main.dart.js'], ['/embed.js', '/embed.js'],
   ]) {
     const response = await worker.fetch(new Request(origin + path), env);
