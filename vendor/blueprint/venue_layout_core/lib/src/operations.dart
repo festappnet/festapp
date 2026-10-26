@@ -4,6 +4,7 @@ import 'dart:math';
 import 'model.dart';
 import 'geometry.dart';
 import 'table_seating.dart';
+import 'table_side_placement.dart' show tableSeatSides, tableSideForSeat;
 export 'table_seating.dart';
 import 'zigzag.dart';
 import 'surface_geometry.dart';
@@ -363,8 +364,31 @@ VenueLayoutDocument reflowTable(
   }
   final retainedIds = {...seatIds};
   final seatRank = {for (var i = 0; i < seats.length; i++) seats[i].id: i};
+  // Explicit side edits must remove surplus fixed chairs on that side.
+  // Import order and slot numbers do not describe the requested distribution.
+  final fixedEdges = <String, int>{
+    if (edgeCounts != null)
+      for (final seat in seats.where(fixed))
+        seat.id: tableSeatSides.indexOf(tableSideForSeat(d, seat) ?? ''),
+  };
+  final fixedCounts = List<int>.filled(4, 0);
+  for (final side in fixedEdges.values) {
+    if (side >= 0) fixedCounts[side]++;
+  }
+  bool surplusFixed(LayoutNode seat) {
+    final side = fixedEdges[seat.id];
+    return edgeCounts != null &&
+        side != null &&
+        side >= 0 &&
+        fixedCounts[side] > edgeCounts[side];
+  }
+
   final removalOrder = seats.toList()
     ..sort((a, b) {
+      final surplus = (surplusFixed(b) ? 1 : 0).compareTo(
+        surplusFixed(a) ? 1 : 0,
+      );
+      if (surplus != 0) return surplus;
       final manualA = fixed(a) ? 1 : 0, manualB = fixed(b) ? 1 : 0;
       final priority = manualA.compareTo(manualB);
       return priority != 0
@@ -379,7 +403,16 @@ VenueLayoutDocument reflowTable(
         batch.any((id) => !seatIds.contains(id))) {
       continue;
     }
+    if (edgeCounts != null &&
+        !batch.any((id) => surplusFixed(nodeIndex[id]!)) &&
+        batch.any(fixedEdges.containsKey)) {
+      continue;
+    }
     retainedIds.removeAll(batch);
+    for (final id in batch) {
+      final side = fixedEdges[id];
+      if (side != null && side >= 0) fixedCounts[side]--;
+    }
   }
   if (retainedIds.length > count) {
     throw TableResizeRejected(

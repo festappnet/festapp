@@ -65,7 +65,7 @@ for package in ('venue_layout_core', 'venue_seat_picker'):
     archive = artifacts / f'{package}.tar.gz'
     with tarfile.open(archive) as source:
         pubspec = source.extractfile('pubspec.yaml').read().decode()
-    version = {'venue_layout_core': '0.2.2', 'venue_seat_picker': '0.4.2'}[package]
+    version = {'venue_layout_core': '0.2.2', 'venue_seat_picker': '0.4.3'}[package]
     if f'version: {version}' not in pubspec.splitlines():
         raise SystemExit(f'Unexpected {package} artifact version')
     target = vendor / package
@@ -113,7 +113,7 @@ manifest['archives'][immutable_pack] = digest(archive)
 shutil.copyfile(artifacts / 'archive-result.json', vendor / 'archive-result.json')
 (vendor / 'README.md').write_text('''# Blueprint distribution snapshot
 
-These are the exact pub-selected 0.4.2 wrapper and 0.2.2 core archives,
+These are the exact pub-selected 0.4.3 wrapper and 0.2.2 core archives,
 verified with the npm 0.3.7 archive by the package archive gate.
 They are dependency artifacts. Edit the canonical `festappnet/venue_seat_picker`
 package, then rebuild and verify its distributions before updating this snapshot.

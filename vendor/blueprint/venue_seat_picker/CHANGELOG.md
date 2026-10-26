@@ -1,6 +1,17 @@
-## 0.4.2
+## 0.4.3
 
-- Group total seat-count steppers inside the field and visibly dim unavailable actions.
+- Group total seat-count minus/plus controls inside the field, matching side counts, and visibly dim unavailable actions.
+- Keep single-finger workspace panning responsive and transfer two-finger input to pinch navigation without applying camera movement twice.
+- Preserve the opposite table edge during resizing, including rotated nesting and canvas boundaries.
+- Reflow free chairs after footprint edits while preserving explicit side pins and protected seat identities.
+- Keep one undo entry per resize and reuse immutable spatial indexes during preview.
+
+## JavaScript 0.3.7
+
+- Apply the shared CSS-pixel seat tap allowance without changing pointer-down or drag ownership.
+- Keep unavailable seats in hit testing so nearby taps cannot jump across them.
+
+## 0.4.2
 
 - Keep imported tables editable when their legacy metadata also marks them as decoration.
 - Keep seat-count digits visible beside compact circular controls in narrow localized inspectors.
@@ -17,12 +28,6 @@
 - Keep external flutter_colorpicker behind an explicit SDK Material compatibility boundary.
 - Preserve current layout/resource/kernel and reservation contracts.
 - Incorporate shipped host fixes for the public template gallery, clipped palette previews and CSS-pixel seat tap allowance into their canonical owner.
-
-## Unreleased
-
-- Keep single-finger panning from the workspace outside the plan responsive
-  in navigation mode independently of ancestor gesture recognition. Transfer two-finger input to
-  the existing pinch navigation without applying camera movement twice.
 
 ## JavaScript 0.3.6
 
@@ -55,12 +60,6 @@
   and mode-specific blocking/ignored targets without bypassing availability.
 - Keep tap tolerance separate from pointer-down/drag ownership, preserve Shift
   selection and tooltips, and cancel edits throughout pinch/cancel sequences.
-
-## Unreleased production v2 fixes
-
-- Preserve the opposite table edge while resizing, including rotated nesting and canvas boundaries.
-- Convert free chair poses to automatic seating after footprint edits; preserve explicit side pins and protected seat identities.
-- Keep one undo entry per resize and reuse immutable spatial indexes during preview.
 
 ## 0.3.1
 
