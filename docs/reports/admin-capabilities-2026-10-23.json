@@ -4,7 +4,7 @@
   "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
   "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Provozní etapa 2B je dokončená a nasazená pro festapptickets / vstupenky.online: inspekce a blokace míst, uvolnění dočasných rezervací, prohození vstupenek, objednávky z míst a rušení vybraných vstupenek. UI i MCP používají společné doménové operace. Na žádost uživatele zde práce končí; etapy 3-10 zůstávají na později.",
+  "scopeNote": "Produkční základ etapy 2B byl ověřen pro festapptickets / vstupenky.online. Etapa 3 doplňuje společnou správu e-mailových šablon, bannerů a syntetických náhledů; je lokálně ověřená v PR #613 a dosud není nasazená. Uvedená živá verze je poslední doložená baseline etapy 2B, nikoli nový live probe.",
   "actions": [
     {
       "id": "action-001",
