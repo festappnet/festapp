@@ -1269,3 +1269,10 @@ soubory se nepřekrývají. Main byl sloučen do rodiče #613, nový parent head
 `6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b`; větev 4A na něj navazuje.
 Source digests a generované kontrakty znovu zkontrolovány bez změny pokrytého
 chování. Obě review větve tak obsahují aktuální autoritativní main.
+
+Publikováno jako [PR #615](https://github.com/festappnet/festapp/pull/615),
+base `feat/admin-mcp-emails-20261026`, implementation head
+`b7917a129f48c8cfae2687d317374c8e45ca3942`. Před prvním pushem i vytvořením PR
+fetch potvrzuje main `3988bb7cb` a parent `6bf8b5be0` jako předky headu.
+Sloučení ani nasazení neproběhlo. Při navázání zkontrolovat oba PR a po
+sloučení rodiče přesměrovat zbývající review na aktuální main.

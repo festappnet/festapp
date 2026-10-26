@@ -168,5 +168,11 @@
     "upstreamChange": "3988bb7cb integration homepage links (#614), 35 unrelated files; inspected, no changed form/auth/MCP sources",
     "strategy": "Merge current main into parent #613, then fast-forward forms base onto that parent; preserves the stack and canonical main ancestry.",
     "affectedValidation": "No covered behavioral sources changed by update; source digests verified unchanged and generated contracts checked."
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/615",
+    "base": "feat/admin-mcp-emails-20261026",
+    "implementationHead": "b7917a129f48c8cfae2687d317374c8e45ca3942",
+    "deployed": false
   }
 }

@@ -20,7 +20,8 @@ checkoutu `/private/tmp/festapp-admin-mcp-emails-20261026`, větev
 produkční rollout etapy 3 dosud neproběhl. Main vyžaduje jedno
 schválení review, bez obcházení ochrany.
 
-Řez 4A formulářů je lokálně ověřený na `feat/admin-mcp-forms-20261026`,
+Řez 4A formulářů je lokálně ověřený v [PR #615](https://github.com/festappnet/festapp/pull/615)
+na `feat/admin-mcp-forms-20261026`,
 navazuje na aktualizovaný head etapy 3
 `6bf8b5be03d2550e0e7206e4b17e2ed59cb5790b` (obsahuje main `3988bb7cb`).
 Etapa 3 zůstává rodičem (#613), dokud nebude schválená a sloučená; neslučovat
