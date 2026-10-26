@@ -17,7 +17,7 @@ The Joomla module is distributed under GPL version 2 or later. The external serv
 Tested on Joomla 5.4.10 with PHP 8.3.36 and Joomla 6.1.4 with PHP 8.4.27. The update channel currently targets Joomla 5.4 and 6.1, with PHP 8.3 or newer. Browser smoke checks include a 320px viewport, keyboard navigation, automatic height, opening and closing the seat map and the helper-blocked fallback. Production smoke checks do not submit purchases or reserve seats.
 
 Installation and documentation: https://github.com/festappnet/festapp/tree/main/integrations/joomla
-Service and current offer: https://vstupenky.online/pro-poradatele
+Service and current offer: https://vstupenky.online/
 Support: https://vstupenky.online/support/
 Terms: https://vstupenky.online/terms/
 Privacy: https://vstupenky.online/privacy/

@@ -90,7 +90,7 @@ odinstalaci modulu vloženého do článku vyčistěte také cache Joomly
 (**Systém > Údržba > Vymazat mezipaměť**), zejména `com_content`.
 Joomla může do té doby uchovávat předchozí vykreslení článku.
 
-Služby: [vstupenky.online](https://vstupenky.online/pro-poradatele),
+Služby: [vstupenky.online](https://vstupenky.online/),
 [Festapp Tickets](https://tickets.festapp.net/). Každý modul má v administraci
 odkazy své značky na `/login`, `/terms/`, `/privacy/` a `/support/`. Přístupové
 podmínky a ceny služby jsou oddělené od GPL licence modulu.

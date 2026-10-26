@@ -14,7 +14,7 @@
   ],
   "php_minimum": "8.3",
   "uses_joomla_update_system": true,
-  "website_url": "https://vstupenky.online/pro-poradatele",
+  "website_url": "https://vstupenky.online/",
   "download_page_url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.1",
   "direct_zip_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
   "documentation_url": "https://github.com/festappnet/festapp/tree/main/integrations/joomla",
