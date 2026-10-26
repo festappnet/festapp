@@ -47,6 +47,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(catalog.includes(`<title>${seo.catalogTitle}</title>`));
   assert.ok(catalog.includes('href="https://vstupenky.online/events"'));
   assert.ok(!catalog.includes('SearchAction'));
+  assert.ok(!catalog.includes('class="catalog-navigation"'), 'generated catalogue must not duplicate shared header navigation');
 
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
   assert.ok(html.includes('href="/login"'));

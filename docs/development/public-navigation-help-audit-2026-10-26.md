@@ -33,3 +33,7 @@ visual checks. At 320px there is no horizontal overflow, the guest logo clears
 the first account action by 31px, and both navigation links have 44px targets.
 Evidence: `/tmp/festapp-public-nav-20261026/` and matching
 `/tmp/festapp-public-nav-*` logs. Production verification is recorded separately.
+
+Live verification additionally found the organizer generator re-inserting the
+old catalogue navigation after the static shell was cleaned. That producer is
+removed as well, with a regression assertion against its generated catalogue.
