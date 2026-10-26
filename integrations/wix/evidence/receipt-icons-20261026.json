@@ -1,6 +1,6 @@
 {
   "verifiedAt": "2026-10-26T01:22:52.737017+00:00",
-  "status": "LOCAL_FIX_VERIFIED_PENDING_PUBLICATION_AND_DEPLOY",
+  "status": "PASS_LOCAL_AND_LIVE_VERIFIED",
   "problem": "Receipt Material Icon names become visible and copy controls overflow when external icon font is unavailable. Original Safari cold-load trigger remains unproven.",
   "redControl": {
     "renderer": "Actual OrderResult/payment_details imports; synthetic immutable payment data, no backend or order",
@@ -81,5 +81,6 @@
   "screenshots": {
     "integrations/wix/evidence/screenshots/receipt-icons-safari-after.png": "fa82a7c628f814140227f9e35692131eac6e3b7f5fa4fbb411cb3fd2e8d3a70d",
     "integrations/wix/evidence/screenshots/receipt-icons-safari-payment-after.png": "5376265117cb6c31b0dd2b974dea235231aeec1c0d0b54009a428186ff65d0e2"
-  }
+  },
+  "liveReceipt": "live-receipt-icons-20261026.json"
 }
