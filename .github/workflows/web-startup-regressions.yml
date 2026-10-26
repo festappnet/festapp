@@ -28,8 +28,11 @@ jobs:
           # pnpm 11 places global executables in PNPM_HOME/bin.
           export PATH="$PNPM_HOME/bin:$PATH"
           echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
-          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
-          agent-browser install --with-deps
+          pnpm add --global --allow-build=agent-browser agent-browser@0.39.4
+          # The hosted runner already provides Chrome and its system libraries.
+          # Avoid fetching optional font packages from the Ubuntu mirror.
+          browser_path="$(command -v google-chrome)"
+          echo "AGENT_BROWSER_EXECUTABLE_PATH=$browser_path" >> "$GITHUB_ENV"
       - name: Install web test dependencies
         working-directory: web_client
         run: pnpm install --frozen-lockfile
