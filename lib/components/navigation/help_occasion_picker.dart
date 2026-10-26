@@ -13,7 +13,7 @@ class HelpOccasionPicker extends StatelessWidget {
     required this.occasions,
     required this.organizers,
     required this.onSelected,
-    required this.onCreateNew,
+    this.onCreateNew,
     required this.onDismiss,
     this.selectedLink,
     this.recentLink,
@@ -23,7 +23,8 @@ class HelpOccasionPicker extends StatelessWidget {
   final List<UnitModel> organizers;
   final String? selectedLink, recentLink;
   final ValueChanged<OccasionModel> onSelected;
-  final VoidCallback onCreateNew, onDismiss;
+  final VoidCallback? onCreateNew;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {

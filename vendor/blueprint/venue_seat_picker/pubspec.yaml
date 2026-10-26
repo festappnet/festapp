@@ -1,6 +1,6 @@
 name: venue_seat_picker
 description: "Venue Layout: a seating-plan editor, viewer and picker for Flutter with portable geometry and host-owned reservations."
-version: 0.4.1
+version: 0.4.2
 homepage: https://festappnet.github.io/venue_seat_picker/
 repository: https://github.com/festappnet/venue_seat_picker
 issue_tracker: https://github.com/festappnet/venue_seat_picker/issues
