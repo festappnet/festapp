@@ -1,10 +1,11 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const profiles = Object.fromEntries(['webclient','flutter','auth_bridge','organizers','none','static-test'].map(profile => [profile, {policy: `base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-${profile}'; script-src-attr 'none'; report-uri /_security/csp-report?profile=${profile}; report-to csp-${profile}`} ]));
 const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
-const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
  .replace('// SHARED_PUBLIC_PAGE_SEO',readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url),'utf8').replaceAll('export function','function'))
  .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => `const CSP_MANIFEST = ${JSON.stringify({profiles, documents:{'privacy/index.html':{profile:'static-test'}}})};`)
  .replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', 'const MARKETING = {enabled:true,pages:[{id:"home",path:"/",asset:"/organizers-page"}],sitemapPaths:["/","/events"]};');

@@ -1,3 +1,4 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -75,7 +76,7 @@ test('public-to-private and public-to-public history changes leave the measured 
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const shared = file => readFileSync(new URL('../../web_client/src/' + file, import.meta.url), 'utf8').replaceAll('export function', 'function');
-const source = shared('services/scanner_routes.js') + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const source = shared('services/scanner_routes.js') + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
   .replace('// SHARED_PUBLIC_PAGE_SEO', shared('services/public_page_seo.js'))
   .replace('// SHARED_CATALOG_CLASSIFICATION', shared('components/occasion/catalog.js'))
   .replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = "https://tenant.invalid";')

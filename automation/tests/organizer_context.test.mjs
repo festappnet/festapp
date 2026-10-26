@@ -1,3 +1,4 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
@@ -86,7 +87,7 @@ test('synthetic EN uses same renderer, empty references, own media and optional 
   assert.equal(pwa.marketingRoutes['/prodej-vstupenek-na-ples'],undefined);
   const script=readFileSync(new URL('../cloudflare_build.sh',import.meta.url),'utf8');
   const scanner=readFileSync(new URL('../../web_client/src/services/scanner_routes.js',import.meta.url),'utf8').replaceAll('export function','function');
-  const workerSource=scanner+'\n'+script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+  const workerSource=scanner+'\n'+script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource)
     .replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};',`const MARKETING = ${JSON.stringify(manifest)};`)
     .replace('const CANONICAL_ORIGIN = null;',`const CANONICAL_ORIGIN = "${config.WEB_LINK}";`);
   const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(workerSource).toString('base64'));

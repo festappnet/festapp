@@ -1,3 +1,4 @@
+import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
@@ -107,7 +108,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
   const worker = join(root, 'worker.js'); const config = join(root, 'project.conf');
-  writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
+  writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
   for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
@@ -121,7 +122,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   assert.ok(!source.includes('// SHARED_CATALOG_CLASSIFICATION'));
   for (const domain of ['other.invalid', 'plesy.vstupenky.online']) {
     writeFileSync(config, `WEB_LINK=https://${domain}\nAPP_NAME=Other\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n`);
-    writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
+    writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
     const other = spawnSync('python3', ['-', worker, config], {input:python, encoding:'utf8'});
     assert.equal(other.status,0,other.stderr);
     assert.ok(readFileSync(worker,'utf8').includes('\"enabled\": false'));
