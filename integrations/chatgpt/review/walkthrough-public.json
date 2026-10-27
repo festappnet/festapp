@@ -1,0 +1,33 @@
+{
+  "format": "Screenshot-based walkthrough of actual dedicated-reviewer ChatGPT conversation; not a continuous recording",
+  "actor": "Dedicated synthetic reviewer via normal first-party OAuth, nickname MCP demo - hodnotitel",
+  "sourceConversation": "https://chatgpt.com/c/6ae00f75-ef40-83eb-8422-b7d4f5e10436",
+  "dataProfile": "order-summary",
+  "sourceRevision": "bcacfc728a74cbd97b6afd6f007c8247116b90f2",
+  "durationSeconds": 50,
+  "sha256": "e6fd4177e317fa7ad50157524603e3a14e3790f595c35ae569bbffec0dddcb1d",
+  "file": "walkthrough-public-e6fd4177e317.mp4",
+  "chapters": [
+    {
+      "startSeconds": 0,
+      "endSeconds": 10,
+      "title": "Choose between two accessible events before reading a report"
+    },
+    {
+      "startSeconds": 10,
+      "endSeconds": 24,
+      "title": "Canonical sales totals for explicitly selected January event"
+    },
+    {
+      "startSeconds": 24,
+      "endSeconds": 40,
+      "title": "Actual order detail with buyer fields and internal notes withheld"
+    },
+    {
+      "startSeconds": 40,
+      "endSeconds": 50,
+      "title": "Unconsented report denied; cancellation and ticket delivery unavailable"
+    }
+  ],
+  "limits": "Highlights from the conversation, not proof of all eight individual tool calls or a continuous login recording. See reviewer transcript and hosted public SDK evidence."
+}

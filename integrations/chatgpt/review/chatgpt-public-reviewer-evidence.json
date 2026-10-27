@@ -1,0 +1,56 @@
+{
+  "executedAt": "2026-10-27T02:45:59.252129+00:00",
+  "boundary": "Real ChatGPT conversational checks using the dedicated synthetic reviewer account through normal first-party OAuth, separate from SDK evidence",
+  "conversation": "https://chatgpt.com/c/6ae00f75-ef40-83eb-8422-b7d4f5e10436",
+  "accountNickname": "MCP demo - hodnotitel",
+  "dataProfile": "order-summary",
+  "sourceRevision": "bcacfc728a74cbd97b6afd6f007c8247116b90f2",
+  "metadataRefresh": "Refresh tools in private ChatGPT app after live profile deployment; portal six-tool rescan also completed",
+  "caseExecution": "Five positive and three negative cases covered in four conversational turns; related positive and negative requests grouped, with explicit reviewer-account selection. Not eight independent fresh chats.",
+  "checks": [
+    {
+      "case": "N3_ambiguity",
+      "outcome": "passed",
+      "observed": "Fresh ambiguous request offered January 1072614 and February 1072615, asked which; no report returned before explicit selection."
+    },
+    {
+      "case": "P1_access",
+      "outcome": "passed",
+      "observed": "Exactly two demo occasions, no unit-wide or inaccessible-event listing."
+    },
+    {
+      "case": "P2_report",
+      "outcome": "passed",
+      "observed": "4 orders, 6 ticket records, 2 valid orders, 4 valid tickets, 1 waiting, net received500CZK, current order value1250CZK; preserved payment_total_without_ledger warning."
+    },
+    {
+      "case": "P3_state_list",
+      "outcome": "passed",
+      "observed": "Limit5 ordered returned only6821, symbol8M6K9Q6A3V, 2tickets500CZK, nextCursor null."
+    },
+    {
+      "case": "P4_symbol",
+      "outcome": "passed",
+      "observed": "Exact symbol returned6821 inJanuary1072614."
+    },
+    {
+      "case": "P5_public_detail",
+      "outcome": "passed",
+      "observed": "Ordered,2tickets,500CZK,paid0CZK; explained notes and personal fields are unavailable, no invented note or override."
+    },
+    {
+      "case": "N1_unconsented",
+      "outcome": "passed",
+      "observed": "Report1072616 returnedFORBIDDEN, no sales data, request bddd1972-8ab6-458e-9dc4-f2b0d75a6a5f."
+    },
+    {
+      "case": "N2_writes",
+      "outcome": "passed",
+      "observed": "Cancellation/delivery unavailable under read-only tools; no successful execution claimed."
+    }
+  ],
+  "limits": [
+    "Conversational transcript is model-visible behavior, not a server trace. Hosted SDK evidence independently asserts public output fields and denial.",
+    "Organizer-authored labels/template configuration remain subject to usage restrictions; IDs and symbols remain pseudonymous."
+  ]
+}
