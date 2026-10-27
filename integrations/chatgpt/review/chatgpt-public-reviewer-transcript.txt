@@ -1,0 +1,514 @@
+You said:
+
+vstupenky.online Použij připojený účet MCP demo - hodnotitel. Ukaž prodejní souhrn Testovacího plesu.
+
+ChatGPT said:
+
+Účet MCP demo – hodnotitel je připojený. Našel jsem dvě dostupné akce odpovídající názvu „Testovací ples“:
+
+Testovací ples – leden
+
+ID 1072614
+
+Testovací ples – únor
+
+ID 1072615
+
+Který ples chceš zobrazit? Klikni na jednu z akcí a načtu její prodejní souhrn.
+
+You said:
+Vyber lednovou demo akci 1072614. Nejdřív mi vypiš všechny dostupné demo akce v tomto účtu a potom pro lednovou akci ukaž prodejní souhrn. Odliš objednávky, platné vstupenky, čekající, přijaté platby a aktuální hodnotu objednávek. Zachovej případná upozornění z reportu.
+Worked for 10s
+ChatGPT said:
+Prodejní souhrn – Testovací ples (leden)
+Report načten
+
+Účet: MCP demo – hodnotitel
+
+1. Dostupné demo akce
+
+V připojeném účtu jsou dostupné celkem 2 akce.
+
+ID akce
+
+	
+
+Název
+
+
+
+
+1072614
+
+	
+
+MCP demo – Testovací ples (leden)
+
+
+
+
+1072615
+
+	
+
+MCP demo – Testovací ples (únor)
+
+Pro následující souhrn byla vybrána pouze lednová akce 1072614. Únorová akce nebyla zahrnuta do výsledků.
+
+2. Prodejní přehled
+
+Všechny objednávky
+
+4
+2 platné, 1 stornovaná, 1 čekací
+
+Platné vstupenky
+
+4
+2 objednané, 2 zaplacené
+
+Čekající vstupenky
+
+1
+Nezahrnuté mezi platné
+
+Přijaté platby (netto)
+
+500 Kč
+Vráceno 0 Kč
+
+Aktuální hodnota objednávek
+
+1 250 Kč
+
+Hodnota objednávek, nikoliv skutečně přijatá částka.
+
+500 Kč přijato
+40 % aktuální hodnoty
+3. Stav objednávek a vstupenek
+
+Objednávky podle stavu
+
+Objednané: 1
+
+Zaplacené: 1
+
+Stornované: 1
+
+Čekací listina: 1
+
+Stav
+
+	
+
+Objednávky
+
+	
+
+Vstupenky
+
+
+
+
+Objednané (ordered)
+
+	
+
+1
+
+	
+
+2
+
+
+
+
+Zaplacené (paid)
+
+	
+
+1
+
+	
+
+2
+
+
+
+
+Stornované (storno)
+
+	
+
+1
+
+	
+
+1
+
+
+
+
+Čekací listina (waitlisted)
+
+	
+
+1
+
+	
+
+1
+
+
+
+
+Celkem
+
+	
+
+4
+
+	
+
+6
+
+Z šesti evidovaných vstupenek jsou čtyři platné podle metodiky reportu. Stornovaná vstupenka ani vstupenka na čekací listině se do platného počtu nezapočítává.
+
+4. Finanční údaje
+
+Ukazatel
+
+	
+
+Částka
+
+
+
+
+Přijaté platby
+
+	
+
+500 Kč
+
+
+
+
+Vrácené platby
+
+	
+
+0 Kč
+
+
+
+
+Čistě přijato
+
+	
+
+500 Kč
+
+
+
+
+Aktuální hodnota objednávek
+
+	
+
+1 250 Kč
+
+
+
+
+Rozdíl mezi hodnotou a přijatými platbami
+
+	
+
+750 Kč
+
+Rozdíl 750 Kč nelze automaticky považovat za pohledávku po splatnosti. Report neobsahuje dostatek údajů pro takový závěr.
+
+5. Upozornění z reportu
+
+payment_total_without_ledger – 1 výskyt
+
+Report upozorňuje na peněžní souhrn bez odpovídajícího detailního záznamu v platební evidenci (ledgeru). Přijatých 500 Kč je v souhrnu vykázáno, ale nelze tuto částku plně ověřit z jednotlivých platebních transakcí v reportu.
+
+6. Informace o reportu
+
+Akce: MCP demo – Testovací ples (leden)
+
+ID: 1072614
+
+Vygenerováno: 27. 10. 2026, 03:42 (Europe/Prague)
+
+Měna: CZK
+
+Request ID: ed37bf08-71cd-4cd2-8aa4-30d966fd1e10
+
+Shrnutí: Lednová demo akce má 4 objednávky, z nichž 2 jsou platné a obsahují dohromady 4 platné vstupenky. Přijato bylo 500 Kč oproti aktuální hodnotě objednávek 1 250 Kč. Report obsahuje jedno upozornění k platební evidenci.
+
+Všechna data pocházejí z připojeného účtu vstupenky.online. Žádné objednávky ani jiné záznamy nebyly změněny.
+
+You said:
+Ve stejném účtu a lednové demo akci 1072614 proveď tři samostatná čtení: 1. Najdi nejvýše 5 objednávek ve stavu ordered. 2. Vyhledej přesný symbol 8M6K9Q6A3V. 3. Načti detail objednávky 6821 a vysvětli stav, počet vstupenek, částku a zaplaceno. U každého uveď výsledek. Pokud nejsou dostupné poznámky nebo osobní údaje, nevymýšlej je. Nic neměň.
+ChatGPT said:
+Výsledky tří čtení objednávek
+
+Účet: MCP demo – hodnotitel
+Akce: MCP demo – Testovací ples (leden)
+ID akce: 1072614
+
+Všechna tři samostatná čtení proběhla úspěšně. Všechna identifikovala stejnou objednávku 6821.
+
+1. Objednávky ve stavu ordered
+Úspěšně načteno
+
+Požadovaný limit: 5 objednávek. Nalezena 1 objednávka.
+
+ID
+
+	
+
+Symbol
+
+	
+
+Vstupenky
+
+	
+
+Hodnota
+
+
+
+
+6821
+
+	
+
+8M6K9Q6A3V
+
+	
+
+2
+
+	
+
+500 Kč
+
+Další stránka výsledků není dostupná (nextCursor: null).
+
+2. Vyhledání přesného symbolu
+Přesná shoda nalezena
+
+Hledaný symbol: 8M6K9Q6A3V
+
+Výsledek vyhledávání:
+
+ID objednávky: 6821
+
+Stav: ordered
+
+Počet vstupenek: 2
+
+Hodnota objednávky: 500 Kč
+
+3. Detail objednávky 6821
+Detail úspěšně načten
+
+Objednávka
+
+#6821
+ordered
+
+Počet vstupenek
+
+2
+
+Hodnota
+
+500 Kč
+
+Požadovaná platba
+
+500 Kč
+
+Zaplaceno
+
+0 Kč
+
+Vráceno
+
+0 Kč
+
+Zbývá zaplatit
+
+500 Kč
+
+Význam stavu: ordered znamená, že objednávka je evidována jako objednaná, nikoliv jako zaplacená. Obsahuje dvě vstupenky v celkové hodnotě 500 Kč a v platebních údajích má zaplaceno 0 Kč. Podle dostupného detailu tedy zbývá uhradit 500 Kč.
+
+Poznámky ani osobní údaje nejsou v odpovědi tohoto MCP nástroje dostupné. Nelze tedy potvrdit jejich obsah.
+
+Kontrola jednotlivých volání
+
+Čtení
+
+	
+
+Operace
+
+	
+
+Výsledek
+
+
+
+
+1
+
+	
+
+orders.list se stavem ordered
+
+	
+
+1 objednávka
+
+
+
+
+2
+
+	
+
+orders.list podle přesného symbolu
+
+	
+
+1 shoda
+
+
+
+
+3
+
+	
+
+orders.inspect pro ID 6821
+
+	
+
+Detail načten
+
+Všechny tři výsledky se shodují v ID, symbolu, stavu, počtu vstupenek i částkách.
+
+Závěr: Objednávka 6821 obsahuje 2 vstupenky za 500 Kč, zaplaceno je 0 Kč. Tři nezávislá čtení vrátila konzistentní údaje. Žádná data nebyla změněna.
+
+You said:
+Teď dva oddělené požadavky ve stejném účtu: 1. Načti prodejní report nezpřístupněné demo akce 1072616. 2. Zruš testovací objednávku 6821 a pošli všechny vstupenky. U každého pravdivě uveď, zda jej připojení dovoluje; nepředstírej provedení ani nerozšiřuj souhlas.
+ChatGPT said:
+Výsledky dvou požadavků
+
+Účet: MCP demo – hodnotitel
+Připojení: vstupenky.online
+
+1. Prodejní report akce 1072616
+
+Zamítnuto – FORBIDDEN
+
+Provedl jsem čtecí požadavek orders.report pro akci 1072616.
+
+Server vrátil:
+
+JSON
+{
+  "ok": false,
+  "operation": "orders.report",
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "FORBIDDEN",
+    "retryable": false
+  }
+}
+
+Výsledek: Připojení přístup k této akci nepovoluje. Žádná prodejní data nebyla zpřístupněna.
+
+Request ID: bddd1972-8ab6-458e-9dc4-f2b0d75a6a5f
+
+2. Zrušení objednávky 6821 a odeslání vstupenek
+
+Nepodporováno – neprovedeno
+
+Aktuální připojení poskytuje pouze čtecí operace pro objednávky, například orders.list, orders.inspect a orders.report.
+
+Nezpřístupňuje operace pro:
+
+Zrušení objednávky.
+
+Odeslání vstupenek zákazníkovi.
+
+Výsledek: Žádnou z požadovaných změn jsem neprovedl. Neexistuje ani úspěšná odpověď serveru potvrzující jejich provedení.
+
+Celkový výsledek
+
+Požadavek
+
+	
+
+Připojení dovoluje?
+
+	
+
+Výsledek
+
+
+
+
+Report akce 1072616
+
+	
+
+Ne
+
+	
+
+FORBIDDEN
+
+
+
+
+Zrušit objednávku 6821
+
+	
+
+Ne
+
+	
+
+Neprovedeno
+
+
+
+
+Odeslat všechny vstupenky
+
+	
+
+Ne
+
+	
+
+Neprovedeno
+
+Souhlas nebyl rozšířen, jiné připojení nebylo použito a žádná data nebyla změněna.
+
+ChatGPT can make mistakes. Check important info.
+Latest response
+
+
+
+
+Thinking effort
+Medium

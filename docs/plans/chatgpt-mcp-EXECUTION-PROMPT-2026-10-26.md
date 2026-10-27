@@ -7,6 +7,8 @@ Execution checkpoint, 2026-10-27: the regional cutover is deployed, first-party
 ChatGPT consent completed, and live report/list/detail/search plus scope denial
 passed. Resume from the [pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27);
 do not repeat deployment or create another connector to redo completed work.
+Public-review preparation now includes a retained isolated demo and two critics;
+resume its current gates in `integrations/chatgpt/review/readiness.md`.
 
 User amendment, 2026-10-27: first move the regional issuer/resource to
 `https://mcp.vstupenky.online/mcp`, then resume ChatGPT connection and acceptance.
@@ -77,3 +79,30 @@ wave before proceeding. Leave no placeholders or unplanned compatibility paths.
 At handoff provide changed contract, checks, live source/image evidence, actual
 ChatGPT acceptance state and any precise external blocker. Update the pilot
 record and current README without erasing historical evidence.
+
+## Public submission data profile - 2026-10-27
+
+The owner approved a restricted public ChatGPT order projection and explicitly
+required full MCP support for trusted private models. Protected client
+registrations now choose `dataProfile: order-summary | operator` independently
+from OAuth scopes and event consent. The public ChatGPT registration selects
+`order-summary`; native and private operator clients preserve full authorized
+DTOs. Never weaken the public profile during deployment or rollback.
+
+The public order projection excludes buyer contacts, notes, registration
+responses and field definitions, ticket/product free text, and connected user
+ID. Order IDs/symbols remain pseudonymous. Exact-symbol search follows bounded
+canonical pagination and explicitly reports unavailable on incomplete scans.
+Organizer-authored labels and ticket templates remain subject to the documented
+no-child-data/no-government-identifiers usage restriction.
+
+Replace the old retrieved-hostile-note public review scenario with verification
+that the note and registration fields are absent. Retain previous injection
+evidence as historical operator-profile evidence. Actual portal state is in
+`integrations/chatgpt/review/portal-status.json`.
+
+Final public milestone: version **1.0.1** submitted through the actual portal;
+confirmed **In review**, **Not published**. Reviewer credentials, CZ scope,
+current five-positive/three-negative cases and matching public walkthrough are
+saved. External next step is OpenAI review. Receipt and advisory findings are
+recorded in `integrations/chatgpt/review/portal-status.json`.

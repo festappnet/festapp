@@ -1,0 +1,103 @@
+{
+  "executedAt": "2026-10-27T01:19:16.983Z",
+  "boundary": "Real hosted MCP native SDK with dedicated reviewer identity; not ChatGPT model evidence",
+  "resource": "https://mcp.vstupenky.online/mcp",
+  "actor": "dedicated synthetic reviewer",
+  "clientId": "festapp-codex",
+  "checks": [
+    {
+      "name": "ordinary_password_login_without_MFA",
+      "at": "2026-10-27T01:19:05.792Z",
+      "actor": "dedicated reviewer",
+      "organizationId": 3
+    },
+    {
+      "name": "hosted_native_PKCE",
+      "at": "2026-10-27T01:19:11.993Z",
+      "clientId": "festapp-codex",
+      "scope": "festapp:ticket-layouts:read festapp:orders:read",
+      "selectedOccasions": [
+        1072614,
+        1072615
+      ]
+    },
+    {
+      "name": "deployed_clarification_guidance",
+      "at": "2026-10-27T01:19:12.443Z",
+      "initializeInstructions": true,
+      "reportDescription": true
+    },
+    {
+      "name": "P1_access_exact_two_occasions",
+      "at": "2026-10-27T01:19:13.178Z",
+      "tools": [
+        "festapp_orders_report",
+        "festapp_orders_list",
+        "festapp_orders_inspect",
+        "festapp_access_inspect",
+        "festapp_context_inspect",
+        "festapp_ticket_layouts_inspect"
+      ]
+    },
+    {
+      "name": "P2_canonical_report",
+      "at": "2026-10-27T01:19:13.755Z",
+      "validTickets": 4,
+      "validOrders": 2,
+      "waitingTickets": 1,
+      "currency": "CZK",
+      "netReceived": "500.00",
+      "currentOrderValue": "1250.00",
+      "warning": "payment_total_without_ledger"
+    },
+    {
+      "name": "P3_bounded_order_state",
+      "at": "2026-10-27T01:19:14.284Z",
+      "rows": 1,
+      "nextCursor": null
+    },
+    {
+      "name": "P4_symbol_search",
+      "at": "2026-10-27T01:19:14.902Z",
+      "rows": 1
+    },
+    {
+      "name": "P5_detail_hostile_text_retrieved",
+      "at": "2026-10-27T01:19:15.413Z",
+      "noteDelivered": true,
+      "allowedActions": [
+        "view"
+      ],
+      "modelBehavior": "separate ChatGPT scenario"
+    },
+    {
+      "name": "N1_unconsented_and_unrelated_denied",
+      "at": "2026-10-27T01:19:15.568Z",
+      "occasionIds": [
+        1072616,
+        99
+      ],
+      "code": "FORBIDDEN"
+    },
+    {
+      "name": "N2_writes_unadvertised_and_rejected",
+      "at": "2026-10-27T01:19:15.649Z",
+      "mutationInvoked": false
+    },
+    {
+      "name": "empty_search",
+      "at": "2026-10-27T01:19:16.150Z",
+      "rows": 0
+    },
+    {
+      "name": "explicit_refresh",
+      "at": "2026-10-27T01:19:16.243Z",
+      "naturalExpiryWait": false
+    },
+    {
+      "name": "immediate_issuer_revocation",
+      "at": "2026-10-27T01:19:16.983Z",
+      "status": 401
+    }
+  ]
+}

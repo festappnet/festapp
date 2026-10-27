@@ -4,6 +4,7 @@ import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
+import { connectionPageStyles } from './connection_page_styles.js';
 
 
 
@@ -91,11 +92,12 @@ export class AccountConnectionsPage {
         this.container.querySelector('[data-apps-heading]')?.focus();
     }
     render() {
-        const root = document.createElement('main'); root.className = 'account-connections';
+        const root = document.createElement('main'); root.className = 'account-connections connection-page';
+        root.setAttribute('aria-busy', String(this.state === 'loading'));
         const add = (tag, text = '', parent = root) => { const el = document.createElement(tag); el.textContent = text; parent.append(el); return el; };
         const button = (label, action, parent, disabled = false) => { const el = add('button', label, parent); el.type = 'button'; el.disabled = disabled; el.onclick = action; return el; };
+        const back = add('a', CommonStrings.back); back.href = '/'; back.className = 'connection-back';
         add('h1', CommonStrings.accountConnections);
-        const back = add('a', CommonStrings.back); back.href = '/';
         if (this.state === 'loading') add('p', CommonStrings.loading).setAttribute('role', 'status');
         else if (this.state === 'login') {
             add('p', this.text('loginHint'));
@@ -104,11 +106,11 @@ export class AccountConnectionsPage {
             add('p', this.text('error')).setAttribute('role', 'alert');
             button(CommonStrings.retry, () => this.init());
         } else {
-            add('p', (this.user.email ?? '').replace(new RegExp(`^${AppConfig.organization}\\+`), ''));
+            add('p', (this.user.email ?? '').replace(new RegExp(`^${AppConfig.organization}\\+`), '')).className = 'connection-identity';
             add('p', this.text('intro'));
             const methods = add('section'); methods.setAttribute('aria-labelledby', 'account-signin-heading');
             add('h2', this.text('signInMethods'), methods).id = 'account-signin-heading';
-            add('p', this.text('googleHint'), methods);
+            add('p', this.text('googleHint', { appName: AppConfig.appName }), methods);
             if (this.googleState === 'loading') add('p', CommonStrings.loading, methods).setAttribute('role', 'status');
             else if (this.googleState === 'error') {
                 add('p', this.text('error'), methods).setAttribute('role', 'alert');
@@ -120,10 +122,12 @@ export class AccountConnectionsPage {
                 if (this.googleActionFailed) add('p', this.text('error'), methods).setAttribute('role', 'alert');
                 const action = button(this.text(this.googleStatus.linked ? 'unlinkGoogle' : 'linkGoogle'), () => this.startGoogle(), methods, this.googleBusy);
                 action.dataset.googleAction = '';
+                if (!this.googleStatus.linked) action.dataset.primary = '';
             }
             const apps = add('section'); apps.id = 'apps'; apps.setAttribute('aria-labelledby', 'account-apps-heading');
             const heading = add('h2', this.text('apps'), apps); heading.id = 'account-apps-heading'; heading.tabIndex = -1; heading.dataset.appsHeading = '';
             add('p', this.text('appsHint'), apps);
+            button(this.text('refresh'), () => this.loadApps(), apps, this.appsState === 'loading' || this.revoking).dataset.refreshConnections = '';
             if (this.notice) add('p', this.notice, apps).setAttribute('role', 'status');
             if (this.actionError) add('p', this.actionError, apps).setAttribute('role', 'alert');
             if (this.appsState === 'loading') add('p', CommonStrings.loading, apps).setAttribute('role', 'status');
@@ -134,6 +138,9 @@ export class AccountConnectionsPage {
             else for (const c of this.connections) {
                 const item = add('article', '', apps); item.className = 'account-connection';
                 add('h3', c.client, item);
+                add('p', this.text('active'), item).className = 'connection-status';
+                if (!c.access.units.some(u => u.canCreateOccasions) && c.permissions.every(p => p.endsWith(':read')))
+                    add('p', this.text('readOnly'), item).className = 'connection-status';
                 add('p', this.text('expires', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt)) }), item);
                 const scope = add('ul', '', item);
                 for (const unit of c.access.units) add('li', this.text(unit.canCreateOccasions ? 'organizerCreate' : 'organizer', { id: unit.unitId }), scope);
@@ -153,7 +160,13 @@ export class AccountConnectionsPage {
             }
         }
         const style = document.createElement('style');
-        style.textContent = `.account-connections{max-width:720px;margin:32px auto;padding:24px;color:var(--text-color,inherit);overflow-wrap:anywhere}.account-connections a{color:inherit;text-decoration:underline;text-underline-offset:3px}.account-connections h1{font-size:2rem}.account-connections h2{font-size:1.25rem}.account-connections h3{font-size:1.125rem}.account-connections section{margin-block:32px;padding-block-start:16px;border-block-start:1px solid currentColor}.account-connections p,.account-connections li{line-height:1.6}.account-connections ul{padding-inline-start:24px}.account-connection{margin-block:24px;padding-block-end:16px;border-block-end:1px solid currentColor}.account-connections button{font:inherit;min-height:44px;padding:10px 20px;margin:8px 12px 8px 0;border-radius:24px;cursor:pointer}.account-connections button:disabled{cursor:wait}.account-connections :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;
+        style.textContent = connectionPageStyles + `
+.account-connections section{margin-block:32px;padding-block-start:28px;border-block-start:1px solid var(--connection-line)}
+.account-connections ul{padding-inline-start:22px;line-height:1.6}
+.account-connection{margin-block:20px;padding:20px 0;border-block-start:1px solid var(--connection-line)}
+.account-connection h3{margin:0 0 8px}
+.account-connection [data-confirm-revoke]{border-width:2px}
+`;
         this.container.hidden = false; this.container.style.display = 'block'; this.container.replaceChildren(style, root);
     }
 }

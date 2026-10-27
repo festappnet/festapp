@@ -12,6 +12,7 @@ import { inventoryDescriptors, inventoryDataSchemas, invokeInventoryOperation } 
 import { productScheduleDescriptors, productScheduleDataSchemas, invokeProductScheduleOperation } from './product-schedules.mjs';
 import { productDescriptors, productDataSchemas, invokeProductOperation } from './products.mjs';
 import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
+import { publicOrderPage, publicOrderSearch, publicOrders } from './public-orders.mjs';
 import { operatorAccess, accessProjection } from './access.mjs';
 import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
@@ -113,11 +114,11 @@ const metaSchema = z.strictObject({
     organizationId: occasion,
     readAt: z.iso.datetime(),
 });
-const resultSchema = (id) =>
+const resultSchema = (id, schema = dataSchemas[id]) =>
     z.strictObject({
         ok: z.boolean(),
         operation: z.literal(id),
-        data: dataSchemas[id].optional(),
+        data: schema.optional(),
         error: z
             .strictObject({
                 code: z.string(),
@@ -129,7 +130,7 @@ const resultSchema = (id) =>
     });
 const descriptors = [
     ...[...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
-    { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
+    { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
       input: occasionCreateInput, domainReadOnly: false, idempotent: true, requiresDelegatedCreate: true },
@@ -212,10 +213,19 @@ export class Operations {
                     (!descriptor.requiresDelegatedAccess || this.owner.allowedOperations?.includes(descriptor.id) === true) &&
                     (!descriptor.requiresDelegatedCreate || this.owner.allowedOperations?.includes('occasions.create') === true),
             )
-            .map((descriptor) => ({
-                ...descriptor,
-                output: resultSchema(descriptor.id),
-            }));
+            .map((descriptor) => {
+                if (this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(descriptor.id))
+                    return { ...descriptor,
+                        description: descriptor.id === 'orders.list'
+                            ? 'List a bounded page of orders for one selected occasion, at most 50. Search only by the exact 10-character order symbol. Returns order identifiers, stored state, ticket count and amounts. No buyer names, email addresses, registration answers, notes, QR codes or personal ticket content.'
+                            : 'Read one order identifier, stored state, ticket count and amounts for one selected occasion. Buyer names, emails, registration answers, internal notes and personal ticket content are withheld. This connection cannot change orders or send tickets.',
+                        input: descriptor.id === 'orders.list' ? descriptor.input.extend({ search: publicOrderSearch.optional() }) : descriptor.input,
+                        output: resultSchema(descriptor.id, publicOrderPage) };
+                if (this.owner.orderSummaryOnly && descriptor.id === 'context.inspect')
+                    return { ...descriptor, description: 'Inspect tenant and read-only capabilities. Does not return the connected user identifier.',
+                        output: resultSchema(descriptor.id, dataSchemas[descriptor.id].omit({ userId: true })) };
+                return { ...descriptor, output: resultSchema(descriptor.id) };
+            });
     }
     setWriteReady(value) {
         if (this.writeReady === value) return;
@@ -457,6 +467,11 @@ export class Operations {
                     };
                 }
                 check(dataSchemas[id].safeParse(data).success);
+                if (this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id)) data = publicOrders(data, args);
+                if (this.owner.orderSummaryOnly && id === 'context.inspect') {
+                    const { userId, ...publicContext } = data;
+                    data = publicContext;
+                }
                 return { ok: true, operation: id, data, meta };
             });
         } catch (error) {

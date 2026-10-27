@@ -16,6 +16,7 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
+        this.orderSummaryOnly = config.clients.find(client => client.id === token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;

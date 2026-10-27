@@ -1,0 +1,36 @@
+{
+  "observedAt": "2026-10-27T02:52:24.016552+00:00",
+  "organizationDisplayName": "Festapp",
+  "developerIdentityVerified": true,
+  "pluginId": "plugin_asdk_app_6ae002a14394819189521c68175a53d5",
+  "version": "1.0.1",
+  "versionId": "pluginrel_a94eb603be90819187f244c7ae3e63f8",
+  "outcome": "submitted_in_review",
+  "draftCreated": true,
+  "packageUploaded": true,
+  "domainVerified": true,
+  "reviewerCredentialsUploaded": true,
+  "oauthConnectedAsDedicatedReviewer": true,
+  "toolsScanned": 6,
+  "blockingFindingsObserved": 0,
+  "publicOrderSchemaVerifiedInPortal": true,
+  "submittedForReview": true,
+  "published": false,
+  "nextActionURL": "https://platform.openai.com/plugins/manage/plugin_asdk_app_6ae002a14394819189521c68175a53d5?version=pluginrel_a94eb603be90819187f244c7ae3e63f8",
+  "reviewStatus": "In review",
+  "reviewerInstructionsUpdatedForPublicProfile": true,
+  "positiveCasesComplete": 5,
+  "negativeCasesComplete": 3,
+  "countries": [
+    "CZ"
+  ],
+  "videoPublicHTTPStatus": 200,
+  "videoSha256Matched": true,
+  "videoURL": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/chatgpt/review/walkthrough-public-e6fd4177e317.mp4",
+  "zipSha256": "533a4652c42efc4bd3cdc0f17d1d1b95b132e574c96d3f29bd8ea249ee39fb76",
+  "metadataAdvisories": [
+    "Automated category confirmation incomplete",
+    "Automated privacy assessment incomplete; portal permits submission for additional review"
+  ],
+  "nextAction": "Await OpenAI review; do not auto-publish"
+}
