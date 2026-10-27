@@ -5,6 +5,11 @@ Ověřeno 2026-10-23. Praktická pravidla pro další etapy
 Tento dokument je návrhová a ověřovací brána; samotný zápis pravidla neznamená,
 že je již každý současný nástroj plní. Stav nasazení dokládá release receipt.
 
+Pro objednávky a finance platí také [společné commerce jádro](order-commerce-core.md)
+a [jeho plán přechodu](../plans/order-commerce-core-plan-2026-10-27.md). MCP zůstává
+tenký uživatelský adaptér ke stejným doménovým příkazům jako UI. Woo ani jiný
+kanál nesmí získat vlastní paid/refund engine nebo obejít uloženou autoritu úhrady.
+
 ## Co je standard, zkušenost a naše rozhodnutí
 
 - **Protokol:** stabilní revize `2026-07-28`. Server používá oficiální SDK

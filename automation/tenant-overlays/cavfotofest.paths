@@ -9,8 +9,6 @@ assets/icons/fstapplogo.dark.svg
 assets/icons/fstapplogo.svg
 fonts/Futura PT Book.ttf
 fonts/Futura PT Medium.ttf
-web_client/src/assets/fonts/FuturaPTBook.ttf
-web_client/src/assets/fonts/FuturaPTMedium.ttf
 android/app/src/main/res/mipmap-*/ic_launcher.png
 ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
 web/android-chrome-*.png
