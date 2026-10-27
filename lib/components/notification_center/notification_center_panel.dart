@@ -238,57 +238,9 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ],
               ),
             ),
-          ..._dayRows(context, entry.value),
+          for (final item in entry.value) _item(context, item),
         ],
       );
-    }
-  }
-
-  Iterable<Widget> _dayRows(
-    BuildContext context,
-    List<NotificationItem> items,
-  ) sync* {
-    final byDay = <DateTime?, List<NotificationItem>>{};
-    for (final item in items) {
-      final value = item.day ?? item.occurredAt?.toLocal();
-      final day = value == null
-          ? null
-          : DateTime(value.year, value.month, value.day);
-      (byDay[day] ??= []).add(item);
-    }
-    final locale =
-        (EasyLocalization.of(context)?.locale ??
-                Localizations.localeOf(context))
-            .toLanguageTag();
-    for (final entry in byDay.entries) {
-      if (entry.key case final day?) {
-        yield Padding(
-          key: ValueKey(
-            'notification-day-${items.first.occasionId ?? 'organization'}-${day.toIso8601String()}',
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
-          child: Semantics(
-            header: true,
-            child: Text(
-              NotificationCenterTime.dayHeading(
-                day,
-                locale,
-                now:
-                    widget.controller.snapshotDay ??
-                    widget.controller.snapshotAt,
-              ),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0,
-              ),
-            ),
-          ),
-        );
-      }
-      for (final item in entry.value) {
-        yield _item(context, item);
-      }
     }
   }
 
@@ -424,17 +376,13 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
             .toLanguageTag();
     final presentation = NotificationItemPresenter(item, locale: locale);
     final details = presentation.details;
+    final day = item.day ?? item.occurredAt?.toLocal();
     const radius = BorderRadius.all(Radius.circular(4));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Material(
         key: ValueKey('notification-item-${item.id}'),
-        color: unread
-            ? Color.alphaBlend(
-                colors.primary.withValues(alpha: .08),
-                colors.surface,
-              )
-            : Colors.transparent,
+        color: Colors.transparent,
         borderRadius: radius,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -447,7 +395,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 16,
+                  vertical: 12,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,7 +418,9 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           Text(
                             presentation.title,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colors.onSurface,
+                              color: unread
+                                  ? colors.onSurface
+                                  : colors.onSurfaceVariant,
                               fontWeight: unread
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -507,6 +457,30 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ],
+                          if (day != null) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              NotificationCenterTime.dayHeading(
+                                day,
+                                locale,
+                                now:
+                                    widget.controller.snapshotDay ??
+                                    widget.controller.snapshotAt,
+                              ),
+                              key: ValueKey('notification-age-${item.id}'),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 13,
+                                height: 1.35,
+                                letterSpacing: 0,
+                                color: unread
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant,
+                                fontWeight: unread
+                                    ? FontWeight.w500
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -515,14 +489,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       Padding(
                         padding: const EdgeInsets.only(top: 7),
                         child: _unreadDot(context),
-                      ),
-                    ],
-                    if (presentation.hasDetail) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 18,
-                        color: colors.onSurfaceVariant,
                       ),
                     ],
                   ],

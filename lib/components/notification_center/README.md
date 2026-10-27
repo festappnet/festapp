@@ -4,10 +4,12 @@ The controller owns one personal daily overview and opaque cursor. The server ow
 complete authorized counts, bounded contact previews, ordering and acknowledgment.
 See the [SQL contract](../../../database/functions/notification_center/README.md).
 
-The panel has one heading and mute menu per occasion ID, then quieter calendar-day
-headings: Today, Yesterday, relative days within the last week, older local dates.
-Same-name occasions remain distinct. Only the same action kind on the same day of
-the same occasion combines. Selecting a summary opens the existing common order
+The panel has one heading and mute menu per occasion ID, with continuous rows
+below. Age belongs to each row as small secondary metadata: Today, Yesterday,
+relative days within the last week, or older local dates. There are no day subheads.
+Read/unread rows share the same neutral surface; unread state uses the trailing
+dot, stronger title weight and primary-colored age. Same-name occasions remain distinct. Only the same action
+kind on the same day of the same occasion combines. Selecting a summary opens the existing common order
 page directly; there is no expansion, unread filter or exact time in the list.
 
 A summary shows its activity count and an exact historical place total when all
