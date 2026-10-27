@@ -10,13 +10,20 @@ class NotificationItemPresenter {
   final String? locale;
   final NotificationItem item;
   bool get hasDetail =>
+      (item.occasionLink != null && item.data['relatedOrders'] == true) ||
       item.data['messageId'] is String ||
       (item.occasionLink != null && item.data['orderId'] is int) ||
       (item.data['bankAccountId'] is int && item.data['unitId'] is int);
   bool get isError =>
       const {'email_problem', 'bank_problem'}.contains(item.kind) &&
       item.status != 'recovered';
-  String get title => NotificationCenterStrings.kind(item.kind);
+  String get title => item.isSummary && (item.data['activityCount'] as int) > 1
+      ? NotificationCenterStrings.activities(
+          item.kind,
+          item.data['activityCount'] as int,
+          locale: locale,
+        )
+      : NotificationCenterStrings.kind(item.kind);
   String? get reason {
     final value = item.data['reason'];
     return value is String && value.isNotEmpty
@@ -32,6 +39,12 @@ class NotificationItemPresenter {
       surname: contact['surname'] as String?,
       email: contact['email'] as String?,
     );
+    if (item.isSummary && (data['activityCount'] as int) > 1) {
+      return [
+        if (customer.isNotEmpty)
+          NotificationCenterStrings.latestCustomer(customer),
+      ];
+    }
     final count = data['count'] as int?;
     final multiple = (data['formContext'] as Map?)?['allowsMultiple'] == true;
     return [

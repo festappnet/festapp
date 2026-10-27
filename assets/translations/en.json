@@ -4475,7 +4475,46 @@
     "capacity": "Available for public sale: {remaining} / {limit}",
     "heldForWaiting": "Held for waiting list: {count}",
     "needsAttention": "Needs attention",
-    "detail": "Details"
+    "detail": "Details",
+    "latestCustomer": "Latest: {name}",
+    "activityCounts": {
+      "order_created": {
+        "one": "{count} new order",
+        "few": "{count} new orders",
+        "many": "{count} new orders",
+        "other": "{count} new orders"
+      },
+      "order_cancelled": {
+        "one": "{count} cancelled order",
+        "few": "{count} cancelled orders",
+        "many": "{count} cancelled orders",
+        "other": "{count} cancelled orders"
+      },
+      "waitlist_registered": {
+        "one": "{count} new waitlist registration",
+        "few": "{count} new waitlist registrations",
+        "many": "{count} new waitlist registrations",
+        "other": "{count} new waitlist registrations"
+      },
+      "offer_accepted": {
+        "one": "{count} accepted offer",
+        "few": "{count} accepted offers",
+        "many": "{count} accepted offers",
+        "other": "{count} accepted offers"
+      },
+      "offer_declined": {
+        "one": "{count} declined offer",
+        "few": "{count} declined offers",
+        "many": "{count} declined offers",
+        "other": "{count} declined offers"
+      },
+      "offer_expired": {
+        "one": "{count} expired offer",
+        "few": "{count} expired offers",
+        "many": "{count} expired offers",
+        "other": "{count} expired offers"
+      }
+    }
   },
   "TicketBatches": {
     "selectedCount": "Selected: {count}",

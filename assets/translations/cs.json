@@ -4477,7 +4477,46 @@
     "capacity": "Volná místa pro veřejnost: {remaining} / {limit}",
     "heldForWaiting": "Drženo pro pořadník: {count}",
     "needsAttention": "Vyžaduje pozornost",
-    "detail": "Detail"
+    "detail": "Detail",
+    "latestCustomer": "Poslední: {name}",
+    "activityCounts": {
+      "order_created": {
+        "one": "{count} nová objednávka",
+        "few": "{count} nové objednávky",
+        "many": "{count} nových objednávek",
+        "other": "{count} nových objednávek"
+      },
+      "order_cancelled": {
+        "one": "{count} zrušená objednávka",
+        "few": "{count} zrušené objednávky",
+        "many": "{count} zrušených objednávek",
+        "other": "{count} zrušených objednávek"
+      },
+      "waitlist_registered": {
+        "one": "{count} nový náhradník",
+        "few": "{count} noví náhradníci",
+        "many": "{count} nových náhradníků",
+        "other": "{count} nových náhradníků"
+      },
+      "offer_accepted": {
+        "one": "{count} přijatá nabídka",
+        "few": "{count} přijaté nabídky",
+        "many": "{count} přijatých nabídek",
+        "other": "{count} přijatých nabídek"
+      },
+      "offer_declined": {
+        "one": "{count} odmítnutá nabídka",
+        "few": "{count} odmítnuté nabídky",
+        "many": "{count} odmítnutých nabídek",
+        "other": "{count} odmítnutých nabídek"
+      },
+      "offer_expired": {
+        "one": "{count} vypršelá nabídka",
+        "few": "{count} vypršelé nabídky",
+        "many": "{count} vypršelých nabídek",
+        "other": "{count} vypršelých nabídek"
+      }
+    }
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",

@@ -70,6 +70,21 @@ class NotificationCenterStrings {
       }.contains(value)
       ? text('reasons.$value')
       : text('needsAttention');
+  static String latestCustomer(String name) =>
+      'NotificationCenter.latestCustomer'.tr(namedArgs: {'name': name});
+  static String activities(String kind, int count, {String? locale}) {
+    String form(String key) => 'NotificationCenter.activityCounts.$kind.$key'
+        .tr(namedArgs: {'count': '$count'});
+    return Intl.plural(
+      count,
+      locale: locale,
+      one: form('one'),
+      few: form('few'),
+      many: form('many'),
+      other: form('other'),
+    );
+  }
+
   static String places(int count, {String? locale}) {
     String form(String key) =>
         'NotificationCenter.places.$key'.tr(namedArgs: {'count': '$count'});

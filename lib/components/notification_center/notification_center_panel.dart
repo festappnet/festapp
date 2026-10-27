@@ -5,7 +5,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 import 'notification_center_controller.dart';
 import 'notification_center_strings.dart';
-import 'notification_center_time.dart';
 import 'notification_item_presenter.dart';
 
 class NotificationCenterPanel extends StatefulWidget {
@@ -47,7 +46,14 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   ),
                 ),
                 child: AppDialogHeader(
-                  title: Text(NotificationCenterStrings.title),
+                  title: Text(
+                    NotificationCenterStrings.title,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0,
+                    ),
+                  ),
                   actions: [
                     IconButton(
                       tooltip: s(settings ? 'back' : 'settings'),
@@ -154,13 +160,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                             ],
                           ),
                         ),
-                      for (final section
-                          in c.items.map((g) => g.section).toSet()) ...[
-                        ..._section(
-                          context,
-                          c.items.where((g) => g.section == section),
-                        ),
-                      ],
+                      ..._section(context, c.items),
                       if (c.pageFailed) Text(s('refreshFailed')),
                       if (c.nextCursor != null)
                         TextButton(
@@ -212,7 +212,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           .firstOrNull;
       final title = first.occasionTitle ?? occasion?['title']?.toString();
       yield Column(
-        key: ValueKey('notification-occasion-${first.section}-${entry.key}'),
+        key: ValueKey('notification-occasion-${entry.key}'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (first.occasionId != null && title != null)
@@ -228,7 +228,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontSize: 17,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                       ),
                     ),
@@ -237,10 +237,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ],
               ),
             ),
-          if (first.occasionId != null && title != null)
-            const Divider(height: 1),
-          for (final item in entry.value)
-            if (item.isPeriod) _period(context, item) else _item(context, item),
+          for (final item in entry.value) _item(context, item),
         ],
       );
     }
@@ -285,167 +282,44 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     ),
   );
 
-  Widget _period(BuildContext context, NotificationItem item) {
-    final state = widget.controller.periodState(item);
-    final isUnread = widget.controller.isUnread(item);
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final locale =
-        (EasyLocalization.of(context)?.locale ??
-                Localizations.localeOf(context))
-            .toLanguageTag();
-    final period = item.period;
-    final first = DateTime.parse(period['firstDay'] as String);
-    final last = DateTime.parse(period['lastDay'] as String);
-    final label = period['unit'] == 'day' || first == last
-        ? NotificationCenterTime.day(first, locale)
-        : 'NotificationCenter.week'.tr(
-            namedArgs: {
-              'range':
-                  '${DateFormat.yMd(locale).format(first)} - ${DateFormat.yMd(locale).format(last)}',
-            },
-          );
-    return Column(
-      key: ValueKey('notification-period-${item.id}'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Material(
-          color: isUnread
-              ? colors.primary.withValues(alpha: .08)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          child: Semantics(
-            expanded: state.expanded,
-            child: InkWell(
-              onTap: () => widget.controller.togglePeriod(item),
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    if (isUnread)
-                      _unreadDot(context)
-                    else
-                      const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: isUnread
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            s('orderActivities'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${item.data['count']}',
-                        style: theme.textTheme.labelLarge,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Tooltip(
-                      message: s(state.expanded ? 'collapse' : 'expand'),
-                      child: Icon(
-                        state.expanded ? Icons.expand_less : Icons.expand_more,
-                        size: 20,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (state.expanded)
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final child in state.items) _item(context, child),
-                if (state.loading) const LinearProgressIndicator(),
-                if (state.failed) ...[
-                  Text(s('refreshFailed')),
-                  TextButton(
-                    onPressed: () => widget.controller.loadPeriod(item),
-                    child: Text(CommonStrings.retry),
-                  ),
-                ] else if (!state.loading && state.items.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(s('unavailable')),
-                  ),
-                if (!state.failed && state.nextCursor != null)
-                  TextButton(
-                    onPressed: state.loading
-                        ? null
-                        : () => widget.controller.loadPeriod(item),
-                    child: Text(s('more')),
-                  ),
-              ],
-            ),
-          ),
-        const Divider(height: 1),
-      ],
-    );
-  }
+  IconData _kindIcon(String kind) => switch (kind) {
+    'order_created' => Icons.confirmation_number_outlined,
+    'order_cancelled' => Icons.cancel_outlined,
+    'waitlist_registered' => Icons.hourglass_empty,
+    'offer_accepted' => Icons.check_circle_outline,
+    'offer_declined' || 'offer_expired' => Icons.event_busy_outlined,
+    'email_problem' => Icons.mail_outline,
+    'bank_problem' => Icons.account_balance_outlined,
+    'capacity_warning' ||
+    'capacity_full' ||
+    'capacity_reopened' ||
+    'event_capacity_full' ||
+    'occasion_joined' => Icons.people_outline,
+    _ => Icons.event_note_outlined,
+  };
 
   Widget _item(BuildContext context, NotificationItem item) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final problem = const {'email_problem', 'bank_problem'}.contains(item.kind);
-    final isUnread = widget.controller.isUnread(item);
+    final unread = widget.controller.isUnread(item);
     final locale =
         (EasyLocalization.of(context)?.locale ??
                 Localizations.localeOf(context))
             .toLanguageTag();
     final presentation = NotificationItemPresenter(item, locale: locale);
-    final radius = BorderRadius.circular(problem ? 12 : 4);
+    final details = presentation.details;
+    const radius = BorderRadius.all(Radius.circular(4));
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: problem ? 8 : 0),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Material(
         key: ValueKey('notification-item-${item.id}'),
-        color: isUnread
+        color: unread
             ? Color.alphaBlend(
                 colors.primary.withValues(alpha: .08),
                 colors.surface,
               )
-            : problem
-            ? colors.surface
             : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: problem
-              ? BorderSide(color: colors.outlineVariant)
-              : BorderSide.none,
-        ),
+        borderRadius: radius,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -454,9 +328,85 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               onTap: presentation.hasDetail
                   ? () => widget.onDetail(item)
                   : null,
-              child: problem
-                  ? _incident(context, item, presentation, locale)
-                  : _feedRow(context, item, presentation, locale),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(
+                        _kindIcon(item.kind),
+                        size: 20,
+                        color: presentation.isError
+                            ? colors.error
+                            : colors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            presentation.title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colors.onSurface,
+                              fontWeight: unread
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                          if (details.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  for (var i = 0; i < details.length; i++) ...[
+                                    if (i > 0) const TextSpan(text: ' · '),
+                                    TextSpan(
+                                      text: details[i],
+                                      style: TextStyle(
+                                        color:
+                                            details[i] == presentation.reason &&
+                                                presentation.isError
+                                            ? colors.error
+                                            : colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (unread) ...[
+                      const SizedBox(width: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 7),
+                        child: _unreadDot(context),
+                      ),
+                    ],
+                    if (presentation.hasDetail) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
             if (item.data['affectedOccasions'] is List &&
                 item.data['bankAccountId'] == null)
@@ -473,219 +423,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     }),
                   ),
                 ),
-            if (!problem) const Divider(height: 1),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _timestamp(
-    BuildContext context,
-    NotificationItem item,
-    String locale, {
-    bool compact = false,
-  }) {
-    final value = item.occurredAt!;
-    final local = value.toLocal();
-    return Tooltip(
-      message: NotificationCenterTime.exact(value, locale),
-      child: Text(
-        compact
-            ? '${NotificationCenterTime.day(local, locale)}\n${DateFormat.jm(locale).format(local)}'
-            : NotificationCenterTime.timestamp(value, locale),
-        textAlign: compact ? TextAlign.right : TextAlign.start,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _feedRow(
-    BuildContext context,
-    NotificationItem item,
-    NotificationItemPresenter presentation,
-    String locale,
-  ) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final timeBeside =
-            constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) >=
-            320;
-        return ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 72),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Row(
-              children: [
-                if (widget.controller.isUnread(item))
-                  _unreadDot(context)
-                else
-                  const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        presentation.title,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colors.onSurface,
-                          fontWeight: widget.controller.isUnread(item)
-                              ? FontWeight.w600
-                              : const {
-                                  'form_opened',
-                                  'form_closed',
-                                }.contains(item.kind)
-                              ? FontWeight.w500
-                              : FontWeight.w400,
-                        ),
-                      ),
-                      if (presentation.details.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          presentation.details.join(' · '),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                      if (!timeBeside && item.occurredAt != null) ...[
-                        const SizedBox(height: 6),
-                        _timestamp(context, item, locale),
-                      ],
-                    ],
-                  ),
-                ),
-                if (timeBeside && item.occurredAt != null) ...[
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 76,
-                    child: _timestamp(context, item, locale, compact: true),
-                  ),
-                ],
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 18,
-                  child: presentation.hasDetail
-                      ? Icon(
-                          Icons.chevron_right,
-                          size: 18,
-                          color: colors.onSurfaceVariant,
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _incident(
-    BuildContext context,
-    NotificationItem item,
-    NotificationItemPresenter presentation,
-    String locale,
-  ) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final details = presentation.details;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                item.kind == 'email_problem'
-                    ? Icons.mark_email_unread_outlined
-                    : Icons.account_balance_outlined,
-                size: 20,
-                color: presentation.isError
-                    ? colors.error
-                    : colors.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              if (widget.controller.isUnread(item)) _unreadDot(context),
-              Expanded(
-                child: Text(
-                  presentation.title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          for (var i = 0; i < details.length; i++) ...[
-            SizedBox(height: i == 0 ? 12 : 6),
-            if (details[i] == presentation.reason)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    presentation.isError
-                        ? Icons.error_outline
-                        : Icons.check_circle_outline,
-                    size: 18,
-                    color: presentation.isError
-                        ? colors.error
-                        : colors.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      details[i],
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: presentation.isError
-                            ? colors.error
-                            : colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            else
-              Text(
-                details[i],
-                style: i == 0
-                    ? theme.textTheme.titleMedium?.copyWith(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.w600,
-                      )
-                    : theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-              ),
-          ],
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 12,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (item.occurredAt != null) _timestamp(context, item, locale),
-              if (presentation.hasDetail)
-                TextButton.icon(
-                  onPressed: () => widget.onDetail(item),
-                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: Text(s('detail')),
-                ),
-            ],
-          ),
-        ],
       ),
     );
   }
