@@ -1,4 +1,4 @@
-# FestUp Tickets and vstupenky.online: identity and endpoint decision
+# Festapp Tickets and vstupenky.online: identity and endpoint decision
 
 Checked 2026-10-27. This investigation informs the current read-only pilot;
 it does not authorize DNS changes, another production client, public submission,
@@ -7,14 +7,14 @@ regional target `https://mcp.vstupenky.online/mcp` for implementation **before f
 
 ## Product presentation
 
-The intended presentation is two identifiable connections: `FestUp Tickets` for
+The intended presentation is two identifiable connections: `Festapp Tickets` for
 the global product, and `vstupenky.online` for the regional product. A user searching
 for the regional brand should recognize that exact name. Do not claim that a
 private connection has directory search placement or that description keywords
 are guaranteed to be indexed.
 
 Regional consent explains: “Toto připojení platí pro vstupenky.online, který běží
-na společné platformě FestUp.” The deployment's optional `regionalPortal` settings
+na společné platformě Festapp.” The deployment's optional `regionalPortal` settings
 supply the labels. Global deployments omit these settings. If one issuer later
 serves both products, bind presentation and tenant policy to its registered clients
 before sharing that deployment; never show a regional deployment default to a
@@ -48,7 +48,7 @@ support or actual review. No support message or submission was sent.
 | Current private pilot | `https://mcp.festapp.net/mcp` | Active historical target; no further ChatGPT setup/acceptance here. Replace through the approved cutover first. |
 | Proposed regional public connection | `https://mcp.vstupenky.online/mcp` | Accepted by the user on 2026-10-27; not yet provisioned, registered or published. Separates MCP routing from the main site's application shell. |
 | Alternative regional route | `https://vstupenky.online/mcp` | Technically possible with deliberate proxy, discovery and OAuth routing. Sharing the app's root well-known paths needs extra care. |
-| Global public connection | Stable endpoint under the verified FestUp global domain | Domain choice remains outstanding; do not invent ownership or register a speculative hostname. |
+| Global public connection | Stable endpoint under the verified Festapp global domain | Domain choice remains outstanding; do not invent ownership or register a speculative hostname. |
 
 A public name, public MCP resource URL, OAuth issuer and actual backend are
 separate concepts. An OAuth issuer may be on a different origin from the MCP

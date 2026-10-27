@@ -40,7 +40,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     const raw = configuration(issuer);
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
-    if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'FestUp' };
+    if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
     const config = parseRemoteConfig(raw);
     const audit = [];

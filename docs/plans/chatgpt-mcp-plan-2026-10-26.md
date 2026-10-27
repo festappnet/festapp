@@ -8,7 +8,7 @@ Verification: standard (OAuth, permissions, public contracts and production)
 
 The user authorized operating a new browser tab in their existing ChatGPT account.
 The regional product must be identifiable as `vstupenky.online`, with an explanation
-of its relationship to FestUp that is absent for global FestUp Tickets users.
+of its relationship to Festapp that is absent for global Festapp Tickets users.
 Two independent branded connections with shared implementation are the intended
 presentation. Public listing eligibility and URL migration were investigated in
 [branding and URLs](chatgpt-mcp-branding-and-urls-2026-10-27.md). The current pilot
@@ -425,7 +425,7 @@ Before any further ChatGPT connection setup or acceptance, make
 `https://mcp.vstupenky.online/mcp` the canonical
 regional resource for the connector named `vstupenky.online`. Keep the current
 `https://mcp.festapp.net/mcp` unchanged until this coordinated cutover is ready.
-The global `FestUp Tickets` connection has its own final address under a verified
+The global `Festapp Tickets` connection has its own final address under a verified
 global domain. Do not provision a guessed global domain or a second production
 client in this regional pilot.
 
@@ -456,7 +456,7 @@ and exact migration concerns. Work remaining in this phase:
   refresh, in-flight revocation, both protocol eras and controlled rollback.
 - Keep the old route only for the explicitly staged transition/rollback window;
   retire it as a regional authority after the new connection is accepted. Do not
-  repurpose an old regional grant as global FestUp access.
+  repurpose an old regional grant as global Festapp access.
 
 Normal protected main review, scoped backend/hosting release rules and cheaper
 subagent deployment delegation still apply. This phase permits no other tenant
