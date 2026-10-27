@@ -3765,6 +3765,7 @@
     "hideOccasions": "Skrýt akce ({count})",
     "accessSummary": "Co propojení umožní",
     "sameRights": "Ve vybraném rozsahu může aplikace používat následující funkce. Vždy ji omezují Vaše aktuální uživatelská práva.",
+    "regionalPlatform": "Toto připojení platí pro {portal}, který běží na společné platformě {platform}.",
     "baseAccess": "Číst identitu, dostupné akce a vzhled vstupenek",
     "sensitiveActionsHint": "Před rušením objednávek, změnami plateb nebo odesláním vstupenek si má aplikace ověřit Váš konkrétní pokyn.",
     "selectionSummary": "Vybraní pořadatelé: {organizers}. Jednotlivé akce: {occasions}.",
