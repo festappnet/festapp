@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -130,7 +129,6 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
         ? null
         : bell.localToGlobal(Offset.zero, ancestor: overlay) & bell.size;
     NotificationItem? target;
-    Map<String,dynamic>? selection;
     await showDialog<void>(
         context: context,
         barrierColor: desktop ? Colors.transparent : Colors.black54,
@@ -138,24 +136,17 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
             controller: controller,
             anchor: anchor,
             onDetail: (item) {
-              selection = controller.selectionScope(item);
-              if (item.isSummary && selection == null) {
-                unawaited(controller.open());
-                return;
-              }
               target = item;
               Navigator.of(dialogContext).pop();
             }));
     if (!mounted) return;
     controller.close();
     focus.requestFocus();
-    if (target != null) await _detail(target!, selection);
+    if (target != null) await _detail(target!);
   }
 
-  Future<void> _detail(NotificationItem item, Map<String,dynamic>? selection) async {
+  Future<void> _detail(NotificationItem item) async {
     final data = item.data;
-    if (data['relatedOrders'] != true) await ExceptionHandler.guard(context, futureFunction: () => controller.markRead(item));
-    if (!mounted) return;
     final link = item.occasionLink;
     if (link != null && data['orderId'] is int) {
       await pushRootPath(
@@ -199,7 +190,10 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       await pushRootPath(
           context.router.root,
           Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'],
-            queryParameters: selection != null ? {'notificationGroup': jsonEncode(selection)} : null).toString());
+            queryParameters: item.isSummary ? {'notificationGroup': jsonEncode({
+              'id': item.id, 'organization': controller.organization,
+              'snapshot': controller.snapshot, 'timezone': controller.displayTimezone,
+            })} : null).toString());
       return;
     }
     final account = data['bankAccountId'];
@@ -212,10 +206,9 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
           '/unit/$unit/edit/bank-accounts/$account/connection');
       return;
     }
-    if (mounted) {
+    if (mounted)
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(NotificationCenterStrings.text('unavailable'))));
-    }
   }
 
   @override

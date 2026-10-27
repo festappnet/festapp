@@ -12,9 +12,7 @@ typedef NotificationRead = Future<dynamic> Function(
 
 class NotificationItem {
   NotificationItem.fromJson(Map<String, dynamic> json)
-    : isRead = json['isRead'] as bool?,
-      isSeen = json['isSeen'] as bool?,
-      id = json['id'].toString(),
+    : id = json['id'].toString(),
       section = json['section'] as int? ?? 2,
       sequence = json['sequence'] as int? ?? 0,
       occasionId = json['occasionId'] as int?,
@@ -25,8 +23,6 @@ class NotificationItem {
       day = DateTime.tryParse(json['day']?.toString() ?? ''),
       occasionLink = json['occasionLink'] as String?,
       data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
-  bool? isRead;
-  final bool? isSeen;
   final String id, kind, status;
   final int section, sequence;
   final int? occasionId;
@@ -58,16 +54,13 @@ class NotificationCenterController extends ChangeNotifier {
       loading = false,
       failed = false,
       pageFailed = false;
-  bool panelOpen = false,
-      foreground = true,
-      refreshFailed = false,
-      truncated = false;
+  bool panelOpen = false, foreground = true, refreshFailed = false;
   int snapshot = 0;
   // Preserve the pre-open watermark while the server acknowledges this snapshot.
   // A missing watermark on older backends must not label every row as new.
   int? previousReadThrough;
   bool isUnread(NotificationItem item) =>
-      item.isRead != null ? !item.isRead! : previousReadThrough != null &&
+      previousReadThrough != null &&
       item.sequence > previousReadThrough! &&
       item.sequence <= snapshot;
   DateTime? snapshotAt;
@@ -78,35 +71,6 @@ class NotificationCenterController extends ChangeNotifier {
     'p_snapshot_at': snapshotAt?.toUtc().toIso8601String(),
     'p_timezone': displayTimezone,
   };
-
-  /// Freeze the row's scope before dismissing the overlay or changing routes.
-  Map<String, dynamic>? selectionScope(NotificationItem item) {
-    if (!item.isSummary || organization == null || snapshot <= 0) return null;
-    return {
-      'id': item.id,
-      'organization': organization,
-      'snapshot': snapshot,
-      'timezone': displayTimezone,
-      'snapshotAt': snapshotAt?.toUtc().toIso8601String(),
-      if (item.data['afterSequence'] != null) 'afterSequence': item.data['afterSequence'],
-      'throughSequence': item.sequence > 0 ? item.sequence : snapshot,
-      'markRead': isUnread(item),
-    };
-  }
-
-  Future<void> markRead(NotificationItem item) async {
-    if (organization == null || !isUnread(item)) return;
-    final generation = _generation;
-    final result = await _read('mark_notification_center_item_read', {
-      'p_organization': organization,
-      'p_scope': {'id': item.id, 'snapshot': snapshot, 'throughSequence': item.sequence > 0 ? item.sequence : snapshot},
-    });
-    if (generation == _generation && result == true) {
-      item.isRead = true;
-      notifyListeners();
-    }
-  }
-
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
   dynamic nextCursor;
@@ -138,7 +102,6 @@ class NotificationCenterController extends ChangeNotifier {
     if (identityChanged || invalidate) enabled = unread = false;
     failed = pageFailed = loading = false;
     nextCursor = null;
-    truncated = false;
     snapshot = 0;
     previousReadThrough = null;
     snapshotAt = null;
@@ -192,15 +155,12 @@ class NotificationCenterController extends ChangeNotifier {
         updates[item.id] = item;
       }
       if (result['unread'] is bool) unread = result['unread'] as bool;
-      truncated = result['truncated'] == true;
       // Recheck permissions and live facts without moving snapshot positions or
       // inserting arrivals. Missing IDs are revoked, not cached personal data.
       items = [
         for (final item in items)
           if (updates[item.id] case final update?)
             NotificationItem.fromJson({
-              'isRead': update.isRead,
-              'isSeen': update.isSeen,
               'id': update.id,
               'kind': update.kind,
               'status': update.status,
@@ -335,7 +295,6 @@ class NotificationCenterController extends ChangeNotifier {
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
       nextCursor = result['nextCursor'];
-      truncated = result['truncated'] == true;
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
@@ -377,7 +336,6 @@ class NotificationCenterController extends ChangeNotifier {
             .where((e) => known.add(e.id)),
       );
       nextCursor = result['nextCursor'];
-      truncated = result['truncated'] == true;
     } catch (error) {
       if (generation == _generation &&
           revision == _revision &&
