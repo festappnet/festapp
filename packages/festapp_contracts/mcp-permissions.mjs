@@ -1,6 +1,15 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
+    'festapp:people:read': {label:'peopleRead',operations:['profiles.list','profiles.inspect'],requires:[]},
+    'festapp:people:write': {label:'peopleWrite',operations:['profiles.create','profiles.save','profiles.delete','profiles.import','profiles.importTickets'],requires:['festapp:people:read']},
+    'festapp:people:roles': {label:'peopleRoles',operations:['profiles.roles'],requires:['festapp:people:read']},
+    'festapp:groups:read': {label:'groupsRead',operations:['groups.list','groups.inspect'],requires:[]},
+    'festapp:groups:write': {label:'groupsWrite',operations:['groups.save','groups.delete','groups.addMembers','groups.replaceAssignments'],requires:['festapp:groups:read']},
+    'festapp:unit-people:read': {label:'unitPeopleRead',operations:['units.people.list'],requires:[]},
+    'festapp:unit-people:write': {label:'unitPeopleWrite',operations:['units.people.create','units.people.profile'],requires:['festapp:unit-people:read']},
+    'festapp:unit-people:roles': {label:'unitPeopleRoles',operations:['units.people.roles'],requires:['festapp:unit-people:read']},
+    'festapp:unit-people:revoke': {label:'unitPeopleRevoke',operations:['units.people.revoke'],requires:['festapp:unit-people:read']},
     'festapp:occasion-settings:read': {label:'occasionSettingsRead',operations:['occasions.settings.inspect','occasions.game.inspect'],requires:[]},
     'festapp:occasion-settings:write': {label:'occasionSettingsWrite',operations:['occasions.settings.save','occasions.publicLink','occasions.setPublicLink','occasions.game.save'],requires:['festapp:occasion-settings:read']},
     'festapp:unit-settings:read': {label:'unitSettingsRead',operations:['units.settings.inspect'],requires:[]},

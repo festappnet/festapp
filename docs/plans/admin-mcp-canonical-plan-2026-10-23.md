@@ -915,3 +915,21 @@ na review a samostatný produkční rollout. Dosavadní orientační váhy dáva
 přibližně 45 % celkového objemu práce, s rozumným rozpětím 40-50 %; nejde
 o změřené odpracované hodiny. Zbývají etapy 6-10. Autoritativní aktuální stav
 je v posledním checkpointu, nikoli v historických odstavcích o review stacku.
+
+
+### Checkpoint po etapě 6 - 2026-10-27
+
+Etapa 6 je lokálně dokončená a ověřená, bez produkčního nasazení. Přidáno
+19 MCP nástrojů, katalog nyní 103 úkonů / 87 nástrojů. Profily a skupiny používají
+původní SQL příkazy; lidé u pořadatele mají společný verzovaný příkaz pro UI/MCP,
+původní persistence owner a jednu společnou invalidaci přístupů při změně rolí
+nebo odebrání člena. Role, dobrovolnictví a revokace mají nové oddělené souhlasy.
+
+[Kontrakt a matice vlastníků](admin-mcp-stage6-boundary-2026-10-27.md),
+[přesná evidence a zdrojové hashe](../reports/admin-people-evidence-2026-10-27.json).
+Čtyři skutečné souběhy prokazují odmítnutí čtení/zápisu/replay po změně scope
+nebo revokaci. Prošly i původní group/profile SQL a cílené Flutter/SDK kontroly.
+
+Hotovo 7 z 11 hlavních etap. Další je **7 - pokročilá editace plánků a vzhled
+vstupenek**. Etapy 0-5 mají doložený rollout pro prod/festapptickets; stage 6
+vyžaduje běžné review a samostatně autorizovaný kompatibilní release.

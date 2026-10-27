@@ -1463,3 +1463,39 @@ obsahuje přesné hashe, image, bundle a Cloudflare preview ID. Čistý main a
 vybraný prod checkout byly zachované, původní rozpracované soubory zálohované.
 Hotovo zůstává **6/11 hlavních etap, orientačně 45 % podle velikosti**.
 Následuje **6 - lidé, role, skupiny a dobrovolníci**.
+
+
+## Stage 6 locally complete 2026-10-27
+
+Etapa 6 je implementovaná a lokálně ověřená na izolované větvi
+`feat/admin-mcp-stage6-20261027`, základ main `a698f7403bbb62730df211a91c777b12a356d25c`.
+Cizí dirty checkout nebyl upraven. Main vyžaduje jedno review; admin výjimka ani
+produkční rollout nejsou součástí této etapy.
+
+- 19 nových nástrojů: profily a importy, výslovné role/volunteer status,
+  atomická členství/skupiny, lidé a přístupy u pořadatele. Katalog 103/87.
+- Původní profile/group receipt vlastníci; named profile patch se slučuje až
+  uvnitř jejich hash/replay/version hranice. Nové role nelze udělit běžnou editací
+  ani starým OAuth grantem. Žádná nová ACL, trigger, druhý profile writer či ledger.
+- `save_unit_user_client_sync_v1` obaluje původní unit-user persistence owner.
+  Současný UI grid používá stejný verzovaný příkaz, zachovává původní verzi
+  i potvrzenou identitu. Vydané `update_unit_user` zůstává fasádou do stejného owneru.
+  Změny rolí a odebrání přístupu sdílejí jednu invalidaci soukromých profilů.
+- Živé role a uložený scope jsou ověřené před replay. Skutečný self-demotion
+  mění běžný capabilities kontext; čtyři row-lock souběhy odmítají čtení, zápis
+  a replay po přesunu mimo consent nebo revokaci. Zápis nezůstane uložený.
+- Prošlo 15 DB/SDK/scope případů bez skipu (včetně čtyř stávajících SQL
+  regresních souborů), 14 unikátních Flutter případů, 54 remote/context/operation,
+  41 web a 8 source testů plus 9 Python testů. Dart bez errors/warnings;
+  tři původní info linty v db_users.dart. Žádný produkční build nebo provider call.
+
+[Konkrétní hranice a matice](admin-mcp-stage6-boundary-2026-10-27.md),
+[příkazy, source digests a naměřený plán/payload](../reports/admin-people-evidence-2026-10-27.json).
+Migrace `20261027150000_people_group_authoring.sql` je nová; publikované migrace
+se neměnily. Effective-source parity i nezměněný runtime ticket-layout kontrakt
+jsou ověřené. Nová stránka 50 identit načítá jen příslušný limit před agregací;
+nekopíruje celý occasion-user editor bundle ani nerozbíjí jeden save na více RPC.
+
+Hotovo **7/11 hlavních etap**, etapa 6 dosud nenasazená. Následuje
+**7 - pokročilá editace plánků a vzhled vstupenek**. Neslučovat s odděleným
+ChatGPT veřejným pilotem a neobnovovat historický PR stack.

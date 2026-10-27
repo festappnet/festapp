@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "date": "2026-10-26",
-  "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
-  "liveBaselineVersion": "0.20.371+869",
+  "date": "2026-10-27",
+  "sourceMain": "a698f7403bbb62730df211a91c777b12a356d25c",
+  "liveBaselineVersion": "0.20.427+929",
   "tenant": "festapptickets",
-  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapy 3 a 4 jsou lokálně dokončené a ověřené; jejich produkční rollout neproběhl.",
+  "scopeNote": "Etapy 0-5 mají doložený produkční rollout pro vstupenky.online. Etapa 6 je lokálně implementovaná a ověřená; její produkční nasazení neproběhlo.",
   "actions": [
     {
       "id": "action-001",
@@ -1391,11 +1391,17 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.list",
+        "profiles.inspect",
+        "profiles.create",
+        "profiles.save"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-079",
@@ -1405,11 +1411,15 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.import",
+        "profiles.importTickets"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-080",
@@ -1419,11 +1429,14 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.delete"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-081",
@@ -1433,11 +1446,15 @@
       "sources": [
         "lib/components/unit/unit_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.people.list",
+        "units.people.revoke"
+      ],
       "phase": "6",
       "effect": "critical",
       "scope": "Pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-082",
@@ -1447,11 +1464,17 @@
       "sources": [
         "lib/components/groups/group_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "groups.list",
+        "groups.inspect",
+        "groups.save",
+        "groups.delete"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-083",
@@ -1461,11 +1484,15 @@
       "sources": [
         "lib/components/groups/group_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "groups.addMembers",
+        "groups.replaceAssignments"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-084",
@@ -1734,15 +1761,70 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "deploymentState": "pending"
+    },
+    {
+      "id": "action-101",
+      "area": "Lidé a oprávnění",
+      "title": "Měnit role, schvalování a dobrovolnictví účastníků",
+      "description": "Výslovný samostatný souhlas, živé oprávnění managera akce, původní verze a společný profile command owner.",
+      "sources": [
+        "lib/components/users/profile_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "profiles.roles"
+      ],
+      "phase": "6",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
+    },
+    {
+      "id": "action-102",
+      "area": "Lidé a oprávnění",
+      "title": "Přidat a upravit profil člověka u pořadatele",
+      "description": "Přidání bez udělení rolí; existující členství se nepřepisuje. UI i MCP sdílí verzovaný příkaz.",
+      "sources": [
+        "lib/components/unit/unit_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "units.people.create",
+        "units.people.profile"
+      ],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
+    },
+    {
+      "id": "action-103",
+      "area": "Lidé a oprávnění",
+      "title": "Měnit role lidí u pořadatele",
+      "description": "Samostatný role příkaz vyžaduje výslovný souhlas pro celého pořadatele a jeho živou manager roli.",
+      "sources": [
+        "lib/components/unit/unit_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "units.people.roles"
+      ],
+      "phase": "6",
+      "effect": "critical",
+      "scope": "Pořadatel",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     }
   ],
   "dataQualityReview": {
-    "status": "Etapa 4: lokálně ověřené společné SQL a omezené datové kontrakty.",
-    "finding": "Návrh čekací listiny stránkuje před JSON agregací a zachovává globální FIFO výpočet. Quote používá skutečný příkaz v rollbacku; potvrzení drží stejný receipt a externí invoice fence. Naměřené velikosti jsou syntetické SQL/JSON vzorky, nikoli produkční latence nebo tokenové úspory.",
-    "nextStep": "Stejným způsobem prověřit rozsah a vlastníky etapy 5; rollout hotových etap zůstává samostatný krok.",
-    "evidence": "admin-form-completion-evidence-2026-10-26.json"
+    "status": "Etapa 6: skutečné PostgreSQL, SDK a Flutter kontroly.",
+    "finding": "Stejná první stránka 50 identit: 168416 -> 5111 serializovaných bajtů, 121 -> 50 přenesených účastníků. Jeden doménový request na obou stranách; scope/Auth lookupy měřeny nejsou. Lokální syntetická data nejsou produkční latence ani měření tokenů.",
+    "nextStep": "Etapa 7; produkční rollout etapy 6 je samostatný krok.",
+    "evidence": "admin-people-evidence-2026-10-27.json"
   },
-  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 (#617) jsou publikované k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
+  "progress": "Etapy 0-5 jsou nasazené. Etapa 6 sjednocuje lidi, role, skupiny a dobrovolníky přes společné příkazy a nové výslovné souhlasy. Lokálně hotovo 7 z 11 hlavních etap. Následuje etapa 7: pokročilý editor plánků a vzhled vstupenek.",
   "phases": [
     {
       "id": "0",
@@ -1787,8 +1869,8 @@
     {
       "id": "3",
       "title": "E-mailové šablony a dědičnost",
-      "state": "local",
-      "status": "Lokálně hotovo, nenasazeno",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Sjednotit úpravy šablon pořadatele a akce, bannery a náhled výsledného e-mailu.",
       "example": "Upravit potvrzení objednávky pro konkrétní akci nebo vrátit šablonu k výchozí podobě pořadatele.",
       "result": "UI i MCP ukážou, odkud výsledná šablona pochází, a použijí stejné ukládání a renderer náhledu.",
@@ -1797,8 +1879,8 @@
     {
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
-      "state": "local",
-      "status": "Lokálně hotovo, nenasazeno",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
@@ -1807,8 +1889,8 @@
     {
       "id": "5",
       "title": "Nastavení akce a pořadatele",
-      "state": "next",
-      "status": "Další na řadě",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Sjednotit změny základních údajů, termínů, funkcí, publikace a prodeje.",
       "example": "Posunout začátek akce nebo upravit její dostupné funkce.",
       "result": "Změny půjdou přes existující společné ukládání. Práva k jedné akci automaticky nedávají právo měnit celého pořadatele.",
@@ -1817,18 +1899,18 @@
     {
       "id": "6",
       "title": "Lidé, role, skupiny a dobrovolníci",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Sjednotit správu účastníků a jejich přístupů bez nechtěného rozšíření oprávnění.",
       "example": "Přidat člověka do skupiny nebo změnit roli dobrovolníka v rámci konkrétní akce.",
       "result": "Změna role se projeví v dostupných oprávněních a následné operace ověří aktuální stav.",
-      "note": ""
+      "note": "19 MCP nástrojů, původní SQL vlastníci, nový společný verzovaný unit user command. Oddělené souhlasy pro role a revokaci; souběhy ověřeny skutečnými row-lock waits."
     },
     {
       "id": "7",
       "title": "Pokročilý editor plánků a vzhled vstupenek",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "next",
+      "status": "Další na řadě",
       "purpose": "Řešit geometrii, uspořádání, skupiny míst, texty, obrázky a tiskový vzhled.",
       "example": "Přesunout stoly, změnit nedělitelný výběr míst nebo upravit rozložení tištěné vstupenky.",
       "result": "Editor zachová rozpracovaný návrh, Uložit a Zrušit. Změny ověří obchodní vazby; tiskový vzhled potřebuje také ověřený PDF renderer.",
@@ -1865,5 +1947,5 @@
       "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
     }
   ],
-  "phaseSummary": "Nasazeno 0-2B; etapy 3 a 4 lokálně dokončené, nenasazené. Další je etapa 5."
+  "phaseSummary": "Nasazeno 0-5; etapa 6 lokálně hotová, nenasazená. Další je etapa 7."
 }

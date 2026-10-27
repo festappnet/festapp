@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION update_unit_user(
+CREATE OR REPLACE FUNCTION public.update_unit_user_internal_v1(
     input_data jsonb
 ) RETURNS jsonb
 SECURITY DEFINER
@@ -63,7 +63,7 @@ BEGIN
     );
 
     -- 5. Call update_user and handle its response
-    v_update_user_result := update_user(v_update_user_payload);
+    v_update_user_result := public.update_user_internal_v1(v_update_user_payload);
 
     -- If the sub-function did not return a success code (200 or 201), pass its error response through.
     IF (v_update_user_result->>'code')::int NOT IN (200, 201) THEN
@@ -101,3 +101,4 @@ EXCEPTION WHEN OTHERS THEN
     );
 END;
 $$ LANGUAGE plpgsql;
+REVOKE ALL ON FUNCTION public.update_unit_user_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;

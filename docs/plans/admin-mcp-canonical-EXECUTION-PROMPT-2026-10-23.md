@@ -1,47 +1,42 @@
 # Pokračování kanonické administrace a MCP
 
-Aktuální pokračování: 2026-10-27. Načíst aktuální `origin/main`, AGENTS.md,
-CLAUDE.md a `docs/architecture/ai_context.md`. Cizí dirty checkout neměnit.
-Ověřování `standard`; práce patří do izolovaného worktree.
+Aktuální pokračování: 2026-10-27. Načíst čerstvý origin/main, AGENTS.md,
+CLAUDE.md a docs/architecture/ai_context.md. Ověřování standard, izolovaný
+worktree; cizí dirty checkout neměnit.
 
-Autoritativní plán je [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
-Poslední aktuální sekce [checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md)
-je **Production rollout 2026-10-27**. Etapy 0-5 jsou implementované a pro
-`prod/festapptickets` nasazené ve verzi **0.20.427+929**. Kód release main
-`00c1da5cef9bb1e949bf230f270f221b1b9f69d8`, tenant
-`bfbc1c3c1740efe34949b688a914808f61bb9252`.
-[Release receipt](../operations/releases/festapptickets-2026-10-27.json)
-obsahuje ověřené SQL/Edge/MCP/web komponenty a limity. #617/#618/#619 jsou
-sloučené; #613/#615/#616 byly nahrazené. Neobnovovat starý review stack.
-Při navázání ověřit čerstvý main a skutečný stav služby. Admin výjimky byly
-výslovně omezené na dokončený rollout; další etapa a nasazení se řídí běžnými
-pravidly a případným novým oprávněním uživatele. Souběžný ChatGPT pilot je
-samostatná práce, nikoli další dokončená doménová etapa.
+Autoritativní plán: [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
+Poslední stav: [Stage 6 locally complete](admin-mcp-canonical-checkpoint-2026-10-23.md).
+Etapy 0-5 mají doložené nasazení pro prod/festapptickets ve verzi
+0.20.427+929. [Receipt](../operations/releases/festapptickets-2026-10-27.json)
+obsahuje skutečné SQL/Edge/MCP/web revize. Etapa 6 je lokálně hotová a ověřená,
+bez produkčního nasazení; větev feat/admin-mcp-stage6-20261027 z main a698f7403.
+Před pokračováním ověřit stav jejího review/integrace. Main vyžaduje review;
+staré admin výjimky se na další etapu či rollout nevztahují.
 
-Další doménová etapa je **6 - lidé, role, skupiny a dobrovolníci**. Nejprve
-najít konkrétní UI handlery a existující group/profile/unit command vlastníky,
-vypsat typed predicate -> SQL owner -> UI -> nástroj. Postupovat scoped čtením,
-pak běžnými údaji a členstvím; role jako samostatný explicitní příkaz. Před
-kódem potvrdit úzký kontrakt a nejmenší smysluplný ověřovací batch.
+Další etapa je **7 - pokročilá editace plánků a vzhled vstupenek**. Přečíst
+její konkrétní řezy v plánu. Provozní blokace/hold release/swap/order již existují;
+neimplementovat je znovu. Navázat na kanonický layout/controller/save a současné
+PDF/font/rendering vlastníky, zachovat draft, explicitní Save/Cancel, původní
+verze, scope a oprávnění. Před kódem zapsat owner -> UI -> MCP a nejmenší
+smysluplný testovací batch. Žádné vývojové subagenty bez autorizace.
 
-Etapu 5 znovu neimplementovat: osm nástrojů sdílí původní occasion/unit/game
-receipt vlastníky. Kontrakt `packages/festapp_contracts/configuration-settings.json`
-generuje SQL a MCP strict schemas. Současný UI producer posílá named metadata;
-sloučení až po původním hashi/version locku. Game UI/MCP vyžaduje původní verzi,
-organizer settings vlastní manager oprávnění a explicitní whole-unit souhlas.
-Současný přesun mimo scope je otestovaný přes skutečný row-lock wait; nesmí
-přežít ani vrátit čtení nebo commit. Důkazy:
-[admin-configuration-evidence-2026-10-26.json](../reports/admin-configuration-evidence-2026-10-26.json).
+Etapu 6 znovu neimplementovat. [Matice a kontrakt](admin-mcp-stage6-boundary-2026-10-27.md)
+a [evidence](../reports/admin-people-evidence-2026-10-27.json) obsahují 19 nových
+nástrojů, reálné PostgreSQL/SDK/Flutter kontroly a source hashe. Profily/skupiny
+sdílejí původní command ownery; named profily a role mají rozdílný explicitní
+záměr a OAuth scope. Organizer user grid používá nový společný verzovaný command
+nad původní persistence funkcí, s jednou access-change invalidací. Neforkovat
+žádnou ACL, receipt ani profile writer.
 
-Publikované migrace neměnit. Aktuální konfiguraci sestavuje
-`automation/assemble-configuration-migration.py`, pak generátory canonical source
-contract a katalogu. Změna occasion save owneru vyžaduje též přegenerovat runtime
-ticket-layout kontrakt a zahrnout jej do nové migrace; samotné změnění source
-souboru nestačí. Striktní vstupy ani nové scopes nesmí rozšířit starší souhlasy.
-Draft finalizace, provider setup a ticket artwork si ponechávají své vlastníky.
+SQL měnit jako canonical source a novou forward migraci. Pro etapu 6 běží
+python3 automation/assemble-people-migration.py --check a source/parity generátor.
+Publikované migrace jsou neměnné. Změna occasion save owneru vyžaduje také
+přegenerovat scoped runtime ticket-layout kontrakt a zahrnout jej do nové migrace.
+Použít marker-verified disposable PostgreSQL, skutečné běžné identity a explicitní
+souběhové testy pro zásadní kolize. Flutter pouze jeden proces, concurrency=1.
 
-Celkem 6/11 hlavních etap, orientačně 45 % podle velikosti (40-50 %). Nejde o
-odpracované hodiny. Další výrazné bloky jsou 6, 7, 8 a 10. Efektivita: nevytvářet
-novou ACL, writer, receipt, univerzální JSON CRUD ani paralelní cestu k existující
-operaci. Testovat skutečné běžné identity a cílené inputy; passing check neopakovat,
-pokud jeho vstupy zůstaly stejné. Flutter pouze jeden proces a concurrency=1.
+Hotovo 7/11 hlavních etap. Produkční release je oddělený, explicitně autorizovaný
+krok. Vybraný tenant zůstává prod/festapptickets, jiné varianty ani Android do
+výchozího scope nepatří. Backend přes canonical workflow, web lokálně přes
+automation/deploy_direct.sh; rutinní autorizované nasazení delegovat dle AGENTS.
+Souběžný ChatGPT veřejný pilot je samostatná práce, ne další doménová etapa.

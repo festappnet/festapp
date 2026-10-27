@@ -7,6 +7,7 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_result jsonb;
   v_before_users uuid[];
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
   IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(

@@ -338,6 +338,13 @@
     "others/configuration_settings_contract.sql",
     "others/configuration_settings.sql",
     "user_permissions/game_settings.sql",
-    "others/configuration_authoring.sql"
+    "others/configuration_authoring.sql",
+    "people/scope.sql",
+    "people/profile_changes.sql",
+    "people/unit_user_command.sql",
+    "people/authoring.sql",
+    "users/update_unit_user.sql",
+    "users/get_all_users_from_unit.sql",
+    "people/access_fanout.sql"
   ]
 }

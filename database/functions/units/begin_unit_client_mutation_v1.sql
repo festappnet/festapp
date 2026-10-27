@@ -19,7 +19,7 @@ BEGIN
          THEN public.can_write_unit_icons(p_unit)
        WHEN p_command_name IN ('unit.email_template.save','unit.email_template.reset','unit.email_banner.save')
          THEN public.can_write_unit_email_templates(p_unit)
-       WHEN p_command_name='profile.unit_access.delete' THEN public.can_manage_unit_users(p_unit)
+       WHEN p_command_name IN ('profile.unit_access.delete','profile.unit_user.save') THEN public.can_manage_unit_users(p_unit)
        WHEN p_command_name='unit.config.save' THEN public.can_manage_unit_configuration(p_unit)
        WHEN p_command_name='occasion.duplicate' THEN public.can_copy_occasion_target(p_unit)
        ELSE false END) THEN
