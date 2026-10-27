@@ -321,12 +321,15 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   ) {
     final names = presentation.previewNames;
     final total = presentation.item.data['activityCount'] as int;
-    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      fontSize: 15,
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-      height: 1.4,
-      letterSpacing: 0,
-    );
+    // Reuse existing copyWith call shapes. A new nullable named-argument call
+    // shape adds a forwarding stub to every dart2js closure in deferred chunks.
+    final style = Theme.of(context).textTheme.bodyMedium
+        ?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          height: 1.4,
+          letterSpacing: 0,
+        )
+        .copyWith(fontSize: 15);
     final textScaler = MediaQuery.textScalerOf(context);
     final direction = Directionality.of(context);
     final prefix = details.isEmpty ? '' : '${details.join(' · ')} · ';
