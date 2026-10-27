@@ -214,14 +214,14 @@ export class Operations {
                     (!descriptor.requiresDelegatedCreate || this.owner.allowedOperations?.includes('occasions.create') === true),
             )
             .map((descriptor) => {
-                if (this.owner.publicOrderData && ['orders.list', 'orders.inspect'].includes(descriptor.id))
+                if (this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(descriptor.id))
                     return { ...descriptor,
                         description: descriptor.id === 'orders.list'
                             ? 'List a bounded page of orders for one selected occasion, at most 50. Search only by the exact 10-character order symbol. Returns order identifiers, stored state, ticket count and amounts. No buyer names, email addresses, registration answers, notes, QR codes or personal ticket content.'
                             : 'Read one order identifier, stored state, ticket count and amounts for one selected occasion. Buyer names, emails, registration answers, internal notes and personal ticket content are withheld. This connection cannot change orders or send tickets.',
                         input: descriptor.id === 'orders.list' ? descriptor.input.extend({ search: publicOrderSearch.optional() }) : descriptor.input,
                         output: resultSchema(descriptor.id, publicOrderPage) };
-                if (this.owner.publicOrderData && descriptor.id === 'context.inspect')
+                if (this.owner.orderSummaryOnly && descriptor.id === 'context.inspect')
                     return { ...descriptor, description: 'Inspect tenant and read-only capabilities. Does not return the connected user identifier.',
                         output: resultSchema(descriptor.id, dataSchemas[descriptor.id].omit({ userId: true })) };
                 return { ...descriptor, output: resultSchema(descriptor.id) };
@@ -467,8 +467,8 @@ export class Operations {
                     };
                 }
                 check(dataSchemas[id].safeParse(data).success);
-                if (this.owner.publicOrderData && ['orders.list', 'orders.inspect'].includes(id)) data = publicOrders(data, args);
-                if (this.owner.publicOrderData && id === 'context.inspect') {
+                if (this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id)) data = publicOrders(data, args);
+                if (this.owner.orderSummaryOnly && id === 'context.inspect') {
                     const { userId, ...publicContext } = data;
                     data = publicContext;
                 }

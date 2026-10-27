@@ -42,7 +42,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
-    if (publicClient) raw.clients[0].id = 'festapp-chatgpt';
+    if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
     const config = parseRemoteConfig(raw);
     const audit = [];
@@ -788,7 +788,7 @@ for (const version of ['2026-07-28', '2025-11-25']) test(`public ChatGPT order p
         return reply({ occasionId: 7, orders: [row], nextCursor: null });
     };
     const f = await setup(t, { tenant: true, pilot: true, publicClient: true, fetchImpl: backend });
-    const tokens = await connectTenant(f, { clientId: 'festapp-chatgpt', scopes: [READ_SCOPE, 'festapp:orders:read'] });
+    const tokens = await connectTenant(f, { clientId: 'arbitrary-summary-client', scopes: [READ_SCOPE, 'festapp:orders:read'] });
     const response = async (method, params) => {
         const r = await jsonRpc(f, tokens.access_token, method, params, version);
         assert.equal(r.status, 200);
@@ -822,7 +822,7 @@ for (const version of ['2026-07-28', '2025-11-25']) test(`public ChatGPT order p
     assert.equal(context.structuredContent.data.userId, undefined);
     // The ordinary operator/native contract continues to include the full DTO.
     await f.owner.login('fixture@example.test', 'fixture-password');
-    const native = new Operations({ ...f.owner, publicOrderData: false,
+    const native = new Operations({ ...f.owner, orderSummaryOnly: false,
         allowedOperations: ['orders.inspect'], authorized: action => f.owner.authorized(action) });
     const original = await native.invoke('orders.inspect', { occasionId: 7, orderId: 51 });
     assert.equal(original.ok, true, JSON.stringify(original));

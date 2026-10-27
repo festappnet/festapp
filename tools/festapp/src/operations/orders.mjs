@@ -52,7 +52,7 @@ export async function invokeOrderOperation(owner, client, operation, args) {
             p_changes: args.changes ?? (operation === 'payments.record' ? { amount: args.amount, currency: args.currency, receivedAt: args.receivedAt, note: args.note ?? null } : {}) };
     }
     let { data, error, status } = await client.rpc(rpc, parameters);
-    if (owner.publicOrderData && operation === 'orders.list' && args.search) {
+    if (owner.orderSummaryOnly && operation === 'orders.list' && args.search) {
         // The shared operator RPC also searches contacts. Walk its pages until
         // the exact symbol is found or exhausted; never call a filtered page
         // a complete negative result. Bound work and fail explicitly on excess.
