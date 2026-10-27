@@ -47,7 +47,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
       if (!result.ok) throw new Error();
       return await result.json();
     };
-    if (body.operation === "cancel") return json(await broker({ operation: "cancel" }));
+    if (body.operation === "cancel") return json({ ...await broker({ operation: "cancel" }), issuer: config.issuer });
     const accessToken = req.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
     if (!accessToken || accessToken.length > 8192) return json({ error: "authentication_required" }, 401);
     const { data, error } = await admin.auth.getUser(accessToken);
@@ -70,7 +70,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     const result = await broker({ operation: "complete", lease: prepared.lease,
       session: { access_token: minted.access_token, refresh_token: minted.refresh_token } });
     transferred = true;
-    return json(result);
+    return json({ ...result, issuer: config.issuer });
   } catch {
     if (minted && !transferred) await admin.auth.admin.signOut(minted.access_token, "local").catch(() => undefined);
     return json({ error: "connection_unavailable" }, 403);

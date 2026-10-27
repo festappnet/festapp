@@ -1,6 +1,6 @@
 # Ochrana osobních údajů - Vstupenky.online
 
-Účinnost: 20. října 2026. Verze: 1.2.
+Účinnost: 27. října 2026. Verze: 1.3.
 
 ## Kdo odpovídá za vaše údaje
 
@@ -31,6 +31,14 @@ Při obsluze webu Cloudflare zpracovává také IP adresu, požadovanou cestu a 
 Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
 
 Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
+
+## Volitelné propojení s ChatGPT
+
+Pokud svůj účet propojíte s ChatGPT od OpenAI, vyberete akce nebo pořadatele a povolíte rozsah přístupu. Konektor předává do ChatGPT údaje potřebné pro Vámi požadovanou operaci pouze v tomto rozsahu a podle Vašich aktuálních oprávnění. Čtecí připojení umožňuje přehled akcí, prodejní souhrny, hledání a detail objednávek a čtení podkladů vstupenek; nezakládá objednávky, nemění platby ani neodesílá vstupenky.
+
+Veřejný konektor ChatGPT předává názvy a identifikátory akcí, identifikátory a symboly objednávek, počty a stavy objednávek a vstupenek, částky, měny, údaje o úhradách a podklady vzhledu vstupenek. Z objednávek nepředává jména, příjmení, e-maily, poznámky ani odpovědi a definice polí přihlášek. Hledání podporuje přesný symbol objednávky, nikoli kontaktní údaje. Identifikátory a symboly nejsou anonymní údaje. Konektor je určen pořadatelům; neslouží ke zpracování údajů dětí ani údajů z dokladů. Do názvů akcí a podkladů vzhledu vstupenek proto tyto údaje nevkládejte. Obsah se může stát součástí Vaší konverzace. Zahrnujte jen údaje, které smíte k danému účelu zpřístupnit.
+
+OpenAI zpracovává předané údaje podle podmínek a nastavení Vašeho účtu ChatGPT. Samotné omezení konektoru na čtení neznamená, že se žádné osobní údaje nepředávají. Propojení je dobrovolné a bez něj lze systém používat běžným způsobem. Přístup kdykoliv odvoláte ve správě propojení účtu. Odvolání zastaví další přístup konektoru, ale samo neodstraní obsah dřívějších konverzací v ChatGPT; ten spravujete u OpenAI.
 
 ## Kde údaje zpracováváme
 

@@ -108,6 +108,16 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  assert.equal((await invoke('payments.record',{...extra,commandId:randomUUID(),currency:'CZK'})).ok,false);
  // A known order ID does not authorize another event or organizer.
  const scope=owner.delegatedContext;owner.delegatedContext=async()=>({organizationId:f.org,unitId:f.unit+999999});assert.equal((await invoke('orders.inspect',{orderId:a.id})).error.code,'FORBIDDEN');owner.delegatedContext=scope;
+ // Bounded reads exercise canonical SQL with more than one maximum-size page.
+ for(let i=0;i<51;i++) await createOrder();
+ const savedPermit=owner.permitsOperation;
+ owner.permitsOperation=id=>['orders.report','orders.list','orders.inspect'].includes(id);
+ r=await invoke('orders.list',{limit:50});assert.equal(r.ok,true);assert.equal(r.data.orders.length,50);assert(r.data.nextCursor);
+ assert(r.data.orders.every(o=>o.allowedActions.length===1&&o.allowedActions[0]==='view'));
+ const tail=await invoke('orders.list',{limit:50,before:r.data.nextCursor});assert.equal(tail.data.orders.length,3);assert.equal(tail.data.nextCursor,null);
+ assert.equal((await invoke('orders.list',{search:'no-matching-synthetic-symbol'})).data.orders.length,0);
+ const unpaid=await invoke('orders.list',{state:'ordered',limit:50});assert.equal(unpaid.data.orders.length,50);assert(unpaid.data.orders.every(o=>o.state==='ordered'));
+ owner.permitsOperation=savedPermit;
  await db.query('RESET ROLE');await db.query('update occasion_users set is_editor_order=false,is_editor_order_view=false where occasion=$1 and "user"=$2',[f.occasion,f.actor]);await db.query('SET LOCAL ROLE authenticated');
  assert.equal((await invoke('orders.inspect',{orderId:a.id})).error.code,'FORBIDDEN');assert.equal((await invoke('payments.record',payment)).error.code,'FORBIDDEN');
 });

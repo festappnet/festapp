@@ -207,21 +207,41 @@ writes, preview and issued-ticket actions remain separate waves.
 
 ## Hosted OAuth pilot: connect in a browser
 
-The public endpoint is `https://mcp.festapp.net/mcp`. DNS/TLS and OAuth discovery
-are active; a real user connection still requires login and explicit consent.
+The live regional endpoint is `https://mcp.vstupenky.online/mcp`. The former
+`mcp.festapp.net` endpoint is retired with HTTP 410. The regional cutover and
+first-party ChatGPT consent completed on 2026-10-27; the account discovers six
+read tools. See the [pilot record](../../docs/operations/chatgpt-mcp-pilot-2026-10-26.md)
+for executed acceptance cases and remaining checks.
 
-Add that URL as a custom remote MCP server in ChatGPT, choose
+Add the regional URL as a custom remote MCP server named `vstupenky.online` in ChatGPT, choose
 OAuth and the pre-registered public client `festapp-chatgpt` with no client secret.
 Register the exact callback shown by ChatGPT's server management page. The
-prepared configuration uses its stable callback
+verified account configuration uses its stable callback
 `https://chatgpt.com/connector_platform_oauth_redirect`; issuer identification is
 advertised and verified locally. Automatic/open client registration is disabled.
 
 Click connect. The configured first-party tenant page reuses the application
-login, then lets you select allowed occasions and confirm access. No API key or refresh token is copied into ChatGPT. The first
-pilot allows only `context.inspect` and `ticket_layouts.inspect`; the configured
-ordinary-user rights and consent scope are checked again for every call. Disconnect at
-`https://mcp.festapp.net/connections`, independently of the Festapp application.
+login, then lets you select allowed occasions and confirm access. No API key or refresh token is copied into ChatGPT. The base scope exposes access/context discovery and ticket artwork. The sales
+pilot additionally needs explicit `festapp:orders:read` in the requested scopes
+and consent, giving report/list/detail readers. The configured ordinary-user
+rights, client ceiling and consent are checked again for every call. Disconnect at
+`https://mcp.vstupenky.online/connections`, independently of the Festapp application.
+
+Private setup with the provided client and both read scopes is recorded in
+[integrations/chatgpt](../../integrations/chatgpt/README.md). A bare URL/base-only
+connection does not establish sales access. `allowedScopes` is an optional
+per-client issuer ceiling; omitted ceilings preserve existing clients. Configure
+`festapp-chatgpt` with base + order read for the regional pilot. Never remove this
+ceiling to make a rollback image accept old configuration.
+
+The regional account connection is named **vstupenky.online**, powered by Festapp.
+Its optional `regionalPortal` configuration explains this relationship on consent;
+global Festapp Tickets deployments omit it. The
+[brand/URL decision](../../docs/plans/chatgpt-mcp-branding-and-urls-2026-10-27.md)
+distinguishes two branded listings from the shared operation implementation.
+No new global registration or public directory submission is included. The live
+endpoint has not yet been updated to the locally tested read-pilot contract; see
+[the execution record](../../docs/operations/chatgpt-mcp-pilot-2026-10-26.md).
 
 The first-party page uses the application's existing login choices. MFA accounts
 currently fail closed at independent session issuance. The local terminal login
@@ -269,7 +289,7 @@ IP loopback HTTP callbacks; the maintained provider permits a variable port,
 while the callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
-codex mcp add festapp --url https://mcp.festapp.net/mcp --oauth-client-id festapp-codex --oauth-resource https://mcp.festapp.net/mcp
+codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex --oauth-resource https://mcp.vstupenky.online/mcp
 codex mcp login festapp --scopes festapp:ticket-layouts:read
 ```
 
@@ -285,3 +305,26 @@ for a separate MCP-owned Auth session over the first-party Edge broker. No app
 refresh token is shared and no token is placed in a redirect URL. Deployment
 variables and security boundaries are documented in the
 [first-party consent contract](../../docs/architecture/operations/remote-mcp-auth.md#first-party-tenant-consent).
+
+### Per-client data profiles
+
+The protected server registration chooses `clients[].dataProfile` independently
+of OAuth scopes, model vendor, client name, and event consent:
+
+- `operator` (backwards-compatible default) preserves ordinary operator DTOs,
+  including buyer fields and registration answers when the granted scopes and
+  live event permissions allow them. Use a separate registered client for a
+  trusted private model or native operator integration.
+- `order-summary` exposes order identifiers/symbols, states, counts and monetary
+  totals, withholding buyer contacts, notes, answers, field definitions and
+  ticket/product free text. It also omits the connected user ID from context and
+  permits only exact-symbol order search. Bounded incomplete search returns an
+  explicit error rather than a false empty result.
+
+The public `festapp-chatgpt` registration must explicitly select `order-summary`
+(as recorded in `integrations/chatgpt/client-policy.json`). A request, prompt or
+OAuth scope cannot upgrade this server-owned profile. A private client selecting
+`operator` still cannot exceed its independent scope ceiling, user consent or
+live backend permissions. Existing native/operator clients retain their current
+profile and operations; this is not a system-wide MCP redaction. Event labels,
+aggregate reports and template configuration remain organizer-authored content.

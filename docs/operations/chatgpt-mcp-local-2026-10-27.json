@@ -1,0 +1,448 @@
+{
+  "date": "2026-10-27",
+  "verification": "standard",
+  "runtime": "v24.20.0",
+  "pnpm": "11.24.0",
+  "baseMain": "00c1da5cef9bb1e949bf230f270f221b1b9f69d8",
+  "reconciledMain": "b58e2bbd3",
+  "sourceFileSha256": {
+    "integrations/chatgpt/mcp.json": "e19008c684311f70ca994672d9b412b02f0d6266bd9255a2f45e4e7bcb7118b3",
+    "packages/festapp_contracts/mcp-permissions.mjs": "239dcecb2b88f77fcbc5cbfb2317f24add52e3a5a358d4ca961b78db814794d8",
+    "supabase/functions/mcp-session-exchange/handler.ts": "ec8239d351c1c47188f68fbee33a4d9c8f09cebd0c2299dcdd058c3d100cca3e",
+    "supabase/functions/mcp-session-exchange/handler_test.ts": "5bcd78f187f9ffc21e121d01920be966c177c491dc441a9b6d5db7c055767bd6",
+    "tools/festapp/src/mcp/protocol.mjs": "bc02065a995468433d7371763e04fb1c5780d61262b58f4b05b788e3fcd31d2d",
+    "tools/festapp/src/mcp/server.mjs": "c43f949fd94b704f128a0d36cf94db30e2f4e3b0516581298f15e9013f3c00af",
+    "tools/festapp/src/operations/catalog.mjs": "9d7eaa27e22d1c1fcebd3de4fbb12732db722e3e9e0fcf2c95b5bee6ae8e3340",
+    "tools/festapp/src/operations/orders.mjs": "65d20b677a8ff8f0a2e2e083316e41f8d4406dbff94da762a3c6983a328542ce",
+    "tools/festapp/src/remote/config.mjs": "ca119856727ebc38c247d33895be8de1d7c75e833278c3f374ef6cf98f445cc5",
+    "tools/festapp/src/remote/delegation.mjs": "6a6d5efa9b0933d0765612b7a38d580d879eff3b9732d2ab4fa76c9542980171",
+    "tools/festapp/src/remote/server.mjs": "70e02d5d8af153fb7903b86d4e56d75338df7c600dafb1164574f34e5717a1f2",
+    "tools/festapp/src/remote/tenant-bridge.mjs": "31b54a37dbed9c6d3dd07855d3f1e74f351223c156eea84b40682046aae9d39b",
+    "tools/festapp/test/local/exchange.ts": "9a55163e957803a3884ff2940afc91bc27c7dbf75aa192afc26e8dda5125f6f1",
+    "tools/festapp/test/local/pilot.e2e.mjs": "ff072410513893b92c8b0f3064d26d329c4136f56103d5e70dac0c920bc7ad21",
+    "tools/festapp/test/orders-postgres.test.mjs": "f678996219a436db427910bcb0a531ecb25c3fb391a5c6a96ad23f6efc0ff9a9",
+    "tools/festapp/test/remote.test.mjs": "615ce393a55c7a40174c1dd94b6e355b07cc32be42c3b6d6f18d880cc8c9e6eb",
+    "web_client/src/components/mcp/mcp_connection_page.js": "4dd0b1887c85a97c9904df7c0013bedb2cede0fda6d0867beda84fc0b2f15472",
+    "web_client/tests/components/mcp_connection_page.test.js": "7fcc71b93068040f0e5842feb9dff2fe8910e749a84daaa2820b3a52ee3db056",
+    "web_client/tests/fixtures/mcp/index.html": "a4d42ddd2b6cb6fe9e2f95f007d74b83c903f538af3579a8ef0d216ac0692613"
+  },
+  "checks": {
+    "remote": {
+      "passed": 37,
+      "skipped": 0
+    },
+    "ordersPostgres": {
+      "passed": 1,
+      "skipped": 0,
+      "marker": "festapp-authz-20261020",
+      "cron": "off",
+      "email": "paused; worker_url null",
+      "rollback": true
+    },
+    "readiness": {
+      "passed": 4,
+      "skipped": 0
+    },
+    "stdio": {
+      "passed": 2,
+      "skipped": 0
+    },
+    "imageImport": {
+      "passed": 1,
+      "skipped": 0
+    },
+    "ui": {
+      "passed": 39,
+      "skipped": 0
+    },
+    "edge": {
+      "passed": 12,
+      "skipped": 0
+    },
+    "realAuthRunner": {
+      "executed": true,
+      "passed": true,
+      "testFrameworkCollection": false,
+      "entrypoint": "tools/festapp/test/local/pilot.e2e.mjs"
+    }
+  },
+  "measuredFixture": [
+    {
+      "fixture": "read-pilot",
+      "protocol": "2026-07-28",
+      "runtime": "v24.20.0",
+      "receipts": [
+        {
+          "clientId": "chatgpt-fixture",
+          "tools": 6,
+          "toolsListBytes": 22125,
+          "observations": [
+            {
+              "tool": "festapp_orders_report",
+              "shape": "default",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 8.03,
+                  "backendRequests": 5,
+                  "resultBytes": 947,
+                  "dtoBytes": 370
+                },
+                {
+                  "ms": 4.88,
+                  "backendRequests": 5,
+                  "resultBytes": 947,
+                  "dtoBytes": 370
+                },
+                {
+                  "ms": 5.11,
+                  "backendRequests": 5,
+                  "resultBytes": 947,
+                  "dtoBytes": 370
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "max-page",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 13.68,
+                  "backendRequests": 5,
+                  "resultBytes": 44633,
+                  "dtoBytes": 21022
+                },
+                {
+                  "ms": 13.97,
+                  "backendRequests": 5,
+                  "resultBytes": 44633,
+                  "dtoBytes": 21022
+                },
+                {
+                  "ms": 13.65,
+                  "backendRequests": 5,
+                  "resultBytes": 44633,
+                  "dtoBytes": 21022
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "last-page",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 5.39,
+                  "backendRequests": 5,
+                  "resultBytes": 1599,
+                  "dtoBytes": 681
+                },
+                {
+                  "ms": 5.11,
+                  "backendRequests": 5,
+                  "resultBytes": 1599,
+                  "dtoBytes": 681
+                },
+                {
+                  "ms": 4.77,
+                  "backendRequests": 5,
+                  "resultBytes": 1599,
+                  "dtoBytes": 681
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "unpaid",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 9.68,
+                  "backendRequests": 5,
+                  "resultBytes": 22749,
+                  "dtoBytes": 10680
+                },
+                {
+                  "ms": 8.78,
+                  "backendRequests": 5,
+                  "resultBytes": 22749,
+                  "dtoBytes": 10680
+                },
+                {
+                  "ms": 9.03,
+                  "backendRequests": 5,
+                  "resultBytes": 22749,
+                  "dtoBytes": 10680
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "empty",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 5.59,
+                  "backendRequests": 5,
+                  "resultBytes": 723,
+                  "dtoBytes": 267
+                },
+                {
+                  "ms": 4.87,
+                  "backendRequests": 5,
+                  "resultBytes": 723,
+                  "dtoBytes": 267
+                },
+                {
+                  "ms": 4.99,
+                  "backendRequests": 5,
+                  "resultBytes": 723,
+                  "dtoBytes": 267
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_inspect",
+              "shape": "default",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 4.6,
+                  "backendRequests": 5,
+                  "resultBytes": 1605,
+                  "dtoBytes": 684
+                },
+                {
+                  "ms": 4.49,
+                  "backendRequests": 5,
+                  "resultBytes": 1605,
+                  "dtoBytes": 684
+                },
+                {
+                  "ms": 3.68,
+                  "backendRequests": 5,
+                  "resultBytes": 1605,
+                  "dtoBytes": 684
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "clientId": "portable-fixture",
+          "tools": 3,
+          "toolsListBytes": 8485,
+          "observations": []
+        }
+      ]
+    },
+    {
+      "fixture": "read-pilot",
+      "protocol": "2025-11-25",
+      "runtime": "v24.20.0",
+      "receipts": [
+        {
+          "clientId": "chatgpt-fixture",
+          "tools": 6,
+          "toolsListBytes": 21998,
+          "observations": [
+            {
+              "tool": "festapp_orders_report",
+              "shape": "default",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 4.34,
+                  "backendRequests": 5,
+                  "resultBytes": 854,
+                  "dtoBytes": 370
+                },
+                {
+                  "ms": 4.11,
+                  "backendRequests": 5,
+                  "resultBytes": 854,
+                  "dtoBytes": 370
+                },
+                {
+                  "ms": 4.16,
+                  "backendRequests": 5,
+                  "resultBytes": 854,
+                  "dtoBytes": 370
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "max-page",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 13.07,
+                  "backendRequests": 5,
+                  "resultBytes": 44540,
+                  "dtoBytes": 21022
+                },
+                {
+                  "ms": 12.86,
+                  "backendRequests": 5,
+                  "resultBytes": 44540,
+                  "dtoBytes": 21022
+                },
+                {
+                  "ms": 13.14,
+                  "backendRequests": 5,
+                  "resultBytes": 44540,
+                  "dtoBytes": 21022
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "last-page",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 5.22,
+                  "backendRequests": 5,
+                  "resultBytes": 1506,
+                  "dtoBytes": 681
+                },
+                {
+                  "ms": 4.35,
+                  "backendRequests": 5,
+                  "resultBytes": 1506,
+                  "dtoBytes": 681
+                },
+                {
+                  "ms": 4.89,
+                  "backendRequests": 5,
+                  "resultBytes": 1506,
+                  "dtoBytes": 681
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "unpaid",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 8.44,
+                  "backendRequests": 5,
+                  "resultBytes": 22656,
+                  "dtoBytes": 10680
+                },
+                {
+                  "ms": 8.55,
+                  "backendRequests": 5,
+                  "resultBytes": 22656,
+                  "dtoBytes": 10680
+                },
+                {
+                  "ms": 8.87,
+                  "backendRequests": 5,
+                  "resultBytes": 22656,
+                  "dtoBytes": 10680
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_list",
+              "shape": "empty",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 4.49,
+                  "backendRequests": 5,
+                  "resultBytes": 630,
+                  "dtoBytes": 267
+                },
+                {
+                  "ms": 11.4,
+                  "backendRequests": 5,
+                  "resultBytes": 630,
+                  "dtoBytes": 267
+                },
+                {
+                  "ms": 4.21,
+                  "backendRequests": 5,
+                  "resultBytes": 630,
+                  "dtoBytes": 267
+                }
+              ]
+            },
+            {
+              "tool": "festapp_orders_inspect",
+              "shape": "default",
+              "callsPerTask": 1,
+              "samples": [
+                {
+                  "ms": 4.61,
+                  "backendRequests": 5,
+                  "resultBytes": 1512,
+                  "dtoBytes": 684
+                },
+                {
+                  "ms": 4.39,
+                  "backendRequests": 5,
+                  "resultBytes": 1512,
+                  "dtoBytes": 684
+                },
+                {
+                  "ms": 4.42,
+                  "backendRequests": 5,
+                  "resultBytes": 1512,
+                  "dtoBytes": 684
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "clientId": "portable-fixture",
+          "tools": 3,
+          "toolsListBytes": 8358,
+          "observations": []
+        }
+      ]
+    }
+  ],
+  "realAuthBrokerSqlIntegration": {
+    "fixture": "festapp-authz-20261020",
+    "actualAuth": true,
+    "actualEdgeHandler": true,
+    "actualCanonicalSql": true,
+    "independentSession": true,
+    "allowedActor": true,
+    "deniedActor": true,
+    "selectedOccasionOnly": true,
+    "readTools": 6,
+    "emptyReportAndPage": true,
+    "liveRightsRemoval": true,
+    "issuerRevocation": true,
+    "realChatgptAcceptance": false,
+    "transportBoundary": "loopback HTTP; Edge HTTPS issuer config maps to the same loopback broker only in the local runner"
+  },
+  "chatgptAcceptance": "not accepted; regional cutover must precede further setup",
+  "live": {
+    "sourceSha": "00c1da5cef9bb1e949bf230f270f221b1b9f69d8",
+    "image": "sha256:c8f7fcb2a6e29086660c632c0fb29101f752b756bd2ede29e4922c0eba18f9b8",
+    "issuer": "https://mcp.festapp.net",
+    "resource": "https://mcp.festapp.net/mcp",
+    "health": 200,
+    "discovery": 200,
+    "unauthenticatedMcp": 401,
+    "chatgptAllowedScopes": null
+  },
+  "approvedTarget": "https://mcp.vstupenky.online/mcp",
+  "targetDnsResolved": false,
+  "publicSubmission": false,
+  "productionMutations": false,
+  "publication": {
+    "implementationSha": "c278a48baeb715eea636677dcac3a36622149bb9",
+    "baseSha": "b58e2bbd3cf2f6220c3452805985dab5675bc82f",
+    "pullRequest": "https://github.com/festappnet/festapp/pull/621",
+    "status": "awaiting required review; regional cutover not deployed"
+  }
+}

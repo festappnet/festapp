@@ -35,13 +35,13 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
   const request = (operation = "approve", origin = config.tenantOrigin, token = "app-access") =>
     handleMcpExchange(new Request("https://api.invalid/mcp-session-exchange", { method: "POST",
       headers: { Origin: origin, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ request: "r".repeat(43), operation, access, userId: "attacker", email: "attacker@invalid" }),
+      body: JSON.stringify({ request: "r".repeat(43), operation, access, userId: "attacker", issuer: "https://attacker.invalid", email: "attacker@invalid" }),
     }), deps);
   return { request, calls };
 }
 Deno.test("tenant proof and explicit consent mint only the verified actor and never return backend credentials", async () => {
   const f = fixture(); const response = await f.request(); assertEquals(response.status, 200);
-  const body = await response.text(); assert(!body.includes("independent-refresh")); assert(!body.includes("independent-access"));
+  const body = await response.text(); assertEquals(JSON.parse(body).issuer, config.issuer); assert(!body.includes("independent-refresh")); assert(!body.includes("independent-access"));
   assertEquals(f.calls, ["proof:app-access", "prepare", "mint", "proof:app-access", "check", "complete"]);
 });
 Deno.test("foreign origin and invalid identity cannot reach privileged mint", async () => {
@@ -51,6 +51,7 @@ Deno.test("foreign origin and invalid identity cannot reach privileged mint", as
 Deno.test("reading consent metadata or status and cancelling never mint a session", async () => {
   const f = fixture(); assertEquals((await f.request("details")).status, 200); assertEquals((await f.request("status")).status, 200); assertEquals((await f.request("cancel")).status, 200);
   assert(!f.calls.includes("mint"));
+  assertEquals((await (await f.request("cancel")).json()).issuer, config.issuer);
 });
 Deno.test("actor or tenant mismatch rejects before session issuance", async () => {
   for (const opts of [{ wrongActor: true }, { organization: 4 }]) {
