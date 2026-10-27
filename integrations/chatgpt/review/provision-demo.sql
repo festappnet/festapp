@@ -72,11 +72,14 @@ BEGIN
     FOR j IN 1..4 LOOP
       v_state := (ARRAY['ordered','paid','storno','waitlisted'])[j];
       v_count := CASE WHEN j<=2 THEN 2 ELSE 1 END;
-      v_price := v_count*250;
-      INSERT INTO eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method,
-        bank_account,stripe_connection_id,deadline)
-      VALUES(v_price,CASE WHEN j=2 THEN v_price ELSE 0 END,0,'CZK',null,'bank',null,null,'2027-01-10 23:59:00+01')
-      RETURNING id INTO v_payment;
+      v_price := CASE WHEN j=4 THEN NULL ELSE v_count*250 END;
+      v_payment := NULL;
+      IF j<>4 THEN
+        INSERT INTO eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method,
+          bank_account,stripe_connection_id,deadline)
+        VALUES(v_price,CASE WHEN j=2 THEN v_price ELSE 0 END,0,'CZK',null,'bank',null,null,'2027-01-10 23:59:00+01')
+        RETURNING id INTO v_payment;
+      END IF;
       v_symbol := generate_order_symbol();
       INSERT INTO eshop.orders(occasion,form,payment_info,state,price,currency_code,order_sequence,order_symbol,data,note_hidden)
       VALUES(v_event,v_form,v_payment,v_state,v_price,'CZK',next_order_sequence(v_event),v_symbol,
