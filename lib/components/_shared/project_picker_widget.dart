@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/occasion/occasion_creation_button.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/services/responsive_service.dart';
@@ -12,6 +13,7 @@ class ProjectPicker<T> extends StatefulWidget {
   final String Function(T item) itemTitleBuilder;
   final void Function(T item) onItemSelected;
   final VoidCallback? onCreateNew;
+  final VoidCallback? onCreateNewQuick;
   final String hintText;
   final String createNewText;
   final Object? Function(T item) itemIdBuilder;
@@ -36,6 +38,7 @@ class ProjectPicker<T> extends StatefulWidget {
     required this.itemTitleBuilder,
     required this.onItemSelected,
     this.onCreateNew,
+    this.onCreateNewQuick,
     required this.hintText,
     required this.createNewText,
     required this.itemIdBuilder,
@@ -382,27 +385,35 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Divider(height: 1),
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.only(
-                    left: 16.0,
-                    right: 16.0,
-                  ),
-                  onTap: () {
-                    widget.onCreateNew!();
+                OccasionCreationButton(
+                  showChoices: widget.onCreateNewQuick != null,
+                  onGuided: () {
                     widget.onDismiss();
+                    widget.onCreateNew!();
                   },
-                  title: Row(
-                    children: [
-                      Icon(Icons.add, color: iconColor, size: iconSize),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          widget.createNewText,
-                          style: titleTextStyle,
+                  onQuick: () {
+                    widget.onDismiss();
+                    (widget.onCreateNewQuick ?? widget.onCreateNew)!();
+                  },
+                  builder: (onPressed) => ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(
+                      left: 16.0,
+                      right: 16.0,
+                    ),
+                    onTap: onPressed,
+                    title: Row(
+                      children: [
+                        Icon(Icons.add, color: iconColor, size: iconSize),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.createNewText,
+                            style: titleTextStyle,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],

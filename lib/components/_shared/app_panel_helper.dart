@@ -141,18 +141,16 @@ class AppPanelHelper {
                     !RightsService.hasCapability(
                         AuthorizationCapabilities.occasionsCreate)
                 ? null
-                : () async {
-                    final newOccasion =
-                        await OccasionCreationHelper.createNewOccasion(
-                            originalContext,
-                            currentUnit,
-                            occasionsInCurrentUnit);
-                    if (newOccasion != null && newOccasion.link != null) {
-                      await RouterService.navigateToOccasionAdministration(
-                          originalContext,
-                          occasionLink: newOccasion.link!);
-                    }
-                  },
+                : () => _createOccasionFromPicker(
+                    originalContext, currentUnit, occasionsInCurrentUnit),
+            onCreateNewQuick: currentUnit == null ||
+                    !AppConfig.occasionSetupEnabled ||
+                    !RightsService.hasCapability(
+                        AuthorizationCapabilities.occasionsCreate)
+                ? null
+                : () => _createOccasionFromPicker(
+                    originalContext, currentUnit, occasionsInCurrentUnit,
+                    withoutWizard: true),
             onTitleTap: () async {
               if (currentOccasion.link != null) {
                 await RouterService.navigateToOccasionAdministration(
@@ -323,6 +321,7 @@ class AppPanelHelper {
     required Object? Function(T) itemIdBuilder,
     required Function(T) onItemSelected,
     required VoidCallback? onCreateNew,
+    VoidCallback? onCreateNewQuick,
     required VoidCallback onTitleTap,
     required String searchHintText,
     required String createNewText,
@@ -395,6 +394,7 @@ class AppPanelHelper {
                     itemDateBuilder: itemDateBuilder,
                     onItemSelected: onItemSelected,
                     onCreateNew: onCreateNew,
+                    onCreateNewQuick: onCreateNewQuick,
                     searchHintText: searchHintText,
                     createNewText: createNewText,
                     happeningNowText: itemDateBuilder != null
@@ -426,6 +426,18 @@ class AppPanelHelper {
     );
   }
 
+  static Future<void> _createOccasionFromPicker(BuildContext context,
+      UnitModel unit, List<OccasionModel> occasions,
+      {bool withoutWizard = false}) async {
+    final created = await OccasionCreationHelper.createNewOccasion(
+        context, unit, occasions,
+        withoutWizard: withoutWizard);
+    if (context.mounted && created?.link != null) {
+      await RouterService.navigateToOccasionAdministration(context,
+          occasionLink: created!.link!);
+    }
+  }
+
   /// Displays the custom picker using a direct Overlay for precise positioning and dismissibility.
   static void _showPicker<T>({
     required BuildContext context,
@@ -435,6 +447,7 @@ class AppPanelHelper {
     required Object? Function(T) itemIdBuilder,
     required Function(T) onItemSelected,
     required VoidCallback? onCreateNew,
+    VoidCallback? onCreateNewQuick,
     required String searchHintText,
     required String createNewText,
     DateTime? Function(T item)? itemDateBuilder,
@@ -510,6 +523,7 @@ class AppPanelHelper {
                         itemDateBuilder: itemDateBuilder,
                         onItemSelected: onItemSelected,
                         onCreateNew: onCreateNew,
+                        onCreateNewQuick: onCreateNewQuick,
                         hintText: searchHintText,
                         createNewText: createNewText,
                         happeningNowText: happeningNowText,
