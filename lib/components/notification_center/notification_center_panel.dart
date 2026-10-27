@@ -35,7 +35,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
             child: IconTheme(
               data: IconThemeData(
                 color: Theme.of(context).colorScheme.onSurface,
@@ -51,6 +51,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     NotificationCenterStrings.title,
                     textAlign: TextAlign.start,
                     style: const TextStyle(
+                      fontSize: 28,
+                      height: 1.15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0,
                     ),
@@ -97,7 +99,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   )
                 : ListView(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                     children: [
                       if (c.unread)
                         Padding(
@@ -206,6 +208,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     for (final item in items) {
       (byOccasion[item.occasionId ?? 'organization'] ??= []).add(item);
     }
+    var firstSection = true;
     for (final entry in byOccasion.entries) {
       final first = entry.value.first;
       final occasion = widget.controller.occasions
@@ -216,9 +219,17 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
         key: ValueKey('notification-occasion-${entry.key}'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (!firstSection)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+              child: Divider(
+                height: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
           if (first.occasionId != null && title != null)
             Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 4),
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 0, 4),
               child: Row(
                 children: [
                   Expanded(
@@ -228,7 +239,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         title,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              fontSize: 17,
+                              fontSize: 20,
+                              height: 1.25,
+                              letterSpacing: 0,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -241,6 +255,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           for (final item in entry.value) _item(context, item),
         ],
       );
+      firstSection = false;
     }
   }
 
@@ -265,7 +280,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
       );
 
   Widget _unreadDot(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(end: 8),
+    padding: EdgeInsets.zero,
     child: Tooltip(
       message: s('newNotification'),
       excludeFromSemantics: true,
@@ -307,6 +322,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     final names = presentation.previewNames;
     final total = presentation.item.data['activityCount'] as int;
     final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      fontSize: 15,
       color: Theme.of(context).colorScheme.onSurfaceVariant,
       height: 1.4,
       letterSpacing: 0,
@@ -379,7 +395,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     final day = item.day ?? item.occurredAt?.toLocal();
     const radius = BorderRadius.all(Radius.circular(4));
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
         key: ValueKey('notification-item-${item.id}'),
         color: Colors.transparent,
@@ -394,20 +410,34 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
+                  horizontal: 8,
+                  vertical: 14,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                    // A stable leading anchor separates rows without cards.
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            (presentation.isError
+                                    ? colors.error
+                                    : unread
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant)
+                                .withValues(alpha: .10),
+                      ),
                       child: Icon(
                         _kindIcon(item.kind),
-                        size: 20,
+                        size: 22,
                         color: presentation.isError
                             ? colors.error
-                            : colors.primary,
+                            : unread
+                            ? colors.primary
+                            : colors.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -418,6 +448,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           Text(
                             presentation.title,
                             style: theme.textTheme.bodyLarge?.copyWith(
+                              fontSize: 17,
+                              height: 1.3,
                               color: unread
                                   ? colors.onSurface
                                   : colors.onSurfaceVariant,
@@ -438,7 +470,14 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               TextSpan(
                                 children: [
                                   for (var i = 0; i < details.length; i++) ...[
-                                    if (i > 0) const TextSpan(text: ' · '),
+                                    if (i > 0)
+                                      TextSpan(
+                                        text:
+                                            details[i] == presentation.reason &&
+                                                presentation.isError
+                                            ? '\n'
+                                            : ' · ',
+                                      ),
                                     TextSpan(
                                       text: details[i],
                                       style: TextStyle(
@@ -453,12 +492,13 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                 ],
                               ),
                               style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 15,
                                 height: 1.4,
                               ),
                             ),
                           ],
                           if (day != null) ...[
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 4),
                             Text(
                               NotificationCenterTime.dayHeading(
                                 day,
@@ -485,9 +525,9 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       ),
                     ),
                     if (unread) ...[
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Padding(
-                        padding: const EdgeInsets.only(top: 7),
+                        padding: const EdgeInsets.only(top: 8),
                         child: _unreadDot(context),
                       ),
                     ],
