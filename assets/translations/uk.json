@@ -2629,7 +2629,46 @@
     "capacity": "Доступно для продажу: {remaining} / {limit}",
     "heldForWaiting": "Зарезервовано для черги: {count}",
     "needsAttention": "Потребує уваги",
-    "detail": "Докладніше"
+    "detail": "Докладніше",
+    "latestCustomer": "Останнє: {name}",
+    "activityCounts": {
+      "order_created": {
+        "one": "{count} нове замовлення",
+        "few": "{count} нові замовлення",
+        "many": "{count} нових замовлень",
+        "other": "{count} нових замовлень"
+      },
+      "order_cancelled": {
+        "one": "{count} скасоване замовлення",
+        "few": "{count} скасовані замовлення",
+        "many": "{count} скасованих замовлень",
+        "other": "{count} скасованих замовлень"
+      },
+      "waitlist_registered": {
+        "one": "{count} новий запис у списку очікування",
+        "few": "{count} нові записи у списку очікування",
+        "many": "{count} нових записів у списку очікування",
+        "other": "{count} нових записів у списку очікування"
+      },
+      "offer_accepted": {
+        "one": "{count} прийнята пропозиція",
+        "few": "{count} прийняті пропозиції",
+        "many": "{count} прийнятих пропозицій",
+        "other": "{count} прийнятих пропозицій"
+      },
+      "offer_declined": {
+        "one": "{count} відхилена пропозиція",
+        "few": "{count} відхилені пропозиції",
+        "many": "{count} відхилених пропозицій",
+        "other": "{count} відхилених пропозицій"
+      },
+      "offer_expired": {
+        "one": "{count} прострочена пропозиція",
+        "few": "{count} прострочені пропозиції",
+        "many": "{count} прострочених пропозицій",
+        "other": "{count} прострочених пропозицій"
+      }
+    }
   },
   "TicketBatches": {
     "selectedCount": "Вибрано: {count}",

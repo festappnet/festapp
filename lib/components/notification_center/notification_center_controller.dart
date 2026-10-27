@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'notification_center_calendar.dart';
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -29,16 +27,7 @@ class NotificationItem {
   final DateTime? occurredAt;
   final String? occasionLink;
   final Map<String, dynamic> data;
-  bool get isPeriod => kind == 'order_activity_group';
-  Map<String, dynamic> get period =>
-      Map<String, dynamic>.from(data['period'] as Map);
-}
-
-class NotificationPeriodState {
-  bool expanded = false, loading = false, failed = false;
-  int request = 0;
-  List<NotificationItem> items = [];
-  dynamic nextCursor;
+  bool get isSummary => data['activityCount'] is int;
 }
 
 /// Only open acknowledges. Generation and revision fences reject stale polls.
@@ -67,14 +56,9 @@ class NotificationCenterController extends ChangeNotifier {
       item.sequence > previousReadThrough! &&
       item.sequence <= snapshot;
   DateTime? snapshotAt;
-  List<Map<String, dynamic>> periods = [];
-  final Map<String, NotificationPeriodState> periodStates = {};
-  NotificationPeriodState periodState(NotificationItem item) =>
-      periodStates.putIfAbsent(item.id, NotificationPeriodState.new);
-  Map<String, dynamic> get _timelineScope => {
+  Map<String, dynamic> get _overviewScope => {
     ..._scope,
     'p_snapshot': snapshot,
-    'p_snapshot_at': snapshotAt!.toIso8601String(),
   };
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
@@ -110,8 +94,6 @@ class NotificationCenterController extends ChangeNotifier {
     snapshot = 0;
     previousReadThrough = null;
     snapshotAt = null;
-    periods = [];
-    periodStates.clear();
     panelOpen = false;
     items = [];
     occasions = [];
@@ -151,17 +133,16 @@ class NotificationCenterController extends ChangeNotifier {
           revision != _revision) {
         return;
       }
-      final captured = [
-        ...items.where((item) => !item.isPeriod),
-        for (final state in periodStates.values) ...state.items,
-      ].map((item) => item.id).toSet();
-      final ids = captured.toList();
+      final captured = items.map((item) => item.id).toList();
       final updates = <String, NotificationItem>{};
-      for (var start = 0; start < ids.length; start += 200) {
-        final result = await _read('get_notification_center_updates', {
-          'p_organization': organization,
-          'p_snapshot': snapshot,
-          'p_ids': ids.sublist(start, (start + 200).clamp(0, ids.length)),
+      for (var start = 0; start < captured.length; start += 200) {
+        final result = await _read('get_notification_center_overview', {
+          ..._overviewScope,
+          'p_ids': captured.sublist(
+            start,
+            (start + 200).clamp(0, captured.length),
+          ),
+          'p_limit': 200,
         });
         if (generation != _generation || revision != _revision) return;
         for (final row in result['items'] as List? ?? []) {
@@ -171,76 +152,24 @@ class NotificationCenterController extends ChangeNotifier {
           updates[item.id] = item;
         }
       }
-      final headers = items.where((item) => item.isPeriod).toList();
-      final counts = <String, Map<String, dynamic>>{};
-      for (var start = 0; start < headers.length; start += 200) {
-        final result = await _read(
-          'get_notification_center_timeline_group_updates',
-          {
-            ..._timelineScope,
-            'p_groups': headers
-                .sublist(start, (start + 200).clamp(0, headers.length))
-                .map(
-                  (item) => {
-                    'id': item.id,
-                    'occasionId': item.occasionId,
-                    'period': item.period,
-                  },
-                )
-                .toList(),
-          },
-        );
-        if (generation != _generation || revision != _revision) return;
-        for (final row in result['groups'] as List? ?? []) {
-          final value = Map<String, dynamic>.from(row);
-          counts[value['id'] as String] = value;
-        }
-      }
-      // Live facts may change, but snapshot positions and date boundaries stay fixed.
-      NotificationItem hydrate(NotificationItem item) {
-        final update = updates[item.id];
-        if (update == null) return item;
-        return NotificationItem.fromJson({
-          'id': update.id,
-          'kind': update.kind,
-          'status': update.status,
-          'occurredAt': item.occurredAt?.toIso8601String(),
-          'section': item.section,
-          'sequence': item.sequence,
-          'occasionId': item.occasionId,
-          'occasionTitle': update.occasionTitle,
-          'occasionLink': update.occasionLink,
-          'data': update.data,
-        });
-      }
-
-      items.removeWhere(
-        (item) => item.isPeriod
-            ? (counts[item.id]?['count'] as int? ?? 0) == 0
-            : captured.contains(item.id) && !updates.containsKey(item.id),
-      );
-      items = items.map((item) {
-        if (!item.isPeriod) return hydrate(item);
-        final count = counts[item.id]!;
-        return NotificationItem.fromJson({
-          'id': item.id,
-          'kind': item.kind,
-          'sequence': item.sequence,
-          'section': item.section,
-          'occasionId': item.occasionId,
-          'occasionTitle': count['occasionTitle'],
-          'occasionLink': item.occasionLink,
-          'occurredAt': item.occurredAt?.toIso8601String(),
-          'data': {...item.data, 'count': count['count']},
-        });
-      }).toList();
-      periodStates.removeWhere((id, _) => !items.any((item) => item.id == id));
-      for (final state in periodStates.values) {
-        state.items.removeWhere(
-          (item) => captured.contains(item.id) && !updates.containsKey(item.id),
-        );
-        state.items = state.items.map(hydrate).toList();
-      }
+      // Recheck permissions and live facts without moving snapshot positions or
+      // inserting arrivals. Missing IDs are revoked, not cached personal data.
+      items = [
+        for (final item in items)
+          if (updates[item.id] case final update?)
+            NotificationItem.fromJson({
+              'id': update.id,
+              'kind': update.kind,
+              'status': update.status,
+              'occurredAt': item.occurredAt?.toIso8601String(),
+              'section': item.section,
+              'sequence': item.sequence,
+              'occasionId': item.occasionId,
+              'occasionTitle': update.occasionTitle,
+              'occasionLink': update.occasionLink,
+              'data': update.data,
+            }),
+      ];
       refreshFailed = false;
       notifyListeners();
     } catch (error) {
@@ -264,7 +193,6 @@ class NotificationCenterController extends ChangeNotifier {
     enabled = unread = loading = false;
     failed = true;
     items = [];
-    periodStates.clear();
     occasions = [];
     nextCursor = null;
     _timer?.cancel();
@@ -348,30 +276,22 @@ class NotificationCenterController extends ChangeNotifier {
       }
       final newSnapshot = result['snapshot'] as int? ?? 0;
       final at = DateTime.parse(result['snapshotAt'] as String);
-      final calendar = NotificationCenterCalendar.periods(
-        at,
-        DateTime.tryParse(result['oldestOrderAt']?.toString() ?? ''),
-      );
-      final timeline = await _read('get_notification_center_timeline', {
+      final overview = await _read('get_notification_center_overview', {
         ..._scope,
         'p_snapshot': newSnapshot,
-        'p_snapshot_at': at.toIso8601String(),
-        'p_periods': calendar,
         'p_limit': 30,
       });
       if (generation != _generation || revision != _revision) return;
       snapshot = newSnapshot;
       previousReadThrough = result['previousReadThrough'] as int?;
       snapshotAt = at;
-      periods = calendar;
-      periodStates.clear();
-      items = (timeline['items'] as List? ?? [])
+      items = (overview['items'] as List? ?? [])
           .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       occasions = (result['occasions'] as List? ?? [])
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
-      nextCursor = timeline['nextCursor'];
+      nextCursor = overview['nextCursor'];
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
@@ -400,9 +320,8 @@ class NotificationCenterController extends ChangeNotifier {
     pageFailed = false;
     notifyListeners();
     try {
-      final result = await _read('get_notification_center_timeline', {
-        ..._timelineScope,
-        'p_periods': periods,
+      final result = await _read('get_notification_center_overview', {
+        ..._overviewScope,
         'p_cursor': nextCursor,
         'p_limit': 30,
       });
@@ -423,65 +342,6 @@ class NotificationCenterController extends ChangeNotifier {
     } finally {
       if (generation == _generation && revision == _revision) {
         loading = false;
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> togglePeriod(NotificationItem item) async {
-    final state = periodState(item);
-    state.expanded = !state.expanded;
-    notifyListeners();
-    if (state.expanded && state.items.isEmpty && !state.loading) {
-      await loadPeriod(item);
-    }
-  }
-
-  Future<void> loadPeriod(NotificationItem item) async {
-    final state = periodState(item);
-    if (state.loading || (state.items.isNotEmpty && state.nextCursor == null))
-      return;
-    final generation = _generation,
-        revision = _revision,
-        request = ++state.request;
-    state.loading = true;
-    state.failed = false;
-    notifyListeners();
-    try {
-      final result = await _read('get_notification_center_timeline_group', {
-        ..._timelineScope,
-        'p_occasion': item.occasionId,
-        'p_period': item.period,
-        'p_cursor': state.nextCursor,
-        'p_limit': 30,
-      });
-      if (generation != _generation ||
-          revision != _revision ||
-          !identical(periodStates[item.id], state) ||
-          request != state.request)
-        return;
-      final known = state.items.map((item) => item.id).toSet();
-      state.items.addAll(
-        (result['items'] as List? ?? [])
-            .map(
-              (row) =>
-                  NotificationItem.fromJson(Map<String, dynamic>.from(row)),
-            )
-            .where((item) => known.add(item.id)),
-      );
-      state.nextCursor = result['nextCursor'];
-    } catch (error) {
-      if (generation == _generation &&
-          revision == _revision &&
-          identical(periodStates[item.id], state) &&
-          !_accessFailure(error)) {
-        state.failed = true;
-      }
-    } finally {
-      if (generation == _generation &&
-          revision == _revision &&
-          identical(periodStates[item.id], state)) {
-        state.loading = false;
         notifyListeners();
       }
     }

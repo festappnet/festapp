@@ -112,3 +112,24 @@ authorized live order/form; captured counts and configuration are never rewritte
 `order_context.sql` is the shared owner used by publication and legacy hydration.
 The new forward migration is `20261026150000_notification_center_order_periods.sql`;
 all previous migration bytes, including the flat feed, are sealed prerequisites.
+
+## Compact overview (2026-10-27)
+
+`get_notification_center_overview` is the current compact client's read owner.
+The existing authorized snapshot selector supplies standalone non-order events
+and one complete count per occasion/order-action kind. Recent and historical
+actions share that destination, so the UI never expands them. Group identities
+include the occasion ID and kind; similarly named occasions and distinct kinds
+cannot merge. A summary previews only the latest authorized contact; singleton
+rows retain existing place/form facts. Summary data omits `orderId`, so navigation
+uses the existing occasion order overview rather than one representative order.
+No paid-order notification is introduced.
+
+Keyset cursors bind recipient, organization, current occasion and snapshot. Limits
+count overview rows rather than underlying events. Known-ID hydration (maximum
+200 IDs) reuses the same query and current authorization, without inserting arrivals
+or acknowledging anything. The existing open/watermark contract remains unchanged.
+The forward migration is `20261027210000_notification_center_overview.sql`.
+The old flat and temporal APIs remain for released clients; their migration bytes
+are immutable. No new projection table, acknowledgment model or publication path
+is introduced.

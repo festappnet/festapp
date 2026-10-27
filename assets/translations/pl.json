@@ -2459,7 +2459,46 @@
     "capacity": "Dostępne publicznie: {remaining} / {limit}",
     "heldForWaiting": "Zarezerwowane dla listy oczekujących: {count}",
     "needsAttention": "Wymaga uwagi",
-    "detail": "Szczegóły"
+    "detail": "Szczegóły",
+    "latestCustomer": "Ostatnio: {name}",
+    "activityCounts": {
+      "order_created": {
+        "one": "{count} nowe zamówienie",
+        "few": "{count} nowe zamówienia",
+        "many": "{count} nowych zamówień",
+        "other": "{count} nowych zamówień"
+      },
+      "order_cancelled": {
+        "one": "{count} anulowane zamówienie",
+        "few": "{count} anulowane zamówienia",
+        "many": "{count} anulowanych zamówień",
+        "other": "{count} anulowanych zamówień"
+      },
+      "waitlist_registered": {
+        "one": "{count} nowy wpis na listę rezerwową",
+        "few": "{count} nowe wpisy na listę rezerwową",
+        "many": "{count} nowych wpisów na listę rezerwową",
+        "other": "{count} nowych wpisów na listę rezerwową"
+      },
+      "offer_accepted": {
+        "one": "{count} przyjęta oferta",
+        "few": "{count} przyjęte oferty",
+        "many": "{count} przyjętych ofert",
+        "other": "{count} przyjętych ofert"
+      },
+      "offer_declined": {
+        "one": "{count} odrzucona oferta",
+        "few": "{count} odrzucone oferty",
+        "many": "{count} odrzuconych ofert",
+        "other": "{count} odrzuconych ofert"
+      },
+      "offer_expired": {
+        "one": "{count} wygasła oferta",
+        "few": "{count} wygasłe oferty",
+        "many": "{count} wygasłych ofert",
+        "other": "{count} wygasłych ofert"
+      }
+    }
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",

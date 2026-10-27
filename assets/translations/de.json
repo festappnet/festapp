@@ -2457,7 +2457,46 @@
     "capacity": "Öffentlich verfügbar: {remaining} / {limit}",
     "heldForWaiting": "Für Warteliste reserviert: {count}",
     "needsAttention": "Aufmerksamkeit erforderlich",
-    "detail": "Details"
+    "detail": "Details",
+    "latestCustomer": "Zuletzt: {name}",
+    "activityCounts": {
+      "order_created": {
+        "one": "{count} neue Bestellung",
+        "few": "{count} neue Bestellungen",
+        "many": "{count} neue Bestellungen",
+        "other": "{count} neue Bestellungen"
+      },
+      "order_cancelled": {
+        "one": "{count} stornierte Bestellung",
+        "few": "{count} stornierte Bestellungen",
+        "many": "{count} stornierte Bestellungen",
+        "other": "{count} stornierte Bestellungen"
+      },
+      "waitlist_registered": {
+        "one": "{count} neuer Wartelisteneintrag",
+        "few": "{count} neue Wartelisteneinträge",
+        "many": "{count} neue Wartelisteneinträge",
+        "other": "{count} neue Wartelisteneinträge"
+      },
+      "offer_accepted": {
+        "one": "{count} angenommenes Angebot",
+        "few": "{count} angenommene Angebote",
+        "many": "{count} angenommene Angebote",
+        "other": "{count} angenommene Angebote"
+      },
+      "offer_declined": {
+        "one": "{count} abgelehntes Angebot",
+        "few": "{count} abgelehnte Angebote",
+        "many": "{count} abgelehnte Angebote",
+        "other": "{count} abgelehnte Angebote"
+      },
+      "offer_expired": {
+        "one": "{count} abgelaufenes Angebot",
+        "few": "{count} abgelaufene Angebote",
+        "many": "{count} abgelaufene Angebote",
+        "other": "{count} abgelaufene Angebote"
+      }
+    }
   },
   "TicketBatches": {
     "selectedCount": "Ausgewählt: {count}",

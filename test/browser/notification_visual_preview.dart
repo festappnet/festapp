@@ -13,11 +13,14 @@ Future<void> main() async {
   final controller = NotificationCenterController(
     read: (_, params) async => {},
   );
+  controller.snapshot = 7;
+  controller.previousReadThrough = 4;
   controller.items = [
     NotificationItem.fromJson({
       'id': 'synthetic-email',
       'kind': 'email_problem',
       'section': 0,
+      'sequence': 5,
       'occurredAt': '2026-10-23T18:30:00',
       'data': {
         'messageId': 'synthetic-message',
@@ -35,6 +38,7 @@ Future<void> main() async {
         'id': entry[0],
         'kind': entry[0],
         'section': 1,
+        'sequence': 6,
         'occasionId': 1,
         'occasionTitle': 'Country bál 2026',
         'occasionLink': 'synthetic-event',
@@ -42,7 +46,8 @@ Future<void> main() async {
         'data': entry[0] == 'form_closed'
             ? {'title': 'Vstupenky', 'reason': 'schedule_end'}
             : {
-                'orderId': 1,
+                'relatedOrders': true,
+                'activityCount': entry[0] == 'order_created' ? 35 : 1,
                 'contact': {'name': 'Jan', 'surname': 'Novák'},
                 'count': 2,
               },
