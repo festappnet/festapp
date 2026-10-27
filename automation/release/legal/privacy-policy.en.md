@@ -26,6 +26,14 @@ We send account and order messages, including sign-in links, confirmations, tick
 
 Delivery and errors are recorded. Some order and organizer messages measure opening through an image associated with the recipient and loading time. Security messages do not use this measurement.
 
+## Optional connection to ChatGPT
+
+If you connect your account to OpenAI's ChatGPT, you select events or organizers and approve the access scope. The connector returns data for your requested operation within that scope and your current permissions. Read access supports event discovery, sales summaries, order search and details, and ticket artwork. It does not create orders, change payments or deliver tickets.
+
+Depending on the tool, data sent to ChatGPT can include event names and identifiers, order and ticket counts and states, amounts, currencies and payment information, buyer names and email addresses, and, in order details, notes and registration responses. Returned content can become part of your conversation. Include only data you are entitled to disclose for that purpose; prefer aggregate reports when customer details are unnecessary.
+
+OpenAI processes returned data under the terms and settings of your ChatGPT account. Read-only access still involves data transfer. Connecting is optional; the service remains usable without it. You can revoke access in your account's connection settings. Revocation stops future connector access but does not itself delete earlier ChatGPT conversation content, which you manage with OpenAI.
+
 ## Where data is processed
 
 The main database and accounts run on self-managed Hetzner servers. Cloudflare provides website delivery, security, files and encrypted backups. Organizers and their authorized staff have access as needed.
