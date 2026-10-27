@@ -1,4 +1,13 @@
--- One client RPC opens/acknowledges, pages or refreshes the daily overview.
+-- Normalize opaque IDs sent by already-open clients during this migration.
+-- This accepts an old identifier, never recreates a daily grouping.
+CREATE OR REPLACE FUNCTION public.notification_center_rollup_id_internal(p_id text)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE SET search_path=public,extensions AS $$
+ SELECT regexp_replace(p_id,'^order-day:([0-9]+):([a-z_]+):[0-9]{4}-[0-9]{2}-[0-9]{2}$','occasion-kind:\1:\2');
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_rollup_id_internal(text) FROM PUBLIC,anon,authenticated,service_role;
+
+-- One client RPC opens/acknowledges, pages or refreshes category rollups.
+-- Keep the existing RPC signature for installed clients; there is one grouping path.
 -- Counts, historical place totals, bounded contact previews and badge state are
 -- computed together. Calendar dates use one validated IANA display timezone.
 CREATE OR REPLACE FUNCTION public.get_notification_center_daily_overview(
@@ -27,10 +36,10 @@ BEGIN
    FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
  END IF;
  snap:=coalesce(snap,0);
- context:=md5(jsonb_build_array('daily-overview',auth.uid(),p_organization,p_current_occasion,snap,extract(epoch FROM anchor),p_timezone)::text);
+ context:=md5(jsonb_build_array('occasion-kind-overview',auth.uid(),p_organization,p_current_occasion,snap,extract(epoch FROM anchor),p_timezone)::text);
  cursor:=public.notification_center_time_cursor_internal(p_cursor,context);
  WITH visible AS MATERIALIZED (
-  SELECT v.*,public.notification_center_order_activity_internal((event).kind) AND (event).occasion IS NOT NULL grouped
+  SELECT v.*,(event).kind NOT IN ('email_problem','bank_problem') AND (event).occasion IS NOT NULL grouped
   FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v),
  -- Resolve absent legacy facts in batches, never one client request per row.
  legacy_orders AS MATERIALIZED (
@@ -38,7 +47,7 @@ BEGIN
   JOIN eshop.orders o ON o.id=CASE WHEN (v.event).data->>'orderId' ~ '^[0-9]{1,18}$'
    THEN ((v.event).data->>'orderId')::bigint END AND o.occasion=(v.event).occasion
   JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=p_organization
-  WHERE v.grouped AND ((v.event).data->>'count' IS NULL
+  WHERE v.grouped AND public.notification_center_order_activity_internal((v.event).kind) AND ((v.event).data->>'count' IS NULL
    OR (v.event).data->>'formContext' IS NULL)),
  legacy_counts AS MATERIALIZED (
   SELECT o.id,nullif(count(DISTINCT x.ticket),0) places FROM legacy_orders o
@@ -59,28 +68,34 @@ BEGIN
    count(*) OVER bucket n,count(captured_places) OVER bucket known_counts,sum(captured_places) OVER bucket total_places,
    bool_or(captured_places>1 OR resolved_context->'allowsMultiple'='true'::jsonb) OVER bucket has_multiple,
    max((delivery).sequence) OVER bucket latest FROM classified WHERE grouped
-  WINDOW bucket AS(PARTITION BY (event).occasion,(event).kind,calendar_day)),
+  WINDOW bucket AS(PARTITION BY (event).occasion,(event).kind)),
  combined AS (
   SELECT (event).id::text id,section,(event).occurred_at at,event,delivery,calendar_day,
    0::bigint activity_count,(delivery).sequence sequence,NULL::bigint place_count,false multiple_places FROM classified WHERE NOT grouped
   UNION ALL
-  SELECT 'order-day:'||(event).occasion||':'||(event).kind||':'||calendar_day,section,(event).occurred_at,event,delivery,
+  SELECT 'occasion-kind:'||(event).occasion||':'||(event).kind,section,(event).occurred_at,event,delivery,
    calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END,coalesce(has_multiple,false) FROM ranked WHERE rank=1),
  rows AS (
   SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM combined
-  WHERE (p_ids IS NULL OR id=ANY(p_ids)) AND (cursor IS NULL OR section>(cursor->>'section')::int
+  WHERE (p_ids IS NULL OR id IN (SELECT public.notification_center_rollup_id_internal(requested) FROM unnest(p_ids) requested)) AND (cursor IS NULL OR section>(cursor->>'section')::int
    OR (section=(cursor->>'section')::int AND (at,id)<((cursor->>'time')::timestamptz,cursor->>'id')))
   ORDER BY section,at DESC,id DESC LIMIT lim+1),
- page AS (SELECT *,public.notification_center_dto(event,delivery) dto FROM rows WHERE position<=lim)
+ page AS (SELECT *,public.notification_center_dto(event,delivery) dto,
+  coalesce((SELECT requested FROM unnest(p_ids) WITH ORDINALITY r(requested,position)
+    WHERE public.notification_center_rollup_id_internal(requested)=rows.id ORDER BY r.position LIMIT 1),id) response_id
+  FROM rows WHERE position<=lim)
  SELECT coalesce((SELECT jsonb_agg(CASE WHEN activity_count=0 THEN dto||jsonb_build_object('section',section,'day',calendar_day)
-  ELSE dto||jsonb_build_object('id',id,'section',section,'day',calendar_day,'sequence',sequence,'data',
+  WHEN NOT public.notification_center_order_activity_internal((event).kind) THEN
+   dto||jsonb_build_object('id',response_id,'section',section,'day',calendar_day,'sequence',sequence,
+     'data',(dto->'data')||jsonb_build_object('eventCount',activity_count))
+  ELSE dto||jsonb_build_object('id',response_id,'section',section,'day',calendar_day,'sequence',sequence,'data',
    (CASE WHEN activity_count=1 THEN dto->'data' ELSE jsonb_build_object('contact',dto#>'{data,contact}') END)-'orderId'-'orderSymbol'
    ||jsonb_build_object('activityCount',activity_count,'relatedOrders',true,'allowsMultiple',multiple_places)
    ||jsonb_strip_nulls(jsonb_build_object('placeCount',place_count))
    ||jsonb_build_object('previewContacts',(SELECT jsonb_agg(
     public.notification_center_dto(r.event,r.delivery)#>'{data,contact}' ORDER BY r.rank)
     FROM ranked r WHERE (r.event).occasion=(page.event).occasion AND (r.event).kind=(page.event).kind
-     AND r.calendar_day=page.calendar_day AND r.rank<=3))) END ORDER BY position) FROM page),'[]'),
+     AND r.rank<=3))) END ORDER BY position) FROM page),'[]'),
   (SELECT jsonb_build_object('context',context,'section',section,'time',at,'id',id) FROM page ORDER BY position DESC LIMIT 1),
   (SELECT count(*)>lim FROM rows) INTO items,tail,more;
  IF p_open THEN

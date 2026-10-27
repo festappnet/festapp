@@ -173,7 +173,7 @@ void main() {
   testWidgets('$selectedKind navigation checks all six matching orders in the existing orders RPC', (tester) async {
     fail = false; includeOrder = true; groupSelection = true; groupRequest = null;
     addTearDown(() { includeOrder = false; groupSelection = false; });
-    final group = {'id':'order-day:1:$selectedKind:2026-10-27','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    final group = {'id':'occasion-kind:1:$selectedKind','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
     await showOrders(tester, path: Uri(path:'/empty',queryParameters:{'notificationGroup':jsonEncode(group)}).toString());
     final grid = tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>)).controller;
     expect(grid.stateManager.refRows.originalList.map((row)=>row.checked), [true,true,true,true,true,true,false]);

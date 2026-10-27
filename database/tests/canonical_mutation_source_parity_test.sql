@@ -912,8 +912,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_map_editor_bundle_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df70f953f4ed9da20e04ad79210aa294'),'current SQL source parity: public.get_map_editor_bundle_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_news_with_versions_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d727eed5a71b41c1a5e0be7658b1f348'),'current SQL source parity: public.get_news_with_versions_v1(bigint)');
--- supabase/migrations/20261028010000_notification_legacy_place_totals.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f3ce387d50722ae5413f8bc4fb847e95'),'current SQL source parity: public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)');
+-- supabase/migrations/20261028013000_notification_category_rollups.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='e4affa354295a5e95c7c70bec58e1ffc'),'current SQL source parity: public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_copy_units(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6b1468a2f2cfe072f99c8e842dac1936'),'current SQL source parity: public.get_occasion_copy_units(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1234,8 +1234,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_ticket_batch_selection_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a38918671e05799721980f59aba84364'),'current SQL source parity: public.normalize_ticket_batch_selection_internal(bigint,jsonb)');
 -- supabase/migrations/20261024235000_notification_center_canonical_availability.sql
  PERFORM assert_true(to_regprocedure('public.notification_center_active_internal(bigint)') IS NULL,'retired SQL identity remains absent: public.notification_center_active_internal(bigint)');
--- supabase/migrations/20261027234500_notification_group_order_selection.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_order_selection(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c2105f44d349347f133b646445eb5153'),'current SQL source parity: public.notification_center_order_selection(bigint,jsonb)');
+-- supabase/migrations/20261028013000_notification_category_rollups.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_order_selection(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='fb500c1bd04ed9307ea01a93c316f898'),'current SQL source parity: public.notification_center_order_selection(bigint,jsonb)');
+-- supabase/migrations/20261028013000_notification_category_rollups.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_rollup_id_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='859a86169fc2a0a3118a32f70d426a2c'),'current SQL source parity: public.notification_center_rollup_id_internal(text)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_commit_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f85d72057735264187b467f21764e2d9'),'current SQL source parity: public.occasion_commit_read_rule(boolean,boolean)');
 -- supabase/migrations/20261026190000_form_authoring.sql

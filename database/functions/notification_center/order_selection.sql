@@ -23,8 +23,8 @@ BEGIN
  FROM public.notification_center_visible_internal(org,coalesce(snap,0),p_occasion) v
  WHERE (v.event).occasion=p_occasion
   AND public.notification_center_order_activity_internal((v.event).kind)
-  AND 'order-day:'||p_occasion||':'||(v.event).kind||':'||
-    (((v.event).occurred_at AT TIME ZONE zone)::date)::text=p_group->>'id'
+  AND 'occasion-kind:'||p_occasion||':'||(v.event).kind=
+    public.notification_center_rollup_id_internal(p_group->>'id')
   AND (v.event).data->>'orderId' ~ '^[0-9]{1,18}$';
  RETURN result;
 END $$;
