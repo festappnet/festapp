@@ -28,7 +28,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl } = {}) {
+async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? reply({ presets: {}, fonts: {} }) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -38,6 +38,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const issuer = `http://127.0.0.1:${server.address().port}`;
     const raw = configuration(issuer);
+    if (webCallback) raw.clients[0].redirectUris = [webCallback];
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
@@ -84,7 +85,9 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: '7' }) });
     assert.equal(r.status, 303);
     let redirect = r.headers.get('location');
-    for (let i = 0; i < 8 && !new URL(redirect, f.issuer).pathname.startsWith('/callback'); i++) {
+    const callbackTarget = new URL(callbackUri);
+    const isCallback = value => { const u = new URL(value, f.issuer); return u.origin === callbackTarget.origin && u.pathname === callbackTarget.pathname; };
+    for (let i = 0; i < 8 && !isCallback(redirect); i++) {
         r = await f.browser(redirect);
         if (handleFormPost && r.status === 200 && r.headers.get('content-type')?.includes('text/html'))
             r = await handleFormPost(r);
@@ -106,8 +109,9 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
 
 test('OAuth account switching authorizes only the provider auto-submit script and completes the protected POST', async t => {
     let switchedFetch;
-    const f = await setup(t, { fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
-    const first = await connect(f);
+    const callbackUri = 'https://chatgpt.com/connector_platform_oauth_redirect';
+    const f = await setup(t, { webCallback: callbackUri, fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
+    const first = await connect(f, { callbackUri });
     const baseline = (await f.browser('/healthz')).headers.get('content-security-policy');
     assert.match(baseline, /(?:^|;)\s*script-src\s*(?:;|$)/);
     assert.doesNotMatch(baseline, /script-src[^;]*unsafe-inline|sha256-/);
@@ -115,7 +119,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     const other = await fixture(t, { userId: otherActor });
     switchedFetch = other.owner.fetch;
     let posts = 0;
-    const second = await connect(f, { handleFormPost: async response => {
+    const second = await connect(f, { callbackUri, handleFormPost: async response => {
         const html = await response.text();
         assert.match(html, /<title>Submitting Callback<\/title>/);
         const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
@@ -126,6 +130,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
         assert.equal(directive, 'script-src ' + expected);
         assert.match(policy, /default-src 'none'/);
         assert.match(policy, /form-action 'self'/);
+        assert.equal(policy.split(';').find(s => s.trim().startsWith('form-action')).trim(), "form-action 'self' " + callbackUri);
         assert.doesNotMatch(directive, /unsafe-inline|unsafe-eval|'self'|https:/);
         const action = new URL(html.match(/<form method="post" action="([^"]+)"/)[1], f.issuer);
         assert.equal(action.origin, f.issuer);
@@ -142,6 +147,11 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     assert.notEqual(first.tokens.access_token, second.tokens.access_token);
     assert.deepEqual(new Set(f.storage.values('Delegation').map(g => g.userId)), new Set([actor, otherActor]));
     assert(f.storage.values('Delegation').every(g => !g.revoked));
+    for (const redirectUri of ['https://chatgpt.com/not-registered','https://evil.example/callback']) {
+        const r = await f.browser('/auth?' + new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code', redirect_uri: redirectUri,
+            scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) }));
+        assert.equal(r.status, 400);
+    }
 });
 
 test('remote configuration rejects insecure origins, redirects and duplicate identities', () => {
