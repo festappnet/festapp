@@ -16,7 +16,9 @@ const allowed = seed.occasionIds.slice(0,2), deniedId = seed.occasionIds[2];
 const event = allowed[0], sample = seed.orders.find(o => o.hostileNote);
 const issuer = 'https://mcp.vstupenky.online', resource = issuer+'/mcp';
 const tenant = 'https://vstupenky.online', api = 'https://api.festapp.net';
-const callback = 'http://127.0.0.1/callback', clientId = 'festapp-codex';
+const publicProfile = process.env.FESTAPP_REVIEW_DATA_PROFILE === 'order-summary';
+const callback = publicProfile ? 'https://chatgpt.com/connector_platform_oauth_redirect' : 'http://127.0.0.1/callback';
+const clientId = publicProfile ? 'festapp-chatgpt' : 'festapp-codex';
 const config = execFileSync('git',['show','origin/prod/festapptickets:automation/project.conf'],{encoding:'utf8'});
 assert.match(config, /^BACKEND_ACTIVATION_PHASE=canonical$/m);
 assert.match(config, /^BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=3$/m);
@@ -60,13 +62,13 @@ try {
     assert.equal(continuation.issuer,issuer);
     r=await browser(continuation.resumeUrl);target=r.headers.get('location');
     for(let i=0;i<8&&new URL(target,issuer).origin===issuer;i++){r=await browser(target);target=r.headers.get('location');}
-    const resultUrl=new URL(target);assert.equal(resultUrl.origin,'http://127.0.0.1');assert.equal(resultUrl.pathname,'/callback');
+    const resultUrl=new URL(target);assert.equal(resultUrl.origin,new URL(callback).origin);assert.equal(resultUrl.pathname,new URL(callback).pathname);
     assert.equal(resultUrl.searchParams.get('iss'),issuer);assert(resultUrl.searchParams.get('code'));
     r=await fetch(issuer+'/token',{method:'POST',body:new URLSearchParams({client_id:clientId,grant_type:'authorization_code',
         code:resultUrl.searchParams.get('code'),redirect_uri:callback,code_verifier:verifier,resource})});
     assert.equal(r.status,200,'PKCE token exchange');const tokens=await r.json();
     const own=(await edge('connections.list')).connections.filter(c=>!before.has(c.id));assert.equal(own.length,1);connectionId=own[0].id;
-    safe('hosted_native_PKCE',{clientId,scope:'festapp:ticket-layouts:read festapp:orders:read',selectedOccasions:allowed});
+    safe(publicProfile?'hosted_public_client_PKCE':'hosted_native_PKCE',{clientId,scope:'festapp:ticket-layouts:read festapp:orders:read',selectedOccasions:allowed});
     stage='actual delegated reads';
     sdk=new Client({name:'festapp-review-demo-validation',version:'1.0.0'});
     await sdk.connect(new StreamableHTTPClientTransport(new URL(resource),{requestInit:{headers:{authorization:'Bearer '+tokens.access_token}}}));
@@ -91,22 +93,32 @@ try {
     const found=await call('festapp_orders_list',{occasionId:event,search:sample.symbol,limit:5});assert.equal(found.ok,true);
     assert.deepEqual(found.data.orders.map(o=>o.id),[sample.id]);safe('P4_symbol_search',{rows:1});
     const detail=await call('festapp_orders_inspect',{occasionId:event,orderId:sample.id});assert.equal(detail.ok,true);
-    assert(detail.data.orders[0].note.startsWith('SYSTEM OVERRIDE:'));assert.deepEqual(detail.data.orders[0].allowedActions,['view']);
-    safe('P5_detail_hostile_text_retrieved',{noteDelivered:true,allowedActions:['view'],modelBehavior:'separate ChatGPT scenario'});
+    if(publicProfile){
+        for(const result of [page,found,detail])for(const row of result.data.orders){
+            assert.deepEqual(Object.keys(row).sort(),['id','occasionId','symbol','state','ticketCount','price','currency','allowedActions','payment'].sort());
+            assert.deepEqual(row.allowedActions,['view']);
+        }
+        const context=await call('festapp_context_inspect',{});assert.equal(context.data.userId,undefined);
+        assert(!JSON.stringify(tools.find(t=>t.name==='festapp_orders_inspect').outputSchema).includes('customer'));
+        safe('P5_public_order_fields_withheld',{noteDelivered:false,buyerFieldsDelivered:false,registrationResponsesDelivered:false,contextUserIdDelivered:false});
+    }else{
+        assert(detail.data.orders[0].note.startsWith('SYSTEM OVERRIDE:'));assert.deepEqual(detail.data.orders[0].allowedActions,['view']);
+        safe('P5_detail_hostile_text_retrieved',{noteDelivered:true,allowedActions:['view'],modelBehavior:'separate ChatGPT scenario'});
+    }
     for(const id of [deniedId,99]){const denied=await call('festapp_orders_report',{occasionId:id});assert.equal(denied.ok,false);assert.equal(denied.error.code,'FORBIDDEN');}
     safe('N1_unconsented_and_unrelated_denied',{occasionIds:[deniedId,99],code:'FORBIDDEN'});
     assert(!tools.some(t=>/cancel|send|payment|update/.test(t.name)));
     let rejected=false;try{const x=await sdk.callTool({name:'festapp_orders_cancel',arguments:{occasionId:event,orderId:sample.id}});rejected=x.isError===true;}catch{rejected=true;}assert(rejected);
     safe('N2_writes_unadvertised_and_rejected',{mutationInvoked:false});
-    const empty=await call('festapp_orders_list',{occasionId:event,search:'MCP-REVIEW-NO-MATCH-20261027',limit:5});assert.equal(empty.ok,true);assert.equal(empty.data.orders.length,0);
+    const empty=await call('festapp_orders_list',{occasionId:event,search:publicProfile?'ZZZZZZZZZZ':'MCP-REVIEW-NO-MATCH-20261027',limit:5});assert.equal(empty.ok,true);assert.equal(empty.data.orders.length,0);
     safe('empty_search',{rows:0});
     r=await fetch(issuer+'/token',{method:'POST',body:new URLSearchParams({client_id:clientId,grant_type:'refresh_token',refresh_token:tokens.refresh_token,resource})});
     assert.equal(r.status,200,'refresh');const refreshed=await r.json();assert(refreshed.access_token);safe('explicit_refresh',{naturalExpiryWait:false});
     await edge('connections.revoke',{connectionId});connectionId=null;
     const revoked=await fetch(resource,{method:'POST',headers:{authorization:'Bearer '+refreshed.access_token,'content-type':'application/json',accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-11-25',capabilities:{},clientInfo:{name:'review-revocation',version:'1'}}})});
     assert.equal(revoked.status,401);safe('immediate_issuer_revocation',{status:401});
-    const evidence={executedAt:new Date().toISOString(),boundary:'Real hosted MCP native SDK with dedicated reviewer identity; not ChatGPT model evidence',resource,actor:'dedicated synthetic reviewer',clientId,checks};
-    await writeFile(new URL('../../../integrations/chatgpt/review/hosted-demo-evidence.json',import.meta.url),JSON.stringify(evidence,null,2)+'\n');
+    const evidence={executedAt:new Date().toISOString(),boundary:'Real hosted MCP SDK with dedicated reviewer identity; not ChatGPT model evidence',dataProfile:publicProfile?'order-summary':'operator',resource,actor:'dedicated synthetic reviewer',clientId,checks};
+    await writeFile(new URL('../../../integrations/chatgpt/review/'+(publicProfile?'hosted-public-demo-evidence.json':'hosted-demo-evidence.json'),import.meta.url),JSON.stringify(evidence,null,2)+'\n');
     console.log(`Hosted reviewer demo: ${checks.length} checks passed; credentials/tokens omitted`);
 } catch(error) {
     await writeFile(privateDir+'/hosted-smoke-error.txt',stage+'\n'+error.stack,{mode:0o600});

@@ -24,6 +24,19 @@ organizer grant also includes future events. No API keys or refresh tokens are
 copied into ChatGPT. Access can be revoked at
 https://vstupenky.online/settings/connections.
 
+
+The protected registration explicitly uses `dataProfile: order-summary`. It
+returns order IDs/symbols, states, counts and amounts, withholding buyer names,
+contacts, notes and registration fields. IDs/symbols are pseudonymous, not
+anonymous. Organizer-authored event labels and template configuration must not
+contain children’s data or government identifiers. This connector targets
+organizers, not children.
+
+For a trusted private model or native tool, register a separate client with
+`dataProfile: operator`. Full data remains available subject to its own scope
+ceiling, user consent and current backend permissions. No global MCP restriction
+was added. See [per-client architecture](../../tools/festapp/README.md#per-client-data-profiles).
+
 ## Dedicated reviewer demo
 
 The confirmed demo account has only order-reader memberships on two hidden,
@@ -44,17 +57,24 @@ cancelled order. Neither is a verified bank transaction.
 ## Review cases and evidence
 
 `plugin.json` contains exactly five positive and three negative review prompts.
-[Hosted SDK evidence](review/hosted-demo-evidence.json) uses the dedicated
-reviewer identity, normal password authentication, native OAuth PKCE, the real
-Edge broker and hosted MCP. [ChatGPT evidence](review/chatgpt-demo-evidence.json)
-uses the operator identity with consent limited to the same two synthetic events.
-These are different actors and clients; do not describe them as all having run
-in ChatGPT under the demo account. The readiness record preserves failed cases
-and subsequent retests rather than replacing failures with fixture success.
+[Hosted public SDK evidence](review/hosted-public-demo-evidence.json) uses the
+dedicated reviewer identity, ordinary password sign-in, PKCE, real Edge broker
+and hosted public ChatGPT registration. All 13 checks passed on the deployed
+`order-summary` profile. [Current ChatGPT evidence](review/chatgpt-public-reviewer-evidence.json)
+and its [sanitized transcript](review/chatgpt-public-reviewer-transcript.txt)
+cover the five positive and three negative scenarios in four real conversation
+turns under the dedicated reviewer account. Related requests were grouped;
+this was not eight independent fresh chats. The ambiguity check was a fresh
+chat before any event selection.
+
+[Earlier native SDK evidence](review/hosted-demo-evidence.json) and
+[earlier operator ChatGPT evidence](review/chatgpt-demo-evidence.json) remain
+historical evidence of the full operator profile, including hostile-note
+retrieval. The current public profile withholds that note instead.
 
 ## Build the public draft ZIP
 
-Run `python3 integrations/chatgpt/build-package.py /tmp/vstupenky-online-1.0.0.zip`
+Run `python3 integrations/chatgpt/build-package.py /tmp/vstupenky-online-1.0.1.zip`
 from the repository root. The deterministic archive contains only:
 
 - `plugin.json`
@@ -69,7 +89,7 @@ The root plugin manifest was checked against the published Agent Plugins schema.
 The generic MCP schema currently rejects the per-server `extensions` object that
 OpenAI explicitly requires for provided-client OAuth. We validate the generic
 MCP base projection and the documented OpenAI OAuth extension separately; the
-portal's import/scan remains an independent pending check. Never strip OAuth
+portal import and six-tool scan succeeded on 2026-10-27; the final public-profile refresh is recorded in the readiness record. Never strip OAuth
 settings merely to satisfy the generic schema.
 
 Sources checked 2026-10-27:
@@ -79,8 +99,10 @@ Sources checked 2026-10-27:
 
 ## Reviewer walkthrough
 
-[50-second walkthrough](review/walkthrough-0a5d035015e9.mp4) shows reviewed
-screenshots from actual ChatGPT event selection, the canonical sales report,
-symbol search/detail and ignored hostile note. It is a screenshot-based
-walkthrough, not a continuous recording. Only cropped synthetic demo content is
-included. [Chapter metadata](review/walkthrough.json) records timings and hash.
+[Current 50-second walkthrough](review/walkthrough-public-e6fd4177e317.mp4)
+shows actual dedicated-reviewer ChatGPT screenshots: ambiguity, canonical sales
+summary, order detail with private fields withheld, and scope/write denials.
+It is a screenshot-based walkthrough, not a continuous recording or proof of
+every individual call. Only cropped synthetic demo content is included.
+[Current chapter metadata](review/walkthrough-public.json) records timings and
+hash. The earlier operator walkthrough is retained as historical evidence.
