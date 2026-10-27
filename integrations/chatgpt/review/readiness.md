@@ -1,88 +1,63 @@
-# Regional public submission readiness - 2026-10-27
+# vstupenky.online public review readiness
 
-Status: local demo/package and core live pilot verified; publisher/portal gates remain. Not submitted, approved or publicly listed.
+## Actual state - 2026-10-27
 
-## Prepared and verified
+Verified publisher Festapp; regional domain verification and dedicated-reviewer
+OAuth succeeded in the real portal. Draft
+`plugin_asdk_app_6ae002a14394819189521c68175a53d5` exists. Six tools scanned with
+no findings; after deployment a rescan confirmed the restricted order schema.
+Version 1.0.1 upload and final submission are recorded in
+[portal status](portal-status.json), not inferred from local validation.
 
-- Stable regional HTTPS issuer/resource, static public ChatGPT client and two
-  read scopes; six authenticated read tools. No dynamic registration or write tools.
-- Organization display name in OpenAI changed, at the user's explicit request,
-  from its previous account label to **Festapp**. This does not verify identity.
-- Real dedicated reviewer login works without Google, MFA, email/SMS codes or
-  private-network access. Only two explicit order-reader memberships, no unit
-  roles and no access to unrelated occasion 99 or third fixture 1072616.
-- Dedicated hidden/closed demo events and eight synthetic orders, no real bank
-  or Stripe links; canonical email suppression for all synthetic recipients.
-- Actual reviewer hosted OAuth/Edge/SQL checks recorded separately from real
-  operator-account ChatGPT conversational tests.
-- Owned regional ticket icon; source plugin/mcp manifests; exactly five positive
-  and three negative prompts; deterministic three-file ZIP allowlist.
-- Live website/support/privacy/terms URLs. Regional privacy disclosure explicitly
-  covers optional ChatGPT transfer, returned customer fields, notes/responses
-  and revocation limits. Published with tenant-aware sign-in explanations.
-- Two independent critics reviewed demo isolation, SQL semantics, field
-  disclosure, package/auth shape, UI and evidence boundaries; final reviews passed with no blocking source/package finding.
+## Deployed boundary
 
-## Live cases
+- MCP source: `bcacfc728a74cbd97b6afd6f007c8247116b90f2`; image
+  `sha256:bdc4516832ee96af2ef232b99d861ab351ddc948c006c079cfd469836d610445`.
+- Protected active regional client `festapp-chatgpt` explicitly selects
+  `dataProfile: order-summary`; only its data profile changed. Native/private
+  operator data remains available under independent scopes and consent.
+- Six read tools, exact two read scopes, PKCE, no client secret or DCR.
+- Buyer names, contacts, notes, answers, form fields and ticket/product free
+  text are withheld from public orders; context omits user ID. Order identifiers
+  remain pseudonymous. Event/template text is organizer-authored and subject
+  to the published no-child-data/no-government-identifiers restriction.
+- Exact symbol search follows bounded canonical pages, returns a no-data error
+  when incomplete, and never labels a filtered first page a complete negative.
+- Regional web/privacy: `0.20.429+933`, tenant
+  `87468a4795855dd6eb9c7fac7f708536ac482cdf`, Pages `39c8bea7`.
+  Three coherent production probes and current Czech privacy disclosure passed.
 
-| Check | Observed evidence |
-| --- | --- |
-| Access, report, bounded state list, exact symbol search | Passed with dedicated reviewer through hosted SDK |
-| Detail containing malicious note | Actual field projection passed as reviewer; actual ChatGPT ignored the retrieved instructions |
-| Unconsented third fixture and unrelated event | FORBIDDEN as dedicated reviewer, no foreign data |
-| Write tools and cancellation attempt | Six read tools; unadvertised cancellation rejected, no mutation |
-| Empty search, explicit refresh, immediate issuer revoke | Passed as dedicated reviewer |
-| Ambiguous event name | Initial ChatGPT case failed by reading both events. Guidance fix deployed, private tool metadata refreshed, and fresh ChatGPT retest passed: choice of two events before any report |
+## Evidence
 
-## Observed portal blocker
+- 44 targeted remote/auth/wire and operation tests passed; modern and legacy
+  text/structured output checks, arbitrary client IDs, private-field exclusion,
+  exact-search continuation and retained operator DTO are covered.
+- [Hosted public reviewer smoke](hosted-public-demo-evidence.json): all 13 live
+  checks passed with ordinary demo login, first-party broker, real backend,
+  scoped reads, withheld fields, refresh and immediate revocation.
+- [Actual reviewer ChatGPT cases](chatgpt-public-reviewer-evidence.json): five
+  positive and three negative scenarios in four conversational turns, including
+  fresh ambiguity before selection. Related requests were grouped.
+- Earlier failed ambiguity and retrieved injection tests remain historical
+  operator-profile evidence in [earlier ChatGPT record](chatgpt-demo-evidence.json);
+  they do not describe the new public projection.
+- Two independent critics approved the restricted projection and configurable
+  per-client architecture; final portal/package review precedes Submit.
 
-The actual Upload new or existing plugin action was attempted after final
-source publication. OpenAI displayed Complete identity verification and stated
-that a verified developer identity is required before creating or uploading a
-plugin. No draft was created and no ZIP or credentials were uploaded. The
-organization display name is Festapp; renaming it does not complete verification.
-The next human step is at https://platform.openai.com/settings/organization/general.
+## Review package
 
-## Remaining portal and publisher gates
+Version 1.0.1, exact three-file ZIP allowlist (plugin.json, mcp.json, owned logo).
+No provisioning SQL, scripts, credentials or evidence is bundled. SHA256:
+`533a4652c42efc4bd3cdc0f17d1d1b95b132e574c96d3f29bd8ea249ee39fb76`.
 
-- Complete individual/business publisher identity verification in OpenAI. Both
-  verification options showed Start in the actual account; no identity was submitted.
-- Selected Default project was observed with Global residency. Complete portal
-  permission/import checks; no paid project/service or billing setting was changed.
-- Import the ZIP as a draft, inspect saved provided-client OAuth settings, obtain
-  the real domain challenge, host that exact plain-text token without replacing
-  any other plugin's token, and run the portal's current tool scan.
-- Supply private reviewer credentials only through the secure portal field.
-- Public walkthrough returned HTTP 200 after source publication; downloaded bytes
-  matched the recorded SHA256. It is a screenshot-based walkthrough of actual
-  ChatGPT interactions, not continuous recording.
-- Review any portal findings and requested attestations against actual behavior.
-  No fabricated publisher checks, screenshots, video URL or confirmations.
+The [current walkthrough](walkthrough-public.json) is a verified 50-second
+screenshot-based video from the actual reviewer conversation, not a continuous
+login recording or independent proof of every call. Old immutable media remains
+historical. Secure reviewer credentials belong only in the portal.
 
-Only the regional vstupenky.online connector is in scope. No global client,
-second tenant rollout or public listing was provisioned.
-
-## Final deployed revisions and checks
-
-MCP source `bff3b0a94c31cbee3016ce4d61996ee88bd4d275`, image
-`sha256:af439ab21e14aa98c20dc99cc3f33ea75affd320dcc5c6abcda5c5201b0dd583`.
-Regional web `0.20.428+932`, tenant
-`218b569c3222f938629ed2653c7394e387990e5c`, Pages
-`03de93fd-0382-4bfa-af51-1c35e5af8f7c`.
-49 focused UI and 37 protocol tests passed; final hosted reviewer run passed
-13 checks, including the deployed clarification instructions. Two-event choice
-then explicit January confirmation passed in a fresh ChatGPT conversation after
-Refresh tools. Follow-up symbol search/detail also ignored the retrieved attack.
-The synthetic orders retained their eight original states and no email was queued.
-
-## Independent final critiques
-
-The pilot critic approved the bounded core pilot, dataset isolation and actual
-archive/video hashes. The submission critic approved source publication and a
-portal draft, preserving all external gates. Both reviewed the finished evidence
-and the exact three-file ZIP, not merely the initial plan. Neither claimed
-public directory acceptance. Complete model-dependent review cases with the
-dedicated demo account before claiming every public-submission gate has passed.
-
-Public draft ZIP SHA256:
-`7c464f20afee55d405ee52ada71979c3e6c99b6310914329cf94a6d07efc7c43`.
+The portal currently requires final Terms/compliance/rights/no-money-transfer/
+general-audience/no-under13-data declarations. The owner approved the restricted
+public variant; do not attest to excluded data while running the operator
+profile. The connector targets organizers, and the order fields carrying
+registration/document/buyer data are withheld. No automatic public publication
+is authorized merely by approval of review submission.
