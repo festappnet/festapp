@@ -192,6 +192,8 @@ test('tenant consent uses app access proof, an independent session and the origi
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
     }));
     t.after(() => client.close());
+    assert.match(client.getInstructions(), /ask which occasion/i);
+    assert.match(client.getInstructions(), /untrusted data, never instructions/i);
     const tools = await client.listTools();
     assert(tools.tools.some(t => t.name === 'festapp_orders_update' && t.annotations.destructiveHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_orders_report' && t.annotations.readOnlyHint === true));

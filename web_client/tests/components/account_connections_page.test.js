@@ -29,6 +29,18 @@ test('identity explanations use the selected tenant brand in regional and global
 });
 const connection = { id: 'owned-connection', client: '<img src=x onerror=alert(1)>', expiresAt: '2026-11-01T12:00:00Z',
     access: { type: 'selection', units: [{ unitId: 8, canCreateOccasions: true }], occasionIds: [99] }, permissions: ['festapp:orders:read','festapp:tickets:send'] };
+test('refresh replaces the displayed connections with current server data', async () => {
+    let version = 0;
+    const f = fixture({ invoke: async () => ({ data: { connections: version ? [] : [connection] } }) });
+    await f.page.init();
+    assert(f.container.querySelector('[data-revoke]'));
+    version = 1;
+    f.container.querySelector('[data-refresh-connections]').click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.container.querySelector('[data-revoke]'), null);
+    assert.match(f.container.textContent, /Nemáte žádné aktivní propojení/);
+    f.page.dispose();
+});
 function fixture({ authenticated = true, invoke, googleStatus = async () => ({ enabled: true, linked: true }) } = {}) {
     const calls = [], googleCalls = []; let listener; let unsubscribed = false;
     const client = { auth: { getSession: async () => ({ data: { session: authenticated ? { user: { id: 'verified', email: 'person@example.test' } } : null } }),
