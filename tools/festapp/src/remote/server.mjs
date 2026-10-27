@@ -107,7 +107,9 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             return res.sendStatus(403);
         res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
-            'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
+            // Empty script-src denies scripts; oidc-provider adds only the exact
+            // hash of its account-switch auto-submit script when it renders it.
+            'Content-Security-Policy': "default-src 'none'; script-src; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
         if (canonical) res.set('Strict-Transport-Security', 'max-age=31536000');
         try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
     });
