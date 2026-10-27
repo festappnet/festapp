@@ -180,7 +180,8 @@ void main() {
     expect(find.byType(OrderEmailRepairDialog),findsNothing);
   });
 
-  testWidgets('localized notification names fit one line and metadata retains exact counts', (tester) async {
+  for (final kind in ['order_created', 'order_cancelled']) {
+  testWidgets('localized $kind names fit one line and metadata retains exact counts', (tester) async {
     final loader = FontLoader('NotificationPreviewFont')..addFont(Future.value(ByteData.sublistView(File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync())));
     await loader.load();
     final c = NotificationCenterController();
@@ -188,7 +189,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     c.snapshotAt = DateTime(2026,10,27);
-    c.items = [NotificationItem.fromJson({'id':'names','kind':'order_created','occasionId':1,'occasionTitle':'Ples','day':'2026-10-26','data':{'activityCount':8,'placeCount':18,'relatedOrders':true,'previewContacts':[{'name':'Jana','surname':'Czernérová'},{'name':'Radomír','surname':'Káňa'},{'name':'Miroslav','surname':'Krajíček'}]}})];
+    c.items = [NotificationItem.fromJson({'id':'names','kind':kind,'occasionId':1,'occasionTitle':'Ples','day':'2026-10-26','data':{'activityCount':8,'placeCount':18,'relatedOrders':true,'previewContacts':[{'name':'Jana','surname':'Czernérová'},{'name':'Radomír','surname':'Káňa'},{'name':'Miroslav','surname':'Krajíček'}]}})];
     for(final width in [800.0,390.0,320.0]) {
       tester.view.physicalSize = Size(width,1200); tester.view.devicePixelRatio=1;
       await tester.pumpWidget(EasyLocalization(supportedLocales:const [Locale('cs')],startLocale:const Locale('cs'),path:'unused',assetLoader:_Translations(),child:Builder(builder:(context)=>MaterialApp(builder:DependencyMaterialBridge.builder,locale:context.locale,supportedLocales:context.supportedLocales,localizationsDelegates:[...context.localizationDelegates,...GlobalMaterialLocalizations.delegates],theme:ThemeData(fontFamily:'NotificationPreviewFont'),home:NotificationCenterPanel(controller:c,onDetail:(_){})))));
@@ -199,12 +200,14 @@ void main() {
         expect(preview.data,contains('Jana Czernérová'));
         expect(preview.data,contains('další'));
       } else {
-        expect(preview.data,anyOf(contains('Jana Czernérová'),'8 nových objednávek'));
+        expect(preview.data,anyOf(contains('Jana Czernérová'),kind == 'order_cancelled' ? '8 zrušených objednávek' : '8 nových objednávek'));
       }
       expect(preview.data,isNot(contains('…')));
-      expect(find.text('Včera · 8 objednávek · 18 míst'),findsOneWidget);
+      expect(find.text(kind == 'order_cancelled' ? 'Včera · 8 zrušených objednávek · 18 míst' : 'Včera · 8 objednávek · 18 míst'),findsOneWidget);
+      expect(find.byKey(const ValueKey('notification-age-names')),findsOneWidget);
       expect(tester.takeException(),isNull);
     }
   });
 
+  }
 }

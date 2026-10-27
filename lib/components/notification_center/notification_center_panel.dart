@@ -362,6 +362,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   }
 
   Widget _item(BuildContext context, NotificationItem item) {
+    final customerOrder = const {
+      'order_created',
+      'order_cancelled',
+    }.contains(item.kind);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final unread = widget.controller.isUnread(item);
@@ -424,7 +428,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (item.kind == 'order_created' &&
+                          if (customerOrder &&
                               presentation.previewNames.isNotEmpty)
                             _customerPreview(
                               context,
@@ -462,7 +466,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                     letterSpacing: 0,
                                   ),
                             ),
-                          if (item.kind == 'order_created') ...[
+                          if (customerOrder) ...[
                             const SizedBox(height: 4),
                             Text(
                               [
@@ -474,10 +478,17 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                         widget.controller.snapshotDay ??
                                         widget.controller.snapshotAt,
                                   ),
-                                NotificationCenterStrings.orders(
-                                  item.data['activityCount'] as int? ?? 1,
-                                  locale: locale,
-                                ),
+                                if (item.kind == 'order_cancelled')
+                                  NotificationCenterStrings.activities(
+                                    item.kind,
+                                    item.data['activityCount'] as int? ?? 1,
+                                    locale: locale,
+                                  )
+                                else
+                                  NotificationCenterStrings.orders(
+                                    item.data['activityCount'] as int? ?? 1,
+                                    locale: locale,
+                                  ),
                                 if (item.data['placeCount'] is int)
                                   NotificationCenterStrings.places(
                                     item.data['placeCount'] as int,
@@ -553,7 +564,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ],
-                          if (day != null && item.kind != 'order_created') ...[
+                          if (day != null && !customerOrder) ...[
                             const SizedBox(height: 4),
                             Text(
                               NotificationCenterTime.dayHeading(
