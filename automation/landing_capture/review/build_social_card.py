@@ -12,8 +12,8 @@ def build(repo, output):
     source = (repo / 'automation/release/organizers/page.html').read_text()
     paths = re.search(r'<g class="sketch-scene" data-sketch-scene="0"[^>]*>(.*?)</g>', source).group(1)
     fonts = ''
-    for name, weight in [('FuturaPTBook.ttf', 400), ('FuturaPTMedium.ttf', 500)]:
-        data = base64.b64encode((repo / 'web_client/src/assets/fonts' / name).read_bytes()).decode()
+    for name, weight in [('Futura PT Book.ttf', 400), ('Futura PT Medium.ttf', 500)]:
+        data = base64.b64encode((repo / 'automation/fonts' / name).read_bytes()).decode()
         fonts += f'@font-face{{font-family:Futura;src:url(data:font/ttf;base64,{data});font-weight:{weight}}}'
     page = f'''<!doctype html><html lang="cs"><meta charset="utf-8"><style>{fonts}
 *{{box-sizing:border-box}}body{{margin:0;background:#ebf1f6;color:#253759;font-family:Futura,sans-serif}}

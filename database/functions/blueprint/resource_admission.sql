@@ -1,10 +1,15 @@
+CREATE OR REPLACE FUNCTION public.can_prepare_layout_resources_as_actor_internal_v1(p_actor uuid,p_occasion bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT coalesce(public.can_write_blueprints_as_actor_internal_v1(p_actor,p_occasion),false)
+  OR coalesce(public.can_edit_ticket_layout_as_actor_internal_v1(p_actor,p_occasion),false);
+$$;
+REVOKE ALL ON FUNCTION public.can_prepare_layout_resources_as_actor_internal_v1(uuid,bigint) FROM PUBLIC,anon,authenticated,service_role;
 -- Shared immutable fonts and text shaping serve both editors. Admission to
 -- these resources does not grant ticket template, PDF or blueprint writes.
 CREATE OR REPLACE FUNCTION public.can_prepare_layout_resources(p_occasion bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
- SELECT coalesce(public.can_write_blueprints(p_occasion),false)
-     OR coalesce(public.can_edit_ticket_layout(p_occasion),false);
+ SELECT public.can_prepare_layout_resources_as_actor_internal_v1(auth.uid(),p_occasion);
 $$;
 REVOKE ALL ON FUNCTION public.can_prepare_layout_resources(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_prepare_layout_resources(bigint) TO authenticated,service_role;

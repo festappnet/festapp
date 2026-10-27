@@ -14,6 +14,7 @@ export function toolResult(result, owner, id) {
         ...(!result.ok ? { isError: true } : {}),
         content: [
             { type: 'text', text: JSON.stringify(structuredContent) },
+            ...(data.file?.uri ? [{type:'resource_link',uri:data.file.uri,name:data.file.fileName,mimeType:data.file.mimeType}] : []),
             ...(image ? [
                 { type: 'image', mimeType: image.mimeType, data: image.data },
                 { type: 'resource_link', uri: data.pdf.uri, name: 'Canonical synthetic ticket preview', mimeType: 'application/pdf' },

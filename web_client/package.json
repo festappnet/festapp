@@ -1,11 +1,11 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.431",
+  "version": "0.20.432",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node ../automation/configure_fonts.js .. --assets-only && vite",
+    "build": "node ../automation/configure_fonts.js .. --assets-only && vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",

@@ -1,0 +1,95 @@
+{
+  "profile": {
+    "name": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "surname": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "phone": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "diet": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "text1": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "text2": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "text3": {
+      "type": "string",
+      "maxLength": 512,
+      "nullable": true
+    },
+    "sex": {
+      "type": "string",
+      "maxLength": 32,
+      "nullable": true
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 8192,
+      "nullable": true
+    },
+    "birthDate": {
+      "type": "string",
+      "pattern": "^([0-9]{4}-[0-9]{2}-[0-9]{2})?$",
+      "nullable": true
+    }
+  },
+  "roles": {
+    "is_editor": {
+      "type": "boolean"
+    },
+    "is_editor_view": {
+      "type": "boolean"
+    },
+    "is_editor_order": {
+      "type": "boolean"
+    },
+    "is_editor_order_view": {
+      "type": "boolean"
+    },
+    "is_cleaning_crew": {
+      "type": "boolean"
+    },
+    "is_cleaning_blocked": {
+      "type": "boolean"
+    },
+    "is_receptionist": {
+      "type": "boolean"
+    },
+    "is_approver": {
+      "type": "boolean"
+    },
+    "is_approved": {
+      "type": "boolean"
+    },
+    "is_manager": {
+      "type": "boolean"
+    },
+    "is_volunteer": {
+      "type": "boolean"
+    },
+    "role": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647,
+      "nullable": true
+    }
+  }
+}

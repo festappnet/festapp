@@ -1,0 +1,8 @@
+{
+  "people": {"columns":["userId","name","surname","email","phone","birthDate","role","isVolunteer","isApproved","note"],"defaults":["userId","name","surname"]},
+  "orders": {"columns":["id","symbol","state","createdAt","ticketCount","price","currency","paid"],"defaults":["id","symbol","state","ticketCount","price","currency","paid"]},
+  "events": {"columns":["id","title","startTime","endTime","maxParticipants","aggregateVersion"],"defaults":["id","title","startTime","endTime","aggregateVersion"]},
+  "speakers": {"columns":["id","title","subtitle","description","aggregateVersion"],"defaults":["id","title","subtitle","aggregateVersion"]},
+  "places": {"columns":["id","title","description","type","aggregateVersion"],"defaults":["id","title","type","aggregateVersion"]},
+  "feedback": {"columns":["event_id","event_title","event_start_time","event_end_time","feedback_id","created_at","updated_at","rating","note","user_name","is_anonymous"],"defaults":["feedback_id","event_title","rating","note","is_anonymous"]}
+}

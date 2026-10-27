@@ -1,7 +1,7 @@
 -- Canonical owner recovered from the recorded effective main schema.
 -- Public signatures, response envelopes and existing execution roles are preserved.
 
-CREATE OR REPLACE FUNCTION public.get_client_commits_v1(p_occasion bigint, p_before_time timestamp with time zone DEFAULT NULL::timestamp with time zone, p_before_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 50, p_filters jsonb DEFAULT '{}'::jsonb)
+CREATE OR REPLACE FUNCTION public.get_client_commits_scoped_internal_v1(p_occasion bigint, p_before_time timestamp with time zone DEFAULT NULL::timestamp with time zone, p_before_id uuid DEFAULT NULL::uuid, p_limit integer DEFAULT 50, p_filters jsonb DEFAULT '{}'::jsonb, p_include_unit boolean DEFAULT true,p_include_organization boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -11,9 +11,9 @@ AS $function$
     SELECT o.unit, o.organization,
       public.can_read_occasion_client_commits(p_occasion) AS can_occasion,
       CASE WHEN o.unit IS NULL THEN false
-        ELSE public.can_read_unit_client_commits(o.unit) END AS can_unit,
+        ELSE (p_include_unit AND public.can_read_unit_client_commits(o.unit)) END AS can_unit,
       CASE WHEN o.organization IS NULL THEN false
-        ELSE public.can_read_organization_client_commits(o.organization) END AS can_organization
+        ELSE (p_include_organization AND public.can_read_organization_client_commits(o.organization)) END AS can_organization
     FROM public.occasions o
     WHERE o.id = p_occasion
   )
@@ -80,9 +80,15 @@ AS $function$
   FROM (SELECT 1) singleton;
 $function$
 ;
-REVOKE ALL ON FUNCTION public.get_client_commits_v1(bigint,timestamp with time zone,uuid,integer,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-GRANT EXECUTE ON FUNCTION public.get_client_commits_v1(bigint,timestamp with time zone,uuid,integer,jsonb) TO postgres,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_client_commits_scoped_internal_v1(bigint,timestamptz,uuid,integer,jsonb,boolean,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.get_client_commits_v1(p_occasion bigint,p_before_time timestamptz DEFAULT NULL,p_before_id uuid DEFAULT NULL,p_limit integer DEFAULT 50,p_filters jsonb DEFAULT '{}')
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_client_commits_scoped_internal_v1(p_occasion,p_before_time,p_before_id,p_limit,p_filters,true,true);
+$$;
+REVOKE ALL ON FUNCTION public.get_client_commits_v1(bigint,timestamptz,uuid,integer,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_client_commits_v1(bigint,timestamptz,uuid,integer,jsonb) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_client_commit_v1(p_commit_id uuid)
  RETURNS jsonb

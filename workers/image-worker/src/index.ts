@@ -1,3 +1,4 @@
+import {handleOccasionLifecycle} from './occasion-lifecycle';
 import { handleTicketBatches } from './ticket-batches';
 import type { Env } from './types';
 import {
@@ -19,7 +20,7 @@ export default {
   async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const isControlHost = url.hostname === 'image-api.festapp.net';
-    const isControlPath = url.pathname === '/upload'
+    const isControlPath = url.pathname === '/upload' || url.pathname === '/occasion-lifecycle'
       || url.pathname.startsWith('/service/')
       || url.pathname.startsWith('/private/')
       || url.pathname === '/delete'
@@ -35,7 +36,9 @@ export default {
       // Route by path prefix
       let response: Response;
 
-      if (url.pathname === '/service/account-assets') {
+      if (url.pathname === '/occasion-lifecycle') {
+        response = await handleOccasionLifecycle(request, env);
+      } else if (url.pathname === '/service/account-assets') {
         response = await handleAccountAssets(request, env);
       } else if (url.pathname.startsWith('/service/ticket-batches/')) {
         response = await handleTicketBatches(request, env);

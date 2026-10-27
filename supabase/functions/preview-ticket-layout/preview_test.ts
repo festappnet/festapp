@@ -377,3 +377,20 @@ Deno.test('metadata retains a saved template and ignores inactive named backgrou
  const result=await handlePreview(req({...body,resourceProtocol:3}),s.deps);assertEquals(result.status,200);const j=await result.json();assertEquals(j.backgroundUrl,null);
  const saved=await handlePreview(req({...body,type:'wide',resourceProtocol:3}),s.deps);const current=await saved.json();assertEquals(current.preset,wide);assertEquals(current.template,wide);assertEquals(current.backgroundUrl,'https://img.festapp.net/images/old-wide.png');
 });
+
+Deno.test('delegated render scope is validated before private reads and revoked scope discards the rendered result',async()=>{
+ const scope={organizationId:3,unitId:4};const input={...body,delegatedScope:scope};
+ const missing=setup();assertEquals((await handlePreview(req(input),missing.deps)).status,403);assertEquals(missing.counts(),[0,0,0]);
+ const revoked=setup();let calls=0;revoked.deps.authorizeDelegatedScope=async(_header,occasionId,value,blueprint)=>{assertEquals(occasionId,7);assertEquals(value,scope);assertEquals(blueprint,false);return ++calls===1?{actorId:'10000000-0000-4000-8000-000000000001'}:false;};
+ assertEquals((await handlePreview(req(input),revoked.deps)).status,403);assertEquals(calls,2);
+ assertEquals((await handlePreview(req({...input,delegatedScope:{...scope,actorId:'forged'}}),revoked.deps)).status,403);
+});
+Deno.test('delegated whole-text preparation registers only the server-authorized actor and exact scope',async()=>{
+ const {fontFamilyCatalog}=await import('../_shared/ticketFonts.ts');const family=fontFamilyCatalog.find(f=>Object.values(f.faces).includes(futuraId))!;
+ const actorId='10000000-0000-4000-8000-000000000001';const scope={organizationId:3,unitId:null};const s=setup();let registered=0;
+ s.deps.authorizeDelegatedScope=async(_header,occasionId,value,blueprint)=>{assertEquals(occasionId,7);assertEquals(value,scope);assertEquals(blueprint,true);return{actorId};};
+ s.deps.font=async()=>({id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400});
+ s.deps.registerLayoutTextResources=async(value)=>{assertEquals(value,{occasionId:7,delegatedScope:{...scope,actorId}});registered++;};
+ const request={text:'Židle',role:'text',fontFamilyId:family.id,fontFaceId:futuraId,size:24,language:'und',direction:'auto',lineHeight:1.2,align:'left',box:{x:0,y:0,width:200,height:100},fit:'wrap'};
+ assertEquals((await handlePreview(req({occasionId:7,mode:'layout-text',resourceProtocol:2,delegatedScope:scope,batch:{requests:[request],numericFaces:[]}}),s.deps)).status,200);assertEquals(registered,1);
+});

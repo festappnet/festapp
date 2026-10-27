@@ -17,8 +17,9 @@ const receipt = z.object({
     }),
 });
 export class LayoutSave {
-    constructor(store) {
+    constructor(store, { scopeFor } = {}) {
         this.store = store;
+        this.scopeFor = scopeFor;
     }
     async save(client, context, request) {
         check(
@@ -46,10 +47,12 @@ export class LayoutSave {
         return this.submit(client, context, intent);
     }
     async submit(client, context, intent) {
+        const scope = await this.scopeFor?.(client, intent.request.occasionId);
         const { data, error } = await client.rpc(
-            'save_occasion_client_sync_v1',
+            scope ? 'save_delegated_ticket_layout' : 'save_occasion_client_sync_v1',
             {
                 ...layoutParameters(intent.request),
+                ...(scope ? {p_organization:scope.organizationId,p_unit:scope.unitId} : {}),
                 p_command_id: intent.commandId,
             },
         );

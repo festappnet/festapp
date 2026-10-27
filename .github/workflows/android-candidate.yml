@@ -61,6 +61,7 @@ jobs:
       - shell: bash
         run: |
           set -euo pipefail
+          node automation/configure_fonts.js . --assets-only
           flutter pub get --enforce-lockfile
           printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
           (cd android && ./gradlew dependencies --no-daemon --build-cache)
@@ -160,6 +161,7 @@ jobs:
           set -euo pipefail
           test "$(uname -s)" = Linux
           test "${GITHUB_ACTIONS:-}" = true
+          node automation/configure_fonts.js . --assets-only
           flutter pub get --enforce-lockfile
           version_json="$(node automation/release/project_version.mjs --json)"
           flutter build appbundle --release --build-name "$(jq -r .version <<<"$version_json")" \
