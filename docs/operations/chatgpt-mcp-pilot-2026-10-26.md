@@ -134,7 +134,7 @@ No sales/order answer, normal live token-expiry follow-up or live revocation tes
 was completed. Further connection work is paused until the regional cutover.
 
 The private app name was changed from `Festapp` to `vstupenky.online`; its
-region-specific description explains that the service runs on FestUp. No public
+region-specific description explains that the service runs on Festapp. No public
 listing, upload or submission was made. The downloaded private plugin ZIP was an
 existing integration reference (`.app.json`), not evidence that explicit order-read
 scopes are saved. The reviewed private connection config in `integrations/chatgpt`

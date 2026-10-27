@@ -234,9 +234,9 @@ per-client issuer ceiling; omitted ceilings preserve existing clients. Configure
 `festapp-chatgpt` with base + order read for the regional pilot. Never remove this
 ceiling to make a rollback image accept old configuration.
 
-The regional account connection is named **vstupenky.online**, powered by FestUp.
+The regional account connection is named **vstupenky.online**, powered by Festapp.
 Its optional `regionalPortal` configuration explains this relationship on consent;
-global FestUp Tickets deployments omit it. The
+global Festapp Tickets deployments omit it. The
 [brand/URL decision](../../docs/plans/chatgpt-mcp-branding-and-urls-2026-10-27.md)
 distinguishes two branded listings from the shared operation implementation.
 No new global registration or public directory submission is included. The live

@@ -5,8 +5,8 @@ CLAUDE.md and docs/architecture/ai_context.md. Verification: standard.
 
 User amendment, 2026-10-27: first move the regional issuer/resource to
 `https://mcp.vstupenky.online/mcp`, then resume ChatGPT connection and acceptance.
-Use connector name `vstupenky.online` and explain FestUp only on this regional
-surface. Global `FestUp Tickets` is a separate future branded connection; do not
+Use connector name `vstupenky.online` and explain Festapp only on this regional
+surface. Global `Festapp Tickets` is a separate future branded connection; do not
 provision an unverified global domain or another tenant. Authoritative plan wave
 2b includes discovery, protected registry, frontend continuation, state/reconsent,
 scoped routing and rollback. Preserve required main review; no admin bypass.
