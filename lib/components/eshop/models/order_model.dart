@@ -146,7 +146,7 @@ class OrderModel extends ITrinaRowModel {
       case usedState:
         return OrdersStrings.stateUsed;
       case stornoState:
-        return CommonStrings.storno;
+        return CommonStrings.cancelled;
       default:
         return state; // Return the key itself if not found
     }

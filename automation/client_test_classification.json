@@ -1,5 +1,12 @@
 {
   "flutter_roots": {
+    "test/services/deferred_external_url_test.dart": {
+      "kind": "adapter",
+      "reason": "Browser URL launch orchestration reserves a tab before asynchronous access resolution and handles blocked windows and failed requests.",
+      "sources": [
+        "test/services/deferred_external_url_test.dart"
+      ]
+    },
     "test/services/locale_date_time_test.dart": {
       "kind": "environment",
       "reason": "Locale mismatch regression exercises the delivery tooltip and dialog with Flutter localization delegates; shared date adapters cover all interface languages and canonical grid values.",

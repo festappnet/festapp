@@ -789,8 +789,8 @@ class EshopColumns {
                   futureFunction: () async {
                 final id = rendererContext
                     .row.cells[EshopColumnIds.ORDER_ID]!.value as int;
-                final url = await WaitlistCommands().adminOverviewUrl(id);
-                await LaunchUrlService.openExternalUrl(url);
+                await LaunchUrlService.openExternalUrlFrom(
+                    () => WaitlistCommands().adminOverviewUrl(id));
               }),
             ),
           ),
