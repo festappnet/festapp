@@ -240,10 +240,12 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            )
+                            .copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
                               height: 1.25,
                               letterSpacing: 0,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
                             ),
                       ),
                     ),
@@ -450,17 +452,20 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         children: [
                           Text(
                             presentation.title,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 17,
-                              height: 1.3,
-                              color: unread
-                                  ? colors.onSurface
-                                  : colors.onSurfaceVariant,
-                              fontWeight: unread
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              letterSpacing: 0,
-                            ),
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontSize: 17,
+                                  fontWeight: unread
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                )
+                                .copyWith(
+                                  color: unread
+                                      ? colors.onSurface
+                                      : colors.onSurfaceVariant,
+                                  height: 1.3,
+                                  letterSpacing: 0,
+                                ),
                           ),
                           if (item.isSummary &&
                               (item.data['activityCount'] as int) > 1 &&
