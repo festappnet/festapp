@@ -1,9 +1,10 @@
 # Kanonické operace administrace pro UI a MCP
 
-Aktuální stav 2026-10-27: **etapy 0-10 jsou lokálně dokončené a ověřené**.
-Etapy 0-5 mají doložené nasazení pro prod/festapptickets 0.20.427+929;
-etapy 6-10 jsou v [PR #641](https://github.com/festappnet/festapp/pull/641)
-a dosud se nenasazovaly. Žádná další implementační etapa nezbývá.
+Aktuální stav 2026-10-27: **etapy 0-10 jsou dokončené, ověřené a nasazené**
+pro `prod/festapptickets` / vstupenky.online ve verzi **0.20.432+936**.
+PR #641 a #642 jsou sloučené; SQL, Edge, MCP, image Worker i web jsou ověřené.
+[Závěrečný release receipt](../operations/releases/festapptickets-mcp-final-2026-10-27.json)
+dokládá konkrétní zdroje a produkční kontroly. Žádná další etapa nezbývá.
 Ověřování: `standard` (oprávnění, souběhy, veřejné kontrakty a migrace).
 
 Poslední [checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md#stage-7-10-final-local-closure),

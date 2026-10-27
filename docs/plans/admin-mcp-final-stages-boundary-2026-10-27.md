@@ -1,9 +1,12 @@
 # Remaining admin/MCP stages - execution boundary
 
-Continue on the isolated stage 6 branch and existing review PR #641, from source
-72f9e8676. Main a698f7403 is included. Complete stages 7-10 sequentially; preserve
-normal review and no production deployment. Existing owners and current UI
-semantics remain authoritative. New capabilities require new explicit scopes.
+Status 2026-10-27: all stages 0-10 are completed and deployed to
+`prod/festapptickets` / vstupenky.online **0.20.432+936**. PR #641 and #642
+are merged. The user separately authorized this final rollout and cleanup.
+[Production receipt](../operations/releases/festapptickets-mcp-final-2026-10-27.json).
+The execution boundary below records the completed implementation contract.
+Existing owners, current UI semantics and explicit operation scopes remain
+authoritative; historical no-deployment instructions describe the earlier phase.
 
 ## Stage 7 - exact blueprint drafts and ticket appearance
 
