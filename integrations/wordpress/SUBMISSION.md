@@ -1,5 +1,14 @@
 # vstupenky.online - podklady pro WordPress.org
 
+**Review 2026-10-27:** WordPress.org vyžádal shodné `Requires at least: 6.6`
+v hlavičce pluginu a readme místo `6.6.4`. Český kandidát **1.0.3** opravu
+obsahuje; čistá instalace a aktivace, 39 reálných kontraktů a Plugin Check 2.1.0
+prošly na WordPressu 6.6 / PHP 7.4.33. Plugin Check: 0 errors, 1 dříve
+zdokumentované upozornění na překlady pro samostatnou ZIP instalaci.
+Opravený ZIP byl nahrán do stejné žádosti a odpověď odeslána v původním review
+vlákně. Schválení katalogu nadále čeká. Záznam: `evidence/review-response-20261027.json`;
+historické potvrzení verze 1.0.0 zůstává beze změny. Nezakládat další žádost.
+
 **Podáno 2026-10-24:** vstupenky.online 1.0.0, předběžný slug
 `vstupenky-online`. Automatická kontrola WordPress.org: **Pass**.
 Ruční kontrola: **Awaiting Review**. Plugin ještě není veřejně v katalogu.

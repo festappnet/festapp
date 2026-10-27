@@ -1,14 +1,14 @@
 {
   "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-  "blocks/ticket-form/block.json": "9841e44799b459651ef209b3d7ec5f0f0b5bdf07ad19248b9a29d35e8e137c7b",
+  "blocks/ticket-form/block.json": "04c6402907fafabef2d02dbe8d999b7ad4150e3eeea2f43da1d3bf6755d8fcf3",
   "blocks/ticket-form/editor.js": "91b94ee8c7288360740a355c3874a6333acb8626e15b763cff0573b5c190c65d",
   "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
   "includes/admin.php": "fec85b8172b86477d3f96fb35bc2c1927f3f4ea2a18225751bbe0b2f4b0ac164",
   "includes/embed.php": "0444da495d5b2aac323cf76792e643224a33169ba7dd03d264e45549f8e6dbf1",
   "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "8afc1c4fb1fb6974eddf705bb5873ef1e35ac1669dbe3501b3bf1fcc804d1444",
-  "languages/vstupenky-online-cs_CZ.mo": "db59b7d95c416a4d0bc4dce3385bed4f3bd3e407e97ee8e72d2206ede2d68e61",
-  "languages/vstupenky-online-cs_CZ.po": "529f02662551417287cff38399ecd659fe8d9a70fbf8976516513ff3cb78c7ea",
-  "languages/vstupenky-online.pot": "b95b9068ebf8219cba17a54e7af353e1e08f8de70ed8da428c8cfa3aee9cd613",
-  "readme.txt": "ab0f3929b4ccb8b6c12f34d83b94991db7e407b2e0ede859c5c986a158ceff0b",
-  "vstupenky-online.php": "65150204439fe2051e1ae495b26854d3d4ecd745e301155d06ae1cb5597d5eb3"
+  "languages/vstupenky-online-cs_CZ.mo": "e83cc6622dc13a48161f53927833e823093e7f5df12a4d642b661ab3e5b1692e",
+  "languages/vstupenky-online-cs_CZ.po": "1c8350373eee62f6b1b3dea49a4e2a589acecb425b21c1c61fa2b2fb59051780",
+  "languages/vstupenky-online.pot": "46dee0a325d97dbe88907a84d6eb64490149af3077fb7dcc55617e8e8376626f",
+  "readme.txt": "6aac39e58429d7e7e2ed2a5868e5076afa8b3809a5e16de066e2afb0bc87ce7d",
+  "vstupenky-online.php": "020cfcb781bfcd2066304640282fa3acad45bac2c089abe641657b0829f1d3fa"
 }

@@ -1,6 +1,7 @@
 """Generate two self-contained plugins from one source; no runtime core dependency."""
 from pathlib import Path
 import argparse,hashlib,json,re,struct
+from metadata_contract import validate_minimum_wordpress
 ROOT=Path(__file__).resolve().parents[1]
 SHARED=ROOT/'shared'
 PRODUCTS=json.loads((ROOT/'products.json').read_text())
@@ -34,6 +35,7 @@ for p in PRODUCTS:
  out=ROOT/slug;assert not out.is_symlink();out.mkdir(exist_ok=True)
  generated={}
  for source,target in FILES.items():generated[target.format(slug=slug)]=replace((SHARED/source).read_text(),p)
+ validate_minimum_wordpress(generated[f'{slug}.php'],generated['readme.txt'])
  # All textdomain arguments and namespaces are literal in the distributed sources.
  messages=set()
  for name,text in generated.items():
@@ -68,6 +70,6 @@ for p in PRODUCTS:
  for name,value in generated.items():
   target=out/name;assert not target.is_symlink();target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(value if isinstance(value,bytes) else value.encode())
  manifest[slug]={'files':{name:hashlib.sha256((out/name).read_bytes()).hexdigest() for name in sorted(generated)},'messages':len(messages),'czech_translations':len(catalog)-1}
-manifest['shared_inputs']={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'products.json',ROOT/'scripts/build-plugins.py',ROOT/'scripts/package.py',*sorted(SHARED.iterdir())] if p.is_file()}
+manifest['shared_inputs']={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'products.json',ROOT/'scripts/build-plugins.py',ROOT/'scripts/package.py',ROOT/'scripts/metadata_contract.py',*sorted(SHARED.iterdir())] if p.is_file()}
 (ROOT/'evidence/shared-build.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(f'Generated {len(PRODUCTS)} selected plugin(s) from shared sources, with readable code and Czech translations')

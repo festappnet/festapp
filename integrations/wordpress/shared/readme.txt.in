@@ -1,7 +1,7 @@
 === @@NAME@@ ===
 Contributors: festappnet
 Tags: tickets, events, registration, embed, forms
-Requires at least: 6.6.4
+Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
 Stable tag: @@VERSION@@
