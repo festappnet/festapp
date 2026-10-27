@@ -16,6 +16,7 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
+        this.publicOrderData = token.clientId === 'festapp-chatgpt';
         const grant = this.current();
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;

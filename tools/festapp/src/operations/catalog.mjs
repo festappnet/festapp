@@ -12,6 +12,7 @@ import { inventoryDescriptors, inventoryDataSchemas, invokeInventoryOperation } 
 import { productScheduleDescriptors, productScheduleDataSchemas, invokeProductScheduleOperation } from './product-schedules.mjs';
 import { productDescriptors, productDataSchemas, invokeProductOperation } from './products.mjs';
 import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
+import { publicOrderPage, publicOrderSearch, publicOrders } from './public-orders.mjs';
 import { operatorAccess, accessProjection } from './access.mjs';
 import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
@@ -113,11 +114,11 @@ const metaSchema = z.strictObject({
     organizationId: occasion,
     readAt: z.iso.datetime(),
 });
-const resultSchema = (id) =>
+const resultSchema = (id, schema = dataSchemas[id]) =>
     z.strictObject({
         ok: z.boolean(),
         operation: z.literal(id),
-        data: dataSchemas[id].optional(),
+        data: schema.optional(),
         error: z
             .strictObject({
                 code: z.string(),
@@ -212,10 +213,19 @@ export class Operations {
                     (!descriptor.requiresDelegatedAccess || this.owner.allowedOperations?.includes(descriptor.id) === true) &&
                     (!descriptor.requiresDelegatedCreate || this.owner.allowedOperations?.includes('occasions.create') === true),
             )
-            .map((descriptor) => ({
-                ...descriptor,
-                output: resultSchema(descriptor.id),
-            }));
+            .map((descriptor) => {
+                if (this.owner.publicOrderData && ['orders.list', 'orders.inspect'].includes(descriptor.id))
+                    return { ...descriptor,
+                        description: descriptor.id === 'orders.list'
+                            ? 'List a bounded page of orders for one selected occasion, at most 50. Search only by the exact 10-character order symbol. Returns order identifiers, stored state, ticket count and amounts. No buyer names, email addresses, registration answers, notes, QR codes or personal ticket content.'
+                            : 'Read one order identifier, stored state, ticket count and amounts for one selected occasion. Buyer names, emails, registration answers, internal notes and personal ticket content are withheld. This connection cannot change orders or send tickets.',
+                        input: descriptor.id === 'orders.list' ? descriptor.input.extend({ search: publicOrderSearch.optional() }) : descriptor.input,
+                        output: resultSchema(descriptor.id, publicOrderPage) };
+                if (this.owner.publicOrderData && descriptor.id === 'context.inspect')
+                    return { ...descriptor, description: 'Inspect tenant and read-only capabilities. Does not return the connected user identifier.',
+                        output: resultSchema(descriptor.id, dataSchemas[descriptor.id].omit({ userId: true })) };
+                return { ...descriptor, output: resultSchema(descriptor.id) };
+            });
     }
     setWriteReady(value) {
         if (this.writeReady === value) return;
@@ -457,6 +467,11 @@ export class Operations {
                     };
                 }
                 check(dataSchemas[id].safeParse(data).success);
+                if (this.owner.publicOrderData && ['orders.list', 'orders.inspect'].includes(id)) data = publicOrders(data, args);
+                if (this.owner.publicOrderData && id === 'context.inspect') {
+                    const { userId, ...publicContext } = data;
+                    data = publicContext;
+                }
                 return { ok: true, operation: id, data, meta };
             });
         } catch (error) {

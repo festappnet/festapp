@@ -51,7 +51,22 @@ export async function invokeOrderOperation(owner, client, operation, args) {
             p_action: operation === 'payments.record' ? 'record_payment' : operation.slice(7),
             p_changes: args.changes ?? (operation === 'payments.record' ? { amount: args.amount, currency: args.currency, receivedAt: args.receivedAt, note: args.note ?? null } : {}) };
     }
-    const { data, error, status } = await client.rpc(rpc, parameters);
+    let { data, error, status } = await client.rpc(rpc, parameters);
+    if (owner.publicOrderData && operation === 'orders.list' && args.search) {
+        // The shared operator RPC also searches contacts. Walk its pages until
+        // the exact symbol is found or exhausted; never call a filtered page
+        // a complete negative result. Bound work and fail explicitly on excess.
+        for (let page = 0; !error; page++) {
+            const result = orderDataSchemas[operation].parse(data);
+            const found = result.orders.filter(row => row.symbol === args.search);
+            if (found.length || result.nextCursor === null) {
+                data = { ...result, orders: found, nextCursor: null };
+                break;
+            }
+            if (page === 3) throw new OperationError('UNAVAILABLE');
+            ({ data, error, status } = await client.rpc(rpc, { ...parameters, p_before: result.nextCursor, p_limit: 50 }));
+        }
+    }
     if (['22023', '23514', '55000', 'P0001'].includes(error?.code)) throw new OperationError('ORDER_CHANGE_REJECTED');
     upstream(error && { ...error, status: error.status ?? status });
     if (rpc !== 'manage_operator_order_v1') {
