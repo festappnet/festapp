@@ -91,6 +91,11 @@ class FunctionsRestartTest(unittest.TestCase):
             self.execute()
         self.assertFalse(any('restart' in args for args in self.calls))
 
+    def test_shared_app_links_organization_is_preserved_independently(self):
+        self.environment['APP_LINKS_ORGANIZATION_ID'] = '9'
+        self.container['Config']['Env'] = [k + '=' + v for k, v in self.environment.items()]
+        guard.validate_configuration(self.model, self.container)
+
     @unittest.skipUnless(shutil.which('docker'), 'Docker Compose CLI required')
     def test_real_compose_email_overlay_is_required_by_guard(self):
         # Real interpolation/merging, not a fabricated already-correct model.

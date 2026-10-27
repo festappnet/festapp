@@ -68,7 +68,11 @@ def validate_configuration(model, container):
     require(desired.get('command') == container['Config']['Cmd'], 'Functions command drift.')
     require(urlparse(environment['SUPABASE_DB_URL']).path == '/' + DATABASE,
             'Functions database target mismatch.')
-    require(environment['APP_LINKS_ORGANIZATION_ID'] == '3', 'Email organization mismatch.')
+    # The shared app-links sender has its own provisioned organization; it is
+    # independent of the selected ticketing tenant whose database we verify.
+    require(str(environment['APP_LINKS_ORGANIZATION_ID']).isdigit()
+            and int(environment['APP_LINKS_ORGANIZATION_ID']) > 0,
+            'App-links organization is not configured.')
     require(container['State']['Running'], 'Functions container is not running.')
 
 
