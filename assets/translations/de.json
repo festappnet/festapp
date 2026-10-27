@@ -2357,6 +2357,18 @@
     "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} Bestellung",
+      "few": "{count} Bestellungen",
+      "many": "{count} Bestellungen",
+      "other": "{count} Bestellungen"
+    },
+    "others": {
+      "one": "und {count} weitere",
+      "few": "und {count} weitere",
+      "many": "und {count} weitere",
+      "other": "und {count} weitere"
+    },
     "orderActivities": "Bestellaktivitäten",
     "expand": "Aufklappen",
     "collapse": "Zuklappen",

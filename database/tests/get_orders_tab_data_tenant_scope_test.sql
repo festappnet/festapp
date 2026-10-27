@@ -1,3 +1,5 @@
+-- test-setup: database/functions/notification_center/order_selection.sql
+-- test-setup: database/functions/eshop_orders/get_orders_tab_data.sql
 BEGIN;
 
 DO $$
@@ -60,8 +62,8 @@ BEGIN
     'orders belong to the authorized occasion');
   PERFORM assert_true(v_result#>>'{orders,0,order_symbol}' ~ '^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$', 'authorized list carries order symbol');
   PERFORM assert_eq((v_result#>>'{orders,0,order_sequence}')::bigint,1::bigint,'authorized list carries persisted per-occasion sequence');
-  PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
-    'email summaries resolve the same authorized occasion without ambiguity');
+  PERFORM assert_false((v_result->'email_delivery') ? v_foreign_order::text,
+    'email summaries cannot include the foreign occasion');
 
   -- A second occasion in the same tenant can carry the same legacy slug.
   INSERT INTO public.occasions
@@ -75,8 +77,8 @@ BEGIN
   SET LOCAL ROLE authenticated;
   v_result := public.get_orders_tab_data(v_link);
   RESET ROLE;
-  PERFORM assert_eq(v_result->'email_delivery', '{}'::jsonb,
-    'same-tenant duplicate links do not break delivery summaries');
+  PERFORM assert_false((v_result->'email_delivery') ? v_foreign_order::text,
+    'same-tenant duplicate links do not leak foreign summaries');
 
   DELETE FROM eshop.orders WHERE id = v_own_order;
   SET LOCAL ROLE authenticated;

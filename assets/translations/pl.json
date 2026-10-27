@@ -2359,6 +2359,18 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} zamówienie",
+      "few": "{count} zamówienia",
+      "many": "{count} zamówień",
+      "other": "{count} zamówienia"
+    },
+    "others": {
+      "one": "i {count} inna",
+      "few": "i {count} inne",
+      "many": "i {count} innych",
+      "other": "i {count} innych"
+    },
     "orderActivities": "Zmiany w zamówieniach",
     "expand": "Rozwiń",
     "collapse": "Zwiń",

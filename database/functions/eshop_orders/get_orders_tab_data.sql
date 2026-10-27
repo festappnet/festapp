@@ -1,5 +1,7 @@
+DROP FUNCTION IF EXISTS public.get_orders_tab_data(text);
 CREATE OR REPLACE FUNCTION public.get_orders_tab_data(
-    p_occasion_link TEXT
+    p_occasion_link TEXT,
+    p_notification_group JSONB DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -8,6 +10,7 @@ AS $$
 DECLARE
     v_orders_data JSONB;
     v_forms_data JSONB;
+    v_notification_ids JSONB := '[]'::jsonb;
 BEGIN
 
     SELECT get_orders(p_occasion_link, NULL, '{}'::jsonb) INTO v_orders_data;
@@ -23,8 +26,16 @@ BEGIN
     END IF;
 
     v_orders_data:=jsonb_set(v_orders_data,'{data,orders}',coalesce((SELECT jsonb_agg(o) FROM jsonb_array_elements(v_orders_data#>'{data,orders}') o WHERE o->>'state' IS DISTINCT FROM 'stock'),'[]'));
+    IF p_notification_group IS NOT NULL THEN
+      SELECT public.notification_center_order_selection(
+        (v_orders_data->>'occasion_id')::bigint,p_notification_group) INTO v_notification_ids;
+      -- Keep only records in the independently authorized orders response.
+      SELECT coalesce(jsonb_agg(o->'id'),'[]'::jsonb) INTO v_notification_ids
+      FROM jsonb_array_elements(v_orders_data#>'{data,orders}') o
+      WHERE (o->>'id')::bigint IN (SELECT value::bigint FROM jsonb_array_elements_text(v_notification_ids));
+    END IF;
     -- No orders means no delivery status. Do not resolve an ambiguous event slug.
-    RETURN (v_orders_data->'data') || jsonb_build_object('forms', v_forms_data->'data', 'email_delivery',
+    RETURN (v_orders_data->'data') || jsonb_build_object('notification_order_ids',v_notification_ids,'forms', v_forms_data->'data', 'email_delivery',
       CASE WHEN jsonb_array_length(v_orders_data#>'{data,orders}') = 0
         THEN '{}'::jsonb
         ELSE public.get_order_email_summaries(
@@ -34,3 +45,6 @@ BEGIN
       END);
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.get_orders_tab_data(text,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_orders_tab_data(text,jsonb) TO anon,authenticated,service_role;

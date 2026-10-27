@@ -1,4 +1,6 @@
 -- test-setup: database/functions/notification_center/daily_overview.sql
+-- test-setup: database/functions/notification_center/order_selection.sql
+-- test-setup: database/functions/eshop_orders/get_orders_tab_data.sql
 BEGIN;
 DO $$
 DECLARE f bigint; oid bigint; org bigint; oc bigint; other_oc bigint; viewer uuid:=gen_random_uuid(); result jsonb; page jsonb; cursor jsonb;
@@ -47,6 +49,27 @@ BEGIN
  PERFORM assert_eq(jsonb_array_length(page->'items'),9,'daily summaries preserve kind, date and occasion identities');
  SELECT x->>'id' INTO summary FROM jsonb_array_elements(page->'items') x WHERE (x#>>'{data,activityCount}')::int=35;
  PERFORM assert_true(summary IS NOT NULL,'complete daily count is independent of page size');
+ PERFORM pg_temp.adopt_public_link_fixtures();
+ SET LOCAL ROLE authenticated;
+ result:=public.get_orders_tab_data((SELECT link FROM public.occasions WHERE id=oc),
+   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague'));
+ RESET ROLE;
+ PERFORM assert_eq(jsonb_array_length(result->'notification_order_ids'),35,'orders RPC resolves all 35 targets, not only preview');
+ SET LOCAL ROLE authenticated;
+ result:=public.notification_center_order_selection(other_oc,
+   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague'));
+ RESET ROLE;
+ PERFORM assert_eq(result,'[]'::jsonb,'another occasion cannot resolve group IDs');
+ result:=public.notification_center_order_selection(oc,
+   jsonb_build_object('id',summary,'organization',org,'snapshot',0,'timezone','Europe/Prague'));
+ PERFORM assert_eq(result,'[]'::jsonb,'snapshot cannot include later deliveries');
+ BEGIN
+  PERFORM public.notification_center_order_selection(oc,
+   jsonb_build_object('id',summary,'organization',org+1,'snapshot',snap,'timezone','Europe/Prague'));
+  RAISE EXCEPTION 'Expected cross-organization denial';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_false(has_function_privilege('anon','public.notification_center_order_selection(bigint,jsonb)','execute'),'no anonymous target IDs');
+
  PERFORM assert_eq((SELECT (x#>>'{data,placeCount}')::int FROM jsonb_array_elements(page->'items') x WHERE x->>'id'=summary),70,'captured historical places sum across the complete day');
  PERFORM assert_eq((SELECT x->>'day' FROM jsonb_array_elements(page->'items') x WHERE x->>'id'=summary),'2026-10-25','DST day retains its local date');
  PERFORM assert_eq((SELECT (x#>>'{data,placeCount}')::int FROM jsonb_array_elements(page->'items') x WHERE x->>'kind'='order_created' AND x->>'day'='2026-10-27' AND (x->>'occasionId')::bigint=oc),8,'today is independent of older orders');

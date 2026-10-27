@@ -83,6 +83,23 @@ class NotificationCenterStrings {
     );
   }
 
+  static String orders(int count, {String? locale}) =>
+      _count('orders', count, locale);
+  static String others(int count, {String? locale}) =>
+      _count('others', count, locale);
+  static String _count(String key, int count, String? locale) {
+    String form(String category) =>
+        'NotificationCenter.$key.$category'.tr(namedArgs: {'count': '$count'});
+    return Intl.plural(
+      count,
+      locale: locale,
+      one: form('one'),
+      few: form('few'),
+      many: form('many'),
+      other: form('other'),
+    );
+  }
+
   static String daysAgo(int count, {String? locale}) {
     String form(String key) =>
         'NotificationCenter.daysAgo.$key'.tr(namedArgs: {'count': '$count'});

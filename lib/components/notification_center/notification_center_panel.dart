@@ -316,72 +316,46 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     _ => Icons.event_note_outlined,
   };
 
-  Widget _summarySubtitle(
+  Widget _customerPreview(
     BuildContext context,
     NotificationItemPresenter presentation,
-    List<String> details,
+    TextStyle? style,
   ) {
     final names = presentation.previewNames;
-    final total = presentation.item.data['activityCount'] as int;
-    // Reuse existing copyWith call shapes. A new nullable named-argument call
-    // shape adds a forwarding stub to every dart2js closure in deferred chunks.
-    final style = Theme.of(context).textTheme.bodyMedium
-        ?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          height: 1.4,
-          letterSpacing: 0,
-        )
-        .copyWith(fontSize: 15);
-    final textScaler = MediaQuery.textScalerOf(context);
-    final direction = Directionality.of(context);
-    final prefix = details.isEmpty ? '' : '${details.join(' · ')} · ';
-    bool fits(String text, double width) {
-      final painter = TextPainter(
-        text: TextSpan(text: text, style: style),
-        textDirection: direction,
-        textScaler: textScaler,
-        maxLines: 1,
-      )..layout(maxWidth: width);
-      final fits = !painter.didExceedMaxLines;
-      painter.dispose();
-      return fits;
-    }
-
-    String preview(double width, String prefix) {
-      for (var count = names.length; count > 0; count--) {
-        final text =
-            '$prefix${names.take(count).join(', ')}${total > count ? ' …' : ''}';
-        if (fits(text, width)) return text;
-      }
-      return '$prefix${names.first} …';
-    }
-
+    final total = presentation.item.data['activityCount'] as int? ?? 1;
+    final locale = Localizations.localeOf(context).toLanguageTag();
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final wrapPlaces =
-            prefix.isNotEmpty && !fits('$prefix${names.first}', width);
-        final text = preview(width, wrapPlaces ? '' : prefix);
-        final namesText = Text(
-          text,
-          key: ValueKey('notification-preview-${presentation.item.id}'),
-          style: style,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        );
+        String? preview;
+        for (var count = names.length; count > 0; count--) {
+          final remaining = total - count;
+          final text =
+              '${names.take(count).join(', ')}${remaining > 0 ? ' ${NotificationCenterStrings.others(remaining, locale: locale)}' : ''}';
+          final painter = TextPainter(
+            text: TextSpan(text: text, style: style),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout(maxWidth: constraints.maxWidth);
+          final fits = !painter.didExceedMaxLines;
+          painter.dispose();
+          if (fits) {
+            preview = text;
+            break;
+          }
+        }
+        // Keep the activity understandable when an identifier cannot fit even on
+        // its own (long e-mail, enlarged text, or a narrow device).
         return Semantics(
-          label: '$prefix${names.join(', ')}',
+          label: '${names.join(', ')}. ${presentation.title}',
           excludeSemantics: true,
-          child: wrapPlaces
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(details.join(' · '), style: style),
-                    const SizedBox(height: 4),
-                    namesText,
-                  ],
-                )
-              : namesText,
+          child: Text(
+            preview ?? presentation.title,
+            key: ValueKey('notification-preview-${presentation.item.id}'),
+            style: style,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       },
     );
@@ -450,28 +424,102 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            presentation.title,
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(
-                                  fontSize: 17,
-                                  fontWeight: unread
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                )
-                                .copyWith(
-                                  color: unread
-                                      ? colors.onSurface
-                                      : colors.onSurfaceVariant,
-                                  height: 1.3,
-                                  letterSpacing: 0,
+                          if (item.kind == 'order_created' &&
+                              presentation.previewNames.isNotEmpty)
+                            _customerPreview(
+                              context,
+                              presentation,
+                              theme.textTheme.bodyLarge
+                                  ?.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: unread
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  )
+                                  .copyWith(
+                                    color: unread
+                                        ? colors.onSurface
+                                        : colors.onSurfaceVariant,
+                                    height: 1.3,
+                                    letterSpacing: 0,
+                                  ),
+                            )
+                          else
+                            Text(
+                              presentation.title,
+                              style: theme.textTheme.bodyLarge
+                                  ?.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: unread
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  )
+                                  .copyWith(
+                                    color: unread
+                                        ? colors.onSurface
+                                        : colors.onSurfaceVariant,
+                                    height: 1.3,
+                                    letterSpacing: 0,
+                                  ),
+                            ),
+                          if (item.kind == 'order_created') ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              [
+                                if (day != null)
+                                  NotificationCenterTime.dayHeading(
+                                    day,
+                                    locale,
+                                    now:
+                                        widget.controller.snapshotDay ??
+                                        widget.controller.snapshotAt,
+                                  ),
+                                NotificationCenterStrings.orders(
+                                  item.data['activityCount'] as int? ?? 1,
+                                  locale: locale,
                                 ),
-                          ),
-                          if (item.isSummary &&
-                              (item.data['activityCount'] as int) > 1 &&
+                                if (item.data['placeCount'] is int)
+                                  NotificationCenterStrings.places(
+                                    item.data['placeCount'] as int,
+                                    locale: locale,
+                                  )
+                                else if (!item.isSummary &&
+                                    item.data['count'] is int &&
+                                    ((item.data['count'] as int) > 1 ||
+                                        (item.data['formContext']
+                                                as Map?)?['allowsMultiple'] ==
+                                            true))
+                                  NotificationCenterStrings.places(
+                                    item.data['count'] as int,
+                                    locale: locale,
+                                  ),
+                              ].join(' · '),
+                              key: ValueKey('notification-age-${item.id}'),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 13,
+                                height: 1.35,
+                                letterSpacing: 0,
+                                color: unread
+                                    ? colors.primary
+                                    : colors.onSurfaceVariant,
+                                fontWeight: unread
+                                    ? FontWeight.w500
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ] else if (item.isSummary &&
                               presentation.previewNames.isNotEmpty) ...[
                             const SizedBox(height: 4),
-                            _summarySubtitle(context, presentation, details),
+                            if (details.isNotEmpty)
+                              Text(
+                                details.join(' · '),
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            _customerPreview(
+                              context,
+                              presentation,
+                              theme.textTheme.bodyMedium,
+                            ),
                           ] else if (details.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text.rich(
@@ -505,7 +553,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ],
-                          if (day != null) ...[
+                          if (day != null && item.kind != 'order_created') ...[
                             const SizedBox(height: 4),
                             Text(
                               NotificationCenterTime.dayHeading(

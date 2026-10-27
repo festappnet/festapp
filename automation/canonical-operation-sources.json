@@ -357,6 +357,7 @@
     "authoring/finance.sql",
     "authoring/agenda.sql",
     "authoring/lifecycle.sql",
-    "authoring/order_deletion.sql"
+    "authoring/order_deletion.sql",
+    "notification_center/order_selection.sql"
   ]
 }

@@ -4375,6 +4375,18 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} order",
+      "few": "{count} orders",
+      "many": "{count} orders",
+      "other": "{count} orders"
+    },
+    "others": {
+      "one": "and {count} other",
+      "few": "and {count} others",
+      "many": "and {count} others",
+      "other": "and {count} others"
+    },
     "orderActivities": "Order activity",
     "expand": "Expand",
     "collapse": "Collapse",

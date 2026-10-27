@@ -2384,6 +2384,18 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} objednávka",
+      "few": "{count} objednávky",
+      "many": "{count} objednávok",
+      "other": "{count} objednávok"
+    },
+    "others": {
+      "one": "a {count} ďalší",
+      "few": "a {count} ďalší",
+      "many": "a {count} ďalších",
+      "other": "a {count} ďalších"
+    },
     "orderActivities": "Zmeny objednávok",
     "expand": "Rozbaliť",
     "collapse": "Zbaliť",

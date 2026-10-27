@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
@@ -230,6 +231,8 @@ class _OrdersContentState extends State<OrdersContent> {
     super.dispose();
   }
 
+  String? _selectedNotificationGroup;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -245,7 +248,9 @@ class _OrdersContentState extends State<OrdersContent> {
       if (target == null) {
         _openedOrder = null;
       }
-      if (target != null && target != _openedOrder) _initializeController();
+      final group = context.routeData.queryParams.optString('notificationGroup');
+      if ((target != null && target != _openedOrder) ||
+          group != _selectedNotificationGroup) _initializeController();
     }
   }
 
@@ -263,9 +268,11 @@ class _OrdersContentState extends State<OrdersContent> {
     if (occasionLink == null) return;
 
     final generation = ++_loadGeneration;
-    // Fetch all data in one request
+    final groupTarget = context.routeData.queryParams.optString('notificationGroup');
+    final group = groupTarget == null ? null : jsonDecode(groupTarget) as Map<String, dynamic>;
+    // Resolve notification selection in the existing orders request.
     var futures = await Future.wait([
-      DbOrders.getOrdersTabData(occasionLink: occasionLink!),
+      DbOrders.getOrdersTabData(occasionLink: occasionLink!, notificationGroup: group),
       DbOccasions.getOccasionByLink(occasionLink!),
     ]);
 
@@ -480,6 +487,11 @@ class _OrdersContentState extends State<OrdersContent> {
       setState(() {
         controller = newController;
       });
+      _selectedNotificationGroup = groupTarget;
+      if (groupTarget != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+          _selectNotificationOrders(newController, bundle.notificationOrderIds, groupTarget, generation));
+      }
       if (requestedOrder != null && _openedOrder != requestedOrder) {
         _openedOrder = requestedOrder;
         final source =
@@ -487,6 +499,35 @@ class _OrdersContentState extends State<OrdersContent> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _openNotificationOrder(
             newController, requestedOrder, source, generation, occasion.id!));
       }
+    }
+  }
+
+  Future<void> _selectNotificationOrders(SingleDataGridController<OrderModel> grid,
+      Set<int> ids, String target, int generation) async {
+    bool owns() => mounted && generation == _loadGeneration &&
+      identical(grid, controller) && isVisibleRouteInstance(context) &&
+      context.routeData.queryParams.optString('notificationGroup') == target;
+    for (var i = 0; i < 100 && owns() && !grid.isGridLoaded; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    if (!owns() || !grid.isGridLoaded) return;
+    // Reveal all matching rows, including cancellations hidden by Active.
+    grid.toggleAdditionalFilter(false);
+    grid.stateManager.setFilterRows([]);
+    grid.applyRowFilter();
+    for (final row in grid.stateManager.refRows.originalList) {
+      grid.stateManager.setRowChecked(row, ids.contains(OrderGridFilters.order(row)?.id), notify: false);
+    }
+    grid.stateManager.notifyListeners();
+    final rows = grid.stateManager.refRows.filterOrOriginalList;
+    final index = rows.indexWhere((row) => ids.contains(OrderGridFilters.order(row)?.id));
+    if (index >= 0) {
+      grid.stateManager.setCurrentCell(rows[index].cells[EshopColumnIds.ORDER_SYMBOL], index);
+      grid.stateManager.moveScrollByRow(TrinaMoveDirection.down, index);
+    }
+    if (owns()) {
+      _selectedNotificationGroup = null;
+      await clearNotificationDetailTarget(context, 'notificationGroup', target);
     }
   }
 
