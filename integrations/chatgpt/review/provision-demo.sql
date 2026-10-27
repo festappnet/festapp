@@ -94,9 +94,11 @@ BEGIN
       v_tickets := '[]';
       FOR k IN 1..v_count LOOP
         INSERT INTO eshop.tickets(occasion,state,ticket_symbol)
-        VALUES(v_event,v_state,gen_random_uuid()::text) RETURNING id INTO v_ticket;
-        INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(v_order,v_product,v_ticket);
-        v_tickets := v_tickets||jsonb_build_array(jsonb_build_object('id',v_ticket,'products',jsonb_build_array(jsonb_build_object('id',v_product,'price',250))));
+        VALUES(v_event,v_state,CASE WHEN j=4 THEN NULL ELSE gen_random_uuid()::text END) RETURNING id INTO v_ticket;
+        INSERT INTO eshop.order_product_ticket("order",product,ticket)
+        VALUES(v_order,CASE WHEN j=4 THEN NULL ELSE v_product END,v_ticket);
+        v_tickets := v_tickets||jsonb_build_array(jsonb_build_object('id',v_ticket,'products',
+          CASE WHEN j=4 THEN '[]'::jsonb ELSE jsonb_build_array(jsonb_build_object('id',v_product,'price',250)) END));
       END LOOP;
       UPDATE eshop.orders SET data=data||jsonb_build_object('tickets',v_tickets) WHERE id=v_order;
       v_orders := v_orders||jsonb_build_array(jsonb_build_object('occasionId',v_event,'id',v_order,'symbol',v_symbol,'state',v_state,'hostileNote',i=1 AND j=1));
