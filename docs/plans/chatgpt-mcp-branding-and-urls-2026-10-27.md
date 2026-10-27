@@ -2,8 +2,11 @@
 
 Checked 2026-10-27. This investigation informs the current read-only pilot;
 it does not authorize DNS changes, another production client, public submission,
-or publication. The live pilot still uses `https://mcp.festapp.net/mcp`. The user approved the
-regional target `https://mcp.vstupenky.online/mcp` for implementation **before further ChatGPT setup and pilot acceptance**; authoritative plan wave 2b owns the cutover.
+or publication. The user-approved regional cutover is now deployed at
+`https://mcp.vstupenky.online/mcp`; the old host returns HTTP 410. First-party
+ChatGPT consent and six read tools are verified. See the
+[live pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27)
+for acceptance evidence. Public directory approval remains separate.
 
 ## Product presentation
 
@@ -45,8 +48,8 @@ support or actual review. No support message or submission was sent.
 
 | Use | Address | State |
 | --- | --- | --- |
-| Current private pilot | `https://mcp.festapp.net/mcp` | Active historical target; no further ChatGPT setup/acceptance here. Replace through the approved cutover first. |
-| Proposed regional public connection | `https://mcp.vstupenky.online/mcp` | Accepted by the user on 2026-10-27; not yet provisioned, registered or published. Separates MCP routing from the main site's application shell. |
+| Former private pilot | `https://mcp.festapp.net/mcp` | Retired with HTTP 410; no credential redirect. |
+| Regional connection | `https://mcp.vstupenky.online/mcp` | Deployed and connected privately in ChatGPT on 2026-10-27. Public listing remains unsubmitted. Separates MCP routing from the main site's application shell. |
 | Alternative regional route | `https://vstupenky.online/mcp` | Technically possible with deliberate proxy, discovery and OAuth routing. Sharing the app's root well-known paths needs extra care. |
 | Global public connection | Stable endpoint under the verified Festapp global domain | Domain choice remains outstanding; do not invent ownership or register a speculative hostname. |
 

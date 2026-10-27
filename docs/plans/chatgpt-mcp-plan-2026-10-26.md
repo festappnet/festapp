@@ -598,20 +598,29 @@ restoring a previous config. Scope policy must not broaden during rollback.
 
 ## Completion and residual risk
 
-- [ ] Existing remote MCP is the only hosted operation/auth owner.
-- [ ] Pilot grant has the exact read catalog and effective read-only capabilities.
-- [ ] Local protocol, permission and real disposable owner checks pass.
-- [ ] Validated source/image revision is identified for the live endpoint.
-- [ ] Actual ChatGPT connection, useful read results, refresh and revocation pass.
-- [ ] Current connection documentation matches observed setup; historical evidence
+Current execution evidence is in the
+[pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27).
+The regional cutover is deployed. Real ChatGPT consent, six read tools, selected
+occasion report/list/detail/search, out-of-consent denial, continuity across
+normal token expiry and immediate issuer-side revocation have passed. Live
+hostile-note and ambiguous-selection cases remain outstanding; do not label
+the entire wave accepted from the core connection checks alone.
+
+- [x] Existing remote MCP is the only hosted operation/auth owner.
+- [x] Pilot grant has the exact read catalog and effective read-only capabilities.
+- [x] Local protocol, permission and real disposable owner checks pass.
+- [x] Validated source/image revision is identified for the live endpoint.
+- [x] Actual ChatGPT connection, useful read results, continuity across expiry
+      and revocation pass (opaque refresh exchange was not logged).
+- [x] Current connection documentation matches observed setup; historical evidence
       is clearly bounded, not presented as current failure or success.
-- [ ] One operation-scope lookup and client ceiling drive issuance, invocation,
+- [x] One operation-scope lookup and client ceiling drive issuance, invocation,
       refresh, discovery and effective capabilities; local CLI is unchanged.
-- [ ] Two registered test clients pass shared protocol/lifecycle assertions without
+- [x] Two registered test clients pass shared protocol/lifecycle assertions without
       relying on vendor metadata; no real Claude support is claimed without its test.
-- [ ] Byte/call/timing evidence exists for the small fixture; no duplicate test
+- [x] Byte/call/timing evidence exists for the small fixture; no duplicate test
       harness or speculative connector framework was introduced.
-- [ ] Public package readiness is recorded separately from pilot acceptance.
+- [x] Public package readiness is recorded separately from pilot acceptance.
 
 Main residual risks: account/UI availability; actual registered-client callback;
 live backend/source drift; existing MFA/session issuance limitations; SDK wire
