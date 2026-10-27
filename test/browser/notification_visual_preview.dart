@@ -41,7 +41,7 @@ Future<void> main() async {
         'id': entry[0],
         'kind': entry[0],
         'section': 1,
-        'sequence': 6,
+        'sequence': entry[0] == 'waitlist_registered' ? 4 : 6,
         'occasionId': 1,
         'occasionTitle': 'Country bál 2026',
         'occasionLink': 'synthetic-event',

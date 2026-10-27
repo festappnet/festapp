@@ -148,7 +148,16 @@ void main() {
       final oldRow = find.byKey(const ValueKey('notification-item-4'));
       final newRow = find.byKey(const ValueKey('notification-item-5'));
       expect(tester.widget<Material>(oldRow).color, Colors.transparent);
-      expect(tester.widget<Material>(newRow).color, isNot(Colors.transparent));
+      expect(tester.widget<Material>(newRow).color, Colors.transparent);
+      final oldAge = tester.widget<Text>(
+        find.byKey(const ValueKey('notification-age-4')),
+      );
+      final newAge = tester.widget<Text>(
+        find.byKey(const ValueKey('notification-age-5')),
+      );
+      expect(oldAge.style?.fontWeight, FontWeight.w400);
+      expect(newAge.style?.fontWeight, FontWeight.w500);
+      expect(newAge.style?.color, isNot(oldAge.style?.color));
       for (final entry in [
         (oldRow, FontWeight.w400),
         (newRow, FontWeight.w600),
@@ -784,7 +793,7 @@ void main() {
   );
 
   testWidgets(
-    'occasion day headings stay separate and summary names adapt to width',
+    'occasions stay separate, ages are row metadata and summary names adapt to width',
     (tester) async {
       final c = NotificationCenterController();
       addTearDown(c.dispose);
@@ -844,6 +853,18 @@ void main() {
           expect(find.text('NotificationCenter.today'), findsWidgets);
         }
         expect(find.text('NotificationCenter.daysAgo.other'), findsOneWidget);
+        final age = find.byKey(const ValueKey('notification-age-old'));
+        expect(
+          tester.widget<Text>(age).data,
+          'NotificationCenter.daysAgo.other',
+        );
+        final ageHeaders = find.ancestor(
+          of: age,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Semantics && widget.properties.header == true,
+          ),
+        );
+        expect(ageHeaders, findsNothing);
         final preview = tester
             .widget<Text>(
               find.byKey(const ValueKey('notification-preview-names')),
