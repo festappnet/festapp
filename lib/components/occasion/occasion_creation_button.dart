@@ -12,13 +12,15 @@ class OccasionCreationButton extends StatelessWidget {
     required this.showChoices,
     required this.onGuided,
     required this.onQuick,
+    this.builder,
   });
 
+  final Widget Function(VoidCallback onPressed)? builder;
   final bool showChoices;
   final VoidCallback onGuided;
   final VoidCallback onQuick;
 
-  Widget _button(VoidCallback onPressed) => FilledButton.icon(
+  Widget _button(VoidCallback onPressed) => builder?.call(onPressed) ?? FilledButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.add, size: 18),
         label: Row(
