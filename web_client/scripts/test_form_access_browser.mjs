@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer as createPortProbe } from 'node:net';
 import { createServer } from 'vite';
+import { openIsolatedBrowser } from './isolated_browser_startup.mjs';
 const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
@@ -23,6 +24,16 @@ async function browser(...args) {
     const result = JSON.parse(stdout);
     assert.equal(result.success, true, result.error);
     return result.data;
+}
+async function openBrowser(url) {
+    await openIsolatedBrowser({
+        open: async () => {
+            session = `fa-${process.pid}-${++browserIndex}`;
+            await browser('open', url);
+        },
+        info: () => browser('session', 'info'),
+        close: () => browser('close'),
+    });
 }
 let server;
 try {
@@ -79,9 +90,7 @@ try {
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
     for (const scenario of ['guest-open', 'editor-open', 'editor-closed', 'unit-editor-open', 'unit-editor-closed', 'visitor-closed']) {
-        session = `fa-${process.pid}-${++browserIndex}`;
-        await browser('open', `${origin}/form/account-access?scenario=${scenario}`);
-        assert.equal((await browser('session', 'info')).runtime.pageCount, 1, 'isolated local Chromium required');
+        await openBrowser(`${origin}/form/account-access?scenario=${scenario}`);
         await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
         await browser('wait', '--fn', `!(${visible('#universal-header')})`);
         await browser('wait', '--fn', visible('#form-page-container'));
@@ -103,8 +112,7 @@ try {
         await browser('close');
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
-    session = `fa-${process.pid}-${++browserIndex}`;
-    await browser('open', `${origin}/?scenario=guest-login`);
+    await openBrowser(`${origin}/?scenario=guest-login`);
     await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
     await browser('wait', '--fn', visible('#universal-header'));
     await browser('click', '.btn-sign-in');
