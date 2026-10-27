@@ -3,7 +3,7 @@ import contract from '../../../../packages/festapp_contracts/configuration-setti
 import {check,upstream,OperationError} from '../errors.mjs';
 const id=z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 const version=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
-function ruleSchema(rule){
+export function ruleSchema(rule){
  let s;
  switch(rule.type){
   case 'object':s=z.strictObject(Object.fromEntries(Object.entries(rule.properties).map(([k,v])=>[k,rule.required?.includes(k)?ruleSchema(v):ruleSchema(v).optional()])));break;

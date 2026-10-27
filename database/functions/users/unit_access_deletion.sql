@@ -37,11 +37,14 @@ CREATE OR REPLACE FUNCTION public.delete_unit_user_client_sync_v1(p_user uuid, p
 AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_before jsonb;
   v_after jsonb; v_result jsonb; v_commit public.client_commits%ROWTYPE;
-  v_occasion bigint; v_revision bigint;
+
 BEGIN
   IF v_actor IS NULL OR p_user IS NULL
     OR NOT public.can_manage_unit_users(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
+  PERFORM public.lock_people_scope_internal_v1(NULL,NULL,p_unit);
+  PERFORM pg_catalog.pg_advisory_xact_lock(-p_unit);
+  IF NOT public.can_manage_unit_users(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'unit',p_unit,'userId',p_user)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_unit_client_mutation_v1(p_command_id,
@@ -70,26 +73,7 @@ BEGIN
     (commit_id,item_index,entity_type,entity_id,operation,safe_label,changed_fields)
   VALUES (v_commit.commit_id,0,'unit_user',p_user::text,'delete','Unit access',
     ARRAY['rights']);
-  FOR v_occasion IN SELECT ou.occasion FROM public.occasion_users ou
-    JOIN public.occasions o ON o.id=ou.occasion
-    WHERE o.unit=p_unit AND ou."user"=p_user ORDER BY ou.occasion LOOP
-    INSERT INTO public.client_aggregate_versions
-      (aggregate_type,scope_type,scope_id,aggregate_id,version)
-    VALUES ('occasion_user','occasion',v_occasion,p_user::text,1)
-    ON CONFLICT (aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE SET
-      version=public.client_aggregate_versions.version+1,
-      updated_at=clock_timestamp();
-    INSERT INTO public.client_sync_private_scopes
-      (component,occasion,user_id,source_revision)
-    VALUES ('private_profile',v_occasion,p_user,1)
-    ON CONFLICT (component,occasion,user_id) DO UPDATE SET
-      source_revision=public.client_sync_private_scopes.source_revision+1,
-      updated_at=now() RETURNING source_revision INTO v_revision;
-    INSERT INTO public.client_commit_components
-      (commit_id,component,scope_type,scope_id,user_id,resulting_revision)
-    VALUES (v_commit.commit_id,'private_profile','occasion',v_occasion,
-      p_user,v_revision);
-  END LOOP;
+  PERFORM public.publish_unit_user_access_change_internal_v1(v_commit.commit_id,p_unit,p_user);
   RETURN public.finish_client_mutation_v1(p_command_id,jsonb_build_object(
     'status','applied','code',200,'data',jsonb_build_object('userId',p_user),
     'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,

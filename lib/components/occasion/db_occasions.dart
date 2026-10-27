@@ -1,9 +1,10 @@
+import 'occasion_media_completion.dart';
+
 import 'dart:convert';
 
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
-import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
 import 'package:fstapp/components/occasion/occasion_duplication.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -213,8 +214,9 @@ class DbOccasions {
 
   static final _duplicator = OccasionDuplicator(
     commands: _commands,
-    loadOccasion: getOccasion,
-    copyImage: DbImages.createCopyOfImage,
+    principalBinding: () =>
+        '${_supabase.rest.url}:${_supabase.auth.currentUser?.id}',
+    completeMedia: (commandId) => completeOccasionMedia(_supabase, commandId),
   );
 
   /// Returns false only when the event exists but its media could not be copied.

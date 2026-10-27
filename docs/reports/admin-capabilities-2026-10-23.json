@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "date": "2026-10-26",
-  "sourceMain": "ddbeb11e6aa477477984da03f947f07f9f6a353a",
-  "liveBaselineVersion": "0.20.371+869",
+  "date": "2026-10-27",
+  "sourceMain": "a698f7403bbb62730df211a91c777b12a356d25c",
+  "liveBaselineVersion": "0.20.427+929",
   "tenant": "festapptickets",
-  "scopeNote": "Produkční baseline etapy 2B zůstává posledním doloženým live stavem. Etapy 3 a 4 jsou lokálně dokončené a ověřené; jejich produkční rollout neproběhl.",
+  "scopeNote": "Etapy 0-5 mají doložený produkční rollout pro vstupenky.online. Etapa 6 je lokálně implementovaná a ověřená; její produkční nasazení neproběhlo. Aktualizace 2026-10-27: dokončené řezy 7-10 používají doložené současné vlastníky. Obecné rozesílání a odeslání provider refundace se nepovažují za existující admin funkce; onboarding účtů zůstává běžnou lidskou cestou.",
   "actions": [
     {
       "id": "action-001",
@@ -518,85 +518,133 @@
       "id": "action-027",
       "area": "Plánky a místa",
       "title": "Upravit geometrii a rozmístění objektů",
-      "description": "Přesný draft a jeho původní layout revision.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-028",
       "area": "Plánky a místa",
       "title": "Přejmenovat místa a obchodní skupiny",
-      "description": "Respektovat chráněná obsazená místa a obchodní identitu.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-029",
       "area": "Plánky a místa",
       "title": "Nastavit skupiny, stoly a společný výběr míst",
-      "description": "Některá místa se rezervují jako nedělitelný celek.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-030",
       "area": "Plánky a místa",
       "title": "Přiřadit produkt místu nebo skupině",
-      "description": "Zachovat dědičnost produktu a explicitní override.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-031",
       "area": "Plánky a místa",
       "title": "Připravit a přiřadit oblast stání",
-      "description": "Geometrie oblasti a skladová kapacita jsou odlišné domény.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-032",
       "area": "Plánky a místa",
       "title": "Uložit nebo zahodit rozpracovaný plánek",
-      "description": "Samotný výběr, přejmenování a náhled nesmí tiše publikovat draft.",
+      "description": "Celý návrh geometrie, názvů, skupin a obchodních vazeb používá stejný atomický blueprint příkaz jako editor. Původní revize, ochrana prodaných či držených míst a přesné opakování příkazu. Zrušit vydá nula zápisů.",
       "sources": [
-        "lib/components/blueprint/blueprint_layout_controller.dart"
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "database/functions/authoring/blueprints.sql",
+        "tools/festapp/src/operations/blueprints.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "blueprints.list",
+        "blueprints.inspect",
+        "blueprints.validate",
+        "blueprints.save"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-033",
@@ -730,15 +778,22 @@
       "id": "action-041",
       "area": "Objednávky a platby",
       "title": "Odstranit objednávku",
-      "description": "Odstranění je jiné než zrušení; nutno zachovat konkrétní doménové podmínky.",
+      "description": "Fyzické odstranění je jiné než zrušení vstupenek. Vyžaduje výslovný souhlas, původní revizi a aktuální doménová práva. Volitelná externí faktura používá stávající Fakturoid gateway a obnovu; příkazy zachovají waitlist, dávkové a doručovací závislosti.",
       "sources": [
-        "lib/components/eshop/order_commands.dart"
+        "lib/components/eshop/order_commands.dart",
+        "database/functions/authoring/order_deletion.sql",
+        "supabase/functions/delete-order/delete.ts",
+        "tools/festapp/src/operations/finance.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "orders.deletion.inspect",
+        "orders.delete"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-042",
@@ -760,15 +815,24 @@
       "id": "action-043",
       "area": "Vstupenky a skenování",
       "title": "Upravit a uložit vzhled vstupenky",
-      "description": "MCP zápis vzhledu není běžně zpřístupněný. Readiness kontrakt PDF vzhledu vyžaduje vlastní kvalifikaci.",
+      "description": "Vzorový PDF náhled, uložení stejného návrhu a obnova nedokončeného ukládání. Kanonický renderer, původní verze a otisk návrhu; vzdálené zápisy se zobrazí až po ověření backendového kontraktu. Soukromý náhled je vázaný na uživatele a připojení.",
       "sources": [
-        "lib/components/ticket_layout/views/ticket_settings.dart"
+        "lib/components/ticket_layout/views/ticket_settings.dart",
+        "tools/festapp/src/operations/layout-save.mjs",
+        "supabase/functions/preview-ticket-layout/handler.ts"
       ],
-      "mcp": [],
+      "mcp": [
+        "ticket_layouts.inspect",
+        "ticket_layouts.preview",
+        "ticket_layouts.save",
+        "ticket_layouts.pending",
+        "ticket_layouts.resume"
+      ],
       "phase": "7",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-044",
@@ -1280,29 +1344,46 @@
       "id": "action-071",
       "area": "Nastavení akce",
       "title": "Kopírovat akci",
-      "description": "SQL data a kopie assetů mají vlastní recovery; nejde o jednu distribuovanou transakci.",
+      "description": "Kopie zdroje i cílový pořadatel musí být v souhlasu připojení. Kanonický SQL receipt vytvoří jedinou akci a uloží postup pro image Worker. Pevné cílové klíče, obnova po výpadku a zachování později vybraných obrázků; průběh médií je oddělený od potvrzeného vytvoření akce.",
       "sources": [
-        "lib/components/occasion/db_occasions.dart"
+        "lib/components/occasion/db_occasions.dart",
+        "database/functions/authoring/lifecycle.sql",
+        "workers/image-worker/src/occasion-lifecycle.ts",
+        "lib/components/occasion/occasion_duplication.dart",
+        "tools/festapp/src/operations/lifecycle.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.copy",
+        "lifecycle.inspect",
+        "lifecycle.pending",
+        "lifecycle.resume"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-072",
       "area": "Nastavení akce",
       "title": "Odstranit akci",
-      "description": "Ochrana souvisejících dat a externích asset účinků.",
+      "description": "Stávající příkaz odstranění zachová kontrolu objednávek, sync režimu a práv pořadatele. Opakování použije původní tombstone. Obrazové soubory se stejně jako v dnešní administraci odpojí a zůstanou uložené; nejde o hromadný purge R2.",
       "sources": [
-        "lib/components/occasion/db_occasions.dart"
+        "lib/components/occasion/db_occasions.dart",
+        "database/functions/authoring/lifecycle.sql",
+        "database/functions/others/delete_occasion.sql",
+        "tools/festapp/src/operations/lifecycle.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "occasions.delete",
+        "lifecycle.inspect"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-073",
@@ -1359,29 +1440,41 @@
       "id": "action-076",
       "area": "Pořadatel",
       "title": "Upravit a odeslat ověřovací údaje pořadatele",
-      "description": "Podání a interní posouzení jsou rozdílné role a operace.",
+      "description": "Právní údaje a odeslání k ověření používají společný UI/MCP receipt nad původními SQL vlastníky a revizí. Odeslání není schválení. Souhlas k pořadateli nezahrnuje soukromé poznámky ani frontu a rozhodování tenantových ověřovatelů.",
       "sources": [
-        "lib/components/unit/verification/db_unit_verification.dart"
+        "lib/components/unit/verification/db_unit_verification.dart",
+        "database/functions/authoring/agenda.sql",
+        "tools/festapp/src/operations/agenda.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.legal.inspect",
+        "units.legal.save",
+        "units.legal.submit"
+      ],
       "phase": "10",
       "effect": "write",
       "scope": "Pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-077",
       "area": "Pořadatel",
       "title": "Odstranit pořadatele",
-      "description": "UI chrání například pořadatele s akcemi a posledního pořadatele.",
+      "description": "Původní kontrola správce, posledního spravovaného pořadatele, zbývajících akcí a databázových závislostí. Sdílený UI/MCP příkaz uchová vlastní výsledek odstranění pro stejného uživatele a stejný commandId.",
       "sources": [
-        "lib/components/unit/db_units.dart"
+        "lib/components/unit/db_units.dart",
+        "database/functions/authoring/agenda.sql",
+        "tools/festapp/src/operations/agenda.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.delete"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-078",
@@ -1391,11 +1484,17 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.list",
+        "profiles.inspect",
+        "profiles.create",
+        "profiles.save"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-079",
@@ -1405,11 +1504,15 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.import",
+        "profiles.importTickets"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-080",
@@ -1419,11 +1522,14 @@
       "sources": [
         "lib/components/users/profile_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "profiles.delete"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-081",
@@ -1433,11 +1539,15 @@
       "sources": [
         "lib/components/unit/unit_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "units.people.list",
+        "units.people.revoke"
+      ],
       "phase": "6",
       "effect": "critical",
       "scope": "Pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-082",
@@ -1447,11 +1557,17 @@
       "sources": [
         "lib/components/groups/group_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "groups.list",
+        "groups.inspect",
+        "groups.save",
+        "groups.delete"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-083",
@@ -1461,165 +1577,294 @@
       "sources": [
         "lib/components/groups/group_commands.dart"
       ],
-      "mcp": [],
+      "mcp": [
+        "groups.addMembers",
+        "groups.replaceAssignments"
+      ],
       "phase": "6",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
     },
     {
       "id": "action-084",
       "area": "Program a další funkce",
       "title": "Upravit a odstranit událost programu",
-      "description": "Událost programu není celá occasion.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/schedule/event_commands.dart"
+        "lib/components/schedule/event_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "events.list",
+        "events.inspect",
+        "events.save",
+        "events.delete",
+        "events.roles"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-085",
       "area": "Program a další funkce",
       "title": "Nastavit účast na události programu",
-      "description": "Zachovat aktuální práva a pravidla události.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/schedule/attendance_commands.dart"
+        "lib/components/schedule/attendance_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "attendance.set"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-086",
       "area": "Program a další funkce",
       "title": "Spravovat vzájemně výlučné skupiny programu",
-      "description": "Volby mají společná doménová pravidla.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/schedule/exclusive_group_commands.dart"
+        "lib/components/schedule/exclusive_group_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "exclusiveGroups.list",
+        "exclusiveGroups.inspect",
+        "exclusiveGroups.save",
+        "exclusiveGroups.delete"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-087",
       "area": "Program a další funkce",
       "title": "Uložit, zahodit a publikovat aktivity",
-      "description": "Draft a publikovaná verze zůstávají oddělené.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/activities/activity_commands.dart"
+        "lib/components/activities/activity_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "activities.inspect",
+        "activities.saveDraft",
+        "activities.discardDraft",
+        "activities.publish"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-088",
       "area": "Program a další funkce",
       "title": "Vytvořit, upravit nebo přesunout místo na mapě",
-      "description": "Souřadnice a vazby přes kanonický map owner.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/map/map_commands.dart"
+        "lib/components/map/map_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "places.list",
+        "places.inspect",
+        "places.save",
+        "places.delete",
+        "placeTypes.list",
+        "placeTypes.inspect",
+        "placeTypes.save",
+        "placeTypes.delete",
+        "paths.list",
+        "paths.inspect",
+        "paths.save",
+        "paths.delete",
+        "places.move",
+        "places.icons"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-089",
       "area": "Program a další funkce",
       "title": "Upravit a odstranit řečníka",
-      "description": "Použít stejné příkazy jako současná administrace.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/speakers/speaker_commands.dart"
+        "lib/components/speakers/speaker_commands.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "speakers.list",
+        "speakers.inspect",
+        "speakers.save",
+        "speakers.delete",
+        "topics.list",
+        "topics.inspect",
+        "topics.save",
+        "topics.delete",
+        "eventSpeakers.inspect",
+        "eventSpeakers.save",
+        "counseling.list",
+        "counseling.createSlots",
+        "counseling.deleteEmptySlots",
+        "counseling.deleteSlot"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-090",
       "area": "Program a další funkce",
       "title": "Spravovat položky služeb a hru",
-      "description": "Pouze pro podporované a povolené funkce akce.",
+      "description": "Stejné existující čtení a verzované příkazy jako současná administrace. Stránkované seznamy, kontrola skutečné akce, konfliktů, opakování a aktuálních oprávnění. Program, aktivity, služby a konzultace zachovávají pravidla konkrétní varianty a zapnutých funkcí.",
       "sources": [
-        "lib/components/occasion/db_occasions.dart"
+        "lib/components/occasion/db_occasions.dart",
+        "database/functions/authoring/program.sql",
+        "tools/festapp/src/operations/program.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "services.list",
+        "services.create",
+        "services.update",
+        "services.delete",
+        "occasions.game.inspect",
+        "occasions.game.save"
+      ],
       "phase": "8",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-091",
       "area": "Finance a citlivé operace",
       "title": "Spravovat bankovní účty a propojení s pořadatelem",
-      "description": "Account-admin a manager propojené unit jsou samostatně kontrolované podmínky.",
+      "description": "Účty, propojení, pořadí a BankSync používají původní bankovní vlastníky a trvalé provider operace. Správa účtu vyžaduje současně bankovního admina a správce skutečně propojeného nedemo pořadatele. Tenant admin tyto role nenahrazuje. Tokeny a párovací údaje zůstávají v běžném nastavení.",
       "sources": [
-        "lib/components/bank_accounts/db_bank_accounts.dart"
+        "lib/components/bank_accounts/db_bank_accounts.dart",
+        "database/functions/authoring/finance.sql",
+        "lib/components/bank_accounts/supabase_bank_accounts.dart",
+        "supabase/functions/bank-sync-manage/index.ts",
+        "tools/festapp/src/operations/finance.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "banks.list",
+        "banks.candidates",
+        "banks.status",
+        "banks.operations",
+        "banks.observations",
+        "banks.save",
+        "banks.link",
+        "banks.sync",
+        "banks.suspend",
+        "banks.resume"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Účet / pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-092",
       "area": "Finance a citlivé operace",
       "title": "Spravovat přístup lidí k bankovnímu účtu",
-      "description": "Nelze odvodit pouze z tenant admin role.",
+      "description": "Omezený seznam bankovních členů včetně e-mailu má vlastní čtecí souhlas. Změna rolí i odstranění přístupu zachová původní dvojí bankovní oprávnění a sdílený receipt; práva se kontrolují i před opakováním.",
       "sources": [
-        "lib/components/bank_accounts/db_bank_accounts.dart"
+        "lib/components/bank_accounts/db_bank_accounts.dart",
+        "database/functions/authoring/finance.sql",
+        "tools/festapp/src/operations/finance.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "banks.users",
+        "banks.user"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Účet / pořadatel",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-093",
       "area": "Finance a citlivé operace",
-      "title": "Vrátit platbu přes kartového providera",
-      "description": "Existenci a rozsah konkrétního administrátorského refund toku je potřeba dohledat. Nelze ho považovat za podporovaný jen podle existence plateb.",
+      "title": "Rozhodnout o vstupenkách po částečné refundaci",
+      "description": "Ověřená současná funkce rozhoduje pouze o platnosti vstupenek po zaznamenané částečné refundaci u providera. Původní SQL ověří částku, revizi a způsobilost vybraných vstupenek. Nejde o odeslání peněz ani vystavení refundace; takový současný admin příkaz nebyl nalezen.",
       "sources": [
-        "lib/components/bank_accounts/db_bank_accounts.dart"
+        "lib/components/bank_accounts/db_bank_accounts.dart",
+        "lib/components/stripe_payments/card_refund_decision_api.dart",
+        "database/functions/eshop_stripe/refund_decisions.sql",
+        "database/functions/authoring/finance.sql",
+        "tools/festapp/src/operations/finance.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "cards.refund.inspect",
+        "cards.refund.decide"
+      ],
       "phase": "10",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "audit"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-094",
       "area": "Finance a citlivé operace",
-      "title": "Další reporty, exporty a hromadné rozesílky",
-      "description": "Přesné podporované operace, datové rozsahy a role je potřeba rozepsat. Tato souhrnná položka není potvrzená nová MCP schopnost.",
+      "title": "Číst historii, reporty a exportovat vybrané údaje",
+      "description": "Historie změn, aktivity, objednávek a doručování; stránkovaná zpětná vazba a exporty vybraných sloupců. Reporty používají původní SQL součty a měny. CSV chrání tabulkové vzorce a soukromé soubory při každém stažení znovu ověří uživatele, připojení a aktuální práva. Generická hromadná rozesílka nemá doloženého současného UI producenta a není novým nástrojem.",
       "sources": [
-        "lib/components/single_data_grid/admin_page_helper.dart"
+        "lib/components/single_data_grid/admin_page_helper.dart",
+        "database/functions/authoring/history.sql",
+        "database/functions/authoring/exports.sql",
+        "tools/festapp/src/operations/reporting.mjs",
+        "supabase/functions/send-email/index.ts"
       ],
-      "mcp": [],
+      "mcp": [
+        "history.commits",
+        "history.commit",
+        "history.activity",
+        "history.orders",
+        "history.email",
+        "feedback.list",
+        "reports.export",
+        "exports.people",
+        "exports.orders",
+        "exports.events",
+        "exports.speakers",
+        "exports.places",
+        "exports.feedback"
+      ],
       "phase": "9",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "audit"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "area": "Formuláře a prodej",
@@ -1734,15 +1979,193 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "deploymentState": "pending"
+    },
+    {
+      "id": "action-101",
+      "area": "Lidé a oprávnění",
+      "title": "Měnit role, schvalování a dobrovolnictví účastníků",
+      "description": "Výslovný samostatný souhlas, živé oprávnění managera akce, původní verze a společný profile command owner.",
+      "sources": [
+        "lib/components/users/profile_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "profiles.roles"
+      ],
+      "phase": "6",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
+    },
+    {
+      "id": "action-102",
+      "area": "Lidé a oprávnění",
+      "title": "Přidat a upravit profil člověka u pořadatele",
+      "description": "Přidání bez udělení rolí; existující členství se nepřepisuje. UI i MCP sdílí verzovaný příkaz.",
+      "sources": [
+        "lib/components/unit/unit_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "units.people.create",
+        "units.people.profile"
+      ],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
+    },
+    {
+      "id": "action-103",
+      "area": "Lidé a oprávnění",
+      "title": "Měnit role lidí u pořadatele",
+      "description": "Samostatný role příkaz vyžaduje výslovný souhlas pro celého pořadatele a jeho živou manager roli.",
+      "sources": [
+        "lib/components/unit/unit_commands.dart",
+        "database/functions/people/authoring.sql"
+      ],
+      "mcp": [
+        "units.people.roles"
+      ],
+      "phase": "6",
+      "effect": "critical",
+      "scope": "Pořadatel",
+      "certainty": "confirmed",
+      "deployment": "Lokálně ověřeno, nenasazeno"
+    },
+    {
+      "id": "action-104",
+      "area": "Plánky a místa",
+      "title": "Připravit textové zdroje a vybrat font",
+      "phase": "7",
+      "scope": "Akce",
+      "effect": "write",
+      "mcp": [
+        "blueprints.fonts",
+        "blueprints.prepare_text"
+      ],
+      "description": "Stejný celořádkový renderer a neměnné zdroje jako editor. Registrace sváže skutečný uložený rozsah s aktuálním běžným uživatelem; service role jeho oprávnění nenahrazuje.",
+      "sources": [
+        "tools/festapp/src/operations/blueprints.mjs",
+        "database/functions/authoring/blueprints.sql",
+        "supabase/functions/preview-ticket-layout/handler.ts"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
+    },
+    {
+      "id": "action-105",
+      "area": "Vstupenky a kontrola",
+      "title": "Ověřit a zaznamenat kontrolu vstupenky",
+      "phase": "7",
+      "scope": "Akce",
+      "effect": "critical",
+      "mcp": [
+        "scanner.inspect",
+        "scanner.admit"
+      ],
+      "description": "Stejná způsobilost, potvrzení nezaplacené vstupenky a operační scanner ledger jako v aplikaci. Opakování neprovede druhý vstup. Session tokeny, QR payload a zákaznické symboly se nevracejí.",
+      "sources": [
+        "tools/festapp/src/operations/scanner.mjs",
+        "database/functions/authoring/scanner.sql"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
+    },
+    {
+      "id": "action-106",
+      "area": "Finance a citlivé operace",
+      "title": "Přečíst stav, pozastavit nebo odpojit kartové platby",
+      "phase": "10",
+      "scope": "Pořadatel",
+      "effect": "critical",
+      "mcp": [
+        "cards.status",
+        "cards.disconnectImpact",
+        "cards.pause",
+        "cards.disconnect"
+      ],
+      "description": "Stávající stripe-connect vybírá prostředí na serveru. Pozastavení má společný UI/MCP receipt; odpojení navazuje na původní provider intent a jeho obnovu. Vyžaduje správce konkrétního pořadatele. OAuth a případné připojení či výměna účtu zůstává běžným lidským onboardingem.",
+      "sources": [
+        "tools/festapp/src/operations/finance.mjs",
+        "database/functions/authoring/finance.sql",
+        "supabase/functions/_shared/stripe/connect.ts",
+        "lib/components/stripe_payments/stripe_connection_api.dart"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
+    },
+    {
+      "id": "action-107",
+      "area": "Pořadatel a akce",
+      "title": "Číst a dokončit uložený návrh akce",
+      "phase": "10",
+      "scope": "Pořadatel",
+      "effect": "critical",
+      "mcp": [
+        "occasions.setup.inspect",
+        "occasions.setup.finalize"
+      ],
+      "description": "Původní revize a finální SQL materializace. Cílový pořadatel musí výslovně povolovat vytvoření akce; všechny uložené zdroje se ověří v rámci téhož příkazu. Uložené schválené nastavení může otevřít prodej. Opakování finálního návrhu vrátí původní výsledek.",
+      "sources": [
+        "database/functions/authoring/lifecycle.sql",
+        "database/functions/occasion_setup/finalize.sql",
+        "tools/festapp/src/operations/lifecycle.mjs"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
+    },
+    {
+      "id": "action-108",
+      "area": "Pořadatel a akce",
+      "title": "Spravovat citáty pořadatele",
+      "phase": "10",
+      "scope": "Pořadatel",
+      "effect": "write",
+      "mcp": [
+        "units.quotes.list",
+        "units.quotes.save",
+        "units.quotes.delete"
+      ],
+      "description": "Stejné verzované information příkazy jako QuotesTab. Omezený seznam, původní verze, datum, obsah a explicitní odstranění; HTML je obsah, nikoliv pokyny.",
+      "sources": [
+        "lib/components/unit/views/quotes_tab.dart",
+        "database/functions/authoring/agenda.sql",
+        "tools/festapp/src/operations/agenda.mjs"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
+    },
+    {
+      "id": "action-109",
+      "area": "Objednávky a platby",
+      "title": "Odstranit uložený záznam historie objednávky",
+      "phase": "10",
+      "scope": "Akce",
+      "effect": "critical",
+      "mcp": [
+        "history.delete"
+      ],
+      "description": "Samostatný destruktivní souhlas: odstranění historické evidence, nikoliv objednávky či platby. Stejný příkaz pro UI a MCP vyžaduje aktuálního správce skutečného pořadatele a uchová receipt. Aktuální syntetický řádek není historický záznam.",
+      "sources": [
+        "lib/components/eshop/views/orders_history_content.dart",
+        "lib/components/eshop/db_orders.dart",
+        "database/functions/authoring/order_deletion.sql",
+        "tools/festapp/src/operations/finance.mjs"
+      ],
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     }
   ],
   "dataQualityReview": {
-    "status": "Etapa 4: lokálně ověřené společné SQL a omezené datové kontrakty.",
-    "finding": "Návrh čekací listiny stránkuje před JSON agregací a zachovává globální FIFO výpočet. Quote používá skutečný příkaz v rollbacku; potvrzení drží stejný receipt a externí invoice fence. Naměřené velikosti jsou syntetické SQL/JSON vzorky, nikoli produkční latence nebo tokenové úspory.",
-    "nextStep": "Stejným způsobem prověřit rozsah a vlastníky etapy 5; rollout hotových etap zůstává samostatný krok.",
-    "evidence": "admin-form-completion-evidence-2026-10-26.json"
+    "status": "Etapa 6: skutečné PostgreSQL, SDK a Flutter kontroly.",
+    "finding": "Stejná první stránka 50 identit: 168416 -> 5111 serializovaných bajtů, 121 -> 50 přenesených účastníků. Jeden doménový request na obou stranách; scope/Auth lookupy měřeny nejsou. Lokální syntetická data nejsou produkční latence ani měření tokenů.",
+    "nextStep": "Etapa 7; produkční rollout etapy 6 je samostatný krok.",
+    "evidence": "admin-people-evidence-2026-10-27.json"
   },
-  "progress": "Etapy 0-2B jsou nasazené. Etapa 3 (#613), formulářové řezy 4A (#615), 4B (#616) a dokončení etapy 4 (#617) jsou publikované k review, bez produkčního nasazení. Etapa 4 nyní pokrývá veřejné odkazy, kompletní podporovaná pole a inline produkty, čekací nabídky včetně přijetí a administrátorské objednávky. Následuje etapa 5: nastavení akce a pořadatele.",
+  "progress": "Etapy 0-10 jsou lokálně implementované. Etapy 0-5 jsou nasazené; 6-10 čekají na běžnou kontrolu a samostatné schválené nasazení. Zbývající implementační etapy nejsou otevřené.",
   "phases": [
     {
       "id": "0",
@@ -1787,8 +2210,8 @@
     {
       "id": "3",
       "title": "E-mailové šablony a dědičnost",
-      "state": "local",
-      "status": "Lokálně hotovo, nenasazeno",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Sjednotit úpravy šablon pořadatele a akce, bannery a náhled výsledného e-mailu.",
       "example": "Upravit potvrzení objednávky pro konkrétní akci nebo vrátit šablonu k výchozí podobě pořadatele.",
       "result": "UI i MCP ukážou, odkud výsledná šablona pochází, a použijí stejné ukládání a renderer náhledu.",
@@ -1797,8 +2220,8 @@
     {
       "id": "4",
       "title": "Formuláře a prodejní nastavení",
-      "state": "local",
-      "status": "Lokálně hotovo, nenasazeno",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
       "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
       "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
@@ -1807,8 +2230,8 @@
     {
       "id": "5",
       "title": "Nastavení akce a pořadatele",
-      "state": "next",
-      "status": "Další na řadě",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
       "purpose": "Sjednotit změny základních údajů, termínů, funkcí, publikace a prodeje.",
       "example": "Posunout začátek akce nebo upravit její dostupné funkce.",
       "result": "Změny půjdou přes existující společné ukládání. Práva k jedné akci automaticky nedávají právo měnit celého pořadatele.",
@@ -1817,53 +2240,53 @@
     {
       "id": "6",
       "title": "Lidé, role, skupiny a dobrovolníci",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Sjednotit správu účastníků a jejich přístupů bez nechtěného rozšíření oprávnění.",
       "example": "Přidat člověka do skupiny nebo změnit roli dobrovolníka v rámci konkrétní akce.",
       "result": "Změna role se projeví v dostupných oprávněních a následné operace ověří aktuální stav.",
-      "note": ""
+      "note": "19 MCP nástrojů, původní SQL vlastníci, nový společný verzovaný unit user command. Oddělené souhlasy pro role a revokaci; souběhy ověřeny skutečnými row-lock waits."
     },
     {
       "id": "7",
       "title": "Pokročilý editor plánků a vzhled vstupenek",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Řešit geometrii, uspořádání, skupiny míst, texty, obrázky a tiskový vzhled.",
       "example": "Přesunout stoly, změnit nedělitelný výběr míst nebo upravit rozložení tištěné vstupenky.",
       "result": "Editor zachová rozpracovaný návrh, Uložit a Zrušit. Změny ověří obchodní vazby; tiskový vzhled potřebuje také ověřený PDF renderer.",
-      "note": "Provozní zásahy jako uvolnění rezervace nebo prohození míst už pokrývá nasazená etapa 2B."
+      "note": "Implementace a cílené scénáře lokálně ověřeny. Změna je součástí PR #641; produkce se neměnila."
     },
     {
       "id": "8",
       "title": "Program a další oblasti akce",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Postupně sjednotit program, místa konání, řečníky, služby a herní funkce podle dostupnosti.",
       "example": "Upravit čas programu, přiřadit řečníka nebo změnit místo konání.",
       "result": "Každá oblast naváže na svůj existující doménový příkaz a zachová vlastní pravidla i oprávnění.",
-      "note": ""
+      "note": "Implementace a cílené scénáře lokálně ověřeny. Změna je součástí PR #641; produkce se neměnila."
     },
     {
       "id": "9",
       "title": "Reporty, historie a exporty",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Doplnit přehledy a exporty o zpřístupněné oblasti a sjednotit význam jejich souhrnů.",
       "example": "Zjistit skutečný počet platných vstupenek, vývoj prodeje nebo historii změn.",
       "result": "Součty, stavy a filtry budou mít stejný význam v tabulce administrace, exportu i odpovědi MCP.",
-      "note": "Část objednávkových reportů už existuje. Tato etapa rozšiřuje a sjednocuje další přehledy."
+      "note": "Implementace a cílené scénáře lokálně ověřeny. Změna je součástí PR #641; produkce se neměnila."
     },
     {
       "id": "10",
       "title": "Finance a životní cyklus akcí",
-      "state": "planned",
-      "status": "Plánováno",
+      "state": "local",
+      "status": "Lokálně hotovo, nenasazeno",
       "purpose": "Dokončit citlivé bankovní operace a zbývající agendu jako kopírování, finalizaci či mazání akce.",
       "example": "Spravovat bankovní vazbu nebo bezpečně zkopírovat akci včetně souvisejících souborů.",
       "result": "Citlivé kroky zachovají finanční oprávnění a ověří skutečný výsledek. Výpadek nesmí způsobit dvojí externí účinek.",
-      "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
+      "note": "Implementace a cílené scénáře lokálně ověřeny. Změna je součástí PR #641; produkce se neměnila."
     }
   ],
-  "phaseSummary": "Nasazeno 0-2B; etapy 3 a 4 lokálně dokončené, nenasazené. Další je etapa 5."
+  "phaseSummary": "Nasazeno 0-5; etapy 6-10 lokálně hotové, v PR #641 a bez nového produkčního nasazení."
 }

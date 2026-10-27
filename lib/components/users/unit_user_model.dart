@@ -6,6 +6,7 @@ import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class UnitUserModel extends ITrinaRowModel {
+  int aggregateVersion;
   int? unit;
   String? user;
   String? name;
@@ -18,6 +19,7 @@ class UnitUserModel extends ITrinaRowModel {
   Map<String, dynamic>? data;
 
   UnitUserModel({
+    this.aggregateVersion = 0,
     this.unit,
     this.user,
     this.name,
@@ -32,6 +34,7 @@ class UnitUserModel extends ITrinaRowModel {
 
   factory UnitUserModel.fromJson(Map<String, dynamic> json) {
     return UnitUserModel(
+      aggregateVersion: TrinaRowVersion.read(json),
       unit: json[Tb.unit_users.unit],
       user: json[Tb.occasion_users.user],
       name: json[Tb.occasion_users.data_name]?.toString().trim(),
@@ -55,6 +58,7 @@ class UnitUserModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     final Map<String, TrinaCell> cells = {
+      TrinaRowVersion.column: TrinaRowVersion.cell(aggregateVersion),
       UserColumns.ID: TrinaCell(value: user),
       UserColumns.UNIT: TrinaCell(value: unit),
       UserColumns.NAME: TrinaCell(value: name ?? ""),
@@ -75,6 +79,7 @@ class UnitUserModel extends ITrinaRowModel {
 
   static UnitUserModel fromPlutoJson(Map<String, dynamic> json) {
     return UnitUserModel(
+        aggregateVersion: TrinaRowVersion.read(json),
         unit: json[UserColumns.UNIT],
         user: json[UserColumns.ID],
         name: json[UserColumns.NAME],

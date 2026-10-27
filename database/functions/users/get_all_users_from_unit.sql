@@ -30,6 +30,7 @@ BEGIN
   FROM (
     SELECT jsonb_build_object(
       'user', ui.id,
+      'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='unit_user' AND scope_type='unit' AND scope_id=unit_id AND aggregate_id=ui.id::text),0),
       'name', ui.name,
       'surname', ui.surname,
       'sex', ui.sex,

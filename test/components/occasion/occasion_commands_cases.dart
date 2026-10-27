@@ -21,7 +21,9 @@ void main() {
     () {
       final occasion = OccasionModel(
         id: 7,
-        isOpen: true, isHidden: false, isPromoted: false,
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
         aggregateVersion: 4,
         data: {
           'reply_to': 'reply@example.invalid',
@@ -226,7 +228,7 @@ void main() {
           ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
-          'data': name.startsWith('duplicate')
+          'data': params['p_action'] == 'copy'
               ? {'occasionId': 12}
               : <String, dynamic>{},
           'sync': {'replacements': <Object>[]},
@@ -236,16 +238,13 @@ void main() {
 
     expect(await commands.duplicate(7), 12);
     await commands.delete(12);
-    expect(calls, [
-      'duplicate_occasion_client_sync_v1',
-      'delete_occasion_client_sync_v1',
-    ]);
+    expect(calls, ['start_occasion_lifecycle', 'start_occasion_lifecycle']);
   });
 
   test('occasion copy sends the selected target unit', () async {
     final commands = SupabaseOccasionCommands.withTransport(
       ClientCommandTransport((name, params) async {
-        expect(name, 'duplicate_occasion_client_sync_v1');
+        expect(name, 'start_occasion_lifecycle');
         expect(params['p_occasion'], 7);
         expect(params['p_target_unit'], 23);
         expect(params['p_locale'], 'cs');

@@ -1,3 +1,5 @@
+import '../support/fixtures/client_command_response_fixture.dart';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -62,7 +64,7 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
-      if (request.url.path == '/rest/v1/rpc/update_bank_account_user') {
+      if (request.url.path == '/rest/v1/rpc/manage_bank_authoring') {
         bankRpcDispatches++;
         return http.Response(
           jsonEncode({'code': '42501', 'message': 'Bank role revoked'}),
@@ -71,10 +73,16 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
-      if (request.url.path == '/rest/v1/rpc/update_unit_user') {
+      if (request.url.path == '/rest/v1/rpc/save_unit_user_client_sync_v1') {
         unitUserUpdates++;
+        final input = jsonDecode(request.body) as Map;
         return http.Response(
-          jsonEncode({'code': 200}),
+          jsonEncode(
+            commandResponseFixture(
+              input['p_command_id'],
+              data: {'userId': input['p_user'], 'version': 1},
+            ),
+          ),
           200,
           request: request,
           headers: {'content-type': 'application/json'},

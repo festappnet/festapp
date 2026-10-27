@@ -10,6 +10,7 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_unit bigint;
   v_event_ids bigint[]; v_group_ids bigint[]; v_private_impacts jsonb;
   v_publishable boolean; v_actor_replacements jsonb:='[]'::jsonb; v_before_state jsonb; v_after_state jsonb; v_old_impacts jsonb;
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
   SELECT o.unit,NOT o.is_hidden INTO v_unit,v_publishable
     FROM public.occasions o WHERE o.id=p_occasion;
   IF v_actor IS NULL OR NOT public.get_can_manage_occasion_users(p_occasion) THEN
@@ -137,6 +138,7 @@ DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_private_impacts jsonb; v_publishable boolean;
   v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
   IF v_actor IS NULL OR NOT public.can_manage_occasion_participants(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;

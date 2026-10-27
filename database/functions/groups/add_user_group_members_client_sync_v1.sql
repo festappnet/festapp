@@ -2,6 +2,7 @@ CREATE OR REPLACE FUNCTION public.add_user_group_members_client_sync_v1(p_occasi
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); begin_result jsonb; hash text; members jsonb; users uuid[]; v_version bigint; changed integer;
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
  PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
  IF cardinality(p_users)>5000 THEN RAISE invalid_parameter_value USING MESSAGE='too many members'; END IF;
  p_users:=ARRAY(SELECT DISTINCT id FROM unnest(p_users) id ORDER BY id);
@@ -12,6 +13,7 @@ BEGIN
  hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,'group',p_group,'users',p_users)::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'profile.group.members.add',p_occasion,actor,hash);
  PERFORM public.lock_group_occasion_internal_v1(p_occasion);
+ IF NOT public.can_add_group_members(p_occasion,p_group) THEN RAISE insufficient_privilege USING MESSAGE='group editor required'; END IF;
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;
  PERFORM 1 FROM public.user_group_info WHERE id=p_group AND occasion=p_occasion FOR UPDATE;
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='group unavailable'; END IF;

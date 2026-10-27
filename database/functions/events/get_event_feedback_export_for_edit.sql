@@ -1,6 +1,6 @@
-CREATE OR REPLACE FUNCTION public.get_event_feedback_export_for_edit(
+CREATE OR REPLACE FUNCTION public.get_event_feedback_export_page_internal_v1(
     p_occasion bigint
-)
+,p_after bigint DEFAULT NULL,p_limit integer DEFAULT NULL)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -45,7 +45,7 @@ BEGIN
         '[]'::jsonb
     )
     INTO v_items
-    FROM public.event_feedback f
+    FROM (SELECT * FROM public.event_feedback WHERE occasion=p_occasion AND (p_after IS NULL OR id>p_after) ORDER BY id LIMIT p_limit) f
     JOIN public.events e ON e.id = f.event
     LEFT JOIN public.user_info ui ON ui.id = f."user"
     WHERE f.occasion = p_occasion;
@@ -54,7 +54,10 @@ BEGIN
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.get_event_feedback_export_for_edit(bigint)
-  FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_event_feedback_export_for_edit(bigint)
-  TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.get_event_feedback_export_page_internal_v1(bigint,bigint,integer) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.get_event_feedback_export_for_edit(p_occasion bigint)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_event_feedback_export_page_internal_v1(p_occasion,NULL,NULL);
+$$;
+REVOKE ALL ON FUNCTION public.get_event_feedback_export_for_edit(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.get_event_feedback_export_for_edit(bigint) TO authenticated;

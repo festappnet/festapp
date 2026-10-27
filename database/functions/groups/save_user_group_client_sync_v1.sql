@@ -14,6 +14,7 @@ DECLARE
   v_current_place jsonb; v_requested_place jsonb; v_place_changed boolean:=false;
   v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
  PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   v_id:=(p_group->>'id')::bigint;
   IF v_actor IS NULL OR NOT public.can_write_group(p_occasion,v_id) THEN
