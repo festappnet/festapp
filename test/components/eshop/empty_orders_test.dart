@@ -1,3 +1,5 @@
+import 'package:fstapp/components/notification_center/notification_center_controller.dart';
+import 'package:fstapp/components/notification_center/notification_center_panel.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/views/order_email_repair_dialog.dart';
@@ -42,6 +44,8 @@ void main() {
   var fail = false;
   var includeOrder = false;
   var repairReads = 0;
+  var groupSelection = false;
+  Map<String, dynamic>? groupRequest;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -52,6 +56,7 @@ void main() {
           autoRefreshToken: false, localStorage: EmptyLocalStorage()),
       httpClient: MockClient((request) async {
         final isOrders = request.url.path.endsWith('/get_orders_tab_data');
+        if (isOrders && groupSelection) groupRequest = jsonDecode(request.body) as Map<String,dynamic>;
         if (request.url.path.endsWith('/get_order_history')) repairReads++;
         if (fail && isOrders) {
           return http.Response(
@@ -78,6 +83,10 @@ void main() {
                     : <dynamic>[],
               }
             : {'id': 1, 'unit': 1, 'link': 'empty', 'data': {}, 'features': []};
+        if (isOrders && groupSelection) {
+          data['orders'] = [for (final id in [4,5,6]) {'id':id,'created_at':'2026-10-27T12:00:00Z','order_sequence':id,'order_symbol':'ORDER$id','occasion':1,'state':'ordered','currency_code':'CZK','data':{'email':'customer@example.invalid'}}];
+          data['notification_order_ids'] = [4,5];
+        }
         return http.Response(jsonEncode(data), 200,
             request: request, headers: {'content-type': 'application/json'});
       }),
@@ -159,5 +168,43 @@ void main() {
       expect(grid.stateManager.currentCell!.key, isNot(current));
     });
   }
+
+  testWidgets('group navigation checks all matching orders in the existing orders RPC', (tester) async {
+    fail = false; includeOrder = true; groupSelection = true; groupRequest = null;
+    addTearDown(() { includeOrder = false; groupSelection = false; });
+    final group = {'id':'order-day:1:order_created:2026-10-27','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    await showOrders(tester, path: Uri(path:'/empty',queryParameters:{'notificationGroup':jsonEncode(group)}).toString());
+    final grid = tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>)).controller;
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked), [true,true,false]);
+    expect(groupRequest?['p_notification_group'],group);
+    expect(find.byType(OrderEmailRepairDialog),findsNothing);
+  });
+
+  testWidgets('localized notification names fit one line and metadata retains exact counts', (tester) async {
+    final loader = FontLoader('NotificationPreviewFont')..addFont(Future.value(ByteData.sublistView(File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync())));
+    await loader.load();
+    final c = NotificationCenterController();
+    addTearDown(c.dispose);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    c.snapshotAt = DateTime(2026,10,27);
+    c.items = [NotificationItem.fromJson({'id':'names','kind':'order_created','occasionId':1,'occasionTitle':'Ples','day':'2026-10-26','data':{'activityCount':8,'placeCount':18,'relatedOrders':true,'previewContacts':[{'name':'Jana','surname':'Czernérová'},{'name':'Radomír','surname':'Káňa'},{'name':'Miroslav','surname':'Krajíček'}]}})];
+    for(final width in [800.0,390.0,320.0]) {
+      tester.view.physicalSize = Size(width,1200); tester.view.devicePixelRatio=1;
+      await tester.pumpWidget(EasyLocalization(supportedLocales:const [Locale('cs')],startLocale:const Locale('cs'),path:'unused',assetLoader:_Translations(),child:Builder(builder:(context)=>MaterialApp(builder:DependencyMaterialBridge.builder,locale:context.locale,supportedLocales:context.supportedLocales,localizationsDelegates:[...context.localizationDelegates,...GlobalMaterialLocalizations.delegates],theme:ThemeData(fontFamily:'NotificationPreviewFont'),home:NotificationCenterPanel(controller:c,onDetail:(_){})))));
+      await tester.pumpAndSettle();
+      final preview = tester.widget<Text>(find.byKey(const ValueKey('notification-preview-names')));
+      expect(preview.maxLines,1);
+      if(width>=390) {
+        expect(preview.data,contains('Jana Czernérová'));
+        expect(preview.data,contains('další'));
+      } else {
+        expect(preview.data,anyOf(contains('Jana Czernérová'),'8 nových objednávek'));
+      }
+      expect(preview.data,isNot(contains('…')));
+      expect(find.text('Včera · 8 objednávek · 18 míst'),findsOneWidget);
+      expect(tester.takeException(),isNull);
+    }
+  });
 
 }

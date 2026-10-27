@@ -2529,6 +2529,18 @@
     "duplicateBlock": "Блок {{tickets}} можна використовувати лише один раз."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} замовлення",
+      "few": "{count} замовлення",
+      "many": "{count} замовлень",
+      "other": "{count} замовлення"
+    },
+    "others": {
+      "one": "і ще {count}",
+      "few": "і ще {count}",
+      "many": "і ще {count}",
+      "other": "і ще {count}"
+    },
     "orderActivities": "Зміни замовлень",
     "expand": "Розгорнути",
     "collapse": "Згорнути",
