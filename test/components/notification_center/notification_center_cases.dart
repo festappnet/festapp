@@ -148,16 +148,7 @@ void main() {
       final oldRow = find.byKey(const ValueKey('notification-item-4'));
       final newRow = find.byKey(const ValueKey('notification-item-5'));
       expect(tester.widget<Material>(oldRow).color, Colors.transparent);
-      expect(tester.widget<Material>(newRow).color, Colors.transparent);
-      final oldAge = tester.widget<Text>(
-        find.byKey(const ValueKey('notification-age-4')),
-      );
-      final newAge = tester.widget<Text>(
-        find.byKey(const ValueKey('notification-age-5')),
-      );
-      expect(oldAge.style?.fontWeight, FontWeight.w400);
-      expect(newAge.style?.fontWeight, FontWeight.w500);
-      expect(newAge.style?.color, isNot(oldAge.style?.color));
+      expect(tester.widget<Material>(newRow).color, isNot(Colors.transparent));
       for (final entry in [
         (oldRow, FontWeight.w400),
         (newRow, FontWeight.w600),
@@ -593,7 +584,7 @@ void main() {
       expect(find.byType(PopupMenuButton<bool>), findsNWidgets(2));
       expect(find.byIcon(Icons.expand_more), findsNothing);
       expect(find.text('HIDDEN'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('notification-item-first')));
+      await tester.tap(find.text('contact@example.invalid'));
       expect(selected, ['first']);
       await c.loadMore();
       await tester.pumpAndSettle();
@@ -793,7 +784,7 @@ void main() {
   );
 
   testWidgets(
-    'occasions stay separate, ages are row metadata and summary names adapt to width',
+    'occasion day headings stay separate and summary names adapt to width',
     (tester) async {
       final c = NotificationCenterController();
       addTearDown(c.dispose);
@@ -826,6 +817,7 @@ void main() {
           data: {'activityCount': 3, 'relatedOrders': true},
         ),
       ];
+      String? widePreview;
       for (final sample in [(800.0, 1.0), (320.0, 1.0), (320.0, 2.0)]) {
         final (width, scale) = sample;
         tester.view.physicalSize = Size(width, 1600);
@@ -846,36 +838,25 @@ void main() {
         // At 2x text the later occasion can be outside ListView's cache extent.
         if (scale == 1) {
           expect(find.text('Same title'), findsNWidgets(2));
-          expect(find.textContaining('NotificationCenter.today'), findsNWidgets(2));
+          expect(find.text('NotificationCenter.today'), findsNWidgets(2));
         } else {
           expect(find.text('Same title'), findsWidgets);
-          expect(find.textContaining('NotificationCenter.today'), findsWidgets);
+          expect(find.text('NotificationCenter.today'), findsWidgets);
         }
-        expect(find.textContaining('NotificationCenter.daysAgo.other'), findsOneWidget);
-        final age = find.byKey(const ValueKey('notification-age-old'));
-        expect(
-          tester.widget<Text>(age).data,
-          contains('NotificationCenter.daysAgo.other · NotificationCenter.orders.other'),
-        );
-        final ageHeaders = find.ancestor(
-          of: age,
-          matching: find.byWidgetPredicate(
-            (widget) => widget is Semantics && widget.properties.header == true,
-          ),
-        );
-        expect(ageHeaders, findsNothing);
+        expect(find.text('NotificationCenter.daysAgo.other'), findsOneWidget);
         final preview = tester
             .widget<Text>(
               find.byKey(const ValueKey('notification-preview-names')),
             )
             .data!;
-        final previewWidget = tester.widget<Text>(find.byKey(const ValueKey('notification-preview-names')));
-        expect(previewWidget.maxLines, 1);
-        expect(previewWidget.overflow, TextOverflow.ellipsis);
-        // This suite deliberately has no translation catalog; long missing-key
-        // placeholders may force the safe activity-title fallback at any width.
-        expect(preview, anyOf(contains('Jan Novák'),
-            'NotificationCenter.activityCounts.order_created.other'));
+        expect(preview, contains('Jan Novák'));
+        if (width == 800) {
+          widePreview = preview;
+          expect(preview, contains('Eva Malá'));
+        } else {
+          expect(preview.length, lessThan(widePreview!.length));
+          expect(preview, isNot(contains('Eva Malá')));
+        }
         expect(tester.takeException(), isNull);
       }
     },
