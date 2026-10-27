@@ -1,45 +1,46 @@
 # Notification center Flutter adapter
 
-The controller owns a personal overview and one opaque cursor. The server owns
-ordering, complete snapshot counts, delivery and current permissions. See the
-[SQL contract](../../../database/functions/notification_center/README.md).
+The controller owns one personal daily overview and opaque cursor. The server owns
+complete authorized counts, bounded contact previews, ordering and acknowledgment.
+See the [SQL contract](../../../database/functions/notification_center/README.md).
 
-The panel groups the overview by occasion ID in first appearance order, with one
-heading and mute menu per occasion. Same-name occasions remain distinct. Order
-actions of each kind are one row per occasion, across the authorized retained
-snapshot. The count means events of that kind, not seats or paid orders. A single
-action retains its contact/place details; a summary previews the latest contact
-with an explicit label rather than inventing distinct customers. Selecting either
-opens the occasion's existing order overview, without expansion or an order modal.
+The panel has one heading and mute menu per occasion ID, then quieter calendar-day
+headings: Today, Yesterday, relative days within the last week, older local dates.
+Same-name occasions remain distinct. Only the same action kind on the same day of
+the same occasion combines. Selecting a summary opens the existing common order
+page directly; there is no expansion, unread filter or exact time in the list.
 
-All rows use a leading kind icon, title, optional detail and a trailing unread dot.
-The list has no timestamps or unread filter. Email/bank incidents remain separate
-and retain their authorized detail and recovery state; their problems never merge
-with order actions. Organization-only incidents keep their scope and related
-links. Informational form/capacity rows have no fake navigation affordance.
+A summary shows its activity count and an exact historical place total when all
+underlying counts were captured and multiple places are meaningful. One-order =
+one-application flows omit the redundant place total. Missing legacy counts never
+turn into a partial sum; singleton facts retain their existing presentation.
+The server previews at most three latest authorized contacts. The client uses the
+shared customer label rule, removes duplicates/empty values, and measures actual
+text width at the current text scale to choose how many names fit. Place totals
+have priority and wrap independently when a name needs its own line.
 
-`NotificationItemPresenter` and `OrderModel.toCustomerData` use the shared core
-customer label rule. Counts for individual tickets retain their existing historical
-meaning, and capacity recovery does not imply that a form or sale has opened.
+One RPC (`get_notification_center_daily_overview`) opens and acknowledges the
+snapshot, fetches another page, or refreshes all loaded IDs and badge state. Opening
+uses `p_open=true`; the watermark commits only after all overview data succeeds.
+Other reads never acknowledge. The new function requires migration
+`20261027220000_notification_center_daily_overview.sql` before deploying the client.
+Released clients retain their original overview/temporal APIs.
 
-Acknowledgment deliberately retains the existing contract: explicit open/snapshot
-refresh confirms the snapshot, including unloaded history. Rows retain the pre-open
-watermark for unread styling during that opening. This is not persistent per-item
-read tracking. Generation/revision/badge fences reject stale results after identity,
-context, foreground or snapshot changes. Pagination and mute never acknowledge.
+Web uses the browser's IANA timezone; native uses the application's selected zone
+from the shared time owner. The zone, snapshot instant and returned snapshot day
+are frozen for pagination/refresh and relative labels. PostgreSQL computes day
+boundaries in that zone, including DST; UTC offsets are never guessed.
 
-Every 15 seconds an open panel rechecks loaded IDs in batches of 200 through the
-same authorized overview query. Counts and contacts update; revoked IDs disappear;
-positions and unread sequences stay fixed, and new arrivals wait for explicit
-refresh. Closed panels poll the badge every 60 seconds; background routes pause.
+When closed, only the lightweight existing badge RPC runs every 60 seconds: it
+checks for an eligible unread delivery without hydrating contacts or computing
+summary/place totals. Open panels refresh loaded data every 15 seconds through
+one RPC. Background/inactive routes pause. New arrivals wait for explicit refresh,
+and generation/revision/badge fences reject stale identity or snapshot responses.
+Email/bank incidents remain separate, with authorized detail/recovery behavior and
+safe organization-only affected links. Informational rows have no fake navigation.
 
-The compact overview RPC requires migration
-`20261027210000_notification_center_overview.sql` before deploying the client.
-The released older timeline RPCs remain available for older clients; this adapter
-has no temporal child state or expansion calls. There is no fallback data path.
-
-Focused tests are registered as `notification_center` in
-`default_locale_5_cases.dart`, through `shared_default_3_test.dart`. The real themed
-panel can be inspected with `test/browser/notification_visual_preview.dart`, which
-uses synthetic data without backend calls. Full-app fixtures remain in
-`test/browser/notification_center_e2e.dart` for an isolated local Supabase tenant.
+Focused tests register as `notification_center` in `default_locale_5_cases.dart`
+through `shared_default_3_test.dart`; relative labels have the existing standalone
+time test. `test/browser/notification_visual_preview.dart` renders the real themed
+panel with synthetic data. Full-app fixtures remain in
+`test/browser/notification_center_e2e.dart` for isolated local Supabase testing.

@@ -4476,7 +4476,12 @@
     "heldForWaiting": "Held for waiting list: {count}",
     "needsAttention": "Needs attention",
     "detail": "Details",
-    "latestCustomer": "Latest: {name}",
+    "daysAgo": {
+      "one": "{count} day ago",
+      "few": "{count} days ago",
+      "many": "{count} days ago",
+      "other": "{count} days ago"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} new order",

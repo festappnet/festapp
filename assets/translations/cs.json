@@ -4478,7 +4478,12 @@
     "heldForWaiting": "Drženo pro pořadník: {count}",
     "needsAttention": "Vyžaduje pozornost",
     "detail": "Detail",
-    "latestCustomer": "Poslední: {name}",
+    "daysAgo": {
+      "one": "Před {count} dnem",
+      "few": "Před {count} dny",
+      "many": "Před {count} dny",
+      "other": "Před {count} dny"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} nová objednávka",

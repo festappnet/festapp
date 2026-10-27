@@ -2460,7 +2460,12 @@
     "heldForWaiting": "Zarezerwowane dla listy oczekujących: {count}",
     "needsAttention": "Wymaga uwagi",
     "detail": "Szczegóły",
-    "latestCustomer": "Ostatnio: {name}",
+    "daysAgo": {
+      "one": "{count} dzień temu",
+      "few": "{count} dni temu",
+      "many": "{count} dni temu",
+      "other": "{count} dni temu"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} nowe zamówienie",

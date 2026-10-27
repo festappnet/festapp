@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'notification_timezone.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,13 +20,14 @@ class NotificationItem {
       kind = json['kind'] as String? ?? '',
       status = json['status'] as String? ?? '',
       occurredAt = DateTime.tryParse(json['occurredAt']?.toString() ?? ''),
+      day = DateTime.tryParse(json['day']?.toString() ?? ''),
       occasionLink = json['occasionLink'] as String?,
       data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
   final String id, kind, status;
   final int section, sequence;
   final int? occasionId;
   final String? occasionTitle;
-  final DateTime? occurredAt;
+  final DateTime? occurredAt, day;
   final String? occasionLink;
   final Map<String, dynamic> data;
   bool get isSummary => data['activityCount'] is int;
@@ -32,12 +35,17 @@ class NotificationItem {
 
 /// Only open acknowledges. Generation and revision fences reject stale polls.
 class NotificationCenterController extends ChangeNotifier {
-  NotificationCenterController({NotificationRead? read})
-    : _read =
-          read ??
-          ((name, params) =>
-              Supabase.instance.client.rpc(name, params: params));
+  NotificationCenterController({
+    NotificationRead? read,
+    String Function()? timezone,
+  }) : _timezone = timezone ?? NotificationCenterTimezone.name,
+       _read =
+           read ??
+           ((name, params) =>
+               Supabase.instance.client.rpc(name, params: params));
   final NotificationRead _read;
+  final String Function() _timezone;
+  String displayTimezone = 'UTC';
   int? organization, currentOccasion;
   String? user;
   int _generation = 0, _revision = 0, _badgeRequest = 0;
@@ -56,9 +64,12 @@ class NotificationCenterController extends ChangeNotifier {
       item.sequence > previousReadThrough! &&
       item.sequence <= snapshot;
   DateTime? snapshotAt;
+  DateTime? snapshotDay;
   Map<String, dynamic> get _overviewScope => {
     ..._scope,
     'p_snapshot': snapshot,
+    'p_snapshot_at': snapshotAt?.toUtc().toIso8601String(),
+    'p_timezone': displayTimezone,
   };
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
@@ -94,6 +105,8 @@ class NotificationCenterController extends ChangeNotifier {
     snapshot = 0;
     previousReadThrough = null;
     snapshotAt = null;
+    snapshotDay = null;
+    displayTimezone = 'UTC';
     panelOpen = false;
     items = [];
     occasions = [];
@@ -123,35 +136,25 @@ class NotificationCenterController extends ChangeNotifier {
     _refreshing = true;
     final generation = _generation, revision = _revision;
     try {
-      await refreshBadge();
-      if (!panelOpen ||
-          loading ||
-          !foreground ||
-          organization == null ||
-          user == null ||
-          generation != _generation ||
-          revision != _revision) {
+      if (!panelOpen) {
+        await refreshBadge();
+        return;
+      }
+      if (loading || !foreground || organization == null || user == null) {
         return;
       }
       final captured = items.map((item) => item.id).toList();
+      final result = await _read('get_notification_center_daily_overview', {
+        ..._overviewScope,
+        'p_ids': captured,
+      });
+      if (generation != _generation || revision != _revision) return;
       final updates = <String, NotificationItem>{};
-      for (var start = 0; start < captured.length; start += 200) {
-        final result = await _read('get_notification_center_overview', {
-          ..._overviewScope,
-          'p_ids': captured.sublist(
-            start,
-            (start + 200).clamp(0, captured.length),
-          ),
-          'p_limit': 200,
-        });
-        if (generation != _generation || revision != _revision) return;
-        for (final row in result['items'] as List? ?? []) {
-          final item = NotificationItem.fromJson(
-            Map<String, dynamic>.from(row),
-          );
-          updates[item.id] = item;
-        }
+      for (final row in result['items'] as List? ?? []) {
+        final item = NotificationItem.fromJson(Map<String, dynamic>.from(row));
+        updates[item.id] = item;
       }
+      if (result['unread'] is bool) unread = result['unread'] as bool;
       // Recheck permissions and live facts without moving snapshot positions or
       // inserting arrivals. Missing IDs are revoked, not cached personal data.
       items = [
@@ -162,6 +165,7 @@ class NotificationCenterController extends ChangeNotifier {
               'kind': update.kind,
               'status': update.status,
               'occurredAt': item.occurredAt?.toIso8601String(),
+              'day': item.day?.toIso8601String().split('T').first,
               'section': item.section,
               'sequence': item.sequence,
               'occasionId': item.occasionId,
@@ -261,12 +265,15 @@ class NotificationCenterController extends ChangeNotifier {
     failed = pageFailed = refreshFailed = false;
     notifyListeners();
     try {
-      final result = await _read('open_notification_center', {
+      final zone = _timezone();
+      final result = await _read('get_notification_center_daily_overview', {
         ..._scope,
+        'p_timezone': zone,
+        'p_open': true,
         'p_limit': 30,
       });
       if (generation != _generation || revision != _revision) return;
-      if (result['timelineSupported'] != true) {
+      if (result['dailySupported'] != true) {
         _unsupported = true;
         enabled = unread = false;
         items = [];
@@ -276,22 +283,18 @@ class NotificationCenterController extends ChangeNotifier {
       }
       final newSnapshot = result['snapshot'] as int? ?? 0;
       final at = DateTime.parse(result['snapshotAt'] as String);
-      final overview = await _read('get_notification_center_overview', {
-        ..._scope,
-        'p_snapshot': newSnapshot,
-        'p_limit': 30,
-      });
-      if (generation != _generation || revision != _revision) return;
       snapshot = newSnapshot;
       previousReadThrough = result['previousReadThrough'] as int?;
       snapshotAt = at;
-      items = (overview['items'] as List? ?? [])
+      snapshotDay = DateTime.tryParse(result['snapshotDay']?.toString() ?? '');
+      displayTimezone = zone;
+      items = (result['items'] as List? ?? [])
           .map((e) => NotificationItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       occasions = (result['occasions'] as List? ?? [])
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
-      nextCursor = overview['nextCursor'];
+      nextCursor = result['nextCursor'];
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
@@ -320,7 +323,7 @@ class NotificationCenterController extends ChangeNotifier {
     pageFailed = false;
     notifyListeners();
     try {
-      final result = await _read('get_notification_center_overview', {
+      final result = await _read('get_notification_center_daily_overview', {
         ..._overviewScope,
         'p_cursor': nextCursor,
         'p_limit': 30,

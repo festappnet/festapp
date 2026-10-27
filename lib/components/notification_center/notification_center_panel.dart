@@ -5,6 +5,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 import 'notification_center_controller.dart';
 import 'notification_center_strings.dart';
+import 'notification_center_time.dart';
 import 'notification_item_presenter.dart';
 
 class NotificationCenterPanel extends StatefulWidget {
@@ -203,7 +204,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   ) sync* {
     final byOccasion = <Object, List<NotificationItem>>{};
     for (final item in items) {
-      (byOccasion[item.occasionId ?? item.id] ??= []).add(item);
+      (byOccasion[item.occasionId ?? 'organization'] ??= []).add(item);
     }
     for (final entry in byOccasion.entries) {
       final first = entry.value.first;
@@ -237,9 +238,57 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ],
               ),
             ),
-          for (final item in entry.value) _item(context, item),
+          ..._dayRows(context, entry.value),
         ],
       );
+    }
+  }
+
+  Iterable<Widget> _dayRows(
+    BuildContext context,
+    List<NotificationItem> items,
+  ) sync* {
+    final byDay = <DateTime?, List<NotificationItem>>{};
+    for (final item in items) {
+      final value = item.day ?? item.occurredAt?.toLocal();
+      final day = value == null
+          ? null
+          : DateTime(value.year, value.month, value.day);
+      (byDay[day] ??= []).add(item);
+    }
+    final locale =
+        (EasyLocalization.of(context)?.locale ??
+                Localizations.localeOf(context))
+            .toLanguageTag();
+    for (final entry in byDay.entries) {
+      if (entry.key case final day?) {
+        yield Padding(
+          key: ValueKey(
+            'notification-day-${items.first.occasionId ?? 'organization'}-${day.toIso8601String()}',
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+          child: Semantics(
+            header: true,
+            child: Text(
+              NotificationCenterTime.dayHeading(
+                day,
+                locale,
+                now:
+                    widget.controller.snapshotDay ??
+                    widget.controller.snapshotAt,
+              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        );
+      }
+      for (final item in entry.value) {
+        yield _item(context, item);
+      }
     }
   }
 
@@ -297,6 +346,73 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     'occasion_joined' => Icons.people_outline,
     _ => Icons.event_note_outlined,
   };
+
+  Widget _summarySubtitle(
+    BuildContext context,
+    NotificationItemPresenter presentation,
+    List<String> details,
+  ) {
+    final names = presentation.previewNames;
+    final total = presentation.item.data['activityCount'] as int;
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      height: 1.4,
+      letterSpacing: 0,
+    );
+    final textScaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final prefix = details.isEmpty ? '' : '${details.join(' · ')} · ';
+    bool fits(String text, double width) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: direction,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout(maxWidth: width);
+      final fits = !painter.didExceedMaxLines;
+      painter.dispose();
+      return fits;
+    }
+
+    String preview(double width, String prefix) {
+      for (var count = names.length; count > 0; count--) {
+        final text =
+            '$prefix${names.take(count).join(', ')}${total > count ? ' …' : ''}';
+        if (fits(text, width)) return text;
+      }
+      return '$prefix${names.first} …';
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final wrapPlaces =
+            prefix.isNotEmpty && !fits('$prefix${names.first}', width);
+        final text = preview(width, wrapPlaces ? '' : prefix);
+        final namesText = Text(
+          text,
+          key: ValueKey('notification-preview-${presentation.item.id}'),
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+        return Semantics(
+          label: '$prefix${names.join(', ')}',
+          excludeSemantics: true,
+          child: wrapPlaces
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(details.join(' · '), style: style),
+                    const SizedBox(height: 4),
+                    namesText,
+                  ],
+                )
+              : namesText,
+        );
+      },
+    );
+  }
 
   Widget _item(BuildContext context, NotificationItem item) {
     final theme = Theme.of(context);
@@ -361,7 +477,12 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               letterSpacing: 0,
                             ),
                           ),
-                          if (details.isNotEmpty) ...[
+                          if (item.isSummary &&
+                              (item.data['activityCount'] as int) > 1 &&
+                              presentation.previewNames.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            _summarySubtitle(context, presentation, details),
+                          ] else if (details.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text.rich(
                               TextSpan(
