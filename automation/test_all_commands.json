@@ -209,5 +209,15 @@
     "node",
     "--test",
     "automation/tests/platform_updates.test.mjs"
+  ],
+  [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "automation/tests",
+    "-p",
+    "test_functions_restart.py"
   ]
 ]

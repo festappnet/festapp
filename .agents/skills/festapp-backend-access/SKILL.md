@@ -59,6 +59,20 @@ route; Studio and unrelated applications need no policy changes.
 
 ## Authorized backend releases
 
+For a Functions code reload, use the repository's
+`automation/hetzner-supabase/runtime/restart-production-functions.py`: run it
+without arguments first, then with `--restart` after the authorized release
+workflow pauses and drains email. It checks the complete canonical Compose
+configuration against the running container, then restarts that same container
+without recreating it or replacing its environment. Resume email only after the
+worker probe passes, and verify `get_email_delivery_health()` after resuming.
+The tool leaves email paused on failure; retain that state while recovering.
+Never use an ad-hoc `docker compose -f ... up` to reload Functions. Explicit
+`-f` arguments replace the installed `COMPOSE_FILE` list and previously dropped
+the email and monitoring settings in production. A deliberate environment/image
+change needs its own reviewed configuration migration using the complete
+installed overlay list, pause/drain, health checks and rollback evidence.
+
 Use SSH and `docker exec -i supabase-db psql -X -U postgres -d <verified-database>
 -v ON_ERROR_STOP=1`, following the repository's approved release workflow. Do not
 retrieve postgres passwords or Supabase service-role keys. Use exact canonical
