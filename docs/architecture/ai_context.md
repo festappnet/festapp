@@ -21,6 +21,16 @@ interface only for a project they actually grant access to.
 
 ## Critical: Split Brain Logic
 
+Functions code reloads must use
+`automation/hetzner-supabase/runtime/restart-production-functions.py`, with the
+email queue paused and drained before `--restart`. It preserves the existing
+container and environment and rejects configuration drift. Never recreate
+Functions with a partial `docker compose -f` list: that replaces `COMPOSE_FILE`
+and caused a production email outage on 2026-10-27. Environment/image migrations
+require a separate plan preserving every installed overlay, health checks and
+rollback evidence. Resume email only after the worker probe succeeds, then
+check `get_email_delivery_health()`.
+
 Business logic is split between **SQL functions** (`database/functions/`) and Dart/JS. Before modifying any data flow, check if the logic lives in SQL.
 
 - Search for `supabase.rpc('...')` in Dart/JS to find which SQL function handles the operation

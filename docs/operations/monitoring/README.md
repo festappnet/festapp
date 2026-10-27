@@ -98,6 +98,25 @@ Capabilities expire after one year; rotate with an explicit short overlap and
 remove the old hash/credential after consumers switch. Secrets and raw event/mail
 receipts belong in protected operational evidence, never in repository files.
 
+## Functions reload safety
+
+Use `automation/hetzner-supabase/runtime/restart-production-functions.py` on the
+verified canonical host. Its default mode checks configuration without changes.
+For an authorized code reload, pause/drain email through the existing release
+workflow, run with `--restart`, resume only after the worker probe passes, and
+check `get_email_delivery_health()`. A failed restart leaves email paused for
+operator recovery. This tool restarts the existing container; environment/image
+changes need a separately reviewed migration with rollback evidence.
+
+On 2026-10-27 at 00:13 UTC, an ad-hoc Functions recreation selected only the base
+and Festapp Compose files, omitting the installed email/monitoring overlays.
+The protected `.env` was intact, but those settings never reached the container.
+Health monitoring detected stale provider preflight/quota and a stalled queue.
+Recreation using the complete installed overlay list restored health at
+01:15 UTC. Only Functions changed; the due queue drained, one message gained
+provider acceptance, and the two existing unknown outcomes were preserved.
+Future code reloads must use the guarded command, never a partial `-f` list.
+
 ## Rollback
 
 Change only Festapp's Monitoring project to record mode, disable organization 3
