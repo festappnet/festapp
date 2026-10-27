@@ -3763,6 +3763,7 @@
     "hideOccasions": "Hide events ({count})",
     "accessSummary": "What this connection allows",
     "sameRights": "Within your selection, the application can use the following features. Your current user rights always apply.",
+    "regionalPlatform": "This connection applies to {portal}, powered by the shared {platform} platform.",
     "baseAccess": "Read your identity, available events and ticket artwork",
     "sensitiveActionsHint": "Before cancelling orders, changing payments or sending tickets, the application should verify your specific instruction.",
     "selectionSummary": "Selected organizers: {organizers}. Individual events: {occasions}.",
