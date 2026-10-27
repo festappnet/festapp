@@ -111,12 +111,7 @@ $$;
 REVOKE ALL ON FUNCTION public.can_import_group_assignments(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_import_group_assignments(bigint) TO authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.can_write_blueprints(p_occasion bigint)
-RETURNS boolean LANGUAGE sql STABLE  SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT public.blueprint_write_rule(public.get_is_editor_on_occasion(p_occasion),public.get_is_manager_on_occasion(p_occasion));
-$$;
-REVOKE ALL ON FUNCTION public.can_write_blueprints(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.can_write_blueprints(bigint) TO authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.can_copy_inventory_target(p_occasion bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$

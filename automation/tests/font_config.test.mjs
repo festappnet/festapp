@@ -20,6 +20,14 @@ try {
   write('web_client/src/theme_config.css', "@font-face { font-family: 'Futura'; src: url('old.ttf'); }\nbody { font-family: 'Futura', sans-serif; }\n");
   write('lib/theme_config.dart', 'static final fontFamily = "Futura";\n');
 
+  const configPaths = ['pubspec.yaml', 'web_client/src/theme_config.css', 'lib/theme_config.dart'];
+  const snapshot = () => configPaths.map(name => fs.readFileSync(path.join(root, name), 'utf8'));
+  const beforeBootstrap = snapshot();
+  execFileSync('node', [script, root, '--assets-only'], { stdio: 'pipe' });
+  assert.equal(fs.readFileSync(path.join(root, 'fonts/Futura PT Book.ttf'), 'utf8'), 'shared-font');
+  assert.equal(fs.readFileSync(path.join(root, 'web_client/src/assets/fonts/FuturaPTBook.ttf'), 'utf8'), 'shared-font');
+  assert.deepEqual(snapshot(), beforeBootstrap, 'fresh-checkout asset preparation does not rewrite config');
+
   const configured = 'fonts/Cerebri-Sans-Regular.ttf,fonts/Cerebri-Sans-Bold.ttf';
   execFileSync('node', [script, root, 'Cerebri-Sans', configured], { stdio: 'pipe' });
   const pubspec = fs.readFileSync(path.join(root, 'pubspec.yaml'), 'utf8');
@@ -33,6 +41,14 @@ try {
   assert.doesNotMatch(css, /FuturaPTBook\.ttf/);
   assert.equal(fs.readFileSync(path.join(root, 'web_client/src/assets/fonts/Cerebri-Sans-Regular.ttf'), 'utf8'), 'tenant-regular');
   assert.match(fs.readFileSync(path.join(root, 'lib/theme_config.dart'), 'utf8'), /fontFamily = "Cerebri-Sans"/);
+
+  write('automation/project.conf', `FONT_FAMILY_BASE="Cerebri-Sans"\nFONT_FILES="${configured}"\n`);
+  fs.rmSync(path.join(root, 'web_client/src/assets/fonts'), { recursive: true });
+  const beforeTenantBootstrap = snapshot();
+  execFileSync('node', [script, root, '--assets-only'], { stdio: 'pipe' });
+  assert.equal(fs.readFileSync(path.join(root, 'web_client/src/assets/fonts/Cerebri-Sans-Bold.ttf'), 'utf8'), 'tenant-bold');
+  assert.equal(fs.existsSync(path.join(root, 'web_client/src/assets/fonts/FuturaPTBook.ttf')), false);
+  assert.deepEqual(snapshot(), beforeTenantBootstrap, 'bootstrap honors quoted tenant font sources without rewriting config');
 
   assert.throws(() => execFileSync('node', [script, root, 'Cerebri-Sans', 'fonts/../automation/fonts/Futura PT Book.ttf'], { stdio: 'pipe' }));
   assert.throws(() => execFileSync('node', [script, root, 'Cerebri-Sans', 'fonts/Missing.ttf'], { stdio: 'pipe' }));

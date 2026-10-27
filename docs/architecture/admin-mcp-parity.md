@@ -5,6 +5,13 @@ operation predicates remain authoritative. Delegation additionally narrows
 organization, units/occasions and explicitly consented functional scopes.
 Existing issued grants are never expanded by adding tools.
 
+The proposed [order and financial core](order-commerce-core.md) includes MCP
+order/form/seat tools as mandatory callers and readers, using the same domain
+owners as administration. Its [migration plan](../plans/order-commerce-core-plan-2026-10-27.md)
+requires settlement-source policy, semantic approval revisions, strict response
+schema compatibility and UI/MCP parity before native WooCommerce sales. This is
+a planned cutover, not a claim that the new commerce core is already deployed.
+
 ## First cutover: product catalog
 
 - Seam: catalog reads and immediate product configuration, deletion and stock
@@ -75,7 +82,7 @@ that every row is exposed by the current MCP catalog.
 | Seating plans, spots and ticket artwork | blueprint aggregate, seating/capacity commands and canonical PDF renderer | Artwork read available; full editor operations pending |
 | Stock pools, contexts, resources | inventory domain commands; pools tab | Catalog assignments included; pool/resource administration pending |
 | Occasion info, features, settings | occasion aggregate commands; info/settings tabs | Pending, combine related settings in their aggregate save |
-| Users, roles, groups and volunteers | canonical user-permission and group commands | Pending; role changes require particular care and live checks |
+| Users, roles, groups and volunteers | existing profile/group commands and shared versioned organizer-user command | Stage 6 locally verified: 19 tools, separate role/revoke scopes, original-version writes and live authorization/scope fences; not deployed |
 | Schedule, places, speakers, services, game | corresponding domain commands and feature tabs | Pending, enabled only where normal administration supports them |
 | Reports and history | report and audit projections | Order report available; other reports/change history pending |
 | Unit settings, occasion lists and quotes | unit/occasion/quote domain; unit admin tabs | Pending, unit scope must not be inferred from a single event grant |

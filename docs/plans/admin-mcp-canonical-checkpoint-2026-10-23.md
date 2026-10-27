@@ -1,5 +1,10 @@
 # Execution checkpoint - admin UI/MCP
 
+Aktuální stav 2026-10-27: etapy 0-10 lokálně dokončené. Produkce zůstává
+na doložených etapách 0-5; 6-10 čekají na běžné review PR #641 a samostatně
+autorizovaný rollout. [Závěrečné uzavření](#stage-7-10-final-local-closure)
+je na konci tohoto chronologického záznamu.
+
 Base: GitHub origin/main `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`.
 Workspace: `/private/tmp/festapp-admin-mcp-canonical-20261023`.
 Main dirty checkout untouched. Verification: standard.
@@ -1463,3 +1468,120 @@ obsahuje přesné hashe, image, bundle a Cloudflare preview ID. Čistý main a
 vybraný prod checkout byly zachované, původní rozpracované soubory zálohované.
 Hotovo zůstává **6/11 hlavních etap, orientačně 45 % podle velikosti**.
 Následuje **6 - lidé, role, skupiny a dobrovolníci**.
+
+
+## Stage 6 locally complete 2026-10-27
+
+Etapa 6 je implementovaná a lokálně ověřená na izolované větvi
+`feat/admin-mcp-stage6-20261027`, základ main `a698f7403bbb62730df211a91c777b12a356d25c`.
+Cizí dirty checkout nebyl upraven. Main vyžaduje jedno review; admin výjimka ani
+produkční rollout nejsou součástí této etapy.
+
+- 19 nových nástrojů: profily a importy, výslovné role/volunteer status,
+  atomická členství/skupiny, lidé a přístupy u pořadatele. Katalog 103/87.
+- Původní profile/group receipt vlastníci; named profile patch se slučuje až
+  uvnitř jejich hash/replay/version hranice. Nové role nelze udělit běžnou editací
+  ani starým OAuth grantem. Žádná nová ACL, trigger, druhý profile writer či ledger.
+- `save_unit_user_client_sync_v1` obaluje původní unit-user persistence owner.
+  Současný UI grid používá stejný verzovaný příkaz, zachovává původní verzi
+  i potvrzenou identitu. Vydané `update_unit_user` zůstává fasádou do stejného owneru.
+  Změny rolí a odebrání přístupu sdílejí jednu invalidaci soukromých profilů.
+- Živé role a uložený scope jsou ověřené před replay. Skutečný self-demotion
+  mění běžný capabilities kontext; čtyři row-lock souběhy odmítají čtení, zápis
+  a replay po přesunu mimo consent nebo revokaci. Zápis nezůstane uložený.
+- Prošlo 15 DB/SDK/scope případů bez skipu (včetně čtyř stávajících SQL
+  regresních souborů), 14 unikátních Flutter případů, 54 remote/context/operation,
+  41 web a 8 source testů plus 9 Python testů. Dart bez errors/warnings;
+  tři původní info linty v db_users.dart. Žádný produkční build nebo provider call.
+
+[Konkrétní hranice a matice](admin-mcp-stage6-boundary-2026-10-27.md),
+[příkazy, source digests a naměřený plán/payload](../reports/admin-people-evidence-2026-10-27.json).
+Migrace `20261027150000_people_group_authoring.sql` je nová; publikované migrace
+se neměnily. Effective-source parity i nezměněný runtime ticket-layout kontrakt
+jsou ověřené. Nová stránka 50 identit načítá jen příslušný limit před agregací;
+nekopíruje celý occasion-user editor bundle ani nerozbíjí jeden save na více RPC.
+
+Hotovo **7/11 hlavních etap**, etapa 6 dosud nenasazená. Následuje
+**7 - pokročilá editace plánků a vzhled vstupenek**. Neslučovat s odděleným
+ChatGPT veřejným pilotem a neobnovovat historický PR stack.
+
+
+### Stage 6 publication receipt
+
+Publikováno jako [PR #641](https://github.com/festappnet/festapp/pull/641).
+Ověřená implementace `518b7d80954334cc148439486be4d93447b5924d`, base main
+`a698f7403bbb62730df211a91c777b12a356d25c`. Bezprostřední pre-publication
+fetch potvrdil, že čerstvý origin/main je předkem navrženého headu; upstream
+mezitím nepostoupil. GitHub potvrzuje OPEN / REVIEW_REQUIRED, cíl main.
+Tento následný záznam mění pouze dokumentaci; zdroje a jejich passing evidence
+zůstávají beze změny. Produkční merge ani rollout neproběhly.
+
+
+## Stage 7-10 final local closure
+
+2026-10-27, verification standard, isolated worktree
+`/private/tmp/festapp-admin-mcp-stage6-20261027`. Source base of this continuation
+`72f9e8676ae4216619a056f02e5e14f5b3c3bb59`; current main
+`a698f7403bbb62730df211a91c777b12a356d25c`. The unrelated main checkout remains
+untouched. Existing review PR #641 is extended, not replaced with a PR stack.
+
+- Stage7: complete blueprint document/bindings and validation share the existing
+  aggregate owner; real checkout/save concurrency preserves protected seats.
+  Text and font resources use the canonical renderer and actor-bound registration.
+  Hosted artwork now qualifies the original readiness contract; preview resources
+  survive separate HTTP requests and reauthorize their connection and live role.
+  Scanner admission uses its existing eligibility/session/operation ledger.
+- Stage8: bounded schedule, attendance, exclusive groups, map/place types/paths,
+  icons, speakers/topics/assignments/counseling, activities and services delegate
+  to current UI commands. Variant, feature, draft/publication, version and replay
+  semantics remain owned by SQL. Existing game tools are reused.
+- Stage9: canonical audit/activity/order/delivery/feedback projections, same SQL
+  sales report and closed-column paged CSV exports. No Node accounting, QR or
+  raw historical/customer dumps. Private artifacts bind actor and connection;
+  every read rechecks live rights. Oversized audit detail is explicitly refused.
+- Stage10: current bank, card pause/disconnect, legal identity, quote, order,
+  history and unit-delete producers use the same receipted owners as MCP.
+  The bank two-role exception and original provider recovery remain intact.
+  Copying has a durable SQL media manifest and deterministic canonical Worker
+  objects; the Dart intent survives a coordinator restart. Current occasion delete
+  retains detached blobs, matching its actual owner. Finalization preserves the
+  original setup materializer and atomically checks all delegated source scopes.
+
+Forward migrations `20261027160000_blueprint_authoring.sql`,
+`20261027170000_program_authoring.sql`, `20261027180000_reporting_exports.sql`,
+and `20261027190000_finance_authoring.sql` are frozen from canonical sources by
+`automation/assemble-admin-authoring-migration.py`. Published migrations were
+not edited. Ordinary released RPCs remain only as needed client boundaries into
+the same owners; the obsolete Dart-only occasion-media copier was removed.
+
+Validation: 38 disposable PostgreSQL/SDK domain cases, 67 MCP/HTTP/context/save
+cases, 41 consent/account web cases, 47 Edge cases and 123 image Worker unit
+cases passed without skips. A subsequent scoped deletion-guard check passed 4/4.
+Final changed-component Flutter batch passed 49/49; the style follow-up and Dart
+analysis cover the final inputs. Source tests, frozen migrations, runtime artwork
+contract and generated catalogue pass their checks. Exact commands, log receipts,
+source digests and verification limits are in
+[final evidence](../reports/admin-authoring-final-evidence-2026-10-27.json).
+
+The catalogue now contains 109 confirmed rows and 193 remote operations; its exact
+recovery HTML/JSON mirrors are maintained. All new scope labels exist in all six
+Flutter/web language pairs. No generic bulk-mail or provider refund issuance was
+invented; current refund admission decisions are distinct from moving money.
+Human OAuth and credential onboarding remain the ordinary application flow.
+
+**All implementation stages are locally complete.** Main still requires normal
+review. This work did not merge, deploy, run a production build, contact a real
+payment provider or change another tenant. Production rollout remains a separate
+authorized operation; the previous release receipt is not rewritten.
+
+
+### Final publication follow-up
+
+Initial implementation head `dd726ff73c54c8bef175635989693bfb67666011` passed
+six hosted checks; ticket-client found two fixture routes still targeting the
+retired UI transport names. The fixtures now exercise the canonical bank and
+unit-user receipt and retain their existing denial/self-role-refresh assertions.
+The exact 50-case CI client step passes locally. A 16-case occasion suite also
+checks the copy coordinator across restart and an account change during durable
+intent acquisition: a changed identity issues no SQL or Worker dispatch. The
+follow-up is pushed to the same PR; no production operation is added.

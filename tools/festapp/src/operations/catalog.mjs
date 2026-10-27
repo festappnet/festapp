@@ -1,3 +1,11 @@
+import {lifecycleDescriptors,lifecycleDataSchemas,invokeLifecycleOperation} from './lifecycle.mjs';
+import {agendaDescriptors,agendaDataSchemas,invokeAgendaOperation} from './agenda.mjs';
+import {financeDescriptors,financeDataSchemas,invokeFinanceOperation} from './finance.mjs';
+import {reportingDescriptors,reportingDataSchemas,invokeReportingOperation,authorizeExportArtifact} from './reporting.mjs';
+import {programDescriptors,programDataSchemas,invokeProgramOperation} from './program.mjs';
+import {scannerDescriptors,scannerDataSchemas,invokeScannerOperation} from './scanner.mjs';
+import {blueprintDescriptors,blueprintDataSchemas,invokeBlueprintOperation} from './blueprints.mjs';
+import {peopleDescriptors,peopleDataSchemas,invokePeopleOperation} from './people.mjs';
 import {configurationDescriptors,configurationDataSchemas,invokeConfigurationOperation} from './configuration.mjs';
 import {formSalesDescriptors,formSalesDataSchemas,invokeFormSalesOperation} from './form-sales.mjs';
 import { formDescriptors, formDataSchemas, invokeFormOperation } from './forms.mjs';
@@ -45,6 +53,14 @@ const projection = z
     })
     .strict();
 const dataSchemas = {
+    ...lifecycleDataSchemas,
+    ...agendaDataSchemas,
+    ...financeDataSchemas,
+    ...reportingDataSchemas,
+    ...programDataSchemas,
+    ...scannerDataSchemas,
+    ...blueprintDataSchemas,
+    ...peopleDataSchemas,
     ...configurationDataSchemas,
     ...formDataSchemas,
     ...formSalesDataSchemas,
@@ -128,8 +144,9 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
+const delegatedDescriptors = [...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
-    ...[...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
+    ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
@@ -201,7 +218,7 @@ export class Operations {
         this.writeReady = false;
         this.rasterize = rasterize;
         this.artifacts = artifacts;
-        this.layoutSave = new LayoutSave(new FileIntentStore(owner.root));
+        this.layoutSave = new LayoutSave(new FileIntentStore(owner.root), {scopeFor: owner.delegatedContext?.bind(owner)});
     }
     operationIdForTool(name) { return descriptors.find(d => d.name === name)?.id; }
     get catalog() {
@@ -277,9 +294,10 @@ export class Operations {
             Buffer.byteLength(JSON.stringify(body)) <= 40000,
             'INVALID_INPUT',
         );
+        const scope = await this.owner.delegatedContext?.(client, body.occasionId);
         const { data, error } = await client.functions.invoke(
             'preview-ticket-layout',
-            { body },
+            { body: {...body, ...(scope ? {delegatedScope:{organizationId:scope.organizationId,unitId:scope.unitId}} : {})} },
         );
         upstream(error);
         check(data && !data.error);
@@ -318,9 +336,17 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || delegatedDescriptors.some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (lifecycleDataSchemas[id]) data = await invokeLifecycleOperation(this.owner, client, id, args);
+                else if (agendaDataSchemas[id]) data = await invokeAgendaOperation(this.owner, client, id, args);
+                else if (financeDataSchemas[id]) data = await invokeFinanceOperation(this.owner, client, id, args);
+                else if (reportingDataSchemas[id]) data = await invokeReportingOperation(this.owner, client, id, args, context, this.artifacts);
+                else if (programDataSchemas[id]) data = await invokeProgramOperation(this.owner, client, id, args);
+                else if (scannerDataSchemas[id]) data = await invokeScannerOperation(this.owner, client, id, args);
+                else if (blueprintDataSchemas[id]) data = await invokeBlueprintOperation(this.owner, client, id, args);
+                else if (peopleDataSchemas[id]) data = await invokePeopleOperation(this.owner, client, id, args);
                 else if (configurationDataSchemas[id]) data = await invokeConfigurationOperation(this.owner, client, id, args);
                 else if (formSalesDataSchemas[id]) data = await invokeFormSalesOperation(this.owner, client, id, args, context);
                 else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args);
@@ -444,8 +470,9 @@ export class Operations {
                         saveRequest,
                     );
                     saveRequest.draftFingerprint = fingerprint;
-                    const uri = this.artifacts.put(digest(pdf), {
+                    const uri = this.artifacts.put(digest(JSON.stringify([this.owner.profile.binding, context.userId, args.occasionId, digest(pdf)])), {
                         pdf,
+                        profileBinding: this.owner.profile.binding,
                         userId: context.userId,
                         occasionId: args.occasionId,
                     });
@@ -481,14 +508,20 @@ export class Operations {
     async readArtifact(uri) {
         return this.owner.authorized(async (client, { userId }) => {
             const item = this.artifacts.get(uri);
-            check(item.userId === userId, 'FORBIDDEN');
-            await this.inspect(client, item.occasionId);
+            check(item.userId === userId && (!item.profileBinding || item.profileBinding === this.owner.profile.binding), 'FORBIDDEN');
+            if (item.exportScope) {
+                await this.owner.authorizeOperation?.(item.exportScope.operation, item.exportScope.args);
+                await authorizeExportArtifact(this.owner, client, item.exportScope);
+            } else {
+                await this.owner.authorizeOperation?.('ticket_layouts.preview', {occasionId:item.occasionId});
+                await this.inspect(client, item.occasionId);
+            }
             return {
                 contents: [
                     {
                         uri,
-                        mimeType: 'application/pdf',
-                        blob: item.pdf.toString('base64'),
+                        mimeType: item.mimeType,
+                        blob: item.bytes.toString('base64'),
                     },
                 ],
             };

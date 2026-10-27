@@ -221,3 +221,13 @@ automation/release/platform_updates/node_modules/
 
 # Private browser sessions and local scanner preview evidence.
 /web_client/.private/
+
+# Public help is rendered from automation/release/help; never version build copies.
+/web/napoveda/
+/web_client/public/napoveda/
+
+# Shared app font copies are prepared from automation/fonts.
+/fonts/Futura PT Book.ttf
+/fonts/Futura PT Medium.ttf
+/fonts/Gill Sans Bold.otf
+/web_client/src/assets/fonts/

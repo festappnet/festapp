@@ -1,3 +1,6 @@
+import {canonicalPreview} from './render-fixture.mjs';
+import {receipt as layoutReceipt} from './layout-fixture.mjs';
+import {MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { PROTOCOL_VERSION_META_KEY, CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY } from '@modelcontextprotocol/server';
 import {invokeFormOperation} from '../src/operations/forms.mjs';
 import test from 'node:test';
@@ -28,9 +31,9 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false } = {}) {
+async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
-        ? reply({ presets: {}, fonts: {} }) : fetchImpl?.(url, init) });
+        ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
     const key = randomBytes(32);
     const storage = await openRemoteStorage(root, key);
@@ -1032,4 +1035,41 @@ test('refresh replay revokes its connection, expired grants fail refresh, and en
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
     assert.equal(result.structuredContent.ok, true);
     assert.equal(result.structuredContent.data.userId, actor);
+});
+
+
+test('remaining domain scopes require fresh grant AND token consent; copy/finalize also require explicit target creation',async t=>{
+ const f=await setup(t),id='final-domain-permissions';
+ const grant={id,binding:'final-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:grant.clientId,aud:f.config.resource,scope:[READ_SCOPE,CREATE_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ const operations=['blueprints.save','ticket_layouts.preview','scanner.admit','events.save','activities.publish','exports.people','history.delete','banks.save','cards.pause','cards.refund.decide','units.quotes.save','units.legal.submit','units.delete','occasions.copy','occasions.setup.finalize'];
+ for(const operation of operations)assert(!owner().allowedOperations.includes(operation),operation);
+ const permissions=Object.keys(MCP_PERMISSIONS);
+ f.storage.put('Delegation',id,{...grant,permissions});
+ assert(owner().allowedOperations.includes('events.save'));assert(!owner().allowedOperations.includes('occasions.copy'));
+ await assert.rejects(owner().delegatedUnitContext({},11));
+ f.storage.put('Delegation',id,{...grant,permissions,access:{type:'selection',occasionIds:[7],units:[{unitId:11,canCreateOccasions:true}]}});
+ for(const operation of operations)assert(owner().allowedOperations.includes(operation),operation);
+ owner().authorizeOperation('occasions.copy',{occasionId:7,targetUnitId:11});owner().authorizeOperation('occasions.setup.finalize',{unitId:11});
+ assert.throws(()=>owner().authorizeOperation('occasions.copy',{occasionId:7,targetUnitId:12}));assert.throws(()=>owner().authorizeOperation('occasions.setup.finalize',{unitId:12}));
+ token.scope=READ_SCOPE;for(const operation of operations)assert(!owner().allowedOperations.includes(operation),operation);
+});
+
+
+test('hosted artwork qualifies its writes and shares private preview artifacts across HTTP requests',async t=>{
+ const generated=await canonicalPreview();let denied=false;const writes=[];
+ const f=await setup(t,{tenant:true,previewFetch:(_url,init)=>{const body=JSON.parse(init.body);assert.equal(body.delegatedScope.organizationId,profile().organizationId);assert.equal(body.delegatedScope.unitId,null);return reply(generated[body.mode]??{presets:{},fonts:{}});},fetchImpl:(url,init)=>{
+  if(denied&&url.pathname==='/rest/v1/rpc/get_delegated_ticket_layout_for_authoring_v1')return reply({code:'42501'},403);
+  if(url.pathname==='/rest/v1/rpc/save_delegated_ticket_layout'){const body=JSON.parse(init.body);assert.equal(body.p_organization,profile().organizationId);assert.equal(body.p_unit,null);writes.push(body);return reply(layoutReceipt(body.p_command_id));}
+ }});
+ const scopes=[READ_SCOPE,'festapp:ticket-artwork:preview','festapp:ticket-artwork:write'];const tokens=await connectTenant(f,{scopes});
+ const client=new Client({name:'hosted-artwork-fixture',version:'1'});await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource),{requestInit:{headers:{authorization:'Bearer '+tokens.access_token}}}));t.after(()=>client.close());
+ const names=(await client.listTools()).tools.map(t=>t.name);for(const name of ['festapp_ticket_layouts_preview','festapp_ticket_layouts_save','festapp_ticket_layouts_pending','festapp_ticket_layouts_resume'])assert(names.includes(name),name);
+ const preview=await client.callTool({name:'festapp_ticket_layouts_preview',arguments:{occasionId:7,type:'named'}});assert.equal(preview.structuredContent.ok,true,JSON.stringify(preview.structuredContent.error));
+ const {pdf,saveRequest}=preview.structuredContent.data;
+ assert.equal(Buffer.from((await client.readResource({uri:pdf.uri})).contents[0].blob,'base64').subarray(0,5).toString(),'%PDF-');
+ const saved=await client.callTool({name:'festapp_ticket_layouts_save',arguments:saveRequest});assert.equal(saved.structuredContent.ok,true,JSON.stringify(saved));assert.equal(writes.length,1);
+ denied=true;await assert.rejects(client.readResource({uri:pdf.uri}));
 });

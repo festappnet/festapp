@@ -23,6 +23,14 @@ BEGIN
  PERFORM public.check_stripe_unit_manager_internal(p_unit,auth.uid());
  PERFORM 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion WHERE o.unit=p_unit ORDER BY f.id FOR UPDATE OF f;
  PERFORM 1 FROM public.units WHERE id=p_unit FOR UPDATE;
+ -- Completed intents also retain their binding. A lost final response must
+ -- resume that same intent after the connection was retired, not dispatch again.
+ SELECT i.* INTO intent FROM eshop.stripe_disconnect_intents i
+ JOIN eshop.stripe_connections stored ON stored.id=i.connection_id
+ WHERE i.connection_id=p_expected_connection AND i.actor=auth.uid()
+  AND stored.unit_id=p_unit AND stored.livemode=p_livemode
+ ORDER BY i.created_at DESC LIMIT 1;
+ IF FOUND THEN RETURN jsonb_build_object('intentId',intent.id); END IF;
  SELECT * INTO c FROM eshop.stripe_connections WHERE id=p_expected_connection AND unit_id=p_unit AND livemode=p_livemode AND state IN ('connected','restricted') FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'STRIPE_RECIPIENT_CHANGED'; END IF;
  SELECT * INTO intent FROM eshop.stripe_disconnect_intents WHERE connection_id=c.id AND state<>'completed';
