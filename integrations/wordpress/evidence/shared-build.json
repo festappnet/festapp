@@ -19,8 +19,9 @@
   },
   "shared_inputs": {
     "products.json": "9b32188ab583c11fbe7ced1499c51c3057a47c2f2ad57aadee5cf9838102db69",
-    "scripts/build-plugins.py": "f70b3c8a1d1e9d42540af580f5b3a10be3f30ab9279982af1e1333c6edcbcb83",
+    "scripts/build-plugins.py": "405a798df959a82efdb24a9c83555ab94b2121e7cd87a286ae298128868f4590",
     "scripts/package.py": "9e92790a26b0a0363c7d25c30729fc08211a2ed8784aecb4a4dfec546baa3e6e",
+    "scripts/metadata_contract.py": "b4d1e7be024291a685ece8cf29967319545dfe1131d3687b1bbca1640190bf8a",
     "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
     "shared/admin.php.in": "597bcbda0a0e34a3f45e716175297828b0de2c00ef4eef404fcf2406aeced892",
     "shared/block.json.in": "93460d3d976cd20843ad0bbb542909cce235ab24e9d8f733a00d350e7106a262",
