@@ -1,4 +1,5 @@
 import { LocalizationService } from '../../services/localization_service.js';
+import { AppConfig } from '../../app_config.js';
 
 export class CommonStrings {
     static get settings() { return LocalizationService.tr('Common.settings'); }
@@ -11,7 +12,7 @@ export class CommonStrings {
     static get googlePasswordVisibility() { return LocalizationService.tr("FeatureUser.googlePasswordVisibility"); }
     static get googleUnlinkProof() { return LocalizationService.tr("FeatureUser.googleUnlinkProof"); }
     static get googleContinue() { return LocalizationService.tr("FeatureUser.googleContinue"); }
-    static get googleSubtitle() { return LocalizationService.tr("FeatureUser.googleSubtitle"); }
+    static get googleSubtitle() { return LocalizationService.tr("FeatureUser.googleSubtitle", { appName: AppConfig.appName }); }
     static get googleOr() { return LocalizationService.tr("FeatureUser.googleOr"); }
     static get googleClose() { return LocalizationService.tr("FeatureUser.googleClose"); }
     static get googleOpening() { return LocalizationService.tr("FeatureUser.googleOpening"); }
