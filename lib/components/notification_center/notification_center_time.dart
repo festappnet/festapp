@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
+import 'notification_center_strings.dart';
+
 /// Calendar labels use the interface locale, independently of the device locale.
 class NotificationCenterTime {
   static String _date(DateTime value, String locale) =>
@@ -8,20 +10,37 @@ class NotificationCenterTime {
   /// Group days are calendar dates, not instants to shift into a time zone.
   static String day(DateTime value, String locale, {DateTime? now}) {
     final today = (now ?? DateTime.now()).toLocal();
-    final days = DateTime.utc(today.year, today.month, today.day)
-        .difference(DateTime.utc(value.year, value.month, value.day))
-        .inDays;
+    final days = DateTime.utc(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime.utc(value.year, value.month, value.day)).inDays;
     if (days == 0) return 'NotificationCenter.today'.tr();
     if (days == 1) return 'NotificationCenter.yesterday'.tr();
     return _date(value, locale);
   }
 
+  static String dayHeading(DateTime value, String locale, {DateTime? now}) {
+    final today = (now ?? DateTime.now()).toLocal();
+    final days = DateTime.utc(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime.utc(value.year, value.month, value.day)).inDays;
+    if (days >= 2 && days < 7) {
+      return NotificationCenterStrings.daysAgo(days, locale: locale);
+    }
+    return day(value, locale, now: now);
+  }
+
   static String timestamp(DateTime value, String locale, {DateTime? now}) {
     final local = value.toLocal();
-    return 'NotificationCenter.atTime'.tr(namedArgs: {
-      'day': day(local, locale, now: now),
-      'time': DateFormat.jm(locale).format(local),
-    });
+    return 'NotificationCenter.atTime'.tr(
+      namedArgs: {
+        'day': day(local, locale, now: now),
+        'time': DateFormat.jm(locale).format(local),
+      },
+    );
   }
 
   static String exact(DateTime value, String locale) {

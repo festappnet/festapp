@@ -27,8 +27,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ReservationsBundle {
   final List<OrderModel> orders;
   final List<FormBundle> forms;
+  final Set<int> notificationOrderIds;
 
-  ReservationsBundle({required this.orders, required this.forms});
+  ReservationsBundle({required this.orders, required this.forms,
+    this.notificationOrderIds = const {}});
 }
 
 class OrderHistoryBundle {
@@ -210,10 +212,12 @@ class DbOrders {
 
   static Future<ReservationsBundle> getOrdersTabData({
     required String occasionLink,
+    Map<String, dynamic>? notificationGroup,
   }) async {
     final response = await _supabase.rpc(
       'get_orders_tab_data',
-      params: {'p_occasion_link': occasionLink},
+      params: {'p_occasion_link': occasionLink,
+        if (notificationGroup != null) 'p_notification_group': notificationGroup},
     );
 
     // Response is the data object directly.
@@ -328,7 +332,9 @@ class DbOrders {
 
     orders.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
-    return ReservationsBundle(orders: orders, forms: forms ?? []);
+    return ReservationsBundle(orders: orders, forms: forms ?? [],
+      notificationOrderIds: (json['notification_order_ids'] as List? ?? const [])
+          .whereType<num>().map((id) => id.toInt()).toSet());
   }
 
   static Future<bool> hasFakturoidForDeletion(int orderId) async {

@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/notification_center/notification_center_controller.dart';
 import 'package:fstapp/components/notification_center/notification_center_panel.dart';
+import 'package:fstapp/components/notification_center/notification_timezone.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -13,6 +14,8 @@ Future<void> main() async {
   final controller = NotificationCenterController(
     read: (_, params) async => {},
   );
+  controller.displayTimezone = NotificationCenterTimezone.name();
+  controller.snapshotAt = DateTime(2026, 10, 27, 20);
   controller.snapshot = 7;
   controller.previousReadThrough = 4;
   controller.items = [
@@ -21,7 +24,7 @@ Future<void> main() async {
       'kind': 'email_problem',
       'section': 0,
       'sequence': 5,
-      'occurredAt': '2026-10-23T18:30:00',
+      'occurredAt': '2026-10-27T18:30:00',
       'data': {
         'messageId': 'synthetic-message',
         'recipient': 'zakaznik@example.invalid',
@@ -30,15 +33,15 @@ Future<void> main() async {
       },
     }),
     for (final entry in [
-      ['form_closed', '2026-10-26T12:00:00'],
-      ['order_created', '2026-10-26T10:08:00'],
-      ['waitlist_registered', '2026-10-26T09:42:00'],
+      ['form_closed', '2026-10-27T12:00:00'],
+      ['order_created', '2026-10-27T10:08:00'],
+      ['waitlist_registered', '2026-10-22T09:42:00'],
     ])
       NotificationItem.fromJson({
         'id': entry[0],
         'kind': entry[0],
         'section': 1,
-        'sequence': 6,
+        'sequence': entry[0] == 'waitlist_registered' ? 4 : 6,
         'occasionId': 1,
         'occasionTitle': 'Country bál 2026',
         'occasionLink': 'synthetic-event',
@@ -47,14 +50,39 @@ Future<void> main() async {
             ? {'title': 'Vstupenky', 'reason': 'schedule_end'}
             : {
                 'relatedOrders': true,
-                'activityCount': entry[0] == 'order_created' ? 35 : 1,
+                'activityCount': entry[0] == 'order_created' ? 8 : 1,
+                if (entry[0] == 'order_created') 'placeCount': 18,
+                'previewContacts': [
+                  {'name': 'Jan', 'surname': 'Novák'},
+                  {'name': 'Petra', 'surname': 'Dvořáková'},
+                  {'name': 'Tomáš', 'surname': 'Černý'},
+                ],
                 'contact': {'name': 'Jan', 'surname': 'Novák'},
                 'count': 2,
               },
       }),
+    NotificationItem.fromJson({
+      'id': 'second-occasion-order',
+      'kind': 'order_created',
+      'section': 2,
+      'sequence': 3,
+      'occasionId': 2,
+      'occasionTitle': 'Taneční večer na Vinohradech',
+      'occasionLink': 'synthetic-second-event',
+      'occurredAt': '2026-10-26T11:00:00',
+      'data': {
+        'relatedOrders': true,
+        'activityCount': 3,
+        'previewContacts': [
+          {'name': 'Eva', 'surname': 'Malá'},
+          {'name': 'Petr', 'surname': 'Svoboda'},
+        ],
+      },
+    }),
   ];
   controller.occasions = [
     {'id': 1, 'title': 'Country bál 2026'},
+    {'id': 2, 'title': 'Taneční večer na Vinohradech'},
   ];
   final dark = Uri.base.queryParameters['theme'] == 'dark';
   runApp(

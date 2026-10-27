@@ -4377,6 +4377,18 @@
     "duplicateBlock": "Blok {{tickets}} lze použít pouze jednou."
   },
   "NotificationCenter": {
+    "orders": {
+      "one": "{count} objednávka",
+      "few": "{count} objednávky",
+      "many": "{count} objednávek",
+      "other": "{count} objednávek"
+    },
+    "others": {
+      "one": "a {count} další",
+      "few": "a {count} další",
+      "many": "a {count} dalších",
+      "other": "a {count} dalších"
+    },
     "orderActivities": "Změny objednávek",
     "expand": "Rozbalit",
     "collapse": "Sbalit",
@@ -4390,19 +4402,19 @@
     "today": "Dnes",
     "yesterday": "Včera",
     "atTime": "{day} v {time}",
-    "title": "Upozornění",
-    "unread": "Upozornění - nové události",
-    "settings": "Nastavení upozornění",
-    "back": "Zpět na upozornění",
-    "muteHelp": "Ztlumení akce zastaví nová upozornění. Historie zůstane dostupná. Po odtlumení se zmeškané události nedoplní.",
-    "muted": "Ztlumit nová upozornění",
+    "title": "Notifikace",
+    "unread": "Notifikace - nové události",
+    "settings": "Nastavení notifikací",
+    "back": "Zpět na notifikace",
+    "muteHelp": "Ztlumení akce zastaví nové notifikace. Historie zůstane dostupná. Po odtlumení se zmeškané události nedoplní.",
+    "muted": "Ztlumit nové notifikace",
     "saveFailed": "Nastavení se nepodařilo uložit. Zkuste to znovu.",
-    "newNotification": "Nové oznámení",
-    "newItems": "Nová upozornění",
-    "loadFailed": "Upozornění se nepodařilo načíst.",
-    "refreshFailed": "Nelze aktualizovat upozornění.",
-    "empty": "Zatím žádná upozornění",
-    "emptyHelp": "Zde uvidíte nové události od zapnutí upozornění.",
+    "newNotification": "Nová notifikace",
+    "newItems": "Nové notifikace",
+    "loadFailed": "Notifikace se nepodařilo načíst.",
+    "refreshFailed": "Nelze aktualizovat notifikace.",
+    "empty": "Zatím žádné notifikace",
+    "emptyHelp": "Zde uvidíte nové události od zapnutí notifikací.",
     "section0": "Společné problémy",
     "section1": "Aktuální akce",
     "section2": "Ostatní akce",
@@ -4478,7 +4490,12 @@
     "heldForWaiting": "Drženo pro pořadník: {count}",
     "needsAttention": "Vyžaduje pozornost",
     "detail": "Detail",
-    "latestCustomer": "Poslední: {name}",
+    "daysAgo": {
+      "one": "Před {count} dnem",
+      "few": "Před {count} dny",
+      "many": "Před {count} dny",
+      "other": "Před {count} dny"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} nová objednávka",

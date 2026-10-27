@@ -129,6 +129,7 @@
     "public.get_blueprint_swap_money_internal(jsonb)",
     "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean)",
     "public.notification_center_active_internal(bigint)",
-    "public.set_notification_center_activation(bigint,boolean,text)"
+    "public.set_notification_center_activation(bigint,boolean,text)",
+    "public.get_orders_tab_data(text)"
   ]
 }
