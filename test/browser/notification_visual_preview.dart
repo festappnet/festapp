@@ -61,9 +61,28 @@ Future<void> main() async {
                 'count': 2,
               },
       }),
+    NotificationItem.fromJson({
+      'id': 'second-occasion-order',
+      'kind': 'order_created',
+      'section': 2,
+      'sequence': 3,
+      'occasionId': 2,
+      'occasionTitle': 'Taneční večer na Vinohradech',
+      'occasionLink': 'synthetic-second-event',
+      'occurredAt': '2026-10-26T11:00:00',
+      'data': {
+        'relatedOrders': true,
+        'activityCount': 3,
+        'previewContacts': [
+          {'name': 'Eva', 'surname': 'Malá'},
+          {'name': 'Petr', 'surname': 'Svoboda'},
+        ],
+      },
+    }),
   ];
   controller.occasions = [
     {'id': 1, 'title': 'Country bál 2026'},
+    {'id': 2, 'title': 'Taneční večer na Vinohradech'},
   ];
   final dark = Uri.base.queryParameters['theme'] == 'dark';
   runApp(
