@@ -11,6 +11,22 @@ before(async () => {
     LocalizationService.translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json', import.meta.url)));
 });
 after(() => dom.window.close());
+test('identity explanations use the selected tenant brand in regional and global clients', async () => {
+    const { AppConfig } = await import('../../src/app_config.js');
+    const { CommonStrings } = await import('../../src/components/shared/common_strings.js');
+    const previous = AppConfig.appName;
+    try {
+        for (const appName of ['vstupenky.online', 'Festapp Tickets']) {
+            AppConfig.appName = appName;
+            const f = fixture(); await f.page.init();
+            assert(f.container.textContent.includes(`Google slouží k přihlášení do ${appName}.`));
+            assert(CommonStrings.googleSubtitle.includes(appName));
+            assert(!f.container.textContent.includes('{appName}'));
+            if (appName === 'Festapp Tickets') assert(!f.container.textContent.includes('vstupenky.online'));
+            f.page.dispose();
+        }
+    } finally { AppConfig.appName = previous; }
+});
 const connection = { id: 'owned-connection', client: '<img src=x onerror=alert(1)>', expiresAt: '2026-11-01T12:00:00Z',
     access: { type: 'selection', units: [{ unitId: 8, canCreateOccasions: true }], occasionIds: [99] }, permissions: ['festapp:orders:read','festapp:tickets:send'] };
 function fixture({ authenticated = true, invoke, googleStatus = async () => ({ enabled: true, linked: true }) } = {}) {

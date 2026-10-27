@@ -1,6 +1,6 @@
 # Ochrana osobních údajů - Vstupenky.online
 
-Účinnost: 20. října 2026. Verze: 1.2.
+Účinnost: 27. října 2026. Verze: 1.3.
 
 ## Kdo odpovídá za vaše údaje
 
@@ -31,6 +31,14 @@ Při obsluze webu Cloudflare zpracovává také IP adresu, požadovanou cestu a 
 Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
 
 Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
+
+## Volitelné propojení s ChatGPT
+
+Pokud svůj účet propojíte s ChatGPT od OpenAI, vyberete akce nebo pořadatele a povolíte rozsah přístupu. Konektor předává do ChatGPT údaje potřebné pro Vámi požadovanou operaci pouze v tomto rozsahu a podle Vašich aktuálních oprávnění. Čtecí připojení umožňuje přehled akcí, prodejní souhrny, hledání a detail objednávek a čtení podkladů vstupenek; nezakládá objednávky, nemění platby ani neodesílá vstupenky.
+
+Podle zvoleného nástroje se mohou předávat názvy a identifikátory akcí, počty a stavy objednávek a vstupenek, částky a měny, údaje o úhradách, jméno, příjmení a e-mail objednavatele a v detailu také poznámky a odpovědi z přihlášky. Obsah se může stát součástí Vaší konverzace. Do propojení proto zahrnujte jen údaje, které smíte k danému účelu zpřístupnit; pro souhrnné dotazy upřednostněte prodejní souhrn před detaily zákazníků.
+
+OpenAI zpracovává předané údaje podle podmínek a nastavení Vašeho účtu ChatGPT. Samotné omezení konektoru na čtení neznamená, že se žádné osobní údaje nepředávají. Propojení je dobrovolné a bez něj lze systém používat běžným způsobem. Přístup kdykoliv odvoláte ve správě propojení účtu. Odvolání zastaví další přístup konektoru, ale samo neodstraní obsah dřívějších konverzací v ChatGPT; ten spravujete u OpenAI.
 
 ## Kde údaje zpracováváme
 

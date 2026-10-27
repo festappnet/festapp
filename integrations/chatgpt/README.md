@@ -1,13 +1,14 @@
 # Private ChatGPT connection
 
-This is private connection configuration for the approved regional target, not a
-public submission package. Do not connect until the regional cutover is verified.
-The currently deployed old address is `https://mcp.festapp.net/mcp`.
+This is private connection configuration for the deployed regional target, not a
+public submission package. The live address is `https://mcp.vstupenky.online/mcp`;
+the former `mcp.festapp.net` endpoint returns HTTP 410. Regional cutover and
+first-party ChatGPT consent completed on 2026-10-27, with six discovered read tools.
 Import `mcp.json` through the account's supported private configuration surface.
 For a provided-client form, use client `festapp-chatgpt`, token auth `none`,
 resource `https://mcp.vstupenky.online/mcp`, and both explicit scopes:
 `festapp:ticket-layouts:read festapp:orders:read`. Verify the exact callback in
-ChatGPT against the protected issuer registration; the prepared callback is
+ChatGPT against the protected issuer registration; the verified account callback is
 `https://chatgpt.com/connector_platform_oauth_redirect`.
 
 The issuer's protected client entry must have
@@ -25,7 +26,9 @@ widen registration. Public plugin manifests/assets follow actual acceptance.
 
 [Official configuration contract](https://developers.openai.com/plugins/build/plugins)
 and [tool authentication](https://developers.openai.com/plugins/build/auth),
-checked 2026-10-27. Account-specific import/installation remains to be verified.
+checked 2026-10-27. The account's Add custom MCP form accepted the provided public
+client, PKCE S256 and the two explicit read scopes. Deselect automatically
+discovered domain scopes other than these two before creating the connection.
 
 Rollback must retain this client's ceiling. Use a compatible previous image or
 disable/revoke the pilot client before restoring an older config. Never drop the
@@ -33,7 +36,7 @@ ceiling to make an old image start with wider grants.
 
 ## Platform and regional identity
 
-The intended presentation has two independent connections: **FestUp Tickets**
+The intended presentation has two independent connections: **Festapp Tickets**
 for the global platform and **vstupenky.online** for the regional portal. They can
 share this MCP implementation and endpoint. Use separate registered OAuth clients,
 exact callbacks, explicit scope ceilings and consent; do not infer their backend
@@ -41,7 +44,7 @@ or privileges from the display name. This pilot retains `festapp-chatgpt` for th
 regional connection. No global client is registered or enabled by this change.
 
 Merge `regional-portal.json` into the protected regional issuer configuration.
-Consent then explains in the user's language that vstupenky.online runs on FestUp
+Consent then explains in the user's language that vstupenky.online runs on Festapp
 and that this connection applies to that portal. A global deployment omits
 `regionalPortal`; global users see no regional explanation. Presentation never
 selects a backend or grants access. A future shared issuer serving both products
@@ -49,7 +52,7 @@ must bind this presentation and tenant policy to the registered client, rather
 than use the regional deployment's default for both.
 
 Regional app name: `vstupenky.online`. Regional description: “vstupenky.online běží
-na společné platformě FestUp. Toto připojení platí pro vstupenky.online.”
+na společné platformě Festapp. Toto připojení platí pro vstupenky.online.”
 The regional name is explicit for user recognition and later directory search.
 The private name alone does not prove public search indexing.
 
