@@ -34,6 +34,15 @@ Status: local demo/package and core live pilot verified; publisher/portal gates 
 | Empty search, explicit refresh, immediate issuer revoke | Passed as dedicated reviewer |
 | Ambiguous event name | Initial ChatGPT case failed by reading both events. Guidance fix deployed, private tool metadata refreshed, and fresh ChatGPT retest passed: choice of two events before any report |
 
+## Observed portal blocker
+
+The actual Upload new or existing plugin action was attempted after final
+source publication. OpenAI displayed Complete identity verification and stated
+that a verified developer identity is required before creating or uploading a
+plugin. No draft was created and no ZIP or credentials were uploaded. The
+organization display name is Festapp; renaming it does not complete verification.
+The next human step is at https://platform.openai.com/settings/organization/general.
+
 ## Remaining portal and publisher gates
 
 - Complete individual/business publisher identity verification in OpenAI. Both
@@ -44,9 +53,9 @@ Status: local demo/package and core live pilot verified; publisher/portal gates 
   the real domain challenge, host that exact plain-text token without replacing
   any other plugin's token, and run the portal's current tool scan.
 - Supply private reviewer credentials only through the secure portal field.
-- Walkthrough MP4 and a real public repository URL are prepared; verify public
-  availability after source publication. It is an explicitly labeled screenshot-based
-  walkthrough of actual ChatGPT interactions, not continuous recording.
+- Public walkthrough returned HTTP 200 after source publication; downloaded bytes
+  matched the recorded SHA256. It is a screenshot-based walkthrough of actual
+  ChatGPT interactions, not continuous recording.
 - Review any portal findings and requested attestations against actual behavior.
   No fabricated publisher checks, screenshots, video URL or confirmations.
 

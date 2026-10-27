@@ -406,3 +406,10 @@ and the remaining publisher/portal gates. The public ZIP contains only the root
 manifest, MCP config and owned regional icon. The 50-second walkthrough uses
 reviewed screenshots of actual ChatGPT interactions; it is not continuous footage
 or proof that every review case ran as the dedicated demo identity.
+
+The published walkthrough returned HTTP 200 and its bytes matched the stored
+SHA256. An actual portal upload attempt was blocked before file selection by
+OpenAI's developer-identity verification requirement. No draft, upload, secure
+reviewer-credential entry or submission was created. The exact observed state is
+in `integrations/chatgpt/review/portal-status.json`; resume from identity
+verification rather than recreating the package, demo or private connection.
