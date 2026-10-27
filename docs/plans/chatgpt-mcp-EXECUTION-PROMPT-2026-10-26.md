@@ -3,6 +3,11 @@
 Work in `/Users/miakh/source/festapp`, respecting applicable AGENTS.md,
 CLAUDE.md and docs/architecture/ai_context.md. Verification: standard.
 
+Execution checkpoint, 2026-10-27: the regional cutover is deployed, first-party
+ChatGPT consent completed, and live report/list/detail/search plus scope denial
+passed. Resume from the [pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27);
+do not repeat deployment or create another connector to redo completed work.
+
 User amendment, 2026-10-27: first move the regional issuer/resource to
 `https://mcp.vstupenky.online/mcp`, then resume ChatGPT connection and acceptance.
 Use connector name `vstupenky.online` and explain Festapp only on this regional

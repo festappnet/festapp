@@ -1,13 +1,14 @@
 # Private ChatGPT connection
 
-This is private connection configuration for the approved regional target, not a
-public submission package. Do not connect until the regional cutover is verified.
-The currently deployed old address is `https://mcp.festapp.net/mcp`.
+This is private connection configuration for the deployed regional target, not a
+public submission package. The live address is `https://mcp.vstupenky.online/mcp`;
+the former `mcp.festapp.net` endpoint returns HTTP 410. Regional cutover and
+first-party ChatGPT consent completed on 2026-10-27, with six discovered read tools.
 Import `mcp.json` through the account's supported private configuration surface.
 For a provided-client form, use client `festapp-chatgpt`, token auth `none`,
 resource `https://mcp.vstupenky.online/mcp`, and both explicit scopes:
 `festapp:ticket-layouts:read festapp:orders:read`. Verify the exact callback in
-ChatGPT against the protected issuer registration; the prepared callback is
+ChatGPT against the protected issuer registration; the verified account callback is
 `https://chatgpt.com/connector_platform_oauth_redirect`.
 
 The issuer's protected client entry must have
@@ -25,7 +26,9 @@ widen registration. Public plugin manifests/assets follow actual acceptance.
 
 [Official configuration contract](https://developers.openai.com/plugins/build/plugins)
 and [tool authentication](https://developers.openai.com/plugins/build/auth),
-checked 2026-10-27. Account-specific import/installation remains to be verified.
+checked 2026-10-27. The account's Add custom MCP form accepted the provided public
+client, PKCE S256 and the two explicit read scopes. Deselect automatically
+discovered domain scopes other than these two before creating the connection.
 
 Rollback must retain this client's ceiling. Use a compatible previous image or
 disable/revoke the pilot client before restoring an older config. Never drop the

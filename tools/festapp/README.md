@@ -207,16 +207,16 @@ writes, preview and issued-ticket actions remain separate waves.
 
 ## Hosted OAuth pilot: connect in a browser
 
-The currently live endpoint is `https://mcp.festapp.net/mcp`. Its replacement is
-`https://mcp.vstupenky.online/mcp`, approved for the regional portal. Complete the
-[regional cutover](../../docs/plans/chatgpt-mcp-plan-2026-10-26.md#wave-2b---regional-endpoint-cutover-added-by-user-decision-2026-10-27)
-before further ChatGPT setup or acceptance. The new host is not yet deployed.
-Public health/discovery alone does not establish a user connection.
+The live regional endpoint is `https://mcp.vstupenky.online/mcp`. The former
+`mcp.festapp.net` endpoint is retired with HTTP 410. The regional cutover and
+first-party ChatGPT consent completed on 2026-10-27; the account discovers six
+read tools. See the [pilot record](../../docs/operations/chatgpt-mcp-pilot-2026-10-26.md)
+for executed acceptance cases and remaining checks.
 
-After the cutover, add the new regional URL as a custom remote MCP server in ChatGPT, choose
+Add the regional URL as a custom remote MCP server named `vstupenky.online` in ChatGPT, choose
 OAuth and the pre-registered public client `festapp-chatgpt` with no client secret.
 Register the exact callback shown by ChatGPT's server management page. The
-prepared configuration uses its stable callback
+verified account configuration uses its stable callback
 `https://chatgpt.com/connector_platform_oauth_redirect`; issuer identification is
 advertised and verified locally. Automatic/open client registration is disabled.
 
