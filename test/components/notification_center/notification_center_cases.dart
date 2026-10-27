@@ -159,8 +159,8 @@ void main() {
       expect(newAge.style?.fontWeight, FontWeight.w500);
       expect(newAge.style?.color, isNot(oldAge.style?.color));
       for (final entry in [
-        (oldRow, FontWeight.w600),
-        (newRow, FontWeight.w600),
+        (oldRow, FontWeight.w500),
+        (newRow, FontWeight.w500),
       ]) {
         final title = find.descendant(
           of: entry.$1,

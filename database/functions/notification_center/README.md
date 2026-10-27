@@ -113,35 +113,18 @@ authorized live order/form; captured counts and configuration are never rewritte
 The new forward migration is `20261026150000_notification_center_order_periods.sql`;
 all previous migration bytes, including the flat feed, are sealed prerequisites.
 
-## Compact overview (2026-10-27)
+## Category overview and one-request operations (2026-10-28)
 
-`get_notification_center_overview` is the current compact client's read owner.
-The existing authorized snapshot selector supplies standalone non-order events
-and one complete count per occasion/order-action kind. Recent and historical
-actions share that destination, so the UI never expands them. Group identities
-include the occasion ID and kind; similarly named occasions and distinct kinds
-cannot merge. A summary previews only the latest authorized contact; singleton
-rows retain existing place/form facts. Summary data omits `orderId`, so navigation
-uses the existing occasion order overview rather than one representative order.
-No paid-order notification is introduced.
-
-Keyset cursors bind recipient, organization, current occasion and snapshot. Limits
-count overview rows rather than underlying events. Known-ID hydration (maximum
-200 IDs) reuses the same query and current authorization, without inserting arrivals
-or acknowledging anything. The existing open/watermark contract remains unchanged.
-The forward migration is `20261027210000_notification_center_overview.sql`.
-The old flat and temporal APIs remain for released clients; their migration bytes
-are immutable. No new projection table, acknowledgment model or publication path
-is introduced.
-
-## Daily overview and one-request operations (2026-10-27 correction)
-
-The current client uses `get_notification_center_daily_overview`. One RPC returns
-complete per-occasion/kind/local-day counts, historical place totals, at most three
-recent authorized contacts per summary, pagination and the current unread badge.
-It validates a named display timezone and computes calendar dates with PostgreSQL
-`AT TIME ZONE`, including DST and local midnight. Cursor context binds the recipient,
-organization, occasion, snapshot, anchor instant and zone. No summaries cross days.
+The current client uses `get_notification_center_daily_overview`; the installed
+RPC name remains stable while the grouping is now per occasion and kind across
+all dates. One RPC returns complete order counts, place totals, at most three
+recent authorized contacts, pagination and the unread badge. All non-error
+occasion events are rolled up; email and bank incidents stay separate. Each
+row's date is the most recent occurrence, converted using the validated display
+timezone and PostgreSQL `AT TIME ZONE`. Canonical IDs are `occasion-kind:<id>:<kind>`
+and do not contain a date. Cursor context binds recipient, organization,
+occasion, snapshot, anchor instant and zone. The current grouping migration is
+`20261028013000_notification_category_rollups.sql`.
 
 `p_open=true` locks the existing personal state row, captures its pre-read watermark
 and delivery snapshot, includes occasion preferences and acknowledges only after
@@ -159,4 +142,6 @@ historical multi-order sum. Single-place application flows omit redundant totals
 The earlier overview RPC remains for already released clients. The forward-only
 migration is `20261027220000_notification_center_daily_overview.sql`.
 
-Daily totals retain captured counts and form context. Missing legacy fields are hydrated in batches from the authorized same-occasion orders, retained distinct ticket identities and distinct form contexts, matching the individual DTO contract. Multi-place applicability is returned even when the exact total is unavailable; clients show an explicit unavailable label rather than silently omitting places or inventing zero. No additional client RPC is needed.
+Group totals retain captured counts and form context. Missing legacy fields are hydrated in batches from the authorized same-occasion orders, retained distinct ticket identities and distinct form contexts, matching the individual DTO contract. Multi-place applicability is returned even when the exact total is unavailable; clients show an explicit unavailable label rather than silently omitting places or inventing zero. No additional client RPC is needed.
+
+Category rollups group all non-error events by occasion and kind across dates; email and bank incidents stay independent. The latest event supplies time/context, while all authorized delivered order activities in the frozen snapshot contribute counts and the latest three contact previews. Canonical IDs omit dates. The existing RPC name remains installed-client compatible; old day IDs accepted during loaded-row refresh resolve to one rollup under the first caller alias, never restore day grouping. New opens/pages use canonical occasion-kind IDs. Group selection uses the same entire category and snapshot.

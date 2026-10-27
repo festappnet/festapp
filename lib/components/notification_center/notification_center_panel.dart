@@ -441,8 +441,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                             key: ValueKey('notification-action-${item.id}'),
                             style: theme.textTheme.bodyLarge
                                 ?.copyWith(
-                                  fontSize: 17,
-                                  fontWeight: customerOrder || unread
+                                  fontSize: customerOrder ? 16 : 17,
+                                  fontWeight: customerOrder
+                                      ? FontWeight.w500
+                                      : unread
                                       ? FontWeight.w600
                                       : FontWeight.w400,
                                 )
@@ -508,7 +510,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                         s('placesUnavailable'),
                                     ].join(' · '),
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
