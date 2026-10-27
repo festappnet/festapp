@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -189,11 +188,8 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     if (link != null && data['relatedOrders'] == true) {
       await pushRootPath(
           context.router.root,
-          Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'],
-            queryParameters: item.isSummary ? {'notificationGroup': jsonEncode({
-              'id': item.id, 'organization': controller.organization,
-              'snapshot': controller.snapshot, 'timezone': controller.displayTimezone,
-            })} : null).toString());
+          Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'])
+              .toString());
       return;
     }
     final account = data['bankAccountId'];
