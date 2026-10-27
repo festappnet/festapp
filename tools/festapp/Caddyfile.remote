@@ -10,6 +10,12 @@ mcp.vstupenky.online {
         max_size 48KB
     }
     header -Server
+    # Exact public verification proof for the regional OpenAI directory draft.
+    # Keep it stable across future versions; never replace another app's proof.
+    handle /.well-known/openai-apps-challenge {
+        header Content-Type "text/plain; charset=utf-8"
+        respond "Ytxp6Kul7LPShauLX-V8zHZTfB3OlmodBE8aLlDDVh4" 200
+    }
     reverse_proxy 127.0.0.1:3399 {
         header_up Host mcp.vstupenky.online
         header_up X-Forwarded-Proto https
