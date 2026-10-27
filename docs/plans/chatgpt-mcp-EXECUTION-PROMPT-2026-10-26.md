@@ -100,3 +100,9 @@ Replace the old retrieved-hostile-note public review scenario with verification
 that the note and registration fields are absent. Retain previous injection
 evidence as historical operator-profile evidence. Actual portal state is in
 `integrations/chatgpt/review/portal-status.json`.
+
+Final public milestone: version **1.0.1** submitted through the actual portal;
+confirmed **In review**, **Not published**. Reviewer credentials, CZ scope,
+current five-positive/three-negative cases and matching public walkthrough are
+saved. External next step is OpenAI review. Receipt and advisory findings are
+recorded in `integrations/chatgpt/review/portal-status.json`.
