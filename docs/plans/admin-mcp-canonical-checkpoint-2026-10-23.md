@@ -1,9 +1,10 @@
 # Execution checkpoint - admin UI/MCP
 
-Aktuální stav 2026-10-27: etapy 0-10 lokálně dokončené. Produkce zůstává
-na doložených etapách 0-5; 6-10 čekají na běžné review PR #641 a samostatně
-autorizovaný rollout. [Závěrečné uzavření](#stage-7-10-final-local-closure)
-je na konci tohoto chronologického záznamu.
+Aktuální stav 2026-10-27: **etapy 0-10 dokončené a nasazené** pro
+`prod/festapptickets`, verze **0.20.432+936**.
+[Produkční uzavření](#final-production-closure-2026-10-27) a
+[release receipt](../operations/releases/festapptickets-mcp-final-2026-10-27.json)
+jsou aktuální stav; starší sekce zachovávají historii.
 
 Base: GitHub origin/main `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`.
 Workspace: `/private/tmp/festapp-admin-mcp-canonical-20261023`.
@@ -1585,3 +1586,35 @@ The exact 50-case CI client step passes locally. A 16-case occasion suite also
 checks the copy coordinator across restart and an account change during durable
 intent acquisition: a changed identity issues no SQL or Worker dispatch. The
 follow-up is pushed to the same PR; no production operation is added.
+
+
+## Final production closure 2026-10-27
+
+User explicitly authorized completing merge, deployment and workspace cleanup.
+PR #641 and #642 were merged with that one-time admin approval; main protection
+remained unchanged. Deployed application main is `acb68475bfabf5f51561082042ea7204d0e350fb`,
+tenant `04e3a152bb3c4ee68adab1719768b1a2e72233d2`, version **0.20.432+936**.
+Backend source `c03b28d1544e90953d637c3fe27f3d769b191dfc` is byte-equivalent
+to the final application main in every backend source directory.
+
+Five forward migrations and matching ledger rows were applied atomically after
+a fresh encrypted pgBackRest backup. Edge restart preserved the complete runtime
+configuration, with email paused/drained and resumed after worker probes. MCP
+was promoted after actual-image smoke and verified encrypted rollback backups;
+its stale Compose image pin was reconciled to the deployed image only. Keys,
+mounts and existing scope ceilings/grants were preserved. SQLite remains mutable
+and passed integrity checks. Image Worker release and all 12 probes passed.
+
+The local canonical web build and direct production upload passed, followed by
+three coherent live version/asset/legal probes. All 7 PR #641 checks and all 8
+PR #642 checks passed. No production business fixture or provider operation was
+created. Other tenant branches and Android were outside this rollout.
+
+Obsolete worktrees and merged branches were removed after ancestry checks.
+Original dirty changes remain recoverable under local archive refs; all 18
+integration/planning files were preserved byte-for-byte in the sole integration
+worktree. The canonical workspace is clean on main.
+
+See [the final receipt](../operations/releases/festapptickets-mcp-final-2026-10-27.json)
+for exact artifact IDs, migration hashes, readiness and live probe evidence.
+No implementation or deployment stage remains open.
