@@ -122,4 +122,32 @@ void main() {
     await coordinator().duplicate(7, targetUnitId: 23);
     expect(accepted[2], isNot(accepted[1]));
   });
+  test('identity change while opening a durable media intent refuses SQL and Worker dispatch', () async {
+    final storage = await LocalAppStorageFixture.open();
+    addTearDown(storage.dispose);
+    var identityReads = 0, sqlCalls = 0, mediaCalls = 0;
+    final commands = SupabaseOccasionCommands.withTransport(
+      ClientCommandTransport((name, params) async {
+        sqlCalls++;
+        return commandResponseFixture(
+          params['p_command_id'],
+          data: {'occasionId': 42},
+        );
+      }),
+    );
+    final coordinator = OccasionDuplicator(
+      commands: commands,
+      principalBinding: () =>
+          identityReads++ == 0 ? 'fixture:actor-A' : 'fixture:actor-B',
+      completeMedia: (_) async {
+        mediaCalls++;
+      },
+    );
+    await expectLater(
+      coordinator.duplicate(7, targetUnitId: 23),
+      throwsA(isA<StateError>()),
+    );
+    expect(sqlCalls, 0);
+    expect(mediaCalls, 0);
+  });
 }

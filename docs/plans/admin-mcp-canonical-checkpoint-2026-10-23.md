@@ -1573,3 +1573,15 @@ Human OAuth and credential onboarding remain the ordinary application flow.
 review. This work did not merge, deploy, run a production build, contact a real
 payment provider or change another tenant. Production rollout remains a separate
 authorized operation; the previous release receipt is not rewritten.
+
+
+### Final publication follow-up
+
+Initial implementation head `dd726ff73c54c8bef175635989693bfb67666011` passed
+six hosted checks; ticket-client found two fixture routes still targeting the
+retired UI transport names. The fixtures now exercise the canonical bank and
+unit-user receipt and retain their existing denial/self-role-refresh assertions.
+The exact 50-case CI client step passes locally. A 16-case occasion suite also
+checks the copy coordinator across restart and an account change during durable
+intent acquisition: a changed identity issues no SQL or Worker dispatch. The
+follow-up is pushed to the same PR; no production operation is added.

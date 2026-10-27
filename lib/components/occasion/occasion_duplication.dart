@@ -41,12 +41,18 @@ class OccasionDuplicator {
                 requestJson: jsonEncode(payload),
               )
             : const Uuid().v4());
+    if (principal != null && principalBinding?.call() != principal) {
+      throw StateError('Copy identity changed');
+    }
     final id = await commands.duplicate(
       source,
       targetUnitId: targetUnitId,
       locale: locale,
       commandId: intent,
     );
+    if (principal != null && principalBinding?.call() != principal) {
+      throw StateError('Copy identity changed');
+    }
     try {
       await completeMedia(intent);
       if (ownsIntent) {
@@ -62,6 +68,9 @@ class OccasionDuplicator {
       }
       return (occasionId: id, mediaCopied: true);
     } catch (_) {
+      if (principal != null && principalBinding?.call() != principal) {
+        rethrow;
+      }
       debugPrint('Occasion $id exists; resume media job $intent.');
       return (occasionId: id, mediaCopied: false);
     }

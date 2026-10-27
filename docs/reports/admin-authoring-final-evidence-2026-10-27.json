@@ -157,6 +157,24 @@
         "node automation/reports/generate_admin_capabilities.mjs --check"
       ],
       "status": "passed"
+    },
+    {
+      "name": "copy identity fence and coordinator recovery",
+      "command": "fvm flutter test --concurrency=1 test/components/occasion/occasion_unit_cases.dart",
+      "passed": 16,
+      "failed": 0,
+      "log": "/tmp/festapp-final-copy-identity.log",
+      "logSha256": "75130d0335199da7cc063875b7643ef4f9bac80d096b4c19e803cce5aa3ffc50",
+      "countNote": "Overlapping affected batches are not summed."
+    },
+    {
+      "name": "exact GitHub ticket-client regression step",
+      "command": "fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart test/components/notification_center/notification_center_cases.dart test/components/notification_center/notification_center_time_test.dart",
+      "passed": 50,
+      "failed": 0,
+      "log": "/tmp/festapp-final-ticket-client-ci.log",
+      "logSha256": "d430c563cfff9f724b155b9d7087461701da54c863f8049ce598f0b0a401663c",
+      "countNote": "Overlapping affected batches are not summed."
     }
   ],
   "sourceAuthority": "Exact source digests, not a claim that the historical stage6 source receipt describes this continuation. Source freeze and canonical parity are checked separately.",
@@ -195,7 +213,7 @@
     "lib/components/occasion/README.md": "ef591d1bd389ae71b9c8b977b7d04109cf4b024162f15eb42c4e99fd9ae76138",
     "lib/components/occasion/db_occasions.dart": "d00504fb0cbb37f4288a525ca7fd73513481cb63465952734a8c92d10006463c",
     "lib/components/occasion/occasion_commands.dart": "45e74d1e63c0c5ee91f7de9f0d424341a2713522c742f2ac5bf5b6671be328ff",
-    "lib/components/occasion/occasion_duplication.dart": "ecd8e36179f3b01ef6664f7497c6470e97fb94660e5501b4dca0c84698be64ec",
+    "lib/components/occasion/occasion_duplication.dart": "57911b22db91f64aa8202b1525427eb8f1ba9bf8d21716be9bda5c4dbe580c09",
     "lib/components/occasion/occasion_media_completion.dart": "aa8a41e387c3645156ac4173f5aa216e183ea0fdeac7de82313a1995ea1c6eae",
     "lib/components/stripe_payments/stripe_connection_api.dart": "a5f9d0c2f5e214cd82e9642377a4b92eba013a77bf33ee76f18585e5019809d8",
     "lib/components/unit/db_units.dart": "46959dfe610f7f3edfc66105c973163c044352a2ec5238baf5509bb7f6b76f58",
@@ -218,8 +236,9 @@
     "test/components/bank_accounts/token_update_cases.dart": "93a9a96b311028fbf399f4b58ecc8dbd575901456450b15f35c957cf3d0e22cb",
     "test/components/forms/verification_review_test.dart": "f8246b102c68ed3f9dee66309846044712d8f388d73ceac89e20bfe37a65bd3d",
     "test/components/occasion/occasion_commands_cases.dart": "2a1f27f490179ca30f9d7597174b2ceb96572e190a4b2be25b99b3e7f1debd5d",
-    "test/components/occasion/occasion_media_copier_cases.dart": "c88b2ecf23a162a0774b892fdac436f46fe6a0de835ec4be89f60e2bf1cd2087",
+    "test/components/occasion/occasion_media_copier_cases.dart": "c485996fef40abebbe6fffd55155464afa989b5c993b703e2aace39c0ed7f182",
     "test/components/stripe_payments/unit_card_payments_test.dart": "2956d29afda8e4290f9d1a01545c3ac04e3414a23f2c256e8618f2f64072d453",
+    "test/data_services/rights_explicit_occasion_test.dart": "0aa18ed7e38d08fdacefbf5894f2d4e3f2be1c597fb3aa832921428aed85d058",
     "tools/festapp/Dockerfile.remote": "3ce36a45807e8b6cbbfd5e6c00c255d0fa35ed49dc637e4c1994dfcc5862a936",
     "tools/festapp/src/mcp/protocol.mjs": "85a25db35b2aad41c137ff75051a2f92cdd0aa326aa8498e34f419945d1905c8",
     "tools/festapp/src/mcp/server.mjs": "a2c5722fdda7f2f1318ebbb828c8493a64c31452cfff7c14b51a2bc0ee55249f",
@@ -280,5 +299,12 @@
     "Focused affected checks were used, not a full production release gate.",
     "Backend/Edge/Worker/MCP/web must be released coherently in a separately authorized rollout."
   ],
-  "coverageNote": "The complete 38-case domain run preceded final admission/consent guard tightening. Its affected agenda4, finance7 and lifecycle6 suites were rerun on final inputs. Counts overlap and are not summed. Unaffected passing suites were not repeated."
+  "coverageNote": "The complete 38-case domain run preceded final admission/consent guard tightening. Its affected agenda4, finance7 and lifecycle6 suites were rerun on final inputs. Counts overlap and are not summed. Unaffected passing suites were not repeated.",
+  "ciFollowup": {
+    "initialHead": "dd726ff73c54c8bef175635989693bfb67666011",
+    "initialRun": "https://github.com/festappnet/festapp/actions/runs/40528517122",
+    "finding": "Ticket-client fixtures still expected update_bank_account_user and update_unit_user. They now exercise manage_bank_authoring and the canonical unit-user receipt, preserving denial de-duplication and self-role capability refresh. Exact 50-case failing CI step passes locally.",
+    "identityFence": "Account changes during durable copy-intent acquisition stop before SQL or Worker dispatch; an actor change is not returned as an ordinary partial media success.",
+    "latestHostedChecks": "To be confirmed for the follow-up head; not a deployment."
+  }
 }
