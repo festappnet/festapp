@@ -507,28 +507,24 @@ class _OrdersContentState extends State<OrdersContent> {
     bool owns() => mounted && generation == _loadGeneration &&
       identical(grid, controller) && isVisibleRouteInstance(context) &&
       context.routeData.queryParams.optString('notificationGroup') == target;
-    if (!await grid.whenLoaded) return;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted || !owns() || !grid.isGridLoaded) return;
+    for (var i = 0; i < 100 && owns() && !grid.isGridLoaded; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    if (!owns() || !grid.isGridLoaded) return;
     // Reveal all matching rows, including cancellations hidden by Active.
     grid.toggleAdditionalFilter(false);
     grid.stateManager.setFilterRows([]);
     grid.applyRowFilter();
-    final manager = grid.stateManager;
-    manager.setSelectingMode(TrinaGridSelectingMode.row, notify: false);
-    manager.clearCurrentSelecting(notify: false);
-    final rows = manager.refRows.filterOrOriginalList;
+    for (final row in grid.stateManager.refRows.originalList) {
+      grid.stateManager.setRowChecked(row, ids.contains(OrderGridFilters.order(row)?.id), notify: false);
+    }
+    grid.stateManager.notifyListeners();
+    final rows = grid.stateManager.refRows.filterOrOriginalList;
     final index = rows.indexWhere((row) => ids.contains(OrderGridFilters.order(row)?.id));
     if (index >= 0) {
-      manager.setCurrentCell(rows[index].cells[EshopColumnIds.ORDER_SYMBOL], index, notify: false);
-      for (var i = 0; i < rows.length; i++) {
-        if (ids.contains(OrderGridFilters.order(rows[i])?.id)) {
-          manager.toggleSelectingRow(i, notify: false);
-        }
-      }
-      manager.moveScrollByRow(TrinaMoveDirection.down, index);
+      grid.stateManager.setCurrentCell(rows[index].cells[EshopColumnIds.ORDER_SYMBOL], index);
+      grid.stateManager.moveScrollByRow(TrinaMoveDirection.down, index);
     }
-    manager.notifyListeners();
     if (owns()) {
       _selectedNotificationGroup = null;
       await clearNotificationDetailTarget(context, 'notificationGroup', target);
@@ -616,7 +612,7 @@ class _OrdersContentState extends State<OrdersContent> {
       return const Center(child: CircularProgressIndicator());
     }
     return SingleTableDataGrid<OrderModel>(controller!,
-        key: ObjectKey(controller), emptyMessage: OrdersStrings.noOrders);
+        emptyMessage: OrdersStrings.noOrders);
   }
 
   Future<void> cancelOrders(SingleDataGridController singleDataGrid) async {
