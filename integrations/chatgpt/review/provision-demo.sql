@@ -72,11 +72,14 @@ BEGIN
     FOR j IN 1..4 LOOP
       v_state := (ARRAY['ordered','paid','storno','waitlisted'])[j];
       v_count := CASE WHEN j<=2 THEN 2 ELSE 1 END;
-      v_price := v_count*250;
-      INSERT INTO eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method,
-        bank_account,stripe_connection_id,deadline)
-      VALUES(v_price,CASE WHEN j=2 THEN v_price ELSE 0 END,0,'CZK',null,'bank',null,null,'2027-01-10 23:59:00+01')
-      RETURNING id INTO v_payment;
+      v_price := CASE WHEN j=4 THEN NULL ELSE v_count*250 END;
+      v_payment := NULL;
+      IF j<>4 THEN
+        INSERT INTO eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method,
+          bank_account,stripe_connection_id,deadline)
+        VALUES(v_price,CASE WHEN j=2 THEN v_price ELSE 0 END,0,'CZK',null,'bank',null,null,'2027-01-10 23:59:00+01')
+        RETURNING id INTO v_payment;
+      END IF;
       v_symbol := generate_order_symbol();
       INSERT INTO eshop.orders(occasion,form,payment_info,state,price,currency_code,order_sequence,order_symbol,data,note_hidden)
       VALUES(v_event,v_form,v_payment,v_state,v_price,'CZK',next_order_sequence(v_event),v_symbol,
@@ -91,9 +94,11 @@ BEGIN
       v_tickets := '[]';
       FOR k IN 1..v_count LOOP
         INSERT INTO eshop.tickets(occasion,state,ticket_symbol)
-        VALUES(v_event,v_state,gen_random_uuid()::text) RETURNING id INTO v_ticket;
-        INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(v_order,v_product,v_ticket);
-        v_tickets := v_tickets||jsonb_build_array(jsonb_build_object('id',v_ticket,'products',jsonb_build_array(jsonb_build_object('id',v_product,'price',250))));
+        VALUES(v_event,v_state,CASE WHEN j=4 THEN NULL ELSE gen_random_uuid()::text END) RETURNING id INTO v_ticket;
+        INSERT INTO eshop.order_product_ticket("order",product,ticket)
+        VALUES(v_order,CASE WHEN j=4 THEN NULL ELSE v_product END,v_ticket);
+        v_tickets := v_tickets||jsonb_build_array(jsonb_build_object('id',v_ticket,'products',
+          CASE WHEN j=4 THEN '[]'::jsonb ELSE jsonb_build_array(jsonb_build_object('id',v_product,'price',250)) END));
       END LOOP;
       UPDATE eshop.orders SET data=data||jsonb_build_object('tickets',v_tickets) WHERE id=v_order;
       v_orders := v_orders||jsonb_build_array(jsonb_build_object('occasionId',v_event,'id',v_order,'symbol',v_symbol,'state',v_state,'hostileNote',i=1 AND j=1));
