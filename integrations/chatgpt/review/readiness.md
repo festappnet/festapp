@@ -5,7 +5,7 @@
 Verified publisher Festapp; regional domain verification and dedicated-reviewer
 OAuth succeeded in the real portal. Draft
 `plugin_asdk_app_6ae002a14394819189521c68175a53d5` exists. Six tools scanned with
-no findings; after deployment a rescan confirmed the restricted order schema.
+no blocking findings; the two advisory metadata assessments are recorded below; after deployment a rescan confirmed the restricted order schema.
 Version 1.0.1 was uploaded and **submitted**. The portal list and version
 detail both show **In review**; publication is **Not published**. See
 [portal receipt](portal-status.json). Review is now pending with OpenAI.
