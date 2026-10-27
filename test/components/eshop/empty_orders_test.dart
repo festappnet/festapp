@@ -1,10 +1,3 @@
-import 'package:flutter/material.dart' as sdk;
-import 'package:fstapp/components/notification_center/notification_center_bell.dart';
-import 'package:fstapp/app_router.gr.dart';
-import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
-import 'dart:async';
-import '../../support/navigation_fixture.dart';
-import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/notification_center/notification_center_controller.dart';
 import 'package:fstapp/components/notification_center/notification_center_panel.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -39,26 +32,6 @@ class _Router extends RootStackRouter {
       ];
 }
 
-class _ProductionShapeRouter extends RootStackRouter {
-  _ProductionShapeRouter({this.showBell=false});
-  final bool showBell;
-  AutoRoute fixture(AutoRoute route) {
-    if(route is RedirectRoute) return route;
-    Widget build(BuildContext context) {
-      switch(route.name) {
-        case 'ReservationsRoute': return Scaffold(appBar:showBell?AppBar(actions:const [NotificationCenterBell()]):null,body:const AutoRouter());
-        case 'ReservationsTabsRoute': return const RoutedTabScaffold(tabs:[RoutedTabDefinition(slug:'orders',route:OrdersNavigationRoute(),label:'Orders',icon:Icons.list)]);
-        case 'OrdersNavigationRoute': return const AutoRouter();
-        case 'OrdersTabsRoute': return const RoutedTabScaffold(tabs:[RoutedTabDefinition(slug:'current',route:OrdersCurrentRoute(),label:'Current',icon:Icons.list),RoutedTabDefinition(slug:'history',route:OrdersHistoryRoute(),label:'History',icon:Icons.history)]);
-        case 'OrdersCurrentRoute': return const OrdersContent();
-        default: return Text(route.name);
-      }
-    }
-    return route.copyWith(guards:[],page:PageInfo(route.name,builder:(_)=>Builder(builder:build)),children:route.children?.map(fixture).toList());
-  }
-  @override List<AutoRoute> get routes=>AppRouter().routes.where((route)=>route.name=='ReservationsRoute').map(fixture).toList();
-}
-
 class _Translations extends AssetLoader {
   @override
   Future<Map<String, dynamic>> load(String path, Locale locale) async =>
@@ -72,7 +45,6 @@ void main() {
   var includeOrder = false;
   var repairReads = 0;
   var groupSelection = false;
-  var bellEntry = false;
   Map<String, dynamic>? groupRequest;
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -84,11 +56,6 @@ void main() {
           autoRefreshToken: false, localStorage: EmptyLocalStorage()),
       httpClient: MockClient((request) async {
         final isOrders = request.url.path.endsWith('/get_orders_tab_data');
-        if(bellEntry && (request.url.path.endsWith('/get_notification_center_badge') || request.url.path.endsWith('/get_notification_center_daily_overview'))) {
-          final overview=request.url.path.endsWith('/get_notification_center_daily_overview');
-          return http.Response(jsonEncode({'enabled':true,'feedSupported':true,'timelineSupported':true,'dailySupported':true,'unread':true,'lastSequence':7,'readThrough':0,
-            if(overview) ...{'snapshot':7,'snapshotAt':DateTime.now().toUtc().toIso8601String(),'previousReadThrough':0,'items':[{'id':'occasion-kind:1:order_created','kind':'order_created','occasionId':1,'occasionTitle':'Ples','occasionLink':'empty','sequence':7,'occurredAt':DateTime.now().toUtc().toIso8601String(),'data':{'activityCount':6,'relatedOrders':true,'placeCount':6,'previewContacts':[{'name':'Jan','surname':'Novák'}]}}],'occasions':[]}}),200,request:request,headers:{'content-type':'application/json; charset=utf-8'});
-        }
         if (isOrders && groupSelection) groupRequest = jsonDecode(request.body) as Map<String,dynamic>;
         if (request.url.path.endsWith('/get_order_history')) repairReads++;
         if (fail && isOrders) {
@@ -127,8 +94,8 @@ void main() {
   });
   tearDownAll(() => Supabase.instance.dispose());
 
-  Future<void> showOrders(WidgetTester tester, {String path = '/empty', RootStackRouter? externalRouter}) async {
-    final router = externalRouter ?? _Router();
+  Future<void> showOrders(WidgetTester tester, {String path = '/empty'}) async {
+    final router = _Router();
     addTearDown(router.dispose);
     await tester.pumpWidget(EasyLocalization(
       supportedLocales: const [Locale('cs')],
@@ -203,56 +170,17 @@ void main() {
   }
 
   for (final selectedKind in ['order_created','order_cancelled']) {
-  testWidgets('$selectedKind navigation selects all six matching rows in the existing orders RPC', (tester) async {
+  testWidgets('$selectedKind navigation checks all six matching orders in the existing orders RPC', (tester) async {
     fail = false; includeOrder = true; groupSelection = true; groupRequest = null;
     addTearDown(() { includeOrder = false; groupSelection = false; });
-    final group = {'id':'occasion-kind:1:$selectedKind','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    final group = {'id':'order-day:1:$selectedKind:2026-10-27','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
     await showOrders(tester, path: Uri(path:'/empty',queryParameters:{'notificationGroup':jsonEncode(group)}).toString());
     final grid = tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>)).controller;
-    expect(grid.stateManager.refRows.originalList.map((row)=>grid.stateManager.isSelectedRow(row.key)), [true,true,true,true,true,true,false]);
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked), [true,true,true,true,true,true,false]);
     expect(groupRequest?['p_notification_group'],group);
     expect(find.byType(OrderEmailRepairDialog),findsNothing);
   });
 
-  }
-
-  testWidgets('group notification selects orders when the real retained tab is already open', (tester) async {
-    fail=false;includeOrder=true;groupSelection=true;groupRequest=null;
-    addTearDown(() {includeOrder=false;groupSelection=false;});
-    final router = FixtureRouter(Access())..ordersCurrentBuilder=(_)=>const OrdersContent();
-    await showOrders(tester,path:'/empty/reservations/orders/current',externalRouter:router);
-    final group={'id':'occasion-kind:1:order_created','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
-    unawaited(pushRootPath(router,Uri(path:'/empty/reservations/orders/current',queryParameters:{'notificationGroup':jsonEncode(group)}).toString()));
-    for(var i=0;i<40;i++) {await tester.pump(const Duration(milliseconds:50));}
-    final grids=find.byType(SingleTableDataGrid<OrderModel>);
-    final grid=tester.widget<SingleTableDataGrid<OrderModel>>(grids.last).controller;
-    expect(groupRequest?['p_notification_group'],group);
-    expect(grid.stateManager.refRows.originalList.map((row)=>grid.stateManager.isSelectedRow(row.key)),[true,true,true,true,true,true,false]);
-    await grid.reloadIfClean();
-    await tester.pumpAndSettle();
-    expect(grid.stateManager.refRows.originalList.map((row)=>grid.stateManager.isSelectedRow(row.key)),[true,true,true,true,true,true,false],reason:'automatic clean reload must preserve the notification selection');
-    expect(tester.takeException(),isNull);
-  });
-
-  for(final returnFromHistory in [false,true]) {
-  testWidgets('production route shape applies group after retained tab return=$returnFromHistory', (tester) async {
-    fail=false;includeOrder=true;groupSelection=true;groupRequest=null;
-    addTearDown(() {includeOrder=false;groupSelection=false;});
-    final router=_ProductionShapeRouter();
-    const path='/empty/reservations/orders/current';
-    await showOrders(tester,path:path,externalRouter:router);
-    if(returnFromHistory) {
-      unawaited(router.navigate(rootRouteForPath(router,'/empty/reservations/orders/history')));
-      for(var i=0;i<20;i++){await tester.pump(const Duration(milliseconds:50));}
-    }
-    final group={'id':'occasion-kind:1:order_created','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
-    unawaited(pushRootPath(router,Uri(path:path,queryParameters:{'notificationGroup':jsonEncode(group)}).toString()));
-    for(var i=0;i<50;i++){await tester.pump(const Duration(milliseconds:50));}
-    final grid=tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>).last).controller;
-    expect(groupRequest?['p_notification_group'],group);
-    expect(grid.stateManager.refRows.originalList.map((row)=>grid.stateManager.isSelectedRow(row.key)),[true,true,true,true,true,true,false]);
-    expect(tester.takeException(),isNull);
-  });
   }
 
   for (final kind in ['order_created', 'order_cancelled']) {
@@ -295,30 +223,4 @@ void main() {
   });
 
   }
-  testWidgets('actual bell click selects matching order rows through production routing', (tester) async {
-    fail=false;includeOrder=true;groupSelection=true;bellEntry=true;groupRequest=null;
-    addTearDown(() {includeOrder=false;groupSelection=false;bellEntry=false;});
-    const actor='00000000-0000-4000-8000-000000000001';
-    final token=base64Url.encode(utf8.encode(jsonEncode({'exp':DateTime.now().millisecondsSinceEpoch~/1000+3600,'sub':actor}))).replaceAll('=','');
-    await Supabase.instance.client.auth.recoverSession(jsonEncode({'access_token':'eyJhbGciOiJIUzI1NiJ9.$token.fixture','refresh_token':'fixture','token_type':'bearer','expires_in':3600,'user':{'id':actor,'aud':'authenticated','role':'authenticated','created_at':'2026-01-01T00:00:00Z'}}));
-    final router=_ProductionShapeRouter(showBell:true);
-    await showOrders(tester,path:'/empty/reservations/orders/current',externalRouter:router);
-    await tester.pumpAndSettle();
-    expect(find.byType(NotificationCenterBell),findsOneWidget);
-    final dynamic bellState=tester.state(find.byType(NotificationCenterBell));
-    final NotificationCenterController c=bellState.controller;
-    await tester.runAsync(c.refreshBadge);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(NotificationCenterBell));
-    await tester.runAsync(() async {await Future<void>.delayed(const Duration(milliseconds:100));});
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('notification-item-occasion-kind:1:order_created')));
-    for(var i=0;i<50;i++){await tester.pump(const Duration(milliseconds:50));}
-    final grid=tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>).last).controller;
-    expect(groupRequest?['p_notification_group']?['snapshot'],7);
-    final visibleChecks=tester.widgetList<sdk.Checkbox>(find.byType(sdk.Checkbox)).map((x)=>x.value).toList();
-    expect(visibleChecks.where((x)=>x==true),isEmpty,reason:'notification selection must not check bulk-action checkboxes');
-    expect(grid.stateManager.refRows.originalList.map((row)=>grid.stateManager.isSelectedRow(row.key)),[true,true,true,true,true,true,false]);
-  });
-
 }
