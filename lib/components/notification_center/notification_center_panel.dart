@@ -428,83 +428,91 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(
+                            customerOrder &&
+                                    (item.data['activityCount'] as int? ?? 1) >
+                                        1
+                                ? s(
+                                    item.kind == 'order_created'
+                                        ? 'newOrders'
+                                        : 'cancelledOrders',
+                                  )
+                                : presentation.title,
+                            key: ValueKey('notification-action-${item.id}'),
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontSize: 17,
+                                  fontWeight: customerOrder || unread
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                )
+                                .copyWith(
+                                  color: unread
+                                      ? colors.onSurface
+                                      : colors.onSurfaceVariant,
+                                  height: 1.3,
+                                  letterSpacing: 0,
+                                ),
+                          ),
                           if (customerOrder &&
-                              presentation.previewNames.isNotEmpty)
+                              presentation.previewNames.isNotEmpty) ...[
+                            const SizedBox(height: 4),
                             _customerPreview(
                               context,
                               presentation,
-                              theme.textTheme.bodyLarge
+                              theme.textTheme.bodyMedium
                                   ?.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: unread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  )
-                                  .copyWith(
-                                    color: unread
-                                        ? colors.onSurface
-                                        : colors.onSurfaceVariant,
-                                    height: 1.3,
+                                    color: colors.onSurfaceVariant,
+                                    height: 1.4,
                                     letterSpacing: 0,
-                                  ),
-                            )
-                          else
-                            Text(
-                              presentation.title,
-                              style: theme.textTheme.bodyLarge
-                                  ?.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: unread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
                                   )
-                                  .copyWith(
-                                    color: unread
-                                        ? colors.onSurface
-                                        : colors.onSurfaceVariant,
-                                    height: 1.3,
-                                    letterSpacing: 0,
-                                  ),
+                                  .copyWith(fontSize: 15),
                             ),
+                          ],
                           if (customerOrder) ...[
                             const SizedBox(height: 4),
-                            Text(
-                              [
-                                if (day != null)
-                                  NotificationCenterTime.dayHeading(
-                                    day,
-                                    locale,
-                                    now:
-                                        widget.controller.snapshotDay ??
-                                        widget.controller.snapshotAt,
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  if (day != null)
+                                    TextSpan(
+                                      text:
+                                          '${NotificationCenterTime.dayHeading(day, locale, now: widget.controller.snapshotDay ?? widget.controller.snapshotAt)} · ',
+                                    ),
+                                  TextSpan(
+                                    text: [
+                                      NotificationCenterStrings.orders(
+                                        item.data['activityCount'] as int? ?? 1,
+                                        locale: locale,
+                                      ),
+                                      if (item.data['placeCount'] is int)
+                                        NotificationCenterStrings.places(
+                                          item.data['placeCount'] as int,
+                                          locale: locale,
+                                        )
+                                      else if (!item.isSummary &&
+                                          item.data['count'] is int &&
+                                          ((item.data['count'] as int) > 1 ||
+                                              (item.data['formContext']
+                                                      as Map?)?['allowsMultiple'] ==
+                                                  true))
+                                        NotificationCenterStrings.places(
+                                          item.data['count'] as int,
+                                          locale: locale,
+                                        )
+                                      else if (item.data['allowsMultiple'] ==
+                                              true ||
+                                          (item.data['formContext']
+                                                  as Map?)?['allowsMultiple'] ==
+                                              true)
+                                        s('placesUnavailable'),
+                                    ].join(' · '),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                if (item.kind == 'order_cancelled')
-                                  NotificationCenterStrings.activities(
-                                    item.kind,
-                                    item.data['activityCount'] as int? ?? 1,
-                                    locale: locale,
-                                  )
-                                else
-                                  NotificationCenterStrings.orders(
-                                    item.data['activityCount'] as int? ?? 1,
-                                    locale: locale,
-                                  ),
-                                if (item.data['placeCount'] is int)
-                                  NotificationCenterStrings.places(
-                                    item.data['placeCount'] as int,
-                                    locale: locale,
-                                  )
-                                else if (!item.isSummary &&
-                                    item.data['count'] is int &&
-                                    ((item.data['count'] as int) > 1 ||
-                                        (item.data['formContext']
-                                                as Map?)?['allowsMultiple'] ==
-                                            true))
-                                  NotificationCenterStrings.places(
-                                    item.data['count'] as int,
-                                    locale: locale,
-                                  ),
-                              ].join(' · '),
+                                ],
+                              ),
                               key: ValueKey('notification-age-${item.id}'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontSize: 13,
@@ -519,6 +527,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ] else if (item.isSummary &&
+                              (item.data['activityCount'] as int) > 1 &&
                               presentation.previewNames.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             if (details.isNotEmpty)

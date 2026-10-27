@@ -32,23 +32,40 @@ BEGIN
  WITH visible AS MATERIALIZED (
   SELECT v.*,public.notification_center_order_activity_internal((event).kind) AND (event).occasion IS NOT NULL grouped
   FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v),
+ -- Resolve absent legacy facts in batches, never one client request per row.
+ legacy_orders AS MATERIALIZED (
+  SELECT DISTINCT o.id,o.form FROM visible v
+  JOIN eshop.orders o ON o.id=CASE WHEN (v.event).data->>'orderId' ~ '^[0-9]{1,18}$'
+   THEN ((v.event).data->>'orderId')::bigint END AND o.occasion=(v.event).occasion
+  JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=p_organization
+  WHERE v.grouped AND ((v.event).data->>'count' IS NULL
+   OR (v.event).data->>'formContext' IS NULL)),
+ legacy_counts AS MATERIALIZED (
+  SELECT o.id,nullif(count(DISTINCT x.ticket),0) places FROM legacy_orders o
+  LEFT JOIN eshop.order_product_ticket x ON x."order"=o.id GROUP BY o.id),
+ legacy_forms AS MATERIALIZED (
+  SELECT form,public.notification_center_order_form_context_internal(form) context
+  FROM (SELECT DISTINCT form FROM legacy_orders) f),
  classified AS MATERIALIZED (
   SELECT v.*,((event).occurred_at AT TIME ZONE p_timezone)::date calendar_day,
-   CASE WHEN (event).data->>'count' ~ '^[0-9]{1,9}$'
-    THEN nullif(greatest(((event).data->>'count')::bigint,0),0) END captured_places
-  FROM visible v),
+   coalesce(CASE WHEN (event).data->>'count' ~ '^[0-9]{1,9}$'
+    THEN nullif(greatest(((event).data->>'count')::bigint,0),0) END,c.places) captured_places,
+   coalesce(nullif((event).data->'formContext','null'::jsonb),f.context) resolved_context
+  FROM visible v LEFT JOIN legacy_orders o ON v.grouped AND o.id=
+   CASE WHEN (v.event).data->>'orderId' ~ '^[0-9]{1,18}$' THEN ((v.event).data->>'orderId')::bigint END
+  LEFT JOIN legacy_counts c ON c.id=o.id LEFT JOIN legacy_forms f ON f.form=o.form),
  ranked AS (
   SELECT *,row_number() OVER(bucket ORDER BY (event).occurred_at DESC,(event).id DESC) rank,
    count(*) OVER bucket n,count(captured_places) OVER bucket known_counts,sum(captured_places) OVER bucket total_places,
-   bool_or(captured_places>1 OR (event).data#>'{formContext,allowsMultiple}'='true'::jsonb) OVER bucket has_multiple,
+   bool_or(captured_places>1 OR resolved_context->'allowsMultiple'='true'::jsonb) OVER bucket has_multiple,
    max((delivery).sequence) OVER bucket latest FROM classified WHERE grouped
   WINDOW bucket AS(PARTITION BY (event).occasion,(event).kind,calendar_day)),
  combined AS (
   SELECT (event).id::text id,section,(event).occurred_at at,event,delivery,calendar_day,
-   0::bigint activity_count,(delivery).sequence sequence,NULL::bigint place_count FROM classified WHERE NOT grouped
+   0::bigint activity_count,(delivery).sequence sequence,NULL::bigint place_count,false multiple_places FROM classified WHERE NOT grouped
   UNION ALL
   SELECT 'order-day:'||(event).occasion||':'||(event).kind||':'||calendar_day,section,(event).occurred_at,event,delivery,
-   calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END FROM ranked WHERE rank=1),
+   calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END,coalesce(has_multiple,false) FROM ranked WHERE rank=1),
  rows AS (
   SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM combined
   WHERE (p_ids IS NULL OR id=ANY(p_ids)) AND (cursor IS NULL OR section>(cursor->>'section')::int
@@ -58,7 +75,7 @@ BEGIN
  SELECT coalesce((SELECT jsonb_agg(CASE WHEN activity_count=0 THEN dto||jsonb_build_object('section',section,'day',calendar_day)
   ELSE dto||jsonb_build_object('id',id,'section',section,'day',calendar_day,'sequence',sequence,'data',
    (CASE WHEN activity_count=1 THEN dto->'data' ELSE jsonb_build_object('contact',dto#>'{data,contact}') END)-'orderId'-'orderSymbol'
-   ||jsonb_build_object('activityCount',activity_count,'relatedOrders',true)
+   ||jsonb_build_object('activityCount',activity_count,'relatedOrders',true,'allowsMultiple',multiple_places)
    ||jsonb_strip_nulls(jsonb_build_object('placeCount',place_count))
    ||jsonb_build_object('previewContacts',(SELECT jsonb_agg(
     public.notification_center_dto(r.event,r.delivery)#>'{data,contact}' ORDER BY r.rank)

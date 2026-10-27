@@ -2357,6 +2357,9 @@
     "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   },
   "NotificationCenter": {
+    "newOrders": "Neue Bestellungen",
+    "cancelledOrders": "Stornierte Bestellungen",
+    "placesUnavailable": "Anzahl der Plätze nicht verfügbar",
     "orders": {
       "one": "{count} Bestellung",
       "few": "{count} Bestellungen",
