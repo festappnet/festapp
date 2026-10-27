@@ -10,7 +10,8 @@ Etapy 0-5 mají doložené nasazení pro prod/festapptickets ve verzi
 0.20.427+929. [Receipt](../operations/releases/festapptickets-2026-10-27.json)
 obsahuje skutečné SQL/Edge/MCP/web revize. Etapa 6 je lokálně hotová a ověřená,
 bez produkčního nasazení; větev feat/admin-mcp-stage6-20261027 z main a698f7403.
-Před pokračováním ověřit stav jejího review/integrace. Main vyžaduje review;
+Publikováno jako [PR #641](https://github.com/festappnet/festapp/pull/641),
+implementace 518b7d809. Před pokračováním ověřit stav review/integrace. Main vyžaduje review;
 staré admin výjimky se na další etapu či rollout nevztahují.
 
 Další etapa je **7 - pokročilá editace plánků a vzhled vstupenek**. Přečíst

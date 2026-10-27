@@ -1499,3 +1499,14 @@ nekopíruje celý occasion-user editor bundle ani nerozbíjí jeden save na víc
 Hotovo **7/11 hlavních etap**, etapa 6 dosud nenasazená. Následuje
 **7 - pokročilá editace plánků a vzhled vstupenek**. Neslučovat s odděleným
 ChatGPT veřejným pilotem a neobnovovat historický PR stack.
+
+
+### Stage 6 publication receipt
+
+Publikováno jako [PR #641](https://github.com/festappnet/festapp/pull/641).
+Ověřená implementace `518b7d80954334cc148439486be4d93447b5924d`, base main
+`a698f7403bbb62730df211a91c777b12a356d25c`. Bezprostřední pre-publication
+fetch potvrdil, že čerstvý origin/main je předkem navrženého headu; upstream
+mezitím nepostoupil. GitHub potvrzuje OPEN / REVIEW_REQUIRED, cíl main.
+Tento následný záznam mění pouze dokumentaci; zdroje a jejich passing evidence
+zůstávají beze změny. Produkční merge ani rollout neproběhly.
