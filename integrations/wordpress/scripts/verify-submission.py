@@ -7,6 +7,7 @@ import hashlib
 import json
 import zipfile
 from pathlib import Path
+from metadata_contract import validate_minimum_wordpress
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -36,6 +37,9 @@ require(release['zip_sha256'] == product['zip_sha256'], 'SVN stage refers to ano
 require(release['plugin'] == args.product and release['version'] == product['version'], 'SVN identity/version differs')
 inputs = json.loads((root / 'evidence' / (args.product + '-package-inputs.json')).read_text())
 with zipfile.ZipFile(archive) as package:
+    validate_minimum_wordpress(
+        package.read(args.product + '/' + args.product + '.php').decode('utf-8'),
+        package.read(args.product + '/readme.txt').decode('utf-8'))
     entries = package.infolist()
     require(len(entries) == len(inputs) == product['files'], 'ZIP entry count differs')
     seen = set()

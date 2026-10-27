@@ -1,5 +1,9 @@
 # vstupenky.online a Festapp Tickets pro WordPress
 
+[Zkušenosti z review](REVIEW-LESSONS.md) zaznamenávají přehlédnutá pravidla a jejich
+prevenci. Sémantiku minimální WP verze hlídá generátor i ověření zapečetěného ZIPu;
+regresní případy lze spustit `python3 scripts/test_metadata_contract.py`.
+
 Dva samostatné pluginy 1.0.0 sestavené z `shared/` a explicitních identit v `products.json`. Každý přidává nativní Gutenberg blok a shortcode. Účet pořadatele, objednávky, platby, kapacita, emaily, PDF a odbavení zůstávají ve službě. Výsledky a limity: [READINESS.md](READINESS.md). Veřejné kroky: [SUBMISSION.md](SUBMISSION.md).
 
 | Plugin | Blok | Shortcode | Povolený produkční origin |

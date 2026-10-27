@@ -1,10 +1,10 @@
 === vstupenky.online ===
 Contributors: festappnet
 Tags: tickets, events, registration, embed, forms
-Requires at least: 6.6.4
+Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,7 +48,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.2.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.3.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > vstupenky.online, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -80,6 +80,9 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
+= 1.0.3 =
+* Declare the minimum supported WordPress major release consistently.
+
 = 1.0.2 =
 * Link the service offer directly to the canonical homepage.
 
@@ -88,5 +91,5 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Upgrade Notice ==
 
-= 1.0.2 =
+= 1.0.3 =
 No database migration. Existing block and shortcode settings are retained.

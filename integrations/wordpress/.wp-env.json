@@ -19,7 +19,7 @@
   },
   "env": {
     "tests": {
-      "core": "https://wordpress.org/wordpress-6.6.4.zip",
+      "core": "https://wordpress.org/wordpress-6.6.zip",
       "phpVersion": "7.4"
     }
   }

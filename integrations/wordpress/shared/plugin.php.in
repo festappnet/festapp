@@ -4,7 +4,7 @@
  * Plugin URI: @@ORIGIN@@/
  * Description: Embed a saved @@NAME@@ ticket form with a block or shortcode.
  * Version: @@VERSION@@
- * Requires at least: 6.6.4
+ * Requires at least: 6.6
  * Requires PHP: 7.4.33
  * Author: Festapp
  * Author URI: https://festapp.net/

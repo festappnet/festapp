@@ -1,0 +1,33 @@
+{
+  "state": "REVIEW_CORRECTION_UPLOADED_AND_REPLIED",
+  "checked_at": "2026-10-27T19:28:32.448974+00:00",
+  "review_email_id": "1a17ebf910d7b0d3",
+  "review_thread_id": "1a17ebf910d7b0d3",
+  "review_requirement": "Requires at least: 6.6 in both plugin header and readme",
+  "plugin": "vstupenky-online",
+  "version": "1.0.3",
+  "zip_sha256": "e8f191369e63e801df79dff25d6733df5df62ff1c9549af28ffebf77799a7179",
+  "tests": {
+    "wordpress": "6.6",
+    "php": "7.4.33",
+    "clean_install_activation": true,
+    "real_contract_assertions": 39,
+    "plugin_check": "2.1.0",
+    "plugin_check_errors": 0,
+    "plugin_check_warnings": 1,
+    "warning": "Existing load_plugin_textdomain call retained for sideloaded translations"
+  },
+  "runtime_diff_vs_main_1_0_2": "Only WordPress minimum header and release version/cache keys; embed/admin/editor/style unchanged",
+  "updated_existing_submission": true,
+  "reply_sent": true,
+  "published": false,
+  "upload_verified_at": "2026-10-27T19:30:05.897034+00:00",
+  "portal_confirmation": "New version of vstupenky.online uploaded for review.",
+  "portal_displayed_file": "vstupenky-online-1.0.3.zip",
+  "portal_displayed_version": "1.0.3",
+  "portal_submission_count": 1,
+  "reply_message_id": "1a17ed69e5d06382",
+  "reply_thread_id": "1a17ebf910d7b0d3",
+  "reply_sent_readback_verified": true,
+  "catalog_approval": false
+}

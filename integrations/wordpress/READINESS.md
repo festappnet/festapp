@@ -103,3 +103,13 @@ Nová vlastní jednotka ještě nemá platební/právní konfiguraci. První pla
 Živé globální `/login`, `/embed.js` (protokol 1), anglické privacy/terms/support/choices a aktivace `festappticketsglobal`/canonical byly načteny izolovaným skutečným Chrome (`global-public-origins.json`). Není tím ověřen živý globální platební obchodník, Stripe/SCA ani produkční nákup. Emailové průchody používají hlídaný lokální provider sink pouze pro `@example.invalid`; neprokazují SES acceptance ani doručitelnost. Žádná skutečná platba ani externí testovací email.
 
 Dvě podobné distribuce může WordPress.org posoudit jako duplicitní; schválení ani finální slug nelze slíbit. Připraveny jsou dvě oddělené žádosti, nikoli obcházení review. Po souhlasu vlastníka následuje podání, rozhodnutí katalogu, přidělení SVN a samostatné schválení veřejného vydání. Lokální opravy služby vyžadují samostatný autorizovaný release po sladění s aktuálním main. Checkout obsahuje i cizí rozpracované změny, žádný commit/push nebyl proveden.
+
+## WordPress.org review correction, 2026-10-27
+
+Česká verze 1.0.3 sjednocuje Requires at least na 6.6 v hlavičce a readme.
+Čistá instalace/aktivace a 39 reálných kontraktů prošly na WP 6.6/PHP 7.4.33;
+Plugin Check 2.1.0: 0 errors, 1 známý překladový warning. Runtime embed/admin/editor/style
+je shodný s main 1.0.2; změněny jsou metadata a release/cache version.
+ZIP byl ověřeným podáním nahrán do původní žádosti, reviewer dostal odpověď
+ve stejném vlákně. Nejde o schválení ani veřejné katalogové vydání.
+Důkazy: `evidence/review-response-20261027.json`.
