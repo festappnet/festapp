@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-10-27T01:36:15.933807+00:00",
+  "organizationDisplayName": "Festapp",
+  "project": "Default project",
+  "residency": "Global",
+  "actionAttempted": "Upload new or existing plugin",
+  "outcome": "blocked_before_upload",
+  "blocker": "verified developer identity required to create or upload plugin",
+  "draftCreated": false,
+  "packageUploaded": false,
+  "reviewerCredentialsUploaded": false,
+  "submittedForReview": false,
+  "published": false,
+  "videoPublicHTTPStatus": 200,
+  "videoSha256Matched": true,
+  "videoURL": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/chatgpt/review/walkthrough-0a5d035015e9.mp4",
+  "zipSha256": "7c464f20afee55d405ee52ada71979c3e6c99b6310914329cf94a6d07efc7c43",
+  "nextActionURL": "https://platform.openai.com/settings/organization/general"
+}

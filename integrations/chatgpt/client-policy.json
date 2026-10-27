@@ -1,4 +1,5 @@
 {
   "id": "festapp-chatgpt",
+  "dataProfile": "order-summary",
   "allowedScopes": ["festapp:ticket-layouts:read", "festapp:orders:read"]
 }

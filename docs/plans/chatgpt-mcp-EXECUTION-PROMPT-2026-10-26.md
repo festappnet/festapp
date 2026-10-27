@@ -7,6 +7,8 @@ Execution checkpoint, 2026-10-27: the regional cutover is deployed, first-party
 ChatGPT consent completed, and live report/list/detail/search plus scope denial
 passed. Resume from the [pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27);
 do not repeat deployment or create another connector to redo completed work.
+Public-review preparation now includes a retained isolated demo and two critics;
+resume its current gates in `integrations/chatgpt/review/readiness.md`.
 
 User amendment, 2026-10-27: first move the regional issuer/resource to
 `https://mcp.vstupenky.online/mcp`, then resume ChatGPT connection and acceptance.

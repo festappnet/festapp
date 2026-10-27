@@ -602,9 +602,10 @@ Current execution evidence is in the
 [pilot record](../operations/chatgpt-mcp-pilot-2026-10-26.md#regional-deployment-and-live-account-evidence---2026-10-27).
 The regional cutover is deployed. Real ChatGPT consent, six read tools, selected
 occasion report/list/detail/search, out-of-consent denial, continuity across
-normal token expiry and immediate issuer-side revocation have passed. Live
-hostile-note and ambiguous-selection cases remain outstanding; do not label
-the entire wave accepted from the core connection checks alone.
+normal token expiry and immediate issuer-side revocation have passed. Live hostile-note retrieval and the corrected ambiguous-selection case also
+passed on dedicated synthetic data in ChatGPT. The reviewer-identity hosted SDK
+evidence and operator-identity ChatGPT evidence remain separately labeled.
+Public review still has publisher/domain/portal gates; see the readiness record.
 
 - [x] Existing remote MCP is the only hosted operation/auth owner.
 - [x] Pilot grant has the exact read catalog and effective read-only capabilities.

@@ -1,0 +1,30 @@
+{
+  "format": "Screenshot-based video walkthrough of real ChatGPT interactions; not a continuous screen recording",
+  "actor": "Operator account with consent only to the two dedicated synthetic demo occasions",
+  "sourceConversation": "https://chatgpt.com/c/6adffc94-67e8-83eb-9d87-54ab07f60e6d",
+  "durationSeconds": 50,
+  "sha256": "0a5d035015e92a9ffb8374572f4bcd6664b9586c9ba00821b28aba0cd139da0a",
+  "file": "walkthrough-0a5d035015e9.mp4",
+  "chapters": [
+    {
+      "startSeconds": 0,
+      "endSeconds": 10,
+      "title": "Choose between matching accessible events before reading reports"
+    },
+    {
+      "startSeconds": 10,
+      "endSeconds": 24,
+      "title": "Selected January event: canonical counts, money and state breakdown"
+    },
+    {
+      "startSeconds": 24,
+      "endSeconds": 36,
+      "title": "Exact symbol search followed by real order detail"
+    },
+    {
+      "startSeconds": 36,
+      "endSeconds": 50,
+      "title": "Retrieved hostile note ignored; no write or personal-data disclosure"
+    }
+  ]
+}

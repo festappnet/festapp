@@ -21,6 +21,12 @@ const cookieName = 'festapp_mcp_management';
 export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecret, fetchImpl = fetch, audit = () => {} } = {}) {
     check(cookieKeys?.length >= 2 && cookieKeys.every(k => typeof k === 'string' && k.length >= 32), 'INVALID_COOKIE_KEYS');
     check(jwks?.keys?.length > 0, 'INVALID_ISSUER_KEYS');
+    // Account-switch form POSTs may redirect to a registered web callback.
+    // Use protected exact HTTPS URLs, never an incoming redirect parameter.
+    const webFormCallbacks = [...new Set(config.clients.filter(c => c.applicationType === 'web')
+        .flatMap(c => c.redirectUris).map(value => new URL(value)).filter(u => u.protocol === 'https:')
+        .map(u => u.href.replace(/;/g, '%3B').replace(/'/g, '%27')))].sort();
+    const formAction = ["'self'", ...webFormCallbacks].join(' ');
     const binding = digest(JSON.stringify([config.issuer, config.profile.binding]));
     const previous = storage.get('Metadata', 'deployment');
     check(!previous || previous.binding === binding, 'REMOTE_STORAGE_TARGET_MISMATCH');
@@ -107,7 +113,9 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             return res.sendStatus(403);
         res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
-            'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
+            // Empty script-src denies scripts; oidc-provider adds only the exact
+            // hash of its account-switch auto-submit script when it renders it.
+            'Content-Security-Policy': `default-src 'none'; script-src; style-src 'unsafe-inline'; form-action ${formAction}; frame-ancestors 'none'; base-uri 'none'` });
         if (canonical) res.set('Strict-Transport-Security', 'max-age=31536000');
         try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
     });

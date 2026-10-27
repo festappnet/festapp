@@ -29,6 +29,7 @@ const schema = z.strictObject({
         id: identifier,
         name: identifier,
         applicationType: z.enum(['web', 'native']).default('web'),
+        dataProfile: z.enum(['operator', 'order-summary']).default('operator'),
         redirectUris: z.array(z.url()).min(1).max(4),
         allowedScopes: z.array(z.enum(DOMAIN_SCOPES)).min(1).max(DOMAIN_SCOPES.length).optional(),
     })).min(1).max(10),
