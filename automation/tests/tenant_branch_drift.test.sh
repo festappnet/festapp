@@ -116,8 +116,8 @@ git -C "$REPO" add automation/landing_capture/scenario_contract.py
 git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm forbidden-global-capture-fork
 expect_failure global-capture "$(git -C "$REPO" rev-parse HEAD)" festappticketsglobal
 
-# Glob-owned generated help files must be regenerated and compared, not merely
-# allowlisted. Cover valid changed hashes as well as content/addition/deletion.
+# Help is generated locally and excluded from tenant overlays. Even a forced
+# addition of either build copy must be rejected as forbidden branch drift.
 git -C "$REPO" switch -qc prod/festapptickets "$BASE_SHA"
 cp "$REPO/automation/tests/fixtures/tenants/festapptickets.conf" "$REPO/automation/project.conf"
 node -e 'const fs=require("fs"),p=process.argv[1];fs.writeFileSync(p,fs.readFileSync(p,"utf8").replaceAll("tickets.example.invalid","vstupenky.online"))' "$REPO/automation/project.conf"
@@ -127,14 +127,18 @@ git -C "$REPO" add -A
 git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm valid-help-overlay
 HELP_TIP=$(git -C "$REPO" rev-parse HEAD)
 (cd "$REPO" && CANONICAL_MAIN_REF=main "$TMP_ROOT/checker.sh" "$BASE_SHA" festapptickets "$HELP_TIP" >/dev/null)
-for mode in content added missing; do
+test -f "$REPO/web_client/public/napoveda/index.html"
+test ! -e "$REPO/web/napoveda"
+test -z "$(git -C "$REPO" ls-tree -r --name-only "$HELP_TIP" -- web/napoveda web_client/public/napoveda)"
+for mode in legacy public; do
   git -C "$REPO" switch -qc "tamper-help-$mode" "$HELP_TIP"
   case "$mode" in
-    content) printf '\nunauthorized change\n' >> "$REPO/web/napoveda/index.html" ;;
-    added) printf 'unauthorized asset\n' > "$REPO/web/napoveda/assets/extra.js" ;;
-    missing) python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).unlink()' "$REPO/web/napoveda/index.html" ;;
+    legacy) help_path=web/napoveda/index.html ;;
+    public) help_path=web_client/public/napoveda/index.html ;;
   esac
-  git -C "$REPO" add -A
+  mkdir -p "$REPO/$(dirname "$help_path")"
+  printf 'unauthorized generated copy\n' > "$REPO/$help_path"
+  git -C "$REPO" add -f -- "$help_path"
   git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm "tamper-help-$mode"
   expect_failure "help-$mode" "$(git -C "$REPO" rev-parse HEAD)" festapptickets
 done

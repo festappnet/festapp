@@ -1,9 +1,12 @@
+import 'package:festapp_core/sync.dart';
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:uuid/uuid.dart';
 
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
 
 import 'package:fstapp/services/app_logger.dart';
@@ -12,6 +15,32 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseBankAccounts {
   SupabaseBankAccounts(this._supabase);
   final SupabaseClient _supabase;
+  final Map<int, int> _accountUnitContexts = {};
+
+  Future<Map<String, dynamic>> _bankCommand(
+    String action,
+    Map<String, dynamic> payload, {
+    int? unitId,
+  }) async {
+    final unit = unitId ?? _accountUnitContexts[payload['accountId']];
+    final response = ClientCommandResponse.from(
+      await ClientCommandTransport.supabase(
+        _supabase,
+        durable: true,
+      ).invokeIntent(
+        '${_supabase.auth.currentUser?.id}:$unit:bank:$action:${payload['accountId']}',
+        'manage_bank_authoring',
+        {
+          'p_unit': unit,
+          'p_organization': null,
+          'p_action': action,
+          'p_payload': payload,
+        },
+      ),
+    );
+    if (response.code != 200) throw StateError('Bank command rejected');
+    return response.data;
+  }
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     try {
@@ -24,11 +53,14 @@ class SupabaseBankAccounts {
     }
   }
 
-  Future<FunctionResponse> _invokeBankSync(
-      {required Map<String, dynamic> body}) async {
+  Future<FunctionResponse> _invokeBankSync({
+    required Map<String, dynamic> body,
+  }) async {
     try {
-      final response =
-          await _supabase.functions.invoke('bank-sync-manage', body: body);
+      final response = await _supabase.functions.invoke(
+        'bank-sync-manage',
+        body: body,
+      );
       if (response.status == 403) {
         await RightsService.refreshAfterAuthorizationDenial();
       }
@@ -41,8 +73,10 @@ class SupabaseBankAccounts {
     }
   }
 
-  final connectionChanges = ValueNotifier<({int accountId, int revision})>(
-      (accountId: 0, revision: 0));
+  final connectionChanges = ValueNotifier<({int accountId, int revision})>((
+    accountId: 0,
+    revision: 0,
+  ));
   final Map<int, String> _connectionSnapshots = {};
 
   void _connectionChanged(int accountId) {
@@ -81,8 +115,13 @@ class SupabaseBankAccounts {
       throw BankSyncError.fromResponse(result);
     }
     _operationIds.remove(key);
-    if (['resume', 'suspend', 'sync', 'set_token', 'create']
-        .contains(operation)) {
+    if ([
+      'resume',
+      'suspend',
+      'sync',
+      'set_token',
+      'create',
+    ].contains(operation)) {
       _connectionChanged(accountId);
     }
     if (result.containsKey('verification_error')) {
@@ -97,11 +136,13 @@ class SupabaseBankAccounts {
     );
     if (response.status >= 400) {
       throw BankSyncError.fromResponse(
-          response.data is Map ? response.data as Map : const {});
+        response.data is Map ? response.data as Map : const {},
+      );
     }
     if (response.data == null) return null;
     final connection = BankSyncConnection.fromJson(
-        Map<String, dynamic>.from(response.data as Map));
+      Map<String, dynamic>.from(response.data as Map),
+    );
     final snapshot = jsonEncode(connection.toJson());
     final previous = _connectionSnapshots[accountId];
     _connectionSnapshots[accountId] = snapshot;
@@ -109,14 +150,18 @@ class SupabaseBankAccounts {
     return connection;
   }
 
-  Future<List<BankAccountModel>> getBankAccountsForUnit(
-    int unitId,
-  ) async {
+  Future<List<BankAccountModel>> getBankAccountsForUnit(int unitId) async {
     final response = await _rpc(
       'get_bank_accounts_for_unit_management',
       params: {'p_unit_id': unitId},
     );
-    return (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
+    final accounts = (response as List)
+        .map((e) => BankAccountModel.fromJson(e))
+        .toList();
+    for (final account in accounts) {
+      _accountUnitContexts[account.id] = unitId;
+    }
+    return accounts;
   }
 
   Future<List<BankAccountModel>> getBankAccountsForOrganization(
@@ -132,28 +177,21 @@ class SupabaseBankAccounts {
     int? organizationId,
   }) async {
     // Account details remain owned by Festapp; SQL queues the BankSync update.
-    final response = await _rpc(
-      'update_bank_account',
-      params: {
-        'p_id': account.id == 0 ? null : account.id,
-        'p_account_number': account.accountNumber,
-        'p_title': account.title,
-        'p_creditor_name': account.creditorName,
-        'p_type': account.type,
-        'p_supported_currencies': account.supportedCurrencies,
-        'p_account_number_human_readable': account.accountNumberHumanReadable,
-        'p_unit_id':
-            unitId, // organizationId currently ignored/handled by context
-      },
-    );
-    final id = response as int;
+    final response = await _bankCommand('save', {
+      'accountId': account.id == 0 ? null : account.id,
+      'accountNumber': account.accountNumber,
+      'title': account.title,
+      'creditorName': account.creditorName,
+      'type': account.type,
+      'currencies': account.supportedCurrencies,
+      'displayNumber': account.accountNumberHumanReadable,
+    }, unitId: unitId);
+    final id = response['accountId'] as int;
     if (account.id != 0) await manage(id, 'update_details');
     return id;
   }
 
-  Future<String> regenerateBankAccountPairingCode(
-    int bankAccountId,
-  ) async {
+  Future<String> regenerateBankAccountPairingCode(int bankAccountId) async {
     final result = await manage(bankAccountId, 'rotate_pairing');
     return (result['receiving_address'] as String).split('@').first;
   }
@@ -175,32 +213,16 @@ class SupabaseBankAccounts {
     bool isAdmin,
     bool isSupport,
   ) async {
-    await _rpc(
-      'update_bank_account_user',
-      params: {
-        'p_bank_account_id': bankAccountId,
-        'p_user_email': email,
-        'p_is_admin': isAdmin,
-        'p_is_support': isSupport,
-      },
-    );
+    await _bankCommand('user', {
+      'accountId': bankAccountId,
+      'email': email,
+      'isAdmin': isAdmin,
+      'isSupport': isSupport,
+    });
   }
 
-  Future<void> removeBankAccountUser(
-    int bankAccountId,
-    String email,
-  ) async {
-    // To remove, we update with both flags as false/null
-    await _rpc(
-      'update_bank_account_user',
-      params: {
-        'p_bank_account_id': bankAccountId,
-        'p_user_email': email,
-        'p_is_admin': false,
-        'p_is_support': false,
-      },
-    );
-  }
+  Future<void> removeBankAccountUser(int bankAccountId, String email) =>
+      updateBankAccountUser(bankAccountId, email, false, false);
 
   Future<void> updateBankAccountToken(
     int bankAccountId,
@@ -229,15 +251,11 @@ class SupabaseBankAccounts {
     bool hard = false,
   }) async {
     try {
-      await _rpc(
-        'link_bank_account_to_unit',
-        params: {
-          'p_unit_id': unitId,
-          'p_bank_account_id': bankAccountId,
-          'p_priority': priority,
-          'p_hard': hard,
-        },
-      );
+      await _bankCommand('link', {
+        'accountId': bankAccountId,
+        'priority': priority,
+        'force': hard,
+      }, unitId: unitId);
     } on PostgrestException catch (e) {
       if (e.message.contains('LINK_DEPENDENCY_ERROR')) {
         try {

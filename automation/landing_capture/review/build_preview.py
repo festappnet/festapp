@@ -16,8 +16,8 @@ def build(repo, output, page="home"):
     selected = next(item for item in manifest['pages'] if item['id'] == page)
     html = (output / selected['asset'].lstrip('/')).read_text().replace('site-header auth-pending','site-header')
     fonts = []
-    for filename, weight in [('FuturaPTBook.ttf', '400'), ('FuturaPTMedium.ttf', '500 600')]:
-        data = base64.b64encode((repo / 'web_client/src/assets/fonts' / filename).read_bytes()).decode()
+    for filename, weight in [('Futura PT Book.ttf', '400'), ('Futura PT Medium.ttf', '500 600')]:
+        data = base64.b64encode((repo / 'automation/fonts' / filename).read_bytes()).decode()
         fonts.append(f'@font-face{{font-family:Futura;src:url(data:font/ttf;base64,{data});font-weight:{weight}}}')
     html = html.replace('</head>', '<style>' + ''.join(fonts) + '</style></head>')
     html = html.replace('href="/favicon.ico"', f'href="{(repo / "web_client/public/favicon.ico").as_uri()}"')

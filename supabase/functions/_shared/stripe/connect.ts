@@ -221,6 +221,7 @@ export async function stripeConnectHandler(
     if (!Number.isSafeInteger(input.unitId) || (input.unitId as number) <= 0) {
       return json({ error: "stripe_unit_required" }, 400);
     }
+    if(input.commandId!==undefined&&(typeof input.commandId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.commandId)))return json({error:'invalid_request'},400);
     const args = { p_unit: input.unitId, p_livemode: deps.config.livemode };
     try {
       switch (input.action) {
@@ -238,12 +239,14 @@ export async function stripeConnectHandler(
             !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
               .test(input.connectionId)
           ) return json({ error: "invalid_request" }, 400);
-          const intent = record(
-            await deps.userRpc(authorization, "begin_stripe_disconnect", {
-              ...args,
-              p_expected_connection: input.connectionId,
-            }),
-          );
+          const accepted = record(await deps.userRpc(authorization,
+            input.commandId ? 'begin_stripe_disconnect_client_sync_v1' : 'begin_stripe_disconnect', {
+              ...args,p_expected_connection:input.connectionId,
+              ...(input.commandId ? {p_command_id:input.commandId} : {}),
+            }));
+          if(input.commandId && accepted.code!==200)return json(accepted);
+          const intent = input.commandId ? record(accepted.data) : accepted;
+          const resultBody=(result:unknown)=>input.commandId ? {...accepted,data:{...intent,result}} : result;
           await deps.verifyPlatform();
           const claim = record(
             await deps.serviceRpc("claim_stripe_disconnect_internal", {
@@ -252,9 +255,9 @@ export async function stripeConnectHandler(
               p_livemode: deps.config.livemode,
             }),
           );
-          if (claim.disposition === "replay") return json(claim.result);
+          if (claim.disposition === "replay") return json(resultBody(claim.result));
           if (claim.disposition !== "dispatch") {
-            return json({ disconnected: false, uncertain: true }, 202);
+            return json(resultBody({ disconnected: false, uncertain: true }), 202);
           }
           try {
             await deps.oauth.deauthorize(
@@ -262,17 +265,17 @@ export async function stripeConnectHandler(
               deps.config.clientId,
             );
             return json(
-              await deps.serviceRpc("finish_stripe_disconnect_internal", {
+              resultBody(await deps.serviceRpc("finish_stripe_disconnect_internal", {
                 p_intent: intent.intentId,
                 p_success: true,
-              }),
+              })),
             );
           } catch {
             await deps.serviceRpc("finish_stripe_disconnect_internal", {
               p_intent: intent.intentId,
               p_success: false,
             }).catch(() => {});
-            return json({ disconnected: false, uncertain: true }, 202);
+            return json(resultBody({ disconnected: false, uncertain: true }), 202);
           }
         }
         case "form-options":
@@ -296,6 +299,9 @@ export async function stripeConnectHandler(
           );
         case "pause":
         case "resume":
+          if(input.commandId)return json(await deps.userRpc(authorization,'set_stripe_unit_paused_client_sync_v1',{
+            ...args,p_paused:input.action==='pause',p_command_id:input.commandId,
+          }));
           await deps.userRpc(authorization, "set_stripe_unit_paused", {
             ...args,
             p_paused: input.action === "pause",

@@ -8,6 +8,7 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_before jsonb; v_after jsonb; v_result jsonb; v_replacements jsonb:='[]'::jsonb;
 BEGIN
+  PERFORM public.lock_people_scope_internal_v1(p_occasion);
   IF v_actor IS NULL OR NOT public.can_manage_occasion_participants(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   IF p_profile IS NULL OR jsonb_typeof(p_profile)<>'object'
@@ -15,6 +16,7 @@ BEGIN
     OR (p_profile->>'occasion')::bigint IS DISTINCT FROM p_occasion
     OR (p_profile->>'user')::uuid IS DISTINCT FROM p_user THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid occasion user profile'; END IF;
+  PERFORM public.prepare_profile_change_internal_v1('{}',p_profile);
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,
     'userId',p_user,'expectedVersion',p_expected_version,
     'profile',p_profile)::text,'UTF8'),'sha256'),'hex');
@@ -36,7 +38,8 @@ BEGIN
   IF p_expected_version IS DISTINCT FROM v_version THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,
       jsonb_build_object('version',v_version,'profile',v_before)); END IF;
-  v_result:=public.save_occasion_user_for_edit_internal_v1(p_profile);
+  v_result:=public.save_occasion_user_for_edit_internal_v1(
+    public.prepare_profile_change_internal_v1(v_before,p_profile));
   IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       COALESCE((v_result->>'code')::integer,400),jsonb_build_object(

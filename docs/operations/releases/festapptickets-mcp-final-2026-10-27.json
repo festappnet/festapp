@@ -1,0 +1,202 @@
+{
+  "recordedDate": "2026-10-27",
+  "status": "deployed_verified",
+  "stagesCompleted": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "tenantId": "festapptickets",
+  "domain": "https://vstupenky.online",
+  "version": "0.20.432+936",
+  "codeMainSha": "acb68475bfabf5f51561082042ea7204d0e350fb",
+  "tenantSha": "04e3a152bb3c4ee68adab1719768b1a2e72233d2",
+  "previousTenantSha": "d61075866f4ddde5e8b70783b37019d7460d0fe1",
+  "mergedPullRequests": [
+    641,
+    642
+  ],
+  "mainProtection": {
+    "unchanged": true,
+    "adminMergeAuthorization": "Explicit user approval for this rollout and final cleanup only; no standing exception."
+  },
+  "database": {
+    "method": "single guarded transaction applying migration SQL bodies and matching schema_migrations ledger rows",
+    "ledger_count": 5,
+    "migrations": [
+      {
+        "version": "20261027150000",
+        "name": "people_group_authoring",
+        "sha256": "d05896f59bcb8abe7e2dc46848ffcf67381d86d23338d21571e45b8066d216d0"
+      },
+      {
+        "version": "20261027160000",
+        "name": "blueprint_authoring",
+        "sha256": "9c81aeccf87498d89a4f1d3b0db17a85ddf475df1ef4e675df55575831bfc00c"
+      },
+      {
+        "version": "20261027170000",
+        "name": "program_authoring",
+        "sha256": "c568aa9673d638c5566a3e18e96892db3a9cac71a30b688312a7fa936af88274"
+      },
+      {
+        "version": "20261027180000",
+        "name": "reporting_exports",
+        "sha256": "7f50b60cdc09c0650c957e491e59573799f78539cf8b9eb8681e0c72dee8fbef"
+      },
+      {
+        "version": "20261027190000",
+        "name": "finance_authoring",
+        "sha256": "754be642644f5123324df9189fb3ce2ee0ae7dc56557f8dcd02eb54d4f2298c7"
+      }
+    ],
+    "catalog_readiness": {
+      "predicate": "ticket_layout_catalog_ready",
+      "result": true,
+      "transaction": "read-only; rolled back",
+      "fabricated_user_or_customer_writes": false
+    }
+  },
+  "databaseBackup": {
+    "type": "fresh encrypted pgBackRest differential",
+    "label": "20261025-031939F_20261027-160651D",
+    "archive_check": "passed"
+  },
+  "edgeFunctions": {
+    "bundle_id": "c03b28d1544e-20261027T160808Z",
+    "source_sha": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "archive_sha256": "5d75e99ca4c368a452f7365dd9868de4b24f6c22b6015683eed57865e1ad4985",
+    "activation": "canonical restart-production-functions.py; email delivery paused and drained before restart, resumed after probes",
+    "unauthenticated_canaries": {
+      "bank-sync-manage": 401,
+      "delete-order": 401,
+      "preview-ticket-layout": 401
+    },
+    "email_delivery_after": {
+      "paused": false,
+      "producer_access_ok": true,
+      "alerts": []
+    }
+  },
+  "mcp": {
+    "candidate_source_sha": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "candidate_image": {
+      "reference": "festapp-mcp-oauth@sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+      "image_id": "sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+      "architecture": "arm64",
+      "isolated_smoke": {
+        "health": 200,
+        "protected_resource_discovery": 200,
+        "unauthenticated_mcp": 401,
+        "sqlite_quick_check": "ok",
+        "network": "none"
+      }
+    },
+    "previous_actual_running_image": {
+      "image_id": "sha256:bdc4516832ee96af2ef232b99d861ab351ddc948c006c079cfd469836d610445",
+      "source_sha": "bcacfc728a74cbd97b6afd6f007c8247116b90f2"
+    },
+    "promotion": "only FESTAPP_MCP_IMAGE changed; only MCP service recreated",
+    "post_activation": {
+      "healthy": true,
+      "revision": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+      "public_healthz": 200,
+      "public_protected_resource_discovery": 200,
+      "public_unauthenticated_mcp": 401,
+      "sqlite_quick_check": "ok",
+      "encrypted_records": 65
+    },
+    "mounts_preserved": true,
+    "client_scope_policy": "existing ChatGPT client's explicit two-scope ceiling preserved; Codex client remains uncapped by existing explicit consent; no private client identity, grant, or configured scope was expanded",
+    "advertised_scope_catalog": "current canonical MCP_SCOPES returned by protected-resource discovery",
+    "mutable_sqlite_note": "SQLite file hash changed during normal service initialization and runtime rate-limit writes. Same protected data mount remained in use; integrity check passed and encrypted model counts were present. Database bytes are mutable and were not expected to remain identical across activation/public probes."
+  },
+  "mcpRollbackBackup": {
+    "encrypted": true,
+    "snapshotQuickCheck": "ok",
+    "remoteHashAndSizeVerification": true,
+    "stateArchiveSha256": "81bc8bc1b48e784b911e920f0d754729b22c487766fca4a45314e0fa9f8c1f21",
+    "priorImageArchiveSha256": "d34f91e2e7755fb6a4253e34a81977eac85a6cf0fe5c731cbc9e708fff8623f3",
+    "manifestSha256": "35c45f53cdb6c4bfeec10429f1d4524b8136af0120acaae0e0397e3bffd471d8"
+  },
+  "imageWorker": {
+    "name": "festapp-image-worker",
+    "source_sha": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "deployed_version": "f182147b-c9ac-4775-902b-f26bc904ad3d",
+    "rollback_version": "136aa32c-f3ef-4221-8495-0471251d6860",
+    "tests": {
+      "passed": 123,
+      "skipped": 27,
+      "skipped_files": 1
+    },
+    "cors_project_probes": {
+      "passed": 12,
+      "total": 12
+    }
+  },
+  "backendSourceEquivalence": {
+    "deployed_sha": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "final_main_sha": "acb68475bfabf5f51561082042ea7204d0e350fb",
+    "backend_trees_equivalent": [
+      "database",
+      "supabase",
+      "tools/festapp",
+      "packages/festapp_contracts",
+      "workers/image-worker"
+    ],
+    "equivalence_verified": true
+  },
+  "web": {
+    "validation": {
+      "mainOwnedTenantDrift": "passed",
+      "canonicalCutoverPreflight": "passed",
+      "localCloudflareBuild": "passed",
+      "verifyWebBuild": "passed"
+    },
+    "deployment": {
+      "status": "deployed-and-verified",
+      "deploymentId": "2a2addd0-e016-43c1-8bff-5ffac280d599",
+      "deploymentUrl": "https://2a2addd0.vstupenkyonline.pages.dev",
+      "liveOrigin": "https://vstupenky.online",
+      "liveProbe": "verify_web_deployment passed for 0.20.432+936 with 3 consecutive probes; expected assets and canonical legal routes verified",
+      "command": "automation/deploy_direct.sh --skip-build --wrangler-oauth --branch prod/festapptickets"
+    }
+  },
+  "checks": {
+    "pr641": {
+      "head": "f8569e132417a2620f945509d7b38221670b94e4",
+      "passed": 7
+    },
+    "pr642": {
+      "head": "b296abd809661c397fcb5144d1322fba1d0540a5",
+      "passed": 8
+    },
+    "cleanupNodeTests": 11,
+    "cleanupTenantDriftTests": "passed"
+  },
+  "cleanup": {
+    "canonicalWorkspace": "clean main",
+    "remainingWorktrees": [
+      "main",
+      "wip/integrations-20261027"
+    ],
+    "preservedIntegrationFiles": 18,
+    "integrationSnapshotHashesVerified": true,
+    "obsoleteWorktreesRemoved": true,
+    "taskStashesMovedToDurableRecoveryRefs": 3
+  },
+  "limits": [
+    "Existing explicit client scope ceilings and user grants were preserved. New operations still require their explicit consent and live authorization.",
+    "No production test identity, customer order, payment, refund or test email was created.",
+    "No other tenant web branch or Android release was performed.",
+    "Later documentation-only commits record this release; they do not change its deployed application inputs."
+  ]
+}

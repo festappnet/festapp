@@ -60,6 +60,9 @@ export function createServer(operations) {
                 ...(schemes ? { securitySchemes: schemes, _meta: { securitySchemes: schemes } } : {}),
             };
         }) }));
+    server.registerResource('private-export',new ResourceTemplate('festapp-export://artifact/{artifact}',{list:undefined}),
+        {description:'Short-lived scoped export. Actor, connection, live ordinary rights and consent are checked on every read.'},
+        uri=>operations.readArtifact(uri.href));
     server.registerResource(
         'ticket-preview',
         new ResourceTemplate('festapp-preview://artifact/{artifact}', {

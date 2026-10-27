@@ -338,6 +338,25 @@
     "others/configuration_settings_contract.sql",
     "others/configuration_settings.sql",
     "user_permissions/game_settings.sql",
-    "others/configuration_authoring.sql"
+    "others/configuration_authoring.sql",
+    "people/scope.sql",
+    "people/profile_changes.sql",
+    "people/unit_user_command.sql",
+    "people/authoring.sql",
+    "users/update_unit_user.sql",
+    "users/get_all_users_from_unit.sql",
+    "people/access_fanout.sql",
+    "user_permissions/blueprint_authoring.sql",
+    "authoring/blueprints.sql",
+    "authoring/scanner.sql",
+    "authoring/program.sql",
+    "authoring/export_columns.sql",
+    "authoring/history.sql",
+    "authoring/exports.sql",
+    "eshop_stripe/disconnect.sql",
+    "authoring/finance.sql",
+    "authoring/agenda.sql",
+    "authoring/lifecycle.sql",
+    "authoring/order_deletion.sql"
   ]
 }

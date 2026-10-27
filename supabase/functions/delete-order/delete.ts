@@ -18,8 +18,10 @@ export async function deleteOrderWithInvoice(
     commandId?: string | null;
     variableSymbol: string | number;
   }) => Promise<void>,
+  scope?: {occasionId:number;organizationId:number;unitId:number|null;expectedRevision:string},
 ) {
-  const context = await user.rpc("get_order_deletion_context_v1", {
+  const context = await user.rpc(scope ? "get_delegated_order_deletion_context" : "get_order_deletion_context_v1", {
+    ...(scope ? {p_occasion:scope.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_expected_revision:scope.expectedRevision}:{}),
     p_order: orderId,
     p_command_id: commandId,
   });
@@ -40,7 +42,8 @@ export async function deleteOrderWithInvoice(
     variableSymbol: context.data.variableSymbol,
   });
   // Rechecks permissions and deletion constraints, and publishes normal sync effects.
-  const result = await user.rpc("delete_order_client_sync_v1", {
+  const result = await user.rpc(scope ? "delete_delegated_order_client_sync_v1" : "delete_order_client_sync_v1", {
+    ...(scope ? {p_occasion:scope.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_expected_revision:scope.expectedRevision}:{}),
     p_order: orderId,
     p_command_id: commandId,
   });

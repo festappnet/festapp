@@ -132,3 +132,9 @@ readable. Application help owns detailed preparation and troubleshooting.
 Playback controls have a visible label. Mobile posters, sources and intrinsic
 dimensions follow the viewport; changing the breakpoint pauses incompatible
 media and preserves deliberate pause/completion state.
+
+When desktop and mobile exports are byte-identical, point both `src`/`mobileSrc`
+and `poster`/`mobilePoster` at the same files instead of committing copies.
+The Czech `seat-select` chapter shares one portrait video and poster in both
+layouts. Historical storyboard references resolve against their recorded Git
+revision and retain the original export filenames.

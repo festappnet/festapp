@@ -3,9 +3,14 @@ const fs = require('fs');
 const path = require('path');
 
 // Arguments: [node, script, projectRoot, fontFamilyBase, commaSeparatedFontFiles]
-const projectRoot = process.argv[2];
-let fontFamilyBase = process.argv[3] || 'Futura'; // Default
-const configuredFiles = process.argv[4] || '';
+const projectRoot = process.argv[2] && path.resolve(process.argv[2]);
+const assetsOnly = process.argv.includes('--assets-only');
+// Bootstrap assets without rewriting tenant configuration or generated code.
+const configPath = projectRoot && path.join(projectRoot, 'automation/project.conf');
+const config = assetsOnly && fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : '';
+const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '').trim().replace(/^(['"])(.*)\1$/, '$2');
+let fontFamilyBase = assetsOnly ? (value('FONT_FAMILY_BASE') || 'Futura') : (process.argv[3] || 'Futura');
+const configuredFiles = assetsOnly ? value('FONT_FILES') : (process.argv[4] || '');
 
 if (!projectRoot) {
     console.error("Usage: node configure_fonts.js <projectRoot> [fontFamilyBase] [fontFiles]");
@@ -121,6 +126,8 @@ fonts.forEach(font => {
     if (font.srcPath !== flutterTarget) fs.copyFileSync(font.srcPath, flutterTarget);
     fs.copyFileSync(font.srcPath, path.join(webFontDir, font.webFilename));
 });
+
+if (assetsOnly) process.exit(0);
 
 // 3. Update pubspec.yaml
 console.log(`Updating pubspec.yaml with family "${fontFamilyBase}"...`);

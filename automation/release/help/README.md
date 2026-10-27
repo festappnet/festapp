@@ -31,9 +31,12 @@ routes and SEO metadata; each route has an authored HTML body. Keep real UI
 names and external-platform instructions verified. The Wix-specific guide is
 added only after its actual installation flow is qualified.
 
-`render_help_pages.mjs` generates `web/napoveda/` and
+`automation/release/help/` owns the versioned content and media.
+`render_help_pages.mjs` generates a single ignored local output at
 `web_client/public/napoveda/` only for the vstupenky.online organizer site.
-The build ships the same static HTML, hashed assets without unpublished integration packages.
+Production builds render directly into `build/web/napoveda/` with the compiled
+runtime. Do not commit generated help or create a second copy under `web/`.
+The build ships static HTML and hashed assets without unpublished integration packages.
 Cloudflare binds each guide to its generated CSP profile and includes it in the
 sitemap. Help documents/assets are network content, outside the installed app
 cache. No checkout is loaded by the HTML code generator.

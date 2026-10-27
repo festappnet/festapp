@@ -28,6 +28,19 @@ Deno.serve(async (req) => {
   } catch { return json({ error: "invalid_json" }, 400); }
   if (!input || typeof input !== "object" || Array.isArray(input)) return json({ error: "invalid_json" }, 400);
   if (!Number.isSafeInteger(input.account_id) || input.account_id <= 0) return json({ error: "account_required" }, 400);
+  const scope = input.delegatedScope;
+  if (scope !== undefined) {
+    if (!scope || typeof scope !== 'object' || Array.isArray(scope)
+      || Object.keys(scope).some(k => !['organizationId', 'unitId'].includes(k))
+      || !Number.isSafeInteger(scope.organizationId) || scope.organizationId <= 0
+      || !Number.isSafeInteger(scope.unitId) || scope.unitId <= 0
+      || !['status', 'sync', 'suspend', 'resume', 'update_details'].includes(input.operation)) {
+      return json({error:'invalid_delegated_scope'},400);
+    }
+    const checked = await user.rpc('manage_bank_authoring', {p_unit:scope.unitId,
+      p_organization:scope.organizationId,p_action:'status',p_payload:{accountId:input.account_id}});
+    if (checked.error) return json({error:'bank_account_admin_required'},403);
+  }
   const { data: status, error: rightsError } = await user.rpc("get_bank_sync_connection", { p_bank_account_id: input.account_id });
   if (rightsError) return json({ error: "bank_account_admin_required" }, 403);
   if (input.operation === "status") {
@@ -66,7 +79,8 @@ Deno.serve(async (req) => {
   if (!instanceId || !origin.startsWith("https://") || !adminKey) return json({ error: "management_not_configured" }, 503);
   const fingerprint = await hash(JSON.stringify({ operation: input.operation, account: input.account_id,
     mode: input.mode ?? null, token_hash: input.token ? await hash(input.token) : null, expiry: input.expiry ?? null }));
-  const { data: intent, error: intentError } = await user.rpc("begin_bank_sync_operation", {
+  const { data: intent, error: intentError } = await user.rpc(scope ? "begin_delegated_bank_sync_operation" : "begin_bank_sync_operation", {
+    ...(scope ? {p_unit:scope.unitId,p_organization:scope.organizationId} : {}),
     p_id: input.operation_id, p_account_id: input.account_id, p_operation: input.operation, p_hash: fingerprint,
   });
   if (intentError) return intentError.code === '42501'

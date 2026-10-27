@@ -13,12 +13,13 @@ const fontReply=(f:TicketFont)=>({id:f.id,family:f.family,weight:f.weight,font:B
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
   authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean,resourceMode?:'font'|'layout-text'):Promise<false|{abuseLimits:Record<string,number>}>;
+  authorizeDelegatedScope?:(header:string,occasionId:number,scope:{organizationId:number;unitId:number|null},blueprint:boolean)=>Promise<{actorId:string}|false>;
   authorizeSetupDraft?:(header:string,draftId:string,bytes:number)=>Promise<false|{abuseLimits:Record<string,number>}>;
   setupDraft?:(header:string,id:string)=>Promise<{occasion:any;products:ProductCatalog}>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
-  registerLayoutTextResources?:(scope:{occasionId?:number;setupDraftId?:string},resources:Awaited<ReturnType<typeof prepareLayoutTextResources>>)=>Promise<void>;
+  registerLayoutTextResources?:(scope:{occasionId?:number;setupDraftId?:string;delegatedScope?:{organizationId:number;unitId:number|null;actorId:string}},resources:Awaited<ReturnType<typeof prepareLayoutTextResources>>)=>Promise<void>;
   layout?:(value:unknown)=>ReturnType<typeof parseLayout>|Promise<ReturnType<typeof parseLayout>>;
   resources:typeof loadLayoutResources;
 }
@@ -33,7 +34,7 @@ function validPreviewOccasion(value:any):boolean {
     ['start_time','end_time'].every(k=>!(k in value)||date(value[k]))&&
     (!('data' in value)||(record(value.data)&&Object.keys(value.data).every(k=>k==='place_name')&&(!('place_name' in value.data)||text(value.data.place_name))));
 }
-export async function handlePreview(req:Request,deps:PreviewDependencies):Promise<Response>{
+async function handlePreviewInternal(req:Request,deps:PreviewDependencies):Promise<Response>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
   if(req.method!=='POST')return reply(405,{error:'Method not allowed'});
   const auth=req.headers.get('Authorization');
@@ -52,6 +53,14 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(setup&&['resolve','pdf','catalog'].includes(mode)&&Object.keys(body).some(k=>!['setupDraftId','mode','type','scenario','fontProtocol','resourceProtocol','layout','background','previewOccasion'].includes(k)))return reply(400,{error:'Invalid draft preview request'});
     if(setup&&['font','layout-text'].includes(mode)&&('layout' in body||'background' in body))return reply(400,{error:'Invalid draft resource request'});
     if(mode==='resolve'&&body.resourceProtocol!==undefined&&body.resourceProtocol!==3)return reply(400,{error:'ticket_resource_protocol_unsupported'});
+    let delegated:{organizationId:number;unitId:number|null;actorId:string}|undefined;
+    if('delegatedScope' in body){
+      const scope=body.delegatedScope;
+      if(setup||!scope||typeof scope!=='object'||Array.isArray(scope)||Object.keys(scope).some(k=>!['organizationId','unitId'].includes(k))||!Number.isSafeInteger(scope.organizationId)||scope.organizationId<=0||!(scope.unitId===null||Number.isSafeInteger(scope.unitId)&&scope.unitId>0)||!deps.authorizeDelegatedScope)return reply(403,{error:'Forbidden'});
+      const authorized=await deps.authorizeDelegatedScope(auth,occasionId,scope,mode==='layout-text'||mode==='font');
+      if(!authorized)return reply(403,{error:'Forbidden'});
+      delegated={...scope,actorId:authorized.actorId};
+    }
     const readOnly=body.readOnly===true;
     if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
@@ -66,11 +75,11 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       return reply(status,body);
     };
     if(mode==='layout-text'){
-      if(body.resourceProtocol!==2||!deps.font||!deps.registerLayoutTextResources||Object.keys(body).some(k=>!['occasionId','setupDraftId','mode','resourceProtocol','batch'].includes(k)))return reply(400,{error:'layout_text_request'});
+      if(body.resourceProtocol!==2||!deps.font||!deps.registerLayoutTextResources||Object.keys(body).some(k=>!['occasionId','setupDraftId','mode','resourceProtocol','batch','delegatedScope'].includes(k)))return reply(400,{error:'layout_text_request'});
       const {prepareLayoutTextResources}=await import('../_shared/layoutTextResources.ts');
       const resources=await prepareLayoutTextResources(body.batch,deps.font);
       const response=boundedReply(200,resources);
-      await deps.registerLayoutTextResources(setup?{setupDraftId}:{occasionId},resources);
+      await deps.registerLayoutTextResources(setup?{setupDraftId}:{occasionId,...(delegated?{delegatedScope:delegated}:{})},resources);
       return response;
     }
     if(mode==='font'){
@@ -141,4 +150,19 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     boundDocumentOutput(result.bytes,1,limits);
     return boundedReply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
   }catch(error) {if(error && typeof error==='object' && 'status' in error && error.status===429)return reply(429,{error:'temporarily_limited'});if(error instanceof TicketFontError)return reply(400,{error:error.code});return reply(400,{error:'Ticket preview rejected. Check layout and image resources.'});}
+}
+
+// Recheck the live ordinary identity/scope after asynchronous rendering. Resource
+// registration also checks that same actor and binding under database row locks.
+export async function handlePreview(req:Request,deps:PreviewDependencies):Promise<Response>{
+ let binding:{occasionId:number;scope:{organizationId:number;unitId:number|null};blueprint:boolean}|undefined;
+ const wrapped={...deps,authorizeDelegatedScope:deps.authorizeDelegatedScope?async(header:string,occasionId:number,scope:{organizationId:number;unitId:number|null},blueprint:boolean)=>{
+  binding={occasionId,scope,blueprint};return await deps.authorizeDelegatedScope!(header,occasionId,scope,blueprint);
+ }:undefined};
+ const result=await handlePreviewInternal(req,wrapped);
+ if(result.ok&&binding){
+  try{if(!await deps.authorizeDelegatedScope!(req.headers.get('Authorization')??'',binding.occasionId,binding.scope,binding.blueprint))return reply(403,{error:'Forbidden'});}
+  catch{return reply(403,{error:'Forbidden'});}
+ }
+ return result;
 }

@@ -138,3 +138,11 @@ for (
     );
   });
 }
+
+Deno.test('delegated invoice deletion binds the ordinary scoped revision before credentials and again at final SQL',async()=>{
+ const calls:string[]=[];const scope={occasionId:12,organizationId:7,unitId:3,expectedRevision:'a'.repeat(64)};
+ const user={rpc:(name:string,params:Record<string,unknown>)=>{calls.push(name);assertEquals(params.p_occasion,12);assertEquals(params.p_organization,7);assertEquals(params.p_unit,3);assertEquals(params.p_expected_revision,scope.expectedRevision);return Promise.resolve({data:name==='get_delegated_order_deletion_context'?{hasFakturoid:true,commandId:'original-invoice',variableSymbol:'123'}:{code:200,data:{orderId:42}},error:null});}};
+ const admin={rpc:()=>Promise.resolve({data:[{type:'FAKTUROID',data:{slug:'fixture'}}],error:null})};
+ await deleteOrderWithInvoice(42,'delete-command',user,admin,async()=>{calls.push('provider');},scope);
+ assertEquals(calls,['get_delegated_order_deletion_context','provider','delete_delegated_order_client_sync_v1']);
+});

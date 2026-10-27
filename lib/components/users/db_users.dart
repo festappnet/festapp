@@ -371,16 +371,7 @@ class DbUsers {
   }
 
   static Future<void> updateUnitUser(UnitUserModel uum) async {
-    var response = await _supabase.rpc("update_unit_user", params: {
-      "input_data": uum,
-    });
-    var code = response['code'];
-    if (code != 200 && code != 201) {
-      if (code == 403) {
-        await RightsService.refreshAfterAuthorizationDenial();
-      }
-      throw Exception(response['message']);
-    }
+    await _unitCommands.saveUser(uum);
     if (uum.user != null && uum.user == RightsService.currentUser()?.id) {
       await RightsService.refreshAfterAuthorizationChange();
     }
