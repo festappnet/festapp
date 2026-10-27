@@ -15,11 +15,10 @@ const preview = process.argv.includes('--preview');
 if (!['cs', 'en'].includes(locale)) throw new Error('Unknown help locale');
 if (locale !== 'cs' && (!preview || !arg('--output'))) throw new Error('English help is preview-only until localized screenshot capture is complete');
 const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && new URL(value('WEB_LINK')).hostname === 'vstupenky.online';
-const targets = arg('--output') ? [path.resolve(arg('--output'))] : [path.join(root, 'web/napoveda'), path.join(root, 'web_client/public/napoveda')];
-for (const target of targets) {
-  if (path.basename(target) !== 'napoveda') throw new Error('Help output must be a napoveda directory');
-  fs.rmSync(target, {recursive:true, force:true});
-}
+// Authored help is versioned; the single local output is disposable build input.
+const target = path.resolve(arg('--output') || path.join(root, 'web_client/public/napoveda'));
+if (path.basename(target) !== 'napoveda') throw new Error('Help output must be a napoveda directory');
+fs.rmSync(target, {recursive:true, force:true});
 if (!enabled) {console.log('Public help disabled for this tenant.'); process.exit(0);}
 const directory = path.join(root, 'automation/release/help');
 const source = locale === 'cs' ? directory : path.join(directory, 'en');
@@ -51,9 +50,9 @@ const figures = new Map(media.map(item => {
   return [item.id, `<figure class="guide-screenshot${item.device === 'mobile' ? ' guide-screenshot-mobile' : ''}"><a href="${href}" target="_blank" rel="noopener" aria-label="${escape(item.openLabel)}"><img src="${href}" width="${item.width}" height="${item.height}" loading="lazy" alt="${escape(item.alt)}"></a><figcaption>${escape(item.caption)}</figcaption></figure>`];
 }));
 let fontFaces = '';
-for (const [file,weight] of [['FuturaPTBook.ttf',400],['FuturaPTMedium.ttf',500]]) {
-  const data = fs.readFileSync(path.join(root,'web_client/src/assets/fonts',file));
-  const name = file.replace('.ttf',`.${digest(data)}.ttf`); assets[name] = data;
+for (const [file,weight] of [['Futura PT Book.ttf',400],['Futura PT Medium.ttf',500]]) {
+  const data = fs.readFileSync(path.join(root,'automation/fonts',file));
+  const name = file.replaceAll(' ', '').replace('.ttf',`.${digest(data)}.ttf`); assets[name] = data;
   fontFaces += `@font-face{font-family:Futura;src:url("${name}") format("truetype");font-weight:${weight};font-style:normal;font-display:swap}\n`;
 }
 // A single style authority for the homepage and help shell, followed by reader-only rules.
@@ -161,9 +160,10 @@ for (const page of allPages) {
   const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">${publicThemeHead}<meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script><script src="${helpRoot}assets/${jsName}" defer></script><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="help">${publicThemeBody}<a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
 <div class="help-layout"><aside class="help-sidebar"><p>${escape(ui.categoryNav)}</p><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></aside><details class="help-mobile-menu"><summary>${escape(ui.mobileGuides)}</summary><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></details>
 <main id="main" class="help-main"><nav class="breadcrumb" aria-label="${escape(ui.breadcrumb)}">${breadcrumb}</nav><h1>${escape(page.title)}</h1><div data-help-browse>${page.slug && toc ? `<details class="guide-toc"><summary>${escape(ui.onThisPage)}</summary><ul>${toc}</ul></details>` : ''}${body}<div class="guide-related"><p>${escape(ui.related)}</p>${category && !page.collection ? `<a href="${href(category)}">${escape(category.label)}</a>` : ''}<a href="${helpRoot}">${escape(ui.allGuides)}</a><a href="/support/">${escape(ui.support)}</a></div></div></main></div>${shell.footer}${accountScript}</body></html>\n`;
-  for (const target of targets) {const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);}
+  const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);
 }
-for (const target of targets) {fs.mkdirSync(path.join(target,'assets'),{recursive:true}); for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}}
+fs.mkdirSync(path.join(target,'assets'),{recursive:true});
+for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}
 console.log(`Rendered ${allPages.length} ${locale} help pages.`);
 if (!arg('--output')) {
   const sitemap = path.join(root,'web_client/public/sitemap.xml');

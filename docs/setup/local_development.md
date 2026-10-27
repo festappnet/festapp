@@ -108,3 +108,19 @@ Supabase project ID. Isolated checks may select a separate project, workdir and
 port with `FESTAPP_LOCAL_DB_PROJECT_ID`, `FESTAPP_LOCAL_DB_WORKDIR` and
 `FESTAPP_LOCAL_DB_PORT`. Scheduled cron execution is disabled before SQL restore. It does not read `DATABASE_URL`, link a remote project, or
 run `db push`. Testing against production is not part of the supported workflow.
+
+## Generated app fonts
+
+Version shared font binaries only in `automation/fonts/`. Flutter copies under
+`fonts/` and all web copies under `web_client/src/assets/fonts/` are ignored.
+Before running Flutter commands directly after a fresh checkout, prepare assets:
+
+```sh
+node automation/configure_fonts.js . --assets-only
+```
+
+This reads the selected tenant's `FONT_FILES` and copies bytes without rewriting
+configuration. `apply_config.sh`, the client test wrapper, web dev/build commands
+and CI prepare these assets automatically. Tenant-specific files listed in
+`FONT_FILES` remain versioned sources under `fonts/`. The ticket renderer's
+`ticket-assets/font.ttf` remains a deployment input for its independent bundle.

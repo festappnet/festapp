@@ -5,6 +5,13 @@ operation predicates remain authoritative. Delegation additionally narrows
 organization, units/occasions and explicitly consented functional scopes.
 Existing issued grants are never expanded by adding tools.
 
+The proposed [order and financial core](order-commerce-core.md) includes MCP
+order/form/seat tools as mandatory callers and readers, using the same domain
+owners as administration. Its [migration plan](../plans/order-commerce-core-plan-2026-10-27.md)
+requires settlement-source policy, semantic approval revisions, strict response
+schema compatibility and UI/MCP parity before native WooCommerce sales. This is
+a planned cutover, not a claim that the new commerce core is already deployed.
+
 ## First cutover: product catalog
 
 - Seam: catalog reads and immediate product configuration, deletion and stock
