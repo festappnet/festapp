@@ -6,8 +6,9 @@ Verified publisher Festapp; regional domain verification and dedicated-reviewer
 OAuth succeeded in the real portal. Draft
 `plugin_asdk_app_6ae002a14394819189521c68175a53d5` exists. Six tools scanned with
 no findings; after deployment a rescan confirmed the restricted order schema.
-Version 1.0.1 upload and final submission are recorded in
-[portal status](portal-status.json), not inferred from local validation.
+Version 1.0.1 was uploaded and **submitted**. The portal list and version
+detail both show **In review**; publication is **Not published**. See
+[portal receipt](portal-status.json). Review is now pending with OpenAI.
 
 ## Deployed boundary
 
@@ -61,3 +62,15 @@ public variant; do not attest to excluded data while running the operator
 profile. The connector targets organizers, and the order fields carrying
 registration/document/buyer data are withheld. No automatic public publication
 is authorized merely by approval of review submission.
+
+## Final portal receipt
+
+Version 1.0.1, current P5 withholding expectation, all five positive/three
+negative cases, Czechia scope, exact public video and secure current reviewer
+steps were verified in the portal before Submit. Both critics approved the
+actual final portal gates. No blocking findings were shown. Two advisory
+automated assessments remained (category confirmation and privacy assessment);
+the portal allowed submission and their limits were disclosed in Additional
+Submission Context. All six declarations were completed for the owner-approved
+restricted public variant. The portal then confirmed In review in both list
+and version detail. No publication action was taken.
