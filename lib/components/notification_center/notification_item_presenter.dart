@@ -31,6 +31,20 @@ class NotificationItemPresenter {
         : null;
   }
 
+  /// A bounded authorized preview, deduplicated without inventing customer counts.
+  List<String> get previewNames {
+    final contacts =
+        item.data['previewContacts'] as List? ?? [item.data['contact']];
+    return [
+      for (final contact in contacts.whereType<Map>())
+        formatCustomerLabel(
+          name: contact['name'] as String?,
+          surname: contact['surname'] as String?,
+          email: contact['email'] as String?,
+        ),
+    ].where((name) => name.isNotEmpty).toSet().take(3).toList(growable: false);
+  }
+
   List<String> get details {
     final data = item.data;
     final contact = data['contact'] as Map? ?? const {};
@@ -41,8 +55,11 @@ class NotificationItemPresenter {
     );
     if (item.isSummary && (data['activityCount'] as int) > 1) {
       return [
-        if (customer.isNotEmpty)
-          NotificationCenterStrings.latestCustomer(customer),
+        if (data['placeCount'] is int)
+          NotificationCenterStrings.places(
+            data['placeCount'] as int,
+            locale: locale,
+          ),
       ];
     }
     final count = data['count'] as int?;

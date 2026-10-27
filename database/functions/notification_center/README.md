@@ -133,3 +133,28 @@ The forward migration is `20261027210000_notification_center_overview.sql`.
 The old flat and temporal APIs remain for released clients; their migration bytes
 are immutable. No new projection table, acknowledgment model or publication path
 is introduced.
+
+## Daily overview and one-request operations (2026-10-27 correction)
+
+The current client uses `get_notification_center_daily_overview`. One RPC returns
+complete per-occasion/kind/local-day counts, historical place totals, at most three
+recent authorized contacts per summary, pagination and the current unread badge.
+It validates a named display timezone and computes calendar dates with PostgreSQL
+`AT TIME ZONE`, including DST and local midnight. Cursor context binds the recipient,
+organization, occasion, snapshot, anchor instant and zone. No summaries cross days.
+
+`p_open=true` locks the existing personal state row, captures its pre-read watermark
+and delivery snapshot, includes occasion preferences and acknowledges only after
+all data succeeds, within the same transaction. A failed request never confirms
+unseen data. Other operations share the same selector without acknowledging.
+Known-ID refresh accepts at most 10,000 IDs and returns only those IDs in one RPC;
+normal pages remain bounded to 200 overview rows. Revocation removes summaries
+and contact previews together. The closed-panel badge RPC remains an independent
+cheap eligibility/sequence check, without aggregation or contact hydration.
+
+Place totals use captured positive historical event counts only and appear only
+when every group member has a known count and multiple places are meaningful.
+Unknown values suppress the complete total; current order size never rewrites a
+historical multi-order sum. Single-place application flows omit redundant totals.
+The earlier overview RPC remains for already released clients. The forward-only
+migration is `20261027220000_notification_center_daily_overview.sql`.

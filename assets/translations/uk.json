@@ -2630,7 +2630,12 @@
     "heldForWaiting": "Зарезервовано для черги: {count}",
     "needsAttention": "Потребує уваги",
     "detail": "Докладніше",
-    "latestCustomer": "Останнє: {name}",
+    "daysAgo": {
+      "one": "{count} день тому",
+      "few": "{count} дні тому",
+      "many": "{count} днів тому",
+      "other": "{count} днів тому"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} нове замовлення",

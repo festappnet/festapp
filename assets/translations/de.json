@@ -2458,7 +2458,12 @@
     "heldForWaiting": "Für Warteliste reserviert: {count}",
     "needsAttention": "Aufmerksamkeit erforderlich",
     "detail": "Details",
-    "latestCustomer": "Zuletzt: {name}",
+    "daysAgo": {
+      "one": "Vor {count} Tag",
+      "few": "Vor {count} Tagen",
+      "many": "Vor {count} Tagen",
+      "other": "Vor {count} Tagen"
+    },
     "activityCounts": {
       "order_created": {
         "one": "{count} neue Bestellung",

@@ -22,6 +22,7 @@ NotificationItem row(
   String title = 'Same title',
   String kind = 'order_created',
   int section = 2,
+  String? day,
   Map<String, dynamic> data = const {},
 }) => NotificationItem.fromJson({
   'id': id,
@@ -29,6 +30,7 @@ NotificationItem row(
   'occasionTitle': title,
   'kind': kind,
   'section': section,
+  'day': day,
   'occasionLink': occasion == null ? null : 'event-$occasion',
   'occurredAt': '2026-10-26T12:00:00Z',
   'data': data,
@@ -36,6 +38,8 @@ NotificationItem row(
 Map<String, dynamic> opened([List<Map<String, dynamic>> items = const []]) => {
   'feedSupported': true,
   'timelineSupported': true,
+  'dailySupported': true,
+  'unread': true,
   'snapshot': 7,
   'feedItems': items,
   'items': items,
@@ -61,8 +65,14 @@ void main() {
       final c = NotificationCenterController(
         read: (name, params) async {
           if (name == 'get_notification_center_badge') return badge();
-          if (name == 'open_notification_center') {
-            return {...opened(), 'previousReadThrough': watermark};
+          if (params['p_open'] == true) {
+            return {
+              ...opened([
+                {'id': 'read', 'sequence': 4},
+                {'id': 'new', 'sequence': 5},
+              ]),
+              'previousReadThrough': watermark,
+            };
           }
           return opened([
             {'id': 'read', 'sequence': 4},
@@ -157,7 +167,7 @@ void main() {
     final calls = <String>[];
     final c = NotificationCenterController(
       read: (name, params) async {
-        calls.add(name);
+        calls.add(params['p_open'] == true ? 'open_daily' : name);
         if (name == 'get_notification_center_badge') return pending.future;
         return opened();
       },
@@ -168,7 +178,7 @@ void main() {
     pending.complete(badge());
     await Future<void>.delayed(Duration.zero);
     expect(c.unread, isFalse);
-    expect(calls.where((name) => name == 'open_notification_center').length, 1);
+    expect(calls.where((name) => name == 'open_daily').length, 1);
   });
   test('badge begun during acknowledgement cannot undo it', () async {
     final pending = Completer<dynamic>(), polling = Completer<dynamic>();
@@ -220,7 +230,7 @@ void main() {
       final calls = <String>[];
       final c = NotificationCenterController(
         read: (name, params) async {
-          calls.add(name);
+          calls.add(params['p_open'] == true ? 'open_daily' : name);
           return {'enabled': true};
         },
       );
@@ -238,9 +248,9 @@ void main() {
       final calls = <String>[];
       final c = NotificationCenterController(
         read: (name, params) async {
-          calls.add(name);
+          calls.add(params['p_open'] == true ? 'open_daily' : name);
           if (name == 'get_notification_center_badge') return badge();
-          if (name == 'open_notification_center') throw StateError('offline');
+          if (params['p_open'] == true) throw StateError('offline');
           return {
             'items': [
               {'id': 'sixth'},
@@ -258,11 +268,8 @@ void main() {
       c.nextCursor = 'cursor';
       await c.loadMore();
       expect(c.items.single.id, 'sixth');
-      expect(
-        calls.where((name) => name == 'open_notification_center').length,
-        1,
-      );
-      expect(calls, contains('get_notification_center_overview'));
+      expect(calls.where((name) => name == 'open_daily').length, 1);
+      expect(calls, contains('get_notification_center_daily_overview'));
     },
   );
   testWidgets('polling pauses in background and does not acknowledge', (
@@ -271,7 +278,7 @@ void main() {
     final calls = <String>[];
     final c = NotificationCenterController(
       read: (name, params) async {
-        calls.add(name);
+        calls.add(params['p_open'] == true ? 'open_daily' : name);
         return name == 'get_notification_center_badge' ? badge() : opened();
       },
     );
@@ -283,7 +290,7 @@ void main() {
     await c.open();
     await tester.pump(const Duration(seconds: 15));
     expect(c.unread, isTrue);
-    expect(calls.where((name) => name == 'open_notification_center').length, 1);
+    expect(calls.where((name) => name == 'open_daily').length, 1);
     c.setForeground(false);
     final count = calls.length;
     await tester.pump(const Duration(minutes: 2));
@@ -292,7 +299,7 @@ void main() {
   test('pagination failure retains items and snapshot', () async {
     final c = NotificationCenterController(
       read: (name, params) async {
-        if (name == 'get_notification_center_overview')
+        if (name == 'get_notification_center_daily_overview')
           throw StateError('offline');
         return badge();
       },
@@ -318,7 +325,7 @@ void main() {
           if (name == 'get_notification_center_badge') {
             return badge(unread: false);
           }
-          expect(name, 'get_notification_center_overview');
+          expect(name, 'get_notification_center_daily_overview');
           final ids = params['p_ids'] as List;
           batches.add(ids.length);
           return {
@@ -344,7 +351,7 @@ void main() {
       c.items = List.generate(201, (i) => row('$i', section: 1));
       c.panelOpen = true;
       await c.refresh();
-      expect(batches, [200, 1]);
+      expect(batches, [201]);
       expect(c.items.length, 200);
       expect(c.items.first.id, '1');
       expect(c.items.first.status, 'paid');
@@ -528,7 +535,7 @@ void main() {
       final calls = <String>[];
       final c = NotificationCenterController(
         read: (name, params) async {
-          calls.add(name);
+          calls.add(params['p_open'] == true ? 'open_daily' : name);
           return {
             'items': [
               {
@@ -583,7 +590,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Same title'), findsNWidgets(2));
       expect(find.text('NotificationCenter.kinds.form_opened'), findsOneWidget);
-      expect(calls, ['get_notification_center_overview']);
+      expect(calls, ['get_notification_center_daily_overview']);
       expect(c.unread, isTrue);
       expect(tester.takeException(), isNull);
     },
@@ -731,7 +738,7 @@ void main() {
       final calls = <String>[];
       final c = NotificationCenterController(
         read: (name, params) async {
-          calls.add(name);
+          calls.add(params['p_open'] == true ? 'open_daily' : name);
           if (name == 'get_notification_center_badge')
             return badge(unread: false);
           expect(params['p_ids'], ['summary']);
@@ -772,9 +779,155 @@ void main() {
       expect(refreshed.sequence, 5);
       expect(refreshed.occurredAt, original.occurredAt);
       expect(c.isUnread(refreshed), isTrue);
-      expect(calls, isNot(contains('open_notification_center')));
+      expect(calls, isNot(contains('open_daily')));
     },
   );
+
+  testWidgets(
+    'occasion day headings stay separate and summary names adapt to width',
+    (tester) async {
+      final c = NotificationCenterController();
+      addTearDown(c.dispose);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      c.snapshotAt = DateTime(2026, 10, 27, 12);
+      c.items = [
+        row(
+          'names',
+          day: '2026-10-27',
+          data: {
+            'activityCount': 8,
+            'relatedOrders': true,
+            'previewContacts': [
+              {'name': 'Jan', 'surname': 'Novák'},
+              {'name': 'Eva', 'surname': 'Malá'},
+              {'name': 'Petr', 'surname': 'Svoboda'},
+            ],
+          },
+        ),
+        row(
+          'old',
+          day: '2026-10-22',
+          data: {'activityCount': 2, 'relatedOrders': true},
+        ),
+        row(
+          'other',
+          occasion: 2,
+          day: '2026-10-27',
+          data: {'activityCount': 3, 'relatedOrders': true},
+        ),
+      ];
+      String? widePreview;
+      for (final sample in [(800.0, 1.0), (320.0, 1.0), (320.0, 2.0)]) {
+        final (width, scale) = sample;
+        tester.view.physicalSize = Size(width, 1600);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: DependencyMaterialBridge.wrapBuilder(
+              (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+            ),
+            home: NotificationCenterPanel(controller: c, onDetail: (_) {}),
+          ),
+        );
+        await tester.pumpAndSettle();
+        // At 2x text the later occasion can be outside ListView's cache extent.
+        if (scale == 1) {
+          expect(find.text('Same title'), findsNWidgets(2));
+          expect(find.text('NotificationCenter.today'), findsNWidgets(2));
+        } else {
+          expect(find.text('Same title'), findsWidgets);
+          expect(find.text('NotificationCenter.today'), findsWidgets);
+        }
+        expect(find.text('NotificationCenter.daysAgo.other'), findsOneWidget);
+        final preview = tester
+            .widget<Text>(
+              find.byKey(const ValueKey('notification-preview-names')),
+            )
+            .data!;
+        expect(preview, contains('Jan Novák'));
+        if (width == 800) {
+          widePreview = preview;
+          expect(preview, contains('Eva Malá'));
+        } else {
+          expect(preview.length, lessThan(widePreview!.length));
+          expect(preview, isNot(contains('Eva Malá')));
+        }
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
+  test(
+    'one RPC opens, refreshes all loaded rows and pages with a frozen timezone',
+    () async {
+      final requests = <Map<String, dynamic>>[];
+      var timezone = 'Europe/Prague';
+      final c = NotificationCenterController(
+        timezone: () => timezone,
+        read: (name, params) async {
+          if (name == 'get_notification_center_badge') return badge();
+          expect(name, 'get_notification_center_daily_overview');
+          requests.add(Map.of(params));
+          return {...opened(), 'snapshotDay': '2026-10-26'};
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await Future<void>.delayed(Duration.zero);
+      await c.open();
+      expect(requests.length, 1);
+      expect(requests.single['p_open'], isTrue);
+      c.items = List.generate(201, (i) => row('$i'));
+      requests.clear();
+      await c.refresh();
+      expect(requests.length, 1);
+      expect((requests.single['p_ids'] as List).length, 201);
+      expect(requests.single['p_open'], isNull);
+      timezone = 'America/New_York';
+      requests.clear();
+      c.nextCursor = 'next';
+      await c.loadMore();
+      expect(requests.length, 1);
+      expect(requests.single['p_cursor'], 'next');
+      expect(requests.single['p_timezone'], 'Europe/Prague');
+    },
+  );
+
+  test('summary uses exact place total and deduplicates a bounded customer preview', () {
+    final p = NotificationItemPresenter(
+      row(
+        'summary',
+        data: {
+          'activityCount': 8,
+          'placeCount': 18,
+          'previewContacts': [
+            {'name': 'Jan', 'surname': 'Novák'},
+            {'name': 'Jan', 'surname': 'Novák'},
+            {'email': ' eva@example.invalid '},
+          ],
+        },
+      ),
+      locale: 'cs',
+    );
+    expect(p.details, ['NotificationCenter.places.other']);
+    expect(p.previewNames, ['Jan Novák', 'eva@example.invalid']);
+    expect(
+      NotificationItemPresenter(row('single-place', data: {'activityCount': 8}))
+          .details,
+      isEmpty,
+    );
+    expect(
+      NotificationItemPresenter(
+        row('unknown-places', data: {'activityCount': 8, 'placeCount': null}),
+      ).details,
+      isEmpty,
+    );
+  });
 
   test('summary hydration rejects stale identities', () async {
     final pending = Completer<dynamic>();
