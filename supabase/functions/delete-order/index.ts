@@ -33,6 +33,13 @@ Deno.serve(async (request) => {
   ) {
     return reply(400, { error: "INVALID_REQUEST" });
   }
+  const scope=body.delegatedScope;
+  if(scope!==undefined&&(!scope||typeof scope!=='object'||Array.isArray(scope)
+    ||Object.keys(scope).some(k=>!['occasionId','organizationId','unitId','expectedRevision'].includes(k))
+    ||!Number.isSafeInteger(scope.occasionId)||scope.occasionId<=0
+    ||!Number.isSafeInteger(scope.organizationId)||scope.organizationId<=0
+    ||!(scope.unitId===null||(Number.isSafeInteger(scope.unitId)&&scope.unitId>0))
+    ||typeof scope.expectedRevision!=='string'||!/^[a-f0-9]{64}$/.test(scope.expectedRevision)))return reply(400,{error:'INVALID_REQUEST'});
   try {
     const result = await deleteOrderWithInvoice(
       body.orderId,
@@ -40,6 +47,7 @@ Deno.serve(async (request) => {
       createUserClient(authorization),
       supabaseAdmin,
       fakturoidGateway.deleteInvoice,
+      scope,
     );
     return reply(200, result);
   } catch (error) {

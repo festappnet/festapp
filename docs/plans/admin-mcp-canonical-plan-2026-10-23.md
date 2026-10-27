@@ -1,12 +1,23 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Aktualizace 2026-10-26: etapy 0-2B jsou nasazené; etapy 3 a 4 jsou lokálně dokončené a ověřené, jejich produkční rollout neproběhl.
-Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
-Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
-upgrade byl samostatně dokončen a nasazen z main
-`4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`: MCP `2026-07-28`, server SDK
-2.3.1, Node adaptér 2.1.1, oficiální legacy hranice; všech 74 MCP testů prošlo
-včetně disposable PostgreSQL bez skipů. Etapy 0-4 dokládají checkpointy; další pokračování je etapa 5.
+Aktuální stav 2026-10-27: **etapy 0-10 jsou lokálně dokončené a ověřené**.
+Etapy 0-5 mají doložené nasazení pro prod/festapptickets 0.20.427+929;
+etapy 6-10 jsou v [PR #641](https://github.com/festappnet/festapp/pull/641)
+a dosud se nenasazovaly. Žádná další implementační etapa nezbývá.
+Ověřování: `standard` (oprávnění, souběhy, veřejné kontrakty a migrace).
+
+Poslední [checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md#stage-7-10-final-local-closure),
+[matice vlastníků](admin-mcp-final-stages-boundary-2026-10-27.md),
+[evidence](../reports/admin-authoring-final-evidence-2026-10-27.json)
+a [živý dokumentační katalog](../reports/admin-capabilities-2026-10-23.html)
+obsahují konkrétní rozsah, zdroje a kontroly. Katalog má 109 doložených úkonů
+a 193 registrovaných vzdálených nástrojů; dostupnost dál zužují skutečná práva,
+varianta, aktivní funkce, explicitní souhlas a renderer readiness.
+
+Původní transportní základ z main `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`
+zůstává stejný: MCP `2026-07-28`, server SDK 2.3.1, Node adaptér 2.1.1
+a oficiální legacy hranice. Následující specifikace a starší checkpointy
+zachovávají historii postupu; další implementaci již nezadávají.
 
 ## Výsledek a hranice
 
@@ -522,9 +533,10 @@ feature dostupnosti. Začít `components/bank_accounts/db_bank_accounts.dart`,
 owner, účinek a recovery kontrakt; jejich současná podoba zde není plně auditována.
 
 **Podmínky:** banka zachová account-admin AND manager skutečně propojené unit.
-MCP nesmí vyrobit provider stav, refund ani obejít onboarding. Kopie/mazání akce
-má SQL i kanonické asset Worker účinky: jeden orchestration intent s obnovou,
-ne nepravdivý slib jedné distribuované SQL transakce.
+MCP nesmí vyrobit provider stav, refund ani obejít onboarding. Kopie akce má SQL i kanonické asset Worker účinky: jeden orchestration intent
+s obnovou, ne slib jedné distribuované SQL transakce. Ověřený současný delete
+pouze odpojí obrazové záznamy a ponechá R2 objekty; nová cesta nesmí bez dalšího
+rozšířit účinek na jejich purge.
 
 **Odstranění:** přímé externí mutace z nového MCP adaptéru mimo existující owner,
 service-role náhrady běžné autorizace a nová asset/storage autorita.

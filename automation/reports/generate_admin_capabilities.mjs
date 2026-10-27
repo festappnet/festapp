@@ -9,7 +9,10 @@ const source = new URL('docs/reports/admin-capabilities-2026-10-23.json', root);
 const output = new URL('docs/reports/admin-capabilities-2026-10-23.html', root);
 const report = JSON.parse(await readFile(source, 'utf8'));
 const allowedOperations = [...READ_OPERATIONS, 'occasions.create', ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)];
-const catalog = new Operations({root: fileURLToPath(new URL('.documentation-no-runtime', root)), allowedOperations}).catalog;
+const operations = new Operations({root: fileURLToPath(new URL('.documentation-no-runtime', root)), allowedOperations});
+// Document qualified capabilities too; live registration still requires its SQL readiness probe.
+operations.setWriteReady(true);
+const catalog = operations.catalog;
 const byId = new Map(catalog.map(d => [d.id, d]));
 const represented = new Set();
 for (const row of report.actions) {

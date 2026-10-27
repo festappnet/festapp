@@ -59,8 +59,8 @@ export class DelegatedOwner {
         check(this.allowedOperations.includes(id) && this.permitsOperation(id), 'INSUFFICIENT_SCOPE');
         this.operationId = id;
         if (['context.inspect', 'access.inspect'].includes(id)) return;
-        if (id === 'occasions.create') {
-            check(access.units.some(u => u.unitId === args.unitId && u.canCreateOccasions), 'FORBIDDEN');
+        if (['occasions.create','occasions.copy','occasions.setup.finalize'].includes(id)) {
+            check(access.units.some(u => u.unitId === (id==='occasions.copy'?args.targetUnitId:args.unitId) && u.canCreateOccasions), 'FORBIDDEN');
         } else if (id.startsWith('units.settings.')) {
             check(access.units.some(u => u.unitId === args.unitId), 'FORBIDDEN');
         } else if (id.startsWith('email_templates.') && args.entityType === 'unit') {

@@ -21,6 +21,11 @@ BEGIN
          THEN public.can_write_unit_email_templates(p_unit)
        WHEN p_command_name IN ('profile.unit_access.delete','profile.unit_user.save') THEN public.can_manage_unit_users(p_unit)
        WHEN p_command_name='unit.config.save' THEN public.can_manage_unit_configuration(p_unit)
+       WHEN p_command_name IN ('unit.cards.pause','unit.cards.disconnect') THEN public.can_manage_unit_configuration(p_unit) AND NOT public.is_demo_unit(p_unit)
+       WHEN p_command_name='unit.order_history.delete' THEN public.can_manage_unit_configuration(p_unit) AND NOT public.is_demo_unit(p_unit)
+       WHEN p_command_name='unit.delete' THEN public.can_manage_unit_configuration(p_unit) AND NOT public.is_demo_unit(p_unit)
+       WHEN p_command_name IN ('unit.legal.save','unit.legal.submit') THEN public.can_manage_unit_legal_profile(p_unit)
+       WHEN p_command_name IN ('unit.bank.save','unit.bank.link','unit.bank.user') THEN public.can_manage_unit_bank_accounts(p_unit)
        WHEN p_command_name='occasion.duplicate' THEN public.can_copy_occasion_target(p_unit)
        ELSE false END) THEN
     RAISE insufficient_privilege USING MESSAGE='invalid unit mutation receipt claim';

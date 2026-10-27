@@ -35,12 +35,14 @@ services, and lifecycle (Duplication/Deletion).
    across Units only if linked to the target; otherwise the account is cleared
    and that form is closed for review. Receipts and catalog updates belong to
    the target Unit, and the creator receives occasion administration rights.
-2. **Dart**: `DbOccasions.duplicateOccasion` then handles **Image Copying**.
-   - It manually fetches the ticket background and occasion image.
-   - Calls `DbImages.createCopyOfImage` to download through the image control
-     client and upload a new R2 object through the image Worker. A media failure
-     leaves the committed occasion visible and returns a partial result; never
-     repeat SQL creation just to retry copying media.
+2. **Shared media completion**: `start_occasion_lifecycle` attaches one durable
+   media job to that receipt. `OccasionDuplicator` and MCP both resume the job
+   through `/occasion-lifecycle` in the canonical image Worker. Deterministic
+   object keys and registered steps preserve identity after lost responses.
+   The Worker copies each distinct ticket/occasion image, preserves bundled
+   presets, and SQL applies only references the user has not changed meanwhile.
+   Dart retains its media intent until completion, including across restart;
+   a retry never allocates another database copy for unfinished media.
 
 ### 2. Deletion (`deleteOccasion`)
 

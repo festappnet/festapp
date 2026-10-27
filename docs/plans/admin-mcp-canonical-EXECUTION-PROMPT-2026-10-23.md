@@ -1,43 +1,34 @@
-# Pokračování kanonické administrace a MCP
+# Stav kanonické administrace a MCP po dokončení etap
 
-Aktuální pokračování: 2026-10-27. Načíst čerstvý origin/main, AGENTS.md,
-CLAUDE.md a docs/architecture/ai_context.md. Ověřování standard, izolovaný
-worktree; cizí dirty checkout neměnit.
+Aktualizace 2026-10-27: **etapy 0-10 jsou lokálně dokončené a ověřené**.
+Další implementační etapa není otevřená. Neopakovat již dokončené doménové řezy
+ani nevytvářet náhradní ACL, účetní výpočty, receipt ledger nebo storage autoritu.
 
-Autoritativní plán: [admin-mcp-canonical-plan-2026-10-23.md](admin-mcp-canonical-plan-2026-10-23.md).
-Poslední stav: [Stage 6 locally complete](admin-mcp-canonical-checkpoint-2026-10-23.md).
-Etapy 0-5 mají doložené nasazení pro prod/festapptickets ve verzi
-0.20.427+929. [Receipt](../operations/releases/festapptickets-2026-10-27.json)
-obsahuje skutečné SQL/Edge/MCP/web revize. Etapa 6 je lokálně hotová a ověřená,
-bez produkčního nasazení; větev feat/admin-mcp-stage6-20261027 z main a698f7403.
-Publikováno jako [PR #641](https://github.com/festappnet/festapp/pull/641),
-implementace 518b7d809. Před pokračováním ověřit stav review/integrace. Main vyžaduje review;
-staré admin výjimky se na další etapu či rollout nevztahují.
+[Autoritativní plán](admin-mcp-canonical-plan-2026-10-23.md),
+[závěrečný checkpoint](admin-mcp-canonical-checkpoint-2026-10-23.md#stage-7-10-final-local-closure),
+[matice vlastníků](admin-mcp-final-stages-boundary-2026-10-27.md),
+[evidence](../reports/admin-authoring-final-evidence-2026-10-27.json)
+a [katalog 193 nástrojů](../reports/admin-capabilities-2026-10-23.html).
 
-Další etapa je **7 - pokročilá editace plánků a vzhled vstupenek**. Přečíst
-její konkrétní řezy v plánu. Provozní blokace/hold release/swap/order již existují;
-neimplementovat je znovu. Navázat na kanonický layout/controller/save a současné
-PDF/font/rendering vlastníky, zachovat draft, explicitní Save/Cancel, původní
-verze, scope a oprávnění. Před kódem zapsat owner -> UI -> MCP a nejmenší
-smysluplný testovací batch. Žádné vývojové subagenty bez autorizace.
+Aktuální kandidát je větev `feat/admin-mcp-stage6-20261027` v izolovaném worktree
+`/private/tmp/festapp-admin-mcp-stage6-20261027`, nad main `a698f7403`.
+[PR #641](https://github.com/festappnet/festapp/pull/641) obsahuje etapy 6-10.
+Před další publikací načíst čerstvý origin/main a ověřit aktuální review/integraci.
+Main vyžaduje běžné review; staré admin výjimky ani stará release oprávnění se
+na tento kandidát nepřenášejí.
 
-Etapu 6 znovu neimplementovat. [Matice a kontrakt](admin-mcp-stage6-boundary-2026-10-27.md)
-a [evidence](../reports/admin-people-evidence-2026-10-27.json) obsahují 19 nových
-nástrojů, reálné PostgreSQL/SDK/Flutter kontroly a source hashe. Profily/skupiny
-sdílejí původní command ownery; named profily a role mají rozdílný explicitní
-záměr a OAuth scope. Organizer user grid používá nový společný verzovaný command
-nad původní persistence funkcí, s jednou access-change invalidací. Neforkovat
-žádnou ACL, receipt ani profile writer.
+Etapy 0-5 mají doložené nasazení pro `prod/festapptickets` ve verzi 0.20.427+929.
+[Původní release receipt](../operations/releases/festapptickets-2026-10-27.json)
+se nemění. Etapy6-10 zatím v produkci nejsou. Další rollout vyžaduje samostatné
+výslovné zadání. Výchozí scope neobsahuje další tenanty ani Android. Při později
+autorizovaném web release zachovat kanonickou main/tenant ancestry, backendové
+brány, lokální build a `automation/deploy_direct.sh`; rutinní release běh delegovat
+dle AGENTS.md. Veřejný ChatGPT pilot zůstává samostatnou prací.
 
-SQL měnit jako canonical source a novou forward migraci. Pro etapu 6 běží
-python3 automation/assemble-people-migration.py --check a source/parity generátor.
-Publikované migrace jsou neměnné. Změna occasion save owneru vyžaduje také
-přegenerovat scoped runtime ticket-layout kontrakt a zahrnout jej do nové migrace.
-Použít marker-verified disposable PostgreSQL, skutečné běžné identity a explicitní
-souběhové testy pro zásadní kolize. Flutter pouze jeden proces, concurrency=1.
-
-Hotovo 7/11 hlavních etap. Produkční release je oddělený, explicitně autorizovaný
-krok. Vybraný tenant zůstává prod/festapptickets, jiné varianty ani Android do
-výchozího scope nepatří. Backend přes canonical workflow, web lokálně přes
-automation/deploy_direct.sh; rutinní autorizované nasazení delegovat dle AGENTS.
-Souběžný ChatGPT veřejný pilot je samostatná práce, ne další doménová etapa.
+Pro opravy kandidáta používat canonical SQL a nové dosud nepublikované forward
+migrace. Jejich source freeze ověří
+`python3 automation/assemble-admin-authoring-migration.py <7|8|9|10> --check`,
+source/parity generátor a runtime ticket-layout kontrakt. Historické publikované
+migrace neměnit. Backendové testy jen v marker-verified disposable databázi se
+zastaveným cronem a doručováním. Flutter pouze jeden proces, concurrency=1.
+Cizí dirty checkout neměnit. Bez autorizace nepoužívat vývojové subagenty.

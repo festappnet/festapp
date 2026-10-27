@@ -50,11 +50,17 @@ abstract interface class OccasionCommands {
 
 class SupabaseOccasionCommands implements OccasionCommands {
   SupabaseOccasionCommands(SupabaseClient client)
-    : _transport = ClientCommandTransport.supabase(client);
+    : _transport = ClientCommandTransport.supabase(client),
+      _lifecycleTransport = ClientCommandTransport.supabase(
+        client,
+        durable: true,
+      );
 
-  SupabaseOccasionCommands.withTransport(this._transport);
+  SupabaseOccasionCommands.withTransport(this._transport)
+    : _lifecycleTransport = _transport;
 
   final ClientCommandTransport _transport;
+  final ClientCommandTransport _lifecycleTransport;
 
   @override
   Future<OccasionModel> create(OccasionModel occasion) async {
@@ -113,11 +119,12 @@ class SupabaseOccasionCommands implements OccasionCommands {
         'p_occasion': occasionId,
         'p_expected_version': expectedVersion,
         'p_config': {'id': occasionId, 'ticket_layout_change': change},
-        if (commandId != null) 'p_command_id': commandId,
+        'p_command_id': ?commandId,
       }),
     );
-    if (response.code != 200)
+    if (response.code != 200) {
       throw StateError('Ticket layout save was rejected');
+    }
     await applyClientCommandReplacements(response);
     return OccasionModel.fromJson(
       (response.data['occasion'] as Map).cast<String, dynamic>(),
@@ -132,7 +139,10 @@ class SupabaseOccasionCommands implements OccasionCommands {
     String? commandId,
   }) async {
     final response = ClientCommandResponse.from(
-      await _transport.invoke('duplicate_occasion_client_sync_v1', {
+      await _lifecycleTransport.invoke('start_occasion_lifecycle', {
+        'p_unit': null,
+        'p_organization': null,
+        'p_action': 'copy',
         'p_occasion': occasionId,
         'p_target_unit': targetUnitId,
         'p_locale': locale,
@@ -147,7 +157,10 @@ class SupabaseOccasionCommands implements OccasionCommands {
   @override
   Future<void> delete(int occasionId) async {
     final response = ClientCommandResponse.from(
-      await _transport.invoke('delete_occasion_client_sync_v1', {
+      await _lifecycleTransport.invoke('start_occasion_lifecycle', {
+        'p_unit': null,
+        'p_organization': null,
+        'p_action': 'delete',
         'p_occasion': occasionId,
       }),
     );

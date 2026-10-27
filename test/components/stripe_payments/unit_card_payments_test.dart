@@ -1,3 +1,6 @@
+import '../../support/fixtures/local_app_storage_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import 'dart:async';
@@ -101,6 +104,57 @@ void main() {
         openExternal: open,
       ),
     ),
+  );
+  test(
+    'HTTP writes preserve a pending disconnect command across adapter restart',
+    () async {
+      final storage = await LocalAppStorageFixture.open();
+      addTearDown(storage.dispose);
+      final disconnectIds = <String>[];
+      var attempts = 0;
+      final client = SupabaseClient(
+        'https://fixture.invalid',
+        'fixture',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+          final payload = jsonDecode(request.body) as Map;
+          final id = payload['commandId'] as String;
+          final disconnect = payload['action'] == 'disconnect';
+          if (disconnect) disconnectIds.add(id);
+          return http.Response(
+            jsonEncode(
+              commandResponseFixture(
+                id,
+                data: disconnect
+                    ? {
+                        'intentId': '00000000-0000-4000-8000-000000000001',
+                        'result': {'disconnected': attempts++ > 0},
+                      }
+                    : {
+                        'state': {'paused': true},
+                      },
+              ),
+            ),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      await SupabaseStripeConnectionApi(client: client).pause(8, true);
+      const connection = '00000000-0000-4000-8000-000000000001';
+      expect(
+        (await SupabaseStripeConnectionApi(client: client)
+            .disconnect(8, connection))['disconnected'],
+        false,
+      );
+      expect(
+        (await SupabaseStripeConnectionApi(client: client)
+            .disconnect(8, connection))['disconnected'],
+        true,
+      );
+      expect(disconnectIds[0], disconnectIds[1]);
+    },
   );
   test(
     'HTTP adapter preserves explicit missing configuration and other failures',

@@ -1,7 +1,11 @@
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+
 import 'orders_strings.dart';
+
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:collection/collection.dart';
@@ -24,10 +28,7 @@ class ReservationsBundle {
   final List<OrderModel> orders;
   final List<FormBundle> forms;
 
-  ReservationsBundle({
-    required this.orders,
-    required this.forms,
-  });
+  ReservationsBundle({required this.orders, required this.forms});
 }
 
 class OrderHistoryBundle {
@@ -37,17 +38,21 @@ class OrderHistoryBundle {
 }
 
 class SpotSelectionResult {
-  SpotSelectionResult.fromJson(Map<String, dynamic> json,
-      {required String previousSecret, required int requestedSpotId})
-      : code = (json['code'] as num).toInt(),
-        message = json['message']?.toString(),
-        reason = json['reason']?.toString(),
-        secret =
-            (json['secret'] ?? json['secretId'] ?? previousSecret).toString(),
-        expiresAt = DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
-        spotIds = List.unmodifiable(
-            (json['spotIds'] as List? ?? [requestedSpotId])
-                .map((v) => (v as num).toInt()));
+  SpotSelectionResult.fromJson(
+    Map<String, dynamic> json, {
+    required String previousSecret,
+    required int requestedSpotId,
+  }) : code = (json['code'] as num).toInt(),
+       message = json['message']?.toString(),
+       reason = json['reason']?.toString(),
+       secret = (json['secret'] ?? json['secretId'] ?? previousSecret)
+           .toString(),
+       expiresAt = DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
+       spotIds = List.unmodifiable(
+         (json['spotIds'] as List? ?? [requestedSpotId]).map(
+           (v) => (v as num).toInt(),
+         ),
+       );
   final int code;
   final String? message, reason;
   final String secret;
@@ -61,7 +66,8 @@ class DbOrders {
   static OrderCommands get _commands => SupabaseOrderCommands(_supabase);
 
   static Future<FunctionResponse> sendTicketOrder(
-      Map<String, dynamic> data) async {
+    Map<String, dynamic> data,
+  ) async {
     return _sendTicketOrderIntent(
       namespace: 'ticket_order',
       payload: data,
@@ -85,11 +91,7 @@ class DbOrders {
     );
     final response = await _supabase.functions.invoke(
       "send-ticket-order",
-      body: {
-        bodyKey: payload,
-        "commandId": commandId,
-        "clientId": clientId,
-      },
+      body: {bodyKey: payload, "commandId": commandId, "clientId": clientId},
     );
     final data = response.data;
     final code = data is Map ? data['code'] : null;
@@ -97,50 +99,79 @@ class DbOrders {
         (code == 200 ||
             (code >= 1000 && code < 2000) ||
             (code >= 400 && code < 500 && code != 408 && code != 429))) {
-      await ClientCommandIdentity.completeIntent(namespace, payload,
-          commandId: commandId, principalBinding: principalBinding);
+      await ClientCommandIdentity.completeIntent(
+        namespace,
+        payload,
+        commandId: commandId,
+        principalBinding: principalBinding,
+      );
     }
     return response;
   }
 
   static Future<void> stornoOrder(int id) => _orderIntent(
-      'inventory.order.cancel',
-      id,
-      (commandId) => _commands.cancel(id, commandId: commandId));
+    'inventory.order.cancel',
+    id,
+    (commandId) => _commands.cancel(id, commandId: commandId),
+  );
 
   static Future<void> _orderIntent(
-      String operation, int id, Future<void> Function(String) submit) async {
+    String operation,
+    int id,
+    Future<void> Function(String) submit,
+  ) async {
     final payload = {'order': id};
     final principal = '${_supabase.rest.url}:${_supabase.auth.currentUser!.id}';
     final commandId = await ClientCommandIdentity.claimIntent(
-        operation, payload,
-        principalBinding: principal);
+      operation,
+      payload,
+      principalBinding: principal,
+    );
     await submit(commandId);
-    await ClientCommandIdentity.completeIntent(operation, payload,
-        commandId: commandId, principalBinding: principal);
+    await ClientCommandIdentity.completeIntent(
+      operation,
+      payload,
+      commandId: commandId,
+      principalBinding: principal,
+    );
   }
 
   static Future<SpotSelectionResult> selectSpotResult(
-      String formKey, String secret, int spotId, bool selecting) async {
-    final response = await _supabase.rpc('select_spot', params: {
-      'form_key': formKey,
-      'secret_id': secret,
-      'spot_id': spotId,
-      'selecting': selecting,
-    });
+    String formKey,
+    String secret,
+    int spotId,
+    bool selecting,
+  ) async {
+    final response = await _supabase.rpc(
+      'select_spot',
+      params: {
+        'form_key': formKey,
+        'secret_id': secret,
+        'spot_id': spotId,
+        'selecting': selecting,
+      },
+    );
     return SpotSelectionResult.fromJson(
-        Map<String, dynamic>.from(response as Map),
-        previousSecret: secret,
-        requestedSpotId: spotId);
+      Map<String, dynamic>.from(response as Map),
+      previousSecret: secret,
+      requestedSpotId: spotId,
+    );
   }
 
-  static Future<bool> selectSpot(BuildContext context, String formKey,
-      String secret, int spotId, bool selecting) async {
+  static Future<bool> selectSpot(
+    BuildContext context,
+    String formKey,
+    String secret,
+    int spotId,
+    bool selecting,
+  ) async {
     final result = await selectSpotResult(formKey, secret, spotId, selecting);
     if (!result.accepted && context.mounted) {
       ToastHelper.Show(
-          context, result.message ?? result.reason ?? 'Reservation rejected',
-          severity: ToastSeverity.NotOk);
+        context,
+        result.message ?? result.reason ?? 'Reservation rejected',
+        severity: ToastSeverity.NotOk,
+      );
     }
     return result.accepted;
   }
@@ -152,8 +183,10 @@ class DbOrders {
     bool includeSpots = false,
     bool includeOrdersHistory = false,
   }) async {
-    assert(occasionLink != null || formLink != null,
-        'Either occasionLink or formLink must be provided.');
+    assert(
+      occasionLink != null || formLink != null,
+      'Either occasionLink or formLink must be provided.',
+    );
 
     final options = <String, bool>{};
     if (includeOrderDetails) options['include_full_order_data'] = true;
@@ -178,9 +211,10 @@ class DbOrders {
   static Future<ReservationsBundle> getOrdersTabData({
     required String occasionLink,
   }) async {
-    final response = await _supabase.rpc('get_orders_tab_data', params: {
-      'p_occasion_link': occasionLink,
-    });
+    final response = await _supabase.rpc(
+      'get_orders_tab_data',
+      params: {'p_occasion_link': occasionLink},
+    );
 
     // Response is the data object directly.
     return _parseOrdersBundle(response);
@@ -229,8 +263,9 @@ class DbOrders {
     // Main loop to assemble the final OrderModel objects
     for (var order in orders) {
       final delivery = (json['email_delivery'] as Map?)?[order.id.toString()];
-      order.emailDelivery =
-          delivery is Map ? Map<String, dynamic>.from(delivery) : null;
+      order.emailDelivery = delivery is Map
+          ? Map<String, dynamic>.from(delivery)
+          : null;
       final orderOpts = orderToOpt[order.id] ?? [];
       final ticketIds = orderOpts.map((opt) => opt.ticketId).toSet();
       final relatedTickets = ticketIds
@@ -239,11 +274,13 @@ class DbOrders {
           .toList();
 
       order.relatedTickets = relatedTickets;
-      order.form =
-          forms?.firstWhereOrNull((f) => f.definition.id == order.formId);
+      order.form = forms?.firstWhereOrNull(
+        (f) => f.definition.id == order.formId,
+      );
       if (order.form == null && order.formKey != null) {
-        order.form =
-            forms?.firstWhereOrNull((f) => f.definition.key == order.formKey);
+        order.form = forms?.firstWhereOrNull(
+          (f) => f.definition.key == order.formKey,
+        );
       }
       order.relatedHistory = historyMap[order.id];
 
@@ -274,14 +311,16 @@ class DbOrders {
           orderProductIds.addAll(ticket.relatedProducts!.map((p) => p.id!));
         }
       }
-      order.relatedProducts =
-          products.where((p) => orderProductIds.contains(p.id)).toList();
+      order.relatedProducts = products
+          .where((p) => orderProductIds.contains(p.id))
+          .toList();
       order.paymentInfoModel = paymentMap[order.paymentInfo];
 
       if (order.isExpired()) {
         order.state = OrderModel.expiredState;
-        for (var t in order.relatedTickets!
-            .where((t) => t.state == OrderModel.orderedState)) {
+        for (var t in order.relatedTickets!.where(
+          (t) => t.state == OrderModel.orderedState,
+        )) {
           t.state = order.state;
         }
       }
@@ -293,40 +332,52 @@ class DbOrders {
   }
 
   static Future<bool> hasFakturoidForDeletion(int orderId) async {
-    final context = await _supabase
-        .rpc('get_order_deletion_context_v1', params: {'p_order': orderId});
+    final context = await _supabase.rpc(
+      'get_order_deletion_context_v1',
+      params: {'p_order': orderId},
+    );
     return context['hasFakturoid'] == true;
   }
 
-  static Future<void> deleteOrder(OrderModel model,
-      {bool deleteFakturoidInvoice = false}) async {
+  static Future<void> deleteOrder(
+    OrderModel model, {
+    bool deleteFakturoidInvoice = false,
+  }) async {
     if (deleteFakturoidInvoice) {
       final payload = {'orderId': model.id, 'deleteFakturoidInvoice': true};
       final principal =
           '${_supabase.rest.url}:${_supabase.auth.currentUser!.id}';
       final commandId = await ClientCommandIdentity.claimIntent(
-          'order_delete_fakturoid', payload,
-          principalBinding: principal);
+        'order_delete_fakturoid',
+        payload,
+        principalBinding: principal,
+      );
       try {
-        final result = await _supabase.functions.invoke('delete-order', body: {
-          ...payload,
-          'commandId': commandId,
-        });
+        final result = await _supabase.functions.invoke(
+          'delete-order',
+          body: {...payload, 'commandId': commandId},
+        );
         final response = ClientCommandResponse.from(result.data);
         if (response.code != 200) {
           throw StateError(OrdersStrings.deleteFakturoidInvoiceFailed);
         }
         await applyClientCommandReplacements(response);
         await ClientCommandIdentity.completeIntent(
-            'order_delete_fakturoid', payload,
-            commandId: commandId, principalBinding: principal);
+          'order_delete_fakturoid',
+          payload,
+          commandId: commandId,
+          principalBinding: principal,
+        );
       } on FunctionException {
         throw StateError(OrdersStrings.deleteFakturoidInvoiceFailed);
       }
       return;
     }
-    await _orderIntent('inventory.order.delete', model.id!,
-        (commandId) => _commands.delete(model.id!, commandId: commandId));
+    await _orderIntent(
+      'inventory.order.delete',
+      model.id!,
+      (commandId) => _commands.delete(model.id!, commandId: commandId),
+    );
   }
 
   static Future<void> updateOrderResponses(FormResponseModel responses) async {
@@ -339,22 +390,22 @@ class DbOrders {
   /// Deletes a specific order history record by its ID.
   /// Throws a [PostgrestException] if the deletion fails due to permissions or other issues.
   static Future<void> deleteOrderHistory(int historyId) async {
-    await _supabase.rpc(
-      'delete_order_history',
-      params: {
-        'p_history_id': historyId,
-      },
+    final result = ClientCommandResponse.from(
+      await ClientCommandTransport.supabase(_supabase, durable: true).invoke(
+        'delete_order_history_client_sync_v1',
+        {'p_history_id': historyId},
+      ),
     );
+    if (result.code != 200) throw StateError('Order history deletion rejected');
   }
 
   static Future<void> updateOrderNoteHidden(
-      int orderId, String newNoteHidden) async {
+    int orderId,
+    String newNoteHidden,
+  ) async {
     var response = await _supabase.rpc(
       "update_order_note_hidden",
-      params: {
-        "order_id": orderId,
-        "new_note_hidden": newNoteHidden,
-      },
+      params: {"order_id": orderId, "new_note_hidden": newNoteHidden},
     );
     if (response["code"] != 200) {
       throw Exception("Saving of note has failed.");
@@ -364,21 +415,21 @@ class DbOrders {
   static Future<void> updateOrderAndTicketsToPaid(int orderId) async {
     var response = await _supabase.rpc(
       "update_order_and_tickets_to_paid_ws",
-      params: {
-        "order_id": orderId,
-      },
+      params: {"order_id": orderId},
     );
 
     if (response["code"] != 200) {
       throw Exception(
-          "Failed to update order and tickets to 'paid'. Error: ${response['message']}");
+        "Failed to update order and tickets to 'paid'. Error: ${response['message']}",
+      );
     }
   }
 
   static Future<OrderHistoryBundle> getOrderHistory(int orderId) async {
-    final response = await _supabase.rpc('get_order_history', params: {
-      'order_id': orderId,
-    });
+    final response = await _supabase.rpc(
+      'get_order_history',
+      params: {'order_id': orderId},
+    );
 
     if (response["code"] != 200) {
       throw Exception("Failed to fetch order history: ${response['message']}");
@@ -391,8 +442,9 @@ class DbOrders {
     final history = (json['history'] as List)
         .map((h) => OrderHistoryModel.fromJson(h))
         .toList();
-    final users =
-        (json['users'] as List).map((u) => UserInfoModel.fromJson(u)).toList();
+    final users = (json['users'] as List)
+        .map((u) => UserInfoModel.fromJson(u))
+        .toList();
 
     // Link users to history items
     final userMap = {for (var u in users) u.id: u};
@@ -406,15 +458,22 @@ class DbOrders {
     return OrderHistoryBundle(order: order, history: history);
   }
 
-  static Future<FunctionResponse> sendStornoTicketOrderEmail({required int orderId}) =>
-      _supabase.functions.invoke('send-email', body: {
-        'code': 'TICKET_ORDER_STORNO', 'data': {'orderId': orderId},
-      });
+  static Future<FunctionResponse> sendStornoTicketOrderEmail({
+    required int orderId,
+  }) => _supabase.functions.invoke(
+    'send-email',
+    body: {
+      'code': 'TICKET_ORDER_STORNO',
+      'data': {'orderId': orderId},
+    },
+  );
 
   static Future<Uint8List?> downloadContractPdf(int orderId) async {
     try {
-      final response = await _supabase.functions
-          .invoke("generate-order-agreement", body: {"orderId": orderId});
+      final response = await _supabase.functions.invoke(
+        "generate-order-agreement",
+        body: {"orderId": orderId},
+      );
 
       final String? base64Str = response.data['file'];
 
@@ -448,10 +507,7 @@ class DbOrders {
     };
 
     try {
-      await _supabase.rpc(
-        'insert_manual_transaction',
-        params: params,
-      );
+      await _supabase.rpc('insert_manual_transaction', params: params);
     } catch (e) {
       rethrow;
     }

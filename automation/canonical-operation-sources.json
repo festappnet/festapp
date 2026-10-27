@@ -345,6 +345,18 @@
     "people/authoring.sql",
     "users/update_unit_user.sql",
     "users/get_all_users_from_unit.sql",
-    "people/access_fanout.sql"
+    "people/access_fanout.sql",
+    "user_permissions/blueprint_authoring.sql",
+    "authoring/blueprints.sql",
+    "authoring/scanner.sql",
+    "authoring/program.sql",
+    "authoring/export_columns.sql",
+    "authoring/history.sql",
+    "authoring/exports.sql",
+    "eshop_stripe/disconnect.sql",
+    "authoring/finance.sql",
+    "authoring/agenda.sql",
+    "authoring/lifecycle.sql",
+    "authoring/order_deletion.sql"
   ]
 }

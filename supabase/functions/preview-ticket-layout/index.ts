@@ -22,6 +22,11 @@ Deno.serve(req=>handlePreview(req,{
     return {occasion:{id:0,locale:org.data?.DEFAULT_LANGUAGE||'cs',title:d.title,start_time:d.start,end_time:d.end,
       data:{place_name:d.placeName},features:[{...d.ticketDraft,code:'ticket'}]},products:draftPreviewProducts(d)};
   },
+  authorizeDelegatedScope:async(header,occasionId,scope,blueprint)=>{
+    const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});
+    const {data,error}=await client.rpc('check_delegated_render_scope',{p_occasion:occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_blueprint:blueprint});
+    return !error&&data?.actorId?data:false;
+  },
   authorize:async(header,occasionId,bytes,readOnly=false,resourceMode)=>{
     const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});
     const {data,error}=resourceMode
@@ -35,7 +40,9 @@ Deno.serve(req=>handlePreview(req,{
   resources:loadLayoutResources,
   font:resolveTicketFont,layout:parseRegisteredTicketLayout,
   registerLayoutTextResources:async(scope,resources)=>{
-    const {error}=await supabaseAdmin.rpc('register_blueprint_text_resources',{p_occasion:scope.occasionId??null,p_setup_draft:scope.setupDraftId??null,p_resources:resources});
+    const {error}=scope.delegatedScope
+      ? await supabaseAdmin.rpc('register_delegated_blueprint_text_resources',{p_occasion:scope.occasionId,p_organization:scope.delegatedScope.organizationId,p_unit:scope.delegatedScope.unitId,p_actor:scope.delegatedScope.actorId,p_resources:resources})
+      : await supabaseAdmin.rpc('register_blueprint_text_resources',{p_occasion:scope.occasionId??null,p_setup_draft:scope.setupDraftId??null,p_resources:resources});
     if(error)throw error;
   },
 }));

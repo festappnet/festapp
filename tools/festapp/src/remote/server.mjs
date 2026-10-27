@@ -1,3 +1,4 @@
+import {PreviewArtifacts} from '../operations/preview.mjs';
 import express from 'express';
 import { tenantConnections } from './management.mjs';
 import { tenantBridge } from './tenant-bridge.mjs';
@@ -95,6 +96,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     app.disable('x-powered-by');
     const form = express.urlencoded({ extended: false, limit: '8kb', parameterLimit: 110 });
     const active = new Map();
+    const artifacts = new PreviewArtifacts();
     let totalActive = 0;
     const limit = (bucket, max) => {
         const key = digest(bucket);
@@ -282,7 +284,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!grant.clientConnectedAt) storage.put('Delegation', token.grantId,
                 { ...grant, clientConnectedAt: Date.now() }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
         } catch { return challenge(res); }
-        const operations = new Operations(owner);
+        const operations = new Operations(owner, {artifacts});
         if (req.body?.method === 'tools/call') {
             const id = operations.operationIdForTool(req.body.params?.name);
             if (id && !owner.permitsOperation(id)) {
@@ -298,6 +300,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         let handler;
         const requestId = randomUUID();
         try {
+            if (owner.allowedOperations.some(id => ['ticket_layouts.save','ticket_layouts.pending','ticket_layouts.resume'].includes(id))) await operations.prepare();
             const invoke = operations.invoke.bind(operations);
             operations.invoke = async (id, args) => {
                 const result = await invoke(id, args);
