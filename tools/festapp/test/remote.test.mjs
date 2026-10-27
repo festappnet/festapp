@@ -61,7 +61,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false, handleFormPost } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
@@ -85,7 +85,10 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     assert.equal(r.status, 303);
     let redirect = r.headers.get('location');
     for (let i = 0; i < 8 && !new URL(redirect, f.issuer).pathname.startsWith('/callback'); i++) {
-        r = await f.browser(redirect); redirect = r.headers.get('location');
+        r = await f.browser(redirect);
+        if (handleFormPost && r.status === 200 && r.headers.get('content-type')?.includes('text/html'))
+            r = await handleFormPost(r);
+        redirect = r.headers.get('location');
         assert(redirect, `missing callback redirect, status ${r.status}: ${await r.text()}`);
     }
     const callback = new URL(redirect, f.issuer);
@@ -100,6 +103,46 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     assert.equal(response.status, badVerifier ? 400 : 200, await response.clone().text());
     return { callback, exchange, response, tokens: await response.json() };
 }
+
+test('OAuth account switching authorizes only the provider auto-submit script and completes the protected POST', async t => {
+    let switchedFetch;
+    const f = await setup(t, { fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
+    const first = await connect(f);
+    const baseline = (await f.browser('/healthz')).headers.get('content-security-policy');
+    assert.match(baseline, /(?:^|;)\s*script-src\s*(?:;|$)/);
+    assert.doesNotMatch(baseline, /script-src[^;]*unsafe-inline|sha256-/);
+    const otherActor = '22222222-2222-4222-8222-222222222222';
+    const other = await fixture(t, { userId: otherActor });
+    switchedFetch = other.owner.fetch;
+    let posts = 0;
+    const second = await connect(f, { handleFormPost: async response => {
+        const html = await response.text();
+        assert.match(html, /<title>Submitting Callback<\/title>/);
+        const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+        assert.equal(scripts.length, 1);
+        const expected = "'sha256-" + createHash('sha256').update(scripts[0]).digest('base64') + "'";
+        const policy = response.headers.get('content-security-policy');
+        const directive = policy.split(';').find(s => s.trim().startsWith('script-src')).trim();
+        assert.equal(directive, 'script-src ' + expected);
+        assert.match(policy, /default-src 'none'/);
+        assert.match(policy, /form-action 'self'/);
+        assert.doesNotMatch(directive, /unsafe-inline|unsafe-eval|'self'|https:/);
+        const action = new URL(html.match(/<form method="post" action="([^"]+)"/)[1], f.issuer);
+        assert.equal(action.origin, f.issuer);
+        assert.equal(action.pathname, '/session/end/confirm');
+        const values = Object.fromEntries([...html.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)].map(m => [m[1], m[2]]));
+        assert(values.xsrf); assert.equal(values.logout, 'yes');
+        const forged = await f.browser(action.href, { ...values, xsrf: 'wrong' });
+        assert.notEqual(forged.status, 303);
+        posts++;
+        return f.browser(action.href, values);
+    } });
+    assert.equal(posts, 1);
+    assert(second.tokens.access_token);
+    assert.notEqual(first.tokens.access_token, second.tokens.access_token);
+    assert.deepEqual(new Set(f.storage.values('Delegation').map(g => g.userId)), new Set([actor, otherActor]));
+    assert(f.storage.values('Delegation').every(g => !g.revoked));
+});
 
 test('remote configuration rejects insecure origins, redirects and duplicate identities', () => {
     const c = configuration('http://127.0.0.1:3456');
