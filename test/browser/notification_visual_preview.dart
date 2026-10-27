@@ -36,6 +36,7 @@ Future<void> main() async {
       ['form_closed', '2026-10-27T12:00:00'],
       ['order_created', '2026-10-27T10:08:00'],
       ['waitlist_registered', '2026-10-22T09:42:00'],
+      ['order_cancelled', '2026-10-26T11:00:00'],
     ])
       NotificationItem.fromJson({
         'id': entry[0],
@@ -52,10 +53,13 @@ Future<void> main() async {
                 'relatedOrders': true,
                 'activityCount': entry[0] == 'order_created' ? 8 : 1,
                 if (entry[0] == 'order_created') 'placeCount': 18,
+                if (entry[0] == 'order_cancelled') 'placeCount': 2,
                 'previewContacts': [
                   {'name': 'Jan', 'surname': 'Novák'},
-                  {'name': 'Petra', 'surname': 'Dvořáková'},
-                  {'name': 'Tomáš', 'surname': 'Černý'},
+                  if (entry[0] != 'order_cancelled') ...[
+                    {'name': 'Petra', 'surname': 'Dvořáková'},
+                    {'name': 'Tomáš', 'surname': 'Černý'},
+                  ],
                 ],
                 'contact': {'name': 'Jan', 'surname': 'Novák'},
                 'count': 2,

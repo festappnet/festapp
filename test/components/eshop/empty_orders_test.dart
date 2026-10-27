@@ -84,8 +84,8 @@ void main() {
               }
             : {'id': 1, 'unit': 1, 'link': 'empty', 'data': {}, 'features': []};
         if (isOrders && groupSelection) {
-          data['orders'] = [for (final id in [4,5,6]) {'id':id,'created_at':'2026-10-27T12:00:00Z','order_sequence':id,'order_symbol':'ORDER$id','occasion':1,'state':'ordered','currency_code':'CZK','data':{'email':'customer@example.invalid'}}];
-          data['notification_order_ids'] = [4,5];
+          data['orders'] = [for (final id in [4,5,6,7,8,9,10]) {'id':id,'created_at':'2026-10-27T12:00:00Z','order_sequence':id,'order_symbol':'ORDER$id','occasion':1,'state':groupRequest?['p_notification_group']?['id'].toString().contains('order_cancelled')==true && id!=10?'storno':'ordered','currency_code':'CZK','data':{'email':'customer@example.invalid'}}];
+          data['notification_order_ids'] = [4,5,6,7,8,9];
         }
         return http.Response(jsonEncode(data), 200,
             request: request, headers: {'content-type': 'application/json'});
@@ -169,16 +169,19 @@ void main() {
     });
   }
 
-  testWidgets('group navigation checks all matching orders in the existing orders RPC', (tester) async {
+  for (final selectedKind in ['order_created','order_cancelled']) {
+  testWidgets('$selectedKind navigation checks all six matching orders in the existing orders RPC', (tester) async {
     fail = false; includeOrder = true; groupSelection = true; groupRequest = null;
     addTearDown(() { includeOrder = false; groupSelection = false; });
-    final group = {'id':'order-day:1:order_created:2026-10-27','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    final group = {'id':'order-day:1:$selectedKind:2026-10-27','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
     await showOrders(tester, path: Uri(path:'/empty',queryParameters:{'notificationGroup':jsonEncode(group)}).toString());
     final grid = tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>)).controller;
-    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked), [true,true,false]);
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked), [true,true,true,true,true,true,false]);
     expect(groupRequest?['p_notification_group'],group);
     expect(find.byType(OrderEmailRepairDialog),findsNothing);
   });
+
+  }
 
   for (final kind in ['order_created', 'order_cancelled']) {
   testWidgets('localized $kind names fit one line and metadata retains exact counts', (tester) async {
@@ -203,10 +206,20 @@ void main() {
         expect(preview.data,anyOf(contains('Jana Czernérová'),kind == 'order_cancelled' ? '8 zrušených objednávek' : '8 nových objednávek'));
       }
       expect(preview.data,isNot(contains('…')));
-      expect(find.text(kind == 'order_cancelled' ? 'Včera · 8 zrušených objednávek · 18 míst' : 'Včera · 8 objednávek · 18 míst'),findsOneWidget);
+      expect(find.text('Včera · 8 objednávek · 18 míst'),findsOneWidget);
+      expect(find.text(kind == 'order_cancelled'?'Zrušené objednávky':'Nové objednávky'),findsOneWidget);
       expect(find.byKey(const ValueKey('notification-age-names')),findsOneWidget);
       expect(tester.takeException(),isNull);
     }
+    c.items.first.data.remove('placeCount');
+    c.items.first.data['allowsMultiple'] = true;
+    c.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Počet míst není dostupný'), findsOneWidget);
+    c.items.first.data['allowsMultiple'] = false;
+    c.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Počet míst není dostupný'), findsNothing);
   });
 
   }

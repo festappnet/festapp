@@ -2529,6 +2529,9 @@
     "duplicateBlock": "Блок {{tickets}} можна використовувати лише один раз."
   },
   "NotificationCenter": {
+    "newOrders": "Нові замовлення",
+    "cancelledOrders": "Скасовані замовлення",
+    "placesUnavailable": "Кількість місць недоступна",
     "orders": {
       "one": "{count} замовлення",
       "few": "{count} замовлення",

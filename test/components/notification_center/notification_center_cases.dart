@@ -159,7 +159,7 @@ void main() {
       expect(newAge.style?.fontWeight, FontWeight.w500);
       expect(newAge.style?.color, isNot(oldAge.style?.color));
       for (final entry in [
-        (oldRow, FontWeight.w400),
+        (oldRow, FontWeight.w600),
         (newRow, FontWeight.w600),
       ]) {
         final title = find.descendant(
@@ -854,7 +854,7 @@ void main() {
         expect(find.textContaining('NotificationCenter.daysAgo.other'), findsOneWidget);
         final age = find.byKey(const ValueKey('notification-age-old'));
         expect(
-          tester.widget<Text>(age).data,
+          tester.widget<Text>(age).textSpan?.toPlainText() ?? tester.widget<Text>(age).data,
           contains('NotificationCenter.daysAgo.other · NotificationCenter.orders.other'),
         );
         final ageHeaders = find.ancestor(

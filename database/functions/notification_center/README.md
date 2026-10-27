@@ -158,3 +158,5 @@ Unknown values suppress the complete total; current order size never rewrites a
 historical multi-order sum. Single-place application flows omit redundant totals.
 The earlier overview RPC remains for already released clients. The forward-only
 migration is `20261027220000_notification_center_daily_overview.sql`.
+
+Daily totals retain captured counts and form context. Missing legacy fields are hydrated in batches from the authorized same-occasion orders, retained distinct ticket identities and distinct form contexts, matching the individual DTO contract. Multi-place applicability is returned even when the exact total is unavailable; clients show an explicit unavailable label rather than silently omitting places or inventing zero. No additional client RPC is needed.

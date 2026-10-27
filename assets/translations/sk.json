@@ -2384,6 +2384,9 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "newOrders": "Nové objednávky",
+    "cancelledOrders": "Zrušené objednávky",
+    "placesUnavailable": "Počet miest nie je dostupný",
     "orders": {
       "one": "{count} objednávka",
       "few": "{count} objednávky",
