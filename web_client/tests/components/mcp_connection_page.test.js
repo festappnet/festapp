@@ -321,8 +321,8 @@ test('regional brand explanation is opt-in and absent for the global platform', 
     const global = fixture(); await global.page.init();
     assert.doesNotMatch(global.container.textContent, /společné platformě|Toto připojení platí/);
     const regional = fixture({ invoke: async () => ({ data: { client: 'ChatGPT',
-        regionalPortal: { name: 'vstupenky.online', platform: 'FestUp' }, occasions: [{ id: 99, title: 'Ples' }] } }) });
+        regionalPortal: { name: 'vstupenky.online', platform: 'Festapp' }, occasions: [{ id: 99, title: 'Ples' }] } }) });
     await regional.page.init();
-    assert.match(regional.container.textContent, /vstupenky.online, který běží na společné platformě FestUp/);
+    assert.match(regional.container.textContent, /vstupenky.online, který běží na společné platformě Festapp/);
     assert.match(regional.container.textContent, /Toto připojení platí pro vstupenky.online/);
 });

@@ -298,7 +298,7 @@ export class McpConnectionPage {
             }
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
-            add('p', this.text('duration'));
+            add('p', this.text('duration', { appName: AppConfig.appName }));
             button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
             button('cancel', () => this.finish('cancel'));
         } else if (this.state === 'login') {

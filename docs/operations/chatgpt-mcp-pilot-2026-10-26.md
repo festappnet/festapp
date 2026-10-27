@@ -1,8 +1,10 @@
 # ChatGPT MCP pilot - 2026-10-26
 
-Status: public transport/discovery verified; authenticated ChatGPT connection
-and business reads remain unverified. This record starts the user-authorized
-ChatGPT pilot. It does not claim public directory approval.
+Current status, 2026-10-27: regional deployment and authenticated ChatGPT consent
+completed at `https://mcp.vstupenky.online/mcp`; ChatGPT discovers six read tools.
+Live report/list/detail/search, scope denial, continuity across token expiry
+and immediate revocation passed. Remaining adversarial cases are recorded below.
+Earlier observations are historical. This record does not claim public directory approval.
 
 Implementation authority: [hardened plan](../plans/chatgpt-mcp-plan-2026-10-26.md),
 revised 2026-10-27 for client portability and efficiency. The public checks here
@@ -134,7 +136,7 @@ No sales/order answer, normal live token-expiry follow-up or live revocation tes
 was completed. Further connection work is paused until the regional cutover.
 
 The private app name was changed from `Festapp` to `vstupenky.online`; its
-region-specific description explains that the service runs on FestUp. No public
+region-specific description explains that the service runs on Festapp. No public
 listing, upload or submission was made. The downloaded private plugin ZIP was an
 existing integration reference (`.app.json`), not evidence that explicit order-read
 scopes are saved. The reviewed private connection config in `integrations/chatgpt`
@@ -243,3 +245,94 @@ advanced upstream; validated source-file hashes remained unchanged. Source is
 published for required review in [PR #621](https://github.com/festappnet/festapp/pull/621).
 The source PR is not a deployed regional issuer. No immutable candidate image
 has been promoted and no ChatGPT acceptance can be claimed until cutover.
+
+## Regional deployment and live account evidence - 2026-10-27
+
+This section supersedes the pending deployment/account statements above.
+
+- Canonical source: `c58c1e03087f5be03b988692b707836bde8ff489` (PR #621),
+  translation publication fix `fdc8ecb27e80379bbf25bf364c134c5731f0e6b2`
+  (PR #622), canonical Festapp terminology `ae2f9c929146d2fe924a2069c7f5127609539562`
+  (PR #623). The standing brand rule is recorded in `CLAUDE.md`.
+- Regional issuer/resource: `https://mcp.vstupenky.online/mcp`. Proxied DNS,
+  TLS, health, both metadata documents and unauthenticated protocol challenge
+  passed. The old host returns HTTP 410, without redirecting credentials.
+- Sidecar image: `sha256:cfc895e8e58d19e0833763cb6c24d4691b4ab803dbd6b7a5af8b3448ded09819`,
+  source label `c58c1e03087f5be03b988692b707836bde8ff489`. Canonical Compose
+  health reads the configured issuer; container is healthy. Protected keys were
+  retained, regional state is fresh, existing revoked grants were not reactivated.
+- Edge handler SHA256: `ec8239d351c1c47188f68fbee33a4d9c8f09cebd0c2299dcdd058c3d100cca3e`.
+  Only the selected tenant's protected registry entry changed. Database and
+  other tenant configuration remained outside this rollout.
+- Selected tenant `prod/festapptickets`, organization 3: deployed source
+  `0758a992f6ed292679185cdace7659fbb9950b3d`, base main `fdc8ecb27e80379bbf25bf364c134c5731f0e6b2`,
+  version `0.20.428+930`. Direct local release passed drift, sealed manifest and
+  three coherent live probes. Pages deployment `b6a7125c-8510-47ac-ac48-1172aad05bea`.
+- The private ChatGPT app is named `vstupenky.online`; its description explains
+  that the regional portal runs on Festapp. The account form accepted public
+  client `festapp-chatgpt`, no secret, PKCE S256 and the exact registered callback
+  `https://chatgpt.com/connector_platform_oauth_redirect`. Only the two read
+  scopes were selected; automatically discovered write scopes were deselected.
+- First-party consent completed using the ordinary app session and only occasion
+  99, in the existing test organization. No whole-unit or future-event grant.
+  ChatGPT discovered exactly `festapp_access_inspect`, `festapp_context_inspect`,
+  `festapp_orders_inspect`, `festapp_orders_list`, `festapp_orders_report`, and
+  `festapp_ticket_layouts_inspect` in its Read 6 group.
+
+### Reported consent-page loop
+
+The affected tab loaded document version `0.20.428+930` while its active service
+worker was `0.20.427+929`; the matching `0.20.428+930` worker was waiting.
+The tab initially rendered blank, then displayed an untranslated regional key
+and the application's recovery banner. Using that existing banner's refresh
+action activated the prepared version. The consent page then rendered its full
+Festapp explanation, no recovery banner, and completed the return to ChatGPT.
+No browser-wide cache, login storage or unrelated tabs were cleared. This was
+an observed recovery of this installation, not a new service-worker code fix.
+
+### Executed live reads
+
+The task-owned ChatGPT conversation completed access inspection, sales report
+and a bounded five-row order read against occasion 99. Access inspection returned
+only the selected occasion and no delegated whole units; `writesEnabled` was
+false. Report/list answers distinguished orders from tickets, current value
+from received payments, preserved CZK, and explained that five rows did not
+cover the sixth order in the requested stored state. Customer personal data
+was excluded from the prompt and answer evidence. Despite its name, this
+existing test occasion is populated; it is not an empty-results fixture.
+
+The follow-up successfully read a test order detail, explained its stored state
+and missing payment, then found exactly the same order by its returned symbol.
+The detail advertised only `view`. A report request for unconsented occasion 1
+returned domain `FORBIDDEN`, no business data and `retryable: false`; ChatGPT's
+runtime wrapped the tool error as `INVALID_ARGUMENT` while retaining that domain
+payload. Neither cancellation nor ticket-delivery tools were advertised or run.
+
+At 00:35:18 UTC a newly requested report succeeded, followed at 00:35:21 UTC by
+a bounded search for a unique nonexistent test string: `orders: []`, no next
+cursor. This is over five minutes after the first successful report, while the
+issuer source explicitly uses `accessTokenTTL: 300`. The account continued
+without login or reconsent, establishing continuity across normal token expiry;
+the opaque refresh-token exchange itself was not inspected or logged.
+
+The first-party connections page then removed the test delegation. An immediate
+fresh report request in the same ChatGPT conversation returned no report and
+displayed "Your vstupenky.online connection has expired" with Reconnect. This
+was within the new access-token window and proves immediate revocation rather
+than waiting for token expiry. The same private app was reconnected with the
+same selected occasion; no replacement app or broader grant was needed. This
+second consent page loaded immediately with the correct regional explanation
+and no recovery banner or reload loop.
+
+After the operator completed that new consent, ChatGPT automatically resumed
+the suspended report request. It succeeded at 00:37:38 UTC, request ID
+`4d4fb398-0143-438e-a9f0-e199c2424021`. Its initial answer incorrectly interpreted
+that post-reconsent result as an ineffective revocation because the earlier
+prompt still described the revoked state. The operator supplied the missing
+UI/reconsent chronology in the conversation. Keep the expired-connection gate
+and the later newly authorized result distinct; the latter is not evidence of
+access under the revoked delegation.
+
+Full wave 4 acceptance and public submission remain unclaimed: the existing
+local hostile-note fixture is not relabeled as an executed live case, and
+ambiguous-selection handling has not been exercised live.

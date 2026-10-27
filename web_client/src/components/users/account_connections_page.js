@@ -108,7 +108,7 @@ export class AccountConnectionsPage {
             add('p', this.text('intro'));
             const methods = add('section'); methods.setAttribute('aria-labelledby', 'account-signin-heading');
             add('h2', this.text('signInMethods'), methods).id = 'account-signin-heading';
-            add('p', this.text('googleHint'), methods);
+            add('p', this.text('googleHint', { appName: AppConfig.appName }), methods);
             if (this.googleState === 'loading') add('p', CommonStrings.loading, methods).setAttribute('role', 'status');
             else if (this.googleState === 'error') {
                 add('p', this.text('error'), methods).setAttribute('role', 'alert');

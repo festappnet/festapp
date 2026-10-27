@@ -27,3 +27,10 @@ This is UI wording; existing backend command names and accounting states stay un
 
 Address users formally in Czech UI copy (for example, “Vyberte”, “Klikněte”,
 “Zadejte”). Apply the same wording to editor hints and validation messages.
+
+## Platform brand
+
+Always spell the platform brand **Festapp**. Use **Festapp Tickets** for the
+global ticketing product and **vstupenky.online** for the regional portal. Keep
+this exact spelling in UI, connector metadata, descriptions and documentation;
+do not invent another spelling or infer a brand name from speech transcription.
