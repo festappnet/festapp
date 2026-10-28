@@ -42,7 +42,17 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final ValueNotifier<int> reloadGeneration = ValueNotifier(0);
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
-  bool isGridLoaded = false;
+  bool _isGridLoaded = false;
+  Completer<bool>? _pendingReady;
+  bool get isGridLoaded => _isGridLoaded;
+  set isGridLoaded(bool value) {
+    _isGridLoaded = value;
+    _pendingReady?.complete(value);
+    _pendingReady = null;
+  }
+  /// Native grid readiness, including disposal; independent of render speed.
+  Future<bool> get whenLoaded => _isGridLoaded
+      ? Future.value(true) : (_pendingReady ??= Completer<bool>()).future;
   bool _autoRefreshing = false;
   final bool refreshOnTabActivation;
   late TrinaGridStateManager stateManager;
@@ -68,9 +78,12 @@ class SingleDataGridController<T extends ITrinaRowModel> {
       final vertical = stateManager.scroll.verticalOffset;
       final sorted =
           stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
+      final checkedIds = visibleCheckedRows
+          .map((row) => fromPlutoJson(row.toJson()).id).whereType<Object>().toSet();
       rows = data.map((item) {
         final row = item.toTrinaRow(context);
         row.cells[firstColumnTypeId] = TrinaCell(value: 'delete');
+        row.setChecked(checkedIds.contains(item.id));
         return row;
       }).toList();
       applyDataToGrid();

@@ -164,6 +164,31 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           ),
                         ),
                       ..._section(context, c.items),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 16, 8, 4),
+                        child: Text(
+                          s('lifecycleHint'),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                      if (c.truncated)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                          child: Text(
+                            s('historyLimit'),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ),
                       if (c.pageFailed) Text(s('refreshFailed')),
                       if (c.nextCursor != null)
                         TextButton(

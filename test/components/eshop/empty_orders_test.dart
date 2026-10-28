@@ -1,3 +1,8 @@
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
+import 'dart:async';
+import '../../support/navigation_fixture.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/notification_center/notification_center_controller.dart';
 import 'package:fstapp/components/notification_center/notification_center_panel.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -30,6 +35,24 @@ class _Router extends RootStackRouter {
             page: PageInfo('OrdersFixture',
                 builder: (_) => const Scaffold(body: OrdersContent()))),
       ];
+}
+
+class _ProductionShapeRouter extends RootStackRouter {
+  AutoRoute fixture(AutoRoute route) {
+    if(route is RedirectRoute) return route;
+    Widget build(BuildContext context) {
+      switch(route.name) {
+        case 'ReservationsRoute': return const AutoRouter();
+        case 'ReservationsTabsRoute': return const RoutedTabScaffold(tabs:[RoutedTabDefinition(slug:'orders',route:OrdersNavigationRoute(),label:'Orders',icon:Icons.list)]);
+        case 'OrdersNavigationRoute': return const AutoRouter();
+        case 'OrdersTabsRoute': return const RoutedTabScaffold(tabs:[RoutedTabDefinition(slug:'current',route:OrdersCurrentRoute(),label:'Current',icon:Icons.list),RoutedTabDefinition(slug:'history',route:OrdersHistoryRoute(),label:'History',icon:Icons.history)]);
+        case 'OrdersCurrentRoute': return const OrdersContent();
+        default: return Text(route.name);
+      }
+    }
+    return route.copyWith(guards:[],page:PageInfo(route.name,builder:(_)=>Builder(builder:build)),children:route.children?.map(fixture).toList());
+  }
+  @override List<AutoRoute> get routes=>AppRouter().routes.where((route)=>route.name=='ReservationsRoute').map(fixture).toList();
 }
 
 class _Translations extends AssetLoader {
@@ -94,8 +117,8 @@ void main() {
   });
   tearDownAll(() => Supabase.instance.dispose());
 
-  Future<void> showOrders(WidgetTester tester, {String path = '/empty'}) async {
-    final router = _Router();
+  Future<void> showOrders(WidgetTester tester, {String path = '/empty', RootStackRouter? externalRouter}) async {
+    final router = externalRouter ?? _Router();
     addTearDown(router.dispose);
     await tester.pumpWidget(EasyLocalization(
       supportedLocales: const [Locale('cs')],
@@ -181,6 +204,45 @@ void main() {
     expect(find.byType(OrderEmailRepairDialog),findsNothing);
   });
 
+  }
+
+  testWidgets('group notification selects orders when the real retained tab is already open', (tester) async {
+    fail=false;includeOrder=true;groupSelection=true;groupRequest=null;
+    addTearDown(() {includeOrder=false;groupSelection=false;});
+    final router = FixtureRouter(Access())..ordersCurrentBuilder=(_)=>const OrdersContent();
+    await showOrders(tester,path:'/empty/reservations/orders/current',externalRouter:router);
+    final group={'id':'occasion-kind:1:order_created','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    unawaited(pushRootPath(router,Uri(path:'/empty/reservations/orders/current',queryParameters:{'notificationGroup':jsonEncode(group)}).toString()));
+    for(var i=0;i<40;i++) {await tester.pump(const Duration(milliseconds:50));}
+    final grids=find.byType(SingleTableDataGrid<OrderModel>);
+    final grid=tester.widget<SingleTableDataGrid<OrderModel>>(grids.last).controller;
+    expect(groupRequest?['p_notification_group'],group);
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked),[true,true,true,true,true,true,false]);
+    await grid.reloadIfClean();
+    await tester.pumpAndSettle();
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked),[true,true,true,true,true,true,false],reason:'automatic clean reload must preserve the notification selection');
+    expect(tester.takeException(),isNull);
+  });
+
+  for(final returnFromHistory in [false,true]) {
+  testWidgets('production route shape applies group after retained tab return=$returnFromHistory', (tester) async {
+    fail=false;includeOrder=true;groupSelection=true;groupRequest=null;
+    addTearDown(() {includeOrder=false;groupSelection=false;});
+    final router=_ProductionShapeRouter();
+    const path='/empty/reservations/orders/current';
+    await showOrders(tester,path:path,externalRouter:router);
+    if(returnFromHistory) {
+      unawaited(router.navigate(rootRouteForPath(router,'/empty/reservations/orders/history')));
+      for(var i=0;i<20;i++){await tester.pump(const Duration(milliseconds:50));}
+    }
+    final group={'id':'occasion-kind:1:order_created','organization':3,'snapshot':7,'timezone':'Europe/Prague'};
+    unawaited(pushRootPath(router,Uri(path:path,queryParameters:{'notificationGroup':jsonEncode(group)}).toString()));
+    for(var i=0;i<50;i++){await tester.pump(const Duration(milliseconds:50));}
+    final grid=tester.widget<SingleTableDataGrid<OrderModel>>(find.byType(SingleTableDataGrid<OrderModel>).last).controller;
+    expect(groupRequest?['p_notification_group'],group);
+    expect(grid.stateManager.refRows.originalList.map((row)=>row.checked),[true,true,true,true,true,true,false]);
+    expect(tester.takeException(),isNull);
+  });
   }
 
   for (final kind in ['order_created', 'order_cancelled']) {

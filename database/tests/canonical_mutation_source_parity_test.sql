@@ -912,8 +912,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_map_editor_bundle_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df70f953f4ed9da20e04ad79210aa294'),'current SQL source parity: public.get_map_editor_bundle_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_news_with_versions_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d727eed5a71b41c1a5e0be7658b1f348'),'current SQL source parity: public.get_news_with_versions_v1(bigint)');
--- supabase/migrations/20261028013000_notification_category_rollups.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='e4affa354295a5e95c7c70bec58e1ffc'),'current SQL source parity: public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)');
+-- supabase/migrations/20261028020000_notification_center_lifecycle.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_notification_center_badge(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='574bbf55afb80f9b0664deea9f41e9eb'),'current SQL source parity: public.get_notification_center_badge(bigint)');
+-- supabase/migrations/20261028020000_notification_center_lifecycle.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='28d8cc94ddc11ab0ca2397e9551e127f'),'current SQL source parity: public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_copy_units(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6b1468a2f2cfe072f99c8e842dac1936'),'current SQL source parity: public.get_occasion_copy_units(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1234,9 +1236,11 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_ticket_batch_selection_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a38918671e05799721980f59aba84364'),'current SQL source parity: public.normalize_ticket_batch_selection_internal(bigint,jsonb)');
 -- supabase/migrations/20261024235000_notification_center_canonical_availability.sql
  PERFORM assert_true(to_regprocedure('public.notification_center_active_internal(bigint)') IS NULL,'retired SQL identity remains absent: public.notification_center_active_internal(bigint)');
--- supabase/migrations/20261028013000_notification_category_rollups.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_order_selection(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='fb500c1bd04ed9307ea01a93c316f898'),'current SQL source parity: public.notification_center_order_selection(bigint,jsonb)');
--- supabase/migrations/20261028013000_notification_category_rollups.sql
+-- supabase/migrations/20261028020000_notification_center_lifecycle.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_in_center_internal(public.notification_center_events,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='a7c9d5e107a68692d62c381552776179'),'current SQL source parity: public.notification_center_in_center_internal(public.notification_center_events,timestamp with time zone)');
+-- supabase/migrations/20261028020000_notification_center_lifecycle.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_order_selection(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f8697d4e44d42086af8182630be2b957'),'current SQL source parity: public.notification_center_order_selection(bigint,jsonb)');
+-- supabase/migrations/20261028020000_notification_center_lifecycle.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_rollup_id_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='859a86169fc2a0a3118a32f70d426a2c'),'current SQL source parity: public.notification_center_rollup_id_internal(text)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_commit_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f85d72057735264187b467f21764e2d9'),'current SQL source parity: public.occasion_commit_read_rule(boolean,boolean)');

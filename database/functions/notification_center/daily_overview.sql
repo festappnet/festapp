@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION public.get_notification_center_daily_overview(
  p_snapshot_at timestamptz DEFAULT NULL,p_timezone text DEFAULT 'UTC',p_cursor jsonb DEFAULT NULL,
  p_limit integer DEFAULT 30,p_ids text[] DEFAULT NULL,p_open boolean DEFAULT false)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE snap bigint; context text; cursor jsonb; items jsonb; tail jsonb; more boolean;
+DECLARE snap bigint; context text; cursor jsonb; items jsonb; tail jsonb; more boolean; truncated boolean;
  anchor timestamptz:=coalesce(p_snapshot_at,clock_timestamp()); previous_read bigint;
  choices jsonb; badge jsonb; lim integer:=greatest(1,least(p_limit,200));
 BEGIN
@@ -40,7 +40,8 @@ BEGIN
  cursor:=public.notification_center_time_cursor_internal(p_cursor,context);
  WITH visible AS MATERIALIZED (
   SELECT v.*,(event).kind NOT IN ('email_problem','bank_problem') AND (event).occasion IS NOT NULL grouped
-  FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v),
+  FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v
+  WHERE public.notification_center_in_center_internal(v.event,anchor)),
  -- Resolve absent legacy facts in batches, never one client request per row.
  legacy_orders AS MATERIALIZED (
   SELECT DISTINCT o.id,o.form FROM visible v
@@ -75,9 +76,12 @@ BEGIN
   UNION ALL
   SELECT 'occasion-kind:'||(event).occasion||':'||(event).kind,section,(event).occurred_at,event,delivery,
    calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END,coalesce(has_multiple,false) FROM ranked WHERE rank=1),
+ catalog AS MATERIALIZED (
+  SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) catalog_position FROM
+   (SELECT * FROM combined ORDER BY section,at DESC,id DESC LIMIT 101) bounded),
  rows AS (
-  SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM combined
-  WHERE (p_ids IS NULL OR id IN (SELECT public.notification_center_rollup_id_internal(requested) FROM unnest(p_ids) requested)) AND (cursor IS NULL OR section>(cursor->>'section')::int
+  SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM catalog
+  WHERE catalog_position<=100 AND (p_ids IS NULL OR id IN (SELECT public.notification_center_rollup_id_internal(requested) FROM unnest(p_ids) requested)) AND (cursor IS NULL OR section>(cursor->>'section')::int
    OR (section=(cursor->>'section')::int AND (at,id)<((cursor->>'time')::timestamptz,cursor->>'id')))
   ORDER BY section,at DESC,id DESC LIMIT lim+1),
  page AS (SELECT *,public.notification_center_dto(event,delivery) dto,
@@ -97,7 +101,7 @@ BEGIN
     FROM ranked r WHERE (r.event).occasion=(page.event).occasion AND (r.event).kind=(page.event).kind
      AND r.rank<=3))) END ORDER BY position) FROM page),'[]'),
   (SELECT jsonb_build_object('context',context,'section',section,'time',at,'id',id) FROM page ORDER BY position DESC LIMIT 1),
-  (SELECT count(*)>lim FROM rows) INTO items,tail,more;
+  (SELECT count(*)>lim FROM rows),(SELECT count(*)>100 FROM catalog) INTO items,tail,more,truncated;
  IF p_open THEN
   SELECT coalesce(jsonb_agg(jsonb_build_object('id',oc.id,'title',oc.title,'muted',coalesce(p.muted,false)) ORDER BY oc.title),'[]') INTO choices
   FROM public.occasions oc LEFT JOIN public.occasion_users ou ON ou.occasion=oc.id AND ou."user"=auth.uid()
@@ -109,7 +113,7 @@ BEGIN
   WHERE organization=p_organization AND recipient=auth.uid();
  END IF;
  badge:=public.get_notification_center_badge(p_organization);
- RETURN badge||jsonb_build_object('dailySupported',true,'snapshot',snap,'snapshotAt',anchor,
+ RETURN badge||jsonb_build_object('dailySupported',true,'truncated',truncated,'snapshot',snap,'snapshotAt',anchor,
   'snapshotDay',(anchor AT TIME ZONE p_timezone)::date,'timezone',p_timezone,
   'previousReadThrough',previous_read,'occasions',choices,'items',items,
   'nextCursor',CASE WHEN more AND p_ids IS NULL THEN to_jsonb(encode(convert_to(tail::text,'UTF8'),'base64')) END);

@@ -129,6 +129,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
         ? null
         : bell.localToGlobal(Offset.zero, ancestor: overlay) & bell.size;
     NotificationItem? target;
+    Map<String,dynamic>? selection;
     await showDialog<void>(
         context: context,
         barrierColor: desktop ? Colors.transparent : Colors.black54,
@@ -136,16 +137,21 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
             controller: controller,
             anchor: anchor,
             onDetail: (item) {
+              selection = controller.selectionScope(item);
+              if (item.isSummary && selection == null) {
+                unawaited(controller.open());
+                return;
+              }
               target = item;
               Navigator.of(dialogContext).pop();
             }));
     if (!mounted) return;
     controller.close();
     focus.requestFocus();
-    if (target != null) await _detail(target!);
+    if (target != null) await _detail(target!, selection);
   }
 
-  Future<void> _detail(NotificationItem item) async {
+  Future<void> _detail(NotificationItem item, Map<String,dynamic>? selection) async {
     final data = item.data;
     final link = item.occasionLink;
     if (link != null && data['orderId'] is int) {
@@ -190,10 +196,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       await pushRootPath(
           context.router.root,
           Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'],
-            queryParameters: item.isSummary ? {'notificationGroup': jsonEncode({
-              'id': item.id, 'organization': controller.organization,
-              'snapshot': controller.snapshot, 'timezone': controller.displayTimezone,
-            })} : null).toString());
+            queryParameters: selection != null ? {'notificationGroup': jsonEncode(selection)} : null).toString());
       return;
     }
     final account = data['bankAccountId'];

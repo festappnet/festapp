@@ -1,11 +1,13 @@
+-- test-setup: database/functions/notification_center/center_policy.sql
 -- test-setup: database/functions/notification_center/daily_overview.sql
 -- test-setup: database/functions/notification_center/order_selection.sql
 -- test-setup: database/functions/eshop_orders/get_orders_tab_data.sql
 BEGIN;
 DO $$
-DECLARE f bigint; oid bigint; org bigint; oc bigint; other_oc bigint; viewer uuid:=gen_random_uuid(); result jsonb; page jsonb; cursor jsonb;
+DECLARE shift interval:=date_trunc('day',clock_timestamp())-'2026-10-28 00:00Z'::timestamptz; f bigint; oid bigint; org bigint; oc bigint; other_oc bigint; viewer uuid:=gen_random_uuid(); result jsonb; page jsonb; cursor jsonb;
  at timestamptz:='2026-10-27 20:00Z'; snap bigint; before_read bigint; n int:=0; ids text[]:='{}'; summary text;
 BEGIN
+ at:=at+shift;
  INSERT INTO public.organizations(title) VALUES('Daily overview fixture') RETURNING id INTO org;
  INSERT INTO auth.users(id) VALUES(viewer); INSERT INTO public.user_info(id,organization) VALUES(viewer,org);
  INSERT INTO public.occasions(organization,title,link,start_time,end_time)
@@ -21,23 +23,23 @@ BEGIN
    VALUES(oc,f,'ordered','9X8Y7W'||((i-1)/9+1)::text||'F'||((i-1)%9+1)::text||'G',i,
     jsonb_build_object('name','Jméno '||i,'surname','Zákazník')) RETURNING id INTO oid;
   PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:'||i,
-   jsonb_build_object('orderId',oid,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,'2026-10-25 01:00Z'::timestamptz+make_interval(mins=>i));
+   jsonb_build_object('orderId',oid,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,('2026-10-25 01:00Z'::timestamptz+shift)+make_interval(mins=>i));
  END LOOP;
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:today1',jsonb_build_object('orderId',(SELECT id FROM eshop.orders WHERE occasion=oc AND order_sequence=34),'count',3,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,'2026-10-27 10:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:today2',jsonb_build_object('orderId',oid,'count',5,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,'2026-10-27 11:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:unknown1','{"count":2,"formContext":{"allowsMultiple":true}}',NULL,'2026-10-26 10:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:unknown2',jsonb_build_object('orderId',(SELECT id FROM eshop.orders WHERE occasion=oc AND order_sequence=33)),NULL,'2026-10-26 11:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'order_cancelled','daily:cancel','{"count":2,"formContext":{"allowsMultiple":false}}',NULL,'2026-10-27 12:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'form_closed','daily:form','{}',NULL,'2026-10-25 14:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'form_closed','daily:old-form','{}',NULL,'2026-10-19 14:00Z');
+ PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:today1',jsonb_build_object('orderId',(SELECT id FROM eshop.orders WHERE occasion=oc AND order_sequence=34),'count',3,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,('2026-10-27 10:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:today2',jsonb_build_object('orderId',oid,'count',5,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,('2026-10-27 11:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:unknown1','{"count":2,"formContext":{"allowsMultiple":true}}',NULL,('2026-10-26 10:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:unknown2',jsonb_build_object('orderId',(SELECT id FROM eshop.orders WHERE occasion=oc AND order_sequence=33)),NULL,('2026-10-26 11:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'order_cancelled','daily:cancel','{"count":2,"formContext":{"allowsMultiple":false}}',NULL,('2026-10-27 12:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'form_closed','daily:form','{}',NULL,('2026-10-25 14:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'form_closed','daily:old-form','{}',NULL,('2026-10-19 14:00Z'::timestamptz+shift));
  FOR i IN 1..2 LOOP
   PERFORM public.notification_center_publish_internal(org,other_oc,'order_created','daily:single:'||i,
-   '{"count":1,"formContext":{"allowsMultiple":false}}',NULL,'2026-10-27 10:00Z'::timestamptz+make_interval(mins=>i));
+   '{"count":1,"formContext":{"allowsMultiple":false}}',NULL,('2026-10-27 10:00Z'::timestamptz+shift)+make_interval(mins=>i));
  END LOOP;
- PERFORM public.notification_center_publish_internal(org,oc,'offer_accepted','daily:midnight-before','{"count":1}',NULL,'2026-10-26 22:59Z');
- PERFORM public.notification_center_publish_internal(org,oc,'offer_accepted','daily:midnight-after','{"count":1}',NULL,'2026-10-26 23:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'email_problem','separate-error1','{}',NULL,'2026-10-26 10:00Z');
- PERFORM public.notification_center_publish_internal(org,oc,'email_problem','separate-error2','{}',NULL,'2026-10-27 10:00Z');
+ PERFORM public.notification_center_publish_internal(org,oc,'offer_accepted','daily:midnight-before','{"count":1}',NULL,('2026-10-26 22:59Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'offer_accepted','daily:midnight-after','{"count":1}',NULL,('2026-10-26 23:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'email_problem','separate-error1','{}',NULL,('2026-10-26 10:00Z'::timestamptz+shift));
+ PERFORM public.notification_center_publish_internal(org,oc,'email_problem','separate-error2','{}',NULL,('2026-10-27 10:00Z'::timestamptz+shift));
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague',p_open=>true);
@@ -54,26 +56,26 @@ BEGIN
  PERFORM pg_temp.adopt_public_link_fixtures();
  SET LOCAL ROLE authenticated;
  result:=public.get_orders_tab_data((SELECT link FROM public.occasions WHERE id=oc),
-   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague'));
+   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',at));
  RESET ROLE;
  PERFORM assert_eq(jsonb_array_length(result->'notification_order_ids'),35,'orders RPC resolves all 35 targets, not only preview');
  SET LOCAL ROLE authenticated;
  result:=public.notification_center_order_selection(other_oc,
-   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague'));
+   jsonb_build_object('id',summary,'organization',org,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',at));
  RESET ROLE;
  PERFORM assert_eq(result,'[]'::jsonb,'another occasion cannot resolve group IDs');
  result:=public.notification_center_order_selection(oc,
-   jsonb_build_object('id',summary,'organization',org,'snapshot',0,'timezone','Europe/Prague'));
+   jsonb_build_object('id',summary,'organization',org,'snapshot',0,'timezone','Europe/Prague','snapshotAt',at));
  PERFORM assert_eq(result,'[]'::jsonb,'snapshot cannot include later deliveries');
  BEGIN
   PERFORM public.notification_center_order_selection(oc,
-   jsonb_build_object('id',summary,'organization',org+1,'snapshot',snap,'timezone','Europe/Prague'));
+   jsonb_build_object('id',summary,'organization',org+1,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',at));
   RAISE EXCEPTION 'Expected cross-organization denial';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM assert_false(has_function_privilege('anon','public.notification_center_order_selection(bigint,jsonb)','execute'),'no anonymous target IDs');
 
  PERFORM assert_true((SELECT NOT(x->'data' ? 'placeCount') FROM jsonb_array_elements(page->'items') x WHERE x->>'id'=summary),'unknown historical counts never yield an incomplete category total');
- PERFORM assert_eq((SELECT x->>'day' FROM jsonb_array_elements(page->'items') x WHERE x->>'id'=summary),'2026-10-27','age is the latest occurrence across all days');
+ PERFORM assert_eq((SELECT x->>'day' FROM jsonb_array_elements(page->'items') x WHERE x->>'id'=summary),((('2026-10-27 11:00Z'::timestamptz+shift) AT TIME ZONE 'Europe/Prague')::date)::text,'age is the latest occurrence across all days');
  PERFORM assert_eq((SELECT count(*) FROM jsonb_array_elements(page->'items') x WHERE x->>'kind'='order_created' AND (x->>'occasionId')::bigint=oc),1::bigint,'new orders are not split by date');
  PERFORM assert_true((SELECT NOT (x->'data' ? 'placeCount') FROM jsonb_array_elements(page->'items') x WHERE (x->>'occasionId')::bigint=other_oc),'single-place registrations omit redundant total');
  PERFORM assert_eq((SELECT (x#>>'{data,activityCount}')::int FROM jsonb_array_elements(page->'items') x WHERE x->>'kind'='offer_accepted'),2,'offers merge even across local midnight');
@@ -104,7 +106,7 @@ BEGIN
   PERFORM public.get_notification_center_daily_overview(org,oc,snap,at,'invalid/timezone');
   RAISE EXCEPTION 'Unknown timezone accepted';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:late','{"count":9}',NULL,'2026-10-25 01:00Z');
+ PERFORM public.notification_center_publish_internal(org,oc,'order_created','daily:late','{"count":9}',NULL,('2026-10-25 01:00Z'::timestamptz+shift));
  PERFORM public.project_notification_center(500);
  page:=public.get_notification_center_daily_overview(org,oc,snap,at,'Europe/Prague',NULL,200,ARRAY[summary]);
  PERFORM assert_eq((page#>>'{items,0,data,activityCount}')::int,39,'late arrivals do not alter frozen category count');
@@ -118,7 +120,7 @@ BEGIN
  PERFORM assert_eq((page#>>'{items,0,data,activityCount}')::int,39,'legacy identifier resolves the same complete category');
  PERFORM assert_eq(page#>>'{items,0,id}','order-day:'||oc||':order_created:2026-10-27','refresh preserves the first caller alias');
  SET LOCAL ROLE authenticated;
- result:=public.notification_center_order_selection(oc,jsonb_build_object('id','order-day:'||oc||':order_created:2026-10-27','organization',org,'snapshot',snap,'timezone','Europe/Prague'));
+ result:=public.notification_center_order_selection(oc,jsonb_build_object('id','order-day:'||oc||':order_created:2026-10-27','organization',org,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',at));
  RESET ROLE;
  PERFORM assert_eq(jsonb_array_length(result),35,'already-open group links select across days too');
  PERFORM assert_eq((SELECT read_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer),before_read,'daily reads never acknowledge');

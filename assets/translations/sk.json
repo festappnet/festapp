@@ -2384,6 +2384,8 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
+    "lifecycleHint": "Aktivita za 30 dní. Otvorením sa oznámenia označia ako prečítané, chyby tým nevyriešite. Aktívne chyby zostávajú do opravy.",
+    "historyLimit": "Zobrazených je najviac 100 oznámení. Staršie nájdete v objednávkach a histórii e-mailov.",
     "newOrders": "Nové objednávky",
     "cancelledOrders": "Zrušené objednávky",
     "placesUnavailable": "Počet miest nie je dostupný",

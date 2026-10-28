@@ -54,7 +54,10 @@ class NotificationCenterController extends ChangeNotifier {
       loading = false,
       failed = false,
       pageFailed = false;
-  bool panelOpen = false, foreground = true, refreshFailed = false;
+  bool panelOpen = false,
+      foreground = true,
+      refreshFailed = false,
+      truncated = false;
   int snapshot = 0;
   // Preserve the pre-open watermark while the server acknowledges this snapshot.
   // A missing watermark on older backends must not label every row as new.
@@ -71,6 +74,19 @@ class NotificationCenterController extends ChangeNotifier {
     'p_snapshot_at': snapshotAt?.toUtc().toIso8601String(),
     'p_timezone': displayTimezone,
   };
+
+  /// Freeze the row's scope before dismissing the overlay or changing routes.
+  Map<String, dynamic>? selectionScope(NotificationItem item) {
+    if (!item.isSummary || organization == null || snapshot <= 0) return null;
+    return {
+      'id': item.id,
+      'organization': organization,
+      'snapshot': snapshot,
+      'timezone': displayTimezone,
+      'snapshotAt': snapshotAt?.toUtc().toIso8601String(),
+    };
+  }
+
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
   dynamic nextCursor;
@@ -102,6 +118,7 @@ class NotificationCenterController extends ChangeNotifier {
     if (identityChanged || invalidate) enabled = unread = false;
     failed = pageFailed = loading = false;
     nextCursor = null;
+    truncated = false;
     snapshot = 0;
     previousReadThrough = null;
     snapshotAt = null;
@@ -155,6 +172,7 @@ class NotificationCenterController extends ChangeNotifier {
         updates[item.id] = item;
       }
       if (result['unread'] is bool) unread = result['unread'] as bool;
+      truncated = result['truncated'] == true;
       // Recheck permissions and live facts without moving snapshot positions or
       // inserting arrivals. Missing IDs are revoked, not cached personal data.
       items = [
@@ -295,6 +313,7 @@ class NotificationCenterController extends ChangeNotifier {
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
       nextCursor = result['nextCursor'];
+      truncated = result['truncated'] == true;
       _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
       unread = false;
     } catch (error) {
@@ -336,6 +355,7 @@ class NotificationCenterController extends ChangeNotifier {
             .where((e) => known.add(e.id)),
       );
       nextCursor = result['nextCursor'];
+      truncated = result['truncated'] == true;
     } catch (error) {
       if (generation == _generation &&
           revision == _revision &&
