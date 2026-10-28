@@ -1,5 +1,11 @@
 # External billing delivery operations
 
+Activation hold as of 2026-10-28: the [independent critic report](../../../docs/plans/wix-partner-billing-CRITIC-2026-10-28.md)
+identifies three P2 source/projection defects (contract race, backdated refund
+payload drift, unreportable immutable metadata). Fix and regress these before
+activating billing, in addition to the commercial prerequisites below. Unknown
+reconciliation must also fence the old worker before authorizing another send.
+
 Server-only code: `dispatcher.mjs`; canonical SQL: `database/functions/wix_billing/`.
 Economic source and import contract: [service fees](../../../docs/architecture/service-fees.md).
 

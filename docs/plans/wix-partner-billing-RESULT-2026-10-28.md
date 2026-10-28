@@ -3,6 +3,8 @@
 Aktuální stav: source je na `main`, DB/backend a klient `prod/festapptickets` jsou
 nasazené jako `0.20.444+949`. Údaje OSVČ jsou uložené v nepodepsané DocuSign
 žádosti. Billing je vypnutý; widget hosting, podpis a marketplace nejsou dokončené.
+Nezávislá [kritická kontrola](wix-partner-billing-CRITIC-2026-10-28.md) následně
+našla tři P2 vady; jejich opravy jsou další podmínkou před aktivací billingu.
 Následující původní části zachovávají historii před nasazením; aktuální receipt je
 [produkční foundation release](../operations/releases/festapptickets-wix-foundation-2026-10-28.json).
 

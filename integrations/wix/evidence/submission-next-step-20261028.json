@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-28",
-  "status": "awaiting-wix-sole-trader-clarification-and-personal-signature",
+  "status": "blocked-commercial-and-billing-correctness",
   "existingExpertThreadId": "1a18198a75444077",
   "lastReceivedMessageId": "1a1825fe56ce9706",
   "lastSentMessageId": "1a18267de29c3241",
@@ -20,5 +20,27 @@
     "widgetHosting": true,
     "marketplaceSubmission": true
   },
-  "billingGateWeakened": false
+  "billingGateWeakened": false,
+  "independentReview": {
+    "report": "docs/plans/wix-partner-billing-CRITIC-2026-10-28.md",
+    "findings": [
+      {
+        "id": "WIX-C01",
+        "severity": "P2",
+        "fixed": false
+      },
+      {
+        "id": "WIX-C02",
+        "severity": "P2",
+        "fixed": false
+      },
+      {
+        "id": "WIX-C03",
+        "severity": "P2",
+        "fixed": false
+      }
+    ],
+    "activationHeldUntilCorrected": true,
+    "productionChangedByReview": false
+  }
 }
