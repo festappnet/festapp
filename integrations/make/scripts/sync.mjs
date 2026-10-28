@@ -1,37 +1,25 @@
-import { readFile, lstat } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { loadToken, createSdk, evidenceWriter, evidenceDirectory, sha256, cleanSourceRevision, safeFailure } from './lib/make-sdk.mjs';
 import assert from 'node:assert/strict';
 
 assert(process.argv.includes('--apply'), 'Use --apply to sync the existing PRIVATE app. This command never publishes or requests review.');
 const root = new URL('../', import.meta.url);
 const read = async p => JSON.parse(await readFile(new URL(p, root), 'utf8'));
 const app = await read('app.json'), manifest = await read('src/generated/manifest.json');
+const sourceRevision=cleanSourceRevision(root);
+const {assemble,writeGenerated}=await import('./build.mjs');
+await writeGenerated(await assemble(),{check:true});
 assert.equal(app.zone, 'eu1.make.com');
 assert.equal(app.organizationId, 9450617);
-const tokenFile = join(homedir(), '.config/festapp/make-api-token');
-const stat = await lstat(tokenFile);
-assert(stat.isFile() && !stat.isSymbolicLink() && !(stat.mode & 0o077), 'Protected API token file required.');
-const token = (await readFile(tokenFile, 'utf8')).trim();
-let lastRequest=0;
-const request = async (path, method = 'GET', body) => {
-    await new Promise(resolve=>setTimeout(resolve,Math.max(0,lastRequest+2200-Date.now())));lastRequest=Date.now();
-    const r = await fetch('https://' + app.zone + '/api/v2' + path, { method,
-        headers: { authorization: 'Token ' + token, 'content-type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body) });
-    const text = await r.text();
-    if (!r.ok) {
-        let error; try { error = JSON.parse(text); } catch { error = {}; }
-        throw new Error(method + ' ' + path + ': HTTP ' + r.status + ' ' + (error.code ?? '') + ' ' + (error.detail ?? error.message ?? 'Request failed'));
-    }
-    try { return JSON.parse(text); } catch { return text; }
-};
+const request = createSdk(app, await loadToken());
 const prefix = '/sdk/apps/' + app.name + '/' + app.version;
 const existing = (await request(prefix)).app;
 assert(existing && !existing.approved && (!existing.public || process.argv.includes('--review-update')),
     'Only the existing unapproved app may be edited; a published app requires --review-update. Never creates a review request.');
 const org = (await request('/organizations/' + app.organizationId)).organization;
 assert.equal(org.productName, 'Free'); assert.equal(org.autoPurchasingActivated, false);
+const save = evidenceWriter(evidenceDirectory(), 'sync', {sourceRevision,app:app.name,version:app.version,generatedManifestSha256:sha256(await readFile(new URL('src/generated/manifest.json',root))),freeze:'review-freeze-20261028.json'});
+try {
 await request(prefix + '/base', 'PUT', await read('src/generated/base.json'));
 await request(prefix + '/groups', 'PUT', await read('src/generated/groups.json'));
 for (const section of ['common','api','parameters','scope','scopes'])
@@ -54,3 +42,6 @@ for (const [kind, keys, identity] of [['rpcs',manifest.rpcs,'rpc'],['modules',ma
     }
 }
 process.stdout.write('Synced five modules, groups, one RPC and one OAuth connection to the existing unapproved app; no Publish or new review request.\n');
+
+await save({status:'applied',published:false,reviewRequested:false,reviewStateBefore:{approved:existing.approved,public:existing.public,inReview:existing.inReview??null}});
+} catch(error) { await save({status:'failed_or_partial',error:safeFailure(error)}); throw error; }

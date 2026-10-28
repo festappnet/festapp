@@ -1,0 +1,39 @@
+{
+  "modules": [
+    {
+      "key": "listOccasions",
+      "label": "List accessible events",
+      "operation": "access.inspect",
+      "description": "Lists events available to the connection.",
+      "group": "Events"
+    },
+    {
+      "key": "salesReport",
+      "label": "Get an event sales summary",
+      "operation": "orders.report",
+      "description": "Retrieves a sales summary for a selected event.",
+      "group": "Events"
+    },
+    {
+      "key": "listOrders",
+      "label": "List orders",
+      "operation": "orders.list",
+      "description": "Lists orders for a selected event, with pagination and a total result limit.",
+      "group": "Orders"
+    },
+    {
+      "key": "getOrder",
+      "label": "Get an order",
+      "operation": "orders.inspect",
+      "description": "Retrieves an order from a selected event.",
+      "group": "Orders"
+    },
+    {
+      "key": "apiCall",
+      "label": "Make an API call",
+      "operation": null,
+      "description": "Performs an arbitrary authorized API call.",
+      "group": "Other"
+    }
+  ]
+}

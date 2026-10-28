@@ -2,11 +2,7 @@ import { check } from '../errors.mjs';
 import { z } from 'zod';
 import { scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 
-// This is a transport allowlist, never a substitute for delegated authorization.
-export const MAKE_CLIENT_ID = 'festapp-make';
-export const MAKE_READ_OPERATIONS = Object.freeze([
-    'context.inspect', 'access.inspect', 'orders.report', 'orders.list', 'orders.inspect',
-]);
+import { MAKE_READ_OPERATIONS, MAKE_SCOPES, MAKE_LIMITS } from './make-contract.mjs';
 
 export function makeDocumentation(config, catalog) {
     return {
@@ -26,7 +22,7 @@ export function makeDocumentation(config, catalog) {
         ])),
         components: { securitySchemes: { oauth: { type: 'oauth2', flows: { authorizationCode: {
             authorizationUrl: config.issuer + '/auth', tokenUrl: config.issuer + '/token',
-            scopes: { 'festapp:ticket-layouts:read': 'Discover consented events.', 'festapp:orders:read': 'Read sales and order summaries without buyer contact details.' },
+            scopes: Object.fromEntries(MAKE_SCOPES.map(scope => [scope, scope])),
         } } } } },
     };
 }
@@ -67,10 +63,10 @@ export function validateMakePage(operation, input, result, headers = {}) {
     check(limitText === undefined || limitText === '' || /^[1-9][0-9]*$/.test(limitText), 'INVALID_INPUT');
     const page = pageText === undefined ? 1 : Number(pageText);
     const totalLimit = !limitText ? Infinity : Number(limitText);
-    check(Number.isSafeInteger(page) && page <= 50 &&
+    check(Number.isSafeInteger(page) && page <= MAKE_LIMITS.maxPages &&
         (totalLimit === Infinity || Number.isSafeInteger(totalLimit)), 'PAGINATION_LIMIT_EXCEEDED');
     // Fail before Make's own request ceiling, rather than silently ending an
     // all-results export. A caller asking for exactly 2500 rows can still finish.
-    check(page < 50 || nextCursor === null || totalLimit <= page * 50,
+    check(page < MAKE_LIMITS.maxPages || nextCursor === null || totalLimit <= page * MAKE_LIMITS.pageSize,
         'PAGINATION_LIMIT_EXCEEDED');
 }

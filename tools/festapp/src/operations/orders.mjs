@@ -1,3 +1,4 @@
+import { orderReportSchema } from './order-report-schema.mjs';
 import { z } from 'zod';
 import { check, upstream, OperationError } from '../errors.mjs';
 export const orderId = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -23,7 +24,7 @@ const changes = z.strictObject({ note: z.string().max(10000).optional(),
     tickets: z.array(z.strictObject({ ticketId: orderId, products: z.array(z.strictObject({ productId: orderId, price: money })).max(100) })).max(20).optional(),
 }).refine(v => Object.keys(v).length > 0);
 export const orderDataSchemas = {
-    'orders.report': z.strictObject({ occasionId: orderId, report: z.object({ schema_version: z.literal(1), valid: z.object({ tickets: z.object({ total: z.number().int().nonnegative() }).passthrough() }).passthrough() }).passthrough(), waitingTickets: z.number().int().nonnegative() }),
+    'orders.report': z.strictObject({ occasionId: orderId, report: orderReportSchema, waitingTickets: z.number().int().nonnegative() }),
     'orders.list': page, 'orders.inspect': page,
     'orders.update': command, 'orders.cancel': command, 'orders.mark_paid': command, 'payments.record': command, 'orders.send_tickets': command,
 };

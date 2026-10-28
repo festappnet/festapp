@@ -1,0 +1,160 @@
+{
+  "sourceRevision": "6a65c83dc823edd1ae2af78541729502ee166643",
+  "status": "review_items_addressed_live_openapi_refactor_gap",
+  "manifestSha256": "7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0",
+  "mail": {
+    "case": "2351677:2082001",
+    "originalFeedback": "1a18239723a8b8c6",
+    "sentResponse": "1a18258af1b4ad0b",
+    "caseSearchMessageCount": 3,
+    "newFeedbackFound": false
+  },
+  "points": [
+    {
+      "point": 1,
+      "disposition": "fixed_and_explained",
+      "evidence": "Standard universal inputs/output; five-operation fixed-origin read allowlist intentionally retained"
+    },
+    {
+      "point": 2,
+      "disposition": "fixed",
+      "evidence": "RPC limit 500"
+    },
+    {
+      "point": 3,
+      "disposition": "fixed",
+      "evidence": "Get RPC fields use edit mode"
+    },
+    {
+      "point": 4,
+      "disposition": "fixed",
+      "evidence": "Presentation descriptions separated from MCP instructions"
+    },
+    {
+      "point": 5,
+      "disposition": "verified",
+      "evidence": "Final existing scenario qualification passed all modules and mappings"
+    },
+    {
+      "point": 6,
+      "disposition": "fixed_and_explained",
+      "evidence": "Refresh fallback present; immutable seven-day server consent retained"
+    },
+    {
+      "point": 7,
+      "disposition": "explained",
+      "evidence": "access.inspect has no pagination cursor"
+    },
+    {
+      "point": 8,
+      "disposition": "explained",
+      "evidence": "Adapter rejects missing or mismatched detail before first()"
+    },
+    {
+      "point": 9,
+      "disposition": "explained",
+      "evidence": "Headers enforce completion, not access"
+    },
+    {
+      "point": 10,
+      "disposition": "fixed",
+      "evidence": "Readable shared status/code/message"
+    },
+    {
+      "point": 11,
+      "disposition": "explained",
+      "evidence": "Canonical stored state remains free text"
+    },
+    {
+      "point": 12,
+      "disposition": "fixed_and_explained",
+      "evidence": "Date and dotted key consumers passed; report text IDs and money representation preserved"
+    },
+    {
+      "point": 13,
+      "disposition": "fixed",
+      "evidence": "Sentence-case labels, ID and Event presentation"
+    },
+    {
+      "point": 14,
+      "disposition": "fixed",
+      "evidence": "Read CRUD metadata"
+    },
+    {
+      "point": 15,
+      "disposition": "fixed",
+      "evidence": "Events/Orders/Other groups"
+    },
+    {
+      "point": 16,
+      "disposition": "fixed_and_explained",
+      "evidence": "Limit help corrected; omitted/default and explicit blank behavior preserved"
+    },
+    {
+      "point": 17,
+      "disposition": "explained",
+      "evidence": "Official Make body replacement requires complete pagination body"
+    },
+    {
+      "point": 18,
+      "disposition": "fixed_and_explained",
+      "evidence": "Connection common client ID, errors and optional label; summary privacy preserved"
+    },
+    {
+      "point": 19,
+      "disposition": "fixed",
+      "evidence": "Select validation removed; order nullable strings use text"
+    },
+    {
+      "point": 20,
+      "disposition": "fixed",
+      "evidence": "Universal module declares both read scopes"
+    },
+    {
+      "point": 21,
+      "disposition": "verified",
+      "evidence": "Both list modules have samples and match SDK"
+    }
+  ],
+  "currentReadback": {
+    "sectionsMatched": 34,
+    "scenariosInactive": true,
+    "scenarioSchedule": "on-demand",
+    "freshRunsPerformed": false
+  },
+  "publicDocumentation": {
+    "githubReadableStatus": 200,
+    "githubRawStatus": 200,
+    "openapiStatusWithAuditUserAgent": 200,
+    "openapiDefaultPythonUserAgentStatus": 403
+  },
+  "gap": {
+    "id": "live_openapi_report_schema",
+    "liveKnownFields": [
+      "schema_version",
+      "valid"
+    ],
+    "sourceKnownFields": [
+      "schema_version",
+      "occasion",
+      "generated_at",
+      "spots",
+      "orders",
+      "tickets",
+      "valid",
+      "money_by_currency",
+      "timeline",
+      "products",
+      "ticket_batches",
+      "warnings"
+    ],
+    "otherFourOutputSchemasMatch": true,
+    "reason": "Backend refactor was not deployed; current Make SDK uses the new interface, live OpenAPI still uses the older operation schema",
+    "impact": "Documentation/schema mismatch; successful report data and live Make qualification do not prove schema deployment",
+    "nextAction": "Prepare a separate authorized precise backend service source/deployment to align live OpenAPI; do not resend review or email"
+  },
+  "tests": "Previous passing 61 targeted and 12 follow-up contract tests retained; unchanged tests were not rerun",
+  "approval": "Human approval/catalogue release and independent-account OAuth remain unproven",
+  "mutationsPerformed": false,
+  "runId": "2026-10-28T14-08-59-353Z-ca1c7e86-c6ad-4965-8b75-ab3d732da8c9"
+}
