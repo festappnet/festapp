@@ -5,7 +5,7 @@
       "code_verifier": "{{sha256(join(add(emptyarray, uuid, uuid, uuid), ''))}}"
     },
     "qs": {
-      "client_id": "festapp-make",
+      "client_id": "{{common.clientId}}",
       "response_type": "code",
       "redirect_uri": "{{oauth.localRedirectUri}}",
       "scope": "{{join(oauth.scope, ' ')}}",
@@ -31,7 +31,7 @@
     "type": "urlencoded",
     "body": {
       "grant_type": "authorization_code",
-      "client_id": "festapp-make",
+      "client_id": "{{common.clientId}}",
       "redirect_uri": "{{oauth.localRedirectUri}}",
       "code": "{{temp.code}}",
       "code_verifier": "{{temp.code_verifier}}",
@@ -64,14 +64,14 @@
     "type": "urlencoded",
     "body": {
       "grant_type": "refresh_token",
-      "client_id": "festapp-make",
+      "client_id": "{{common.clientId}}",
       "refresh_token": "{{data.refreshToken}}",
       "resource": "https://mcp.vstupenky.online/mcp"
     },
     "response": {
       "data": {
         "accessToken": "{{body.access_token}}",
-        "refreshToken": "{{body.refresh_token}}",
+        "refreshToken": "{{ifempty(body.refresh_token, data.refreshToken)}}",
         "expires": "{{addSeconds(now, body.expires_in)}}",
         "grantExpiresAt": "{{data.grantExpiresAt}}"
       },
@@ -102,11 +102,11 @@
     "response": {
       "valid": "{{body.ok}}",
       "error": {
-        "message": "{{body.error.code}}"
+        "message": "[{{statusCode}}] {{ifempty(body.error.code, ifempty(body.error, 'REQUEST_FAILED'))}}: {{switch(body.error.code, 'FORBIDDEN', 'You do not have access to this event or operation.', 'INVALID_INPUT', 'Check the event ID, order ID and input values.', 'PAGINATION_LIMIT_EXCEEDED', 'The requested export exceeds the technical pagination limit.', ifempty(body.error.message, 'The request could not be completed.'))}}"
       },
       "metadata": {
         "type": "text",
-        "value": "vstupenky.online"
+        "value": "{{ifempty(parameters.accountLabel, 'vstupenky.online')}}"
       }
     },
     "log": {

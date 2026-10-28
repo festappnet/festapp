@@ -6,6 +6,6 @@
     "occasionId": "{{parameters.occasionId}}"
   },
   "response": {
-    "output": "{{body.data}}"
+    "output": "{{set(body.data, 'report.generated_at', parseDate(body.data.report.generated_at))}}"
   }
 }

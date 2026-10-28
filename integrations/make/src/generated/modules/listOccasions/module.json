@@ -1,7 +1,8 @@
 {
   "name": "listOccasions",
-  "label": "List Accessible Events",
-  "description": "List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.",
+  "label": "List accessible events",
+  "description": "Lists events available to the connection.",
   "typeId": 9,
-  "connection": "vstupenky-online-buoz5u"
+  "connection": "vstupenky-online-buoz5u",
+  "crud": "read"
 }

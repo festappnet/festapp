@@ -1,18 +1,18 @@
 [
   {
     "name": "id",
-    "label": "Id",
+    "label": "ID",
     "type": "number"
   },
   {
     "name": "occasionId",
-    "label": "Occasion Id",
+    "label": "Event ID",
     "type": "number"
   },
   {
     "name": "symbol",
     "label": "Symbol",
-    "type": "any"
+    "type": "text"
   },
   {
     "name": "state",
@@ -21,22 +21,22 @@
   },
   {
     "name": "ticketCount",
-    "label": "Ticket Count",
+    "label": "Ticket count",
     "type": "number"
   },
   {
     "name": "price",
     "label": "Price",
-    "type": "any"
+    "type": "text"
   },
   {
     "name": "currency",
     "label": "Currency",
-    "type": "any"
+    "type": "text"
   },
   {
     "name": "allowedActions",
-    "label": "Allowed Actions",
+    "label": "Allowed actions",
     "type": "array",
     "spec": {
       "type": "text"
@@ -50,17 +50,17 @@
       {
         "name": "amount",
         "label": "Amount",
-        "type": "any"
+        "type": "text"
       },
       {
         "name": "paid",
         "label": "Paid",
-        "type": "any"
+        "type": "text"
       },
       {
         "name": "returned",
         "label": "Returned",
-        "type": "any"
+        "type": "text"
       }
     ]
   }

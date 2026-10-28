@@ -1,7 +1,7 @@
 [
   {
     "name": "occasionId",
-    "label": "Occasion Id",
+    "label": "Event ID",
     "type": "number"
   },
   {
@@ -223,12 +223,12 @@
       },
       {
         "name": "occasion",
-        "label": "Occasion",
+        "label": "Event",
         "type": "collection",
         "spec": [
           {
             "name": "id",
-            "label": "Id",
+            "label": "ID",
             "type": "text"
           },
           {
@@ -247,12 +247,12 @@
           "spec": [
             {
               "name": "type_id",
-              "label": "Type id",
+              "label": "Type ID",
               "type": "text"
             },
             {
               "name": "product_id",
-              "label": "Product id",
+              "label": "Product ID",
               "type": "text"
             },
             {
@@ -371,7 +371,7 @@
       {
         "name": "generated_at",
         "label": "Generated at",
-        "type": "text"
+        "type": "date"
       },
       {
         "name": "ticket_batches",
@@ -469,7 +469,7 @@
   },
   {
     "name": "waitingTickets",
-    "label": "Waiting Tickets",
+    "label": "Waiting tickets",
     "type": "number"
   }
 ]

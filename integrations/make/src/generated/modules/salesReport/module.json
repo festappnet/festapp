@@ -1,7 +1,8 @@
 {
   "name": "salesReport",
-  "label": "Get Event Sales Summary",
-  "description": "Read the canonical event report for one explicitly selected occasion: distinct valid ticket counts, waiting tickets, order/ticket states and amounts by currency. Resolve ambiguous event names with the user first; never read or combine multiple matching events unless explicitly requested. An order may contain multiple people. Cancelled and waitlisted tickets are excluded from valid totals.",
+  "label": "Get an event sales summary",
+  "description": "Retrieves a sales summary for a selected event.",
   "typeId": 4,
-  "connection": "vstupenky-online-buoz5u"
+  "connection": "vstupenky-online-buoz5u",
+  "crud": "read"
 }

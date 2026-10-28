@@ -1,6 +1,6 @@
 {
-  "recordedAt": "2026-10-28T11:09:40.999859+00:00",
-  "status": "review_submitted_followup_form_accepted_waiting_for_make",
+  "recordedAt": "2026-10-28T11:46:31.561783+00:00",
+  "status": "review_feedback_fixed_clarifications_prepared",
   "ownerSelectedEmail": "info@festapp.net",
   "emailVerificationConfirmed": true,
   "makeZone": "eu1.make.com",
@@ -36,7 +36,10 @@
     "source-readback-20261028.json",
     "freeze-20261028.json",
     "review-error-20261028.json",
-    "submission-20261028.json"
+    "submission-20261028.json",
+    "review-response-20261028.json",
+    "review-qualification-20261028.json",
+    "source-readback-review-20261028.json"
   ],
   "scenarios": [
     {
@@ -58,9 +61,12 @@
     "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
     "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
   ],
-  "nextAction": "Wait for Make automatic/manual feedback in the existing App review: vstupenky.online thread. Do not submit another request or optional partnership application. Fix actual reviewer feedback in this same app. After approval/release, verify catalogue discovery and OAuth from another authorized account.",
+  "nextAction": "Publish validated review corrections to canonical main, update the documentation link in the existing review, and reply to the existing case with runtime evidence and documented clarifications. No new review request.",
   "connectorSourceRevision": "5b94f8fe28505a66495117996eb568bfbf853668",
   "reviewCase": "2351677:2082001",
   "reviewFollowupFormId": 191861,
-  "followupFormSubmitted": true
+  "followupFormSubmitted": true,
+  "lastReviewFeedbackMessageId": "1a18239723a8b8c6",
+  "reviewFeedbackAddressed": true,
+  "reviewResponseSent": false
 }

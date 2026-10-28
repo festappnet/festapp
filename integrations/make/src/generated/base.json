@@ -7,7 +7,7 @@
   "response": {
     "valid": "{{body.ok}}",
     "error": {
-      "message": "[{{statusCode}}] {{ifempty(body.error.code, ifempty(body.error, 'REQUEST_FAILED'))}}"
+      "message": "[{{statusCode}}] {{ifempty(body.error.code, ifempty(body.error, 'REQUEST_FAILED'))}}: {{switch(body.error.code, 'FORBIDDEN', 'You do not have access to this event or operation.', 'INVALID_INPUT', 'Check the event ID, order ID and input values.', 'PAGINATION_LIMIT_EXCEEDED', 'The requested export exceeds the technical pagination limit.', ifempty(body.error.message, 'The request could not be completed.'))}}"
     }
   },
   "log": {

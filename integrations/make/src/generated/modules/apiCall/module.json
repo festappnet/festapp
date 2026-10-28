@@ -1,7 +1,7 @@
 {
   "name": "apiCall",
-  "label": "Make an API Call",
-  "description": "Call an allowed read operation with the same consent and order-summary profile.",
+  "label": "Make an API call",
+  "description": "Performs an arbitrary authorized API call.",
   "typeId": 12,
   "connection": "vstupenky-online-buoz5u"
 }

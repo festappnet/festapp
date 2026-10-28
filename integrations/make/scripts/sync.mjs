@@ -13,7 +13,9 @@ const tokenFile = join(homedir(), '.config/festapp/make-api-token');
 const stat = await lstat(tokenFile);
 assert(stat.isFile() && !stat.isSymbolicLink() && !(stat.mode & 0o077), 'Protected API token file required.');
 const token = (await readFile(tokenFile, 'utf8')).trim();
+let lastRequest=0;
 const request = async (path, method = 'GET', body) => {
+    await new Promise(resolve=>setTimeout(resolve,Math.max(0,lastRequest+2200-Date.now())));lastRequest=Date.now();
     const r = await fetch('https://' + app.zone + '/api/v2' + path, { method,
         headers: { authorization: 'Token ' + token, 'content-type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body) });
@@ -26,11 +28,13 @@ const request = async (path, method = 'GET', body) => {
 };
 const prefix = '/sdk/apps/' + app.name + '/' + app.version;
 const existing = (await request(prefix)).app;
-assert(existing && !existing.public && !existing.approved, 'This sync command only edits the existing private app.');
+assert(existing && !existing.approved && (!existing.public || process.argv.includes('--review-update')),
+    'Only the existing unapproved app may be edited; a published app requires --review-update. Never creates a review request.');
 const org = (await request('/organizations/' + app.organizationId)).organization;
 assert.equal(org.productName, 'Free'); assert.equal(org.autoPurchasingActivated, false);
 await request(prefix + '/base', 'PUT', await read('src/generated/base.json'));
-for (const section of ['api','parameters','scope','scopes'])
+await request(prefix + '/groups', 'PUT', await read('src/generated/groups.json'));
+for (const section of ['common','api','parameters','scope','scopes'])
     await request('/sdk/apps/connections/' + app.connectionName + '/' + section, 'PUT', await read('src/generated/connections/' + section + '.json'));
 for (const [kind, keys, identity] of [['rpcs',manifest.rpcs,'rpc'],['modules',manifest.modules,'module']]) {
     const inventory = await request(prefix + '/' + kind);
@@ -40,8 +44,13 @@ for (const [kind, keys, identity] of [['rpcs',manifest.rpcs,'rpc'],['modules',ma
     for (const key of keys) {
         const path = 'src/generated/' + kind + '/' + key + '/';
         if (!names.has(key)) await request(prefix + '/' + kind, 'POST', await read(path + identity + '.json'));
+        else if (kind === 'modules') {
+            const meta=await read(path + identity + '.json');
+            await request(prefix + '/modules/' + key, 'PATCH', {label:meta.label,description:meta.description,...(meta.crud?{crud:meta.crud}:{})});
+        }
+        else await request(prefix + '/rpcs/' + key, 'PATCH', {label:(await read(path + identity + '.json')).label});
         const sections = kind === 'modules' ? ['api','expect','interface','scope','samples'] : ['api','parameters'];
         for (const section of sections) await request(prefix + '/' + kind + '/' + key + '/' + section, 'PUT', await read(path + section + '.json'));
     }
 }
-process.stdout.write('Synced five modules, one RPC and one OAuth connection to the existing private app; no Publish or review request.\n');
+process.stdout.write('Synced five modules, groups, one RPC and one OAuth connection to the existing unapproved app; no Publish or new review request.\n');

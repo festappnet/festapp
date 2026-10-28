@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Events",
+    "modules": [
+      "listOccasions",
+      "salesReport"
+    ]
+  },
+  {
+    "label": "Orders",
+    "modules": [
+      "listOrders",
+      "getOrder"
+    ]
+  },
+  {
+    "label": "Other",
+    "modules": [
+      "apiCall"
+    ]
+  }
+]

@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-28T11:42:28.275Z",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "generatedManifestSha256": "9a46cc151a1808cfdaa68f03fc772e5c2ced2b3450f7d82d5ce3e0a5e985ef2d",
+  "positive": {
+    "scenarioId": 8226665,
+    "executionId": "530ff7fbc73a44c390b45d7a90467536",
+    "status": 1,
+    "modules": [
+      {
+        "id": 1,
+        "bundles": 1,
+        "status": 1
+      },
+      {
+        "id": 3,
+        "bundles": 1,
+        "status": 1
+      },
+      {
+        "id": 4,
+        "bundles": 52,
+        "status": 1
+      },
+      {
+        "id": 5,
+        "bundles": 1,
+        "status": 1
+      },
+      {
+        "id": 6,
+        "bundles": 1,
+        "status": 1
+      },
+      {
+        "id": 7,
+        "bundles": 1,
+        "status": 1
+      }
+    ],
+    "mappingProofs": [
+      "The literal dotted capability key is consumed with backticks by module 7 and must be false for the read-only fixture; undefined or wrong mapping would select invalid event ID 0.",
+      "The parsed report timestamp is consumed by formatDate in module 6 and supplied as an exact 10-character symbol search."
+    ]
+  },
+  "cases": [
+    {
+      "name": "reserved_header_overrides_ignored",
+      "scenarioId": 8228261,
+      "executionId": "f22e9ac993d9480c9e0587509c6cb24a",
+      "status": 1
+    },
+    {
+      "name": "unsupported_method",
+      "scenarioId": 8228261,
+      "executionId": "3102ac15282341569898afc841699422",
+      "status": 3,
+      "error": {
+        "message": "[405] METHOD_NOT_ALLOWED: Use POST.",
+        "name": "RuntimeError",
+        "causeModule": {
+          "name": "apiCall",
+          "appName": "app#vstupenky-online-buoz5u"
+        }
+      }
+    },
+    {
+      "name": "unknown_operation",
+      "scenarioId": 8228261,
+      "executionId": "e4985124fefa43c580945146665f68e7",
+      "status": 3,
+      "error": {
+        "message": "[403] FORBIDDEN: You do not have access to this event or operation.",
+        "name": "RuntimeError",
+        "causeModule": {
+          "name": "apiCall",
+          "appName": "app#vstupenky-online-buoz5u"
+        }
+      }
+    },
+    {
+      "name": "write_operation_rejected",
+      "scenarioId": 8228261,
+      "executionId": "a4795a16fc8e43938c0c5cc0da2b58e1",
+      "status": 3,
+      "error": {
+        "message": "[403] FORBIDDEN: You do not have access to this event or operation.",
+        "name": "RuntimeError",
+        "causeModule": {
+          "name": "apiCall",
+          "appName": "app#vstupenky-online-buoz5u"
+        }
+      }
+    },
+    {
+      "name": "unconsented_order_detail",
+      "scenarioId": 8228261,
+      "executionId": "924b6bca50144c0d83d321316e31ffad",
+      "status": 3,
+      "error": {
+        "message": "[403] FORBIDDEN: You do not have access to this event or operation.",
+        "name": "RuntimeError",
+        "causeModule": {
+          "name": "getOrder",
+          "appName": "app#vstupenky-online-buoz5u"
+        }
+      }
+    },
+    {
+      "name": "foreign_url_rejected",
+      "scenarioId": 8228261,
+      "executionId": "ed4be4e1594f4ef9ab31a8cb2a13ddbb",
+      "status": 3,
+      "error": {
+        "message": "[403] FORBIDDEN: You do not have access to this event or operation.",
+        "name": "RuntimeError",
+        "causeModule": {
+          "name": "apiCall",
+          "appName": "app#vstupenky-online-buoz5u"
+        }
+      }
+    }
+  ],
+  "bothScenariosInactive": true
+}

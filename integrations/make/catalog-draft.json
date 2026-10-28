@@ -13,34 +13,39 @@
   "modules": [
     {
       "key": "listOccasions",
-      "label": "List Accessible Events",
+      "label": "List accessible events",
       "operation": "access.inspect",
-      "tool": "festapp_access_inspect"
+      "tool": "festapp_access_inspect",
+      "description": "Lists events available to the connection."
     },
     {
       "key": "salesReport",
-      "label": "Get Event Sales Summary",
+      "label": "Get an event sales summary",
       "operation": "orders.report",
-      "tool": "festapp_orders_report"
+      "tool": "festapp_orders_report",
+      "description": "Retrieves a sales summary for a selected event."
     },
     {
       "key": "listOrders",
-      "label": "List Orders",
+      "label": "List orders",
       "operation": "orders.list",
-      "tool": "festapp_orders_list"
+      "tool": "festapp_orders_list",
+      "description": "Lists orders for a selected event, with pagination and a total result limit."
     },
     {
       "key": "getOrder",
-      "label": "Get an Order",
+      "label": "Get an order",
       "operation": "orders.inspect",
-      "tool": "festapp_orders_inspect"
+      "tool": "festapp_orders_inspect",
+      "description": "Retrieves an order from a selected event."
     },
     {
       "key": "apiCall",
-      "label": "Make an API Call",
+      "label": "Make an API call",
       "operation": null,
       "tool": null,
-      "state": "implemented_fixed_origin_read_allowlist"
+      "state": "implemented_fixed_origin_read_allowlist",
+      "description": "Performs an arbitrary authorized API call."
     }
   ],
   "connection": {

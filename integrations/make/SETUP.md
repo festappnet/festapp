@@ -7,15 +7,17 @@ record payments, send tickets or export buyer contacts.
 
 ## Modules
 
-- **List Accessible Events** lists only events available to this connection.
+- **List accessible events** lists only events available to this connection.
   Events with identical names remain separate; use their IDs.
-- **Get Event Sales Summary** returns one canonical report for one event,
+- **Get an event sales summary** returns one canonical report for one event,
   including currencies, waiting tickets and warnings.
-- **List Orders** returns one bundle per order, with cursor pagination.
-- **Get an Order** returns one matching order from the selected event.
-- **Make an API Call** calls one of the five documented read operations. Select
-  its relative path and enter a JSON body. The transport uses POST; write
-  operations and foreign URLs remain forbidden.
+- **List orders** returns one bundle per order, with cursor pagination.
+- **Get an order** returns one matching order from the selected event.
+- **Make an API call** calls one of the five documented read operations. Enter
+  a service-relative path such as `/make/v1/operations/context.inspect` and a
+  JSON body. The API currently supports POST for five authorized read operations.
+  The module exposes method, supported headers, query string, body, response
+  headers and status code; write operations and foreign URLs remain forbidden.
 
 ## Limits and reconnecting
 
@@ -39,7 +41,7 @@ value, received money and valid ticket count are separate measures.
 
 ## A recurring sales overview
 
-Choose **Get Event Sales Summary**, select one event by its ID, then map the
+Choose **Get an event sales summary**, select one event by its ID, then map the
 returned report to your destination. If updating a spreadsheet, use one fixed
 row for that event and update that row on reruns. Serialize writes to the same
 row. The connector itself does not append rows or perform destination writes.
@@ -64,3 +66,6 @@ means the requested export did not complete.
 [Privacy](https://vstupenky.online/privacy/).
 [Service terms](https://vstupenky.online/terms/).
 Support: info@festapp.net.
+
+An optional connection label helps distinguish connections to different accounts
+or events. Account identifiers and contacts are not exposed by the summary API.

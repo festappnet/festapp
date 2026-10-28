@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-28T11:41:51.922Z",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "definitionSectionsMatched": 34,
+  "generatedManifestSha256": "9a46cc151a1808cfdaa68f03fc772e5c2ced2b3450f7d82d5ce3e0a5e985ef2d",
+  "sourceLogoSha256": "b6b76f8ae94cbe072ada7d7b5f3b9b595c46a46ee3a4776e85eef953ccc4d34b",
+  "renderedLogoSha256": "81bb38dff54656785f0eea9c6d41240bd9e2e28220580cbbcc263730249d5a47",
+  "visibilityAtReadback": "public",
+  "inReview": true,
+  "reviewStateSource": "SDK selected inReview field when available; native Review tab and confirmation email retain the workflow history.",
+  "modules": [
+    "listOccasions",
+    "salesReport",
+    "listOrders",
+    "getOrder",
+    "apiCall"
+  ],
+  "connectionCount": 1,
+  "rpcCount": 1,
+  "prototypeFunctionCount": 0,
+  "tokenValuesIncluded": false
+}

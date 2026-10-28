@@ -11,5 +11,5 @@
   "connectionName": "vstupenky-online-buoz5u",
   "website": "https://vstupenky.online/",
   "supportEmail": "info@festapp.net",
-  "apiDocumentation": "https://mcp.vstupenky.online/make/v1"
+  "apiDocumentation": "https://github.com/festappnet/festapp/blob/main/integrations/make/API.md"
 }

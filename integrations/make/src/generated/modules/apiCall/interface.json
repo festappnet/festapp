@@ -5,8 +5,13 @@
     "type": "collection"
   },
   {
+    "name": "headers",
+    "label": "Headers",
+    "type": "collection"
+  },
+  {
     "name": "statusCode",
-    "label": "Status Code",
+    "label": "Status code",
     "type": "number"
   }
 ]

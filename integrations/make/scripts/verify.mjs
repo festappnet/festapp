@@ -19,7 +19,10 @@ const meta = (await get(prefix+'?cols[]=name&cols[]=label&cols[]=version&cols[]=
 for(const field of ['name','label','version','description','theme','language'])assert.equal(meta[field],app[field],'App metadata mismatch: '+field);
 assert.equal(meta.docs,await readFile(new URL('SETUP.md',root),'utf8'),'Make README differs from source. Save SETUP.md in the native README editor.');
 assert.equal(createHash('sha256').update(meta.docs).digest('hex'),manifest.readmeSha256);
-assert.deepEqual((await get(prefix+'/modules')).appModules.map(m=>m.name).sort(),[...manifest.modules].sort());
+const liveModules=(await get(prefix+'/modules')).appModules;
+assert.deepEqual(liveModules.map(m=>m.name).sort(),[...manifest.modules].sort());
+for(const module of liveModules){const expected=await read('src/generated/modules/'+module.name+'/module.json');
+    for(const field of ['label','description','crud'])if(expected[field]!==undefined)assert.equal(module[field],expected[field],module.name+' '+field);}
 assert.deepEqual((await get(prefix+'/rpcs')).appRpcs.map(r=>r.name).sort(),[...manifest.rpcs].sort());
 const connections=(await get('/sdk/apps/'+app.name+'/connections')).appConnections;
 assert.equal(connections.length,1);assert.equal(connections[0].name,app.connectionName);
@@ -39,7 +42,8 @@ const logoBytes=Buffer.from(await logo.arrayBuffer());assert.equal(logoBytes.sub
 const receipt={at:new Date().toISOString(),app:app.name,version:app.version,zone:app.zone,definitionSectionsMatched:checked,
     generatedManifestSha256:createHash('sha256').update(await readFile(new URL('src/generated/manifest.json',root))).digest('hex'),
     sourceLogoSha256:manifest.logoSha256,renderedLogoSha256:createHash('sha256').update(logoBytes).digest('hex'),
-    visibilityAtReadback:meta.public?'public':'private',inReview:meta.inReview??meta.in_review??false,
+    visibilityAtReadback:meta.public?'public':'private',inReview:meta.inReview??meta.in_review??null,
+    reviewStateSource:'SDK selected inReview field when available; native Review tab and confirmation email retain the workflow history.',
     modules:manifest.modules,connectionCount:1,rpcCount:1,prototypeFunctionCount:0,tokenValuesIncluded:false};
-await writeFile(new URL('evidence/source-readback-20261028.json',root),JSON.stringify(receipt,null,2)+'\n');
+await writeFile(new URL(process.argv.includes('--review-update')?'evidence/source-readback-review-20261028.json':'evidence/source-readback-20261028.json',root),JSON.stringify(receipt,null,2)+'\n');
 process.stdout.write('PASS: live Make definitions, metadata, README and logo match the frozen source; '+checked+' sections verified.\n');
