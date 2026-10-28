@@ -1,0 +1,16 @@
+{
+  "sourceRevision": "eb02a9c2a62e8b37280beb27411f7616ee6fb681",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "generatedManifestSha256": "7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0",
+  "freeze": "review-freeze-20261028.json",
+  "status": "applied",
+  "published": false,
+  "reviewRequested": false,
+  "reviewStateBefore": {
+    "approved": false,
+    "public": true,
+    "inReview": null
+  },
+  "runId": "2026-10-28T13-53-22-465Z-abf45151-8b46-47b7-a573-c0095098822e"
+}

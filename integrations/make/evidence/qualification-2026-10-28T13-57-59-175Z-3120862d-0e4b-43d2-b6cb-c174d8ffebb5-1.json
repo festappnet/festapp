@@ -1,0 +1,18 @@
+{
+  "sourceRevision": "49a9007e8d3f8b627707d41f740c85ca0c1168f5",
+  "freeze": "review-freeze-20261028.json",
+  "at": "2026-10-28T13:57:59.174Z",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "generatedManifestSha256": "7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0",
+  "positive": {
+    "scenarioId": 8226665,
+    "executionId": "1eddfdac33804f57b64f7499f5949775",
+    "status": 1,
+    "modules": []
+  },
+  "cases": [],
+  "bothScenariosInactive": false,
+  "runId": "2026-10-28T13-57-59-175Z-3120862d-0e4b-43d2-b6cb-c174d8ffebb5"
+}

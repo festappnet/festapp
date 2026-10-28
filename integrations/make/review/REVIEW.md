@@ -18,7 +18,7 @@ Logo source: `integrations/chatgpt/assets/logo.png` (same regional service ident
 - All five modules: https://eu1.make.com/3387186/scenarios/8226665/edit
 - Expected error / fixed-origin read allowlist: https://eu1.make.com/3387186/scenarios/8228261/edit
 
-Both are on-demand and inactive. Do not enable a recurring schedule. Positive scenario returns one report, one consented event, 52 order bundles across two pages, one order detail and one universal read call. The error scenario intentionally rejects a foreign URL. Existing successful executions and expected errors are recorded in `../evidence/`; refresh logs before actual submission if delayed.
+Both are on-demand and inactive. Do not enable a recurring schedule. Positive scenario returns one report, one consented event, 52 order bundles across two pages, one order detail and one universal read call. The error scenario intentionally rejects a foreign URL. Existing successful executions and expected errors are recorded in `../evidence/`; These historical logs identify their frozen digest. Do not repeat the submitted review.
 
 ## Synthetic reviewer access
 
@@ -41,3 +41,7 @@ Public cost conclusion is documented in `../evidence/publisher-costs.json`. The 
 Publish, all five visible modules, one review request and its follow-up form were accepted. Case `2351677:2082001`, confirmation message `1a1822f6b03104a4`, form record `191861`. No optional partner application was selected and no fixed fee or paid subscription was presented. See `../evidence/submission-20261028.json`. Await feedback in this existing thread; do not resubmit. Approval and catalogue release are pending.
 
 Review corrections were published from `1967445f97bb6a91b256672ec346eac06e9796c3`; the API documentation link was updated in the existing review and the technical response was sent as message `1a18258af1b4ad0b`. No new Review request or partner application was created.
+
+## Subsequent source maintenance
+
+Current status belongs to `../evidence/execution-20261028.json`. The review response has already been sent. Refactoring receipts use unique run/checkpoint paths; original qualification, readback and freeze files remain immutable. Reviewer identities and existing scenario IDs belong to `../src/reviewer.json`. Changes to generated SDK sections require a clean source freeze, a single current review-state read, same-app unapproved review update, readback and relevant existing on-demand scenarios. Source-only tooling/schema artifacts do not become SDK components. No further Publish, review request or email is implied.

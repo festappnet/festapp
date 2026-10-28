@@ -1,0 +1,9 @@
+{
+  "connectionId": 12447881,
+  "positiveScenarioId": 8226665,
+  "guardrailsScenarioId": 8228261,
+  "fixtureMarker": "make-review-20261028",
+  "fixtureReceipt": ".festapp/make-review-20261028/receipt.json",
+  "freeze": "review-freeze-20261028.json",
+  "ownerId": 9773133
+}

@@ -1,19 +1,14 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { readFile } from 'node:fs/promises';
+import { loadToken, createSdk, evidenceWriter, evidenceDirectory, safeFailure, cleanSourceRevision } from './lib/make-sdk.mjs';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 const root = new URL('../', import.meta.url);
 const read = async p => JSON.parse(await readFile(new URL(p, root), 'utf8'));
 const app = await read('app.json'), manifest = await read('src/generated/manifest.json');
-const token = (await readFile(homedir()+'/.config/festapp/make-api-token','utf8')).trim();
-let lastRead = 0;
-const get = async path => {
-    await new Promise(resolve => setTimeout(resolve, Math.max(0, lastRead + 2200 - Date.now())));
-    lastRead = Date.now();
-    const response = await fetch('https://'+app.zone+'/api/v2'+path,{headers:{authorization:'Token '+token}});
-    assert(response.ok, 'Readback failed: '+path+' HTTP '+response.status);
-    const text = await response.text(); return JSON.parse(text);
-};
+const sourceRevision=cleanSourceRevision(root);
+const get = createSdk(app, await loadToken());
+const save = evidenceWriter(evidenceDirectory(), 'readback', {sourceRevision,freeze:'review-freeze-20261028.json'});
+try {
 const prefix = '/sdk/apps/'+app.name+'/'+app.version;
 const meta = (await get(prefix+'?cols[]=name&cols[]=label&cols[]=version&cols[]=description&cols[]=theme&cols[]=language&cols[]=docs&cols[]=public&cols[]=inReview')).app;
 for(const field of ['name','label','version','description','theme','language'])assert.equal(meta[field],app[field],'App metadata mismatch: '+field);
@@ -36,14 +31,14 @@ for(const [path]of Object.entries(manifest.files)){
         :prefix+'/'+path.replace('.json','');
     assert.deepEqual(normalized(await get(remote)),await read('src/generated/'+path),'Make source mismatch: '+path);checked++;
 }
-const logo=await fetch('https://'+app.zone+'/api/v2'+prefix+'/icon/512',{headers:{authorization:'Token '+token}});
-assert(logo.ok,'Make app logo must be present');
-const logoBytes=Buffer.from(await logo.arrayBuffer());assert.equal(logoBytes.subarray(1,4).toString(),'PNG');
+const logoBytes=await get(prefix+'/icon/512','GET',undefined,{binary:true});assert.equal(logoBytes.subarray(1,4).toString(),'PNG');
 const receipt={at:new Date().toISOString(),app:app.name,version:app.version,zone:app.zone,definitionSectionsMatched:checked,
     generatedManifestSha256:createHash('sha256').update(await readFile(new URL('src/generated/manifest.json',root))).digest('hex'),
     sourceLogoSha256:manifest.logoSha256,renderedLogoSha256:createHash('sha256').update(logoBytes).digest('hex'),
     visibilityAtReadback:meta.public?'public':'private',inReview:meta.inReview??meta.in_review??null,
     reviewStateSource:'SDK selected inReview field when available; native Review tab and confirmation email retain the workflow history.',
     modules:manifest.modules,connectionCount:1,rpcCount:1,prototypeFunctionCount:0,tokenValuesIncluded:false};
-await writeFile(new URL(process.argv.includes('--review-update')?'evidence/source-readback-review-20261028.json':'evidence/source-readback-20261028.json',root),JSON.stringify(receipt,null,2)+'\n');
+await save({...receipt,status:'verified'});
 process.stdout.write('PASS: live Make definitions, metadata, README and logo match the frozen source; '+checked+' sections verified.\n');
+
+} catch(error) { await save({status:'failed',error:safeFailure(error)}); throw error; }
