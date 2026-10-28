@@ -1,6 +1,8 @@
 # Wix Partner Billed - nezávislá kritická kontrola
 
-Datum: 2026-10-28. Výsledek: **3 nálezy P2, billing neaktivovat před opravami**.
+Datum: 2026-10-28. Původní nálezy: 3x P2. **Všechny tři jsou opravené, znovu
+zkontrolované kritikem a nasazené migrací 20261028160000.**
+[Produkční receipt](../operations/releases/festapptickets-wix-critic-fix-2026-10-28.json).
 Kontrola nenašla P0/P1; nejde o záruku absence dalších vad.
 
 Nezávislý kritik prověřil diff od `176a27aea10f903852a659bb9389432f3e0637ff`
@@ -132,3 +134,21 @@ Nová `20261028160000_service_fee_reporting_integrity.sql` vyžaduje vypnutý bi
 a prázdné money/delivery tabulky pod zámky; nevytváří domnělé pořadí historie.
 Dokončení produkčního nasazení bude doložené samostatným receiptem. Do té doby
 zůstává aktivační hold. Smluvní a marketplace podmínky se tím nemění.
+
+## Produkční uzavření C01-C03
+
+Opravy ze zdroje `main 3ffd1cea6af275897e0029f770639958625d802d` jsou nasazené
+novou migrací `20261028160000_service_fee_reporting_integrity`, SHA-256
+`389902bade819a1efcf3d7b12a197dbf08402f7c2042fc1336043afc47e28c16`.
+Předchozí aplikovaná migrace zůstala nezměněná. Před aplikací vznikla nová
+šifrovaná pgBackRest differential záloha `20261025-031939F_20261028-160537D`
+s úspěšnou archive check. Chráněná atomická aplikace SQL a ledgeru skončila
+`psql` exit 0. DDL log má čas 2026-10-28T16:07:18.088656565Z; přesný COMMIT čas
+se neuvádí, protože jej PostgreSQL na tomto hostu neeviduje.
+
+Read-only kontrola potvrdila sekvenční sloupec NOT NULL/CHECK/UNIQUE, nové tělo
+importeru, export `{schemaVersion:2,receipts:[]}`, odmítnutí v1 stage a očekávané
+vlastníky/ACL. Billing zůstal vypnutý, source/delivery tabulky prázdné a email
+nepauzovaný a zdravý. Nebyl potřeba restart Functions, klientský build ani změna
+tenant verze. C01-C03 jsou uzavřené. Smluvní, osobní podpisové a marketplace
+podmínky zůstávají otevřené a koncept zprávy zůstal neodeslaný.

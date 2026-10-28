@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-28",
-  "status": "blocked-commercial-and-billing-correctness",
+  "status": "awaiting-commercial-and-marketplace-gates",
   "existingExpertThreadId": "1a18198a75444077",
   "lastReceivedMessageId": "1a1825fe56ce9706",
   "lastSentMessageId": "1a18267de29c3241",
@@ -27,24 +27,29 @@
       {
         "id": "WIX-C01",
         "severity": "P2",
-        "fixed": false
+        "fixed": true,
+        "deployed": true
       },
       {
         "id": "WIX-C02",
         "severity": "P2",
-        "fixed": false
+        "fixed": true,
+        "deployed": true
       },
       {
         "id": "WIX-C03",
         "severity": "P2",
-        "fixed": false
+        "fixed": true,
+        "deployed": true
       }
     ],
-    "activationHeldUntilCorrected": true,
+    "activationHeldUntilCorrected": false,
     "productionChangedByReview": false,
     "localFixesVerified": true,
     "rereview": "C01-C03 pass; approved guarded SQL-only rollout, not billing activation",
     "newForwardMigration": "20261028160000_service_fee_reporting_integrity.sql",
-    "deploymentPending": true
+    "deploymentPending": false,
+    "activationStillHeldForCommercialPrerequisites": true,
+    "separateAuthorizedFixDeploymentReceipt": "docs/operations/releases/festapptickets-wix-critic-fix-2026-10-28.json"
   }
 }
