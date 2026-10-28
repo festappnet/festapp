@@ -4375,6 +4375,14 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "unreadHeading": "Unread",
+    "readHeading": "Read",
+    "unreadNotification": "Unread notification",
+    "lifecycleHint": "Activity from the last 30 days. Only the item you open is marked as read. Active problems remain until fixed.",
+    "historyLimit": "Showing up to 100 notifications. Older activity is in orders and email history.",
+    "newOrders": "New orders",
+    "cancelledOrders": "Cancelled orders",
+    "placesUnavailable": "Place count unavailable",
     "orders": {
       "one": "{count} order",
       "few": "{count} orders",

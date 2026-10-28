@@ -1,0 +1,23 @@
+{
+  "serverGrantExpiryBefore": "2026-11-04T10:38:40.976Z",
+  "serverGrantExpiryAfter": "2026-11-04T10:38:40.976Z",
+  "at": "2026-10-28T10:53:01.356Z",
+  "scenarioIds": [
+    8226665,
+    8228261
+  ],
+  "connectionId": 12447881,
+  "waitSinceLastNativeCallSeconds": 858,
+  "runs": [
+    {
+      "executionId": "a4ce78dcfd10464aa923296f34f02c47",
+      "status": 1
+    },
+    {
+      "executionId": "5fca377aa894468e91b62395493f6f9e",
+      "status": 1
+    }
+  ],
+  "grantExpiryBefore": "2026-11-04T10:43:58.827Z",
+  "grantExpiryAfter": "2026-11-04T10:52:44.753Z"
+}

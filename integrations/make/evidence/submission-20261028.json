@@ -1,0 +1,92 @@
+{
+  "recordedAt": "2026-10-28T11:09:40.999859+00:00",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "organizationId": 9450617,
+  "teamId": 3387186,
+  "sourceRevision": "5b94f8fe28505a66495117996eb568bfbf853668",
+  "frozenManifestSha256": "d709da7ca5b33adecf97445db0cb22535538affc68f9ce24415ae384079366b8",
+  "publication": {
+    "completed": true,
+    "uiTime": "2026-10-28 12:02 Europe/Prague",
+    "apiPublic": true,
+    "allFiveModulesVisible": true,
+    "confirmationDialog": "Irreversible public invite-link distribution; no payment, paid plan or fee terms shown."
+  },
+  "review": {
+    "submittedOnce": true,
+    "uiTime": "2026-10-28 12:04 Europe/Prague",
+    "uiReadback": "Approval requested.",
+    "uiButtonAfterSubmission": "Update review",
+    "case": "2351677:2082001",
+    "confirmationEmail": {
+      "gmailMessageId": "1a1822f6b03104a4",
+      "subject": "App review: vstupenky.online",
+      "from": "helpdesk@make.com",
+      "to": "info@festapp.net",
+      "date": "2026-10-28T11:04:33Z",
+      "authentication": "DKIM/DMARC pass shown in forwarded message headers"
+    },
+    "apiDocumentation": "https://mcp.vstupenky.online/make/v1",
+    "allModuleScenario": "https://eu1.make.com/3387186/scenarios/8226665/edit",
+    "errorScenario": "https://eu1.make.com/3387186/scenarios/8228261/edit"
+  },
+  "followupForm": {
+    "url": "https://tally.so/r/3qGe45?id=191861",
+    "submittedOnce": true,
+    "completionReadback": [
+      "Form submitted",
+      "Thanks for completing this form!"
+    ],
+    "relationship": "Direct vendor (ISV)",
+    "legalName": "Michael Bujnovský (Festapp)",
+    "serviceUrl": "https://vstupenky.online/",
+    "supportAndPartnershipContact": {
+      "name": "Michael Bujnovský",
+      "email": "info@festapp.net",
+      "phone": "+420792759379",
+      "phoneSource": "https://www.festapp.net/ (live public tel link checked)"
+    },
+    "category": "Commerce",
+    "subcategory": "E-Commerce",
+    "logo": {
+      "name": "vstupenky-online.png",
+      "bytes": 4456,
+      "source": "integrations/chatgpt/assets/logo.png"
+    },
+    "optionalTechnologyPartnerApplication": false,
+    "acceptedDeclarations": [
+      "Rights to own app branding",
+      "Compliance with applicable integrated service/API terms, including contingent indemnification for breach"
+    ],
+    "noFixedFeeOrPaidSubscriptionShown": true
+  },
+  "currentState": {
+    "requestAccepted": true,
+    "followupFormAccepted": true,
+    "automaticReviewPassed": false,
+    "manualReviewPassed": false,
+    "approved": false,
+    "catalogueReleased": false,
+    "independentAccountDiscoveryVerified": false
+  },
+  "paidCommitmentMade": false,
+  "costSupportQuestionSent": false,
+  "externalDependency": "Make automatic and manual review, then release scheduling; continue in the same review thread without a duplicate request.",
+  "finalAccountReadback": {
+    "at": "2026-10-28T11:10:27.833Z",
+    "plan": "Free",
+    "autoPurchasingActivated": false,
+    "scenarios": [
+      {
+        "id": 8228261,
+        "isActive": false
+      },
+      {
+        "id": 8226665,
+        "isActive": false
+      }
+    ]
+  }
+}

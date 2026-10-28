@@ -1,0 +1,11 @@
+{
+  "url": "/make/v1/operations/orders.report",
+  "method": "POST",
+  "type": "json",
+  "body": {
+    "occasionId": "{{parameters.occasionId}}"
+  },
+  "response": {
+    "output": "{{set(body.data, 'report.generated_at', parseDate(body.data.report.generated_at))}}"
+  }
+}

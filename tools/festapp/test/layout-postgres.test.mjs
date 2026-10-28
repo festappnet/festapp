@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { openDisposableDatabase } from './postgres.mjs';
 import { fixture, reply, profile } from './fixture.mjs';
 import { canonicalPreview } from './render-fixture.mjs';
@@ -18,6 +19,9 @@ test(
             await db.end();
         });
         await db.query('BEGIN');
+        // The guarded cache can predate the latest probe refresh. Keep the
+        // production readiness checks, including all body and privilege checks.
+        await db.query(await readFile(new URL('../../../database/functions/others/get_ticket_layout_write_contract_v1.sql', import.meta.url), 'utf8'));
         await db.query(
             "select public.create_user_for_test('mcp-e1-node','mcp-e1-node@example.invalid')",
         );
@@ -195,6 +199,14 @@ test(
         assert.deepEqual(saved.appearance.layout, input.nextLayout);
         assert.equal(Number(saved.aggregate_version), 1);
         await db.query('RESET ROLE');
+        // Refreshing the probe must not turn readiness into a bypass: a real
+        // direct-write grant still disables the family, and rollback restores it.
+        await db.query('SAVEPOINT unsafe_artwork_grant');
+        await db.query('GRANT UPDATE ON public.occasions TO authenticated');
+        assert.equal((await db.query('select get_ticket_layout_write_contract_v1() value')).rows[0].value.ready, false);
+        await db.query('ROLLBACK TO SAVEPOINT unsafe_artwork_grant');
+        await db.query('RELEASE SAVEPOINT unsafe_artwork_grant');
+        assert.equal((await db.query('select get_ticket_layout_write_contract_v1() value')).rows[0].value.ready, true);
         const stored = (
             await db.query(
                 'select title,data,features from public.occasions where id=$1',

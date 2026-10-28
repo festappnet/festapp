@@ -1,0 +1,75 @@
+{
+  "recordedAt": "2026-10-28T11:51:19.627414+00:00",
+  "status": "review_corrections_and_evidence_sent_waiting_for_make",
+  "ownerSelectedEmail": "info@festapp.net",
+  "emailVerificationConfirmed": true,
+  "makeZone": "eu1.make.com",
+  "organizationId": 9450617,
+  "teamId": 3387186,
+  "appName": "vstupenky-online-buoz5u",
+  "version": 1,
+  "connectionId": 12447881,
+  "backendRevision": "903145af65e4a3c1944464078c472bee26400ae9",
+  "fixtureRevision": "262c2ce4735c5c418a22c7541dfd82bd45b0a35a",
+  "paidCommitmentMade": false,
+  "supportQuestionSent": false,
+  "publishedByThisRun": true,
+  "reviewSubmittedByThisRun": true,
+  "reviewApproved": false,
+  "catalogueReleased": false,
+  "independentAccountDiscoveryAndConnectionVerified": false,
+  "gates": {
+    "G0": "closed_public_source_zero_fixed_cost_conclusion_see_publisher-costs",
+    "G1": "passed_real_native_oauth_refresh_rotation_revocation",
+    "G2": "closed_single_versioned_json_http_adapter",
+    "G3": "qualification_source_freeze_Publish_and_single_review_submission_done_external_approval_and_catalogue_release_pending"
+  },
+  "evidence": [
+    "publisher-costs.json",
+    "oauth-compatibility.json",
+    "http-deployment-20261028.json",
+    "server-tests-20261028.json",
+    "live-qualification-20261028.json",
+    "guardrails-20261028.json",
+    "refresh-20261028.json",
+    "revocation-20261028.json",
+    "source-readback-20261028.json",
+    "freeze-20261028.json",
+    "review-error-20261028.json",
+    "submission-20261028.json",
+    "review-response-20261028.json",
+    "review-qualification-20261028.json",
+    "source-readback-review-20261028.json"
+  ],
+  "scenarios": [
+    {
+      "id": 8226665,
+      "purpose": "all five modules",
+      "active": false,
+      "schedule": "on-demand"
+    },
+    {
+      "id": 8228261,
+      "purpose": "expected foreign URL error",
+      "active": false,
+      "schedule": "on-demand"
+    }
+  ],
+  "residualLimits": [
+    "Make displayed connection expiry rolls; actual server consent remains fixed seven days.",
+    "No destination app is configured; second-page failure was observed without external writes. No external rollback or exactly-once claim.",
+    "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
+    "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
+  ],
+  "nextAction": "Wait for the existing Make case 2351677 reply and human assessment of the corrections/clarifications. Preserve the same app/version and review. After approval/release, verify catalogue discovery and connection from another authorized account.",
+  "connectorSourceRevision": "1967445f97bb6a91b256672ec346eac06e9796c3",
+  "reviewCase": "2351677:2082001",
+  "reviewFollowupFormId": 191861,
+  "followupFormSubmitted": true,
+  "lastReviewFeedbackMessageId": "1a18239723a8b8c6",
+  "reviewFeedbackAddressed": true,
+  "reviewResponseSent": true,
+  "reviewResponseMessageId": "1a18258af1b4ad0b",
+  "lastPortalReviewStatus": "Changes required (AppBot); response sent, human decision pending",
+  "knowledge": "../review/REVIEW-LESSONS.md"
+}

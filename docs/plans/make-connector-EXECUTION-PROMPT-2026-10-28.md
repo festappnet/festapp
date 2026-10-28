@@ -1,0 +1,13 @@
+# Dokonči konektor vstupenky.online pro Make
+
+Pracuj v `/Users/miakh/source/festapp`. Dodrž AGENTS.md, CLAUDE.md a docs/architecture/ai_context.md. Přečti jednou celý autoritativní [plán](make-connector-plan-2026-10-28.md), potom pokračuj z aktuálních důkazů v `integrations/make/evidence/`. Historický výchozí stav: `preparation-20261028.json`. Účet je `info@festapp.net`; jeho existence nebyla potvrzená, izolované přihlášení zastavila Cloudflare verification.
+
+**Proveď celý postup, nezůstaň u přípravy:** ověř existující účet, jinak jej bezplatně zaregistruj; dokonči běžné e-mailové ověření, založ potřebnou organizaci/app, implementuj a otestuj konektor, proveď nezbytnou izolovanou OAuth konfiguraci a cílené nasazení Make části, potom Publish a jednu žádost o review. Řeš související připomínky. Uživatel tyto kroky schválil; neptej se znovu na stejný souhlas. Případnou povinnou partnerskou přihlášku zahrň, dobrovolné partnerství neodkládá vydání. Žádné pevné poplatky, předplatné ani automatické nákupy kreditů nejsou autorizované. Podmínky přijímej až po jejich ověření v tomto rozsahu; neuváděj nepravdivá prohlášení.
+
+Postupuj branami G0-G3 a etapami A-F. Nejprve účet/náklady a OAuth + jeden report, potom jediný zvolený transport a všechny moduly nad kanonickým `Operations.invoke`. Nekompatibilita obecného MCP Client nesmí zbytečně blokovat native app. Neduplikuj objednávky, peníze, projekce ani oprávnění. Zachovej ChatGPT klienta, DCR vypnuté a ostatní tenanty. Ověř celkový limit proti backendové stránce, chyby a revokaci, expiraci/refresh, osobní údaje a univerzální modul podle plánu.
+
+**Šetři tokeny a čas:** neopakuj hotovou rešerši ani nezměněné kontroly; čti cíleně, dávkuj nezávislé kroky, dokonči souvislou změnu a pak spusť příslušné testy. Pro auth/veřejný kontrakt platí standardní ověření, skipped SQL test není PASS. Znovu testuj jen změněné vstupy a povinné publikační gates. Nezakládej další plány ani alternativní implementace. Průběžně ukládej stručný stav a další krok. Rutinní nasazení deleguj dle AGENTS.md.
+
+Používej izolovaný browser na pozadí. Pokud lidská výzva vyžaduje zásah vlastníka, požádej jen o nezbytný krok, nepřebírej jeho okno a pokračuj nezávislou prací. Tokeny a hesla pouze v chráněném úložišti. Před opakováním externího zápisu ověř, zda už proběhl.
+
+Před Publish zafixuj zdroje/digest a čerstvé reviewer scénáře. Přijetí žádosti, schválení a veřejné vydání eviduj odděleně. Při čekání na Make zapiš přesnou závislost a skonči bez pollovací smyčky. Dokončeno je až dohledání a funkční připojení z jiného účtu; reportuj stručně skutečný stav, testy a zbývající externí krok.

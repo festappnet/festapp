@@ -21,7 +21,9 @@ export async function install(db){
  for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261024023000_confirmed_blueprint_seat_orders.sql','20261024024000_confirmed_blueprint_ticket_cancellation.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  const currentOwners=['blueprint/save.sql','eshop/materialize_ticket_products_internal_v1.sql','eshop/create_ticket_order.sql',
   'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql','eshop_orders/recalculate_order_payment_status.sql',
-  'inventory/apply_allocations.sql','inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql','eshop_waitlist/fakturoid_recovery.sql'];
+  'inventory/apply_allocations.sql','inventory/adjust_spot_capacity_for_pool.sql',
+  'forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql',
+  'emails/email_queue.sql','eshop_waitlist/fakturoid_recovery.sql'];
  for(const file of currentOwners){const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  // Every declaration in this cut is installed by postgres on production.
  // The disposable postgres role cannot replace supabase_admin-owned routines;

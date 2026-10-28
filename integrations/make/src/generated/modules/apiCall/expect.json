@@ -1,0 +1,89 @@
+[
+  {
+    "name": "url",
+    "label": "URL",
+    "type": "text",
+    "required": true,
+    "help": "Enter a path relative to https://mcp.vstupenky.online, for example /make/v1/operations/context.inspect. This API exposes five authorized read operations only."
+  },
+  {
+    "name": "method",
+    "label": "Method",
+    "type": "select",
+    "required": true,
+    "default": "POST",
+    "options": [
+      {
+        "label": "GET",
+        "value": "GET"
+      },
+      {
+        "label": "POST",
+        "value": "POST"
+      },
+      {
+        "label": "PUT",
+        "value": "PUT"
+      },
+      {
+        "label": "PATCH",
+        "value": "PATCH"
+      },
+      {
+        "label": "DELETE",
+        "value": "DELETE"
+      },
+      {
+        "label": "HEAD",
+        "value": "HEAD"
+      },
+      {
+        "label": "OPTIONS",
+        "value": "OPTIONS"
+      }
+    ],
+    "help": "The current read API supports POST; unsupported methods return HTTP 405."
+  },
+  {
+    "name": "headers",
+    "label": "Headers",
+    "type": "array",
+    "spec": [
+      {
+        "name": "key",
+        "label": "Key",
+        "type": "text"
+      },
+      {
+        "name": "value",
+        "label": "Value",
+        "type": "text"
+      }
+    ],
+    "help": "Supported additional headers: Accept, Content-Type and X-Request-ID. Authorization is supplied by the connection; authentication, host and pagination-control overrides are not forwarded."
+  },
+  {
+    "name": "qs",
+    "label": "Query string",
+    "type": "array",
+    "spec": [
+      {
+        "name": "key",
+        "label": "Key",
+        "type": "text"
+      },
+      {
+        "name": "value",
+        "label": "Value",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "name": "body",
+    "label": "Body",
+    "type": "text",
+    "default": "{}",
+    "help": "JSON object matching the canonical operation input. POST is the only transport method."
+  }
+]

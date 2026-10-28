@@ -1,0 +1,12 @@
+[
+  {
+    "name": "occasionId",
+    "label": "Event ID",
+    "type": "select",
+    "required": true,
+    "options": "rpc://occasions",
+    "mappable": true,
+    "help": "Select one consented event by its ID. Events with the same name remain separate.",
+    "mode": "edit"
+  }
+]

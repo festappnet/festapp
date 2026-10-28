@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-28T10:55:46.335Z",
+  "positive": {
+    "scenarioId": 8226665,
+    "executionId": "4bb48fe5253b4deaba6669ff4c6143fa",
+    "status": 1,
+    "modules": [
+      {
+        "id": 1,
+        "bundles": 1,
+        "executionId": "4bb48fe5253b4deaba6669ff4c6143fa"
+      },
+      {
+        "id": 3,
+        "bundles": 1,
+        "executionId": "4bb48fe5253b4deaba6669ff4c6143fa"
+      },
+      {
+        "id": 4,
+        "bundles": 52,
+        "executionId": "4bb48fe5253b4deaba6669ff4c6143fa"
+      },
+      {
+        "id": 5,
+        "bundles": 1,
+        "executionId": "4bb48fe5253b4deaba6669ff4c6143fa"
+      },
+      {
+        "id": 6,
+        "bundles": 1,
+        "executionId": "4bb48fe5253b4deaba6669ff4c6143fa"
+      }
+    ]
+  },
+  "secondPageFailure": {
+    "scenarioId": 8228261,
+    "executionId": "41dc6f96980844889e0624ffd97af9f6",
+    "status": 3,
+    "error": {
+      "message": "[409] PAGINATION_LIMIT_EXCEEDED",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "listOrders",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "logs": [
+      {
+        "imtId": "1793184909564_41dc6f96980844889e0624ffd97af9f6",
+        "timestamp": "2026-10-28T10:55:09.564Z",
+        "status": 3,
+        "error": {
+          "message": "[409] PAGINATION_LIMIT_EXCEEDED"
+        },
+        "size": 0,
+        "bundles": 1,
+        "scenarioId": 8228261,
+        "executionId": "41dc6f96980844889e0624ffd97af9f6",
+        "organizationId": 9450617,
+        "teamId": 3387186
+      }
+    ],
+    "injection": "Temporary private-module header requests page 51 only on the second page; server returns 409. Exact source restored in finally and read back before fresh positive run.",
+    "destinationWrites": 0,
+    "destinationConfigured": false
+  },
+  "guardrailScenario": {
+    "id": 8228261,
+    "mode": "on-demand",
+    "active": false,
+    "currentCase": "foreign URL rejected"
+  },
+  "qualificationScenario": {
+    "id": 8226665,
+    "mode": "on-demand",
+    "active": false
+  },
+  "privacy": "Only retained synthetic fixture data; no buyer contacts or authentication tokens in this receipt."
+}

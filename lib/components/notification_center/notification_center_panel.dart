@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -164,6 +165,31 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           ),
                         ),
                       ..._section(context, c.items),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 16, 8, 4),
+                        child: Text(
+                          s('lifecycleHint'),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                      if (c.truncated)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                          child: Text(
+                            s('historyLimit'),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ),
                       if (c.pageFailed) Text(s('refreshFailed')),
                       if (c.nextCursor != null)
                         TextButton(
@@ -210,6 +236,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     }
     var firstSection = true;
     for (final entry in byOccasion.entries) {
+      final unreadItems = entry.value.where(widget.controller.isUnread).toList();
+      final readItems = entry.value
+          .where((item) => !widget.controller.isUnread(item))
+          .toList();
       final first = entry.value.first;
       final occasion = widget.controller.occasions
           .where((item) => item['id'] == first.occasionId)
@@ -254,10 +284,37 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ],
               ),
             ),
-          for (final item in entry.value) _item(context, item),
+          if (unreadItems.isNotEmpty)
+            ..._readStateGroup(context, unreadItems, unread: true),
+          if (readItems.isNotEmpty)
+            ..._readStateGroup(context, readItems, unread: false),
         ],
       );
       firstSection = false;
+    }
+  }
+
+  Iterable<Widget> _readStateGroup(
+    BuildContext context,
+    List<NotificationItem> items, {
+    required bool unread,
+  }) sync* {
+    yield Padding(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+      child: Semantics(
+        header: true,
+        child: Text(
+          s(unread ? 'unreadHeading' : 'readHeading'),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
+    );
+    for (final item in items) {
+      yield _item(context, item);
     }
   }
 
@@ -284,10 +341,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   Widget _unreadDot(BuildContext context) => Padding(
     padding: EdgeInsets.zero,
     child: Tooltip(
-      message: s('newNotification'),
+      message: s('unreadNotification'),
       excludeFromSemantics: true,
       child: Semantics(
-        label: s('newNotification'),
+        label: s('unreadNotification'),
         child: Container(
           width: 8,
           height: 8,
@@ -362,6 +419,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   }
 
   Widget _item(BuildContext context, NotificationItem item) {
+    final customerOrder = const {
+      'order_created',
+      'order_cancelled',
+    }.contains(item.kind);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final unread = widget.controller.isUnread(item);
@@ -377,7 +438,9 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
         key: ValueKey('notification-item-${item.id}'),
-        color: Colors.transparent,
+        color: unread
+            ? colors.primary.withValues(alpha: .04)
+            : Colors.transparent,
         borderRadius: radius,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -386,7 +449,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               borderRadius: radius,
               onTap: presentation.hasDetail
                   ? () => widget.onDetail(item)
-                  : null,
+                  : unread ? () => ExceptionHandler.guard(context, futureFunction: () => widget.controller.markRead(item)) : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
@@ -424,76 +487,89 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (item.kind == 'order_created' &&
-                              presentation.previewNames.isNotEmpty)
+                          Text(
+                            customerOrder
+                                ? s(
+                                    item.kind == 'order_created'
+                                        ? 'newOrders'
+                                        : 'cancelledOrders',
+                                  )
+                                : presentation.title,
+                            key: ValueKey('notification-action-${item.id}'),
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: unread
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                )
+                                .copyWith(
+                                  color: unread
+                                      ? colors.onSurface
+                                      : colors.onSurfaceVariant,
+                                  height: 1.3,
+                                  letterSpacing: 0,
+                                ),
+                          ),
+                          if (customerOrder &&
+                              presentation.previewNames.isNotEmpty) ...[
+                            const SizedBox(height: 4),
                             _customerPreview(
                               context,
                               presentation,
-                              theme.textTheme.bodyLarge
+                              theme.textTheme.bodyMedium
                                   ?.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: unread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  )
-                                  .copyWith(
-                                    color: unread
-                                        ? colors.onSurface
-                                        : colors.onSurfaceVariant,
-                                    height: 1.3,
+                                    color: colors.onSurfaceVariant,
+                                    height: 1.4,
                                     letterSpacing: 0,
-                                  ),
-                            )
-                          else
-                            Text(
-                              presentation.title,
-                              style: theme.textTheme.bodyLarge
-                                  ?.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: unread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
                                   )
-                                  .copyWith(
-                                    color: unread
-                                        ? colors.onSurface
-                                        : colors.onSurfaceVariant,
-                                    height: 1.3,
-                                    letterSpacing: 0,
-                                  ),
+                                  .copyWith(fontSize: 15),
                             ),
-                          if (item.kind == 'order_created') ...[
+                          ],
+                          if (customerOrder) ...[
                             const SizedBox(height: 4),
-                            Text(
-                              [
-                                if (day != null)
-                                  NotificationCenterTime.dayHeading(
-                                    day,
-                                    locale,
-                                    now:
-                                        widget.controller.snapshotDay ??
-                                        widget.controller.snapshotAt,
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  if (day != null)
+                                    TextSpan(
+                                      text:
+                                          '${NotificationCenterTime.dayHeading(day, locale, now: widget.controller.snapshotDay ?? widget.controller.snapshotAt)} · ',
+                                    ),
+                                  TextSpan(
+                                    text: [
+                                      NotificationCenterStrings.orders(
+                                        item.data['activityCount'] as int? ?? 1,
+                                        locale: locale,
+                                      ),
+                                      if (item.data['placeCount'] is int)
+                                        NotificationCenterStrings.places(
+                                          item.data['placeCount'] as int,
+                                          locale: locale,
+                                        )
+                                      else if (!item.isSummary &&
+                                          item.data['count'] is int &&
+                                          ((item.data['count'] as int) > 1 ||
+                                              (item.data['formContext']
+                                                      as Map?)?['allowsMultiple'] ==
+                                                  true))
+                                        NotificationCenterStrings.places(
+                                          item.data['count'] as int,
+                                          locale: locale,
+                                        )
+                                      else if (item.data['allowsMultiple'] ==
+                                              true ||
+                                          (item.data['formContext']
+                                                  as Map?)?['allowsMultiple'] ==
+                                              true)
+                                        s('placesUnavailable'),
+                                    ].join(' · '),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                NotificationCenterStrings.orders(
-                                  item.data['activityCount'] as int? ?? 1,
-                                  locale: locale,
-                                ),
-                                if (item.data['placeCount'] is int)
-                                  NotificationCenterStrings.places(
-                                    item.data['placeCount'] as int,
-                                    locale: locale,
-                                  )
-                                else if (!item.isSummary &&
-                                    item.data['count'] is int &&
-                                    ((item.data['count'] as int) > 1 ||
-                                        (item.data['formContext']
-                                                as Map?)?['allowsMultiple'] ==
-                                            true))
-                                  NotificationCenterStrings.places(
-                                    item.data['count'] as int,
-                                    locale: locale,
-                                  ),
-                              ].join(' · '),
+                                ],
+                              ),
                               key: ValueKey('notification-age-${item.id}'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontSize: 13,
@@ -508,6 +584,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ] else if (item.isSummary &&
+                              (item.data['activityCount'] as int) > 1 &&
                               presentation.previewNames.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             if (details.isNotEmpty)
@@ -553,7 +630,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               ),
                             ),
                           ],
-                          if (day != null && item.kind != 'order_created') ...[
+                          if (day != null && !customerOrder) ...[
                             const SizedBox(height: 4),
                             Text(
                               NotificationCenterTime.dayHeading(
@@ -580,13 +657,16 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                         ],
                       ),
                     ),
-                    if (unread) ...[
-                      const SizedBox(width: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: _unreadDot(context),
-                      ),
-                    ],
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 8,
+                      child: unread
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: _unreadDot(context),
+                            )
+                          : null,
+                    ),
                   ],
                 ),
               ),

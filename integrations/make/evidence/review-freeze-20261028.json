@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-28T11:47:06.042176+00:00",
+  "previousPublishedSourceRevision": "5b94f8fe28505a66495117996eb568bfbf853668",
+  "reviewCase": "2351677:2082001",
+  "generatedManifestSha256": "9a46cc151a1808cfdaa68f03fc772e5c2ced2b3450f7d82d5ce3e0a5e985ef2d",
+  "sdkSectionsMatched": 34,
+  "backendUnchanged": true,
+  "backendRevision": "903145af65e4a3c1944464078c472bee26400ae9",
+  "freshQualificationExecutionId": "530ff7fbc73a44c390b45d7a90467536",
+  "allFiveModulesPassed": true,
+  "mappingConsumersPassed": 2,
+  "boundaryCasesPassed": 6,
+  "bothScenariosInactive": true,
+  "newReviewRequest": false
+}

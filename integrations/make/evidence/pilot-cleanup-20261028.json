@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-28T10:57:03.861Z",
+  "actor": "existing ChatGPT synthetic reviewer (not Make reviewer)",
+  "revokedMakePilotGrants": 1,
+  "remainingMakePilotGrants": 0,
+  "preservedOtherGrants": [
+    {
+      "client": "ChatGPT",
+      "expiresAt": "2026-11-03T02:28:14.758Z"
+    },
+    {
+      "client": "ChatGPT",
+      "expiresAt": "2026-11-03T02:25:03.843Z"
+    },
+    {
+      "client": "ChatGPT",
+      "expiresAt": "2026-11-03T02:09:46.131Z"
+    },
+    {
+      "client": "ChatGPT",
+      "expiresAt": "2026-11-03T01:57:41.799Z"
+    }
+  ],
+  "accountMembershipsChanged": false,
+  "orderDataChanged": false
+}

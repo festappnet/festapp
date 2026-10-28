@@ -1,0 +1,8 @@
+{
+  "name": "getOrder",
+  "label": "Get an order",
+  "description": "Retrieves an order from a selected event.",
+  "typeId": 4,
+  "connection": "vstupenky-online-buoz5u",
+  "crud": "read"
+}

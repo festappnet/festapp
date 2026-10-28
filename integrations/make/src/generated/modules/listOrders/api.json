@@ -1,0 +1,30 @@
+{
+  "url": "/make/v1/operations/orders.list",
+  "method": "POST",
+  "type": "json",
+  "body": {
+    "occasionId": "{{parameters.occasionId}}",
+    "limit": 50,
+    "state": "{{ifempty(parameters.state, omit)}}",
+    "search": "{{ifempty(parameters.search, omit)}}"
+  },
+  "response": {
+    "iterate": "{{body.data.orders}}",
+    "output": "{{item}}",
+    "limit": "{{if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, 3200), 10)}}"
+  },
+  "headers": {
+    "x-festapp-make-page": "{{ifempty(pagination.page, 1)}}",
+    "x-festapp-make-total-limit": "{{parameters.limit}}"
+  },
+  "pagination": {
+    "condition": "{{body.data.nextCursor != null}}",
+    "body": {
+      "occasionId": "{{parameters.occasionId}}",
+      "limit": 50,
+      "state": "{{ifempty(parameters.state, omit)}}",
+      "search": "{{ifempty(parameters.search, omit)}}",
+      "before": "{{body.data.nextCursor}}"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "salesReport",
+  "label": "Get an event sales summary",
+  "description": "Retrieves a sales summary for a selected event.",
+  "typeId": 4,
+  "connection": "vstupenky-online-buoz5u",
+  "crud": "read"
+}

@@ -1,0 +1,11 @@
+{
+  "url": "/make/v1/operations/access.inspect",
+  "method": "POST",
+  "type": "json",
+  "body": {},
+  "response": {
+    "iterate": "{{body.data.occasions}}",
+    "output": "{{item}}",
+    "limit": "{{if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, 3200), 10)}}"
+  }
+}

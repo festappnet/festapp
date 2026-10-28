@@ -1,0 +1,8 @@
+{
+  "id": 1072614,
+  "title": "MCP demo - Testovací ples (leden)",
+  "unitId": 1010,
+  "capabilities": {
+    "ticket_layouts.read": false
+  }
+}

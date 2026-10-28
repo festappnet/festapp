@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-28T11:04:42.723Z",
+  "scenarioId": 8228261,
+  "executionId": "426f2f338ac14df18a8e0ecca072588f",
+  "status": 3,
+  "error": {
+    "message": "[403] FORBIDDEN"
+  },
+  "sourceCommit": "5b94f8fe2",
+  "active": false
+}

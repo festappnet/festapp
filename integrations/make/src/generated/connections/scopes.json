@@ -1,0 +1,6 @@
+{
+  "openid": "openid",
+  "offline_access": "offline_access",
+  "festapp:ticket-layouts:read": "festapp:ticket-layouts:read",
+  "festapp:orders:read": "festapp:orders:read"
+}

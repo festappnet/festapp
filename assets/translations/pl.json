@@ -2359,6 +2359,14 @@
     "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   },
   "NotificationCenter": {
+    "unreadHeading": "Nieprzeczytane",
+    "readHeading": "Przeczytane",
+    "unreadNotification": "Nieprzeczytane powiadomienie",
+    "lifecycleHint": "Aktywność z ostatnich 30 dni. Tylko otwarty wpis jest oznaczany jako przeczytany. Aktywne błędy pozostają do naprawy.",
+    "historyLimit": "Do 100 powiadomień. Starsze znajdziesz w zamówieniach i historii e-maili.",
+    "newOrders": "Nowe zamówienia",
+    "cancelledOrders": "Anulowane zamówienia",
+    "placesUnavailable": "Liczba miejsc jest niedostępna",
     "orders": {
       "one": "{count} zamówienie",
       "few": "{count} zamówienia",

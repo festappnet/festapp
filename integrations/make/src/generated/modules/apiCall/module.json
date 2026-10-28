@@ -1,0 +1,7 @@
+{
+  "name": "apiCall",
+  "label": "Make an API call",
+  "description": "Performs an arbitrary authorized API call.",
+  "typeId": 12,
+  "connection": "vstupenky-online-buoz5u"
+}

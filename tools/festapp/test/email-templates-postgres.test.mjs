@@ -9,7 +9,10 @@ const connection=process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 // New evidence must never silently skip the actual database contract.
 const options={skip:!connection};
 const code='TICKET_ORDER_CONFIRMATION';
-async function install(db){await db.query(await readFile(new URL('../../../supabase/migrations/20261026170000_email_template_commands.sql',import.meta.url),'utf8'));}
+async function install(db){await db.query(await readFile(new URL('../../../supabase/migrations/20261026170000_email_template_commands.sql',import.meta.url),'utf8'));
+ // This shared receipt owner gains additional command families in later
+ // migrations. Preserve those families when testing current source parity.
+ await db.query(await readFile(new URL('../../../database/functions/units/begin_unit_client_mutation_v1.sql',import.meta.url),'utf8'));}
 async function setup(t){const db=await openDisposableDatabase(connection);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);
  await db.query("insert into email_templates(code,subject,html,title,organization) values($1,'Org subject','<p>Org body {{name}}</p>','Org template',$2)",[code,f.org]);
  return {db,f};}

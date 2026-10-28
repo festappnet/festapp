@@ -4377,6 +4377,14 @@
     "duplicateBlock": "Blok {{tickets}} lze použít pouze jednou."
   },
   "NotificationCenter": {
+    "unreadHeading": "Nepřečtené",
+    "readHeading": "Přečtené",
+    "unreadNotification": "Nepřečtená notifikace",
+    "lifecycleHint": "Aktivita za 30 dní. Jako přečtená se označí jen položka, kterou otevřete. Aktivní chyby zůstávají do opravy.",
+    "historyLimit": "Zobrazeno nejvýše 100 oznámení. Starší najdete v objednávkách a historii e-mailů.",
+    "newOrders": "Nové objednávky",
+    "cancelledOrders": "Zrušené objednávky",
+    "placesUnavailable": "Počet míst není dostupný",
     "orders": {
       "one": "{count} objednávka",
       "few": "{count} objednávky",

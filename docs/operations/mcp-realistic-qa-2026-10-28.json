@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-28",
+  "result": "passed - all 320 local MCP tests; no skipped tests",
+  "runtime": "v24.20.0",
+  "scope": "local disposable MCP testing; no production operations, email delivery or paid model evaluation",
+  "initialSuite": {
+    "tests": 320,
+    "passed": 286,
+    "failed": 34,
+    "skipped": 0
+  },
+  "finalSuite": {
+    "tests": 320,
+    "passed": 320,
+    "failed": 0,
+    "skipped": 0
+  },
+  "affectedSuite": {
+    "tests": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "files": [
+      "orders-postgres",
+      "forms-completion-postgres",
+      "forms-postgres",
+      "forms-settings-postgres",
+      "seat-orders-postgres",
+      "seat-cancellations-postgres",
+      "blueprint-authoring-postgres"
+    ]
+  },
+  "realAuthJourney": {
+    "fixture": "festapp-authz-20261020",
+    "actualAuth": true,
+    "actualEdgeHandler": true,
+    "actualCanonicalSql": true,
+    "independentSession": true,
+    "allowedActor": true,
+    "deniedActor": true,
+    "selectedOccasionOnly": true,
+    "readTools": 6,
+    "emptyReportAndPage": true,
+    "populatedOrders": 57,
+    "distinctValidTickets": 110,
+    "waitingTickets": 2,
+    "completePagination": true,
+    "exactSymbolPastContactMatches": true,
+    "publicDetailPrivacy": true,
+    "invalidInputRejected": true,
+    "receivedMoneySeparatedFromOrderValue": true,
+    "parallelReads": 2,
+    "burstRequests": 6,
+    "throttlingRecovery": true,
+    "liveRightsRemoval": true,
+    "issuerRevocation": true,
+    "realChatgptAcceptance": false,
+    "transportBoundary": "loopback HTTP; Edge HTTPS issuer config maps to the same loopback broker only in the local runner"
+  },
+  "interpretation": "All five previously failing gates pass. Current canonical SQL prerequisites and the current artwork readiness probe are installed inside test transactions without editing historical migrations or weakening checks. The ACL test retains exact principal/privilege comparisons and accounts explicitly for reviewed later migrations and canonical bootstrap owner transfers. Local completion does not establish production readiness or actual ChatGPT acceptance.",
+  "localFixture": {
+    "project": "festapp-authz-20261020",
+    "port": 61022,
+    "initialMaxMigration": "20261023220000",
+    "finalMaxMigration": "20261023234000",
+    "cron": "off",
+    "email": "all paused, worker_url null",
+    "pilotOrganizationsAfterCleanup": 0,
+    "maintenance": "Aligned public non-extension function owners to postgres using canonical bootstrap policy. Attempted canonical upgrade-local; it applied missing migrations through 20261023234000, then stopped on existing notification_center_activation at 20261024010000. No migration ledger was forged and no existing schema or database was dropped."
+  },
+  "commands": {
+    "fullSuite": "pnpm --dir tools/festapp test",
+    "affectedSuite": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/orders-postgres.test.mjs test/forms-completion-postgres.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/seat-orders-postgres.test.mjs test/seat-cancellations-postgres.test.mjs test/blueprint-authoring-postgres.test.mjs",
+    "journey": "pnpm --dir tools/festapp exec node test/local/pilot.e2e.mjs",
+    "environment": "Node 24; FESTAPP_AUTHORIZATION_DATABASE_URL and FESTAPP_MCP_TEST_DATABASE_URL point to the guarded local 61022 database; FESTAPP_MCP_LOCAL_TEMPLATE_PROJECT=festapp-notification-feed-e2e-20261026"
+  },
+  "logs": [
+    "/tmp/festapp-mcp-deep-tests-complete.log",
+    "/tmp/festapp-mcp-deep-affected.log",
+    "/tmp/festapp-mcp-deep-real-auth.log",
+    "/tmp/festapp-mcp-local-upgrade.log",
+    "/tmp/festapp-mcp-resolved-full.log"
+  ],
+  "sourceSha256": {
+    "tools/festapp/test/configuration-postgres.test.mjs": "3b51f2d37251065be2d4add748582f6257aa0c2a144fcc66585410c8f5bb9699",
+    "tools/festapp/test/form-fixtures.mjs": "5476ef2dc74bc8bb2b747905d9999a1b451b281a7a4608d87e2adc3276048e2b",
+    "tools/festapp/test/seat-fixtures.mjs": "c5999ff688330ab709aaca0f9ca80f8ba40d00108b82518ef878829ec53b7219",
+    "tools/festapp/test/orders-postgres.test.mjs": "889dd2eb25c1a530aee36d58bba7dd6200f724a1fe08d930d8a94b06271391ea",
+    "tools/festapp/test/local/pilot.e2e.mjs": "4b1f2bbc35c9813c01f03d1b33a5e5e51201bc379e6f6c6e8293b738eaa2ee0f",
+    "tools/festapp/test/local/README.md": "9050e2bd8c65c78acd9dbbf3bf95fd820a85235645b15a5d04f57ed1afb86fea",
+    "tools/festapp/test/canonical-authorization-postgres.test.mjs": "b25734acefdb277006c68d123a37639518b73110970c41209a4775384cbc0194",
+    "tools/festapp/test/email-templates-postgres.test.mjs": "3119972f434f85bcec31832e0dd63721b417da8cb5850706b7739233c3e3abdd",
+    "tools/festapp/test/layout-postgres.test.mjs": "f0e43ad44fd27cdff66b9dff5b0d2ffd778ffd19a06e331bee75ec405630e874",
+    "tools/festapp/test/standing-inventory-postgres.test.mjs": "62db4b39df178b904e5d6099263f85974d851b4e0f943b4743d484ccb1f0369a"
+  },
+  "previousSuite": {
+    "tests": 320,
+    "passed": 315,
+    "failed": 5,
+    "skipped": 0
+  },
+  "resolvedFailures": [
+    {
+      "location": "test/canonical-authorization-postgres.test.mjs:607:1",
+      "test": "full ACL comparison preserves tables and all unrelated function grants (253.646667ms)",
+      "failure": "AssertionError [ERR_ASSERTION]: Only four legacy DELETE grants are removed; exact approved private tables preserve verified owner/service grants"
+    },
+    {
+      "location": "test/configuration-postgres.test.mjs:105:1",
+      "test": "SDK lists all eight configuration tools and executes real versioned save snapshots (73.062667ms)",
+      "failure": "AssertionError [ERR_ASSERTION]: settings owner changes must retain the ticket-layout write contract"
+    },
+    {
+      "location": "test/email-templates-postgres.test.mjs:106:1",
+      "test": "every new/changed SQL owner matches the forward source contract and private helpers are inaccessible (34.260667ms)",
+      "failure": "error: ASSERTION FAILED: current SQL source parity: public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)"
+    },
+    {
+      "location": "test/layout-postgres.test.mjs:11:1",
+      "test": "MCP preview/save/replay/conflict uses the real canonical PostgreSQL owner as authenticated (868.39175ms)",
+      "failure": "Error [ProtocolError]: Tool festapp_ticket_layouts_save not found"
+    },
+    {
+      "location": "test/standing-inventory-postgres.test.mjs:159:1",
+      "test": "runtime source parity and grants for the shared inventory owners (21.996667ms)",
+      "failure": "error: ASSERTION FAILED: current SQL source parity: public.save_inventory_pool_internal(jsonb)"
+    }
+  ],
+  "remainingFailures": [],
+  "resolution": {
+    "changes": [
+      "Layout/settings fixtures install the current canonical readiness probe after historical snapshots; the actual SQL probe still rejects an injected direct UPDATE grant and returns ready after savepoint rollback.",
+      "Email-template fixture restores the current shared unit receipt owner after its older migration snapshot.",
+      "Standing inventory fixture restores the current pool/resource owners, including later ticket-batch guards.",
+      "ACL regression expects the explicitly added notification organization table, two reviewed service SELECT grants, two locale-aware signature replacements and exact later function ACL changes.",
+      "The historical function ACL snapshot is normalized only for the canonical bootstrap transfer from supabase_admin to postgres. All API grants and privileges remain checked.",
+      "The guarded local notification_center_organizations table has RLS enabled and grants to PUBLIC/anon/authenticated/service_role revoked, matching canonical schema."
+    ],
+    "checks": {
+      "fullSuite": {
+        "tests": 320,
+        "passed": 320,
+        "failed": 0,
+        "skipped": 0
+      },
+      "diffCheck": "passed",
+      "cron": "off",
+      "email": "all paused and worker_url null",
+      "authenticatedOccasionUpdate": false,
+      "serviceRoleNotificationOrganizationSelect": false
+    },
+    "fullSuiteLog": "/tmp/festapp-mcp-resolved-full.log",
+    "productionChanged": false
+  },
+  "publicationValidation": {
+    "baseMainSha": "374443dc48ca57e961341e05fcc9e047f0172790",
+    "tests": 320,
+    "passed": 320,
+    "failed": 0,
+    "skipped": 0,
+    "log": "/tmp/festapp-mcp-publish-main-tests.log",
+    "scope": "clean worktree on current authoritative main"
+  }
+}

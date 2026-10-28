@@ -1,0 +1,949 @@
+{
+  "marker": "make-review-20261028",
+  "unitId": 1011,
+  "occasionIds": [
+    1072620,
+    1072621,
+    1072622
+  ],
+  "orders": [
+    {
+      "id": 6841,
+      "occasionId": 1072620,
+      "symbol": "9I7C2J6J5F",
+      "state": "ordered"
+    },
+    {
+      "id": 6842,
+      "occasionId": 1072620,
+      "symbol": "2P7G9I5G8A",
+      "state": "paid"
+    },
+    {
+      "id": 6843,
+      "occasionId": 1072620,
+      "symbol": "6H1R3P7L5V",
+      "state": "storno"
+    },
+    {
+      "id": 6844,
+      "occasionId": 1072620,
+      "symbol": "3G7Q7N7A5E",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6845,
+      "occasionId": 1072620,
+      "symbol": "6K4R9C7A4E",
+      "state": "ordered"
+    },
+    {
+      "id": 6846,
+      "occasionId": 1072620,
+      "symbol": "2A3M9I5H8N",
+      "state": "paid"
+    },
+    {
+      "id": 6847,
+      "occasionId": 1072620,
+      "symbol": "7R7E1F1I1G",
+      "state": "storno"
+    },
+    {
+      "id": 6848,
+      "occasionId": 1072620,
+      "symbol": "3V8J5K7Q3Q",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6849,
+      "occasionId": 1072620,
+      "symbol": "7R1R4P6Q3A",
+      "state": "ordered"
+    },
+    {
+      "id": 6850,
+      "occasionId": 1072620,
+      "symbol": "5X1A2M7L1R",
+      "state": "paid"
+    },
+    {
+      "id": 6851,
+      "occasionId": 1072620,
+      "symbol": "8H4R4H9K4I",
+      "state": "storno"
+    },
+    {
+      "id": 6852,
+      "occasionId": 1072620,
+      "symbol": "6I6X9U7A1E",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6853,
+      "occasionId": 1072620,
+      "symbol": "9E8W3E6G8N",
+      "state": "ordered"
+    },
+    {
+      "id": 6854,
+      "occasionId": 1072620,
+      "symbol": "7E9V5A7Y7A",
+      "state": "paid"
+    },
+    {
+      "id": 6855,
+      "occasionId": 1072620,
+      "symbol": "8L1F1Y3X5E",
+      "state": "storno"
+    },
+    {
+      "id": 6856,
+      "occasionId": 1072620,
+      "symbol": "9I2L9U4G9U",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6857,
+      "occasionId": 1072620,
+      "symbol": "1H4M2F3Y2U",
+      "state": "ordered"
+    },
+    {
+      "id": 6858,
+      "occasionId": 1072620,
+      "symbol": "7L2K7E2U7I",
+      "state": "paid"
+    },
+    {
+      "id": 6859,
+      "occasionId": 1072620,
+      "symbol": "5M8N9Y8K2V",
+      "state": "storno"
+    },
+    {
+      "id": 6860,
+      "occasionId": 1072620,
+      "symbol": "6J2E4V9X3W",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6861,
+      "occasionId": 1072620,
+      "symbol": "3R9K8I5E3U",
+      "state": "ordered"
+    },
+    {
+      "id": 6862,
+      "occasionId": 1072620,
+      "symbol": "5J6W4J2M5U",
+      "state": "paid"
+    },
+    {
+      "id": 6863,
+      "occasionId": 1072620,
+      "symbol": "9F6Y3R6R9A",
+      "state": "storno"
+    },
+    {
+      "id": 6864,
+      "occasionId": 1072620,
+      "symbol": "5K7P3V5F7C",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6865,
+      "occasionId": 1072620,
+      "symbol": "5H4F7E3L7E",
+      "state": "ordered"
+    },
+    {
+      "id": 6866,
+      "occasionId": 1072620,
+      "symbol": "2N6H2E8V8L",
+      "state": "paid"
+    },
+    {
+      "id": 6867,
+      "occasionId": 1072620,
+      "symbol": "8Y3W3X8U3A",
+      "state": "storno"
+    },
+    {
+      "id": 6868,
+      "occasionId": 1072620,
+      "symbol": "8Q2Y7L1G4Q",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6869,
+      "occasionId": 1072620,
+      "symbol": "2A4I6R3G5P",
+      "state": "ordered"
+    },
+    {
+      "id": 6870,
+      "occasionId": 1072620,
+      "symbol": "4Y7W2H7J5A",
+      "state": "paid"
+    },
+    {
+      "id": 6871,
+      "occasionId": 1072620,
+      "symbol": "2U4E7C5N4M",
+      "state": "storno"
+    },
+    {
+      "id": 6872,
+      "occasionId": 1072620,
+      "symbol": "8K7L5A5K4M",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6873,
+      "occasionId": 1072620,
+      "symbol": "4U9F3K2Q4L",
+      "state": "ordered"
+    },
+    {
+      "id": 6874,
+      "occasionId": 1072620,
+      "symbol": "1E5P1X9L7V",
+      "state": "paid"
+    },
+    {
+      "id": 6875,
+      "occasionId": 1072620,
+      "symbol": "9K3K1N1K9V",
+      "state": "storno"
+    },
+    {
+      "id": 6876,
+      "occasionId": 1072620,
+      "symbol": "7Q8V4I5R1J",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6877,
+      "occasionId": 1072620,
+      "symbol": "4J9G1Q6I4A",
+      "state": "ordered"
+    },
+    {
+      "id": 6878,
+      "occasionId": 1072620,
+      "symbol": "3F7A6Y5W1N",
+      "state": "paid"
+    },
+    {
+      "id": 6879,
+      "occasionId": 1072620,
+      "symbol": "7G2N6A5P3G",
+      "state": "storno"
+    },
+    {
+      "id": 6880,
+      "occasionId": 1072620,
+      "symbol": "1X9K1X9Y4R",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6881,
+      "occasionId": 1072620,
+      "symbol": "1Q8I5R5Y6W",
+      "state": "ordered"
+    },
+    {
+      "id": 6882,
+      "occasionId": 1072620,
+      "symbol": "1P8R1Y3A7X",
+      "state": "paid"
+    },
+    {
+      "id": 6883,
+      "occasionId": 1072620,
+      "symbol": "5V1N2N9J5R",
+      "state": "storno"
+    },
+    {
+      "id": 6884,
+      "occasionId": 1072620,
+      "symbol": "9L4N6L2K5J",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6885,
+      "occasionId": 1072620,
+      "symbol": "7N2A8E9G5I",
+      "state": "ordered"
+    },
+    {
+      "id": 6886,
+      "occasionId": 1072620,
+      "symbol": "3I7P9U7G1G",
+      "state": "paid"
+    },
+    {
+      "id": 6887,
+      "occasionId": 1072620,
+      "symbol": "1G6R6L4Y1Y",
+      "state": "storno"
+    },
+    {
+      "id": 6888,
+      "occasionId": 1072620,
+      "symbol": "5G1N8U6E1N",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6889,
+      "occasionId": 1072620,
+      "symbol": "1M3P5J8Y4H",
+      "state": "ordered"
+    },
+    {
+      "id": 6890,
+      "occasionId": 1072620,
+      "symbol": "9G6I5R9K9K",
+      "state": "paid"
+    },
+    {
+      "id": 6891,
+      "occasionId": 1072620,
+      "symbol": "8V9K6F6E5K",
+      "state": "storno"
+    },
+    {
+      "id": 6892,
+      "occasionId": 1072620,
+      "symbol": "3M8H7E8A7N",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6893,
+      "occasionId": 1072621,
+      "symbol": "9X7U8G5G1L",
+      "state": "ordered"
+    },
+    {
+      "id": 6894,
+      "occasionId": 1072621,
+      "symbol": "3H8E4Y4J7F",
+      "state": "paid"
+    },
+    {
+      "id": 6895,
+      "occasionId": 1072621,
+      "symbol": "9M6J3J3U4J",
+      "state": "storno"
+    },
+    {
+      "id": 6896,
+      "occasionId": 1072621,
+      "symbol": "4A9A7A2P1X",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6897,
+      "occasionId": 1072621,
+      "symbol": "2U4X1C6H5Y",
+      "state": "ordered"
+    },
+    {
+      "id": 6898,
+      "occasionId": 1072621,
+      "symbol": "8X2U4H3G1M",
+      "state": "paid"
+    },
+    {
+      "id": 6899,
+      "occasionId": 1072621,
+      "symbol": "5R3N5K2Q1I",
+      "state": "storno"
+    },
+    {
+      "id": 6900,
+      "occasionId": 1072621,
+      "symbol": "5C3P2H2U7F",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6901,
+      "occasionId": 1072621,
+      "symbol": "2H2K2E6L6H",
+      "state": "ordered"
+    },
+    {
+      "id": 6902,
+      "occasionId": 1072621,
+      "symbol": "7V1A5U5X6K",
+      "state": "paid"
+    },
+    {
+      "id": 6903,
+      "occasionId": 1072621,
+      "symbol": "6Y1P3U9U5W",
+      "state": "storno"
+    },
+    {
+      "id": 6904,
+      "occasionId": 1072621,
+      "symbol": "3L6J3G2E8A",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6905,
+      "occasionId": 1072621,
+      "symbol": "6Y8P9Y7G5Y",
+      "state": "ordered"
+    },
+    {
+      "id": 6906,
+      "occasionId": 1072621,
+      "symbol": "9L9H3K6U7Y",
+      "state": "paid"
+    },
+    {
+      "id": 6907,
+      "occasionId": 1072621,
+      "symbol": "1U8J3V7F7L",
+      "state": "storno"
+    },
+    {
+      "id": 6908,
+      "occasionId": 1072621,
+      "symbol": "4P9I7C5I3F",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6909,
+      "occasionId": 1072621,
+      "symbol": "9H9J5X6V4C",
+      "state": "ordered"
+    },
+    {
+      "id": 6910,
+      "occasionId": 1072621,
+      "symbol": "9W2J4Q9I7K",
+      "state": "paid"
+    },
+    {
+      "id": 6911,
+      "occasionId": 1072621,
+      "symbol": "1F3K2V8J5H",
+      "state": "storno"
+    },
+    {
+      "id": 6912,
+      "occasionId": 1072621,
+      "symbol": "2P7C6P5A4F",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6913,
+      "occasionId": 1072621,
+      "symbol": "7M5U9N8K7R",
+      "state": "ordered"
+    },
+    {
+      "id": 6914,
+      "occasionId": 1072621,
+      "symbol": "8M1K5L7H5F",
+      "state": "paid"
+    },
+    {
+      "id": 6915,
+      "occasionId": 1072621,
+      "symbol": "5N4A7C2K9W",
+      "state": "storno"
+    },
+    {
+      "id": 6916,
+      "occasionId": 1072621,
+      "symbol": "8V6K1F7R6I",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6917,
+      "occasionId": 1072621,
+      "symbol": "1G9W6R3P7K",
+      "state": "ordered"
+    },
+    {
+      "id": 6918,
+      "occasionId": 1072621,
+      "symbol": "2N9E1F9U7W",
+      "state": "paid"
+    },
+    {
+      "id": 6919,
+      "occasionId": 1072621,
+      "symbol": "2I5K3V8A2J",
+      "state": "storno"
+    },
+    {
+      "id": 6920,
+      "occasionId": 1072621,
+      "symbol": "1M7C8G7J4H",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6921,
+      "occasionId": 1072621,
+      "symbol": "5P4K2Q8H1M",
+      "state": "ordered"
+    },
+    {
+      "id": 6922,
+      "occasionId": 1072621,
+      "symbol": "6I9X4W8G2P",
+      "state": "paid"
+    },
+    {
+      "id": 6923,
+      "occasionId": 1072621,
+      "symbol": "6P9U3Y9I4F",
+      "state": "storno"
+    },
+    {
+      "id": 6924,
+      "occasionId": 1072621,
+      "symbol": "4X6R3H8H9H",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6925,
+      "occasionId": 1072621,
+      "symbol": "2F6Y3N9N9P",
+      "state": "ordered"
+    },
+    {
+      "id": 6926,
+      "occasionId": 1072621,
+      "symbol": "1A2L3F3W3F",
+      "state": "paid"
+    },
+    {
+      "id": 6927,
+      "occasionId": 1072621,
+      "symbol": "4L5X6W8F8R",
+      "state": "storno"
+    },
+    {
+      "id": 6928,
+      "occasionId": 1072621,
+      "symbol": "6U5P4L6J5G",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6929,
+      "occasionId": 1072621,
+      "symbol": "7K5M9I4V2X",
+      "state": "ordered"
+    },
+    {
+      "id": 6930,
+      "occasionId": 1072621,
+      "symbol": "6X1C4Y1A6Q",
+      "state": "paid"
+    },
+    {
+      "id": 6931,
+      "occasionId": 1072621,
+      "symbol": "2P5L9I9E6W",
+      "state": "storno"
+    },
+    {
+      "id": 6932,
+      "occasionId": 1072621,
+      "symbol": "6X4L3P1P6M",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6933,
+      "occasionId": 1072621,
+      "symbol": "2W2X4M1J8H",
+      "state": "ordered"
+    },
+    {
+      "id": 6934,
+      "occasionId": 1072621,
+      "symbol": "2P7F9N6L8C",
+      "state": "paid"
+    },
+    {
+      "id": 6935,
+      "occasionId": 1072621,
+      "symbol": "8P6M2H2V9V",
+      "state": "storno"
+    },
+    {
+      "id": 6936,
+      "occasionId": 1072621,
+      "symbol": "1C8W5V3W3W",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6937,
+      "occasionId": 1072621,
+      "symbol": "9Y6C7G9X3U",
+      "state": "ordered"
+    },
+    {
+      "id": 6938,
+      "occasionId": 1072621,
+      "symbol": "4M1G3M7Y7M",
+      "state": "paid"
+    },
+    {
+      "id": 6939,
+      "occasionId": 1072621,
+      "symbol": "5X5R1A8W4C",
+      "state": "storno"
+    },
+    {
+      "id": 6940,
+      "occasionId": 1072621,
+      "symbol": "3W3L3V5R2G",
+      "state": "waitlisted"
+    },
+    {
+      "id": 6941,
+      "occasionId": 1072621,
+      "symbol": "9W8A6V5L9K",
+      "state": "ordered"
+    },
+    {
+      "id": 6942,
+      "occasionId": 1072621,
+      "symbol": "4F9M1R1L3L",
+      "state": "paid"
+    },
+    {
+      "id": 6943,
+      "occasionId": 1072621,
+      "symbol": "9P6I8N1G8J",
+      "state": "storno"
+    },
+    {
+      "id": 6944,
+      "occasionId": 1072621,
+      "symbol": "9X9F2N3A8W",
+      "state": "waitlisted"
+    }
+  ],
+  "canonicalReports": [
+    {
+      "report": {
+        "spots": {
+          "free": 0,
+          "total": 0,
+          "occupied": 0
+        },
+        "valid": {
+          "orders": {
+            "total": 26,
+            "by_state": [
+              {
+                "count": 13,
+                "state": "ordered"
+              },
+              {
+                "count": 13,
+                "state": "paid"
+              }
+            ]
+          },
+          "tickets": {
+            "total": 28,
+            "by_state": [
+              {
+                "count": 14,
+                "state": "ordered"
+              },
+              {
+                "count": 14,
+                "state": "paid"
+              }
+            ]
+          },
+          "order_days": [
+            {
+              "day": "2026-10-28",
+              "count": 26,
+              "currency": "CZK"
+            }
+          ],
+          "ticket_days": [
+            {
+              "day": "2026-10-28",
+              "count": 28,
+              "currency": "CZK"
+            }
+          ]
+        },
+        "orders": {
+          "total": 52,
+          "by_state": [
+            {
+              "count": 13,
+              "state": "ordered"
+            },
+            {
+              "count": 13,
+              "state": "paid"
+            },
+            {
+              "count": 13,
+              "state": "storno"
+            },
+            {
+              "count": 13,
+              "state": "waitlisted"
+            }
+          ]
+        },
+        "tickets": {
+          "total": 54,
+          "by_state": [
+            {
+              "count": 14,
+              "state": "ordered"
+            },
+            {
+              "count": 14,
+              "state": "paid"
+            },
+            {
+              "count": 13,
+              "state": "storno"
+            },
+            {
+              "count": 13,
+              "state": "waitlisted"
+            }
+          ]
+        },
+        "occasion": {
+          "id": "1072620",
+          "title": "Make demo - Testovací ples"
+        },
+        "products": [
+          {
+            "type_id": "928",
+            "product_id": "1947",
+            "type_title": "Demo vstupné",
+            "product_title": "Demo vstupenka",
+            "confirmed_count": 14
+          }
+        ],
+        "timeline": {
+          "orders": [
+            {
+              "day": "2026-10-28",
+              "count": 52,
+              "currency": "CZK"
+            }
+          ],
+          "tickets": [
+            {
+              "day": "2026-10-28",
+              "count": 54,
+              "currency": "CZK"
+            }
+          ],
+          "payments": [],
+          "order_timezone": "Europe/Prague",
+          "payment_date_basis": "bank_transaction_date_and_provider_occurrence"
+        },
+        "warnings": [
+          {
+            "code": "payment_total_without_ledger",
+            "count": 13
+          }
+        ],
+        "generated_at": "2026-10-28T09:52:48.870617Z",
+        "schema_version": 1,
+        "ticket_batches": {
+          "total": 0,
+          "available": 0,
+          "sold_active": 0,
+          "voided_unsold": 0,
+          "cancelled_after_sale": 0
+        },
+        "money_by_currency": [
+          {
+            "currency": "CZK",
+            "received": "3500.00",
+            "returned": "0.00",
+            "has_deposits": false,
+            "net_received": "3500.00",
+            "other_received": "3500.00",
+            "manual_received": "0",
+            "current_order_value": "10250.00",
+            "deposit_received_gross": "0",
+            "beyond_deposit_received_gross": "0"
+          }
+        ]
+      },
+      "occasionId": 1072620,
+      "waitingTickets": 13
+    },
+    {
+      "report": {
+        "spots": {
+          "free": 0,
+          "total": 0,
+          "occupied": 0
+        },
+        "valid": {
+          "orders": {
+            "total": 26,
+            "by_state": [
+              {
+                "count": 13,
+                "state": "ordered"
+              },
+              {
+                "count": 13,
+                "state": "paid"
+              }
+            ]
+          },
+          "tickets": {
+            "total": 28,
+            "by_state": [
+              {
+                "count": 14,
+                "state": "ordered"
+              },
+              {
+                "count": 14,
+                "state": "paid"
+              }
+            ]
+          },
+          "order_days": [
+            {
+              "day": "2026-10-28",
+              "count": 26,
+              "currency": "CZK"
+            }
+          ],
+          "ticket_days": [
+            {
+              "day": "2026-10-28",
+              "count": 28,
+              "currency": "CZK"
+            }
+          ]
+        },
+        "orders": {
+          "total": 52,
+          "by_state": [
+            {
+              "count": 13,
+              "state": "ordered"
+            },
+            {
+              "count": 13,
+              "state": "paid"
+            },
+            {
+              "count": 13,
+              "state": "storno"
+            },
+            {
+              "count": 13,
+              "state": "waitlisted"
+            }
+          ]
+        },
+        "tickets": {
+          "total": 54,
+          "by_state": [
+            {
+              "count": 14,
+              "state": "ordered"
+            },
+            {
+              "count": 14,
+              "state": "paid"
+            },
+            {
+              "count": 13,
+              "state": "storno"
+            },
+            {
+              "count": 13,
+              "state": "waitlisted"
+            }
+          ]
+        },
+        "occasion": {
+          "id": "1072621",
+          "title": "Make demo - Testovací ples"
+        },
+        "products": [
+          {
+            "type_id": "929",
+            "product_id": "1948",
+            "type_title": "Demo vstupné",
+            "product_title": "Demo vstupenka",
+            "confirmed_count": 14
+          }
+        ],
+        "timeline": {
+          "orders": [
+            {
+              "day": "2026-10-28",
+              "count": 52,
+              "currency": "CZK"
+            }
+          ],
+          "tickets": [
+            {
+              "day": "2026-10-28",
+              "count": 54,
+              "currency": "CZK"
+            }
+          ],
+          "payments": [],
+          "order_timezone": "Europe/Prague",
+          "payment_date_basis": "bank_transaction_date_and_provider_occurrence"
+        },
+        "warnings": [
+          {
+            "code": "payment_total_without_ledger",
+            "count": 13
+          }
+        ],
+        "generated_at": "2026-10-28T09:52:48.870617Z",
+        "schema_version": 1,
+        "ticket_batches": {
+          "total": 0,
+          "available": 0,
+          "sold_active": 0,
+          "voided_unsold": 0,
+          "cancelled_after_sale": 0
+        },
+        "money_by_currency": [
+          {
+            "currency": "CZK",
+            "received": "3500.00",
+            "returned": "0.00",
+            "has_deposits": false,
+            "net_received": "3500.00",
+            "other_received": "3500.00",
+            "manual_received": "0",
+            "current_order_value": "10250.00",
+            "deposit_received_gross": "0",
+            "beyond_deposit_received_gross": "0"
+          }
+        ]
+      },
+      "occasionId": 1072621,
+      "waitingTickets": 13
+    }
+  ]
+}

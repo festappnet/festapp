@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-28",
+  "sourceRevisionInspected": "d2ed02f81",
+  "status": "preparation_account_access_pending",
+  "ownerSelectedEmail": "info@festapp.net",
+  "accountExistence": "not_established",
+  "accountCreated": false,
+  "appCreated": false,
+  "mcpConnectionTested": false,
+  "oauthClientRegistered": false,
+  "reviewSubmitted": false,
+  "published": false,
+  "paidCommitmentMade": false,
+  "accountDiscovery": {
+    "savedMakeAuthProfileFound": false,
+    "gmailQuery": "(from:make.com OR from:integromat.com OR to:make.com) -category:promotions",
+    "matchingMessages": 0,
+    "limit": "Only the connected mailbox was searched; this does not prove no account exists."
+  },
+  "browser": {
+    "mode": "isolated_local_headless",
+    "url": "https://www.make.com/en/login",
+    "result": "cloudflare_security_verification_persisted_after_normal_checkbox_click",
+    "userBrowserTouched": false
+  },
+  "costEvidence": {
+    "technologyPartnerJoiningFee": "no_cost_per_official_faq",
+    "allPublisherCostsConfirmedZero": false,
+    "source": "https://www.make.com/technology-partners",
+    "remaining": ["development_plan_entitlement", "review_and_retention_terms"]
+  },
+  "nextAction": "Establish Make account access, verify custom MCP OAuth options and native app development entitlement, then run the transport prototype."
+}

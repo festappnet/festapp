@@ -1,0 +1,215 @@
+[
+  {
+    "name": "omitted_limit",
+    "scenarioId": 8228261,
+    "executionId": "8542824274c0472cb8038380dd113957",
+    "status": 1,
+    "expectedBundles": 10,
+    "actualBundles": 10,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "explicit_blank_limit",
+    "scenarioId": 8228261,
+    "executionId": "a7e2a22a323b4c8f970faf38c246bbde",
+    "status": 1,
+    "expectedBundles": 52,
+    "actualBundles": 52,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "total_limit_10",
+    "scenarioId": 8228261,
+    "executionId": "c651f4e6d1cd433aa4f64c35f5ef227c",
+    "status": 1,
+    "expectedBundles": 10,
+    "actualBundles": 10,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "total_limit_51",
+    "scenarioId": 8228261,
+    "executionId": "9b59574958e24a029a332fa7292bfe31",
+    "status": 1,
+    "expectedBundles": 51,
+    "actualBundles": 51,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "total_limit_52",
+    "scenarioId": 8228261,
+    "executionId": "252f7e78900d4e2dacee2ca3a4425f4c",
+    "status": 1,
+    "expectedBundles": 52,
+    "actualBundles": 52,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "later_page_exact_symbol",
+    "scenarioId": 8228261,
+    "executionId": "ea5e03651b0342578bb967e98e791b19",
+    "status": 1,
+    "expectedBundles": 1,
+    "actualBundles": 1,
+    "error": null,
+    "passed": true
+  },
+  {
+    "name": "partial_symbol_rejected",
+    "scenarioId": 8228261,
+    "executionId": "c5169a1e627c4bc4bee95909f946881c",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[422] INVALID_INPUT",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "listOrders",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "same_name_unconsented_event",
+    "scenarioId": 8228261,
+    "executionId": "d67532ebac6140c3b5095ba7d0ce4361",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "salesReport",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "inaccessible_event",
+    "scenarioId": 8228261,
+    "executionId": "830291e37a8b447398f91146aca5bb5a",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "salesReport",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "foreign_tenant_event",
+    "scenarioId": 8228261,
+    "executionId": "a195456ee7fd4f32ada77e9eb67622bd",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "salesReport",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "foreign_order",
+    "scenarioId": 8228261,
+    "executionId": "276a2e5fddb94428ad18890d41e83cae",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "getOrder",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "missing_order",
+    "scenarioId": 8228261,
+    "executionId": "142fc3626c5e454c89e1a93264a2d36f",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "getOrder",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "universal_write_rejected",
+    "scenarioId": 8228261,
+    "executionId": "d8c01e8a73e343ec98aadab943b88288",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "apiCall",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "universal_foreign_url_rejected",
+    "scenarioId": 8228261,
+    "executionId": "51ac0fac83f64126b4d0c77e8938a653",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[403] FORBIDDEN",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "apiCall",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "universal_unknown_fields_rejected",
+    "scenarioId": 8228261,
+    "executionId": "7717b329fc7c4d40a1065acedfb56476",
+    "status": 3,
+    "expectedBundles": null,
+    "actualBundles": 1,
+    "error": {
+      "message": "[422] INVALID_INPUT",
+      "name": "RuntimeError",
+      "causeModule": {
+        "name": "apiCall",
+        "appName": "app#vstupenky-online-buoz5u"
+      }
+    },
+    "passed": true
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-28T10:35:59.412Z",
+  "executionId": "df74f98a3dce4d249f166d9cb6f2204a",
+  "status": 3,
+  "error": {
+    "message": "[401] invalid_token",
+    "name": "RuntimeError",
+    "causeModule": {
+      "name": "apiCall",
+      "appName": "app#vstupenky-online-buoz5u"
+    }
+  }
+}
