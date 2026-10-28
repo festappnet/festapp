@@ -1,0 +1,51 @@
+{
+  "status": "preview-deployed-and-verified",
+  "checkedAtUtc": "2026-10-28T16:34:08Z",
+  "sourceSha": "f0fed2a0b380d758555e1dc7c9bc8ddef6298665",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "wix-billing-20261028",
+  "environment": "Preview",
+  "deploymentId": "600abe03-63d8-47a7-83c0-f15693a766af",
+  "deploymentUrl": "https://600abe03.festapp-wix.pages.dev",
+  "branchAliasUrl": "https://wix-billing-20261028.festapp-wix.pages.dev",
+  "deploymentStatus": "success",
+  "archive": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "9801fbef4494f97b1eeb616ca4ee275e4c6b61cbed43f6c4145c341e3273b763",
+    "manifestSha256": "a9263b40b0706a531183d1b1765d4dd846464c3a5d224aa5b751176216603eb0",
+    "widgetSha256": "7ac66608c59a9a187857bee8e4f17fc6b93a8412638935dbdca9d406b0b4ae0c",
+    "freshBuildByteComparison": "all six archive assets match fresh pnpm build and manifest hashes"
+  },
+  "previewReadback": {
+    "publicAssetsVerified": 5,
+    "routes": [
+      "/widget.js",
+      "/settings.js",
+      "/settings.css",
+      "/settings",
+      "/help",
+      "/manifest.json"
+    ],
+    "widgetCors": "*",
+    "settingsJsCors": "*",
+    "contentTypes": "passed",
+    "cacheAndSecurityHeaders": "passed",
+    "uniqueDeploymentAndBranchAlias": "passed"
+  },
+  "stableWidget": {
+    "url": "https://festapp-wix.pages.dev/widget.js",
+    "sha256Before": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "sha256After": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "unchanged": true
+  },
+  "scope": {
+    "previewOnly": true,
+    "stableHostingUpdated": false,
+    "dnsOrProjectCreated": false,
+    "nativeWixRegistrationOrBillingChanged": false,
+    "ordersHoldsEmailsOrBillingEvents": false,
+    "scopeAppliesTo": "delegated preview deployment only; primary separately sent the authorized activation email"
+  },
+  "tests": "No tests rerun; widget package source is byte-identical to the sealed, previously validated archive."
+}

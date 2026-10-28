@@ -6,15 +6,16 @@ Backend, order-origin support and the public client are deployed. The service-fe
 source and fenced delivery journal are implemented; live billing is disabled.
 A real native SDK token passed production CORS and context issuance, with the
 signature independently validated by SQL. No production order or billing event
-was emitted. The candidate widget has not replaced the hosted assets.
+was emitted. The candidate widget has not replaced the stable hosted assets; a
+[separate preview](evidence/hosting-preview-20261028.json) is deployed and verified.
 
 Erel's [written clarification](evidence/commercial-clarification-20261028.json)
 resolves the service-fee-only basis, organizer-proceeds exclusion, external
-checkout and zero separate fixed publisher fees. The open contract issue is the
-fixed corporation/incorporation wording for a Czech sole trader. Six identity
-and application fields are saved in the existing DocuSign request, with native
-readback verified; the request is unsigned. No reply to that wording question
-or completed-envelope receipt has been found.
+checkout and zero separate fixed publisher fees. The owner has now personally
+signed the sole-trader details and DocuSign confirms all parties completed it.
+The [completion receipt](evidence/addendum-completion-20261028.json) records the
+signed private PDF and the sent request for Partner Billed activation. Wix has
+not yet confirmed the sole-trader wording or enabled native external billing.
 
 Last authenticated native evidence records unlisted version 1.1, completed
 profile/contact/privacy sections and a saved DYNAMIC Custom pricing draft.
@@ -22,9 +23,9 @@ External billing activation and marketplace approval/publication remain
 unverified. Those historical native receipts do not qualify the candidate
 bundle's Editor/Studio/Harmony matrix or authorize turning billing on.
 
-Before actual submission, obtain the corrected/clarified sole-trader terms and
-personal signature, verify native activation and current store assets, provision
-the protected delivery runtime inputs, qualify the exact candidate bundle in
+Before actual submission, resolve Wix confirmation of the sole-trader details,
+external billing permission and the native payout blocker, verify current store
+assets, provision the protected delivery runtime inputs, qualify the exact candidate bundle in
 all required editors, and pass the existing release gate. Do not substitute
 references to historical receipts for missing current qualification.
 

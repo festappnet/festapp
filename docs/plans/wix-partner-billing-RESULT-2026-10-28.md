@@ -1,8 +1,11 @@
 # Wix Partner Billed - výsledek realizace
 
 Aktuální stav: source je na `main`, DB/backend a klient `prod/festapptickets` jsou
-nasazené jako `0.20.444+949`. Údaje OSVČ jsou uložené v nepodepsané DocuSign
-žádosti. Billing je vypnutý; widget hosting, podpis a marketplace nejsou dokončené.
+nasazené jako `0.20.444+949`. Vlastník osobně podepsal dodatek a DocuSign potvrdil
+dokončení všemi stranami. [Doklad a odeslaná žádost o aktivaci](../../integrations/wix/evidence/addendum-completion-20261028.json)
+jsou uložené; Erel byl informován ve stávajícím vlákně. Billing zůstává vypnutý.
+Wix nyní blokuje podání požadavkem na external billing permission a payouts.
+Produkční hosting nového widgetu a marketplace submission nejsou dokončené.
 Nezávislá [kritická kontrola](wix-partner-billing-CRITIC-2026-10-28.md) následně
 našla tři P2 vady. Všechny jsou opravené, kritikem znovu ověřené a nasazené
 [migrací 20261028160000](../operations/releases/festapptickets-wix-critic-fix-2026-10-28.json).
@@ -96,7 +99,7 @@ native evidence uvádí unlisted 1.1, DYNAMIC Custom plán, external billing fal
 bez podpisu a marketplace submission. Aktuální review/publication stav tedy
 není nově ověřený a nesmí být označen jako publikováno nebo review pending.
 
-## Zbývá před rolloutem a dokončením
+## Historický seznam před rolloutem (aktuální stav viz úvod)
 
 1. Dodat skutečné individuální smlouvy, úhrady vlastních servisních faktur,
    případné vratky, FX/smlouvu s Wixem a akviziční důkazy do nového zdroje.
@@ -203,3 +206,26 @@ uživatelem, následně doložená Partner Billed aktivace a skutečné vydání
 s marketplace submission/review/publication. Účetní import musí při prvním
 skutečném servisním příjmu obsahovat skutečné smluvní, platební a akviziční podklady.
 Žádný takový pohyb ani jeho absence nejsou nahrazovány syntetickými reporty.
+
+## Podpis a pokračování k App Marketu
+
+Vlastník osobně dokončil podpis. DocuSign zpráva `1a183562faa939fa` potvrzuje
+dokončení všemi stranami a obsahuje podepsané PDF; soukromá kopie je archivována
+mimo Git. Zpráva `1a18358487893fcd` byla odeslána Erelovi ve stávajícím vlákně
+a přečtení Gmailu potvrdilo `SENT`. Obsah výslovně uvádí OSVČ a žádá potvrzení
+dostatečnosti a aktivaci Partner Billed. Žádný obecný účetní příjem nebyl domyšlen.
+
+Nativní portál stále uvádí verzi 1.1, plán Ticketing service a dva blockery:
+`Set up payouts` a `Request external billing permission`; tlačítko Submit App je
+vypnuté. Payouts vede na samostatný Partner Program a jeho další podmínky.
+Ty nebyly přijaty a bankovní údaje nebyly vymyšleny. Vyřešení activation/payout
+požadavků a zbývající qualification/release gates zůstávají podmínkou publikace.
+
+Nový widget je připraven na samostatné testovací Cloudflare Pages adrese
+`https://600abe03.festapp-wix.pages.dev` pro source `f0fed2a0b`.
+[Hosting receipt](../../integrations/wix/evidence/hosting-preview-20261028.json)
+dokládá přesnou shodu se zapečetěným balíčkem, HTTP/content types/CORS a funkční
+`/settings` a `/help`. Hash stabilního widgetu zůstal před i po nasazení stejný.
+Nativní registrace se nezměnila. Release check zůstává záměrně blokovaný chybějící
+aktivací, aktuálními editor receipts, billing implementation receipt a ověřením
+store assets; žádná podmínka nebyla oslabena.

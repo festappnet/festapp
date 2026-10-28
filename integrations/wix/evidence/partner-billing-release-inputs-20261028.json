@@ -29,5 +29,7 @@
   },
   "publicStoreAssetsVerified": false,
   "billingImplementationReceipt": null,
-  "qualificationNote": "Backend/client foundation is deployed as 0.20.444+949; real native SDK CORS/proof and SQL signature verification passed (docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json). Candidate widget hosting/native activation and current three-editor/store qualification remain held. DocuSign identity is saved but unsigned; no sole-trader wording reply or executed terms exists."
+  "qualificationNote": "Backend/client foundation is deployed as 0.20.444+949; C01-C03 integrity repairs are deployed. Owner signed addendum and DocuSign confirmed all parties completed it (addendum-completion-20261028.json); activation request was sent to Erel. Native portal still blocks external billing permission and payout setup. Candidate stable hosting, current three-editor/store qualification, native activation and live billing remain held.",
+  "executedAddendumReceipt": "integrations/wix/evidence/addendum-completion-20261028.json",
+  "previewHostingReceipt": "integrations/wix/evidence/hosting-preview-20261028.json"
 }

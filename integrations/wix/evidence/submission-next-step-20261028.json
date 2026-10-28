@@ -1,21 +1,21 @@
 {
   "checkedAt": "2026-10-28",
-  "status": "awaiting-commercial-and-marketplace-gates",
+  "status": "addendum-completed-activation-request-sent-native-publication-blocked",
   "existingExpertThreadId": "1a18198a75444077",
   "lastReceivedMessageId": "1a1825fe56ce9706",
-  "lastSentMessageId": "1a18267de29c3241",
+  "lastSentMessageId": "1a18358487893fcd",
   "soleTraderReplyReceived": false,
-  "completedEnvelopeReceiptFound": false,
+  "completedEnvelopeReceiptFound": true,
   "followupDraft": {
     "id": "r645712298495369747",
-    "messageId": "1a1830f0cd73f394",
+    "messageId": "1a18358487893fcd",
     "threadId": "1a18198a75444077",
-    "state": "DRAFT",
-    "sent": false,
+    "state": "SENT",
+    "sent": true,
     "newSupportCaseCreated": false
   },
   "unchangedHolds": {
-    "signature": true,
+    "signature": false,
     "partnerBillingActivation": true,
     "widgetHosting": true,
     "marketplaceSubmission": true
@@ -51,5 +51,29 @@
     "deploymentPending": false,
     "activationStillHeldForCommercialPrerequisites": true,
     "separateAuthorizedFixDeploymentReceipt": "docs/operations/releases/festapptickets-wix-critic-fix-2026-10-28.json"
+  },
+  "completedEnvelopeReceipt": "integrations/wix/evidence/addendum-completion-20261028.json",
+  "nativePublicationBlockers": [
+    "Set up payouts",
+    "Request external billing permission"
+  ],
+  "soleTraderWordingClarificationStillAwaited": true,
+  "previewHosting": {
+    "receipt": "integrations/wix/evidence/hosting-preview-20261028.json",
+    "deploymentUrl": "https://600abe03.festapp-wix.pages.dev",
+    "deployed": true,
+    "stableHostingChanged": false
+  },
+  "releaseReadinessCheck": {
+    "command": "pnpm run release:check evidence/partner-billing-release-inputs-20261028.json",
+    "status": "blocked-as-expected",
+    "missing": [
+      "partnerBillingApproved",
+      "current Harmony checkout/lifecycle receipt",
+      "current Editor checkout/lifecycle receipt",
+      "current Studio checkout/lifecycle receipt",
+      "approved billing/reporting implementation receipt",
+      "verified current store assets/test credentials/privacy/support"
+    ]
   }
 }
