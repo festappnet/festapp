@@ -1,6 +1,6 @@
 {
   "recordedAt": "2026-10-28T14:00:35.417630+00:00",
-  "status": "architecture_unified_review_update_verified_waiting_for_make",
+  "status": "make_review_items_addressed_live_openapi_schema_alignment_pending",
   "ownerSelectedEmail": "info@festapp.net",
   "emailVerificationConfirmed": true,
   "makeZone": "eu1.make.com",
@@ -53,7 +53,9 @@
     "qualification-2026-10-28T13-57-59-175Z-3120862d-0e4b-43d2-b6cb-c174d8ffebb5-8.json",
     "qualification-2026-10-28T13-57-59-175Z-3120862d-0e4b-43d2-b6cb-c174d8ffebb5-9.json",
     "readback-2026-10-28T13-54-56-938Z-15d524f6-8a0e-4c01-93d0-cc7bc0e51952-1.json",
-    "sync-2026-10-28T13-53-22-465Z-abf45151-8b46-47b7-a573-c0095098822e-1.json"
+    "sync-2026-10-28T13-53-22-465Z-abf45151-8b46-47b7-a573-c0095098822e-1.json",
+    "readback-2026-10-28T14-05-40-799Z-d566dbf1-53ca-4782-973e-ab59b117da8b-1.json",
+    "review-audit-2026-10-28T14-08-59-353Z-ca1c7e86-c6ad-4965-8b75-ab3d732da8c9-1.json"
   ],
   "scenarios": [
     {
@@ -75,7 +77,7 @@
     "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
     "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
   ],
-  "nextAction": "Wait for human assessment in existing Make case 2351677:2082001. Same app/version definitions updated and verified; no repeated Publish, review or response. Approval, catalogue discovery and independent authorized-account OAuth remain external dependencies; no polling.",
+  "nextAction": "Align the live backend OpenAPI report schema through a separately prepared exact-source authorized service deployment. In parallel await human assessment in existing Make case 2351677:2082001. No new Publish, review request, email or polling.",
   "connectorSourceRevision": "eb02a9c2a62e8b37280beb27411f7616ee6fb681",
   "reviewCase": "2351677:2082001",
   "reviewFollowupFormId": 191861,
@@ -115,5 +117,15 @@
     "newPublish": false,
     "newReviewRequest": false,
     "newMessage": false
+  },
+  "reviewAudit": {
+    "receipt": "review-audit-2026-10-28T14-08-59-353Z-ca1c7e86-c6ad-4965-8b75-ab3d732da8c9-1.json",
+    "sdkMatchedSections": 34,
+    "newCaseFeedbackFound": false,
+    "all21PointsHaveFixOrExplanation": true,
+    "liveOpenApiReportSchemaAligned": false,
+    "remainingTechnicalGap": "Live report OpenAPI has only schema_version/valid; current operation schema declares twelve known report blocks. Backend schema refactor is local, not deployed.",
+    "scenarioRunsRepeated": false,
+    "scenariosInactive": true
   }
 }

@@ -182,7 +182,7 @@ Původní rozsah projektu již obsahoval účet `info@festapp.net`, bezplatné v
 
 - [x] Všech 21 bodů má opravu nebo doložené vysvětlení; žádný duplicitní review/mail.
 - [x] Report schéma vlastní operation vrstva; samples nedefinují známá report pole.
-- [x] Runtime/OpenAPI/Make používají společný transportní kontrakt a scope owner; doména zůstává v Operations/SQL.
+- [ ] Runtime/OpenAPI/Make používají společný transportní kontrakt a scope owner; doména zůstává v Operations/SQL. Zdroj sjednocený, live report OpenAPI je ještě staré - viz dodatečný audit níže.
 - [x] Prezentace a SDK mají po jednom vlastníkovi, obsolete zdroje i outputs odstraněné.
 - [x] Generated file set přesně sedí, historie nepřepsaná, aktuální status dohledatelný.
 - [x] Passing cílené testy včetně skutečné lokální SQL; sync/deploy ověřené, nebo výslovně neprovedené.
@@ -220,3 +220,11 @@ SDK definice synchronizované z čistého `eb02a9c2a62e8b37280beb27411f7616ee6fb
 Dohledatelné immutable důkazy (relativně k `integrations/make/evidence/`): sync `sync-2026-10-28T13-53-22-465Z-abf45151-8b46-47b7-a573-c0095098822e-1.json`, readback `readback-2026-10-28T13-54-56-938Z-15d524f6-8a0e-4c01-93d0-cc7bc0e51952-1.json`, finální qualification `qualification-2026-10-28T13-57-59-175Z-3120862d-0e4b-43d2-b6cb-c174d8ffebb5-10.json`. Všech deset qualification checkpointů, samostatné lokální ověření a preflight rejection jsou archivované pod vlastními run IDs. Původních 22 historických evidence souborů se nezměnilo; mutable `execution-20261028.json` byl aktualizovaný. Aktuální stav a přesné source revisions/digesty vlastní `execution-20261028.json`; historický manifest/freeze nepřepisujeme.
 
 Lokální implementace a autorizovaný update jsou dokončené. Čeká se pouze na lidské posouzení v existujícím případu `2351677:2082001`. Approval/release, katalogové discovery a nezávislé OAuth z dalšího již autorizovaného účtu nejsou doložené. Žádný polling ani další automatické provozní kroky.
+
+### Dodatečný audit všech AppBot připomínek
+
+Na výslovnou žádost uživatele znovu přečten původní email `1a18239723a8b8c6`, vyhledaný celý case a všechny body porovnané se zdrojem i nasazenými Make definicemi. Case obsahuje původní feedback, již odeslanou odpověď a původní potvrzení review; další věcný feedback se nenašel. Všech 21 bodů má opravu nebo doložené vysvětlení, některé AI návrhy záměrně nepřevzaté. Čerstvý readback potvrdil 34/34 SDK sekcí, metadata, README a logo; oba scénáře inactive/on-demand. Nezměněné testy ani živé scénáře se neopakovaly.
+
+Audit ale našel zbývající lokální/live rozdíl: veřejné `https://mcp.vstupenky.online/make/v1` deklaruje u reportu pouze `schema_version` a `valid`, nový operation/Make kontrakt má dvanáct známých bloků. Ostatní čtyři operation output schémata se shodují. Dřívější závěr, že server deploy není potřeba pro SDK interface, platí pro hodnoty a funkční Make scénáře; neznamená dokončené nasazení rozšířeného OpenAPI schématu. Pro úplnou runtime/OpenAPI shodu zbývá samostatně připravit a autorizovaně nasadit přesný serverový source; audit žádný deploy neprovedl.
+
+Čitelný GitHub API dokument i raw verze odpovídají HTTP 200. OpenAPI s audit User-Agent odpovídá HTTP 200, výchozí Python User-Agent dostal 403; dostupnost pro libovolný scraper tedy netvrdíme. Kompletní audit a jednotlivé body: `integrations/make/evidence/review-audit-2026-10-28T14-08-59-353Z-ca1c7e86-c6ad-4965-8b75-ab3d732da8c9-1.json`. Lidské schválení Make a katalogový release nadále nejsou doložené; žádný nový mail/review/Publish.
