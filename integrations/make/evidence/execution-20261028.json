@@ -109,7 +109,7 @@
       "boundaryCases": 6,
       "bothScenariosInactive": true
     },
-    "historicalEvidenceFilesUnchanged": 23,
+    "historicalEvidenceFilesUnchanged": 22,
     "backendDeploy": "not_required_not_performed",
     "push": "not_performed",
     "newPublish": false,
