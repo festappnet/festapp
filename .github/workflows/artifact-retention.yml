@@ -1,0 +1,47 @@
+name: Actions artifact retention
+on:
+  workflow_run:
+    workflows: [Android candidate batch, Android candidate revalidation, Android production batch]
+    branches: [main]
+    types: [completed]
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Remove expired Android candidates and redundant raw builds
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: festapp-actions-artifact-retention
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.18.0
+      - run: node --test automation/tests/artifact_retention.test.mjs
+      - name: Apply bounded Android artifact retention
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "$APPLY" = true ]; then args+=(--apply); fi
+          node automation/release/artifact_retention.mjs "${args[@]}" | tee retention-result.json
+          jq '{apply, skipped, removed: (.removed // [] | length), bytes, retainedBytes}' retention-result.json >> "$GITHUB_STEP_SUMMARY"
+          if jq -e '.retainedBytes > 209715200' retention-result.json >/dev/null; then
+            echo '::error::Festapp artifacts exceed the 200 MiB storage budget; review pending candidates before the shared allowance fills.'
+            exit 1
+          fi
