@@ -86,5 +86,5 @@ BEGIN
  VALUES(p_organization,auth.uid(),base,lower_bound,actual_upper) ON CONFLICT DO NOTHING;
  RETURN true;
 END $$;
-REVOKE ALL ON FUNCTION public.mark_notification_center_item_read(bigint,jsonb) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.mark_notification_center_item_read(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.mark_notification_center_item_read(bigint,jsonb) TO authenticated;

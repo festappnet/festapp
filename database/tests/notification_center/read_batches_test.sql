@@ -66,6 +66,7 @@ BEGIN
  PERFORM assert_eq(selected,jsonb_build_array(order_ids[3]),'reopening read history never adds the actor own activity from the same sequence range');
  PERFORM assert_false(has_table_privilege('authenticated','public.notification_center_read_batches','select'),'read receipts remain private');
  PERFORM assert_false(has_function_privilege('anon','public.mark_notification_center_item_read(bigint,jsonb)','execute'),'anonymous users cannot mark personal items');
+ PERFORM assert_false(has_function_privilege('service_role','public.mark_notification_center_item_read(bigint,jsonb)','execute'),'service role has no implicit personal read capability');
  result:=public.get_notification_center_daily_overview(org,oc);
  SELECT x INTO item FROM jsonb_array_elements(result->'items') x WHERE NOT (x->>'isRead')::boolean;
  PERFORM assert_eq((item#>>'{data,activityCount}')::int,1,'late arrival remains a new unread batch');
