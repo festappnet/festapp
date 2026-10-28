@@ -1,3 +1,4 @@
+import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import {PreviewArtifacts} from '../operations/preview.mjs';
 import express from 'express';
 import { tenantConnections } from './management.mjs';
@@ -15,7 +16,7 @@ import { operatorAccess, verifySelection, canCreateWithAccess } from '../operati
 import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
-import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS, makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
+import { makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
 const cookieName = 'festapp_mcp_management';

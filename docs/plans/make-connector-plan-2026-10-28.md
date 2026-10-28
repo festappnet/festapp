@@ -1,281 +1,208 @@
-# Jak dostat vstupenky.online do Make
+# Make: dokončení review a sjednocení implementace
 
-Datum: 2026-10-28. Stav: schválený směr, rozpracovaná příprava; účet, živé propojení a katalogové vydání dosud nejsou ověřené. Ověřování při implementaci: standard (OAuth a veřejné datové rozhraní).
+Datum: 2026-10-28. Stav: připomínky zpracované, odpověď odeslaná; následující architektonické úpravy připravené k implementaci. Verification: standard (OAuth, sdílené schéma, veřejný kontrakt).
 
-## Aktuální zadání a úsporné provedení
+Tento dokument nahrazuje původní přípravný plán na stejné cestě. Je jediným autoritativním plánem; [execution prompt](make-connector-EXECUTION-PROMPT-2026-10-28.md) na něj navazuje. Historické receipty se nepřepisují. Tato aktualizace je plán, nikoli důkaz provedení následujících změn.
 
-Poslední instrukce vlastníka výslovně zahrnuje celý postup až k registraci a odeslání konektoru, ne pouze lokální přípravu. V rozsahu jsou: existující účet nebo bezplatná registrace `info@festapp.net`, běžné ověření vlastnictví e-mailu, založení app a testovacího prostředí, vývoj, nezbytné izolované OAuth registrace, cílené nasazení Make části do stávající regionální MCP služby, testování, Publish, jedna žádost o review a řešení jejích připomínek. Podmínkou jsou nulové pevné poplatky a splněné brány tohoto plánu. Nežádat znovu souhlas s již schválenými kroky. Případnou partnerskou přihlášku vyřídit, pokud je pro vydání potřebná; dobrovolný program není důvod odkládat konektor. Nový placený závazek, nepravdivé prohlášení ani změny jiných produktů autorizované nejsou.
+## Výsledek a hranice
 
-Práce má šetřit tokeny i čas bez vypouštění auth a publikačních kontrol:
+Zachovat funkční konektor vstupenky.online, dokončit existující review a odstranit doložené zdroje driftu. Doménová pravidla, oprávnění a projekce mají jednoho vlastníka; Make definuje transport, prezentaci a provozní nástroje. Nevytvářet nový konektor, REST backend, reportovací model ani generický integrační framework.
 
-- Plán přečíst celý jednou; pokračovat z aktuálního důkazu a změn od poslední revize. Neopakovat rešerši, čtení nezměněných zdrojů, již provedenou kontrolu mailů ani selhaný browser pokus bez nové informace. Externí podmínky znovu ověřit cíleně před jejich přijetím.
-- Nejprve vyřešit přístup, OAuth a jeden report. Po jednom rozhodujícím transportním prototypu zvolit cestu, potom dokončit souvislou sadu modulů před finálními kontrolami. Nepřipravovat několik alternativních konektorů.
-- Nezávislé čtení a lehké kontroly dávkovat. Úspěšné výstupy držet na jednu řádku; plné logy číst až při chybě. Nepřidávat další plán, audit, report ani test jen k zopakování stejného důkazu.
-- Cílené auth/kontraktní testy mají standardní hloubku. Pro nezměněné vstupy používat již platné výsledky; po změně zopakovat jen dotčené kontroly a povinné publikační gates. Žádný Flutter build, pokud Make změna Flutter nezasahuje.
-- Do stavu průběžně uložit pouze aktuální fázi, revizi/digest, provedený krok, výsledek a přesný další krok. Historické receipty neměnit. Rutinní nasazení delegovat dle AGENTS.md, další agenty nespouštět bez oprávnění.
-- Lidskou bezpečnostní výzvu nebo chybějící účet řešit jediným konkrétním požadavkem na nezbytný zásah. Nepřebírat uživatelův browser a nevyvolávat opakované ověřovací e-maily. Mezitím dokončit nezávislou lokální práci; neoznačit blokaci za hotové vydání.
+V rozsahu jsou schéma reportu, Make konfigurace/generátor, přesná inventura generated souborů, společná hranice Make SDK, neměnné důkazy a dokumentace. Mimo rozsah: Wix, účtování, změny SQL výpočtů, prodloužení souhlasů, další tenanty, Flutter buildy.
 
-Uživatel schválil pokračování a zvolil účet `info@festapp.net`. Vlastníkem implementace a důkazů je realizující agent, vlastníkem účtu a případných smluv provozovatel. Uložený přístup pro Make nebyl nalezen; cílené vyhledání komunikace z Make v připojeném Gmailu nevrátilo výsledky. To nedokazuje neexistenci účtu. Izolovaný prohlížeč na přihlašovací stránce zůstal na Cloudflare security verification i po běžném kliknutí na ověření. Žádný účet ani žádost tím nevznikly. Aktuální příprava je v [integrations/make](../../integrations/make/README.md).
+## Aktuální fakta a míra ověření
 
-## Doporučený postup
-
-Hlavní výsledek je vlastní aplikace **vstupenky.online** dohledatelná v katalogu Make, připojitelná běžným pořadatelem a použitelná pro pravidelný přehled prodeje. MCP Client je krátký ověřovací krok a druhá možnost připojení, nikoli povinný distribuční mezikrok. Připojení přes obecný MCP Client samo o sobě vlastní katalogovou položku nevytvoří.
-
-Plán je připravený k ověřovacím etapám A-C. Implementace všech modulů a veřejné vydání mají níže uvedené rozhodovací brány. Nevyřešenou kompatibilitu nebo smluvní podmínku nelze označit jako hotovou jen dokončením dokumentace.
-
-| Cesta | Co získáme | Co ještě potřebujeme |
+| Fakt | Důkaz | Důsledek |
 | --- | --- | --- |
-| MCP Client | Používání našich nástrojů ve scénáři Make | Ověřit OAuth a výstupy v reálném Make |
-| Verified remote MCP server | Výběr našeho serveru v nabídce MCP Client | Zjistit proces zařazení; veřejný návod jej nepopisuje |
-| Vlastní verified app | Samostatně dohledatelný konektor s pojmenovanými moduly | Implementaci, testovací scénáře a review Make |
-| Community app | Partnerskou distribuci aplikace | Partnerství a jeho podmínky; není to zvolená první cesta |
+| Existuje app `vstupenky-online-buoz5u`, v1, EU1; Publish a review byly přijaty | `integrations/make/evidence/submission-20261028.json`, `execution-20261028.json` | Neopakovat registraci, Publish, review ani navazující formulář |
+| AppBot feedback `1a18239723a8b8c6` přišel 28. 10. ve 12:15 Praha | Gmail; `review-response-20261028.json` | Není to dosud nevyřízený nový seznam oprav |
+| Stejné Gmail vlákno obsahuje odpověď `1a18258af1b4ad0b` s labelem SENT | Aktuální Gmail readback; `review/RESPONSE-20261028.md` | Platné připomínky opravené, odchylky vysvětlené; neposílat duplicitní odpověď |
+| V aktuálním hledání `from:make.com newer_than:2d` není další věcná odpověď | Gmail kontrola při aktualizaci plánu | Lidské schválení ani vydání nejsou doložené |
+| Po opravách zaznamenána shoda 34 SDK sekcí, pět modulů, dva konzumenty mapování a šest hraničních případů | `source-readback-review-20261028.json`, `review-qualification-20261028.json` | Historický výsledek konkrétního digestu, nikoli nové ověření worktree |
+| Backend receipt uvádí 45/45 cílených testů bez skipu | `server-tests-20261028.json` | Po změně backendu znovu ověřit; širší write fixture měla samostatné `ORDER_CHANGE_REJECTED` |
+| Doménu obsluhuje `Operations.invoke`, společné scopes a `DelegatedOwner` | `tools/festapp/src/operations/catalog.mjs`, `packages/festapp_contracts/mcp-permissions.mjs`, `tools/festapp/src/remote/delegation.mjs` | Zachovat kanonické vlastníky |
 
-Rozdíly mezi custom, community a verified aplikacemi popisuje [Make](https://help.make.com/introduction-to-make-apps). Custom app označená jako public se stále instaluje přes pozvánku. Community katalog není obyčejná pozvánka: jeho [podmínky](https://developers.make.com/custom-apps-documentation/community-apps/terms-and-conditions) vyžadují partnerskou smlouvu.
+Historické revize: backend `903145af65e4a3c1944464078c472bee26400ae9`, opravené definice `1967445f97bb6a91b256672ec346eac06e9796c3`. Manifest SHA256 `9a46cc151a1808cfdaa68f03fc772e5c2ced2b3450f7d82d5ce3e0a5e985ef2d`. Jde o údaje z receiptů, nikoli čerstvý live probe.
 
-## Co už máme
+Aktuální checkout při průzkumu: `main`, HEAD `d2ed02f81`, mnoho jiných rozpracovaných změn a Make soubory jako untracked. Historickou revizi nezaměňovat za místní obsah. Před implementací izolovat vlastní soubory; před publikací určit přesný čistý source revision a digests. Necommitovat celý dirty worktree.
 
-- Regionální MCP: `https://mcp.vstupenky.online/mcp`. Homepage služby: `https://vstupenky.online/`.
-- `tools/festapp/src/remote/server.mjs`: OAuth issuer, předregistrovaní klienti, token endpoint auth `none`, dynamická registrace vypnutá.
-- `tools/festapp/src/remote/config.mjs`: přesné redirect URI, stropy scopes a profil dat pro každého klienta.
-- `packages/festapp_contracts/mcp-permissions.mjs`: společný seznam oprávnění a operací. Pro první verzi postačí `context.inspect`, `access.inspect`, `orders.report`, `orders.list`, `orders.inspect`.
-- `integrations/chatgpt/README.md`: již ověřené připojení jiného klienta, ne důkaz kompatibility Make. Profil `order-summary` skrývá osobní údaje kupujících a volné texty.
+## Vypořádání všech 21 bodů AppBotu
 
-Repozitář byl prozkoumán na `d2ed02f81`. Před implementací porovnat aktuální zdroj i skutečně nasazenou konfiguraci. Místní zdroj není doklad produkčního nasazení.
+Číslování odpovídá mailu. Opraveno znamená potvrzené zdrojem a existujícím receiptem; přijetí reviewerem je externí krok.
 
-### Fakta, rozhodnutí a otevřené body
-
-| Typ | Bod | Způsob uzavření |
+| Bod | Stav | Řešení / důkaz |
 | --- | --- | --- |
-| Fakt | OAuth klienti mají `none`, PKCE S256 a pevné callbacky; otevřené DCR neexistuje | `remote/server.mjs`, `remote/config.mjs`; ověřit i aktivní server |
-| Fakt | Samotný order-summary profil není zákaz zápisu; operace omezuje také scope a platný souhlas | `remote/delegation.mjs`: `permitsOperation`, `current`, `authorizeOperation` |
-| Fakt | Dva povolené scopes zpřístupňují i `ticket_layouts.inspect`, tedy celkem šest MCP read tools | `mcp-permissions.mjs`: `READ_OPERATIONS` a orders read; neslibovat přesně pět dostupných tools |
-| Rozhodnutí | Native MVP nabízí jen čtení čtyř oblastí plus povinný univerzální modul | Žádný zápisový scope, profil order-summary a omezené cílové rozhraní |
-| Rozhodnutí | API ani doménová logika se nekopírují do Make | Reálné volání projde stejným `Operations.invoke` a `DelegatedOwner` |
-| Otevřené | Make umí náš přesný OAuth a wire protokol bez slabší autentizace | Protokol `oauth-compatibility.json` podle brány G1 |
-| Otevřené | Native konektor použije MCP, nebo tenký HTTP transport | Jediný dokumentovaný výsledek brány G2; dokud chybí, nepsat všechny moduly |
-| Otevřené | Všechny pevné náklady vydavatele jsou nulové | Konkrétní tarif, aktuální podmínky a datum v `publisher-costs.json` |
-| Blokace živého ověření | Přístup do účtu Make není navázaný | Dokončené přihlášení v izolované relaci nebo oficiální přístup s minimálními právy; nepřebírat uživatelovu relaci |
+| 1 Univerzální modul | Opraveno a vysvětleno | `scripts/build.mjs`: relativní URL, metoda, bezpečné headers, qs, JSON body, body/headers/statusCode; API má pět POST read operací |
+| 2 RPC limit | Opraveno | Generated RPC limit 500, bez vymyšlené serverové pagination |
+| 3 Get pole mode edit | Opraveno | Generátor nastavuje `mode: edit` u RPC-backed Get vstupů |
+| 4 Popisy modulů | Opraveno | `catalog-draft.json`: Make prezentace oddělená od MCP instrukcí |
+| 5 Scénáře | Provedeno | `review-qualification-20261028.json`, dvě existující inactive/on-demand scénáře |
+| 6 Expirace a refresh | Opraveno a vysvětleno | `src/connection.json`: fallback refresh tokenu; sedmidenní serverová delegace se neprodlužuje |
+| 7 Pagination akcí | Vysvětleno | `access.inspect` vrací úplný consent-filtered seznam, nemá kurzor |
+| 8 Prázdný detail | Vysvětleno | `validateMakePage`: před úspěchem právě jeden matching event/order řádek; chybějící/cizí detail selže |
+| 9 Pagination headers | Vysvětleno | `make-transport.mjs`: completion guard, nikoli autorizační vstupy |
+| 10 Chybové zprávy | Opraveno | Společné status/code/message pro base a connection test |
+| 11 State select | Vysvětleno | Kanonický input je stored-state string bez enumu; neinventovat neúplný seznam |
+| 12 Output interfaces | Opraveno a vysvětleno | Date parse/declaration, skutečný dotted-key konzument; text report ID a money reprezentace zachované |
+| 13 Labels | Opraveno | Sentence case, ID, Event v prezentaci; machine keys nepřejmenované |
+| 14 Module action | Opraveno | CRUD read metadata |
+| 15 Groups | Opraveno | Events / Orders / Other |
+| 16 Limit | Vysvětleno a upravená nápověda | Chybějící klíč = 10, explicitně prázdné pole = všechny do technické meze; ověřeno skutečnými blueprinty |
+| 17 Pagination body | Návrh vědomě nepřevzat | Make body nahrazuje původní body; event/filtry/limit se musí zopakovat |
+| 18 Connection | Opraveno a vysvětleno | Common client ID, čitelná chyba, uživatelský label; privacy projection nerozšířená o identitu účtu |
+| 19 Validace a typy | Opraveno | Bez neúčinného max na selectu; nullable strings jsou text |
+| 20 Scopes | Opraveno | Univerzální modul má oba read scopes, server kontroluje grant |
+| 21 Samples | Ověřeno | List moduly samples mají; zahrnuté v SDK readbacku |
 
-Název poskytovatele v účtu či veřejné značce není automaticky právní název smluvní strany. Ten při žádosti ověřit z aktuálních údajů provozovatele.
+Oficiální podklady znovu přečtené při plánování: [REST universal module](https://developers.make.com/custom-apps-documentation/app-components/modules/universal-module/rest), [RPC pravidla](https://developers.make.com/custom-apps-documentation/best-practices/remote-procedure-calls), [pagination a nahrazování body](https://developers.make.com/custom-apps-documentation/component-blocks/api/pagination#body). AI feedback není autorita pro změnu oprávnění nebo účetních dat. Podrobné zkušenosti vlastní `integrations/make/review/REVIEW-LESSONS.md`.
 
-## 1. Připojení přes MCP
+## Doložené architektonické nedostatky
 
-Make má aplikaci **MCP Client** v otevřené betě. Pro test použít modul **Call a tool**, který přímo volá vybraný nástroj. AI není pro tento postup potřeba. Funkce Make MCP server slouží opačnému směru, tedy ovládání Make z externího klienta.
+1. `orders.mjs: orderDataSchemas['orders.report']` deklaruje jen malou část reportu a používá passthrough. `build.mjs: inferred/field` doplňuje další pole a typy ze sample, datum podle názvu `generated_at`. Make interface tak částečně vlastní fixture a OpenAPI schéma je neúplné. Toto je hlavní sjednocovací práce.
+2. Transport vlastní `MAKE_CLIENT_ID` a allowlist, generátor klienta znovu hardcoduje; `catalog-draft.json` opakuje scopes/client ID a odvozené stavy. OpenAPI znovu vypisuje scope keys. Groups a moduly mají více seznamů.
+3. Limity jsou rozházené: backend stránka 50, serverový guard 50 stránek, Make total input/fallback 3200, default 10, RPC 500. Jsou to odlišné pojmy. 3200 není příslib úplného exportu 3200 objednávek; při pokračování na stránce 50 současný guard skončí explicitní chybou.
+4. `build.mjs --check` kontroluje očekávané soubory, ne nadbytečné generated soubory. Odstraněný modul může zůstat na disku mimo manifest.
+5. `sync.mjs`, `verify.mjs`, `qualify.mjs` opakují SDK HTTP/token/rate-limit kód. Token file permissions kontroluje jen sync. Qualify hardcoduje connection/version a spolu s verify přepisuje datované historické důkazy.
+6. Původní plán/prompt tvrdily, že účet/OAuth nejsou ověřené. Aktuální status již vlastní `execution-20261028.json`; dokumentace musí odlišit status, historický receipt, místní zdroj a runtime.
 
-### Nejdřív vyřešit OAuth
+## Cílová architektura a invarianty
 
-1. V izolované testovací organizaci Make založit scénář a přidat MCP Client > Call a tool > Create a connection.
-2. Zvolit **+ New MCP Server**, zadat náš endpoint a název vstupenky.online.
-3. Zjistit, zda vlastní server umožňuje zadat předregistrované OAuth client ID a PKCE bez secretu. Zaznamenat skutečně použitý callback, resource, scopes a způsob obnovy tokenu bez jejich tajných hodnot. Make dokumentuje MCP callback `https://www.make.com/oauth/cb/mcp`.
-4. Teprve po ověření vytvořit samostatnou chráněnou registraci, navržené ID `festapp-make-mcp`, přesný callback, explicitní `dataProfile: order-summary` a strop `festapp:ticket-layouts:read`, `festapp:orders:read`. `offline_access` požadovat podle ověřeného refresh toku. Registrace nemá být součástí veřejného balíčku.
-5. Pokud Make pro vlastní server vyžaduje DCR nebo nenabízí potřebnou konfiguraci klienta, zaznamenat konkrétní chybu. Pak ověřit u Make možnost zařazení do seznamu serverů s OAuth konfigurací. Podpora OAuth obecně neprokazuje kompatibilitu s naším klientským modelem.
+Tok zůstává: Make definice -> `/make/v1/operations/:operation` -> společná autentizace a `DelegatedOwner` -> `Operations.invoke` -> existující operation adapter -> SQL -> veřejná projekce -> Make bundle.
 
-Nepoužívat registraci `festapp-chatgpt`, nekopírovat jeho tokeny a nezapínat plošnou dynamickou registraci. Pole API Key / Access token není náhradou za bezpečné přihlášení a obnovu uživatelského souhlasu.
-
-Tyto kroky vycházejí z [návodu MCP Client](https://apps.make.com/mcp-client); úspěšné připojení našeho serveru v Make dosud není ověřeno. Beta může změnit funkce i cenu. Manuální URL není automatické zařazení mezi ověřené servery.
-
-### První scénář a důkaz funkčnosti
-
-Po ověření konfigurace a cíleném nasazení v rozsahu aktuálního schválení:
-
-1. Přihlásit syntetického pořadatele, povolit pouze jeho testovací akci.
-2. Přes Call a tool načíst dostupný kontext a nástroje. Použít skutečné názvy z `tools/list`, nepřepisovat tečky či názvy odhadem.
-3. Vybrat konkrétní akci jejím ID a zavolat prodejní report. Namapovat součty do testovací tabulky; srovnat se stejným reportem v aplikaci, včetně měny a významu částek.
-4. Ověřit stránkování seznamu a detail objednávky. Odepřená či neúplná odpověď musí zastavit export, ne vyrobit nulový prodej.
-5. Ověřit obnovu po expiraci access tokenu, okamžité odvolání souhlasu, zákaz cizí akce a absenci osobních údajů v logu.
-
-Uložit sanitizovaný blueprint, očekávané výsledky a datum do budoucího `integrations/make/evidence/`. Tokeny, session a přihlašovací údaje pouze do chráněného úložiště. Test má být ruční a malý; neběží trvalý polling ani placený AI modul.
-
-**Výstup etapy:** skutečně funkční scénář, nebo doložená OAuth překážka a konkrétní cesta jejího odstranění. Dostupný HTTP endpoint nestačí.
-
-## 2. Vlastní konektor v katalogu
-
-Pro vlastní produkt zvolit standardní app review jako autor služby. Community partnerství nepovažovat za povinný mezikrok. [Technology Partner program](https://www.make.com/technology-partners) je určený autorům vlastního produktu; zveřejněný postup začíná ověřenou aplikací a teprve potom partnerskou přihláškou. Program výslovně uvádí vstup bez poplatku a partnerský sandbox. Není tím potvrzena každá případná podmínka vývoje či trvalého zveřejnění.
-
-### Účet, poplatky a připravené podklady
-
-Nejdřív ověřit, zda už existuje náš účet nebo žádost, a nevytvářet duplicity. Použít existující firemní organizaci, pokud má správného vlastníka. Pro podklady použít značku vstupenky.online, provozovatele Festapp, homepage služby, vlastní regionální logo a kontaktní e-mail `info@festapp.net`; právní identitu převzít z aktuálních údajů provozovatele.
-
-Vstup do Technology Partner programu je podle jeho FAQ bez poplatku. Veřejné stránky review ale nepotvrzují všechny náklady vydavatele ani potřebný tarif před vznikem partnerství. V účtu a aktuálních smluvních podmínkách ověřit registraci, vývoj, testování, review i dlouhodobé ponechání v katalogu. Pokud to nepůjde zjistit, připravit jeden stručný dotaz Make; před jeho případným odesláním ověřit autorizaci k této konkrétní komunikaci a absenci stejného otevřeného dotazu. Žádné předplatné ani pevný poplatek není schválený. Kredity zákazníka za běh scénářů jsou jiný náklad; viz [ceník a účtování kreditů](https://www.make.com/pricing). Nezapínat automatický nákup kreditů.
-
-### Moduly první verze
-
-| Modul | Kanonická operace | Výstup |
-| --- | --- | --- |
-| Dostupné akce | `access.inspect` a existující kontext | Jen akce dostupné aktuálnímu souhlasu a oprávněním |
-| Přehled prodeje | `orders.report` | Částky, měna, počty a původní upozornění reportu |
-| Seznam objednávek | `orders.list` | Omezené stránky bez osobních údajů |
-| Detail objednávky | `orders.inspect` | Identifikátory, stav a částky v profilu order-summary |
-| Vlastní API volání | Schválené veřejné čtecí rozhraní | Stejná oprávnění a datový profil |
-
-To je návrh, ne existující sada Make modulů. První verze neobsahuje „nová objednávka“, webhook, tvorbu objednávek, párování plateb ani rozesílání. Pravidelný report nevyžaduje nový backendový trigger. Export kontaktů do newsletteru v tomto profilu není podporován.
-
-### Rozhraní a architektura
-
-Implementace patří do `integrations/make/`, společná logika zůstává v `tools/festapp/src/operations/` a kanonickém backendu. Viz [pravidla integrací](../../integrations/README.md) a [sdílené operace aplikace a MCP](../architecture/admin-mcp-parity.md). Make nepočítá vlastní zaplacení, kapacitu ani účetní součty.
-
-Před psaním všech modulů udělat jediný transportní prototyp: OAuth + jeden report. Ověřit, zda custom app umí spolehlivě obsloužit MCP inicializaci, hlavičky, session a JSON/SSE odpovědi. Prostý POST `tools/call` není kompletní klient MCP.
-
-Pokud prototyp neprojde nebo Make takové rozhraní nepřijme do review, zvoleným řešením je tenký verzovaný HTTP adaptér ve stávající službě nad stejným vlastníkem operací. Před implementací doplnit přesný kontrakt, autentizaci a testy do tohoto plánu. Nevymýšlet neexistující REST URL ani přímé přístupy k tabulkám. Nedělat paralelně MCP wrapper i HTTP adaptér.
-
-Pro native app použít samostatného OAuth klienta. Make pro custom apps dokumentuje callback `https://www.make.com/oauth/cb/app` a PKCE; to je jiný callback než u MCP Client. Ověřit token exchange a refresh v obou směrech. [OAuth konfigurace](https://developers.make.com/custom-apps-documentation/app-components/connections/oauth2)
-
-Make vyžaduje také univerzální modul. Povolit jen relativní cesty na pevně zvoleném vlastním originu, bez předávání bearer tokenu při přesměrování. Server znovu kontroluje profil dat a scopes, i když uživatel ručně sestaví požadavek. Zápisové doménové operace zůstávají zakázané, i když čtecí transport používá HTTP POST. Nelze odvozovat oprávnění jen z HTTP metody. [Pravidla univerzálního modulu](https://developers.make.com/custom-apps-documentation/app-components/modules/universal-module)
-
-**Výstup etapy:** jeden zvolený transport, funkční moduly a obnovitelné OAuth připojení, žádná druhá implementace objednávek. Prototypy a testovací moduly před publikací odstranit. ChatGPT registrace a historické důkazy zůstávají samostatné.
-
-### Přesný kontrakt modulů
-
-Kanonické deskriptory v `tools/festapp/src/operations/catalog.mjs` vlastní schémata, `Operations.invoke` provádí operace a `public-orders.mjs` vlastní veřejnou projekci. Make vrstva překládá obálku a mapování polí. Nepřebírat běžné operator DTO obsahující kontakty a neodstraňovat citlivá pole až v Make: do Make logů se nesmějí vůbec dostat.
-
-| Modul | Vstup | Mapování a okrajové případy |
-| --- | --- | --- |
-| Dostupné akce | Bez ID od uživatele | Volat `festapp_access_inspect`, vrátit položky `occasions`; `id` je hodnota výběru, `title` pouze popisek. Shodné názvy se neslučují. Prázdný seznam není chyba přihlášení. |
-| Přehled prodeje | `occasionId` | `festapp_orders_report`; jeden výsledek pro jednu akci, zachovat report, měny, čekající vstupenky a varování. Seznam objednávek není zdrojem součtu reportu. |
-| Seznam objednávek | `occasionId`, Make celkový `limit` (výchozí 10), volitelně `state`, `search` | `festapp_orders_list`; backendový limit stránky je samostatný, nejvýše 50. Vyhledávání jen přesný desetiznakový symbol `[A-Z0-9]{10}`. Interně pokračovat přes `nextCursor` jako `before`. Nepřidávat kurzor založený na offsetu. |
-| Detail objednávky | `occasionId`, `orderId` | `festapp_orders_inspect`; kanonická odpověď je stránková obálka. Ověřit právě jeden odpovídající řádek; prázdno vrátit jako nenalezené/nedostupné. Nikdy nevzít první cizí řádek. |
-
-Před implementací znovu odvodit vstupní i výstupní JSON Schema z `Operations.catalog` s profilem order-summary a skutečným stropem scopes. Nevést ručně nezávislou kopii schémat. Návrhový soubor `integrations/make/catalog-draft.json` je seznam modulů, nikoli hotový import Make.
-
-Make List/Search vrací více bundles, Get/Report jeden objekt. Použít správný typ modulu, ne action vracející pole. V Make response nastavit `iterate`, `limit` a kurzorovou pagination podle [Search pravidel](https://developers.make.com/custom-apps-documentation/best-practices/modules/search-modules). Vstupní Make limit je volitelný s výchozí hodnotou 10; explicitně prázdná hodnota podle doporučení Make požaduje všechny výsledky do technických mezí, nikoli tiché omezení na 50. Konečné chování prázdného pole doložit scénářem.
-
-Backendová stránka má nejvýše 50 položek; Make limit omezuje celkový počet vydaných bundles napříč stránkami. `before` patří do vnitřního stránkování, první verze jej nevystavuje jako náhradu exportního checkpointu. Odpověď s `nextCursor:null` stránkování ukončí; opakovaný nebo rostoucí kurzor je chyba kontraktu. Backend řadí podle ID sestupně (`get_operator_orders_v1`); validovat tento směr, nejen odlišnost kurzoru. `access.inspect` nemá stránkování ani backendový limit: omezit výstup přes Make, nevymýšlet síťové stránky.
-
-Make dokumentuje stropy [pagination](https://developers.make.com/custom-apps-documentation/component-blocks/api/pagination): 100 requestů celkem, 50 stránkovacích requestů, 3200 záznamů a 40 sekund. Do prototypu zaznamenat, jak se počítají inicializační/refresh requesty a jak se limit projeví ve skutečném Make. Není dovoleno automaticky dohánět zbytek jiným jobem ani označit omezený výstup za úplný export. Před vyčerpáním vlastního známého rozpočtu skončit s jasnou chybou; pokud Make ukončí běh samo, doložit jeho chování a popsat omezení v návodu.
-
-Vícestránkový seznam není konzistentní databázový snapshot. Ověření bez duplicit a ztrát platí pro stabilní fixture; během běhu se stavy objednávek nebo příslušnost k filtru mohou měnit. Report a seznam mají vlastní okamžik čtení a nemusí spolu při souběžných změnách číselně souhlasit. MVP neslibuje účetní export ani exactly-once synchronizaci.
-
-Peníze zachovat v původní reprezentaci a měně, bez JS float přepočtů nebo slučování měn. Stav objednávky, její hodnota, přijaté peníze a počet platných vstupenek jsou různá pole. Přesné mapování polí finančního reportu a jejich datové typy zafixovat na syntetickém reportu až v prototypu; žádné součty odhadnuté z názvů polí. Referenční scénář ukládá jediný report do předem určeného řádku tabulky. Opakování jej přepíše, nepřičítá peníze ani nepřidává další řádek. Pro tutéž akci neběží souběžné aktualizace. Pokud cílová služba neumí idempotentní zápis nebo potřebnou serializaci, zůstane první důkaz u výstupu Make modulu a omezení se uvede; nepřidávat vlastní databázový ledger kvůli ukázce.
-
-`toolResult` v `tools/festapp/src/mcp/protocol.mjs` vrací MCP výsledek se `structuredContent` a chybovým příznakem. Transportní HTTP 200 ani úspěšné JSON parsování neznamenají úspěch operace. Native adaptér musí rozpoznat JSON-RPC error, `isError` i vnitřní `ok:false`; žádná z nich nesmí vydat úspěšný bundle. Nepoužívat AI ke čtení JSON odpovědi.
-
-| Chyba | Chování konektoru |
+| Vlastník | Odpovědnost |
 | --- | --- |
-| Expirace access tokenu | Obnova standardním OAuth tokem, nejvýše jedno opakování původního čtení |
-| Odvolaný/expirující grant, neplatný refresh | Vyžádat nové připojení; žádná nekonečná obnova |
-| Forbidden / nedostatečný scope | Zastavit, nezvyšovat souhlas automaticky |
-| Neplatný vstup / chybné schéma | Srozumitelná chyba modulu, žádná náhradní prázdná data |
-| 429 / retryable timeout / 5xx | Omezené opakování čtení podle Make a Retry-After; ne dvojité nezávislé retry smyčky |
-| Chyba po první stránce | Selhání běhu a žádné potvrzení úplnosti; zápisy již provedené jinou aplikací nemusejí jít vrátit |
+| `database/functions/eshop/get_report_ws.sql` | Jediné reportové výpočty |
+| `database/functions/eshop_orders/operator_orders.sql: get_operator_order_report_v1` | Scoped obálka nad existujícím reportem |
+| `orderDataSchemas`, `publicOrderPage` | Jediný machine data contract; žádné Make schema kopie |
+| Nový `tools/festapp/src/operations/order-report-schema.mjs`, pokud oddělení pomůže | Jediná deklarace reportu importovaná do `orders.mjs`; ne druhá implementace |
+| Nový `tools/festapp/src/remote/make-contract.mjs` | Make client ID, read allowlist a pojmenované transportní limity; scopes odvozené přes `scopesForOperation` |
+| Nový `integrations/make/src/catalog.json` | Jediná Make prezentace: stable module key, label, description, group, operation vazba |
+| `app.json`, `src/connection.json` | Existující SDK app identity a OAuth IML definice; nepřenášet sem doménová pravidla |
+| Nový `scripts/lib/make-sdk.mjs` | Malá sdílená SDK hranice pro existující příkazy |
 
-Doba access tokenu v současném issueru je 300 sekund, refresh/grant sedm dnů. Dlouhodobý bezobslužný scénář tedy není prokázaný a může vyžadovat nový souhlas; ověřit skutečný deployed profil a chování rotace. Kvůli Make neprodlužovat plošně životnost grantů ani nesdílet refresh token mezi klienty. Dva souběžné běhy musí projít rotací bez revokace druhého legitimního běhu; případný konflikt řešit serializací refresh v připojení, ne vypnutím replay ochrany issueru.
+Invarianty:
 
-Pro MVP zachovat současnou konečnou délku grantu. Refresh access tokenu nemá prodloužit `Delegation.expiresAt`. Před vydáním musí uživatel dostat pravdivý návod na nové připojení po vypršení; „nastavte jednou a běží navždy“ není platný příslib. Pokud je takto časté připojování pro produkt nepřijatelné, je to samostatné rozhodnutí o klientské politice s testy revokace, nikoli drobná změna konstant v Make adaptéru.
+- Generátor promítá schémata a Make metadata. Samples jsou validované příklady, nikdy zdroj typů. Manifest odpovídá přesně celému vlastněnému generated stromu.
+- Zachovat machine names, module keys, operace, connection identity, `/make/v1`, scopes, report `schema_version`, text event ID a původní money typy. Event label neznamená rename `occasionId`.
+- Zachovat client isolation, order-summary privacy, event consent, fixed origin, server allowlist, header ochrany, revokaci a pevnou sedmidenní expiraci. Jsou to záměrné hranice, ne duplicita doménových pravidel.
+- Zachovat omitted/blank limit rozdíl, descending cursor a explicitní incomplete-export error. `access.inspect` nadále nemá serverovou pagination; state zůstává free-text stored value.
+- SQL počty/peníze nepřepočítávat v JS. Přes Make nesmí nově unikat kontakty, poznámky, odpovědi ani QR obsah.
 
-Ani chybová větev scénáře neumí obecně vrátit zápisy provedené ve třetí aplikaci. První ukázka proto používá Report s jedním výsledkem, ne vícestránkový export. Budoucí kompletní synchronizace by potřebovala vlastní protokol dokončení a obnovy; v tomto MVP se neimplementuje.
+## Rozhodnutí, předpoklady a závislosti
 
-### Rozhodovací brány před implementací celého konektoru
+**D1:** Připomínky znovu neimplementovat. Nová práce opravuje doložený drift a zachovává kvalifikované chování.
 
-**G0 - účet a náklady.** Výstup `publisher-costs.json`: vlastník/ID organizace, zone, název tarifu a aktuální oprávnění k custom apps; samostatné položky cena vývoje, review, katalogu a ponechání. Každá položka má zdroj, datum a hodnotu confirmed-zero / nonzero / unknown. Zdarma vstup do programu nesmí vyplnit ostatní položky. Bez placeného závazku lze dál připravovat lokální kontrakty, nikoli nakoupit tarif.
+**D2:** Žádná plošná REST migrace ani přestavba OAuth. Jediný HTTP adapter existuje; neobnovovat pilotní MCP cestu jako alternativní backend.
 
-**G1 - autentizace.** Výstup `oauth-compatibility.json` pro oba typy připojení zvlášť. Zaznamenat client ID, přesný callback, issuer, použitý token endpoint, auth method, PKCE S256, scopes, audience/resource a chování refresh rotace. Bez tokenů, autorizačních kódů či cookies. Ověřit state a vazbu odpovědi na původní připojení. Veřejný klient bez secretu s PKCE je současný kontrakt. Pokud Make vyžaduje confidential client, tajný token nebo jiné resource, nejde o pouhé doplnění metadat: zastavit tuto větev a navrhnout konkrétní změnu auth kontraktu. Jiné funkční připojení není důkaz kompatibility.
+**D3:** Report schéma rozšířit o fakticky známá pole podle SQL a konzumentů; zachovat extension compatibility. Optional/null/union typy odpovídají doloženým SQL variantám. Nezpřísňovat podle jediné fixture ani uzavřeným strict objektem zahodit dříve platná rozšíření.
 
-**G2 - transport.** Jeden prototyp OAuth + Report, záznam `transport-decision.md`:
+**D4:** V tomto refaktoru zachovat veřejný vstupní strop 3200 i současnou completion mez. Pojmenovat je odděleně a odvozovat page size z canonical schema. Změna stropu nebo hlavičkového protokolu je samostatná veřejná změna.
 
-Rozhodnutí realizace 2026-10-28: vlastní aplikace úspěšně dokončila OAuth, MCP
-prototyp v reálném Make selhal na streamované odpovědi a vlastní parserové funkce
-nejsou účtu povolené. Zvolen je jediný tenký JSON HTTP adaptér. Přesné cesty,
-metody, chybové stavy, odvození schémat a strategie jediné OAuth audience jsou
-zafixované v [transportním kontraktu](../../integrations/make/evidence/transport-decision.md).
-Brána zůstává otevřená do úspěšného reportu v tomto transportu.
+**A1:** SQL v repozitáři popisuje zamýšlený report. Před posílením schématu porovnat `get_report_ws`, `get_operator_order_report_v1`, samples a `reporting.mjs: reports.export`. Nesoulad řešit podle doložených variant, nikoli úpravou peněz nebo SQL pro Make.
 
-- MCP varianta projde pouze s doloženou inicializací, verzí protokolu, Accept hlavičkami, rozpoznáním JSON/SSE a chyb, session chováním a rozpočtem requestů. Současný server používá per-request handler bez trvalé MCP session; nedoplňovat zbytečný session store. Doložit mapovatelné strukturované odpovědi v reálné Make custom app. Generic MCP Client není tento důkaz.
-- Pokud to nepůjde, zvolit jediný tenký HTTP adaptér ve stávající službě. Nejdřív doplnit do plánu konkrétní metody, cesty, error/status mapu, JSON Schema a právě jednu strategii OAuth audience. Token vydaný pro `/mcp` nelze bez výslovného kontraktu prohlásit za token pro libovolnou novou API resource. Zachovat stejnou delegaci, revokaci a `Operations.invoke`; žádný service role token ani druhé přihlášení přes heslo.
-- Univerzální modul musí fungovat s vybraným rozhraním a nesmí umožnit obejít profil a scopes. Pokud review vyžaduje něco neslučitelného s bezpečným kontraktem, zaznamenat přesný požadavek a upravit návrh před implementací.
+**A2:** Existující app stále čeká na lidskou kontrolu. Před případným sync jednou načíst stav. Již schválenou app neměnit cestou pro unapproved review update.
 
-Brána je uzavřená až volbou jedné varianty a odstraněním druhého pokusného transportu. V dokumentaci zůstane důvod volby, nikoli udržovaný fallback. Existující MCP pro jiné klienty se nemaže.
+Externí závislost: lidské posouzení Make a katalogové vydání. Lokální architekturu neblokuje. Reautorizace reviewer účtu po expiraci nesmí rozšířit consent scope ani opakovat provisioner.
 
-**G3 - kvalifikace a vydání.** Všechny moduly mají syntetické scénáře, sanitizaci, chybové větve a přesný export zdrojů. Čerstvost logů před odesláním se ověřuje novým během, ne tvrzením „testováno dříve“. Není přípustné Publish se skrytými pokusnými komponentami. Aktuální nulové pevné náklady a skutečnou dostupnost konektoru lze doložit jinak než marketingovým formulářem.
+## Mazací a migrační seznam
 
-## Realizační etapy a přejímka
-
-Každá etapa aktualizuje jeden sanitizovaný stavový záznam v `integrations/make/evidence/`. Označení prepared, tested, submitted a released se nesmějí zaměňovat.
-
-| Etapa | Konkrétní práce | Podmínka dokončení |
+| Artefakt | Akce | Důkaz |
 | --- | --- | --- |
-| A - účet a podmínky | Účet info@festapp.net; potvrdit vlastníka, Make zone a tarify. Sepsat důkaz nákladů. | Přístup bez narušení uživatelova okna; žádný pevný poplatek ani automatický nákup kreditů |
-| B - MCP pilot | Samostatná registrace a prototyp dle etapy 1; zachytit callback, PKCE, resource a refresh | Syntetický report úspěšný, cizí akce a revokace odmítnuté; nebo doložená překážka OAuth |
-| C - native transport | `integrations/make/` s jedním report modulem a connection; ověřit kompletní MCP komunikaci, případně konkretizovat jediný HTTP adaptér | Úspěšné přihlášení, typované výstupy a chyby bez tajných údajů v Make logu |
-| D - celé MVP | Rozšířit zvolený transport o zbývající moduly a univerzální modul, exportovat zdroje z Make do repozitáře | Všechny moduly fungují; žádné pokusné komponenty; schémata odpovídají kanonické projekci |
-| E - kvalifikace | Cílené lokální testy a aktuální reálné Make scénáře; připravit dokumentaci a metadata | Všechny níže uvedené případy doložené včetně mezí ověření |
-| F - vydání | Zkontrolovat konkrétní finální podmínky a rozsah autorizace, Publish a jediné review | Oddělená potvrzení přijetí a vydání; nový uživatel konektor najde a připojí |
+| `catalog-draft.json` | Migrovat prezentaci do `src/catalog.json`, odstranit starý soubor a odvozená runtime/status/tool pole | Žádné aktivní odkazy na starý soubor |
+| Sample inference pro známý report a name-only date heuristika | Nahradit canonical schema | Změna sample hodnot nemění interface; datum deklarované schématem |
+| Kopie client ID/scopes/transportních limitů | Použít `make-contract.mjs` a shared scope owner | Runtime, OpenAPI i generátor odvozují stejné údaje |
+| Paralelní groups/module seznamy | Odvodit z jediné Make prezentace | Každý modul právě jednou, známá read-only operation |
+| Obsolete `src/generated/` soubory | Odstranit pouze ve vlastněném stromu, check odmítá extra soubory | Přesná file-set shoda s manifestem včetně manifestu samého |
+| Tři kopie SDK token/HTTP/rate kódu | Nahradit jednou SDK hranicí; mutation guardy ponechat u příkazů | Jeden protected loader a request implementation |
+| Hardcoded qualification connection/version | Reviewer kontext v jednom ne-secret configu, verze z `app.json` | Konzistentní fixture/identity kontrola |
+| Přepis historických receiptů | Nové run-specific soubory, status pouze pointer | Původní freeze/qualification/readback digesty nezměněné |
+| Zastaralé tvrzení o neexistujícím účtu a nezvoleném transportu | Odstraněné touto aktualizací plánu/promptu | Jediný aktuální execution status |
+| Server allowlist/header guardy, veřejná v1 jména, historické receipty | Záměrně ponechat | Testy kontraktu, doložené boundary/history |
 
-Etapy C-E mohou pokračovat i při nekompatibilitě obecného MCP Client, pokud je prokázaná kompatibilita OAuth vlastní aplikace. Celý projekt nesmí zablokovat pouze chybějící položka v nabídce ověřených MCP serverů. Naopak bez vyřešeného přístupu a OAuth se netvoří zdánlivě hotový import s vymyšlenými endpointy.
+## Implementační vlny
 
-### Přejímací scénáře
+### 1. Jediné faktické schéma reportu
 
-1. **Přihlášení:** neplatný callback, verifier nebo resource se odmítne; scope nelze rozšířit a Make nedostane grant jiného klienta. Refresh po více než 300 sekundách funguje; revokace zablokuje i opakování již použitého čtení.
-2. **Výběr akce:** dvě stejnojmenné syntetické akce, dostupná jen jedna; rozhoduje ID a aktuální oprávnění. Práva odebraná během připojení zastaví další čtení.
-3. **Report:** shoda s kanonickým reportem pro syntetické zaplacené, nezaplacené, zrušené a čekající položky. Nulové, neznámé a chybové hodnoty se nerozpustí do jedné nuly.
-4. **Stránkování:** aspoň 51 syntetických objednávek ve stabilní fixture, výstup bez ztrát a duplicit přes více stránek; celkový Make limit 10/51/52, prázdná hodnota, poslední stránka i nepostupující kurzor. Samostatně přesný symbol na pozdější stránce a záměrně neúplné hledání. Při změně stavu objednávky za běhu neslibovat snapshot.
-5. **Detail a data:** nenalezené ID, ID z jiné akce a z jiného tenantu nic neprozradí. Striktní projekce objednávky nepřipustí customer, note, responses, QR ani neznámá pole; report posuzovat podle vlastního kanonického schématu, nikoli schématu objednávky. Finanční typy a měny zůstávají zachované.
-6. **Chyby a retry:** včetně HTTP 200 s doménovou chybou, 429, timeoutu a chyby druhé stránky. Ověřit, zda už Make vydal předchozí bundles a co skutečně zůstalo v cílové službě; žádný slib automatického rollbacku cizích zápisů. Referenční jednorázový report po opakování nevytvoří další řádek.
-7. **Univerzální modul:** zápisová operace i absolutní/cizí URL jsou odmítnuté; žádný token v hlavičkách při redirectu, blueprintu, výstupu či logu.
-8. **Dlouhý běh:** rotace při dvou souběžných scénářích a dosažení expirace grantu mají doložené chování. Uživatelský návod jasně říká, kdy je potřeba nové připojení. Expiraci sedmidenní delegace testovat řízeným časem v disposable prostředí; živý pěti minutový refresh provést v reálném Make bez zkracování produkční TTL.
-9. **Zátěž a cizí klienti:** souběh tří operací jednoho grantu vyvolá řízené omezení, nikoli únik nebo pád. Změna Make nesmí změnit katalog, scopes, callbacky ani granty stávajícího ChatGPT klienta. Současný server má strop 2 aktivních requestů na grant, 16 celkem a 60/min na grant; ověřit aktivní nastavení a pracovat v jeho mezích.
+**Změny:** zmapovat pouze `get_report_ws.sql` -> `operator_orders.sql` -> `orders.mjs` -> `catalog.mjs` a `reporting.mjs: reports.export`. Popsat známá pole jedním schématem: ISO timestamp, text ID, numeric/decimal-text money varianty a podmíněné bloky. Zachovat passthrough pro rozšíření; nepřidat osobní údaje.
 
-Scénáře používají izolovaná syntetická data. Stávající reviewer demo s osmi objednávkami pro test 51 řádků nestačí; nerozšiřovat bez domluvy účet používaný pro probíhající ChatGPT review. Testy Make autentizace musí použít Make klienta, ne pouze přejmenovanou ChatGPT fixture. Živý Make průchod a lokální simulace backendu mají oddělený důkaz.
+`build.mjs: concrete/field` musí používat schema včetně nullable/union/array/object pravidel a date metadata. U nevyjádřitelného unionu explicitní podporované mapování, ne výběr podle sample. Odstranit sample-owned report typing a name-only date heuristiku. Dynamický record má schema-owned value type, ne seznam fixture keys.
 
-## 3. Testy a žádost
+**Kompatibilita:** stejné hodnoty i rozšíření; žádná SQL změna/migrace ani konverze peněz/ID. Posílení validace nesmí odmítat dosud podporovanou variantu pouze kvůli neúplnému vzorku.
 
-Před review připravit stručnou veřejnou dokumentaci API, konfiguraci připojení, popis dostupných polí a podpory. Make reviewer potřebuje čerstvé scénáře pokrývající každý modul. Doložit stránkování, limity, práci s daty a očekávanou chybovou odpověď. Logy pouze syntetické; auth hlavičky a tokeny sanitizovat. [Požadavky review](https://developers.make.com/custom-apps-documentation/app-review/prerequisites)
+**Validace/exit:** contract testy různých report variant, skutečný SQL výstup přes `make-orders-postgres.test.mjs` a sdílený export přes `reporting-postgres.test.mjs`. Porovnat generated interface a OpenAPI s baseline. Známá report pole mají jednoho vlastníka, změna sample hodnot nemění interface.
 
-Lokální ověřování při implementaci: v `tools/festapp/` spustit přes `pnpm exec node --test --test-concurrency=1` relevantní `test/remote.test.mjs` a nové cílené testy Make adaptéru. Doplnit testy izolace klientů, chybného callbacku/resource, revokace a pokusu obejít read-only profil univerzálním modulem. Potom jeden skutečný průchod v Make, včetně refresh. Nevydávat pouze průchod unit testy za připravenost katalogu.
+### 2. Jeden Make kontrakt a přesný generátor
 
-### Soubory, testovací vrstvy a důkazy
+**Změny:** zavést `make-contract.mjs`, přesměrovat importy serveru/transportu/generátoru; prezentaci přestěhovat do `src/catalog.json`. Scope union odvozovat z allowlistu a `mcp-permissions.mjs`; vazby ověřit proti `Operations.catalog` a `domainReadOnly`. Common client ID ze stejné konstanty. OpenAPI scope keys odvodit, popisy mohou zůstat prezentační.
 
-| Vlastník | Co do něj patří |
-| --- | --- |
-| `integrations/make/` | Exportované zdroje app, connections, modules, RPC výběru akcí, samples a interface; přesné podadresáře podle editoru zvoleného v prototypu |
-| `integrations/make/scripts/` | Deterministický export/build a kontrola souladnosti schémat, až existuje skutečný transport; žádný druhý ručně vedený seznam oprávnění |
-| `tools/festapp/src/operations/` | Kanonické deskriptory a projekce; měnit pouze chybějící společný kontrakt, ne vytvářet `make-orders` s kopiemi doménových výpočtů |
-| `tools/festapp/src/remote/` | Případný tenký HTTP vstup a sdílené ověření tokenu/delegace; chráněná produkční registrace se neukládá do tohoto adresáře |
-| `tools/festapp/test/remote.test.mjs` | Stávající OAuth a wire regresní kontrakt; chrání i ostatní klienty |
-| `tools/festapp/test/make-transport.test.mjs` (navržený) | Skutečný zvolený executor, přesná odpověď/chyba a klientská izolace; nenahrazovat autentizaci mockem, který vždy vrací autorizovaného uživatele |
-| `tools/festapp/test/orders-postgres.test.mjs` a nový čtecí případ | Reálný SQL scope a projekce pro cizí akci, tenanta a cursor; jen disposable databáze |
-| `integrations/make/evidence/` | Sanitizovaný výsledek bran, exportní digest, zdrojová revize a odkazy na aktuální testovací běhy/review; ne osobní nebo přístupové údaje |
+Pojmenovat zvlášť backend page size, max pages, total input cap, default total a RPC sample limit. Page size vycházející ze schema použít v generated body i completion aritmetice. Zachovat úplné pagination body. Groups odvodit z modulových metadat.
 
-Reálné DB testy vyžadují `FESTAPP_MCP_TEST_DATABASE_URL` a `openDisposableDatabase` z `tools/festapp/test/postgres.mjs`. Stav skipped není úspěšný test SQL. Připravit fixture s pozastaveným e-mailovým workerem bez URL, vytvořit syntetické členství a objednávky a vše odstranit rollbackem. Nikdy nesměřovat proměnnou na produkci. Pokud se mění backendový kontrakt, použít kanonické SQL/migraci a příslušné databázové kontroly; plán nepředpokládá novou tabulku ani migraci jen kvůli transportu.
+Oddělit čisté sestavení mapy souborů od CLI zápisu. `--check` porovnává obsah i přesný file set. Regenerace odstraní obsolete artefakty pouze pod vlastním `src/generated/`, bez symlink escape a bez mazání ručních zdrojů. Schema-only artefakty nesynchronizovat jako SDK komponenty.
 
-Příkazy po implementaci ze složky `tools/festapp/` (pokud závislosti chybí, nejdřív `pnpm install --frozen-lockfile`; verze pnpm 11.24.0):
+**Mazání/kompatibilita:** odstranit draft/kopie/seznamy a obsolete outputs; zachovat veřejné názvy, parametry, limity a auth chování.
+
+**Validace/exit:** generator testy dokazují schema/sample nezávislost, detekci extra souboru, zrušený modul, scopes/groups, blank/default logiku. Finální `build.mjs --check`, `make-transport.test.mjs`, `remote.test.mjs`. Jediný Make kontrakt a prezentace, žádný aktivní draft odkaz nebo extra generated artefakt.
+
+### 3. Jediná SDK hranice a důvěryhodné důkazy
+
+**Změny:** `scripts/lib/make-sdk.mjs` sjednotí protected token loader (regular file, bez symlinku, bez group/other permissions), pevný SDK origin z ověřené app identity, paced requests a sanitizované chyby. Žádné automatické retry mutace s neznámým výsledkem. Sync/verify/qualify zachovají účely a guardy; sync nesmí automaticky mazat neznámé remote komponenty.
+
+Reviewer kontext (connection `12447881`, scénáře `8226665`/`8228261`, fixture marker) bude mít jeden ne-secret config. Verze z `app.json`. Před mutací ověřit team, vlastníka, fixture a inactive/on-demand stav. V `finally` ukončit scénáře jako inactive; stop failure zaznamenat i při původní chybě. Žádná nová fixture/provisioner.
+
+Nové důkazy ukládat pod jedinečným run ID s digesty a odkazy na původní freeze. `execution-20261028.json` je stručný mutable status/pointer; původní datované readback/qualification/freeze se nemění. Žádné tokeny nebo celé privátní logy.
+
+**Validace/exit:** fake HTTP testy SDK hranice (403/429/timeout, žádné implicitní mutation retry, token file protections), failure cleanup a immutable evidence writer. Tři příkazy sdílejí klienta; neúspěšný běh má pravdivý status a nezměněnou historii.
+
+### 4. Kontrakce dokumentace a podmíněný review update
+
+**Změny:** aktualizovat `README.md`, `SETUP.md`, `API.md` a review handoff jen podle skutečné změny kontraktu/workflow. Stav odkazuje na execution receipt. Již odeslanou odpověď a historické receipty needitovat. Výsledek implementace doplnit do tohoto plánu, žádný paralelní plán.
+
+Nejprve porovnat finální generated manifest s odeslaným digestem. Pokud se publikované definice nezměnily, žádný sync ani živé scénáře jen kvůli refaktoru tooling. Pokud se změnily, po lokálních checks a readbacku současného review stavu aktualizovat stejnou unapproved app přes `sync.mjs --apply --review-update`, ověřit SDK a jednou spustit dotčené existující scénáře přes `qualify.mjs --apply`. Žádný nový Publish/review. Nový mail není součástí tohoto plánovacího kola; odpověď již odešla. Další konkrétní komunikaci řešit pouze v autorizovaném rozsahu.
+
+Případný server deploy je zvláštní krok s přesnou revizí/cílem podle provozních pravidel a skillu `festapp-backend-access`. Rutinní autorizovaný deploy delegovat levnějšímu subagentovi. Žádný deploy z dirty worktree ani vedlejší tenant. Exit lokální části: deletion ledger uzavřený, dotčené gates passing, dohledatelný nový digest/status. Externí review může stále čekat.
+
+## Ověření, rollout a rollback
+
+Plánování testy nespouští. Při implementaci změny dávkovat a provést cílenou závěrečnou sadu; opakovat jen dotčené kontroly po opravě. Node 24, pnpm 11.24.0, z `tools/festapp/`:
 
 ```sh
-pnpm exec node --test --test-concurrency=1 test/remote.test.mjs test/make-transport.test.mjs
-pnpm exec node --test --test-concurrency=1 test/orders-postgres.test.mjs
+pnpm exec node ../../integrations/make/scripts/build.mjs --check
+pnpm exec node --test --test-concurrency=1 test/make-connector.test.mjs test/make-transport.test.mjs test/remote.test.mjs test/make-orders-postgres.test.mjs test/reporting-postgres.test.mjs
 ```
 
-Nový testovací soubor je součástí budoucí implementace, dnes neexistuje. SQL příkaz má význam pouze s ověřenou disposable fixture. Při změně generátoru nebo Make mapování přidat cílený kontraktní check tam, kde bude skutečný build; nevytvářet falešný test hotového konektoru nad samotným návrhovým JSON.
+Nový `test/make-connector.test.mjs` ověřuje stabilní schema/generator/SDK kontrakty, nikoli přesné znění UI copy. SQL testy vyžadují `FESTAPP_MCP_TEST_DATABASE_URL` na marker-ověřené disposable lokální DB, paused email kapacitu, null worker URL a rollback. Neexportovat produkční `.env.local`, nehádat DB podle starého portu. Chybějící DB/skip = INCOMPLETE, nikoli PASS. Při změně shared schématu zahrnout skutečné konzumenty; širší známou write fixture neoznačovat za passing.
 
-Každý důkaz uvádí zdrojový commit a digest použitého exportu, Make zone, app ID/verzi, ID testovacích scénářů, čas, prostředí a co bylo skutečně provedeno. Podporu chybového případu nelze doložit jen tím, že je uvedený v testovacím seznamu. Soubor `preparation-20261028.json` zůstává historickým záznamem přípravy; pozdější fáze dostanou vlastní datum a nepřepíšou původní neprovedené kroky na provedené.
+Před externí změnou: izolovaný známý commit, aktuální authoritative main fetch/porovnání, cílené tests, manifest freeze, kontrola review state, server před klientem pouze pokud je serverová změna nutná, pak sync/readback a relevantní scénáře. Před push platí repository publication pravidla. Při pouhé reorganizaci nezasahovat do issueru/callbacků.
 
-Postup odeslání podle [Make review](https://developers.make.com/custom-apps-documentation/app-review/request-app-review):
+Rollback tvoří koherentní vrácení zdrojů a generated definic při zachování klientské identity. Nevracet pilot, fallback backend ani paralelní schéma. Schválený katalogový kontrakt neměnit rollbackem přes unapproved review cestu. Historie zůstává zachovaná.
 
-1. Odstranit pokusné komponenty. Akce **Publish** je podle dokumentace nevratná; zveřejněné komponenty nelze jednoduše smazat.
-2. Po připravenosti a autorizaci publikace použít Publish, nastavit viditelné moduly a otevřít Review.
-3. Vyplnit dokumentaci API a odkazy na čerstvé testovací scénáře. Request review zahájí posouzení.
-4. Doplnit navazující formulář: vztah k dodavateli, kontakty, kategorii, logo a web.
-5. Automatické i ruční připomínky řešit ve stejném vlákně; po úpravách obnovit testovací logy.
-6. Zaznamenat přijetí, schválení a skutečné vydání odděleně. Hotovo je až dohledání konektoru z jiné organizace a úspěšné připojení.
+Původní rozsah projektu již obsahoval účet `info@festapp.net`, bezplatné vydání, cílené nasazení Make a řešení review. Tato plánovací aktualizace neuděluje nové širší oprávnění. Případné provozní kroky realizovat pouze v doloženém existujícím rozsahu. Pevný poplatek, předplatné, automatický nákup kreditů ani změny jiných produktů nejsou autorizované.
 
-### Řízení vydání a návratu
+## Definice dokončení a zbytková rizika
 
-Před publikací zmrazit export app včetně connection, module/RPC definic, samples a interfaces a zaznamenat SHA256. Změna po tomto bodě zneplatní příslušné testy, nikoli automaticky všechny ostatní důkazy. Žádost musí odkazovat na stejnou app/verzi jako poslední úspěšné scénáře. Před retry odeslání zkontrolovat portál i potvrzovací e-mail; timeout není důkaz, že žádost nevznikla.
+- [ ] Všech 21 bodů má opravu nebo doložené vysvětlení; žádný duplicitní review/mail.
+- [ ] Report schéma vlastní operation vrstva; samples nedefinují známá report pole.
+- [ ] Runtime/OpenAPI/Make používají společný transportní kontrakt a scope owner; doména zůstává v Operations/SQL.
+- [ ] Prezentace a SDK mají po jednom vlastníkovi, obsolete zdroje i outputs odstraněné.
+- [ ] Generated file set přesně sedí, historie nepřepsaná, aktuální status dohledatelný.
+- [ ] Passing cílené testy včetně skutečné lokální SQL; sync/deploy ověřené, nebo výslovně neprovedené.
+- [ ] Lokální dokončení je oddělené od schválení Make. Katalogové dokončení vyžaduje skutečné approval/release a discovery + OAuth z jiného již autorizovaného účtu; nezakládat další účet jen kvůli testu.
 
-Pokud vznikne nový serverový transport, vydat nejprve zpětně kompatibilní server s platným issuerem a izolovanou registrací. Potom otestovat privátní app v Make. Teprve hotový export použít pro nevratný Publish a review. Žádný Flutter build, změna dalšího tenantu nebo přepnutí ChatGPT registrace není součástí vydání Make. Rutinní autorizované nasazení delegovat podle AGENTS.md se zafixovanou revizí a cílem.
+Rizika: podmíněná report pole a union money typy mohou vyžadovat explicitní Make projekci typu bez změny hodnot. Server a checkout mohou být na jiných revizích. Make může při lidské kontrole vyžádat další doloženou úpravu. Veřejná cost evidence není písemná garance Make. Sedmidenní reautorizace a omezený ne-snapshot export zůstávají produktové limity.
 
-Před Publish lze odstranit pilotní scénáře a nepoužité privátní komponenty. Po Publish už odstranění app a jejích součástí není běžný rollback; použít podporovaný postup Make a nezakládat druhou veřejnou app se stejnou značkou. Při incidentu nejdřív zastavit vlastní pilotní scénáře a odvolat konkrétní Make delegace. Odstranění klientské registrace je širší odstavení všech jejích uživatelů a vyžaduje popsaný dopad. Obnovení serverové verze nesmí načíst konfiguraci, které nerozumí, ani otevřít širší scopes. Případné odstranění nového endpointu až po vypnutí jeho klientů; existující MCP a ostatní granty zůstávají funkční.
+## Implementace 2026-10-28: lokální kontrakce
 
-Podpora musí umět rozlišit vypršelý souhlas, odebraná oprávnění, vyčerpané Make kredity, dosaženou pagination mez a nedostupný backend. Uchovávat jen kód výsledku, request ID, verzi a dobu běhu; žádné bearer tokeny nebo celé odpovědi s objednávkami. Doba držení důkazů a přístup reviewer vycházejí z aktuálních podmínek Make a používají pouze syntetická data. Při změně API/schema aktualizovat nejdřív cílené testy a vývojovou verzi; aktualizace veřejné app opět podléhá pravidlům Make.
+Změny jsou izolované nad existující Make větví `42917b9e1` v `/tmp/festapp-make-contract-20261028` (`refactor/make-contract-20261028`). Dirty main není zdroj pro provozní zápis. Původní obsah dotčených souborů je pro oddělení vlastního diffu zachovaný v `/tmp/festapp-make-baseline-20261028`.
 
-## Co je otevřené a kdy je hotovo
+- Vlna 1: `order-report-schema.mjs` je jediná deklarace známého SQL reportu, importovaná do `orderDataSchemas`; `reports.export` používá stejný executor. Podmíněné bloky jsou optional, objekty passthrough, SQL se nemění. Make pro mixed scalar union používá `any` bez konverze; dynamic collection nemá fixture-owned keys, value schema zůstává canonical JSON Schema. Toto je explicitní mez Make projekce, nikoli další schéma.
+- Vlna 2: identitu, allowlist, scope union a pojmenované limity vlastní `make-contract.mjs`; scopes dál počítá `scopesForOperation`. `src/catalog.json` vlastní pouze prezentaci a groups. `assemble` sestaví mapu; generátor kontroluje přesný file set a odmítá symlinky i u kořenové cesty s koncovým lomítkem. Regenerace maže obsolete soubory pouze ve vlastním stromu.
+- Vlna 3: `scripts/lib/make-sdk.mjs` je jediný token/HTTP/pacing/evidence owner. `src/reviewer.json` vlastní existující reviewer kontext; qualification ověřuje team, autora connection/scénářů, fixture a on-demand/inactive stav. Mutace vyžadují čistý source commit a generated shodu. Evidence vzniká s exclusive create mimo source checkout, každý checkpoint samostatně; cleanup selhání zůstává v receiptu.
+- Vlna 4: README/API/review handoff odlišují historické receipty od místního zdroje. SETUP neměníme: uživatelský/OAuth postup zůstává stejný a jeho native README digest je zachovaný. Existující odpověď ani historické důkazy se nemění.
 
-- [ ] Potvrzené nulové pevné náklady vydavatele, včetně potřebného vývojového tarifu.
-- [ ] Prokázaná kompatibilita Make OAuth; žádné vypnutí klientských omezení.
-- [ ] MCP scénář funguje, nebo je jeho konkrétní překážka doložená.
-- [ ] Native app má jeden zvolený transport a všechny moduly používají kanonické operace.
-- [ ] G0-G3 jsou doložené, ve vzájemně konzistentních verzích; žádné unknown u podmínek potřebných pro vydání.
-- [ ] Výchozí/prázdný celkový limit, technické meze, neatomické cizí zápisy a konečná životnost souhlasu jsou pravdivě popsané.
-- [ ] Připravené testy, dokumentace a skutečně čerstvé reviewer scénáře.
-- [ ] Review odesláno jen jednou; konektor následně dohledatelný a použitelný z jiného účtu.
+Deletion ledger: odstraněn `catalog-draft.json`, sample inference a name-only datumová heuristika, kopie klienta/scopes/limitů a paralelní groups seznam; tři SDK request/token implementace nahrazené jednou; hardcoded qualification IDs/verze nahrazené kontextem/app identity; přepis historických receiptů odstraněn. Baseline neobsahoval obsolete generated soubory; test vytváří extra soubor a retiruje modul, ověřuje jejich odstranění a přesnou shodu zbývajícího stromu. Aktivní draft odkazy nejsou. Záměrně zachovány public machine keys, fixed-origin/read/header/consent hranice a historické důkazy.
 
-Aktuální souhlas zahrnuje registraci, implementaci, nezbytnou Make konfiguraci/nasazení a Publish/odeslání po splnění bran; neomezovat jej zpět na pouhou přípravu. Publikační kontroly zůstávají povinné, další stejné schválení se nevyžaduje. Konkrétní placený závazek schválený není. Pokud se kompatibilita nepotvrdí, nezvyšovat scopes ani nepřidávat servisní klíč jako zkratku. Při návratu z pilotu odvolat jen připojení Make; zachovat ostatní klienty i jejich granty. Plán dokládá zadání, nikoli provedené externí kroky.
+Lokální ověření: Node 24.20.0, pnpm 11.24.0, cílená sada plánu 61/61 PASS, 0 skip. SQL použilo marker `festapp-authz-20261020` na explicitním loopback 61022, cron off, paused email a null worker URL; fixture transakce se rollbackují. `build.mjs --check` potvrzuje všech 42 souborů. První testovací běh zachytil root symlink s trailing slash; opraveno a konečná sada je passing. Širší write fixture se nespouštěla a tento výsledek ji neoznačuje za passing.
+
+Nový manifest SHA256: `7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0`. Proti review freeze se mění pouze `schemas.json`, salesReport interface a manifest; jediné změněné publikované SDK tělo je salesReport interface. Čerstvý omezený SDK read vrátil app v1/public, `approved=false`, `inReview=true`; connection/team a positive scenario owner/on-demand/inactive pole odpovídají reviewer kontextu. Podmíněný update stejné app bude zaznamenaný samostatným immutable receiptem po source freeze. Server deploy není potřebný pro doplnění SDK interface: skutečný SQL výstup již obsahuje tato pole, values/transport se nemění.
+
+Externí závislost zůstává: lidské review, approval/release a následně discovery/OAuth jiného již autorizovaného účtu. Žádný nový Publish, review, mail, účet, provisioner, placený závazek nebo jiný tenant není součástí této implementace.

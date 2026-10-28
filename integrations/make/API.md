@@ -53,3 +53,9 @@ Failure envelope: `{"ok":false,"error":{"code":"...","message":"...","retryable"
 - 5xx: temporary service failure or rejected upstream contract; never interpret as zero sales.
 
 The native list module sends `x-festapp-make-page` (one-based page) and `x-festapp-make-total-limit` (requested total). A blank total means unlimited within technical bounds, not zero. These headers enforce completion boundaries and never grant access. A request cannot silently end at the 50-page boundary when more records were requested. Make also has execution bounds. Lists are not database snapshots; an external app may already have written earlier bundles before an error. This connector performs no destination writes or rollback.
+
+## Contract ownership
+
+Report computations remain in `get_report_ws.sql`, through the scoped operator wrapper. `tools/festapp/src/operations/order-report-schema.mjs` owns the known report shape used by both `orders.report` and `reports.export`; optional provider/deposit blocks and unknown extensions survive. Report event/product IDs remain text. Money retains its numeric or decimal-text representation, without conversion. OpenAPI and Make interfaces derive from this schema, never samples. Make uses `any` for mixed scalar unions and collections for dynamic records; the complete value schema remains in OpenAPI and the generated schema artifact.
+
+`make-contract.mjs` owns client identity, the read allowlist and distinct transport limits. Backend page size derives from the operation input schema; the 50-page completion guard, 3200 public input cap, default total 10 and RPC sample limit 500 retain separate meanings. The input cap is not a guarantee that an export can complete before the page guard.

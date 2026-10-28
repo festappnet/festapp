@@ -1,6 +1,6 @@
 # vstupenky.online pro Make
 
-Implementovaný native konektor má pět modulů, jednu OAuth connection a jeden RPC výběr akcí. Jediný transport je verzovaný JSON HTTP adaptér ve stávající regionální službě, který volá kanonický `Operations.invoke` a profil `order-summary`. Backend je nasazený z `903145af6`; nesdílí klienta ani grant s ChatGPT/Codex a DCR zůstává vypnuté.
+Implementovaný native konektor má pět modulů, jednu OAuth connection a jeden RPC výběr akcí. Jediný transport je verzovaný JSON HTTP adaptér ve stávající regionální službě, který volá kanonický `Operations.invoke` a profil `order-summary`. Historický backend receipt uvádí revizi `903145af6`; nesdílí klienta ani grant s ChatGPT/Codex a DCR zůstává vypnuté.
 
 Publish a jedna žádost o review byly přijaty, včetně navazujícího formuláře (case `2351677:2082001`). Čeká se na kontrolu a vydání Make. Aktuální publikační stav a další krok jsou v [execution-20261028.json](evidence/execution-20261028.json). Publish, podání review, schválení a vydání do katalogu jsou samostatné stavy. Samotné fungování privátní aplikace neznamená dostupnost v katalogu.
 
@@ -8,7 +8,7 @@ Publish a jedna žádost o review byly přijaty, včetně navazujícího formul�
 - [Znalosti z review, ověřené výjimky a publikační postup](review/REVIEW-LESSONS.md)
 - [Konfigurace aplikace](app.json), [zdroj OAuth](src/connection.json), [generované komponenty a manifest](src/generated/manifest.json)
 - [Nasazení](evidence/http-deployment-20261028.json), [45 cílených testů včetně skutečného SQL](evidence/server-tests-20261028.json)
-- [Čerstvý průchod všemi moduly a chyba druhé stránky](evidence/live-qualification-20261028.json), [15 případů limitů a oprávnění](evidence/guardrails-20261028.json)
+- [Historický průchod všemi moduly a chyba druhé stránky](evidence/live-qualification-20261028.json), [15 případů limitů a oprávnění](evidence/guardrails-20261028.json)
 - [Souběžný refresh a neměnná serverová expirace](evidence/refresh-20261028.json), [okamžitá revokace](evidence/revocation-20261028.json), [shoda s Make SDK](evidence/source-readback-20261028.json)
 - [Veřejné důkazy nákladů](evidence/publisher-costs.json), [podklady pro review](review/REVIEW.md)
 
@@ -28,4 +28,8 @@ Make zobrazenou expiraci připojení při refresh posouvá i s explicitní hodno
 
 Historický [přípravný důkaz](evidence/preparation-20261028.json) se nepřepisuje. Autoritativní zadání: [plán](../../docs/plans/make-connector-plan-2026-10-28.md) a [execution prompt](../../docs/plans/make-connector-EXECUTION-PROMPT-2026-10-28.md).
 
-AI review z 2026-10-28 bylo vyhodnoceno: platné připomínky jsou opravené, sporné body mají důkazy v [odeslané odpovědi](review/RESPONSE-20261028.md). Odpověď je ve stejném review; čeká se na posouzení Make. Nové definice prošly 34 SDK kontrolami, všemi pěti moduly, dvěma konzumenty mapovaných polí a šesti hraničními případy. Backend se neměnil; původní cílené testy zůstávají platné. Živý cílený průchod lze zopakovat přes `scripts/qualify.mjs --apply` ze stejného pnpm prostředí; používá jen dvě existující on-demand scénáře.
+AI review z 2026-10-28 bylo vyhodnoceno: platné připomínky jsou opravené, sporné body mají důkazy v [odeslané odpovědi](review/RESPONSE-20261028.md). Odpověď je ve stejném review; čeká se na posouzení Make. Definice zaznamenané v historickém review receiptu prošly 34 SDK kontrolami, všemi pěti moduly, dvěma konzumenty mapovaných polí a šesti hraničními případy. Tyto receipty popisují tehdejší digest; ověření místních změn se eviduje zvlášť. Živý cílený průchod lze zopakovat přes `scripts/qualify.mjs --apply` ze stejného pnpm prostředí; používá jen dvě existující on-demand scénáře.
+
+Kanonické vlastnictví: SQL počítá report; `tools/festapp/src/operations/order-report-schema.mjs` deklaruje známá pole pro `orders.report` i `reports.export`. Samples jsou pouze validované příklady. Make interface používá pro smíšené scalar uniony `any`, aby neměnil peněžní hodnoty; dynamické records zachovává jako collections bez fixture keys, jejich value schema zůstává v `schemas.json` a OpenAPI. Prezentaci vlastní [src/catalog.json](src/catalog.json), klienta/scopes a odlišné limity `make-contract.mjs`. Generátor porovnává celý vlastněný strom, odmítá symlinky a při regeneraci odstraní obsolete outputs.
+
+`sync`, `verify` a `qualify` používají jedinou SDK hranici v `scripts/lib/make-sdk.mjs`: chráněný token, pevný origin, pacing a žádné automatické opakování mutací. Mutace vyžadují čistý izolovaný commit a odpovídající generated strom. Reviewer kontext vlastní [src/reviewer.json](src/reviewer.json); qualification ověřuje stávající team, connection, fixture a inactive/on-demand scénáře a při chybě zaznamená také výsledek cleanupu. Každý evidence checkpoint má jedinečný immutable název. Runtime receipts se ukládají mimo source checkout do `~/.festapp/make-runs/` (lze přesměrovat `FESTAPP_MAKE_EVIDENCE_DIRECTORY`); po běhu se vybrané receipty archivují do `evidence/` a aktuální status odkáže na výsledek. Historické freeze/readback/qualification soubory se nepřepisují.
