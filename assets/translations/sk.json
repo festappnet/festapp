@@ -2384,10 +2384,7 @@
     "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   },
   "NotificationCenter": {
-    "unreadHeading": "Neprečítané",
-    "readHeading": "Prečítané",
-    "unreadNotification": "Neprečítané oznámenie",
-    "lifecycleHint": "Aktivita za 30 dní. Ako prečítaná sa označí len položka, ktorú otvoríte. Aktívne chyby zostávajú do opravy.",
+    "lifecycleHint": "Aktivita za 30 dní. Otvorením sa oznámenia označia ako prečítané, chyby tým nevyriešite. Aktívne chyby zostávajú do opravy.",
     "historyLimit": "Zobrazených je najviac 100 oznámení. Staršie nájdete v objednávkach a histórii e-mailov.",
     "newOrders": "Nové objednávky",
     "cancelledOrders": "Zrušené objednávky",
