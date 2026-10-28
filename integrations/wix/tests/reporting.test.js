@@ -7,11 +7,11 @@ import {prepareReporting} from '../reporting/prepare.mjs';
 
 const instance = '01234567-1234-4234-8234-123456789abc';
 function fixture() {
-  return {schemaVersion: 1, period: '2026-10', agreement: {reference: 'approved-amendment',
+  return {schemaVersion: 2, period: '2026-10', agreement: {reference: 'approved-amendment',
     attributionPolicyReference: 'approved-attribution', refundPolicyReference: 'approved-refunds',
     serviceFeeOnly: true, grossTicketValueExcluded: true, externalTicketCheckoutApproved: true,
     partnerBillingApproved: true, refundTreatmentConfirmed: true, refundConversion: 'original-charge'}, receipts: [{
-    id: 'fee-1', kind: 'charge', sourceReference: 'canonical-fee-settlement-1',
+    id: 'fee-1', kind: 'charge', refundSequence: '0', sourceReference: 'canonical-fee-settlement-1',
     productName: 'Ticketing service fee', instanceId: instance,
     instanceVerificationReference: 'server-verified-installation-1',
     occurredAt: '2026-10-01T12:00:00.000Z', currency: 'CZK',
@@ -23,7 +23,7 @@ function fixture() {
   }]};
 }
 function refund(input, id, amount, time = '2026-10-02T12:00:00.000Z') {
-  const r = {...input.receipts[0], id, kind: 'refund', chargeReceiptId: 'fee-1', feeMinor: amount, occurredAt: time};
+  const r = {...input.receipts[0], id, kind: 'refund', refundSequence: String(input.receipts.length), chargeReceiptId: 'fee-1', feeMinor: amount, occurredAt: time};
   // A refund uses the stored original conversion/share, never today's values.
   delete r.fx; delete r.wixShareBps;
   input.receipts.push(r);
@@ -142,4 +142,33 @@ test('CLI emits private CSV/API files as one batch and refuses overwrite', () =>
     assert.notEqual(run().status, 0);
     assert.deepEqual(JSON.parse(readFileSync(`${output}/manifest.json`, 'utf8')), manifest);
   } finally { rmSync(temp, {recursive: true, force: true}); }
+});
+
+test('late refunds append to immutable rounding order without changing earlier payloads', () => {
+  const input = fixture(); Object.assign(input.receipts[0], {feeMinor:'3',wixShareBps:5000,
+    fx:{usdMinorNumerator:'1',sourceMinorDenominator:'2',reference:'accounted-fx'}});
+  refund(input,'already-reported','1','2026-10-03T12:00:00.000Z');
+  const before=prepareReporting(input).events.find(e=>e.receiptId==='already-reported');
+  refund(input,'late-fact','1','2026-10-02T12:00:00.000Z');
+  const after=prepareReporting(input).events.find(e=>e.receiptId==='already-reported');
+  assert.deepEqual(after,before);
+  assert.equal(after.requestBody.event.grossRevenue,'-0.01');
+  assert.equal(prepareReporting(input).events.find(e=>e.receiptId==='late-fact').requestBody.event.grossRevenue,'0.00');
+  refund(input,'final','1','2026-11-01T12:00:00.000Z');
+  const all=prepareReporting(input).events;
+  input.period='2026-11';
+  const final=prepareReporting(input).events[0].requestBody.event;
+  for(const field of ['grossRevenue','netRevenue','wixShare']) {
+    assert.equal([...all.map(e=>e.requestBody.event),final].reduce((sum,e)=>sum+Math.round(Number(e[field])*100),0),0);
+  }
+});
+
+test('old reporting formats, duplicate and missing source refund sequences fail closed',()=>{
+  const input=fixture();input.schemaVersion=1;
+  assert.throws(()=>prepareReporting(input),/INVALID_REPORT_INPUT/);
+  input.schemaVersion=2;refund(input,'r1','1');refund(input,'r2','1');
+  delete input.receipts[1].refundSequence;assert.throws(()=>prepareReporting(input),/INVALID_REFUND_SEQUENCE/);
+  input.receipts[1].refundSequence='2';assert.throws(()=>prepareReporting(input),/DUPLICATE_REFUND_SEQUENCE/);
+  input.receipts[1].refundSequence='1';input.receipts[2].refundSequence='3';
+  assert.throws(()=>prepareReporting(input),/INCOMPLETE_OR_DUPLICATE_REFUND_SEQUENCE/);
 });

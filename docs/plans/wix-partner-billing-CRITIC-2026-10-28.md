@@ -108,3 +108,27 @@ Osobní podpis, odpověď Wixu k označení OSVČ, ověřená Partner Billed akt
 skutečné účetní podklady a marketplace zůstávají dalšími samostatnými podmínkami.
 Koncept zprávy zůstal neodeslaný. Audit neznamená schválení k vydání ani opravu
 uvedených vad. Další implementace potřebuje cílené regrese pro C01-C03.
+
+## Opravy a opětovná kontrola
+
+Všechny tři nálezy jsou opravené v pracovním zdroji a nezávislý kritik opravy
+schválil pro chráněný SQL-only rollout. C01 znovu načte smlouvu po unit lock;
+skutečný dvouspojový test pozoruje blokování a po commitu ukončení odmítne import.
+C02 používá SQL přiřazené neměnné `refund_sequence`, v2 export a jediný USD výpočet
+v tomto pořadí. Test potvrdí původní report přes skutečný executor s falešným
+providerem, přidá starší refundaci a prokáže neměnnost payloadu i přesné úplné
+vyrušení původního charge. C03 atomicky odmítá neúplné reportovatelné FX/share
+údaje a nevalidní reference; neúspěšný import nezanechá finanční řádky a platný
+listopadový report projde.
+
+Prošlo 36 Wix testů bez skipu včetně PostgreSQL integrací. Po finální změně
+stage kontraktu a skutečné zkoušce upgradu původního prázdného v1 schématu novou
+migrací znovu prošlo 6 dotčených source/dispatcher testů. Kritik nezávisle spustil
+11 reporting testů, kontrolu assembleru a diff check; nové DB regrese zkontroloval
+ve zdroji. Další materiální vadu v opravě nenašel.
+
+Historická migrace `20261028150000` je byte-identická a kontroluje se její SHA.
+Nová `20261028160000_service_fee_reporting_integrity.sql` vyžaduje vypnutý billing
+a prázdné money/delivery tabulky pod zámky; nevytváří domnělé pořadí historie.
+Dokončení produkčního nasazení bude doložené samostatným receiptem. Do té doby
+zůstává aktivační hold. Smluvní a marketplace podmínky se tím nemění.

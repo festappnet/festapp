@@ -41,6 +41,10 @@
       }
     ],
     "activationHeldUntilCorrected": true,
-    "productionChangedByReview": false
+    "productionChangedByReview": false,
+    "localFixesVerified": true,
+    "rereview": "C01-C03 pass; approved guarded SQL-only rollout, not billing activation",
+    "newForwardMigration": "20261028160000_service_fee_reporting_integrity.sql",
+    "deploymentPending": true
   }
 }

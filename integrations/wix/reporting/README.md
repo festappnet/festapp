@@ -35,7 +35,7 @@ contain no tokens. The manifest records a deterministic digest and explicitly
 marks the batch **prepared-not-submitted**. Public widget packaging does not
 include the reporting module or its inputs/outputs.
 
-Input schema version 1 contains `period` (`YYYY-MM`), `agreement` and `receipts`:
+Input schema version 2 contains `period` (`YYYY-MM`), `agreement` and `receipts`:
 
 - Agreement: actual approval `reference`, `attributionPolicyReference`,
   `refundPolicyReference`; affirmative `serviceFeeOnly`, `grossTicketValueExcluded`,
@@ -50,6 +50,8 @@ Input schema version 1 contains `period` (`YYYY-MM`), `agreement` and `receipts`
   `amountBasis: "settled-service-fee-excluding-tax"`, positive integer string
   `feeMinor`, nonnegative integer string `agreedExpensesMinor`, `instanceId`
   and `instanceVerificationReference` from trusted server-side verification.
+  `refundSequence` is a required integer string assigned by SQL: zero for
+  charges, positive and contiguous per original allocation for refunds.
 - Every charge: the applicable historical `wixShareBps` (including an explicit
   zero when applicable), `fx` with integer-string `usdMinorNumerator`,
   `sourceMinorDenominator` and accounting evidence `reference`.
@@ -90,3 +92,24 @@ base/rate, emit fabricated events or submit an empty report as real activity.
 The written commercial clarification is recorded in
 `../evidence/commercial-clarification-20261028.json`; final addendum execution
 and Partner Billed activation remain outstanding. No report or API request was sent in this task.
+
+## Immutable refund ordering - reporting version 2
+
+The canonical SQL exporter now returns `{schemaVersion: 2, receipts: [...]}`.
+Each charge has `refundSequence: "0"`; each refund has a positive integer-string
+sequence assigned under its customer's unit lock, independently for its original
+allocation. Caller input cannot select the sequence. Full history must contain
+contiguous sequences starting at one. The projector rejects duplicates, gaps and
+v1 inputs, and the journal rejects events without this v2 basis.
+
+One USD projector computes cumulative deltas in that committed order before
+sorting output by the actual settlement time. A backdated imported refund appends
+to the sequence and cannot change previously projected receipt payloads. Its
+reported transaction date remains the real settlement date. Late facts can
+require an amended period report; they never rewrite earlier event amounts.
+
+Reportable allocation metadata is validated atomically at source admission,
+including original FX evidence and integer share. Source references retain the
+external source reference; allocation identity is the separate receipt UUID.
+No synthetic source-reference suffix can push an otherwise valid reference
+past the export contract's limit.

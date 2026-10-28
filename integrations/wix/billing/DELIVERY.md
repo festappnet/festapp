@@ -44,7 +44,10 @@ requires the original charge to be confirmed for the same installation.
 
 For unknown or rejected events:
 
-1. Inspect and retain receipt ID, kind, attempt UUID and payload digest.
+1. Inspect and retain receipt ID, kind, attempt UUID and payload digest. Stop
+   the original sending worker and verify it cannot resume, retaining process
+   termination/fencing evidence with the operator record. An expired SQL lease
+   does not stop a paused process from making a future HTTP request.
 2. Obtain authoritative Wix evidence for that exact installation, timestamp,
    amounts and attempt window. With no documented lookup endpoint, use provider
    support/reconciliation records. Absence from a local log or an arbitrary delay

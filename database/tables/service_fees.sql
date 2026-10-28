@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.service_fee_allocations (
  order_id bigint NOT NULL,
  order_created_at timestamptz NOT NULL,
  original_allocation_id uuid REFERENCES public.service_fee_allocations(id),
+ refund_sequence bigint NOT NULL,
  fee_minor numeric(30,0) NOT NULL CHECK(fee_minor>0),
  agreed_expenses_minor numeric(30,0) NOT NULL CHECK(agreed_expenses_minor BETWEEN 0 AND fee_minor),
  expense_approval_reference text,
@@ -51,6 +52,8 @@ CREATE TABLE IF NOT EXISTS public.service_fee_allocations (
  wix_share_bps integer CHECK(wix_share_bps BETWEEN 0 AND 10000),
  partner_terms_reference text,
  CHECK(agreed_expenses_minor=0 OR coalesce(length(btrim(expense_approval_reference)),0)>0),
+ CHECK((original_allocation_id IS NULL AND refund_sequence=0) OR (original_allocation_id IS NOT NULL AND refund_sequence>0)),
+ UNIQUE(original_allocation_id,refund_sequence),
  UNIQUE(settlement_id,order_id)
 );
 ALTER TABLE public.service_fee_agreements ENABLE ROW LEVEL SECURITY;

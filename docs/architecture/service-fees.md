@@ -95,4 +95,29 @@ fee source. See the [operator runbook](../../integrations/wix/billing/DELIVERY.m
 Production activation requires actual contract/payment/acquisition inputs,
 executed Partner Billed terms and verified Wix activation. The migration creates
 an explicitly disabled activation row. Neither imports nor CSV preparation send
-billing events. The new source and delivery boundary are not yet deployed.
+billing events. The foundation is deployed with billing disabled; see the
+[deployment receipt](../operations/releases/festapptickets-wix-foundation-2026-10-28.json).
+
+## Reporting integrity revision - 2026-10-28
+
+The importer rereads the agreement after obtaining the unit lock, so a concurrent
+contract termination is visible before validating service and order periods.
+A charge allocation stores sequence zero; refunds receive an immutable increasing
+`refund_sequence` for that original allocation under the same lock. Only SQL
+assigns it. Actual settlement timestamps are never adjusted to fake arrival order.
+The v2 exporter returns a versioned receipts envelope and the sole USD projector
+uses this committed sequence for rounding, then formats actual dates for CSV/API.
+Old input formats and deliveries without a v2 sequence are rejected.
+
+A charge marked with `partnerTermsReference` must supply valid historical FX
+strings/evidence and an integer Wix share. Evidence references match the
+projection's control-character, whitespace and UTF-16 length requirements.
+Rejected imports leave no settlement or allocations behind. Charges without
+partner terms remain excluded rather than being relabelled as reportable.
+
+The deployed migration `20261028150000` is frozen by digest. Forward migration
+`20261028160000_service_fee_reporting_integrity.sql` applies the new sequence
+contract only while the source and delivery journal are empty and billing is
+disabled, with table locks preventing concurrent changes. It does not guess a
+sequence or rewrite existing money/history. A populated target requires a separate
+evidence-backed upgrade rather than bypassing this guard.
