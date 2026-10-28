@@ -12,3 +12,6 @@ docs/plans/evidence/canonical-authorization-20261020/** linguist-generated=true
 # Catalog function bodies retain existing whitespace so schema fingerprints stay exact.
 /supabase/baseline/*_schema.sql whitespace=-blank-at-eol,-blank-at-eof
 /supabase/baseline/*_reference_seed.sql whitespace=-blank-at-eof
+
+# Preserve the official Wix report template CRLF bytes.
+integrations/wix/reporting/partner-billed-report-template.csv text eol=crlf whitespace=cr-at-eol

@@ -21,4 +21,3 @@ CREATE TABLE IF NOT EXISTS eshop.order_checkout_origins (
 ALTER TABLE eshop.checkout_origin_signing_key ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eshop.order_checkout_origins ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.checkout_origin_signing_key,eshop.order_checkout_origins FROM PUBLIC,anon,authenticated,service_role;
-
