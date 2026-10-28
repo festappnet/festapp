@@ -1,6 +1,6 @@
 {
-  "recordedAt": "2026-10-28T11:01:01.696443+00:00",
-  "status": "qualified_private_app_preparing_authorized_publish",
+  "recordedAt": "2026-10-28T11:09:40.999859+00:00",
+  "status": "review_submitted_followup_form_accepted_waiting_for_make",
   "ownerSelectedEmail": "info@festapp.net",
   "emailVerificationConfirmed": true,
   "makeZone": "eu1.make.com",
@@ -13,8 +13,8 @@
   "fixtureRevision": "262c2ce4735c5c418a22c7541dfd82bd45b0a35a",
   "paidCommitmentMade": false,
   "supportQuestionSent": false,
-  "publishedByThisRun": false,
-  "reviewSubmittedByThisRun": false,
+  "publishedByThisRun": true,
+  "reviewSubmittedByThisRun": true,
   "reviewApproved": false,
   "catalogueReleased": false,
   "independentAccountDiscoveryAndConnectionVerified": false,
@@ -22,7 +22,7 @@
     "G0": "closed_public_source_zero_fixed_cost_conclusion_see_publisher-costs",
     "G1": "passed_real_native_oauth_refresh_rotation_revocation",
     "G2": "closed_single_versioned_json_http_adapter",
-    "G3": "targeted_45_tests_and_real_Make_qualification_passed_source_frozen_pending_publish"
+    "G3": "qualification_source_freeze_Publish_and_single_review_submission_done_external_approval_and_catalogue_release_pending"
   },
   "evidence": [
     "publisher-costs.json",
@@ -33,7 +33,10 @@
     "guardrails-20261028.json",
     "refresh-20261028.json",
     "revocation-20261028.json",
-    "source-readback-20261028.json"
+    "source-readback-20261028.json",
+    "freeze-20261028.json",
+    "review-error-20261028.json",
+    "submission-20261028.json"
   ],
   "scenarios": [
     {
@@ -55,5 +58,9 @@
     "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
     "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
   ],
-  "nextAction": "Freeze and publish source; inspect existing app state, Publish once, expose five modules and submit one standard review. Check any separately presented terms and charge before acceptance. No duplicate request."
+  "nextAction": "Wait for Make automatic/manual feedback in the existing App review: vstupenky.online thread. Do not submit another request or optional partnership application. Fix actual reviewer feedback in this same app. After approval/release, verify catalogue discovery and OAuth from another authorized account.",
+  "connectorSourceRevision": "5b94f8fe28505a66495117996eb568bfbf853668",
+  "reviewCase": "2351677:2082001",
+  "reviewFollowupFormId": 191861,
+  "followupFormSubmitted": true
 }

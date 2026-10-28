@@ -83,5 +83,14 @@
       "supports": "Retention requires active maintenance and API checkups; no fixed listing fee specified."
     }
   ],
-  "boundary": "Current published pricing conclusion only; not a guarantee against future policy changes. Stop if a separate fee, paid plan or paid order is presented; do not purchase."
+  "boundary": "Current published pricing conclusion only; not a guarantee against future policy changes. Stop if a separate fee, paid plan or paid order is presented; do not purchase.",
+  "actualPublicationReadback": {
+    "publishedOnExistingFreeAccount": true,
+    "fiveModulesVisible": true,
+    "reviewRequestAccepted": true,
+    "followupVendorFormAccepted": true,
+    "paymentOrSubscriptionPromptShown": false,
+    "optionalPartnerApplicationSelected": false,
+    "evidence": "submission-20261028.json"
+  }
 }

@@ -2,7 +2,7 @@
 
 Implementovaný native konektor má pět modulů, jednu OAuth connection a jeden RPC výběr akcí. Jediný transport je verzovaný JSON HTTP adaptér ve stávající regionální službě, který volá kanonický `Operations.invoke` a profil `order-summary`. Backend je nasazený z `903145af6`; nesdílí klienta ani grant s ChatGPT/Codex a DCR zůstává vypnuté.
 
-Aktuální publikační stav a další krok jsou v [execution-20261028.json](evidence/execution-20261028.json). Publish, podání review, schválení a vydání do katalogu jsou samostatné stavy. Samotné fungování privátní aplikace neznamená dostupnost v katalogu.
+Publish a jedna žádost o review byly přijaty, včetně navazujícího formuláře (case `2351677:2082001`). Čeká se na kontrolu a vydání Make. Aktuální publikační stav a další krok jsou v [execution-20261028.json](evidence/execution-20261028.json). Publish, podání review, schválení a vydání do katalogu jsou samostatné stavy. Samotné fungování privátní aplikace neznamená dostupnost v katalogu.
 
 - [Návod uživatele a nativní Make README](SETUP.md)
 - [Konfigurace aplikace](app.json), [zdroj OAuth](src/connection.json), [generované komponenty a manifest](src/generated/manifest.json)

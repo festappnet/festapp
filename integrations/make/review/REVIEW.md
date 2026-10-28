@@ -1,5 +1,7 @@
 # Review handoff - vstupenky.online
 
+Status: SUBMITTED, case `2351677:2082001`. The vendor follow-up form was accepted. Do not repeat Publish, Request review or the follow-up submission. Await Make feedback in the existing thread.
+
 App: `vstupenky-online-buoz5u`, version 1, EU1. Publisher account: info@festapp.net, organization 9450617, team 3387186. Standard verified app, first-party service owner. No Community submission or optional partner application is required by the documented verified-app route.
 
 Service: https://vstupenky.online/
@@ -8,7 +10,7 @@ Privacy: https://vstupenky.online/privacy/
 Terms: https://vstupenky.online/terms/
 Support and partnership contact: info@festapp.net
 Legal operator, as displayed in service terms: Michael Bujnovský, IČO 06455361, Přívozská 1704/24, 702 00 Ostrava, Czech Republic. Festapp is the platform name; vstupenky.online is the service brand.
-Suggested category: Events / Event Management (choose the closest category actually offered in the form).
+Submitted category: Commerce / E-Commerce (actual form options; no Event Management category offered).
 Logo source: `integrations/chatgpt/assets/logo.png` (same regional service identity, uploaded to this app).
 
 ## Scenarios
@@ -33,3 +35,7 @@ Before the first Publish, verify source manifest/readback and existing app state
 After Request review, inspect app status and the confirmation email before retrying. Complete the follow-up vendor/contact/category/logo form in the same review. Track request acceptance, approval and catalogue release separately. Confirm catalogue discovery and OAuth from another authorized account only after release; do not create a duplicate account or application for this check.
 
 Public cost conclusion is documented in `../evidence/publisher-costs.json`. The secondary public directory explicitly reports $0 listing, while official MSA fees require an agreed Order and the account is Free. This is not a written Make guarantee; no support question was sent, per the owner's instruction.
+
+## Submitted 2026-10-28
+
+Publish, all five visible modules, one review request and its follow-up form were accepted. Case `2351677:2082001`, confirmation message `1a1822f6b03104a4`, form record `191861`. No optional partner application was selected and no fixed fee or paid subscription was presented. See `../evidence/submission-20261028.json`. Await feedback in this existing thread; do not resubmit. Approval and catalogue release are pending.
