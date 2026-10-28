@@ -36,5 +36,16 @@ public TLS or actual ChatGPT acceptance. The separate remote test fixture owns
 the two-client protocol matrix and byte/call/timing measurements; this runner does
 not duplicate that benchmark.
 
+The runner also seeds 57 synthetic orders (unpaid, paid, cancelled and waiting),
+with multiple products per ticket. Through the actual summary-profile MCP client
+it checks distinct admission counts, order value versus received money, complete
+keyset pagination, state filtering, list-to-detail navigation and exact-symbol
+lookup behind contact-only matches. Private notes contain an injection canary;
+notes, buyer contacts and ticket symbols must stay outside the public wire.
+Two parallel reads must succeed; a six-request burst must return only successes
+or HTTP 429, then permit normal reads again. Invalid arguments, foreign scope,
+live rights removal and disconnection are checked on the same connection.
+The runner removes its synthetic orders, tickets, products and payment records.
+
 The historical `consent.e2e.mjs` is not this runner and retains its historical
 absolute-path setup requirements. Do not run it unchanged for the current pilot.

@@ -8,14 +8,17 @@ import {readFile} from 'node:fs/promises';
 import {setup as formSetup,options,denied} from './form-fixtures.mjs';
 import {configurationDescriptors,invokeConfigurationOperation} from '../src/operations/configuration.mjs';
 import {MCP_PERMISSIONS,scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
-async function setup(t){const {db,f}=await formSetup(t);await db.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));return {db,f};}
+async function setup(t){const {db,f}=await formSetup(t);await db.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));
+ // Later authoring migrations refresh the shared probe after settings change
+ // its dependencies. Exercise today's contract rather than the old snapshot.
+ await db.query(await readFile(new URL('../../../database/functions/others/get_ticket_layout_write_contract_v1.sql',import.meta.url),'utf8'));return {db,f};}
 async function read(db,f,kind='occasion'){return(await db.query('select get_configuration_settings($1,$2,$3,$4) value',[kind,kind==='unit'?f.unit:f.occasion,f.org,f.unit])).rows[0].value;}
 async function save(db,f,changes,version=0,command=randomUUID(),kind='occasion'){return(await db.query('select save_configuration_settings($1,$2,$3,$4,$5,$6,$7) value',[kind,kind==='unit'?f.unit:f.occasion,f.org,f.unit,version,command,changes])).rows[0].value;}
 function client(db){return {rpc:async(name,args)=>{const keys=Object.keys(args);try{return{data:(await db.query('select '+name+'('+keys.map((k,i)=>k+'=> $'+(i+1)).join(',')+') value',Object.values(args))).rows[0].value,error:null};}catch(error){return{data:null,error};}}};}
 function owner(f){return{delegatedContext:async()=>({organizationId:f.org,unitId:null}),delegatedUnitContext:async()=>({organizationId:f.org,unitId:f.unit})};}
 
 test('configuration scopes are explicit, preserve old consents and reject arbitrary paths',()=>{
- assert.deepEqual(scopesForOperation('units.settings.save'),['festapp:unit-settings:read','festapp:unit-settings:write']);
+ assert.deepEqual(scopesForOperation('units.settings.save'),['festapp:ticket-layouts:read','festapp:unit-settings:read','festapp:unit-settings:write']);
  assert(!MCP_PERMISSIONS['festapp:forms:write'].operations.includes('occasions.settings.save'));
  const schema=configurationDescriptors.find(d=>d.id==='occasions.settings.save').input;
  for(const changes of [{data:{client_sync_v1:false}},{organization:2},{unit:2},{settings:{game:{start:null}}},{feature_changes:[{code:'ticket',layout:{}}]},{feature_changes:[{code:'stripe',is_enabled:true}]},{feature_changes:[{code:'map',defaultMapLocation:{lat:49}}]}])

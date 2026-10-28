@@ -7,6 +7,8 @@ import {Operations} from '../src/operations/catalog.mjs';
 const connection=process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 const options={skip:!connection};
 async function install(db){
+ for(const file of ['forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql','eshop_forms/duplicate_form_to_occasion.sql'])
+  await db.query(await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8'));
  for(const file of ['schema','order_context','temporal_feed','app_activity','core','orders','capacity','email','maintenance','bank','form_availability']){
   let sql=await readFile(new URL('../../../database/functions/notification_center/'+file+'.sql',import.meta.url),'utf8');
   if(file==='schema'&&(await db.query("select to_regclass('public.notification_center_events') present")).rows[0].present){
