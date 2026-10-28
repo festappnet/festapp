@@ -1,0 +1,59 @@
+{
+  "recordedAt": "2026-10-28T11:01:01.696443+00:00",
+  "status": "qualified_private_app_preparing_authorized_publish",
+  "ownerSelectedEmail": "info@festapp.net",
+  "emailVerificationConfirmed": true,
+  "makeZone": "eu1.make.com",
+  "organizationId": 9450617,
+  "teamId": 3387186,
+  "appName": "vstupenky-online-buoz5u",
+  "version": 1,
+  "connectionId": 12447881,
+  "backendRevision": "903145af65e4a3c1944464078c472bee26400ae9",
+  "fixtureRevision": "262c2ce4735c5c418a22c7541dfd82bd45b0a35a",
+  "paidCommitmentMade": false,
+  "supportQuestionSent": false,
+  "publishedByThisRun": false,
+  "reviewSubmittedByThisRun": false,
+  "reviewApproved": false,
+  "catalogueReleased": false,
+  "independentAccountDiscoveryAndConnectionVerified": false,
+  "gates": {
+    "G0": "closed_public_source_zero_fixed_cost_conclusion_see_publisher-costs",
+    "G1": "passed_real_native_oauth_refresh_rotation_revocation",
+    "G2": "closed_single_versioned_json_http_adapter",
+    "G3": "targeted_45_tests_and_real_Make_qualification_passed_source_frozen_pending_publish"
+  },
+  "evidence": [
+    "publisher-costs.json",
+    "oauth-compatibility.json",
+    "http-deployment-20261028.json",
+    "server-tests-20261028.json",
+    "live-qualification-20261028.json",
+    "guardrails-20261028.json",
+    "refresh-20261028.json",
+    "revocation-20261028.json",
+    "source-readback-20261028.json"
+  ],
+  "scenarios": [
+    {
+      "id": 8226665,
+      "purpose": "all five modules",
+      "active": false,
+      "schedule": "on-demand"
+    },
+    {
+      "id": 8228261,
+      "purpose": "expected foreign URL error",
+      "active": false,
+      "schedule": "on-demand"
+    }
+  ],
+  "residualLimits": [
+    "Make displayed connection expiry rolls; actual server consent remains fixed seven days.",
+    "No destination app is configured; second-page failure was observed without external writes. No external rollback or exactly-once claim.",
+    "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
+    "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
+  ],
+  "nextAction": "Freeze and publish source; inspect existing app state, Publish once, expose five modules and submit one standard review. Check any separately presented terms and charge before acceptance. No duplicate request."
+}

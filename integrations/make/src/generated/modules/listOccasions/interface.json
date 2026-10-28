@@ -1,0 +1,29 @@
+[
+  {
+    "name": "id",
+    "label": "Id",
+    "type": "number"
+  },
+  {
+    "name": "title",
+    "label": "Title",
+    "type": "text"
+  },
+  {
+    "name": "unitId",
+    "label": "Unit Id",
+    "type": "number"
+  },
+  {
+    "name": "capabilities",
+    "label": "Capabilities",
+    "type": "collection",
+    "spec": [
+      {
+        "name": "ticket_layouts.read",
+        "label": "Ticket layouts.read",
+        "type": "boolean"
+      }
+    ]
+  }
+]

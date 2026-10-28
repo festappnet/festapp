@@ -1,0 +1,15 @@
+{
+  "name": "vstupenky-online-buoz5u",
+  "label": "vstupenky.online",
+  "description": "Read event sales summaries and order status without buyer contact details.",
+  "theme": "#256047",
+  "language": "en",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "organizationId": 9450617,
+  "teamId": 3387186,
+  "connectionName": "vstupenky-online-buoz5u",
+  "website": "https://vstupenky.online/",
+  "supportEmail": "info@festapp.net",
+  "apiDocumentation": "https://mcp.vstupenky.online/make/v1"
+}

@@ -1,0 +1,53 @@
+{
+  "status": "implemented_private_app_verified_not_a_make_import",
+  "product": "vstupenky.online",
+  "platform": "Festapp",
+  "website": "https://vstupenky.online/",
+  "supportEmail": "info@festapp.net",
+  "descriptionDraft": "Connect vstupenky.online to your workflows. Read event sales summaries and order status without buyer contact details.",
+  "dataProfile": "order-summary",
+  "allowedScopes": [
+    "festapp:ticket-layouts:read",
+    "festapp:orders:read"
+  ],
+  "modules": [
+    {
+      "key": "listOccasions",
+      "label": "List Accessible Events",
+      "operation": "access.inspect",
+      "tool": "festapp_access_inspect"
+    },
+    {
+      "key": "salesReport",
+      "label": "Get Event Sales Summary",
+      "operation": "orders.report",
+      "tool": "festapp_orders_report"
+    },
+    {
+      "key": "listOrders",
+      "label": "List Orders",
+      "operation": "orders.list",
+      "tool": "festapp_orders_list"
+    },
+    {
+      "key": "getOrder",
+      "label": "Get an Order",
+      "operation": "orders.inspect",
+      "tool": "festapp_orders_inspect"
+    },
+    {
+      "key": "apiCall",
+      "label": "Make an API Call",
+      "operation": null,
+      "tool": null,
+      "state": "implemented_fixed_origin_read_allowlist"
+    }
+  ],
+  "connection": {
+    "purpose": "native_catalogue_app",
+    "clientId": "festapp-make",
+    "callback": "https://www.make.com/oauth/cb/app",
+    "registrationState": "deployed_isolated_client",
+    "oauthCompatibility": "passed_real_make"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-28",
+  "tenant": "festapptickets",
+  "organizationId": 3,
+  "issuer": "https://mcp.vstupenky.online",
+  "client": {
+    "id": "festapp-make",
+    "name": "Make",
+    "redirectUris": ["https://www.make.com/oauth/cb/app"],
+    "allowedScopes": ["festapp:ticket-layouts:read", "festapp:orders:read"],
+    "dataProfile": "order-summary"
+  },
+  "configuration": {
+    "beforeSha256": "5e2fe075529a0eee013be8283206e3f7f7ecce43b170b3b57f7bd944507cf0af",
+    "afterSha256": "d57c1c0824aa29c0d7f46be81024e20cf712825d3b387eaa6767cb09b3da2db8",
+    "protectedBackup": "/opt/festapp-mcp/config.regional.json.pre-make-20261028",
+    "ownershipMode": "1000:1000 0600",
+    "inodePreserved": true,
+    "priorClientsPreserved": ["festapp-chatgpt", "festapp-codex"],
+    "secretFileComparison": "not captured before change; no claim made"
+  },
+  "runtime": {
+    "container": "festapp-mcp-mcp-1",
+    "containerId": "d13c035ae063b9ce61500374893100c5c8b53d6e65edadf51a873105f0587b0d",
+    "containerCreated": "2026-10-27T16:30:50.212320758Z",
+    "imageId": "sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+    "configImage": "festapp-mcp-oauth@sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+    "sourceRevisionLabel": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "composeImageLabel": "sha256:734efcf40d80a6ed32be94f15fef853370d4cf7673d8a1c95cf7afbe5c208b8c",
+    "composeImageLabelNote": "stale label; actual running image ID is the sha256:690aa... value above",
+    "health": "healthy",
+    "actions": ["config file updated in place", "existing container restarted", "no image build or replacement"]
+  },
+  "verification": {
+    "runningImageConfigParser": "passed: issuer https://mcp.vstupenky.online, resource /mcp, tenant festapptickets, organization 3, three clients",
+    "makeRequestedReadScopes": "allowed by running-image client policy",
+    "makeExcessWriteScope": "denied by running-image client policy",
+    "publicHealth": "passed",
+    "oauthDiscovery": "issuer and endpoints present; registration_endpoint absent",
+    "protectedResourceMetadata": "issuer/resource binding verified",
+    "syntheticProductionData": false
+  }
+}

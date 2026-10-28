@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-28T11:02:03.479534+00:00",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "zone": "eu1.make.com",
+  "generatedManifestSha256": "d709da7ca5b33adecf97445db0cb22535538affc68f9ce24415ae384079366b8",
+  "sdkMatchedSections": 32,
+  "backendCommit": "903145af65e4a3c1944464078c472bee26400ae9",
+  "fixtureCommit": "262c2ce4735c5c418a22c7541dfd82bd45b0a35a",
+  "qualificationExecutionId": "4bb48fe5253b4deaba6669ff4c6143fa",
+  "guardrailsPassed": 15,
+  "targetedTestsPassed": 45,
+  "skipped": 0,
+  "secretsExcluded": true,
+  "temporaryFailureInjectionRestoredAndReadBack": true
+}

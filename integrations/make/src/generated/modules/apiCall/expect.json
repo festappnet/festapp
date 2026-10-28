@@ -1,0 +1,39 @@
+[
+  {
+    "name": "url",
+    "label": "URL",
+    "type": "select",
+    "mappable": true,
+    "required": true,
+    "options": [
+      {
+        "label": "/operations/context.inspect",
+        "value": "/operations/context.inspect"
+      },
+      {
+        "label": "/operations/access.inspect",
+        "value": "/operations/access.inspect"
+      },
+      {
+        "label": "/operations/orders.report",
+        "value": "/operations/orders.report"
+      },
+      {
+        "label": "/operations/orders.list",
+        "value": "/operations/orders.list"
+      },
+      {
+        "label": "/operations/orders.inspect",
+        "value": "/operations/orders.inspect"
+      }
+    ],
+    "help": "Relative read-operation path. Other origins, paths and write operations are rejected."
+  },
+  {
+    "name": "body",
+    "label": "Body",
+    "type": "text",
+    "default": "{}",
+    "help": "JSON object matching the canonical operation input. POST is the only transport method."
+  }
+]

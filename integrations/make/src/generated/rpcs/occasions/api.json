@@ -1,0 +1,13 @@
+{
+  "url": "/make/v1/operations/access.inspect",
+  "method": "POST",
+  "type": "json",
+  "body": {},
+  "response": {
+    "iterate": "{{body.data.occasions}}",
+    "output": {
+      "label": "{{item.title}} ({{item.id}})",
+      "value": "{{item.id}}"
+    }
+  }
+}

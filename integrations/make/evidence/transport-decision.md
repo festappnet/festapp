@@ -63,4 +63,4 @@ prefix, accepts only relative operation paths, exposes POST only, and uses the
 same server allowlist and canonical schema validation. It cannot select another
 origin or supply a different Authorization header.
 
-State: OAuth tested; JSON transport implementation and qualification pending.
+State: JSON transport deployed from canonical main `903145af65e4a3c1944464078c472bee26400ae9`. Real Make report execution `1e9f8f1a4876485189167788c594ee77` succeeded after refresh of the expired access token. Full-module qualification is in progress.

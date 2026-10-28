@@ -1,0 +1,14 @@
+[
+  {
+    "name": "occasionId",
+    "label": "Event",
+    "type": "select",
+    "required": true,
+    "validate": {
+      "max": 9007199254740991
+    },
+    "options": "rpc://occasions",
+    "mappable": true,
+    "help": "Select one consented event by its ID. Events with the same name remain separate."
+  }
+]

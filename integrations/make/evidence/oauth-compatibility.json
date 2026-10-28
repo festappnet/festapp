@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-28",
+  "genericMcpClient": {
+    "status": "incompatible",
+    "endpoint": "https://mcp.vstupenky.online/mcp",
+    "actualMakeError": "Incompatible auth server: does not support dynamic client registration",
+    "clientIdInputAvailable": false,
+    "accessTokenSubstituteUsed": false,
+    "dynamicRegistrationEnabled": false
+  },
+  "nativeApp": {
+    "status": "passed_real_native_oauth_refresh_revocation_and_concurrency",
+    "appName": "vstupenky-online-buoz5u",
+    "appVersion": 1,
+    "connectionName": "vstupenky-online-buoz5u",
+    "clientId": "festapp-make",
+    "documentedCallback": "https://www.make.com/oauth/cb/app",
+    "actualCallbackNotYetObserved": false,
+    "issuer": "https://mcp.vstupenky.online",
+    "resource": "https://mcp.vstupenky.online/mcp",
+    "tokenEndpointAuthMethod": "none",
+    "pkceMethod": "S256",
+    "prototypeFinding": "Make EU1 base64url() unavailable; URL-safe base64 via replace() passed with a 43-character S256 challenge.",
+    "serverClientRegistered": true,
+    "actualCallback": "https://www.make.com/oauth/cb/app",
+    "statePresent": true,
+    "codeChallengeLength": 43,
+    "refresh": {
+      "status": "passed_in_real_Make_after_original_300_second_token_expiry",
+      "scenarioId": 8226665,
+      "executionId": "1e9f8f1a4876485189167788c594ee77",
+      "reauthorizationUsed": false,
+      "grantExpiryExtended": false,
+      "evidence": "refresh-20261028.json",
+      "expirySource": "authoritative server Delegation.expiresAt, not Make connection.expire",
+      "makeUiLimitation": "Make connection.expire rolls on refresh despite explicit response.expires; it is not the authority for consent. Server checks the immutable seven-day delegation on each read and refresh."
+    },
+    "transport": "versioned_json_http",
+    "revocationEvidence": "revocation-20261028.json"
+  }
+}

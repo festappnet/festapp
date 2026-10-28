@@ -1,0 +1,67 @@
+[
+  {
+    "name": "id",
+    "label": "Id",
+    "type": "number"
+  },
+  {
+    "name": "occasionId",
+    "label": "Occasion Id",
+    "type": "number"
+  },
+  {
+    "name": "symbol",
+    "label": "Symbol",
+    "type": "any"
+  },
+  {
+    "name": "state",
+    "label": "State",
+    "type": "text"
+  },
+  {
+    "name": "ticketCount",
+    "label": "Ticket Count",
+    "type": "number"
+  },
+  {
+    "name": "price",
+    "label": "Price",
+    "type": "any"
+  },
+  {
+    "name": "currency",
+    "label": "Currency",
+    "type": "any"
+  },
+  {
+    "name": "allowedActions",
+    "label": "Allowed Actions",
+    "type": "array",
+    "spec": {
+      "type": "text"
+    }
+  },
+  {
+    "name": "payment",
+    "label": "Payment",
+    "type": "collection",
+    "spec": [
+      {
+        "name": "amount",
+        "label": "Amount",
+        "type": "any"
+      },
+      {
+        "name": "paid",
+        "label": "Paid",
+        "type": "any"
+      },
+      {
+        "name": "returned",
+        "label": "Returned",
+        "type": "any"
+      }
+    ]
+  }
+]

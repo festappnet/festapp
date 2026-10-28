@@ -1,0 +1,7 @@
+{
+  "name": "listOrders",
+  "label": "List Orders",
+  "description": "List a bounded page of orders for one selected occasion, at most 50. Search only by the exact 10-character order symbol. Returns order identifiers, stored state, ticket count and amounts. No buyer names, email addresses, registration answers, notes, QR codes or personal ticket content.",
+  "typeId": 9,
+  "connection": "vstupenky-online-buoz5u"
+}

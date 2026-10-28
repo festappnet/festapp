@@ -1,0 +1,156 @@
+{
+  "report": {
+    "spots": {
+      "free": 0,
+      "total": 0,
+      "occupied": 0
+    },
+    "valid": {
+      "orders": {
+        "total": 2,
+        "by_state": [
+          {
+            "count": 1,
+            "state": "ordered"
+          },
+          {
+            "count": 1,
+            "state": "paid"
+          }
+        ]
+      },
+      "tickets": {
+        "total": 4,
+        "by_state": [
+          {
+            "count": 2,
+            "state": "ordered"
+          },
+          {
+            "count": 2,
+            "state": "paid"
+          }
+        ]
+      },
+      "order_days": [
+        {
+          "day": "2026-10-27",
+          "count": 2,
+          "currency": "CZK"
+        }
+      ],
+      "ticket_days": [
+        {
+          "day": "2026-10-27",
+          "count": 4,
+          "currency": "CZK"
+        }
+      ]
+    },
+    "orders": {
+      "total": 4,
+      "by_state": [
+        {
+          "count": 1,
+          "state": "ordered"
+        },
+        {
+          "count": 1,
+          "state": "paid"
+        },
+        {
+          "count": 1,
+          "state": "storno"
+        },
+        {
+          "count": 1,
+          "state": "waitlisted"
+        }
+      ]
+    },
+    "tickets": {
+      "total": 6,
+      "by_state": [
+        {
+          "count": 2,
+          "state": "ordered"
+        },
+        {
+          "count": 2,
+          "state": "paid"
+        },
+        {
+          "count": 1,
+          "state": "storno"
+        },
+        {
+          "count": 1,
+          "state": "waitlisted"
+        }
+      ]
+    },
+    "occasion": {
+      "id": "1072614",
+      "title": "MCP demo - Testovací ples (leden)"
+    },
+    "products": [
+      {
+        "type_id": "924",
+        "product_id": "1943",
+        "type_title": "Demo vstupné",
+        "product_title": "Demo vstupenka",
+        "confirmed_count": 2
+      }
+    ],
+    "timeline": {
+      "orders": [
+        {
+          "day": "2026-10-27",
+          "count": 4,
+          "currency": "CZK"
+        }
+      ],
+      "tickets": [
+        {
+          "day": "2026-10-27",
+          "count": 6,
+          "currency": "CZK"
+        }
+      ],
+      "payments": [],
+      "order_timezone": "Europe/Prague",
+      "payment_date_basis": "bank_transaction_date_and_provider_occurrence"
+    },
+    "warnings": [
+      {
+        "code": "payment_total_without_ledger",
+        "count": 1
+      }
+    ],
+    "generated_at": "2026-10-28T09:43:58.688416Z",
+    "schema_version": 1,
+    "ticket_batches": {
+      "total": 0,
+      "available": 0,
+      "sold_active": 0,
+      "voided_unsold": 0,
+      "cancelled_after_sale": 0
+    },
+    "money_by_currency": [
+      {
+        "currency": "CZK",
+        "received": "500.00",
+        "returned": "0.00",
+        "has_deposits": false,
+        "net_received": "500.00",
+        "other_received": "500.00",
+        "manual_received": "0",
+        "current_order_value": "1250.00",
+        "deposit_received_gross": "0",
+        "beyond_deposit_received_gross": "0"
+      }
+    ]
+  },
+  "occasionId": 1072614,
+  "waitingTickets": 1
+}

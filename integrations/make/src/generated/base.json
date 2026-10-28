@@ -1,0 +1,19 @@
+{
+  "baseUrl": "https://mcp.vstupenky.online",
+  "headers": {
+    "authorization": "Bearer {{connection.accessToken}}",
+    "accept": "application/json"
+  },
+  "response": {
+    "valid": "{{body.ok}}",
+    "error": {
+      "message": "[{{statusCode}}] {{ifempty(body.error.code, ifempty(body.error, 'REQUEST_FAILED'))}}"
+    }
+  },
+  "log": {
+    "sanitize": [
+      "request.headers.authorization",
+      "request.headers.Authorization"
+    ]
+  }
+}

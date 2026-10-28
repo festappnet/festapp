@@ -1,0 +1,7 @@
+{
+  "name": "getOrder",
+  "label": "Get an Order",
+  "description": "Read one order identifier, stored state, ticket count and amounts for one selected occasion. Buyer names, emails, registration answers, internal notes and personal ticket content are withheld. This connection cannot change orders or send tickets.",
+  "typeId": 4,
+  "connection": "vstupenky-online-buoz5u"
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "body",
+    "label": "Body",
+    "type": "collection"
+  },
+  {
+    "name": "statusCode",
+    "label": "Status Code",
+    "type": "number"
+  }
+]

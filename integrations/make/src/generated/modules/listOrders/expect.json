@@ -1,0 +1,42 @@
+[
+  {
+    "name": "occasionId",
+    "label": "Event",
+    "type": "select",
+    "required": true,
+    "validate": {
+      "max": 9007199254740991
+    },
+    "options": "rpc://occasions",
+    "mappable": true,
+    "help": "Select one consented event by its ID. Events with the same name remain separate."
+  },
+  {
+    "name": "state",
+    "label": "State",
+    "type": "text",
+    "validate": {
+      "max": 40
+    }
+  },
+  {
+    "name": "search",
+    "label": "Search",
+    "type": "text",
+    "help": "Exact 10-character order symbol. Names and email addresses are not supported.",
+    "validate": {
+      "pattern": "^[A-Z0-9]{10}$"
+    }
+  },
+  {
+    "name": "limit",
+    "type": "uinteger",
+    "label": "Limit",
+    "default": 10,
+    "help": "Maximum total number of bundles, across pages. Clear this field to request all results within technical bounds. A large result can fail at 50 pages or Make's 40-second bound.",
+    "validate": {
+      "min": 1,
+      "max": 3200
+    }
+  }
+]

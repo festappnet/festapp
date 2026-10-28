@@ -1,0 +1,20 @@
+{
+  "url": "https://mcp.vstupenky.online/make/v1/operations/{{switch(parameters.url, \"/operations/context.inspect\", \"context.inspect\", \"/operations/access.inspect\", \"access.inspect\", \"/operations/orders.report\", \"orders.report\", \"/operations/orders.list\", \"orders.list\", \"/operations/orders.inspect\", \"orders.inspect\", 'forbidden')}}",
+  "method": "POST",
+  "type": "raw",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{{ifempty(parameters.body, '{}')}}",
+  "response": {
+    "output": {
+      "body": "{{body}}",
+      "statusCode": "{{statusCode}}"
+    }
+  },
+  "log": {
+    "sanitize": [
+      "request.body"
+    ]
+  }
+}

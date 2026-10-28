@@ -1,0 +1,13 @@
+[
+  {
+    "name": "limit",
+    "type": "uinteger",
+    "label": "Limit",
+    "default": 10,
+    "help": "Maximum total number of bundles, across pages. Clear this field to request all results within technical bounds. A large result can fail at 50 pages or Make's 40-second bound.",
+    "validate": {
+      "min": 1,
+      "max": 3200
+    }
+  }
+]
