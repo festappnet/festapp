@@ -1,8 +1,0 @@
-{
-  "name": "listOccasions",
-  "label": "List accessible events",
-  "description": "Lists events available to the connection.",
-  "typeId": 9,
-  "connection": "vstupenky-online-buoz5u",
-  "crud": "read"
-}

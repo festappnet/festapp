@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -154,8 +153,6 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
 
   Future<void> _detail(NotificationItem item, Map<String,dynamic>? selection) async {
     final data = item.data;
-    if (data['relatedOrders'] != true) await ExceptionHandler.guard(context, futureFunction: () => controller.markRead(item));
-    if (!mounted) return;
     final link = item.occasionLink;
     if (link != null && data['orderId'] is int) {
       await pushRootPath(
@@ -212,10 +209,9 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
           '/unit/$unit/edit/bank-accounts/$account/connection');
       return;
     }
-    if (mounted) {
+    if (mounted)
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(NotificationCenterStrings.text('unavailable'))));
-    }
   }
 
   @override
