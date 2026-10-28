@@ -15,6 +15,7 @@ import { operatorAccess, verifySelection, canCreateWithAccess } from '../operati
 import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
+import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS, makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
 const cookieName = 'festapp_mcp_management';
@@ -111,7 +112,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
         if (req.headers.host !== expected.host || !loopback ||
             (canonical && req.headers['x-forwarded-proto'] !== 'https')) return res.sendStatus(400);
-        if (req.path === '/mcp' && req.headers.origin && req.headers.origin !== config.issuer)
+        if ((req.path === '/mcp' || req.path.startsWith('/make/v1/')) && req.headers.origin && req.headers.origin !== config.issuer)
             return res.sendStatus(403);
         res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
@@ -122,6 +123,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
     });
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
+    app.get('/make/v1', (_req, res) => res.json(makeDocumentation(config,
+        new Operations({ root: storage.root, orderSummaryOnly: true, allowedOperations: MAKE_READ_OPERATIONS }).catalog)));
     const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES] };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
@@ -272,7 +275,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     });
     const challenge = res => res.status(401).set('WWW-Authenticate',
         authChallenge(config, { error: 'invalid_token', description: 'Connect your Festapp account.' })).json({ error: 'invalid_token' });
-    app.post('/mcp', express.json({ limit: '48kb' }), async (req, res) => {
+    app.post(['/mcp', '/make/v1/operations/:operation'], express.json({ limit: '48kb' }), async (req, res) => {
+        const make = req.path !== '/mcp';
         let token, owner;
         try {
             const h = req.headers.authorization;
@@ -284,9 +288,15 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!grant.clientConnectedAt) storage.put('Delegation', token.grantId,
                 { ...grant, clientConnectedAt: Date.now() }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
         } catch { return challenge(res); }
+        if (make) {
+            if (token.clientId !== MAKE_CLIENT_ID || !owner.orderSummaryOnly ||
+                !MAKE_READ_OPERATIONS.includes(req.params.operation))
+                return res.status(403).json({ ok: false, error: { code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false } });
+            owner.allowedOperations = owner.allowedOperations.filter(id => MAKE_READ_OPERATIONS.includes(id));
+        }
         const operations = new Operations(owner, {artifacts});
-        if (req.body?.method === 'tools/call') {
-            const id = operations.operationIdForTool(req.body.params?.name);
+        if (make || req.body?.method === 'tools/call') {
+            const id = make ? req.params.operation : operations.operationIdForTool(req.body.params?.name);
             if (id && !owner.permitsOperation(id)) {
                 const challenge = owner.challengeFor('INSUFFICIENT_SCOPE', id);
                 if (challenge) return res.status(403).set('WWW-Authenticate', challenge).json({ error: 'insufficient_scope' });
@@ -310,6 +320,21 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                     operation: id, outcome: result.ok ? 'ok' : result.error.code });
                 return result;
             };
+            if (make) {
+                const result = await operations.invoke(req.params.operation, req.body);
+                try { validateMakePage(req.params.operation, req.body, result, req.headers); }
+                catch (error) {
+                    const safe = safeError(error);
+                    audit({ event: 'request', requestId: result.meta.requestId, status: makeStatus({ ok: false, error: safe }) });
+                    return res.status(safe.code === 'PAGINATION_LIMIT_EXCEEDED' ? 409 : makeStatus({ ok: false, error: safe }))
+                        .json({ ok: false, error: safe });
+                }
+                const status = makeStatus(result);
+                if (status === 401) res.set('WWW-Authenticate', authChallenge(config, { error: 'invalid_token' }));
+                if (status === 429) res.set('Retry-After', '60');
+                audit({ event: 'request', requestId: result.meta.requestId, status });
+                return res.status(status).json(result);
+            }
             // The SDK owns modern per-request serving and the stateless legacy
             // boundary. Both use this same authenticated domain catalog.
             handler = createMcpHandler(() => createServer(operations));
@@ -322,6 +347,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         }
     });
     app.all('/mcp', (_req, res) => res.sendStatus(405));
+    app.all('/make/v1/operations/:operation', (_req, res) => res.status(405)
+        .json({ ok: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Use POST.', retryable: false } }));
     // Serialize token exchanges in this single-process deployment. In addition
     // to atomic adapter consumption, this keeps library code/refresh replay
     // revocation ordered before the next exchange can issue credentials.
