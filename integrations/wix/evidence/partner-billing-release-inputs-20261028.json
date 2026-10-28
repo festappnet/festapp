@@ -29,5 +29,5 @@
   },
   "publicStoreAssetsVerified": false,
   "billingImplementationReceipt": null,
-  "qualificationNote": "Historical checkout receipts remain preserved; no new hosted token-info qualification or signed/activated billing production receipt exists."
+  "qualificationNote": "Backend/client foundation is deployed as 0.20.444+949; real native SDK CORS/proof and SQL signature verification passed (docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json). Candidate widget hosting/native activation and current three-editor/store qualification remain held. DocuSign identity is saved but unsigned; no sole-trader wording reply or executed terms exists."
 }
