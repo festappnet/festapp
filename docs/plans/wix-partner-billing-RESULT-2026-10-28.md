@@ -1,8 +1,10 @@
 # Wix Partner Billed - výsledek realizace
 
-Stav: lokální implementace dokončena v dostupném rozsahu; celý plán není splněn.
-Scope produkce zůstává pouze `prod/festapptickets`. Žádné produkční změny,
-podpis, billing události ani marketplace submission nebyly provedeny.
+Aktuální stav: source je na `main`, DB/backend a klient `prod/festapptickets` jsou
+nasazené jako `0.20.444+949`. Údaje OSVČ jsou uložené v nepodepsané DocuSign
+žádosti. Billing je vypnutý; widget hosting, podpis a marketplace nejsou dokončené.
+Následující původní části zachovávají historii před nasazením; aktuální receipt je
+[produkční foundation release](../operations/releases/festapptickets-wix-foundation-2026-10-28.json).
 
 ## Architektura a implementace
 
@@ -144,3 +146,57 @@ Nová účetní hranice a dispatcher zůstávají prázdné a deaktivované. Ž�
 úhrady ani akviziční důkazy se nevymýšlejí. Následný technický rollout může nasadit
 kompatibilní infrastrukturu s vypnutým billingem; podpis, aktivace a marketplace
 zůstávají oddělené skutečné kroky. Podepsání smlouvy provede osobně uživatel.
+
+## Publikace zdrojů a doplněná native evidence
+
+Ověřená implementace je publikovaná přímo na autoritativním `main` jako
+`94a1288a341b5eb39c275ff51f4686c2c39e9e14` (commit implementace
+`3444137d48932fc7e29072085e25390afc2bff9a`, následně pouze normalizace whitespace
+SQL a zachování oficiálních CRLF bajtů report CSV). Před push byl znovu načten
+upstream a ověřena návaznost na `176a27aea10f903852a659bb9389432f3e0637ff`.
+Původní pracovní strom zůstává nedotčený včetně cizí práce.
+
+Po samostatném ověření reálného host tokenu, kanonického handleru a SQL podpisu
+prošel widget na zveřejněném Wix hostu s fixture transportem odpovědi do stejného
+originu: oba iframe i přímé odkazy dvou lokálně připojených widgetů nesou kontext;
+přidání druhého widgetu zachová první iframe a změna titulku prvního zachová druhý.
+Produkční Festapp domény byly blokované a nebyla vytvořena objednávka ani hold.
+Tato transportní adaptace nepředstírá browser kvalifikaci produkčního CORS;
+nový source preflight test skutečnou hlavičku SDK ověřuje. Viz
+`integrations/wix/evidence/native-origin-proof-20261028.json`.
+
+Rutinní backend a web rollout převzal levnější deployment agent. Source zůstává
+zmrazený na uvedené revizi; použit je oddělený čistý klon s větví `main`, nikoli
+přepnutí nebo vyčištění původního pracovního stromu. Existující chráněný schema-2
+release manifest byl nalezen z předchozího schváleného přenosu a nevyrábí se nový.
+Přesný výsledek produkčního nasazení musí doložit závěrečný receipt, nikoli tento
+záznam o přípravě. Billing aktivace, podpis a marketplace zůstávají neprovedené.
+
+## Ověřený produkční výsledek
+
+Zdroj `main 94a1288a341b5eb39c275ff51f4686c2c39e9e14` a tenant
+`5b5f69900ad5d33774c10834b210b2aa5b740e16`, verze `0.20.444+949`, jsou nasazené
+v autorizovaném scope. Ledger obsahuje Wix origin `20261028140000` a service
+fees/delivery `20261028150000`; upstream notification `20261028130000` zůstalo
+samostatné a beze změn. Functions bundle byl nasazen kanonickým installerem.
+Email se během restartu pauzoval a vyprázdnil, kontrolní JSON požadavek na worker
+vrátil 401, po obnovení je `paused=false`, `producer_access_ok=true`, bez alertů.
+Klient prošel main-owned tenant drift, existujícím chráněným schema-2 manifestem,
+lokálním Flutter/web buildem a direct deploy. Živá verze, assety a právní stránky
+prošly třemi souvislými kontrolami.
+
+Samostatný skutečný browser test na vlastním zveřejněném Wix hostu nyní prokázal
+produkční CORS `OPTIONS 200` a `POST 200` s reálným tokenem Wix SDK a existujícím
+veřejným non-demo formulářem organizace 3. Nový widget byl přepsaný pouze uvnitř
+izolovaného browseru, nikoli na hostingu. Iframe i přímý odkaz nesly skutečný
+kontext vydaný produkčním endpointem; read-only SQL potvrdilo platnost podpisu.
+Produkční dokument formuláře a order endpoint byly síťově blokované. Po testu
+zůstalo 0 checkout origin záznamů, 0 fee settlements a 0 delivery záznamů;
+billing byl vypnutý. Tento pozdější probe nahrazuje předchozí otevřený CORS bod.
+Browsery byly ukončené a raw token/capability podklady odstraněné.
+
+Zbývá oprava pevného označení `corporation` ze strany Wixu a osobní podpis
+uživatelem, následně doložená Partner Billed aktivace a skutečné vydání widgetu
+s marketplace submission/review/publication. Účetní import musí při prvním
+skutečném servisním příjmu obsahovat skutečné smluvní, platební a akviziční podklady.
+Žádný takový pohyb ani jeho absence nejsou nahrazovány syntetickými reporty.
