@@ -1,44 +1,32 @@
 # Wix submission kit - vstupenky.online
 
-Latest 2026-10-28: Erel explicitly confirmed the service-fee-only reporting
-basis, exclusion of organizer ticket proceeds, retained external checkout and
-zero separate fixed publisher fees. The account email `info@festapp.net` is now
-confirmed by Wix's verification page. See
-[commercial clarification](evidence/commercial-clarification-20261028.json).
-The earlier request for clarification of the revenue base is resolved; addendum
-execution, actual external-billing activation and the production reporting flow
-remain outstanding. Historical uncertainty below is superseded by this receipt.
+Current authoritative state: [execution result](../../docs/plans/wix-partner-billing-RESULT-2026-10-28.md)
+and [verified foundation deployment](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
+Backend, order-origin support and the public client are deployed. The service-fee
+source and fenced delivery journal are implemented; live billing is disabled.
+A real native SDK token passed production CORS and context issuance, with the
+signature independently validated by SQL. No production order or billing event
+was emitted. The candidate widget has not replaced the hosted assets.
 
-Update 2026-10-28: Contact Info and Security & Privacy now load. Contacts were
-saved and verified after reload; the app profile was updated and reads
-Up-to-date. The owner then confirmed the company privacy answers. The complete
-security/privacy declaration was saved and verified after reload, accurately
-retaining No for the blanket full-encryption question. The native checklist
-fell from four to zero blockers after the validated unlisted minor version 1.1
-was released. See [the release receipt](evidence/minor-release-20261028.json).
-See [current portal evidence](evidence/portal-20261028.json).
-Later pricing investigation resolved the earlier Free readback by adding the
-missing Custom plan: the saved draft now reads DYNAMIC after reload, with a
-percentage-based ticketing-service description and no independent app
-subscription. See [pricing evidence](evidence/pricing-20261028.json). External
-billing activation remains unconfirmed (`isExternalBilling: false`).
-The addendum is unsigned
-and live billing event delivery is not implemented. Local CSV/API preparation
-now uses one service-fee projection and the same commercial approval predicate
-as submission; see [reporting](reporting/README.md). This does not replace
-authenticated attribution, authoritative service-fee settlement or API dispatch.
-The actual addendum was reviewed: its transaction-revenue clause does not
-expressly exclude organizer proceeds, so a correction is needed before signing.
-See [addendum findings](evidence/addendum-review-20261028.json).
-The Partner Agreement is unchecked and
-App Market submission remains disabled. Zero native checklist blockers does not
-supersede these commercial gates. The historical portal/CDN failures
-described below are superseded.
+Erel's [written clarification](evidence/commercial-clarification-20261028.json)
+resolves the service-fee-only basis, organizer-proceeds exclusion, external
+checkout and zero separate fixed publisher fees. The open contract issue is the
+fixed corporation/incorporation wording for a Czech sole trader. Six identity
+and application fields are saved in the existing DocuSign request, with native
+readback verified; the request is unsigned. No reply to that wording question
+or completed-envelope receipt has been found.
 
-Preparation version 0.1.0; **app/widget registered and installation verified in
-Wix Editor, Wix Studio and Harmony. Published synthetic checkout observations use
-adapted test transport. The full payment/lifecycle matrix and commercial approval remain pending; not
-submitted or publicly released in the App Market**.
+Last authenticated native evidence records unlisted version 1.1, completed
+profile/contact/privacy sections and a saved DYNAMIC Custom pricing draft.
+External billing activation and marketplace approval/publication remain
+unverified. Those historical native receipts do not qualify the candidate
+bundle's Editor/Studio/Harmony matrix or authorize turning billing on.
+
+Before actual submission, obtain the corrected/clarified sole-trader terms and
+personal signature, verify native activation and current store assets, provision
+the protected delivery runtime inputs, qualify the exact candidate bundle in
+all required editors, and pass the existing release gate. Do not substitute
+references to historical receipts for missing current qualification.
 
 ## Draft listing identity
 
@@ -93,7 +81,7 @@ The current [distribution documentation](https://dev.wix.com/docs/build-apps/lau
 distinguishes App Market listing from direct installation. Do not claim that an
 unlisted install link is a public catalog listing.
 
-## Validation performed locally
+## Historical local validation - initial preparation
 
 Twelve Node tests cover canonical URL validation, no live checkout in editor or
 preview, rejected/missing SDK context, detached asynchronous completion, instance
@@ -110,7 +98,7 @@ inputs and independent real-site receipts are supplied. No marketplace submissio
 attempted. One custom-billing approval request was submitted through the official
 developer support intake on 2026-10-25; see the support-history receipt.
 
-## Current portal state
+## Historical portal state - 25 October
 
 The app icon, company profile, category and keywords are saved. The required
 phone is `+420 792 759 379`, taken from `https://festapp.net/` at the owner's
@@ -136,7 +124,7 @@ the two CDN403 pages. One reply attempt in the existing case thread was SMTP
 rejected, so it was not delivered. Wait for the actual Expert reply channel;
 the native case detail is read-only. Do not open a duplicate request.
 
-## Additional qualification, 25 October
+## Historical additional qualification - 25 October
 
 [Harmony checkout evidence](evidence/final-checkout-qualification-20261025.json) now
 covers real seat selection/release, zoom/fit, Escape/back/focus, native blocked

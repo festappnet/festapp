@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-10-28",
+  "status": "awaiting-wix-sole-trader-clarification-and-personal-signature",
+  "existingExpertThreadId": "1a18198a75444077",
+  "lastReceivedMessageId": "1a1825fe56ce9706",
+  "lastSentMessageId": "1a18267de29c3241",
+  "soleTraderReplyReceived": false,
+  "completedEnvelopeReceiptFound": false,
+  "followupDraft": {
+    "id": "r645712298495369747",
+    "messageId": "1a1830f0cd73f394",
+    "threadId": "1a18198a75444077",
+    "state": "DRAFT",
+    "sent": false,
+    "newSupportCaseCreated": false
+  },
+  "unchangedHolds": {
+    "signature": true,
+    "partnerBillingActivation": true,
+    "widgetHosting": true,
+    "marketplaceSubmission": true
+  },
+  "billingGateWeakened": false
+}
