@@ -2357,6 +2357,8 @@
     "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   },
   "NotificationCenter": {
+    "lifecycleHint": "Aktivität der letzten 30 Tage. Öffnen markiert Meldungen als gelesen, behebt aber keine Fehler. Aktive Fehler bleiben bis zur Behebung.",
+    "historyLimit": "Bis zu 100 Meldungen. Ältere Aktivitäten finden Sie in Bestellungen und E-Mail-Verlauf.",
     "newOrders": "Neue Bestellungen",
     "cancelledOrders": "Stornierte Bestellungen",
     "placesUnavailable": "Anzahl der Plätze nicht verfügbar",

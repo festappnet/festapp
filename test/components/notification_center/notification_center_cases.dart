@@ -975,4 +975,15 @@ void main() {
     await refresh;
     expect(c.items, isEmpty);
   });
+  test('selected group scope survives route and rights invalidation', () {
+    final c=NotificationCenterController();
+    addTearDown(c.dispose);
+    c.configure(userId:'u',organizationId:3);
+    c.snapshot=42;c.snapshotAt=DateTime.utc(2026,10,28);c.displayTimezone='Europe/Prague';
+    final scope=c.selectionScope(row('occasion-kind:1:order_created',data:{'activityCount':6}));
+    c.configure(userId:'u',organizationId:3,occasionId:2,invalidate:true);
+    expect(c.snapshot,0);
+    expect(scope,{'id':'occasion-kind:1:order_created','organization':3,'snapshot':42,'timezone':'Europe/Prague','snapshotAt':'2026-10-28T00:00:00.000Z'});
+  });
+
 }

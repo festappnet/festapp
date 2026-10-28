@@ -241,17 +241,6 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer) TO authenticated;
-CREATE OR REPLACE FUNCTION public.get_notification_center_badge(p_organization bigint) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.notification_center_user_state;
-BEGIN
- PERFORM public.notification_center_check_context(p_organization);
- SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
- RETURN jsonb_build_object('feedSupported',true,'timelineSupported',true,'enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
- 'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
- WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
- AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
-END $$;
 CREATE OR REPLACE FUNCTION public.get_notification_center_group(p_organization bigint,p_group_key text,p_snapshot bigint,
  p_cursor bigint DEFAULT NULL,p_limit integer DEFAULT 5) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

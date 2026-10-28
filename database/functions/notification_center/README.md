@@ -145,3 +145,24 @@ migration is `20261027220000_notification_center_daily_overview.sql`.
 Group totals retain captured counts and form context. Missing legacy fields are hydrated in batches from the authorized same-occasion orders, retained distinct ticket identities and distinct form contexts, matching the individual DTO contract. Multi-place applicability is returned even when the exact total is unavailable; clients show an explicit unavailable label rather than silently omitting places or inventing zero. No additional client RPC is needed.
 
 Category rollups group all non-error events by occasion and kind across dates; email and bank incidents stay independent. The latest event supplies time/context, while all authorized delivered order activities in the frozen snapshot contribute counts and the latest three contact previews. Canonical IDs omit dates. The existing RPC name remains installed-client compatible; old day IDs accepted during loaded-row refresh resolve to one rollup under the first caller alias, never restore day grouping. New opens/pages use canonical occasion-kind IDs. Group selection uses the same entire category and snapshot.
+
+## Seen, active and bounded history (2026-10-28)
+
+The center is a recent-activity overview, not a task-resolution queue. A successful
+open acknowledges the personal organization delivery snapshot; it does not alter
+orders, resolve delivery/bank problems, or delete history. Read labels/dots keep
+the pre-open watermark during that visit. Failed opens do not acknowledge.
+
+Ordinary activity is limited to the30 days preceding the frozen snapshot anchor.
+Email and bank incidents are eligible regardless of age until their source status
+is recovered/resolved; viewing or clicking is not resolution. The same private
+policy controls badge eligibility, overview rows and selected order membership.
+The center returns at most100 latest relevant items (complete category counts,
+not100 member events), exposes truncation explicitly and terminates pagination.
+Older records remain available in their authoritative order/email histories.
+
+Selection scope is captured before dismissing the notification overlay and
+includes snapshotAt. Native grid readiness is awaited without a two-second render
+deadline, and controller replacement remounts its own grid state. Automatic clean
+refresh preserves checked model IDs, including selections made while fetch was
+in flight, while existing filters still clear hidden selection.

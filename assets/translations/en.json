@@ -4375,6 +4375,8 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
+    "lifecycleHint": "Activity from 30 days. Opening marks notifications as read, not resolved. Active problems remain until fixed.",
+    "historyLimit": "Showing up to 100 notifications. Older activity is in orders and email history.",
     "newOrders": "New orders",
     "cancelledOrders": "Cancelled orders",
     "placesUnavailable": "Place count unavailable",

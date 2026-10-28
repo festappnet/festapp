@@ -507,10 +507,9 @@ class _OrdersContentState extends State<OrdersContent> {
     bool owns() => mounted && generation == _loadGeneration &&
       identical(grid, controller) && isVisibleRouteInstance(context) &&
       context.routeData.queryParams.optString('notificationGroup') == target;
-    for (var i = 0; i < 100 && owns() && !grid.isGridLoaded; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-    }
-    if (!owns() || !grid.isGridLoaded) return;
+    if (!await grid.whenLoaded) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !owns() || !grid.isGridLoaded) return;
     // Reveal all matching rows, including cancellations hidden by Active.
     grid.toggleAdditionalFilter(false);
     grid.stateManager.setFilterRows([]);
@@ -612,7 +611,7 @@ class _OrdersContentState extends State<OrdersContent> {
       return const Center(child: CircularProgressIndicator());
     }
     return SingleTableDataGrid<OrderModel>(controller!,
-        emptyMessage: OrdersStrings.noOrders);
+        key: ObjectKey(controller), emptyMessage: OrdersStrings.noOrders);
   }
 
   Future<void> cancelOrders(SingleDataGridController singleDataGrid) async {
