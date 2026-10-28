@@ -1,6 +1,6 @@
 # Review handoff - vstupenky.online
 
-Status: SUBMITTED, case `2351677:2082001`. The vendor follow-up form was accepted. Do not repeat Publish, Request review or the follow-up submission. Await Make feedback in the existing thread.
+Status: SUBMITTED, case `2351677:2082001`. The vendor follow-up form was accepted. Do not repeat Publish, Request review or the follow-up submission. AppBot feedback was addressed, fresh scenarios passed, and a technical reply was sent in the existing case; human approval is pending. See [review knowledge](REVIEW-LESSONS.md) and [reply](RESPONSE-20261028.md).
 
 App: `vstupenky-online-buoz5u`, version 1, EU1. Publisher account: info@festapp.net, organization 9450617, team 3387186. Standard verified app, first-party service owner. No Community submission or optional partner application is required by the documented verified-app route.
 
@@ -39,3 +39,5 @@ Public cost conclusion is documented in `../evidence/publisher-costs.json`. The 
 ## Submitted 2026-10-28
 
 Publish, all five visible modules, one review request and its follow-up form were accepted. Case `2351677:2082001`, confirmation message `1a1822f6b03104a4`, form record `191861`. No optional partner application was selected and no fixed fee or paid subscription was presented. See `../evidence/submission-20261028.json`. Await feedback in this existing thread; do not resubmit. Approval and catalogue release are pending.
+
+Review corrections were published from `1967445f97bb6a91b256672ec346eac06e9796c3`; the API documentation link was updated in the existing review and the technical response was sent as message `1a18258af1b4ad0b`. No new Review request or partner application was created.

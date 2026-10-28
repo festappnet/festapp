@@ -1,6 +1,6 @@
 {
-  "recordedAt": "2026-10-28T11:46:31.561783+00:00",
-  "status": "review_feedback_fixed_clarifications_prepared",
+  "recordedAt": "2026-10-28T11:51:19.627414+00:00",
+  "status": "review_corrections_and_evidence_sent_waiting_for_make",
   "ownerSelectedEmail": "info@festapp.net",
   "emailVerificationConfirmed": true,
   "makeZone": "eu1.make.com",
@@ -61,12 +61,15 @@
     "Broader pre-existing write SQL fixture fails ORDER_CHANGE_REJECTED; dedicated read SQL and all 45 targeted tests pass.",
     "Public-source cost conclusion is not direct vendor confirmation; inspect any separate contribution terms before acceptance."
   ],
-  "nextAction": "Publish validated review corrections to canonical main, update the documentation link in the existing review, and reply to the existing case with runtime evidence and documented clarifications. No new review request.",
-  "connectorSourceRevision": "5b94f8fe28505a66495117996eb568bfbf853668",
+  "nextAction": "Wait for the existing Make case 2351677 reply and human assessment of the corrections/clarifications. Preserve the same app/version and review. After approval/release, verify catalogue discovery and connection from another authorized account.",
+  "connectorSourceRevision": "1967445f97bb6a91b256672ec346eac06e9796c3",
   "reviewCase": "2351677:2082001",
   "reviewFollowupFormId": 191861,
   "followupFormSubmitted": true,
   "lastReviewFeedbackMessageId": "1a18239723a8b8c6",
   "reviewFeedbackAddressed": true,
-  "reviewResponseSent": false
+  "reviewResponseSent": true,
+  "reviewResponseMessageId": "1a18258af1b4ad0b",
+  "lastPortalReviewStatus": "Changes required (AppBot); response sent, human decision pending",
+  "knowledge": "../review/REVIEW-LESSONS.md"
 }

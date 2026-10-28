@@ -6,7 +6,7 @@
   "receivedAt": "2026-10-28T11:15:33Z",
   "author": "Make AppBot, Apps DX team",
   "reviewKind": "AI-generated; explicitly may contain mistakes; human follow-up available by reply",
-  "status": "valid_findings_fixed_questions_documented_fresh_runs_passed_reply_prepared",
+  "status": "corrections_published_review_form_updated_reply_sent_waiting_for_make",
   "changed": [
     "Sentence-case labels and third-person descriptions, entity groups, CRUD Read metadata",
     "RPC response limit 500; mapping mode edit for Get fields; remove ineffective select numeric validation",
@@ -39,5 +39,27 @@
   },
   "knowledge": "../review/REVIEW-LESSONS.md",
   "response": "../review/RESPONSE-20261028.md",
-  "newReviewCreated": false
+  "newReviewCreated": false,
+  "sourceRevision": "1967445f97bb6a91b256672ec346eac06e9796c3",
+  "reviewFormUpdate": {
+    "accepted": true,
+    "uiTime": "2026-10-28 12:49 Europe/Prague",
+    "action": "Review form updated.",
+    "apiDocumentation": "https://github.com/festappnet/festapp/blob/main/integrations/make/API.md",
+    "publicDocumentationHttpStatus": 200
+  },
+  "reply": {
+    "sentAt": "2026-10-28T11:51:19.627414+00:00",
+    "gmailMessageId": "1a18258af1b4ad0b",
+    "gmailThreadId": "1a18239723a8b8c6",
+    "inReplyToGmailMessageId": "1a18239723a8b8c6",
+    "to": "helpdesk@make.com",
+    "subject": "Re: [#2351677]",
+    "sender": "Connected authenticated Gmail account, default verified sender; no publisher send-as alias configured or added.",
+    "replyTo": "info@festapp.net",
+    "apiReadback": "SENT",
+    "bodySource": "../review/RESPONSE-20261028.md"
+  },
+  "lastPortalReviewStatus": "Changes required (AppBot feedback); no human approval observed",
+  "nextAction": "Wait for a human response in the existing case; no polling loop or new review request."
 }
