@@ -985,7 +985,7 @@ void main() {
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 3);
     c.snapshot = 10; c.previousReadThrough = 10;
-    final item = NotificationItem.fromJson({'id':'occasion-kind:1:form_opened:pending:0','kind':'form_opened','sequence':7,'isRead':false,'isSeen':true});
+    final item = NotificationItem.fromJson({'id':'occasion-kind:1:form_opened:batch:0','kind':'form_opened','sequence':7,'isRead':false,'isSeen':true});
     expect(c.isUnread(item), isTrue, reason:'seen is independent of read');
     await c.markRead(item);
     expect(requests.single['p_scope'], {'id':item.id,'snapshot':10,'throughSequence':7});

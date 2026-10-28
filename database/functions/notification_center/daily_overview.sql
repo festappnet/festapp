@@ -82,12 +82,12 @@ BEGIN
    (SELECT * FROM combined ORDER BY section,at DESC,id DESC LIMIT 101) bounded),
  rows AS (
   SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM catalog
-  WHERE catalog_position<=100 AND (p_ids IS NULL OR EXISTS(SELECT 1 FROM unnest(p_ids) requested WHERE requested=id OR (id LIKE '%:batch:%' AND requested=regexp_replace(id,':batch:.*$','')||':pending:'||after_sequence) OR (requested ~ '^(occasion-kind:[0-9]+:[a-z_]+|order-day:)' AND requested !~ ':(pending|batch|self|legacy)(:|$)' AND public.notification_center_rollup_id_internal(requested)=regexp_replace(id,':(pending|batch):.*$|:(self|legacy)$','')))) AND (cursor IS NULL OR section>(cursor->>'section')::int
+  WHERE catalog_position<=100 AND (p_ids IS NULL OR EXISTS(SELECT 1 FROM unnest(p_ids) requested WHERE requested=id OR (requested ~ '^(occasion-kind:[0-9]+:[a-z_]+|order-day:)' AND requested !~ ':(pending|batch|self|legacy)(:|$)' AND public.notification_center_rollup_id_internal(requested)=regexp_replace(id,':(pending|batch):.*$|:(self|legacy)$','')))) AND (cursor IS NULL OR section>(cursor->>'section')::int
    OR (section=(cursor->>'section')::int AND (at,id)<((cursor->>'time')::timestamptz,cursor->>'id')))
   ORDER BY section,at DESC,id DESC LIMIT lim+1),
  page AS (SELECT *,public.notification_center_dto(event,delivery)||jsonb_build_object('isRead',is_read,'isSeen',is_read OR sequence<=greatest(coalesce((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid()),0),coalesce(previous_read,0))) dto,
   coalesce((SELECT requested FROM unnest(p_ids) WITH ORDINALITY r(requested,position)
-    WHERE requested=rows.id OR (rows.id LIKE '%:batch:%' AND requested=regexp_replace(rows.id,':batch:.*$','')||':pending:'||after_sequence) OR public.notification_center_rollup_id_internal(requested)=regexp_replace(rows.id,':(pending|batch):.*$|:(self|legacy)$','') ORDER BY r.position LIMIT 1),id) response_id
+    WHERE requested=rows.id OR public.notification_center_rollup_id_internal(requested)=regexp_replace(rows.id,':(pending|batch):.*$|:(self|legacy)$','') ORDER BY r.position LIMIT 1),id) response_id
   FROM rows WHERE position<=lim)
  SELECT coalesce((SELECT jsonb_agg(CASE WHEN activity_count=0 THEN dto||jsonb_build_object('section',section,'day',calendar_day)
   WHEN NOT public.notification_center_order_activity_internal((event).kind) THEN

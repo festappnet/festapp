@@ -39,7 +39,7 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        final controller = NotificationCenterController(read: (_, __) async => true);
+        final controller = NotificationCenterController(read: (_, _) async => true);
         addTearDown(controller.dispose);
         controller.snapshot = 42;
         NotificationItem row(String id, bool read, int count) => NotificationItem.fromJson({
@@ -47,7 +47,7 @@ void main() {
           'occasionId': 1, 'occasionTitle': 'Ples AKH 2026', 'occasionLink': 'fixture',
           'kind': 'order_created', 'occurredAt': DateTime.now().toUtc().toIso8601String(),
           'data': {'activityCount': count, 'placeCount': count + 2, 'relatedOrders': true,
-            'previewContacts': [{'name':'Filip','surname':'Konzal'},{'name':'Jana','surname':'Nováková'},{'name':'Štěpánka','surname':'Juránková'}]},
+            'previewContacts': [{'name':'Filip','surname':'Konzal'},{'name':'Jana','surname':'Nováková'},{'name':'Štěpánka','surname':'Juránková'}].take(count).toList()},
         });
         controller.items = [row('read', true, 20), row('unread', false, 2)];
         NotificationItem? followed;

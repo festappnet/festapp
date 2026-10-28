@@ -33,8 +33,8 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
    e.actor=d.recipient AND e.kind IN ('order_created','order_cancelled') own_action FROM state s)
  SELECT CASE WHEN coalesce(s.own_action,false) THEN s.key||':self'
    WHEN d.sequence<=s.baseline THEN s.key||':legacy'
-   WHEN r.id IS NOT NULL THEN s.key||':batch:'||r.id
-   ELSE s.key||':pending:'||s.last_read END,
+   WHEN r.id IS NOT NULL THEN s.key||':batch:'||r.after_sequence
+   ELSE s.key||':batch:'||s.last_read END,
   coalesce(s.own_action,false) OR d.sequence<=s.baseline OR r.id IS NOT NULL,
   CASE WHEN coalesce(s.own_action,false) OR d.sequence<=s.baseline THEN 0
    WHEN r.id IS NOT NULL THEN r.after_sequence ELSE s.last_read END,
@@ -56,9 +56,9 @@ BEGIN
   INTO baseline,snap FROM public.notification_center_user_state
   WHERE organization=p_organization AND recipient=auth.uid() FOR UPDATE;
  IF NOT FOUND THEN RETURN false; END IF;
- IF id ~ '^occasion-kind:[0-9]{1,18}:[a-z_]+:pending:[0-9]{1,18}$' THEN
-  base:=regexp_replace(id,':pending:[0-9]+$','');
-  lower_bound:=substring(id from ':pending:([0-9]+)$')::bigint;
+ IF id ~ '^occasion-kind:[0-9]{1,18}:[a-z_]+:batch:[0-9]{1,18}$' THEN
+  base:=regexp_replace(id,':batch:[0-9]+$','');
+  lower_bound:=substring(id from ':batch:([0-9]+)$')::bigint;
   occ:=split_part(id,':',2)::bigint;
   PERFORM public.notification_center_check_context(p_organization,occ);
  ELSIF id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN

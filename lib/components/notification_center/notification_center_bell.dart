@@ -212,9 +212,10 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
           '/unit/$unit/edit/bank-accounts/$account/connection');
       return;
     }
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(NotificationCenterStrings.text('unavailable'))));
+    }
   }
 
   @override

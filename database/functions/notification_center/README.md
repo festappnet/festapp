@@ -176,8 +176,8 @@ receipts. The legacy `read_through_sequence` remains a frozen transition baselin
 items. Own `order_created`/`order_cancelled` activity is history, never new for its
 actor, while eligible colleagues still receive it as unread.
 
-Unread IDs end in `:pending:<afterSequence>`. Reading seals a bounded receipt;
-closed IDs end in `:batch:<receipt UUID>`. Legacy history and own activity use
+Batch IDs end in `:batch:<afterSequence>` and remain stable when reading seals
+the bounded receipt. Legacy history and own activity use
 `:legacy`/`:self`. The server returns `isRead`/`isSeen` and precise sequence bounds.
 Counts, contact previews and selected orders use the same eligible batch. The
 existing orders RPC records an explicit `markRead` within its successful

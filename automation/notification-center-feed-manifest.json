@@ -1,6 +1,6 @@
 {
-  "name": "notification-center-current-rollups-2026-10-28",
-  "output": "supabase/migrations/20261028120000_notification_center_current_rollups.sql",
+  "name": "notification-center-personal-read-batches-2026-10-28",
+  "output": "supabase/migrations/20261028130000_notification_personal_read_batches.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -17,10 +17,16 @@
     "20261028010000_notification_legacy_place_totals.sql",
     "20261028013000_notification_category_rollups.sql",
     "20261028020000_notification_center_lifecycle.sql",
-    "20261028030000_notification_new_orders_exclude_cancelled.sql"
+    "20261028030000_notification_new_orders_exclude_cancelled.sql",
+    "20261028120000_notification_center_current_rollups.sql"
   ],
   "sources": [
-    "notification_center/daily_overview.sql"
+    "notification_center/read_state.sql",
+    "notification_center/core.sql",
+    "notification_center/center_policy.sql",
+    "notification_center/daily_overview.sql",
+    "notification_center/order_selection.sql",
+    "eshop_orders/get_orders_tab_data.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -38,6 +44,7 @@
     "20261028010000_notification_legacy_place_totals.sql": "35fb5a3f8c77d43a02f8a148fc9a2a557ee519da57ca8265da633cea60a4ff9c",
     "20261028013000_notification_category_rollups.sql": "28bb314bba0e108ec5a9aeda474bafd6f560dbdb790e399efabfb29cdf3b5c08",
     "20261028020000_notification_center_lifecycle.sql": "c28d6e45b85e666abc781ed754a267032b2ab25d48ef9258278235ce55dbafbe",
-    "20261028030000_notification_new_orders_exclude_cancelled.sql": "82e9042156c562e2c8f9ed48d4efbd7cb16bc31beba0cdfa6a69a6ccc1434c65"
+    "20261028030000_notification_new_orders_exclude_cancelled.sql": "82e9042156c562e2c8f9ed48d4efbd7cb16bc31beba0cdfa6a69a6ccc1434c65",
+    "20261028120000_notification_center_current_rollups.sql": "55596efa8ae0e9af14da00c6d38fe495cccb834f790c8bde4b68d9618a76bc3e"
   }
 }

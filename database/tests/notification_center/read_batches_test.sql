@@ -51,6 +51,8 @@ BEGIN
  PERFORM assert_true((SELECT (x->>'isRead')::boolean FROM jsonb_array_elements(result->'items') x WHERE x->>'id' LIKE '%:self'),'own activity is already read even with only order-view rights');
  scope:=jsonb_build_object('id',item->>'id','organization',org,'snapshot',result->'snapshot','snapshotAt',result->>'snapshotAt',
   'timezone','Europe/Prague','afterSequence',item#>'{data,afterSequence}','throughSequence',item->'sequence','markRead',true);
+ -- Another tab reads only the earlier portion of our captured batch.
+ PERFORM public.mark_notification_center_item_read(org,scope||jsonb_build_object('throughSequence',(item->>'sequence')::bigint-1));
  UPDATE eshop.orders SET state='storno' WHERE id=order_ids[2];
  PERFORM public.notification_center_order_internal(order_ids[2],'order_cancelled','batch:self-cancel',viewer);
  -- A later arrival must not be read by an already captured click.
@@ -60,6 +62,10 @@ BEGIN
  result:=public.get_orders_tab_data(link,scope);
  RESET ROLE;
  PERFORM assert_eq(result->'notification_order_ids',jsonb_build_array(order_ids[3]),'cancelled and own orders are excluded from captured new selection');
+ selected:=public.notification_center_order_selection(oc,scope||jsonb_build_object('markRead',false));
+ PERFORM assert_eq(selected,jsonb_build_array(order_ids[3]),'reopening read history never adds the actor own activity from the same sequence range');
+ PERFORM assert_false(has_table_privilege('authenticated','public.notification_center_read_batches','select'),'read receipts remain private');
+ PERFORM assert_false(has_function_privilege('anon','public.mark_notification_center_item_read(bigint,jsonb)','execute'),'anonymous users cannot mark personal items');
  result:=public.get_notification_center_daily_overview(org,oc);
  SELECT x INTO item FROM jsonb_array_elements(result->'items') x WHERE NOT (x->>'isRead')::boolean;
  PERFORM assert_eq((item#>>'{data,activityCount}')::int,1,'late arrival remains a new unread batch');
