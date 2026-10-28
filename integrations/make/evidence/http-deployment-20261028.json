@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-28",
+  "tenant": "festapptickets",
+  "service": "standalone regional Festapp MCP sidecar",
+  "source": {
+    "commit": "903145af65e4a3c1944464078c472bee26400ae9",
+    "branch": "feat/make-connector-http-20261028",
+    "builtFrom": "clean source archive of the pinned commit",
+    "targetedTestEvidence": "integrations/make/evidence/server-tests-20261028.json"
+  },
+  "deployment": {
+    "container": "festapp-mcp-mcp-1",
+    "containerId": "afaa79367bc7d6ecbddbb107ef70d12576aaf8e2fa34d9642762b0b0d621800e",
+    "imageId": "sha256:adee07a3a8c8d2bf39ba17de7ab111b2c50aaf5b90f1f1bdbf17b4ec8995ecb3",
+    "immutableImageReference": "festapp-mcp-oauth@sha256:adee07a3a8c8d2bf39ba17de7ab111b2c50aaf5b90f1f1bdbf17b4ec8995ecb3",
+    "sourceRevisionLabel": "903145af65e4a3c1944464078c472bee26400ae9",
+    "previousImageId": "sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+    "previousImageReference": "festapp-mcp-oauth@sha256:690aa68171b17b6de9679771901c3748de18fc81c1332ae5074074b2ca23b979",
+    "previousSourceRevision": "c03b28d1544e90953d637c3fe27f3d769b191dfc",
+    "composeEnvironmentBackup": "/opt/festapp-mcp/compose.env.pre-http-20261028",
+    "composeDefinitionUnchanged": true,
+    "serviceOnlyRecreated": true,
+    "health": "healthy"
+  },
+  "preservation": {
+    "registeredConfigSha256": "d57c1c0824aa29c0d7f46be81024e20cf712825d3b387eaa6767cb09b3da2db8",
+    "secretFileSha256BeforeAndAfter": "2798dae4b8f54ea53afd3b8e08765ca9101a2a29d379cc3436211219494a9f36",
+    "configAndSecretsMounts": "unchanged",
+    "encryptedStateVolume": "/opt/festapp-mcp/data-regional-vstupenky -> /var/lib/festapp-mcp (same bind mount; contents not hashed)",
+    "unrelatedServicesChanged": false
+  },
+  "verification": {
+    "makeOpenApi": {
+      "version": "3.1.0",
+      "pathCount": 5,
+      "paths": [
+        "/operations/access.inspect",
+        "/operations/context.inspect",
+        "/operations/orders.inspect",
+        "/operations/orders.list",
+        "/operations/orders.report"
+      ],
+      "customerOrUserIdSchemas": false
+    },
+    "unauthenticatedPostContextInspect": {
+      "status": 401,
+      "resourceMetadata": "https://mcp.vstupenky.online/.well-known/oauth-protected-resource/mcp"
+    },
+    "getOperation": 405,
+    "publicHealth": "passed",
+    "oauthRegistrationEndpoint": "absent",
+    "syntheticProductionData": false
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "url": "https://mcp.vstupenky.online{{switch(parameters.url, \"/make/v1/operations/context.inspect\", \"/make/v1/operations/context.inspect\", \"/make/v1/operations/access.inspect\", \"/make/v1/operations/access.inspect\", \"/make/v1/operations/orders.report\", \"/make/v1/operations/orders.report\", \"/make/v1/operations/orders.list\", \"/make/v1/operations/orders.list\", \"/make/v1/operations/orders.inspect\", \"/make/v1/operations/orders.inspect\", '/make/v1/operations/forbidden')}}",
+  "method": "{{ifempty(parameters.method, 'POST')}}",
+  "type": "raw",
+  "headers": {
+    "{{...}}": "{{pick(toCollection(parameters.headers, 'key', 'value'), 'Accept', 'Content-Type', 'X-Request-ID')}}",
+    "content-type": "application/json",
+    "authorization": "Bearer {{connection.accessToken}}"
+  },
+  "qs": {
+    "{{...}}": "{{toCollection(parameters.qs, 'key', 'value')}}"
+  },
+  "body": "{{ifempty(parameters.body, '{}')}}",
+  "response": {
+    "output": {
+      "body": "{{body}}",
+      "headers": "{{headers}}",
+      "statusCode": "{{statusCode}}"
+    }
+  },
+  "log": {
+    "sanitize": [
+      "request.body",
+      "request.headers.authorization",
+      "request.headers.Authorization"
+    ]
+  }
+}

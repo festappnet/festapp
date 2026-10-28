@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-28T09:39:59.803544+00:00",
+  "organizationId": 9450617,
+  "scope": "dedicated new Make development organization only",
+  "reason": "Owner reported unwanted failure emails from qualification runs",
+  "observedFailureEmailTimes": [
+    "2026-10-28T09:13:47Z",
+    "2026-10-28T09:35:34Z"
+  ],
+  "scenarioId": 8226665,
+  "scenarioActive": false,
+  "scheduleType": "on-demand",
+  "changes": {
+    "Errors in scenario run": {
+      "before": true,
+      "after": false
+    },
+    "Scenario deactivation": {
+      "before": true,
+      "after": false
+    }
+  },
+  "preserved": [
+    "Warning in scenario run",
+    "Credit limit reached",
+    "Connection and key activity"
+  ],
+  "persistenceReadback": "confirmed after reloading authenticated notification-options page",
+  "mailReadback": {
+    "query": "from:noreply@eu1.make.com newer_than:1d subject:Encountered error",
+    "matchingEmails": 2,
+    "latestEmailAt": "2026-10-28T09:35:34Z",
+    "result": "Only two historical pre-setting-change messages observed; later qualification failures did not add new messages to connected Gmail."
+  }
+}

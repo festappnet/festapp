@@ -1,0 +1,8 @@
+{
+  "name": "listOrders",
+  "label": "List orders",
+  "description": "Lists orders for a selected event, with pagination and a total result limit.",
+  "typeId": 9,
+  "connection": "vstupenky-online-buoz5u",
+  "crud": "read"
+}

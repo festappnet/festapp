@@ -1,0 +1,475 @@
+[
+  {
+    "name": "occasionId",
+    "label": "Event ID",
+    "type": "number"
+  },
+  {
+    "name": "report",
+    "label": "Report",
+    "type": "collection",
+    "spec": [
+      {
+        "name": "schema_version",
+        "label": "Schema version",
+        "type": "number"
+      },
+      {
+        "name": "valid",
+        "label": "Valid",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "tickets",
+            "label": "Tickets",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "total",
+                "label": "Total",
+                "type": "number"
+              },
+              {
+                "name": "by_state",
+                "label": "By state",
+                "type": "array",
+                "spec": {
+                  "type": "collection",
+                  "spec": [
+                    {
+                      "name": "count",
+                      "label": "Count",
+                      "type": "number"
+                    },
+                    {
+                      "name": "state",
+                      "label": "State",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "name": "orders",
+            "label": "Orders",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "total",
+                "label": "Total",
+                "type": "number"
+              },
+              {
+                "name": "by_state",
+                "label": "By state",
+                "type": "array",
+                "spec": {
+                  "type": "collection",
+                  "spec": [
+                    {
+                      "name": "count",
+                      "label": "Count",
+                      "type": "number"
+                    },
+                    {
+                      "name": "state",
+                      "label": "State",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "name": "order_days",
+            "label": "Order days",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "day",
+                  "label": "Day",
+                  "type": "text"
+                },
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "currency",
+                  "label": "Currency",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "name": "ticket_days",
+            "label": "Ticket days",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "day",
+                  "label": "Day",
+                  "type": "text"
+                },
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "currency",
+                  "label": "Currency",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "spots",
+        "label": "Spots",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "free",
+            "label": "Free",
+            "type": "number"
+          },
+          {
+            "name": "total",
+            "label": "Total",
+            "type": "number"
+          },
+          {
+            "name": "occupied",
+            "label": "Occupied",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "name": "orders",
+        "label": "Orders",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "total",
+            "label": "Total",
+            "type": "number"
+          },
+          {
+            "name": "by_state",
+            "label": "By state",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "state",
+                  "label": "State",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "tickets",
+        "label": "Tickets",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "total",
+            "label": "Total",
+            "type": "number"
+          },
+          {
+            "name": "by_state",
+            "label": "By state",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "state",
+                  "label": "State",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "occasion",
+        "label": "Event",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "id",
+            "label": "ID",
+            "type": "text"
+          },
+          {
+            "name": "title",
+            "label": "Title",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "name": "products",
+        "label": "Products",
+        "type": "array",
+        "spec": {
+          "type": "collection",
+          "spec": [
+            {
+              "name": "type_id",
+              "label": "Type ID",
+              "type": "text"
+            },
+            {
+              "name": "product_id",
+              "label": "Product ID",
+              "type": "text"
+            },
+            {
+              "name": "type_title",
+              "label": "Type title",
+              "type": "text"
+            },
+            {
+              "name": "product_title",
+              "label": "Product title",
+              "type": "text"
+            },
+            {
+              "name": "confirmed_count",
+              "label": "Confirmed count",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      {
+        "name": "timeline",
+        "label": "Timeline",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "orders",
+            "label": "Orders",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "day",
+                  "label": "Day",
+                  "type": "text"
+                },
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "currency",
+                  "label": "Currency",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "name": "tickets",
+            "label": "Tickets",
+            "type": "array",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "day",
+                  "label": "Day",
+                  "type": "text"
+                },
+                {
+                  "name": "count",
+                  "label": "Count",
+                  "type": "number"
+                },
+                {
+                  "name": "currency",
+                  "label": "Currency",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "name": "payments",
+            "label": "Payments",
+            "type": "array",
+            "spec": {
+              "type": "any"
+            }
+          },
+          {
+            "name": "order_timezone",
+            "label": "Order timezone",
+            "type": "text"
+          },
+          {
+            "name": "payment_date_basis",
+            "label": "Payment date basis",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "name": "warnings",
+        "label": "Warnings",
+        "type": "array",
+        "spec": {
+          "type": "collection",
+          "spec": [
+            {
+              "name": "code",
+              "label": "Code",
+              "type": "text"
+            },
+            {
+              "name": "count",
+              "label": "Count",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      {
+        "name": "generated_at",
+        "label": "Generated at",
+        "type": "date"
+      },
+      {
+        "name": "ticket_batches",
+        "label": "Ticket batches",
+        "type": "collection",
+        "spec": [
+          {
+            "name": "total",
+            "label": "Total",
+            "type": "number"
+          },
+          {
+            "name": "available",
+            "label": "Available",
+            "type": "number"
+          },
+          {
+            "name": "sold_active",
+            "label": "Sold active",
+            "type": "number"
+          },
+          {
+            "name": "voided_unsold",
+            "label": "Voided unsold",
+            "type": "number"
+          },
+          {
+            "name": "cancelled_after_sale",
+            "label": "Cancelled after sale",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "name": "money_by_currency",
+        "label": "Money by currency",
+        "type": "array",
+        "spec": {
+          "type": "collection",
+          "spec": [
+            {
+              "name": "currency",
+              "label": "Currency",
+              "type": "text"
+            },
+            {
+              "name": "received",
+              "label": "Received",
+              "type": "text"
+            },
+            {
+              "name": "returned",
+              "label": "Returned",
+              "type": "text"
+            },
+            {
+              "name": "has_deposits",
+              "label": "Has deposits",
+              "type": "boolean"
+            },
+            {
+              "name": "net_received",
+              "label": "Net received",
+              "type": "text"
+            },
+            {
+              "name": "other_received",
+              "label": "Other received",
+              "type": "text"
+            },
+            {
+              "name": "manual_received",
+              "label": "Manual received",
+              "type": "text"
+            },
+            {
+              "name": "current_order_value",
+              "label": "Current order value",
+              "type": "text"
+            },
+            {
+              "name": "deposit_received_gross",
+              "label": "Deposit received gross",
+              "type": "text"
+            },
+            {
+              "name": "beyond_deposit_received_gross",
+              "label": "Beyond deposit received gross",
+              "type": "text"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "waitingTickets",
+    "label": "Waiting tickets",
+    "type": "number"
+  }
+]

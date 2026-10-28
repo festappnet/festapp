@@ -32,6 +32,10 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  assert.equal(ownership.length,signatures.length,'every canonical migration signature must be installed');
  for(const row of ownership)await db.query(row.statement);
  await db.query('SET LOCAL ROLE postgres');await db.query(orderMigration);
+ // The current queue normalizes recipients through this canonical contact owner.
+ // Install the prerequisite in the same rolled-back fixture as the order owner.
+ for(const file of ['forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql'])
+  await db.query(await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8'));
  await db.query('RESET ROLE');
  const f=await fixture(db,1);
  const form=Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Order MCP form',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id",[f.occasion])).rows[0].id);

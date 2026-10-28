@@ -1,5 +1,8 @@
 enableGlobalVirtualStore: false
 
+overrides:
+  'miniflare>undici': 7.30.1
+
 allowBuilds:
   esbuild: true
   workerd: true

@@ -9,6 +9,10 @@ const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 async function install(db) {
  for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])
   await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
+ // Ticket-batch guards extend these owners after the original standing cut.
+ // Install current owners before asserting their behavior and source parity.
+ for(const name of ['save_inventory_pool_internal','save_inventory_resource_internal'])
+  await db.query(await readFile(new URL('../../../database/functions/inventory/'+name+'.sql',import.meta.url),'utf8'));
 }
 async function productFixture(db) {
  const f=await fixture(db,2);

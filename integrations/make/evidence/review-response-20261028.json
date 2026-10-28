@@ -1,0 +1,65 @@
+{
+  "at": "2026-10-28T11:46:31.561783+00:00",
+  "case": "2351677:2082001",
+  "messageId": "1a18239723a8b8c6",
+  "subject": "Re: [#2351677]",
+  "receivedAt": "2026-10-28T11:15:33Z",
+  "author": "Make AppBot, Apps DX team",
+  "reviewKind": "AI-generated; explicitly may contain mistakes; human follow-up available by reply",
+  "status": "corrections_published_review_form_updated_reply_sent_waiting_for_make",
+  "changed": [
+    "Sentence-case labels and third-person descriptions, entity groups, CRUD Read metadata",
+    "RPC response limit 500; mapping mode edit for Get fields; remove ineffective select numeric validation",
+    "Nullable JSON Schema types decoded correctly; generated timestamp parsed/declared date",
+    "Universal relative URL text, method, safe headers, query string, response headers, both read scopes",
+    "Connection common client ID, optional user label, refresh-token fallback, error text",
+    "Public human-readable API document and existing samples verified by SDK readback"
+  ],
+  "preservedWithEvidence": [
+    "Five-operation server allowlist and fixed-origin routing",
+    "Server-enforced immutable seven-day delegation",
+    "Required full pagination request body per official Make docs",
+    "Absent-limit versus explicit-empty-limit contract verified in real Make",
+    "Exactly-one matching detail guard before first()",
+    "Complete access.inspect result without invented cursor pagination",
+    "Canonical report text event ID and original money representation",
+    "Summary context privacy: no account identity/contact fields",
+    "Free-text stored state because canonical schema has no enum"
+  ],
+  "validation": {
+    "sdkSectionsMatched": 34,
+    "allFiveModules": "passed",
+    "ordersAcrossTwoPages": 52,
+    "dateMappingConsumer": "passed",
+    "literalDottedCapabilityMappingConsumer": "passed",
+    "boundaryCasesPassed": 6,
+    "qualificationExecutionId": "530ff7fbc73a44c390b45d7a90467536",
+    "bothScenariosInactive": true,
+    "backend45Tests": "retained valid evidence; backend unchanged, not rerun"
+  },
+  "knowledge": "../review/REVIEW-LESSONS.md",
+  "response": "../review/RESPONSE-20261028.md",
+  "newReviewCreated": false,
+  "sourceRevision": "1967445f97bb6a91b256672ec346eac06e9796c3",
+  "reviewFormUpdate": {
+    "accepted": true,
+    "uiTime": "2026-10-28 12:49 Europe/Prague",
+    "action": "Review form updated.",
+    "apiDocumentation": "https://github.com/festappnet/festapp/blob/main/integrations/make/API.md",
+    "publicDocumentationHttpStatus": 200
+  },
+  "reply": {
+    "sentAt": "2026-10-28T11:51:19.627414+00:00",
+    "gmailMessageId": "1a18258af1b4ad0b",
+    "gmailThreadId": "1a18239723a8b8c6",
+    "inReplyToGmailMessageId": "1a18239723a8b8c6",
+    "to": "helpdesk@make.com",
+    "subject": "Re: [#2351677]",
+    "sender": "Connected authenticated Gmail account, default verified sender; no publisher send-as alias configured or added.",
+    "replyTo": "info@festapp.net",
+    "apiReadback": "SENT",
+    "bodySource": "../review/RESPONSE-20261028.md"
+  },
+  "lastPortalReviewStatus": "Changes required (AppBot feedback); no human approval observed",
+  "nextAction": "Wait for a human response in the existing case; no polling loop or new review request."
+}

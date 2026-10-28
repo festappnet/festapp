@@ -1,6 +1,6 @@
 {
-  "name": "notification-center-daily-overview-2026-10-27",
-  "output": "supabase/migrations/20261027220000_notification_center_daily_overview.sql",
+  "name": "notification-center-current-rollups-2026-10-28",
+  "output": "supabase/migrations/20261028120000_notification_center_current_rollups.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -11,7 +11,13 @@
     "20261026120000_notification_center_feed.sql",
     "20261026150000_notification_center_order_periods.sql",
     "20261026230000_notification_center_unread_snapshot.sql",
-    "20261027210000_notification_center_overview.sql"
+    "20261027210000_notification_center_overview.sql",
+    "20261027220000_notification_center_daily_overview.sql",
+    "20261027234500_notification_group_order_selection.sql",
+    "20261028010000_notification_legacy_place_totals.sql",
+    "20261028013000_notification_category_rollups.sql",
+    "20261028020000_notification_center_lifecycle.sql",
+    "20261028030000_notification_new_orders_exclude_cancelled.sql"
   ],
   "sources": [
     "notification_center/daily_overview.sql"
@@ -26,6 +32,12 @@
     "20261026120000_notification_center_feed.sql": "b19fedfb5507cf7f91ed2f480d6bac1d38e94045ddf53542ba9ca5d918786984",
     "20261026150000_notification_center_order_periods.sql": "58af655065a50e8f4468223d3a53c95bba766c2494a7646bb2b0ef5aaddb12b3",
     "20261026230000_notification_center_unread_snapshot.sql": "27c74f26c8e61d53ec1ec8d51b26e58cbda6bf080990f0001ba6aa654d489b78",
-    "20261027210000_notification_center_overview.sql": "829e20086fc97775d4a4a0d276803f4c3c5d7bdd0a3d0be285a3384120363687"
+    "20261027210000_notification_center_overview.sql": "829e20086fc97775d4a4a0d276803f4c3c5d7bdd0a3d0be285a3384120363687",
+    "20261027220000_notification_center_daily_overview.sql": "e4947888a8184f44d20ae2c7bfa66bd5cc692ade2c7c06e7d067035a061cd682",
+    "20261027234500_notification_group_order_selection.sql": "47b9db08d53558200a7ebcbaf5f47eee78295c8d763c70bcc6a5faf5c892fb8a",
+    "20261028010000_notification_legacy_place_totals.sql": "35fb5a3f8c77d43a02f8a148fc9a2a557ee519da57ca8265da633cea60a4ff9c",
+    "20261028013000_notification_category_rollups.sql": "28bb314bba0e108ec5a9aeda474bafd6f560dbdb790e399efabfb29cdf3b5c08",
+    "20261028020000_notification_center_lifecycle.sql": "c28d6e45b85e666abc781ed754a267032b2ab25d48ef9258278235ce55dbafbe",
+    "20261028030000_notification_new_orders_exclude_cancelled.sql": "82e9042156c562e2c8f9ed48d4efbd7cb16bc31beba0cdfa6a69a6ccc1434c65"
   }
 }

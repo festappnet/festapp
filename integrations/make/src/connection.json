@@ -1,0 +1,119 @@
+{
+  "authorize": {
+    "url": "https://mcp.vstupenky.online/auth",
+    "temp": {
+      "code_verifier": "{{sha256(join(add(emptyarray, uuid, uuid, uuid), ''))}}"
+    },
+    "qs": {
+      "client_id": "{{common.clientId}}",
+      "response_type": "code",
+      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "scope": "{{join(oauth.scope, ' ')}}",
+      "resource": "https://mcp.vstupenky.online/mcp",
+      "code_challenge": "{{replace(replace(replace(sha256(temp.code_verifier, 'base64'), '/\\+/g', '-'), '/\\//g', '_'), '/=+$/', '')}}",
+      "code_challenge_method": "S256"
+    },
+    "response": {
+      "temp": {
+        "code": "{{query.code}}"
+      }
+    },
+    "log": {
+      "sanitize": [
+        "request.qs.state",
+        "response.query.code"
+      ]
+    }
+  },
+  "token": {
+    "url": "https://mcp.vstupenky.online/token",
+    "method": "POST",
+    "type": "urlencoded",
+    "body": {
+      "grant_type": "authorization_code",
+      "client_id": "{{common.clientId}}",
+      "redirect_uri": "{{oauth.localRedirectUri}}",
+      "code": "{{temp.code}}",
+      "code_verifier": "{{temp.code_verifier}}",
+      "resource": "https://mcp.vstupenky.online/mcp"
+    },
+    "response": {
+      "data": {
+        "accessToken": "{{body.access_token}}",
+        "refreshToken": "{{body.refresh_token}}",
+        "expires": "{{addSeconds(now, body.expires_in)}}",
+        "grantExpiresAt": "{{addDays(now, 7)}}"
+      },
+      "expires": "{{addDays(now, 7)}}"
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization",
+        "request.body.code",
+        "request.body.code_verifier",
+        "request.body.refresh_token",
+        "response.body.access_token",
+        "response.body.refresh_token",
+        "response.body.id_token"
+      ]
+    }
+  },
+  "refresh": {
+    "url": "https://mcp.vstupenky.online/token",
+    "method": "POST",
+    "type": "urlencoded",
+    "body": {
+      "grant_type": "refresh_token",
+      "client_id": "{{common.clientId}}",
+      "refresh_token": "{{data.refreshToken}}",
+      "resource": "https://mcp.vstupenky.online/mcp"
+    },
+    "response": {
+      "data": {
+        "accessToken": "{{body.access_token}}",
+        "refreshToken": "{{ifempty(body.refresh_token, data.refreshToken)}}",
+        "expires": "{{addSeconds(now, body.expires_in)}}",
+        "grantExpiresAt": "{{data.grantExpiresAt}}"
+      },
+      "expires": "{{data.grantExpiresAt}}"
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization",
+        "request.body.code",
+        "request.body.code_verifier",
+        "request.body.refresh_token",
+        "response.body.access_token",
+        "response.body.refresh_token",
+        "response.body.id_token"
+      ]
+    },
+    "condition": "{{data.expires < addSeconds(now, 30)}}"
+  },
+  "info": {
+    "url": "https://mcp.vstupenky.online/make/v1/operations/context.inspect",
+    "method": "POST",
+    "type": "json",
+    "headers": {
+      "authorization": "Bearer {{data.accessToken}}",
+      "accept": "application/json"
+    },
+    "body": {},
+    "response": {
+      "valid": "{{body.ok}}",
+      "error": {
+        "message": "{{body.error.code}}"
+      },
+      "metadata": {
+        "type": "text",
+        "value": "{{ifempty(parameters.accountLabel, 'vstupenky.online')}}"
+      }
+    },
+    "log": {
+      "sanitize": [
+        "request.headers.authorization",
+        "request.headers.Authorization"
+      ]
+    }
+  }
+}

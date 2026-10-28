@@ -1,0 +1,8 @@
+[
+  {
+    "name": "accountLabel",
+    "type": "text",
+    "label": "Connection label",
+    "help": "Name this connection to distinguish it from connections to other accounts or events."
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-28",
+  "baseRevision": "8f6c982f11c52a8b7256d18af2ceaaeab5b9b410",
+  "sourceSha256": {
+    "tools/festapp/src/remote/server.mjs": "ce3f595cc8b5d9f94f3d16415223168c50d50a128bd5d4a61b1fe5033a6f4ffb",
+    "tools/festapp/src/remote/make-transport.mjs": "c459ec4e0b20c614bab45865f70d88200b782be88cc7f2c335a360ea9d5afd5b",
+    "tools/festapp/test/make-transport.test.mjs": "39ee5d510cbea73ad0920e732c54b958239bd2b57dc5e6ea05989c63c7e07631",
+    "tools/festapp/test/make-orders-postgres.test.mjs": "4bed8a448cb8f8154b9baf2e3afec318791180832ff2ecd76aa7e81f57becbd2"
+  },
+  "verification": {
+    "node": "24.20 LTS toolchain",
+    "pnpm": "11.24.0",
+    "targetedBatch": {
+      "tests": 45,
+      "pass": 45,
+      "fail": 0,
+      "skipped": 0,
+      "files": [
+        "test/remote.test.mjs",
+        "test/make-transport.test.mjs",
+        "test/make-orders-postgres.test.mjs"
+      ]
+    },
+    "sqlEnvironment": "marker-verified local festapp-authz-20261020, port 61022, paused/null email worker, rollback",
+    "broaderHistoricalWriteTest": {
+      "file": "test/orders-postgres.test.mjs",
+      "status": "failed",
+      "stage": "payments.record fixture rejected before simulated transport-loss/replay assertion",
+      "actualCode": "ORDER_CHANGE_REJECTED",
+      "scope": "No order/payment SQL or operation implementation changed. Dedicated Make read SQL qualification passed; this does not claim that the broader write suite passed."
+    }
+  }
+}

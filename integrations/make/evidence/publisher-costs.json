@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-28",
+  "organizationId": 9450617,
+  "organizationName": "My Organization",
+  "zone": "eu1.make.com",
+  "plan": "Free",
+  "autoPurchasingActivated": false,
+  "customAppsInventory": [
+    "vstupenky-online-buoz5u"
+  ],
+  "developmentApiAccess": "confirmed_on_Free_using_sdk-apps_scopes",
+  "costs": {
+    "registration": {
+      "status": "confirmed-zero",
+      "source": "authenticated Free organization"
+    },
+    "development": {
+      "status": "confirmed-zero",
+      "fixedAmount": 0,
+      "currency": "USD",
+      "basis": "public-source conclusion, not direct vendor confirmation",
+      "source": "authenticated Free execution and SDK access",
+      "checkedAt": "2026-10-28T11:01:01.696443+00:00"
+    },
+    "review": {
+      "status": "confirmed-zero",
+      "fixedAmount": 0,
+      "currency": "USD",
+      "basis": "public-source conclusion, not direct vendor confirmation",
+      "source": "https://www.platformappstores.com/categories/general-saas-app-marketplaces/make",
+      "checkedAt": "2026-10-28T11:01:01.696443+00:00"
+    },
+    "catalogueListing": {
+      "status": "confirmed-zero",
+      "fixedAmount": 0,
+      "currency": "USD",
+      "basis": "public-source conclusion, not direct vendor confirmation",
+      "source": "https://www.platformappstores.com/categories/general-saas-app-marketplaces/make",
+      "checkedAt": "2026-10-28T11:01:01.696443+00:00"
+    },
+    "retention": {
+      "status": "confirmed-zero",
+      "fixedAmount": 0,
+      "currency": "USD",
+      "basis": "public-source conclusion, not direct vendor confirmation",
+      "source": "https://www.platformappstores.com/categories/general-saas-app-marketplaces/make",
+      "checkedAt": "2026-10-28T11:01:01.696443+00:00"
+    }
+  },
+  "paidCommitmentMade": false,
+  "checkedAt": "2026-10-28T11:01:01.696443+00:00",
+  "route": "standard verified first-party app; no Community or optional Technology Partner application",
+  "supportQuestionSent": false,
+  "supportQuestionAuthorization": "owner declined; public research requested instead",
+  "qualificationOnFree": "real native OAuth, all five modules, pagination, negative cases and concurrent refresh succeeded",
+  "evidenceBasis": "Conclusion from public sources plus authenticated Free entitlement; NOT a written Make confirmation. Secondary source explicitly says listing is free and Make does not charge developers. Official MSA fees require an applicable Order; no paid Order, promotion or subscription accepted.",
+  "sources": [
+    {
+      "url": "https://www.platformappstores.com/categories/general-saas-app-marketplaces/make",
+      "kind": "secondary",
+      "checkedAt": "2026-10-28T11:01:01.696443+00:00",
+      "supports": "Listing free, onboarding $0, Make monetizes end users rather than charging developers. Site marks official-source coverage in progress; this is corroboration, not a Make quotation."
+    },
+    {
+      "url": "https://www.make.com/en/master-service-agreement.pdf",
+      "kind": "official",
+      "version": "March 2026",
+      "supports": "5.1 fees agreed in applicable Order; 5.4 promotional upgrades require affirmative acceptance; 12.1 separate contribution terms must still be checked when presented."
+    },
+    {
+      "url": "https://www.make.com/en/pricing",
+      "kind": "official",
+      "supports": "Free $0, no time limit; customer scenario credits separate from publisher listing."
+    },
+    {
+      "url": "https://developers.make.com/custom-apps-documentation/app-review/request-app-review",
+      "kind": "official",
+      "supports": "Standard verified review workflow; no fee or mandatory paid subscription specified."
+    },
+    {
+      "url": "https://developers.make.com/custom-apps-documentation/app-maintenance/terms-of-approved-app-maintenance",
+      "kind": "official",
+      "supports": "Retention requires active maintenance and API checkups; no fixed listing fee specified."
+    }
+  ],
+  "boundary": "Current published pricing conclusion only; not a guarantee against future policy changes. Stop if a separate fee, paid plan or paid order is presented; do not purchase.",
+  "actualPublicationReadback": {
+    "publishedOnExistingFreeAccount": true,
+    "fiveModulesVisible": true,
+    "reviewRequestAccepted": true,
+    "followupVendorFormAccepted": true,
+    "paymentOrSubscriptionPromptShown": false,
+    "optionalPartnerApplicationSelected": false,
+    "evidence": "submission-20261028.json"
+  }
+}

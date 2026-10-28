@@ -1,0 +1,12 @@
+{
+  "url": "/make/v1/operations/orders.inspect",
+  "method": "POST",
+  "type": "json",
+  "body": {
+    "occasionId": "{{parameters.occasionId}}",
+    "orderId": "{{parameters.orderId}}"
+  },
+  "response": {
+    "output": "{{first(body.data.orders)}}"
+  }
+}

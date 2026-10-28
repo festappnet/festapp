@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "tenant": "festapptickets",
+  "organizationId": 3,
+  "sourceRevision": "262c2ce4735c5c418a22c7541dfd82bd45b0a35a",
+  "seedSqlSha256": "cfe16ca4766c06a93ee63bf02700a51a24e73e23a0713741523433758f36e38d",
+  "marker": "make-review-20261028",
+  "fixture": {
+    "unitId": 1011,
+    "occasionIds": [
+      1072620,
+      1072621,
+      1072622
+    ],
+    "hiddenClosedEvents": 3,
+    "sameNameAccessibleEvents": 2,
+    "ordersPerAccessibleEvent": 52,
+    "ordersTotal": 104,
+    "accessibleOrderStatesPerEvent": {
+      "ordered": 13,
+      "paid": 13,
+      "storno": 13,
+      "waitlisted": 13
+    },
+    "newActorOnly": true,
+    "newActorOccasionMemberships": 2,
+    "newActorUnitMemberships": 0,
+    "thirdEventMemberships": 0,
+    "bankOrStripeLinks": 0,
+    "emailSuppressions": 104,
+    "queuedEmailMessages": 0,
+    "outboundEmail": false,
+    "publicSales": false
+  },
+  "canonicalValidation": {
+    "ordinaryUserReadChecks": "passed by guarded transaction before commit",
+    "foreignScopeDenial": "passed for third inaccessible event",
+    "canonicalSalesReports": 2
+  },
+  "preservation": {
+    "chatgptReviewerMembershipsBefore": 2,
+    "chatgptReviewerMembershipsAfter": 2,
+    "chatgptReferenceEvents": 3,
+    "chatgptReferenceOrders": 8,
+    "makeMarkerAndAccountAbsentBeforeApply": true
+  },
+  "privateCredentials": "stored only at ~/.festapp/make-review-20261028/credentials.json"
+}
