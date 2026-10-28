@@ -1,3 +1,15 @@
+-- Shared validation of retained evidence references; no data or money calculation.
+CREATE OR REPLACE FUNCTION public.service_fee_reference_valid_internal(p_value text)
+RETURNS boolean LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT p_value IS NOT NULL
+  AND length(btrim(p_value,U&' \00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF'))>0
+  AND p_value !~ '[[:cntrl:]]'
+  -- Match JavaScript's UTF-16 length limit, including supplementary characters.
+  AND (SELECT coalesce(sum(CASE WHEN ascii(c)>65535 THEN 2 ELSE 1 END),0)
+       FROM unnest(string_to_array(p_value,NULL)) AS chars(c))<=1000
+$$;
+REVOKE ALL ON FUNCTION public.service_fee_reference_valid_internal(text) FROM PUBLIC,anon,authenticated,service_role;
+
 -- Deliberate operator import of real contract and accounting evidence. No UI or
 -- tenant admin may assert platform income. Replay cannot amend historical facts.
 CREATE OR REPLACE FUNCTION public.register_service_fee_agreement(p_id uuid,p_unit bigint,p_reference text,p_rate_bps integer,p_from timestamptz,p_until timestamptz DEFAULT NULL)
@@ -5,6 +17,9 @@ RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions
 DECLARE prior public.service_fee_agreements;
 BEGIN
  PERFORM public.require_service_role();
+ IF NOT public.service_fee_reference_valid_internal(p_reference) OR NOT isfinite(p_from)
+  OR (p_until IS NOT NULL AND NOT isfinite(p_until)) THEN
+  RAISE invalid_parameter_value USING MESSAGE='INVALID_FEE_AGREEMENT'; END IF;
  PERFORM 1 FROM public.units WHERE id=p_unit FOR UPDATE;
  IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='FEE_UNIT_NOT_FOUND'; END IF;
  SELECT * INTO prior FROM public.service_fee_agreements WHERE id=p_id;
@@ -31,7 +46,7 @@ BEGIN
  SELECT * INTO STRICT prior FROM public.service_fee_agreements WHERE id=p_id;
  PERFORM 1 FROM public.units WHERE id=prior.unit_id FOR UPDATE;
  SELECT * INTO STRICT prior FROM public.service_fee_agreements WHERE id=p_id FOR UPDATE;
- IF p_until IS NULL OR p_until<=prior.valid_from OR coalesce(length(btrim(p_evidence)),0) NOT BETWEEN 1 AND 1000 THEN
+ IF p_until IS NULL OR NOT isfinite(p_until) OR p_until<=prior.valid_from OR NOT public.service_fee_reference_valid_internal(p_evidence) THEN
   RAISE invalid_parameter_value USING MESSAGE='FEE_AGREEMENT_TERMINATION_EVIDENCE_REQUIRED'; END IF;
  IF prior.termination_evidence_reference IS NOT NULL THEN
   IF prior.valid_until IS DISTINCT FROM p_until OR prior.termination_evidence_reference<>p_evidence THEN
@@ -48,6 +63,8 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions
 DECLARE prior public.service_fee_customer_acquisitions;
 BEGIN
  PERFORM public.require_service_role();
+ IF NOT public.service_fee_reference_valid_internal(p_evidence) OR NOT isfinite(p_acquired_at) THEN
+  RAISE invalid_parameter_value USING MESSAGE='INVALID_FEE_ACQUISITION'; END IF;
  PERFORM 1 FROM public.units WHERE id=p_unit FOR UPDATE;
  SELECT * INTO prior FROM public.service_fee_customer_acquisitions WHERE unit_id=p_unit;
  IF FOUND THEN
@@ -67,7 +84,7 @@ DECLARE ident uuid:=(p_input->>'id')::uuid; agreement public.service_fee_agreeme
  prior public.service_fee_settlements; original public.service_fee_settlements;
  allocation jsonb; origin public.service_fee_allocations; proof eshop.order_checkout_origins;
  digest text:=encode(extensions.digest(p_input::text,'sha256'),'hex'); total numeric:=0;
- expenses numeric; amount numeric; allocation_id uuid; order_at timestamptz;
+ expenses numeric; amount numeric; allocation_id uuid; order_at timestamptz; refund_sequence bigint;
 BEGIN
  PERFORM public.require_service_role();
  IF jsonb_typeof(p_input) IS DISTINCT FROM 'object' OR octet_length(p_input::text)>1048576
@@ -76,11 +93,16 @@ BEGIN
  SELECT * INTO STRICT agreement FROM public.service_fee_agreements WHERE id=(p_input->>'agreementId')::uuid;
  -- Serialize imports/refunds for this customer, including aggregate caps.
  PERFORM 1 FROM public.units WHERE id=agreement.unit_id FOR UPDATE;
+ -- A termination can commit while the importer waits for the customer lock.
+ SELECT * INTO STRICT agreement FROM public.service_fee_agreements WHERE id=(p_input->>'agreementId')::uuid;
  SELECT * INTO prior FROM public.service_fee_settlements WHERE id=ident;
  IF FOUND THEN
   IF prior.input_digest<>digest THEN RAISE check_violation USING MESSAGE='FEE_SETTLEMENT_REPLAY_CONFLICT'; END IF;
   RETURN ident;
  END IF;
+ IF NOT public.service_fee_reference_valid_internal(p_input->>'sourceReference')
+  OR NOT isfinite((p_input->>'settledAt')::timestamptz) OR NOT isfinite((p_input->>'serviceAt')::timestamptz) THEN
+  RAISE invalid_parameter_value USING MESSAGE='INVALID_FEE_SETTLEMENT_EVIDENCE'; END IF;
  IF p_input->>'amountBasis' IS DISTINCT FROM 'settled-service-fee-excluding-tax'
   OR jsonb_typeof(p_input->'feeMinor') IS DISTINCT FROM 'string' OR jsonb_typeof(p_input->'taxMinor') IS DISTINCT FROM 'string'
   OR p_input->>'feeMinor' !~ '^[1-9][0-9]{0,29}$' OR p_input->>'taxMinor' !~ '^(0|[1-9][0-9]{0,29})$'
@@ -108,7 +130,9 @@ BEGIN
    RAISE invalid_parameter_value USING MESSAGE='INVALID_FEE_ALLOCATION'; END IF;
   amount:=(allocation->>'feeMinor')::numeric; expenses:=(allocation->>'agreedExpensesMinor')::numeric;
   allocation_id:=(allocation->>'id')::uuid; total:=total+amount;
-  proof:=NULL; origin:=NULL; order_at:=NULL;
+  proof:=NULL; origin:=NULL; order_at:=NULL; refund_sequence:=0;
+  IF expenses>0 AND NOT public.service_fee_reference_valid_internal(allocation->>'expenseApprovalReference') THEN
+   RAISE invalid_parameter_value USING MESSAGE='INVALID_FEE_EXPENSE_EVIDENCE'; END IF;
   IF p_input->>'kind'='charge' THEN
    IF allocation->>'originalAllocationId' IS NOT NULL THEN RAISE check_violation USING MESSAGE='INVALID_FEE_ALLOCATION'; END IF;
    IF NOT EXISTS(SELECT 1 FROM eshop.orders o JOIN public.occasions c ON c.id=o.occasion
@@ -116,8 +140,28 @@ BEGIN
     RAISE check_violation USING MESSAGE='FEE_ORDER_SCOPE_MISMATCH'; END IF;
    SELECT created_at INTO STRICT order_at FROM eshop.orders WHERE id=(allocation->>'orderId')::bigint;
    SELECT * INTO proof FROM eshop.order_checkout_origins WHERE order_id=(allocation->>'orderId')::bigint;
+   IF allocation->>'partnerTermsReference' IS NOT NULL THEN
+    IF NOT public.service_fee_reference_valid_internal(agreement.source_reference)
+     OR EXISTS(SELECT 1 FROM public.service_fee_customer_acquisitions c WHERE c.unit_id=agreement.unit_id AND NOT public.service_fee_reference_valid_internal(c.evidence_reference))
+     OR NOT public.service_fee_reference_valid_internal(allocation->>'partnerTermsReference')
+     OR jsonb_typeof(allocation->'fx') IS DISTINCT FROM 'object'
+     OR jsonb_typeof(allocation#>'{fx,reference}') IS DISTINCT FROM 'string'
+     OR NOT public.service_fee_reference_valid_internal(allocation#>>'{fx,reference}')
+     OR jsonb_typeof(allocation#>'{fx,usdMinorNumerator}') IS DISTINCT FROM 'string'
+     OR jsonb_typeof(allocation#>'{fx,sourceMinorDenominator}') IS DISTINCT FROM 'string'
+     OR coalesce(allocation#>>'{fx,usdMinorNumerator}','') !~ '^[1-9][0-9]{0,29}$'
+     OR coalesce(allocation#>>'{fx,sourceMinorDenominator}','') !~ '^[1-9][0-9]{0,29}$'
+     OR jsonb_typeof(allocation->'wixShareBps') IS DISTINCT FROM 'number'
+     OR coalesce(allocation->>'wixShareBps','') !~ '^(0|[1-9][0-9]{0,3}|10000)$'
+     OR (p_input->>'currency'='USD' AND allocation#>>'{fx,usdMinorNumerator}' IS DISTINCT FROM allocation#>>'{fx,sourceMinorDenominator}') THEN
+     RAISE invalid_parameter_value USING MESSAGE='INVALID_WIX_FEE_REPORTING_METADATA'; END IF;
+   END IF;
   ELSE
    SELECT * INTO STRICT origin FROM public.service_fee_allocations WHERE id=(allocation->>'originalAllocationId')::uuid;
+   -- Serialized import order, not provider dates or random UUID order, owns
+   -- cumulative rounding. Late facts append without repricing earlier receipts.
+   SELECT coalesce(max(a.refund_sequence),0)+1 INTO refund_sequence
+    FROM public.service_fee_allocations a WHERE a.original_allocation_id=origin.id;
    IF origin.settlement_id<>original.id OR origin.order_id<>(allocation->>'orderId')::bigint THEN
     RAISE check_violation USING MESSAGE='FEE_REFUND_ALLOCATION_MISMATCH'; END IF;
    IF (SELECT coalesce(sum(fee_minor),0) FROM public.service_fee_allocations WHERE original_allocation_id=origin.id)+amount>origin.fee_minor
@@ -125,8 +169,8 @@ BEGIN
     OR (SELECT coalesce(sum(fee_minor-agreed_expenses_minor),0) FROM public.service_fee_allocations WHERE original_allocation_id=origin.id)+amount-expenses>origin.fee_minor-origin.agreed_expenses_minor THEN
     RAISE check_violation USING MESSAGE='FEE_REFUND_EXCEEDS_ALLOCATION'; END IF;
   END IF;
-  INSERT INTO public.service_fee_allocations(id,settlement_id,order_id,order_created_at,original_allocation_id,fee_minor,
-   agreed_expenses_minor,expense_approval_reference,instance_id,instance_verification_reference,order_origin_snapshot,fx,wix_share_bps,partner_terms_reference) VALUES(allocation_id,ident,(allocation->>'orderId')::bigint,coalesce(order_at,origin.order_created_at),origin.id,amount,expenses,
+  INSERT INTO public.service_fee_allocations(id,settlement_id,order_id,order_created_at,original_allocation_id,refund_sequence,fee_minor,
+   agreed_expenses_minor,expense_approval_reference,instance_id,instance_verification_reference,order_origin_snapshot,fx,wix_share_bps,partner_terms_reference) VALUES(allocation_id,ident,(allocation->>'orderId')::bigint,coalesce(order_at,origin.order_created_at),origin.id,refund_sequence,amount,expenses,
    allocation->>'expenseApprovalReference',coalesce(origin.instance_id,proof.instance_id),
    coalesce(origin.instance_verification_reference,CASE WHEN proof.order_id IS NOT NULL THEN 'public.service_fee_allocations:'||allocation_id||':origin' END),
    CASE WHEN origin.id IS NOT NULL THEN origin.order_origin_snapshot WHEN proof.order_id IS NOT NULL THEN to_jsonb(proof) ELSE NULL END,
@@ -145,12 +189,12 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,ex
 BEGIN
  PERFORM public.require_service_role();
  IF p_partner_terms IS NULL OR length(btrim(p_partner_terms))=0 THEN RAISE invalid_parameter_value USING MESSAGE='PARTNER_TERMS_REQUIRED'; END IF;
- RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object(
-  'id',a.id,'kind',s.kind,'sourceReference',s.source_reference||'#'||a.id,
+ RETURN jsonb_build_object('schemaVersion',2,'receipts',(SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'id',a.id,'kind',s.kind,'sourceReference',s.source_reference,
   'productName','Ticketing service fee','instanceId',a.instance_id,'instanceVerificationReference',a.instance_verification_reference,
   'occurredAt',to_char(s.settled_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
   'currency',s.currency,'amountBasis','settled-service-fee-excluding-tax','feeMinor',a.fee_minor::text,
-  'agreedExpensesMinor',a.agreed_expenses_minor::text,'expenseApprovalReference',a.expense_approval_reference,
+  'refundSequence',a.refund_sequence::text,'agreedExpensesMinor',a.agreed_expenses_minor::text,'expenseApprovalReference',a.expense_approval_reference,
   'organizerAgreementReference',g.source_reference,'organizerFeeRateBps',g.fee_rate_bps,
   'customerOrigin',c.channel,'customerOriginEvidenceReference',c.evidence_reference,
   'fx',a.fx,'wixShareBps',a.wix_share_bps,'chargeReceiptId',a.original_allocation_id
@@ -161,7 +205,7 @@ BEGIN
  LEFT JOIN public.service_fee_allocations original ON original.id=a.original_allocation_id
 
  WHERE g.organization_id=p_organization AND c.channel='wix' AND c.acquired_at<=a.order_created_at
-  AND a.instance_id IS NOT NULL AND coalesce(original.partner_terms_reference,a.partner_terms_reference)=p_partner_terms);
+  AND a.instance_id IS NOT NULL AND coalesce(original.partner_terms_reference,a.partner_terms_reference)=p_partner_terms));
 END $$;
 
 REVOKE ALL ON FUNCTION public.register_service_fee_agreement(uuid,bigint,text,integer,timestamptz,timestamptz),

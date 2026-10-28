@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "status": "addendum-completed-awaiting-native-partner-billed-activation",
+  "personalSignatureAppliedByOwner": true,
+  "agentAppliedSignature": false,
+  "docuSignCompletion": {
+    "gmailMessageId": "1a183562faa939fa",
+    "gmailThreadId": "1a183562faa939fa",
+    "receivedAt": "2026-10-28T16:26:30+00:00",
+    "sender": "APP MARKET via Docusign <dse_NA3@docusign.net>",
+    "subject": "Completed: Please DocuSign: Wix App Market Partner Agreement Addendum",
+    "allPartiesCompleted": true,
+    "signedPdfAttached": true
+  },
+  "downloadedPdf": {
+    "privateArchive": "integrations/wix/.private/partner-billed-addendum-signed-20261028.pdf",
+    "sha256": "6b5f2b6fbc1437d4cb40e18c8240a69e9b98077fea1a4194cb1e7fabf15c39cc",
+    "pages": 3,
+    "signatureFieldPresent": true,
+    "signatureByteRangePresent": true,
+    "signatureTimestampInPdf": "D:20261028162636+00'00'",
+    "subfilter": "/adbe.pkcs7.detached",
+    "cryptographicVerificationPerformed": false
+  },
+  "activationRequest": {
+    "gmailMessageId": "1a18358487893fcd",
+    "gmailThreadId": "1a18198a75444077",
+    "recipient": "support4@wix.com",
+    "replyTo": "info@festapp.net",
+    "sentLabelVerified": true,
+    "soleTraderIdentityExplicitlyDisclosed": true,
+    "askedToConfirmSufficiencyAndEnablePartnerBilled": true
+  },
+  "nativePortal": {
+    "releasedVersion": "1.1",
+    "pricingPlan": "Ticketing service",
+    "pricingDescription": "Ticket-sales percentage fee",
+    "submissionButtonDisabled": true,
+    "blockers": [
+      "Set up payouts",
+      "Request external billing permission"
+    ],
+    "payoutsPageRequiresPartnerProgramEnrollment": true,
+    "separatePartnerProgramTermsAccepted": false,
+    "newSupportCaseCreated": false
+  },
+  "billingEnabled": false,
+  "marketplaceSubmitted": false,
+  "stableWidgetHostingChanged": false,
+  "remaining": [
+    "Wix confirmation of Partner Billed activation and sole-trader sufficiency",
+    "Resolve native payouts blocker or establish whether it applies to Partner Billed",
+    "Qualify exact candidate bundle in required editors and pass existing release gates before stable hosting/submission"
+  ],
+  "supersedesUnsignedStateIn": [
+    "sole-trader-preparation-20261028.json",
+    "commercial-clarification-20261028.json",
+    "addendum-review-20261028.json"
+  ]
+}

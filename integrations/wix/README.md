@@ -17,18 +17,22 @@ The canonical origin, service-fee source and delivery journal are deployed, and
 production CORS/issuer flow, and SQL validated the returned signature. No order,
 hold, fee receipt or billing event was created by that read-only probe.
 
-Wix hosting still serves the previous widget assets. The last authenticated
+Stable Wix hosting still serves the previous widget assets. The candidate is
+deployed to a separate [verified preview](evidence/hosting-preview-20261028.json),
+without changing the assigned native widget URLs. The last authenticated
 native receipt records unlisted version 1.1 and a DYNAMIC Custom pricing draft;
 marketplace publication and Partner Billed activation have not been verified.
 The service-fee-only revenue basis, exclusion of organizer proceeds, external
 checkout and zero separate fixed publisher fees are already confirmed by Wix.
 Do not reopen those resolved questions or treat them as executed terms.
 
-The existing DocuSign request contains Michael Bujnovský's saved sole-trader
-identity, IČO 06455361 and registered office. It is unsigned, and Wix has not yet
-answered the request to correct the fixed corporation/incorporation wording.
-The signer must complete the signature personally. Billing stays disabled and
-widget/marketplace release stays held until the actual remaining gates pass.
+The owner personally signed the addendum. DocuSign confirms completion by all
+parties, and the signed PDF is privately archived. The
+[completion receipt](evidence/addendum-completion-20261028.json) records the
+follow-up sent to Erel asking to confirm the sole-trader details and activate
+Partner Billed. The native dashboard still blocks external billing permission
+and payout setup; Submit App is disabled. Billing and stable widget/marketplace
+release remain held until actual activation and the existing release gates pass.
 
 The owner completed signup/login for `info@festapp.net`. Assigned app and widget
 identities are in [wix-app.json](wix-app.json) and the

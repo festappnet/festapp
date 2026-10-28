@@ -4,6 +4,11 @@ DECLARE ident text:=p_event->>'receiptId'; delivery_kind text:=p_event#>>'{reque
  digest text:=encode(extensions.digest(p_event::text,'sha256'),'hex'); prior public.wix_billing_deliveries;
 BEGIN
  PERFORM public.require_service_role();
+ IF jsonb_typeof(p_event#>'{basis,refundSequence}') IS DISTINCT FROM 'string'
+  OR coalesce(p_event#>>'{basis,refundSequence}','') !~ '^(0|[1-9][0-9]{0,18})$'
+  OR (delivery_kind='CHARGE' AND p_event#>>'{basis,refundSequence}'<>'0')
+  OR (delivery_kind='REFUND' AND p_event#>>'{basis,refundSequence}'='0') THEN
+  RAISE invalid_parameter_value USING MESSAGE='WIX_REPORT_V2_REQUIRED'; END IF;
  IF ident IS NULL OR delivery_kind IS NULL OR p_event->>'instanceId' IS NULL OR jsonb_typeof(p_event#>'{requestBody,event}') IS DISTINCT FROM 'object'
   OR octet_length(p_event::text)>32768 THEN RAISE invalid_parameter_value USING MESSAGE='INVALID_WIX_DELIVERY'; END IF;
  INSERT INTO public.wix_billing_deliveries(app_id,receipt_id,kind,instance_id,payload,payload_digest)

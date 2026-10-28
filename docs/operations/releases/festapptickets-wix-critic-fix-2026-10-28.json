@@ -1,0 +1,105 @@
+{
+  "status": "sql-only-reporting-integrity-migration-applied-and-verified",
+  "sourceMainSha": "3ffd1cea6af275897e0029f770639958625d802d",
+  "target": {
+    "host": "festapp-supabase-rehearsal-01",
+    "database": "festapp_rehearsal_20260909220601",
+    "organizationId": 3,
+    "tenantId": "festapptickets",
+    "activationGeneration": 1
+  },
+  "previousMigrationUnchanged": {
+    "version": "20261028150000",
+    "name": "service_fees_wix_delivery",
+    "sha256": "d6b172eaaa0979594538f3f67507247de5cb530073f0b9e4d36edf9f438d1113"
+  },
+  "migration": {
+    "version": "20261028160000",
+    "name": "service_fee_reporting_integrity",
+    "sourceSha256": "389902bade819a1efcf3d7b12a197dbf08402f7c2042fc1336043afc47e28c16",
+    "appliedTransactionSha256": "28ecc7e2d97ae23d2553d769ae6d2661cbc6a104944faa06794c816a5357b119",
+    "ledgerVerified": true,
+    "guardedAtomicTransaction": true,
+    "psqlExitCode": 0,
+    "ddlLogTimestampUtc": "2026-10-28T16:07:18.088656565Z",
+    "exactCommitTimestampAvailable": false,
+    "reason": "PostgreSQL track_commit_timestamp is off; database logs retain DDL timestamp but not COMMIT timestamp."
+  },
+  "backup": {
+    "type": "fresh encrypted pgBackRest differential",
+    "label": "20261025-031939F_20261028-160537D",
+    "startedAtUtc": "2026-10-28T16:05:37Z",
+    "stoppedAtUtc": "2026-10-28T16:06:20Z",
+    "archiveCheck": "passed"
+  },
+  "verification": {
+    "refundSequenceNotNull": true,
+    "refundSequenceCheckAndUniqueConstraints": true,
+    "exportEnvelope": {
+      "schemaVersion": 2,
+      "receipts": []
+    },
+    "functionOwners": "postgres",
+    "serviceRoleOnlyExecuteForMutatingAndExportFunctions": true,
+    "internalReferenceHelperNotExecutableByApplicationRoles": true,
+    "oldDeliveryPayloadRejected": true,
+    "postCounts": {
+      "agreements": 0,
+      "acquisitions": 0,
+      "settlements": 0,
+      "allocations": 0,
+      "deliveries": 0,
+      "attempts": 0
+    },
+    "billingEnabledAfter": false,
+    "emailPausedAfter": false,
+    "emailHealthAlertsAfter": [],
+    "emailProducerAccess": "ok"
+  },
+  "functionsReloaded": false,
+  "clientBuildOrDeployment": false,
+  "tenantBranchOrVersionChanged": false,
+  "billingActivationOrEventsPerformed": false,
+  "validation": {
+    "wixTests": {
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0
+    },
+    "affectedPostUpgradeSourceExecutorTests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "independentCritic": "C01-C03 fixes pass; no new material issue",
+    "independentReportingTestsPassed": 11,
+    "frozenHistoryAndAssemblerCheck": "pass"
+  },
+  "criticFindings": [
+    {
+      "id": "WIX-C01",
+      "severity": "P2",
+      "fixed": true,
+      "deployed": true
+    },
+    {
+      "id": "WIX-C02",
+      "severity": "P2",
+      "fixed": true,
+      "deployed": true
+    },
+    {
+      "id": "WIX-C03",
+      "severity": "P2",
+      "fixed": true,
+      "deployed": true
+    }
+  ],
+  "reportingContract": {
+    "schemaVersion": 2,
+    "sourceAssignedRefundSequence": true,
+    "oldFormatsFailClosed": true,
+    "backdatedDatesPreserved": true,
+    "usdProjectionOwners": 1
+  }
+}

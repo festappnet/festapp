@@ -37,8 +37,9 @@ try {
     if (args.length !== (command === 'export' ? 4 : 3) || !/^[1-9]\d*$/.test(organization || '')) throw Error('INVALID_EXPORT_ARGUMENTS');
     const {readFile} = await import('node:fs/promises');
     const agreement = JSON.parse(await readFile(approvalFile,'utf8'));
-    const receipts = await rpc('export_wix_service_fee_receipts', {p_organization:organization,p_partner_terms:agreement.reference});
-    const input = {schemaVersion:1,period,agreement,receipts};
+    const source = await rpc('export_wix_service_fee_receipts', {p_organization:organization,p_partner_terms:agreement.reference});
+    if (source?.schemaVersion !== 2 || !Array.isArray(source.receipts)) throw Error('INVALID_SOURCE_EXPORT_VERSION');
+    const input = {schemaVersion:2,period,agreement,receipts:source.receipts};
     const report = prepareReporting(input);
     if (command === 'stage') result = await stageBillingReport(input,journal);
     else {

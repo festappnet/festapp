@@ -1,5 +1,12 @@
 # External billing delivery operations
 
+Integrity review as of 2026-10-28: the three P2 findings in the
+[independent critic report](../../../docs/plans/wix-partner-billing-CRITIC-2026-10-28.md)
+are fixed, re-reviewed and deployed by migration `20261028160000`. Reporting uses
+version 2 with source-assigned immutable refund sequences; old formats fail closed.
+Billing still requires the actual commercial prerequisites below. Unknown
+reconciliation must fence the old worker before authorizing another send.
+
 Server-only code: `dispatcher.mjs`; canonical SQL: `database/functions/wix_billing/`.
 Economic source and import contract: [service fees](../../../docs/architecture/service-fees.md).
 
@@ -38,7 +45,10 @@ requires the original charge to be confirmed for the same installation.
 
 For unknown or rejected events:
 
-1. Inspect and retain receipt ID, kind, attempt UUID and payload digest.
+1. Inspect and retain receipt ID, kind, attempt UUID and payload digest. Stop
+   the original sending worker and verify it cannot resume, retaining process
+   termination/fencing evidence with the operator record. An expired SQL lease
+   does not stop a paused process from making a future HTTP request.
 2. Obtain authoritative Wix evidence for that exact installation, timestamp,
    amounts and attempt window. With no documented lookup endpoint, use provider
    support/reconciliation records. Absence from a local log or an arbitrary delay
