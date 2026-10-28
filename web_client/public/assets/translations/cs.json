@@ -1716,6 +1716,7 @@
     "reservation_state_unknown": "Stav rezervace míst se nepodařilo ověřit. Zkontrolujte připojení k internetu, vraťte se na formulář a zkuste objednávku odeslat znovu. Vyplněné údaje zůstaly zachovány.",
     "reservation_expired": "Rezervace míst vypršela. Vraťte se na formulář a znovu ověřte výběr míst. Vyplněné údaje zůstaly zachovány.",
     "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány.",
+    "CHECKOUT_CONTEXT_EXPIRED": "Platnost formuláře vypršela. Obnovte stránku a zkuste objednávku znovu odeslat.",
     "outcomeUnknownTitle": "Výsledek objednávky není potvrzený",
     "outcomeUnknownHint": "Nepodařilo se ověřit, zda objednávka vznikla. Před vytvořením nové objednávky zkontrolujte e-mail. Stejný pokus můžete zopakovat návratem do formuláře bez obnovení stránky."
   },

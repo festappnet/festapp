@@ -1,5 +1,40 @@
 # Wix submission kit - vstupenky.online
 
+Latest 2026-10-28: Erel explicitly confirmed the service-fee-only reporting
+basis, exclusion of organizer ticket proceeds, retained external checkout and
+zero separate fixed publisher fees. The account email `info@festapp.net` is now
+confirmed by Wix's verification page. See
+[commercial clarification](evidence/commercial-clarification-20261028.json).
+The earlier request for clarification of the revenue base is resolved; addendum
+execution, actual external-billing activation and the production reporting flow
+remain outstanding. Historical uncertainty below is superseded by this receipt.
+
+Update 2026-10-28: Contact Info and Security & Privacy now load. Contacts were
+saved and verified after reload; the app profile was updated and reads
+Up-to-date. The owner then confirmed the company privacy answers. The complete
+security/privacy declaration was saved and verified after reload, accurately
+retaining No for the blanket full-encryption question. The native checklist
+fell from four to zero blockers after the validated unlisted minor version 1.1
+was released. See [the release receipt](evidence/minor-release-20261028.json).
+See [current portal evidence](evidence/portal-20261028.json).
+Later pricing investigation resolved the earlier Free readback by adding the
+missing Custom plan: the saved draft now reads DYNAMIC after reload, with a
+percentage-based ticketing-service description and no independent app
+subscription. See [pricing evidence](evidence/pricing-20261028.json). External
+billing activation remains unconfirmed (`isExternalBilling: false`).
+The addendum is unsigned
+and live billing event delivery is not implemented. Local CSV/API preparation
+now uses one service-fee projection and the same commercial approval predicate
+as submission; see [reporting](reporting/README.md). This does not replace
+authenticated attribution, authoritative service-fee settlement or API dispatch.
+The actual addendum was reviewed: its transaction-revenue clause does not
+expressly exclude organizer proceeds, so a correction is needed before signing.
+See [addendum findings](evidence/addendum-review-20261028.json).
+The Partner Agreement is unchecked and
+App Market submission remains disabled. Zero native checklist blockers does not
+supersede these commercial gates. The historical portal/CDN failures
+described below are superseded.
+
 Preparation version 0.1.0; **app/widget registered and installation verified in
 Wix Editor, Wix Studio and Harmony. Published synthetic checkout observations use
 adapted test transport. The full payment/lifecycle matrix and commercial approval remain pending; not

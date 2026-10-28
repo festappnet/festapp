@@ -1,0 +1,150 @@
+{
+  "checkedAt": "2026-10-28T13:30:35Z",
+  "status": "local-implementation-complete-production-and-marketplace-blocked",
+  "sourceHead": "d2ed02f8144a9e63433938fb9cfc0a6a9e91cf7c",
+  "workingTreeChangesUncommitted": true,
+  "scope": [
+    "main",
+    "prod/festapptickets"
+  ],
+  "userClarification": "Create a general architectural/database owner for missing actual service fee facts; no default rate or invented business records.",
+  "sourcesSha256": {
+    "database/tables/service_fees.sql": "d31659016934d735f7435e0f083893b75b9a1c53527cded82fe242617674c64f",
+    "database/functions/service_fees/source.sql": "b486290e1a909e04cae313dd0f171c8b8d79512fa7af626bcf0d02ce9c8340e3",
+    "database/tables/wix_billing_delivery.sql": "7ca34bb6a4728d950e0f15961fab1402b028c51c24b0033cdda9414946bf2324",
+    "database/functions/wix_billing/delivery.sql": "4040a3ad53a2213290bebe91908886074c0ba058bd4e436faf25fc2a8841025a",
+    "supabase/migrations/20261028150000_service_fees_wix_delivery.sql": "d6b172eaaa0979594538f3f67507247de5cb530073f0b9e4d36edf9f438d1113",
+    "integrations/wix/billing/dispatcher.mjs": "bbb2dc6ea18a8f93551f484de721e3dd681e7585760a949370bcecc2c8ef3a39",
+    "integrations/wix/scripts/billing-operations.mjs": "25992dc229739b1714e2ad011693459d37458b5827ca5120ebcb47ac13cf5eac",
+    "integrations/wix/tests/billing-dispatcher.test.js": "7ef52d8f31a09fd892cc87a961259961572ce7927e7ef5631e8fbbd37520b7d8",
+    "integrations/wix/reporting/prepare.mjs": "064134876a0e978db0c27f3c50d8c69633881bf1deaa94a21ce9d7748c6dd794",
+    "integrations/wix/package.json": "2d3fd5b25df502fc91f443028fef7fa6837240a007d40e3886444d42f1dadffe",
+    "integrations/wix/pnpm-lock.yaml": "d801b66c9f7591cfe22700b2249cef7ee911a213b01fb75bfc104fc57cd8fb23",
+    "automation/assemble-service-fees-migration.py": "33c7bbdb19c67cbfcce5bfd728021a8e6c714d916ae0b07a6d3065a05806f7b5"
+  },
+  "accounting": {
+    "canonicalSource": "public.service_fee_*",
+    "realAccountingProviderConnected": false,
+    "realAgreementsOrSettlementsImported": false,
+    "syntheticDataUsedOnlyInDisposableDatabase": true
+  },
+  "gmail": {
+    "threadId": "1a18198a75444077",
+    "lastObservedMessageId": "1a18267de29c3241",
+    "lastObservedDirection": "sent",
+    "soleTraderReplyReceived": false,
+    "duplicateCorrespondenceSent": false,
+    "finalReadbackLastMessageId": "1a18267de29c3241"
+  },
+  "apiReview": {
+    "authentication": "installation-scoped OAuth client credentials plus token-info APP verification",
+    "endpoint": "POST https://www.wixapis.com/apps/v1/billing-event",
+    "documentedBusinessIdempotencyKeyFound": false,
+    "documentedEventLookupFound": false,
+    "unknownOutcomesRequireProviderEvidence": true,
+    "references": [
+      "https://dev.wix.com/docs/build-apps/develop-your-app/auth/authenticate-using-oauth",
+      "https://dev.wix.com/docs/api-reference/app-management/oauth-2/create-access-token",
+      "https://dev.wix.com/docs/api-reference/app-management/app-billing/external-billing-events/report-external-billing-event",
+      "https://dev.wix.com/docs/api-reference/app-management/app-billing/external-billing-events/sample-flows"
+    ]
+  },
+  "validation": {
+    "database": {
+      "project": "festapp-wix-billing-20261028",
+      "loopbackPort": 60222,
+      "freshBaselineAndForwardMigrations": "pass",
+      "finalMigrationAtomicReapplication": "pass",
+      "stoppedAfterValidation": true
+    },
+    "wixSuite": {
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "affectedSourceDispatcherTestsRerunAfterFinalPeriodChange": 3
+    },
+    "webReplayAndOriginPassed": 13,
+    "edgePassed": 77,
+    "edgeCoverage": {
+      "status": "pass",
+      "productionFunctions": 45,
+      "unknownFunctions": 0,
+      "uncoveredFunctions": 0
+    },
+    "sqlRegressions": {
+      "passed": 3,
+      "files": [
+        "database/tests/eshop_orders/checkout_origin_test.sql",
+        "database/tests/client_sync_v1_runtime_test.sql",
+        "database/tests/eshop/stripe/create_order_test.sql"
+      ]
+    },
+    "build": "pass",
+    "sealedPackage": "pass",
+    "archiveSha256": "381ad37d9591be663e1ef0c1556378563a1fec3549f8c827ca149c935489d5f5",
+    "migrationCanonicalCheck": "pass",
+    "gitDiffCheck": "pass",
+    "policySuite": {
+      "passed": 5,
+      "failed": 1,
+      "command": "node --test automation/tests/abuse_policy_coverage.test.mjs",
+      "reason": "Existing image-worker /occasion-lifecycle route missing from abuse surface inventory; not bypassed"
+    },
+    "realHostedWixTokenVerified": true,
+    "flutterBuildRun": false,
+    "hostTokenReadOnlyProbe": {
+      "browser": "isolated local headless Chrome; closed",
+      "publicSite": "https://info9468674.wixsite.com/my-site-3",
+      "source": "Assigned app accessToken from native Wix public host response; raw private response deleted after verification",
+      "verifier": "supabase/functions/_shared/wix/identity.ts verifyWixIdentity against live Wix token-info",
+      "result": "verified",
+      "instanceId": "5ebf65f5-1d62-43a1-a7f6-f04b06f22354",
+      "siteId": "60fac33a-8ef8-4122-a754-2b6b98a7428b",
+      "festappDomainsNetworkAborted": true,
+      "newHostedWidgetProofRequestObserved": false,
+      "tokensPrinted": false
+    }
+  },
+  "productionReadOnly": {
+    "verifiedHost": "festapp-supabase-rehearsal-01",
+    "verifiedDatabase": "festapp_rehearsal_20260909220601",
+    "organizationId": 3,
+    "organizationTitle": "vstupenky.online",
+    "activation": {
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "requestedMigrationsApplied": [],
+    "checkedMigrationVersions": [
+      "20261028130000",
+      "20261028150000"
+    ],
+    "checkoutOriginsPresent": false,
+    "serviceFeeSettlementsPresent": false,
+    "deliveryJournalPresent": false
+  },
+  "native": {
+    "freshAuthenticatedReadback": false,
+    "lastEvidence": "integrations/wix/evidence/pricing-20261028.json",
+    "lastVerifiedVersion": "unlisted 1.1",
+    "lastVerifiedBusinessModel": "DYNAMIC",
+    "lastVerifiedExternalBilling": false,
+    "signedAddendum": false,
+    "newSubmissionPerformed": false,
+    "currentPublicationVerified": false
+  },
+  "productionWritesPerformed": false,
+  "realBillingEventsSent": false,
+  "realReportsSubmitted": false,
+  "testPurchasesOrHoldsPerformed": false,
+  "committedOrPushed": false,
+  "blockers": [
+    "Actual organizer agreements, fee invoice payment evidence, acquisition documents and accounting connection are not yet provided",
+    "No reply to sole-trader wording request; no executed addendum or verified Partner Billed activation",
+    "Existing policy inventory failure",
+    "New hosted widget/proof flow still unverified end-to-end; server token-info verifier passed against a real native host token",
+    "Production rollout and authenticated marketplace submission/review/publication remain unperformed"
+  ],
+  "resultDocument": "docs/plans/wix-partner-billing-RESULT-2026-10-28.md"
+}

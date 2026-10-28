@@ -1,0 +1,100 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "scope": "Native Wix App Market preparation, following Erel's Partner Billed App instructions",
+  "browser": "Owner authorized existing login in a new background tab; original tabs retained",
+  "contactInfo": {
+    "previousModuleFailureResolved": true,
+    "supportEmail": "info@festapp.net",
+    "billingEmail": "info@festapp.net",
+    "urgentEmail": "info@festapp.net",
+    "phone": "+420792759379",
+    "saved": true,
+    "saveToast": "Changes saved.",
+    "reloadVerified": true
+  },
+  "appProfile": {
+    "appInfoReviewed": true,
+    "descriptionDisclosesServiceCharges": true,
+    "updated": true,
+    "readbackStatus": "Up-to-date",
+    "readbackLastReleased": "Oct 28, 2026",
+    "marketplacePublished": false
+  },
+  "securityAndPrivacy": {
+    "previousModuleFailureResolved": true,
+    "questionnaireLoaded": true,
+    "confirmed": true,
+    "technicalEvidenceGap": "No blanket full encryption claim made. Read-only verified canonical host identity; lsblk/findmnt show database path on /dev/sda1 ext4, no host-level encrypted mapping visible. This does not establish provider-level hardware encryption.",
+    "defaultsAreNotEvidence": true,
+    "saved": true,
+    "saveToast": "Changes saved.",
+    "reloadVerified": true,
+    "answers": {
+      "accessControls": true,
+      "fullPseudonymisationAnonymisationOrEncryptionInTransitAndAtRest": "No",
+      "usesCloudComputing": true,
+      "cloudProviderSelection": "Other",
+      "cloudProviderDetails": "Hetzner; Cloudflare; Amazon Web Services (SES Frankfurt)",
+      "sellsPersonalData": false,
+      "privacyComplaints": false,
+      "breachInvestigationOrLitigation": false,
+      "designatedPrivacyFunction": true,
+      "privacyContact": "info@festapp.net"
+    },
+    "ownerConfirmed": "Michael Bujnovský confirmed responsibility for privacy, no sale of personal data, no complaints and no breach/investigation in this conversation."
+  },
+  "pricing": {
+    "customBillingSelectedAndSaveAttempted": true,
+    "saveToast": "Changes Saved.",
+    "reloadResult": "Free selected again",
+    "customBillingPersisted": true,
+    "reason": "Resolved by adding the missing Custom plan; later native readback is DYNAMIC. External billing activation is still false.",
+    "externalPricingUrlObserved": "https://vstupenky.online/#cena",
+    "marketplaceSubmissionAllowed": false,
+    "supersedingReceipt": "pricing-20261028.json"
+  },
+  "nativeChecklist": {
+    "initialBlockers": 4,
+    "remainingBlockers": 0,
+    "remaining": [],
+    "submitToAppMarketDisabled": true,
+    "partnerAgreementChecked": false,
+    "scope": "Checklist observed after 1.1 release, before later Custom pricing draft changes; final submission gates remain separate."
+  },
+  "version": {
+    "released": "1.1",
+    "unreleasedChanges": false,
+    "releaseDialogInspected": true,
+    "dialogOffers": [
+      "Minor 1.1, immediate update to installed sites",
+      "Major 2.0, manual update"
+    ],
+    "newVersionReleased": true,
+    "releaseReceipt": "minor-release-20261028.json"
+  },
+  "partnerBilledAddendum": {
+    "powerFormOpenedReadOnly": true,
+    "observed": "Signer name/email form before Begin Signing",
+    "beginSigningClicked": false,
+    "signed": false
+  },
+  "reporting": {
+    "officialCsvDownloaded": true,
+    "headerOnlyTemplate": "../reporting/partner-billed-report-template.csv",
+    "apiImplementationComplete": false,
+    "reportSubmitted": false,
+    "billingEventsSent": false
+  },
+  "newCorrespondenceSentThisContinuation": false,
+  "paidCommitmentAccepted": false,
+  "marketplaceSubmitted": false,
+  "verification": {
+    "widgetTestsPassed": 15,
+    "widgetBuild": "pass",
+    "sealedPackaging": "pass",
+    "fourPublicRuntimeAssetsMatchQualifiedReceiptAndLocalBuild": true,
+    "sourceHead": "d2ed02f8144a9e63433938fb9cfc0a6a9e91cf7c",
+    "scope": "No Flutter build, production database writes, billing events or App Market submission"
+  }
+}

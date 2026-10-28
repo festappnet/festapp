@@ -1,5 +1,9 @@
 # Execute Wix completion verification
 
+> Historical checkout/browser qualification. For current Partner Billed completion,
+> use [the 2026-10-28 plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md)
+> and its [execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md).
+
 Read `integrations/wix/COMPLETION-PLAN-20261026.md` in full as the authoritative
 plan, along with repository instructions. The owner authorized writing this plan
 and executing it immediately. Use standard verification for the production read

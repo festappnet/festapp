@@ -1,9 +1,23 @@
 # vstupenky.online - Wix release preparation
 
+Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
+and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
+
 Repository entry point: [all platform integrations](../README.md).
 
-Status 2026-10-25: **app and widget registered, public assets hosted; real Wix
-qualification in progress; not submitted to the App Market**.
+The current objective is the native App Market listing, with installation and
+the widget settings panel. See [the current portal receipt](evidence/portal-20261028.json)
+for progress following Wix's Partner Billed App reply. A generic iframe embed
+does not satisfy this objective.
+
+Status 2026-10-28: **native version 1.1 released, profile and privacy completed,
+zero native checklist blockers at that release; not submitted to the App Market**. Later Custom pricing changes remain a saved draft. The actual
+Partner Billed App Addendum still needs an explicit organizer-proceeds exclusion.
+[Billing ownership](billing/README.md) separates ticket payments from service-fee
+income. The shared approval gate and local CSV/API preparation have 24 passing
+tests; this is not a deployed reporting backend or commercial approval.
+The concrete service-fee calculation and sole-trader clarification were sent to
+Wix in the existing expert thread on 2026-10-28; final terms remain outstanding.
 
 The owner completed signup/login for `info@festapp.net`. The assigned app ID is
 recorded in [wix-app.json](wix-app.json), and the widget extension ID and free

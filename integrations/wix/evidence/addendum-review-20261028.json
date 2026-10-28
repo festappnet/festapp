@@ -1,0 +1,26 @@
+{
+  "reviewedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "documentName": "Wix App Market Partner Agreement Addendum 20220322 (shipping).docx",
+  "pages": 3,
+  "unsignedPdfSha256": "a542eb1a76b07cc198fd58f79cacf803354b547370384510994be0a6376493fb",
+  "privatePdfPath": "../.private/partner-billed-addendum-unsigned-20261028.pdf",
+  "emailValidationCompleted": true,
+  "electronicRecordDeliveryConsentAccepted": true,
+  "contractSigned": false,
+  "finishSubmitted": false,
+  "oneTimePublisherFeeFound": false,
+  "serviceFeeOnlyApproved": false,
+  "organizerTicketProceedsExplicitlyExcluded": false,
+  "reportingCadence": "monthly within 15 days",
+  "usd500Meaning": "Accumulation threshold; quarter-end settlement remains required even below threshold",
+  "partnerFormIssue": "Corporation wording does not fit the documented Czech sole trader",
+  "followupDraftId": "r-3627929290758998176",
+  "followupSent": true,
+  "followupMessageId": "1a1824973badc261",
+  "followupThreadId": "1a18198a75444077",
+  "followupGmailReadbackLabels": [
+    "SENT"
+  ],
+  "finalCommercialApprovalReceived": false
+}

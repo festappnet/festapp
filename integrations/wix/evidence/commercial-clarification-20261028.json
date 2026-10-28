@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "source": {
+    "sender": "Wix Customer Care <support4@wix.com>",
+    "representative": "Erel | Wix Developer Relations",
+    "gmailMessageId": "1a1825fe56ce9706",
+    "gmailThreadId": "1a18198a75444077",
+    "emailTimestamp": "2026-10-28T11:58:04+00:00"
+  },
+  "clarifications": {
+    "serviceFeeOnly": true,
+    "grossTicketValueExcluded": true,
+    "organizerFundsExcluded": true,
+    "externalTicketCheckoutApproved": true,
+    "separatePublisherRegistrationFee": false,
+    "separatePublisherSubmissionFee": false,
+    "separatePublisherListingFee": false,
+    "separatePublisherRecurringRetentionFee": false,
+    "attribution": "Include the instanceId of the Wix site installation associated with the sale. Revenue from pre-existing customers who did not originate through Wix should not be reported as App Market revenue.",
+    "refunds": "Report charges and refunds through the External Billing Events API, linking them to the original app instance. Refunded or reversed service fees should be reflected in reports."
+  },
+  "remaining": {
+    "addendumUnsigned": true,
+    "soleTraderWordingNotAddressed": true,
+    "finalPartnerBilledActivationNotVerified": true,
+    "productionAttributionAndReportingNotImplemented": true
+  },
+  "accountEmailVerification": {
+    "email": "info@festapp.net",
+    "sourceGmailMessageId": "1a173767c7eafeb6",
+    "verificationLinkOpened": true,
+    "pageHeading": "You're all set",
+    "pageConfirmation": "Your email is now confirmed.",
+    "confirmed": true
+  }
+}

@@ -350,6 +350,10 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+# Wix host tokens are verified against Wix; they are not Supabase JWTs.
+[functions.wix-checkout-context]
+verify_jwt = false
+
 [functions.notification-center-maintain]
 verify_jwt = false
 

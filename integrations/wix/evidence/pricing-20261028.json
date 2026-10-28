@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "scope": "Saved pricing draft, no App Market submission or agreement acceptance",
+  "previousState": {
+    "businessModel": "FREE",
+    "plans": [],
+    "isExternalBilling": false
+  },
+  "currentState": {
+    "plans": [
+      {
+        "id": "2925d847-3a4d-44cb-b103-0bb9282ed392",
+        "name": "Ticketing service",
+        "featureList": {},
+        "billing": {
+          "monthlyPrice": 0,
+          "yearlyPrice": 0,
+          "yearlyDiscountPercent": 0,
+          "oneTimePrice": 0,
+          "customTitle": "Ticket-sales percentage fee"
+        },
+        "mostPopular": false,
+        "vendorId": "ticketing-service",
+        "benefits": [
+          "Free widget installation",
+          "Rate agreed with organizer",
+          "No separate app subscription",
+          "Checkout stays in vstupenky.online"
+        ],
+        "status": "VISIBLE",
+        "isFree": false,
+        "planDescription": "BENEFITS"
+      }
+    ],
+    "features": [],
+    "businessModel": "DYNAMIC",
+    "isExternalPricing": true,
+    "externalPricingPageUrl": "https://vstupenky.online/#cena",
+    "languageCode": "en",
+    "isInAppPurchase": false,
+    "isRequiredWixPremium": false,
+    "isExternalBilling": false
+  },
+  "reloadVerified": true,
+  "nativeWidgetVersionRemains": "1.1",
+  "newChargesCreated": false,
+  "marketplaceSubmitted": false,
+  "interpretation": "Custom plan resolves the prior Free readback; isExternalBilling remains false, so individual external billing activation is not proven."
+}

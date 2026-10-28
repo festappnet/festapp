@@ -25,7 +25,7 @@ source = source.replace('"bank-sync-reconcile"].includes', '"bank-sync-reconcile
 
 # These routes authenticate a separate pay/return capability, raw Stripe
 # signature or machine requestSecret inside the owning Edge handler.
-stripe_routes = ('notification-center-maintain', 'stripe-checkout', 'stripe-return', 'stripe-webhook', 'stripe-reconcile')
+stripe_routes = ('notification-center-maintain', 'stripe-checkout', 'stripe-return', 'stripe-webhook', 'stripe-reconcile', 'wix-checkout-context')
 proof_routes = re.search(r'!\[(.*?)\]\.includes\(new URL\(req.url\)\.pathname\.split\("/"\)\[1\]\)', source)
 if proof_routes is None:
     raise SystemExit('installed Function proof routing contract changed')

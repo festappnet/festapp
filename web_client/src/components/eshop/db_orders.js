@@ -1,8 +1,10 @@
 import { SupabaseService } from '../../services/supabase_service.js';
 import { claimTicketOrderIdentity, terminalOrderResponse } from './ticket_order_identity.js';
+import { withCheckoutOrigin } from '../../services/checkout_origin.js';
 
 export class DbOrders {
     static async sendOrder(orderData) {
+        orderData = withCheckoutOrigin(orderData);
         const client = SupabaseService.getClient();
         if (!client) throw new Error('Supabase client not initialized');
         const session = await client.auth.getSession();
@@ -13,7 +15,7 @@ export class DbOrders {
         let response;
         try {
             response = await client.functions.invoke('send-ticket-order', {
-                body: { orderDetails: orderData, commandId: intent.commandId, clientId: intent.clientId },
+                body: { orderDetails: intent.orderDetails, commandId: intent.commandId, clientId: intent.clientId },
             });
         } catch {
             return { success: false, code: 503, errorCode: 'ORDER_OUTCOME_UNKNOWN' };

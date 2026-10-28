@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "wixAppId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "widgetExtensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "publisherFees": {
+    "upfrontAmount": 0,
+    "recurringAmount": 0,
+    "currency": "USD",
+    "evidence": "integrations/wix/evidence/commercial-clarification-20261028.json; Gmail 1a1825fe56ce9706"
+  },
+  "hosting": {
+    "widgetScriptUrl": "https://festapp-wix.pages.dev/widget.js",
+    "settingsUrl": "https://festapp-wix.pages.dev/settings"
+  },
+  "billingApproval": {
+    "reference": "Gmail 1a1825fe56ce9706",
+    "serviceFeeOnly": true,
+    "grossTicketValueExcluded": true,
+    "externalTicketCheckoutApproved": true,
+    "partnerBillingApproved": false,
+    "refundTreatmentConfirmed": true,
+    "attributionPolicyReference": "Gmail 1a1825fe56ce9706",
+    "refundPolicyReference": "Gmail 1a1825fe56ce9706"
+  },
+  "editorReceipts": {
+    "Harmony": null,
+    "Editor": null,
+    "Studio": null
+  },
+  "publicStoreAssetsVerified": false,
+  "billingImplementationReceipt": null,
+  "qualificationNote": "Historical checkout receipts remain preserved; no new hosted token-info qualification or signed/activated billing production receipt exists."
+}

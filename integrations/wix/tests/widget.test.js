@@ -7,6 +7,37 @@ import {registerTicketElement} from '../src/element.js';
 import {initSettings, saveSettings} from '../src/settings_controller.js';
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
+
+test('verified provenance survives direct-link fallback and stale form responses cannot replace checkout',async()=>{
+  const dom=new JSDOM('<body></body>',{url:'https://wix-site.invalid'});
+  const pending=[];
+  registerTicketElement(dom.window,async()=>'Site',{
+    injectToken:()=>()=>{},context:url=>new Promise(resolve=>pending.push({url,resolve})),
+  });
+  const e=dom.window.document.createElement(TAG_NAME);
+  e.setAttribute('form-url',`${SERVICE_ORIGIN}/form/a`);dom.window.document.body.append(e);
+  try {
+    await tick();assert.equal(dom.window.document.querySelector('iframe'),null);
+    e.setAttribute('form-url',`${SERVICE_ORIGIN}/form/b`);await tick();
+    pending[0].resolve('old-proof');await tick();assert.equal(dom.window.document.querySelector('iframe'),null);
+    pending[1].resolve('current-proof');await tick();
+    const frame=dom.window.document.querySelector('iframe');
+    assert.equal(frame.src,`${SERVICE_ORIGIN}/form/b?embed=1&checkout_origin=current-proof`);
+    assert.equal(dom.window.document.querySelector('a').href,`${SERVICE_ORIGIN}/form/b?checkout_origin=current-proof`);
+    e.setAttribute('form-title','Updated title');await tick();
+    assert.equal(dom.window.document.querySelector('iframe'),frame);assert.equal(pending.length,2);
+  } finally {dom.window.close();}
+});
+
+test('context failure cannot silently render an unattributed Wix checkout',async()=>{
+  const dom=new JSDOM('<body></body>',{url:'https://wix-site.invalid'});
+  registerTicketElement(dom.window,async()=>'Site',{injectToken:()=>()=>{},context:async()=>{throw new Error('unavailable');}});
+  const e=dom.window.document.createElement(TAG_NAME);e.setAttribute('form-url',`${SERVICE_ORIGIN}/form/a`);
+  dom.window.document.body.append(e);
+  try {await tick();assert.equal(dom.window.document.querySelector('iframe'),null);
+    assert.equal([...dom.window.document.querySelectorAll('a')].some(a=>a.href.startsWith(`${SERVICE_ORIGIN}/form/`)),false);
+  } finally {dom.window.close();}
+});
 function host(mode) {
   const dom = new JSDOM('<body></body>', {url: 'https://wix-site.invalid'});
   registerTicketElement(dom.window, mode);

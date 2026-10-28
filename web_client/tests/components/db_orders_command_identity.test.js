@@ -107,3 +107,33 @@ test('uncertain order outcomes retain the same intent through the actual form ne
         assert.deepEqual(first.orderDetails,retry.orderDetails);
     }
 });
+
+test('a refreshed Wix proof preserves the exact request after a lost order response', async t => {
+    const bodies = [];
+    const firstProof = 'cHJvdmVuYW5jZQ.' + 'a'.repeat(64);
+    const nextProof = 'cHJvdmVuYW5jZQ.' + 'b'.repeat(64);
+    const previousLocation = Object.getOwnPropertyDescriptor(globalThis, 'location');
+    Object.defineProperty(globalThis, 'location', {configurable:true, writable:true,
+        value:{pathname:'/form/retry-proof',search:`?checkout_origin=${firstProof}`}});
+    t.after(() => {
+        if (previousLocation) Object.defineProperty(globalThis, 'location', previousLocation);
+        else delete globalThis.location;
+    });
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: {getSession:async()=>({data:{session:null},error:null})},
+        functions: {invoke:async(_, {body})=>{
+            bodies.push(body);
+            if (bodies.length===1) throw new TypeError('Response lost after commit');
+            return {data:{code:200},error:null};
+        }},
+    }));
+    const order={form:'wix-proof-retry',ticket:[]};
+    assert.equal((await DbOrders.sendOrder(order)).errorCode,'ORDER_OUTCOME_UNKNOWN');
+    globalThis.location.search=`?checkout_origin=${nextProof}`;
+    assert.equal((await DbOrders.sendOrder(order)).success,true);
+    assert.deepEqual(bodies[1],bodies[0]);
+    assert.equal(bodies[1].orderDetails.checkoutOrigin,firstProof);
+    await DbOrders.sendOrder(order);
+    assert.notEqual(bodies[2].commandId,bodies[0].commandId);
+    assert.equal(bodies[2].orderDetails.checkoutOrigin,nextProof);
+});

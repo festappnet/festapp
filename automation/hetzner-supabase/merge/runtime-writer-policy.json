@@ -359,6 +359,14 @@
         "remote-asset-read"
       ],
       "mutates_authority": true
+    },
+    "wix-checkout-context": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "wix-token-introspection"
+      ],
+      "mutates_authority": false
     }
   },
   "workers": {
@@ -430,7 +438,8 @@
       "stripe-webhook": "bounded-raw-body-signature-timestamp-connected-account-mode-binding-atomic-inbox",
       "stripe-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery",
       "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel",
-      "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion"
+      "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion",
+      "wix-checkout-context": "bounded-body-authoritative-wix-token-introspection-exact-app-and-tenant-signed-provenance-no-festapp-privileges"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

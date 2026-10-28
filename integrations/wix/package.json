@@ -12,16 +12,19 @@
     "test": "node --test tests/*.test.js",
     "build": "node scripts/build.mjs",
     "release:check": "node scripts/check-release.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "billing:prepare": "node scripts/prepare-billing.mjs",
+    "billing:operations": "node scripts/billing-operations.mjs"
   },
   "dependencies": {
     "@wix/editor": "1.979.0",
     "@wix/sdk": "1.21.18",
-    "@wix/site-window": "1.59.0",
-    "@wix/site": "1.71.0"
+    "@wix/site": "1.71.0",
+    "@wix/site-window": "1.59.0"
   },
   "devDependencies": {
     "esbuild": "0.27.1",
-    "jsdom": "27.4.0"
+    "jsdom": "27.4.0",
+    "pg": "8.23.1"
   }
 }

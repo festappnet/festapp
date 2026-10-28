@@ -1,5 +1,9 @@
 # Complete Wix checkout verification
 
+> Historical checkout/browser qualification. For current Partner Billed completion,
+> use [the 2026-10-28 plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md)
+> and its [execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md).
+
 Date: 2026-10-26
 Status: Background software-keyboard case passed; remaining external gates retained
 Verification: standard (production reads, order retry and shared behavior)
