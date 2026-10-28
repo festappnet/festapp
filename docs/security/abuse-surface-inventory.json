@@ -952,6 +952,20 @@
         "supabase/functions/_shared/ticketBatchExports_test.ts"
       ],
       "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "wix-checkout-context",
+      "path": "supabase/functions/wix-checkout-context/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-28",
+      "evidence": [
+        "supabase/functions/_shared/wix/identity_test.ts",
+        "supabase/functions/wix-checkout-context/handler_test.ts"
+      ],
+      "reason": "Body and provider I/O are bounded; Wix validates the exact app identity before the service-only issuer signs tenant/form-bound provenance. This route writes no order, grants no access and creates no financial claim."
     }
   ],
   "workers": [
@@ -1014,6 +1028,12 @@
           "path": "/service/ticket-batches/",
           "policy": "Dedicated server capability; immutable create/read of bounded 16 MiB private R2 objects, no list/delete or user token. SQL document admission and digests remain authoritative.",
           "status": "implemented"
+        },
+        {
+          "path": "/occasion-lifecycle",
+          "policy": "image.upload; canonical occasion-media authorization",
+          "status": "local-enforcement",
+          "reason": "Bounded authenticated command replay (4 KiB, at most two stored media steps); SQL reauthorizes before reads and after R2 writes; existing upload/storage admission runs before each new object allocation."
         }
       ],
       "evidence": [
@@ -1027,7 +1047,8 @@
         "workers/image-worker/tests/unit/account-assets.test.ts",
         "supabase/functions/_shared/accountAssets_test.ts",
         "database/tests/account_asset_cleanup_test.sql",
-        "workers/image-worker/tests/unit/ticket-batches.test.ts"
+        "workers/image-worker/tests/unit/ticket-batches.test.ts",
+        "workers/image-worker/tests/unit/occasion-lifecycle.test.ts"
       ]
     },
     {

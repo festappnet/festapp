@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.create_ticket_order_command_internal(
   p_order jsonb,p_command_id uuid,p_client_id uuid,p_context jsonb DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
-  v_result jsonb; v_symbol text; v_before_users uuid[]; v_actor_kind text;
+  v_result jsonb; v_symbol text; v_before_users uuid[]; v_actor_kind text; v_origin jsonb; v_form bigint;
 BEGIN
   IF p_order IS NULL OR jsonb_typeof(p_order)<>'object'
     OR octet_length(p_order::text)>4194304 OR p_command_id IS NULL
@@ -35,13 +35,22 @@ BEGIN
     END IF;
     RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
+  IF p_order ? 'checkoutOrigin' THEN
+    SELECT id INTO v_form FROM public.forms WHERE key=(p_order->>'form')::uuid;
+    v_origin:=public.read_checkout_origin_internal(p_order->>'checkoutOrigin',v_form);
+    IF v_origin IS NULL THEN
+      RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',400,
+        jsonb_build_object('code',400,'errorCode','CHECKOUT_CONTEXT_EXPIRED'));
+    END IF;
+  END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  v_result:=public.create_ticket_order_internal_v1(p_order-'stripePaymentSource');
+  v_result:=public.create_ticket_order_internal_v1(p_order-ARRAY['stripePaymentSource','checkoutOrigin']);
   IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       CASE WHEN COALESCE((v_result->>'code')::integer,500) BETWEEN 100 AND 599
         THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
+  PERFORM public.attach_checkout_origin_internal((v_result#>>'{order,id}')::bigint,v_origin);
   IF v_result#>>'{order,payment_info,payment_method}'='stripe' THEN
     PERFORM public.attach_stripe_order_pay_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order->'stripePaymentSource');
   END IF;

@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-28",
+  "status": "sole-trader-identity-prefilled-awaiting-corrected-contract-and-personal-signature",
+  "legalName": "Michael Bujnovsk\u00fd",
+  "businessId": "06455361",
+  "aresLegalFormCode": "101",
+  "source": "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/06455361",
+  "registeredOfficeKeptPrivate": true,
+  "existingEnvelopeReused": true,
+  "nonSignatureFieldsFilled": 6,
+  "finishLaterUsed": true,
+  "persistedIdentityApplicationAndRoleReadback": true,
+  "incorporationFieldFilled": false,
+  "signatureApplied": false,
+  "finishSubmitted": false,
+  "wixReplyToSoleTraderRequestReceived": false,
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "policySuite": {
+    "passed": 6,
+    "failed": 0
+  },
+  "lifecycleTestsPassed": 5,
+  "edgeTestsPassed": 78,
+  "newOriginMigration": "20261028140000_wix_checkout_origin.sql",
+  "supersededUnpublishedOriginMigration": "20261028130000_wix_checkout_origin.sql",
+  "reasonForRenumber": "Authoritative main now owns 20261028130000 for notification personal read batches."
+}

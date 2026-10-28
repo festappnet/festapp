@@ -2,8 +2,24 @@
 
 Status: submitted once on 2026-10-25 through the official developer intake.
 Wix confirmed receipt and an email response within 72 hours. The acknowledgement
-identifies case **3000345850**; no expert reply or approval has been received. The owner conditionally authorized
+identifies case **3000345850**. An expert reply arrived on 2026-10-28; see below. The owner conditionally authorized
 contact after duplicate checks and public-documentation research.
+
+## Expert reply and follow-up 2026-10-28
+
+Erel recommended Partner Billed App and listed the addendum, manual reports and
+External Billing Events as required steps. The reply does not explicitly settle
+our revenue-base and fixed-fee conditions. We replied to `support4@wix.com` in
+the expert's existing thread, `DevRel Applications Ref:065800261`, asking for
+those clarifications, attribution/refunds and the previously undelivered portal
+issue. Outbound message: `1a1819ad29c4274a`; thread: `1a18198a75444077`.
+The owner clarified that revenue sharing is acceptable but a one-time publisher
+payment is not. After reviewing the actual addendum and fixing the draft Custom
+plan, we sent the concrete calculation/sole-trader follow-up as message
+`1a1824973badc261` in this same thread, following the owner's instruction to
+resolve the identified issue and continue. Gmail accepted the send; no further
+Wix reply is recorded. No duplicate case was opened and no paid terms or
+contract signature were accepted. See `BILLING-APPROVAL.md`.
 
 [History check](evidence/support-history-20261025.json): the connected mailbox
 contained no prior Wix support message and this owner's Wix Studio ticket list

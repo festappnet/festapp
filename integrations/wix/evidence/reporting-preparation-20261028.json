@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-28",
+  "status": "local-preparation-only",
+  "implemented": [
+    "shared commercial approval validation for submission and reporting",
+    "one service-fee-only CSV/API projection",
+    "original-charge cumulative refund conversion",
+    "private batch CLI with deterministic manifest and overwrite rejection"
+  ],
+  "validation": {
+    "wixTestsPassed": 24,
+    "build": "pass",
+    "package": "pass",
+    "runtimeCodeChanged": false
+  },
+  "notImplemented": [
+    "authoritative service-fee ledger/export",
+    "server-verified app-instance attribution",
+    "Wix OAuth dispatcher and unknown-outcome reconciliation"
+  ],
+  "externalBlocker": "Actual unsigned addendum B.2 lacks explicit exclusion of organizer ticket proceeds",
+  "marketplaceSubmitted": false,
+  "billingEventsSent": false,
+  "newSupportReplySent": false
+}

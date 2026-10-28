@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-10-28",
+  "status": "implemented-tested-not-deployed",
+  "organizerPricing": {
+    "mode": "individual-per-contract",
+    "defaultRate": null,
+    "source": "owner confirmation"
+  },
+  "commercialClarificationMessageId": "1a1825fe56ce9706",
+  "soleTraderFollowupMessageId": "1a18267de29c3241",
+  "validation": {
+    "wixTestsPassed": 28,
+    "wixBuild": "pass",
+    "wixPackage": "pass",
+    "edgeTestsPassed": 77,
+    "webTestsPassed": 13,
+    "freshDatabaseMigration": "pass",
+    "databaseOriginTest": "pass",
+    "existingDatabaseRegressionTestsPassed": 2,
+    "edgeCoverage": "pass",
+    "productionRoutePatchCoverage": "pass",
+    "fullPolicySuite": "blocked by pre-existing occasion-lifecycle inventory mismatch"
+  },
+  "productionDatabaseChanged": false,
+  "backendDeployed": false,
+  "widgetPublished": false,
+  "billingEventsSent": false,
+  "reportsSubmitted": false,
+  "addendumSigned": false,
+  "remaining": [
+    "authoritative settled-service-fee export",
+    "customer acquisition evidence",
+    "durable billing-event delivery and reconciliation",
+    "sole-trader addendum wording and execution",
+    "Partner Billed activation",
+    "coordinated production deployment"
+  ],
+  "architectureReview": {
+    "purchaseAuthority": "existing canonical order/payment SQL",
+    "provenanceAuthority": "Wix token introspection and form-bound database signature",
+    "billingAuthority": "actual settled-service-fee receipts with individual contract and acquisition evidence",
+    "correctedFinding": "Renewed proofs must not create a new purchase intent after an uncertain outcome. Pending commands now retain and replay their original proof and exact request.",
+    "regressionCoverage": "Real DbOrders transport loses first response, receives a refreshed proof, and replays the exact original body. New proof is adopted only after terminal completion."
+  }
+}

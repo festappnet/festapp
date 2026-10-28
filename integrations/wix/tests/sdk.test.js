@@ -12,16 +12,42 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 test('bundled self-managed entry binds the real Wix SDK to the assigned app before requesting Site mode',async()=>{
   const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
   try {
+    dom.window.Headers=Headers;
     const calls=[];
     dom.window.clientSdk={async invoke(request){calls.push(request);return 'Site';}};
+    const origin='cHJvdmVuYW5jZQ.'+'a'.repeat(64);
+    const requests=[];
+    dom.window.fetch=async(url,init)=>{
+      requests.push({url,init});
+      return {ok:true,json:async()=>({context:origin,expiresAt:Math.floor(Date.now()/1000)+86400})};
+    };
     dom.window.eval(bundle);
+    dom.window.document.querySelector('vstupenky-online-form').accessTokenListener(async()=>'qa-wix-token');
     await tick();
     assert.equal(calls.length,1);
     assert.equal(calls[0].applicationId,registration.appId);
     assert.equal(calls[0].namespace,'window');
     assert.equal(calls[0].method,'viewMode');
-    assert.equal(dom.window.document.querySelector('iframe').src,'https://vstupenky.online/form/ukazka?embed=1');
+    assert.equal(requests.length,1);
+    assert.equal(requests[0].url,'https://api.festapp.net/functions/v1/wix-checkout-context');
+    assert.equal(new Headers(requests[0].init.headers).get('authorization'),'qa-wix-token');
+    assert.deepEqual(JSON.parse(requests[0].init.body),{formLink:'ukazka'});
+    assert.equal(dom.window.document.querySelector('iframe').src,`https://vstupenky.online/form/ukazka?embed=1&checkout_origin=${origin}`);
+    assert.ok([...dom.window.document.querySelectorAll('a')].some(a=>a.href===`https://vstupenky.online/form/ukazka?checkout_origin=${origin}`));
   } finally {dom.window.close();}
+});
+
+test('bundled Wix entry never requests attribution in Editor or Preview',async()=>{
+  for(const mode of ['Editor','Preview']) {
+    const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
+    try {
+      dom.window.Headers=Headers;
+      dom.window.clientSdk={async invoke(){return mode;}};
+      let requests=0;dom.window.fetch=async()=>{requests++;throw new Error('unexpected request');};
+      dom.window.eval(bundle);await tick();
+      assert.equal(requests,0);assert.equal(dom.window.document.querySelector('iframe'),null);
+    } finally {dom.window.close();}
+  }
 });
 
 test('bundled self-managed entry fails closed when the real Wix host is unavailable',async()=>{

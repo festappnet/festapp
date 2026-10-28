@@ -18,7 +18,9 @@
     "grossTicketValueExcluded": false,
     "externalTicketCheckoutApproved": false,
     "partnerBillingApproved": false,
-    "refundTreatmentConfirmed": false
+    "refundTreatmentConfirmed": false,
+    "attributionPolicyReference": null,
+    "refundPolicyReference": null
   },
   "editorReceipts": {
     "Harmony": null,

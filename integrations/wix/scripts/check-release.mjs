@@ -1,6 +1,7 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {billingApprovalBlockers} from '../billing/approval.mjs';
 export function releaseBlockers(input) {
   const blockers=[];
   if (!input || typeof input !== 'object' || Array.isArray(input)) return ['Missing release input object'];
@@ -11,8 +12,7 @@ export function releaseBlockers(input) {
   if(typeof input.publisherFees?.currency!=='string' || !/^[A-Z]{3}$/.test(input.publisherFees.currency) || typeof input.publisherFees?.evidence!=='string' || !input.publisherFees.evidence.trim())blockers.push('Missing verified publisher fee terms and currency');
   for(const key of ['wixAppId','widgetExtensionId'])if(!uuid(input[key]))blockers.push(`Missing assigned Wix ${key}`);
   for(const key of ['widgetScriptUrl','settingsUrl'])if(!https(input.hosting?.[key]))blockers.push(`Missing verified HTTPS hosting ${key}`);
-  if(typeof input.billingApproval?.reference!=='string' || !input.billingApproval.reference.trim())blockers.push('Missing written billing approval reference');
-  for(const key of ['serviceFeeOnly','grossTicketValueExcluded','externalTicketCheckoutApproved','partnerBillingApproved','refundTreatmentConfirmed'])if(input.billingApproval?.[key]!==true)blockers.push(`Unconfirmed billing condition: ${key}`);
+  blockers.push(...billingApprovalBlockers(input.billingApproval));
   for(const editor of ['Harmony','Editor','Studio'])if(typeof input.editorReceipts?.[editor]!=='string' || !input.editorReceipts[editor].trim())blockers.push(`Missing real ${editor} checkout/lifecycle receipt`);
   if(typeof input.billingImplementationReceipt!=='string' || !input.billingImplementationReceipt.trim())blockers.push('Missing approved billing/reporting implementation receipt');
   if(input.publicStoreAssetsVerified!==true)blockers.push('Store assets/test credentials/privacy/support not verified');

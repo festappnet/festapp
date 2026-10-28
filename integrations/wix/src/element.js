@@ -13,9 +13,16 @@ function ensureHelper(document) {
 
 // Light DOM is intentional: canonical /embed.js discovers declared iframes
 // in document, owns resize/scroll and isolates instances itself.
-export function registerTicketElement(win, getViewMode) {
+export function registerTicketElement(win, getViewMode, attribution) {
   if (win.customElements.get(TAG_NAME)) return;
   class TicketElement extends win.HTMLElement {
+    constructor() {
+      super();
+      if (attribution) {
+        try { this.accessTokenListener=attribution.injectToken(); }
+        catch { this.attributionFailed=true; }
+      }
+    }
     static observedAttributes = ['form-url', 'form-title', 'inherit-style'];
     connectedCallback() {
       const generation = this.generation = (this.generation || 0) + 1;
@@ -35,6 +42,8 @@ export function registerTicketElement(win, getViewMode) {
       this.generation = (this.generation || 0) + 1;
       this.replaceChildren();
       this.frame = null;
+      this.originForm = null;
+      this.checkoutOrigin = null;
     }
     attributeChangedCallback() { if (this.isConnected) this.render(); }
     placeholder(message) {
@@ -53,14 +62,17 @@ export function registerTicketElement(win, getViewMode) {
       help.style.color = '#0754bf';
       section.append(heading, detail, help);
       const url = formUrl(this.getAttribute('form-url'));
-      if (this.mode === 'Unavailable' && url) {
+      if (this.mode === 'Unavailable' && url && (!attribution || this.checkoutOrigin)) {
         const paragraph = this.ownerDocument.createElement('p');
         const fallback = this.ownerDocument.createElement('a');
-        fallback.href = url; fallback.target = '_blank'; fallback.rel = 'noopener noreferrer';
+        fallback.href = this.directUrl(url); fallback.target = '_blank'; fallback.rel = 'noopener noreferrer';
         fallback.textContent = 'Otevřít formulář v novém okně';
         paragraph.append(fallback); section.append(paragraph);
       }
       this.replaceChildren(section);
+    }
+    directUrl(url) {
+      return this.checkoutOrigin ? `${url}?checkout_origin=${encodeURIComponent(this.checkoutOrigin)}` : url;
     }
     render() {
       this.style.display = 'block';
@@ -74,6 +86,28 @@ export function registerTicketElement(win, getViewMode) {
       if (!url) {
         this.placeholder('Nejprve nastavte veřejný odkaz prodejního formuláře.');
         return;
+      }
+      if (attribution && this.originForm !== url) {
+        this.originForm=url;
+        this.checkoutOrigin=null;
+        const generation=this.generation;
+        const request=this.originRequest=(this.originRequest||0)+1;
+        if (this.attributionFailed) {
+          this.mode='Unavailable'; this.render(); return;
+        }
+        this.placeholder('Prodejní formulář se načítá.');
+        Promise.resolve().then(() => attribution.context(url)).then(context => {
+          if (!this.isConnected || this.generation!==generation || this.originForm!==url || this.originRequest!==request) return;
+          this.checkoutOrigin=context;
+          this.render();
+        }).catch(() => {
+          if (!this.isConnected || this.generation!==generation || this.originForm!==url || this.originRequest!==request) return;
+          this.mode='Unavailable'; this.render();
+        });
+        return;
+      }
+      if (attribution && !this.checkoutOrigin) {
+        this.placeholder('Prodejní formulář se načítá.'); return;
       }
       if (!this.frame) {
         const host = this.ownerDocument.createElement('div');
@@ -92,10 +126,10 @@ export function registerTicketElement(win, getViewMode) {
         this.replaceChildren(host);
         this.frame = frame; this.fallback = link;
       }
-      const source = `${url}?embed=1`;
+      const source = `${url}?embed=1${this.checkoutOrigin ? `&checkout_origin=${encodeURIComponent(this.checkoutOrigin)}` : ''}`;
       if (this.frame.getAttribute('src') !== source) this.frame.src = source;
       this.frame.title = this.getAttribute('form-title')?.trim().slice(0, 200) || DEFAULT_TITLE;
-      this.fallback.href = url;
+      this.fallback.href = this.directUrl(url);
       if (this.getAttribute('inherit-style') === 'false') delete this.frame.dataset.festappStyle;
       else this.frame.dataset.festappStyle = 'inherit';
       ensureHelper(this.ownerDocument);

@@ -9,7 +9,11 @@ export function terminalOrderResponse(data) {
     return Number.isInteger(code) && (code === 200 || code >= 1000 && code < 2000 || code >= 400 && code < 500 && ![408, 429].includes(code));
 }
 export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage) {
-    const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalCommandPayload([endpoint, payload.form, payload]))));
+    // Transport provenance can refresh without changing the purchase intent.
+    // Keep ordinary fingerprints unchanged and pin the original proof alongside
+    // the pending command so its SQL payload hash also remains unchanged.
+    const { checkoutOrigin, ...purchase } = payload;
+    const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalCommandPayload([endpoint, payload.form, purchase]))));
     const fingerprint = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
     const key = `client_command_pending:ticket_order:${fingerprint}`;
     let saved;
@@ -20,7 +24,10 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
         // outstanding old command with a newly authenticated purchase.
         if (storage.getItem('client_command_pending:ticket_order')) throw new Error('PAYMENT_RECOVERY_REQUIRED');
         saved = { commandId: crypto.randomUUID(), clientId: crypto.randomUUID(), principal: principal ?? null };
+        if (checkoutOrigin !== undefined) saved.checkoutOrigin = checkoutOrigin;
         storage.setItem(key, JSON.stringify(saved));
     }
-    return { ...saved, complete: () => storage.removeItem(key) };
+    const orderDetails = { ...purchase };
+    if (saved.checkoutOrigin !== undefined) orderDetails.checkoutOrigin = saved.checkoutOrigin;
+    return { ...saved, orderDetails, complete: () => storage.removeItem(key) };
 }

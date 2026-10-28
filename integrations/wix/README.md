@@ -1,22 +1,43 @@
 # vstupenky.online - Wix release preparation
 
+Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
+and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
+
 Repository entry point: [all platform integrations](../README.md).
 
-Status 2026-10-25: **app and widget registered, public assets hosted; real Wix
-qualification in progress; not submitted to the App Market**.
+The current objective is the native App Market listing, with installation and
+the widget settings panel. See [the current portal receipt](evidence/portal-20261028.json)
+for progress following Wix's Partner Billed App reply. A generic iframe embed
+does not satisfy this objective.
 
-The owner completed signup/login for `info@festapp.net`. The assigned app ID is
-recorded in [wix-app.json](wix-app.json), and the widget extension ID and free
-development site are in the [registration receipt](evidence/registration-20261025.json).
-The [hosting receipt](evidence/hosting-20261026.json) records exact public asset
-hashes and URLs. No paid plan or listing fee has been accepted.
+Current release state is recorded in the [execution result](../../docs/plans/wix-partner-billing-RESULT-2026-10-28.md)
+and [production receipt](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
+The canonical origin, service-fee source and delivery journal are deployed, and
+`prod/festapptickets` serves `0.20.444+949`. A real Wix SDK token passed the
+production CORS/issuer flow, and SQL validated the returned signature. No order,
+hold, fee receipt or billing event was created by that read-only probe.
 
-Fourteen tests, build and sealed public-asset packaging pass. The actual bundled
-entry now initializes the self-managed Site host using the assigned application
-ID; its regression test runs the real pinned Wix SDK against a synthetic host
-boundary. This does not replace real Wix qualification. The built settings panel
-was inspected at 320 px with no horizontal overflow and correctly disables saving
-outside the Wix editor. The earlier CAPTCHA attempt is historical account evidence.
+Wix hosting still serves the previous widget assets. The last authenticated
+native receipt records unlisted version 1.1 and a DYNAMIC Custom pricing draft;
+marketplace publication and Partner Billed activation have not been verified.
+The service-fee-only revenue basis, exclusion of organizer proceeds, external
+checkout and zero separate fixed publisher fees are already confirmed by Wix.
+Do not reopen those resolved questions or treat them as executed terms.
+
+The existing DocuSign request contains Michael Bujnovský's saved sole-trader
+identity, IČO 06455361 and registered office. It is unsigned, and Wix has not yet
+answered the request to correct the fixed corporation/incorporation wording.
+The signer must complete the signature personally. Billing stays disabled and
+widget/marketplace release stays held until the actual remaining gates pass.
+
+The owner completed signup/login for `info@festapp.net`. Assigned app and widget
+identities are in [wix-app.json](wix-app.json) and the
+[registration receipt](evidence/registration-20261025.json). The
+[hosting receipt](evidence/hosting-20261026.json) describes the currently hosted
+asset set, not the held candidate bundle. No paid publisher plan or listing fee
+has been accepted. [Billing ownership](billing/README.md) and the
+[delivery runbook](billing/DELIVERY.md) define the deployed boundaries and the
+remaining operator setup.
 
 This is a self-managed **Site Widget (Custom Element)** with an editor settings
 panel. It loads the existing public checkout and service-owned `/embed.js`.
@@ -39,9 +60,10 @@ vstupenky.online service. There is no second checkout or Wix customer-data store
   published **development** site before submission.
 - The helper uses light DOM for discovery, shared protocol 1 for height/scroll,
   and an independent source/origin/instance handshake for each iframe.
-- A direct public-form link remains available on published widgets when the
-  helper is unavailable. Cross-site storage/payment behavior still needs real
-  Wix + browser qualification.
+- The candidate widget obtains tenant/form-bound provenance with its native Wix
+  SDK token before mounting checkout. Its iframe and direct form link retain the
+  same context. Customer acquisition and settled fee evidence remain separate
+  requirements for revenue reporting.
 
 ## Local commands
 

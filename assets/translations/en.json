@@ -1769,6 +1769,7 @@
     "reservation_state_unknown": "We could not verify your seat reservation. Check your internet connection, return to the form and try submitting again. Your entered details have been kept.",
     "reservation_expired": "Your seat reservation has expired. Return to the form and review your seat selection. Your entered details have been kept.",
     "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
+    "CHECKOUT_CONTEXT_EXPIRED": "This form has expired. Reload the page and try submitting your order again.",
     "outcomeUnknownTitle": "Order outcome is unconfirmed",
     "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page."
   },

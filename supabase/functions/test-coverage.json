@@ -517,6 +517,16 @@
         "batch-document",
         "document.output"
       ]
+    },
+    "wix-checkout-context": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/wix/identity_test.ts",
+        "supabase/functions/wix-checkout-context/handler_test.ts"
+      ],
+      "abusePolicy": []
     }
   },
   "excluded": {

@@ -75,6 +75,7 @@ const optionEntrypoints = [
   "send-reset-password-link",
   "send-sign-in-code",
   "send-ticket-order",
+  "wix-checkout-context",
   "waitlist-commands",
   "customer-order-access",
   "send-tickets",

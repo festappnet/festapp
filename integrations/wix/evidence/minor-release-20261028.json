@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "extensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "release": {
+    "previousVersion": "1.0",
+    "releasedVersion": "1.1",
+    "releasedDate": "Oct 28, 2026",
+    "releaseType": "Minor",
+    "versionNote": "Validated widget configuration and updated app profile; App Market billing preparation remains in progress.",
+    "releaseHistoryVerified": true,
+    "existingInstallUpdate": "Wix release dialog stated changes go live immediately and are pushed to sites with this app installed."
+  },
+  "draftConfigurationObserved": {
+    "extensionCount": 1,
+    "extensionType": "Site Widget (Custom Element)",
+    "widgetName": "vstupenky.online",
+    "tagName": "vstupenky-online-form",
+    "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+    "automaticInstallation": false,
+    "additionalInstallationCheckboxChecked": true,
+    "settingsUrl": "Not exposed in the Custom Element editor; settings endpoint was not independently confirmed in Wix UI."
+  },
+  "nativeChecklist": {
+    "blockersAfterRelease": 0,
+    "recommendations": 4,
+    "partnerAgreementChecked": false,
+    "submitAndPublishEnabled": false,
+    "appMarketSubmitted": false
+  },
+  "commercialGates": {
+    "customBillingSavePersists": false,
+    "partnerBilledAddendumSigned": false,
+    "reportingBackendComplete": false,
+    "appMarketSubmissionReady": false
+  },
+  "browser": "Panerelay, stable session wix-minor-release-20261028; opened and pinned a new background tab; only this participant was closed.",
+  "sourceRevision": "d2ed02f8144a9e63433938fb9cfc0a6a9e91cf7c",
+  "marketplaceSubmitted": false
+}

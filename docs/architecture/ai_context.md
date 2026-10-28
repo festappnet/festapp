@@ -231,6 +231,17 @@ retain the guarded legacy allocator until separately authorized activation. The
 preexisting BankSync issuance API is retired in source; its historical registry
 is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
 
+## Platform service fees
+
+`database/functions/service_fees/` owns evidenced organizer contracts, customer
+acquisition, actual settled Festapp fee imports and exact allocations. These
+platform-income facts are separate from buyer payments and organizer invoices in
+`eshop`. No percentage default or inferred income from ticket totals. Wix reporting
+uses the sole existing USD projection and a separate delivery-only journal with
+unknown-outcome reconciliation. Source and dispatch are implemented locally,
+not deployed or activated; no actual accounting feed is connected. See
+[service fee architecture](service-fees.md).
+
 ## Native offline maps
 
 MapLibre is the only native offline renderer. `OfflineMapConfiguration` accepts

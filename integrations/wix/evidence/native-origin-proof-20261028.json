@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-28",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "browser": {
+    "headless": true,
+    "isolatedNamespace": "wixflow28",
+    "emptyConfigPassedOnEveryCommand": true,
+    "nativePage": "https://info9468674.wixsite.com/my-site-3"
+  },
+  "hostToken": {
+    "real": true,
+    "capturedFromNewWidgetSdkRequest": true,
+    "verifier": "supabase/functions/_shared/wix/identity.ts",
+    "provider": "live Wix token-info",
+    "instanceId": "5ebf65f5-1d62-43a1-a7f6-f04b06f22354",
+    "siteId": "60fac33a-8ef8-4122-a754-2b6b98a7428b",
+    "tokenPrinted": false
+  },
+  "context": {
+    "handler": "supabase/functions/wix-checkout-context/handler.ts",
+    "actualCanonicalHandler": true,
+    "actualCanonicalSqlIssuer": true,
+    "signatureValidatedBySqlReader": true,
+    "database": "isolated festapp-wix-billing-20261028 on loopback60222",
+    "httpStatus": 200
+  },
+  "transport": {
+    "adapted": true,
+    "proofEndpointInLocalBundleAdaptedToSameOriginMock": true,
+    "mockReturnsActualDisposableSqlSignedContext": true,
+    "productionCorsBrowserQualified": false,
+    "productionFestappDomainsNetworkAborted": true,
+    "reason": "CLI mock preflight did not expose usable cross-origin allow headers; source preflight regression validates actual Wix SDK x-wix-linguist header."
+  },
+  "results": {
+    "iframeCarriesProof": true,
+    "directLinkCarriesProof": true,
+    "widgets": 2,
+    "bothFramesAndLinksCarryProof": true,
+    "firstFrameRetainedOnSecondWidgetMount": true,
+    "secondFrameRetainedOnFirstTitleChange": true
+  },
+  "productionMutation": false,
+  "ordersOrHoldsCreated": false,
+  "billingEventsSent": false,
+  "hostedWidgetDeploymentPerformed": false,
+  "supersedingProductionProbeReceipt": "docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json"
+}

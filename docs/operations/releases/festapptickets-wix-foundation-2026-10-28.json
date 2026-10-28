@@ -1,0 +1,113 @@
+{
+  "checkedAt": "2026-10-28T14:24:40Z",
+  "status": "backend-foundation-and-selected-web-deployment-verified",
+  "sourceMainSha": "94a1288a341b5eb39c275ff51f4686c2c39e9e14",
+  "tenantBranch": "prod/festapptickets",
+  "tenantSha": "5b5f69900ad5d33774c10834b210b2aa5b740e16",
+  "previousTenantSha": "9f82f81c18d8f68f0b971cfdfb3cc3e5d3871899",
+  "version": "0.20.444+949",
+  "tenantDrift": "passed with main-owned checker at baseMainSha 94a1288a341b5eb39c275ff51f4686c2c39e9e14",
+  "database": {
+    "host": "festapp-supabase-rehearsal-01",
+    "name": "festapp_rehearsal_20260909220601",
+    "organizationId": 3,
+    "backup": {
+      "type": "fresh encrypted pgBackRest differential created by this deployment",
+      "label": "20261025-031939F_20261028-141506D",
+      "startedAtUtc": "2026-10-28T14:15:06Z",
+      "stoppedAtUtc": "2026-10-28T14:16:08Z",
+      "receiptWrittenAtUtc": "2026-10-28T14:16:21Z",
+      "archiveCheck": "passed"
+    },
+    "migrations": [
+      {
+        "version": "20261028140000",
+        "name": "wix_checkout_origin",
+        "sha256": "b04b232f71e440e3981e47bc0d4ee08835391a09d2d3304932c91a7e51bd3165"
+      },
+      {
+        "version": "20261028150000",
+        "name": "service_fees_wix_delivery",
+        "sha256": "d6b172eaaa0979594538f3f67507247de5cb530073f0b9e4d36edf9f438d1113"
+      }
+    ],
+    "transaction": "single guarded transaction; exact source SQL; matching migration ledger entries",
+    "wixBillingEnabled": false,
+    "signedAddendumReferencePresent": false,
+    "checkoutOrigins": 0,
+    "feeAgreements": 0,
+    "feeSettlements": 0,
+    "billingDeliveries": 0,
+    "billingAttempts": 0,
+    "migrationAppliedBetweenUtc": [
+      "2026-10-28T14:16:38Z",
+      "2026-10-28T14:17:35Z"
+    ]
+  },
+  "functions": {
+    "bundleId": "94a1288a341b-20261028T141450Z",
+    "archiveSha256": "38d1404678d73228183151230b22c866bf439c80a077320e6701c678bc73d31f",
+    "installedBundleSha256": "df52e29ef9c1148c96c1ce69f662704dea8623fd25aca0b06afaa9964e9359b6",
+    "wixCheckoutContextProofRoute": "installed",
+    "containerId": "fed69567c1acc3d7a44ec1131d0bacbbcf96c08afb290499901604100f31e2ca",
+    "unauthenticatedJsonWorkerProbe": "401",
+    "emailHealthAlerts": [],
+    "emailProducerAccess": "ok",
+    "emailPausedAfter": "false",
+    "containerStartedAtUtc": "2026-10-28T14:17:35Z",
+    "restartMethod": "restart-production-functions.py --restart; script restarts existing container ID and verifies ID/config unchanged before its built-in JSON 401 probe; independent follow-up JSON probe returned401",
+    "restartEvidenceCaveat": "Canonical --restart invoked; final command session/exit code was not retained. Current restart timestamp, independent unauthorized JSON worker probe and healthy email state are verified; no separate saved pre-restart container-ID receipt.",
+    "finalCanonicalConfigurationGuard": {
+      "status": "passed",
+      "productionWrites": false,
+      "output": "Functions configuration verified; no runtime changes."
+    }
+  },
+  "web": {
+    "path": "automation/deploy_direct.sh --wrangler-oauth --branch prod/festapptickets --skip-build",
+    "build": "passed locally with Flutter 3.47.7; cloudflare web verifier passed",
+    "cloudflareProject": "vstupenkyonline",
+    "deployment": "https://8c6fae8f.vstupenkyonline.pages.dev",
+    "liveVersionProbe": "0.20.444+949; 3 consecutive coherent probes",
+    "legalAndAssetChecks": "passed via verify_web_deployment.mjs"
+  },
+  "held": {
+    "billingActivation": "disabled",
+    "wixWidgetHosting": "not performed",
+    "nativeAppMarketplace": "not submitted or published",
+    "realBillingEvents": false,
+    "productionOrdersOrHolds": false
+  },
+  "releaseManifest": {
+    "existingPrivateManifestUsed": true,
+    "newManifestFabricated": false,
+    "schemaVersion": 2,
+    "ownerOnlyPermissions": true
+  },
+  "nativeProductionProbe": {
+    "realWixHost": true,
+    "localPublishedSourceWidgetOverride": true,
+    "proofEndpointMocked": false,
+    "liveOptionsStatus": 200,
+    "livePostStatus": 200,
+    "actualSqlSignatureValid": true,
+    "iframeCarriesProof": true,
+    "directLinkCarriesProof": true,
+    "publicFormDocumentBlocked": true,
+    "orderEndpointBlocked": true,
+    "productionWrites": false,
+    "billingEnabled": false,
+    "originRowsAfterProbe": 0,
+    "feeRowsAfterProbe": 0,
+    "deliveryRowsAfterProbe": 0
+  },
+  "contract": {
+    "businessId": "06455361",
+    "soleTraderConfirmedByUserAndAres": true,
+    "identityFieldsPrefilledAndNativeReadbackVerified": true,
+    "signedByAgent": false,
+    "signedAddendumPresent": false,
+    "fixedCorporationWordingStillAwaitingWix": true,
+    "marketplaceSubmissionPerformed": false
+  }
+}

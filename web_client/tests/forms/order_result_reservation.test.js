@@ -15,7 +15,7 @@ for (const locale of ['cs', 'en']) {
             LocalizationService.translations = catalog;
             const host = document.querySelector('#host');
             let returned = 0;
-            for (const errorCode of ['reservation_state_unknown', 'reservation_changed', 'reservation_expired']) {
+            for (const errorCode of ['reservation_state_unknown', 'reservation_changed', 'reservation_expired', 'CHECKOUT_CONTEXT_EXPIRED']) {
                 OrderResult.render(host, false, {code:999, errorCode}, {visibleFields:[]}, () => returned++);
                 const message = host.querySelector('.result-subtitle').textContent;
                 assert.equal(message, catalog.PublicOrder[errorCode]);
@@ -23,7 +23,7 @@ for (const locale of ['cs', 'en']) {
                 assert.ok(!message.includes('Waitlist.'));
                 host.querySelector('.btn-back-to-form').click();
             }
-            assert.equal(returned, 3);
+            assert.equal(returned, 4);
         } finally {
             LocalizationService.translations = original;
             dom.window.close();
