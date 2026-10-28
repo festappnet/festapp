@@ -1,0 +1,48 @@
+{
+  "freeze": "review-freeze-20261028.json",
+  "status": "passed",
+  "generatedManifestSha256": "7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0",
+  "fullSuite": {
+    "sourceRevision": "eb02a9c2a62e8b37280beb27411f7616ee6fb681",
+    "node": "24.20.0",
+    "pnpm": "11.24.0",
+    "files": [
+      "make-connector.test.mjs",
+      "make-transport.test.mjs",
+      "remote.test.mjs",
+      "make-orders-postgres.test.mjs",
+      "reporting-postgres.test.mjs"
+    ],
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0
+  },
+  "followup": {
+    "sourceRevision": "49a9007e8",
+    "files": [
+      "make-connector.test.mjs"
+    ],
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "qualifySyntax": "passed",
+    "generatedFileSetCheck": 42
+  },
+  "sql": {
+    "marker": "festapp-authz-20261020",
+    "host": "127.0.0.1",
+    "port": 61022,
+    "cron": "off",
+    "emailPaused": true,
+    "workerUrl": null,
+    "fixturesRolledBack": true
+  },
+  "history": {
+    "unchangedFiles": 23
+  },
+  "broaderWriteFixture": "not_run",
+  "flutter": "not_run",
+  "backendDeploy": "not_required_not_run",
+  "push": "not_run",
+  "runId": "2026-10-28T13-58-17-946Z-fb83cccb-61ea-4df5-ae3c-115982f70fb6"
+}

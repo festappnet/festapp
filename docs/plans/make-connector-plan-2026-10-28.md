@@ -180,13 +180,13 @@ Původní rozsah projektu již obsahoval účet `info@festapp.net`, bezplatné v
 
 ## Definice dokončení a zbytková rizika
 
-- [ ] Všech 21 bodů má opravu nebo doložené vysvětlení; žádný duplicitní review/mail.
-- [ ] Report schéma vlastní operation vrstva; samples nedefinují známá report pole.
-- [ ] Runtime/OpenAPI/Make používají společný transportní kontrakt a scope owner; doména zůstává v Operations/SQL.
-- [ ] Prezentace a SDK mají po jednom vlastníkovi, obsolete zdroje i outputs odstraněné.
-- [ ] Generated file set přesně sedí, historie nepřepsaná, aktuální status dohledatelný.
-- [ ] Passing cílené testy včetně skutečné lokální SQL; sync/deploy ověřené, nebo výslovně neprovedené.
-- [ ] Lokální dokončení je oddělené od schválení Make. Katalogové dokončení vyžaduje skutečné approval/release a discovery + OAuth z jiného již autorizovaného účtu; nezakládat další účet jen kvůli testu.
+- [x] Všech 21 bodů má opravu nebo doložené vysvětlení; žádný duplicitní review/mail.
+- [x] Report schéma vlastní operation vrstva; samples nedefinují známá report pole.
+- [x] Runtime/OpenAPI/Make používají společný transportní kontrakt a scope owner; doména zůstává v Operations/SQL.
+- [x] Prezentace a SDK mají po jednom vlastníkovi, obsolete zdroje i outputs odstraněné.
+- [x] Generated file set přesně sedí, historie nepřepsaná, aktuální status dohledatelný.
+- [x] Passing cílené testy včetně skutečné lokální SQL; sync/deploy ověřené, nebo výslovně neprovedené.
+- [x] Lokální dokončení je oddělené od schválení Make. Katalogové dokončení vyžaduje skutečné approval/release a discovery + OAuth z jiného již autorizovaného účtu; nezakládat další účet jen kvůli testu.
 
 Rizika: podmíněná report pole a union money typy mohou vyžadovat explicitní Make projekci typu bez změny hodnot. Server a checkout mohou být na jiných revizích. Make může při lidské kontrole vyžádat další doloženou úpravu. Veřejná cost evidence není písemná garance Make. Sedmidenní reautorizace a omezený ne-snapshot export zůstávají produktové limity.
 
@@ -212,3 +212,11 @@ Externí závislost zůstává: lidské review, approval/release a následně di
 Čistý freeze `eb02a9c2a62e8b37280beb27411f7616ee6fb681` aktualizoval stejnou unapproved app a SDK readback potvrdil 34/34 sekcí. První qualification invocation skončila lokálně před SDK voláním nebo změnou scénářů: soukromý provision receipt má u objednávek navíc canary metadata `hostileNote`, zatímco veřejný `review/demo-data.json` má jen identity. Plná rovnost řádků tedy není platný fixture invariant. Guard nově porovnává marker, unit/event IDs a set stabilních order identit (id, occasionId, symbol, state); nerozšiřuje consent ani fixture. Preflight rejection je zaznamenaný samostatným immutable receiptem a neprovedl žádný scenario run.
 
 Tooling follow-up navíc odmítá URL-encoded/fragment/query názvy cest ještě před mazáním generated souborů. Cílené contract testy po těchto změnách: 12/12 PASS, 0 skip; generated check opět PASS a manifest je beze změny. Sync a readback se neopakují pro totožné SDK definice. Qualification se provede z nového čistého source revision, poprvé skutečně spustí existující scénáře. Historické freeze zůstávají zachované.
+
+### Dokončení lokálního rozsahu a stejného review update
+
+SDK definice synchronizované z čistého `eb02a9c2a62e8b37280beb27411f7616ee6fb681`; readback 34/34 PASS. Qualification z čistého `49a9007e8d3f8b627707d41f740c85ca0c1168f5` poprvé skutečně spustila scénáře a prošla: všech pět modulů, 52 orders ve dvou stránkách, oba mapping konzumenti a všech šest hraničních případů. Oba existující scénáře ověřené inactive. Manifest zůstává `7c33fb6636d5cc85109c228b0acd62facb452f085374e5d45e0884719e93fdd0`; backend/SQL deploy, push, Publish, nový review, zpráva, provisioner ani vedlejší rollout neproběhly.
+
+Dohledatelné immutable důkazy (relativně k `integrations/make/evidence/`): sync `sync-2026-10-28T13-53-22-465Z-abf45151-8b46-47b7-a573-c0095098822e-1.json`, readback `readback-2026-10-28T13-54-56-938Z-15d524f6-8a0e-4c01-93d0-cc7bc0e51952-1.json`, finální qualification `qualification-2026-10-28T13-57-59-175Z-3120862d-0e4b-43d2-b6cb-c174d8ffebb5-10.json`. Všech deset qualification checkpointů, samostatné lokální ověření a preflight rejection jsou archivované pod vlastními run IDs. Původních 23 evidence souborů se nezměnilo. Aktuální stav a přesné source revisions/digesty vlastní `execution-20261028.json`; historický manifest/freeze nepřepisujeme.
+
+Lokální implementace a autorizovaný update jsou dokončené. Čeká se pouze na lidské posouzení v existujícím případu `2351677:2082001`. Approval/release, katalogové discovery a nezávislé OAuth z dalšího již autorizovaného účtu nejsou doložené. Žádný polling ani další automatické provozní kroky.
