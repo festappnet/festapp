@@ -12,9 +12,7 @@ typedef NotificationRead = Future<dynamic> Function(
 
 class NotificationItem {
   NotificationItem.fromJson(Map<String, dynamic> json)
-    : isRead = json['isRead'] as bool?,
-      isSeen = json['isSeen'] as bool?,
-      id = json['id'].toString(),
+    : id = json['id'].toString(),
       section = json['section'] as int? ?? 2,
       sequence = json['sequence'] as int? ?? 0,
       occasionId = json['occasionId'] as int?,
@@ -25,8 +23,6 @@ class NotificationItem {
       day = DateTime.tryParse(json['day']?.toString() ?? ''),
       occasionLink = json['occasionLink'] as String?,
       data = Map<String, dynamic>.from(json['data'] as Map? ?? {});
-  bool? isRead;
-  final bool? isSeen;
   final String id, kind, status;
   final int section, sequence;
   final int? occasionId;
@@ -67,7 +63,7 @@ class NotificationCenterController extends ChangeNotifier {
   // A missing watermark on older backends must not label every row as new.
   int? previousReadThrough;
   bool isUnread(NotificationItem item) =>
-      item.isRead != null ? !item.isRead! : previousReadThrough != null &&
+      previousReadThrough != null &&
       item.sequence > previousReadThrough! &&
       item.sequence <= snapshot;
   DateTime? snapshotAt;
@@ -88,23 +84,7 @@ class NotificationCenterController extends ChangeNotifier {
       'snapshot': snapshot,
       'timezone': displayTimezone,
       'snapshotAt': snapshotAt?.toUtc().toIso8601String(),
-      if (item.data['afterSequence'] != null) 'afterSequence': item.data['afterSequence'],
-      'throughSequence': item.sequence > 0 ? item.sequence : snapshot,
-      'markRead': isUnread(item),
     };
-  }
-
-  Future<void> markRead(NotificationItem item) async {
-    if (organization == null || !isUnread(item)) return;
-    final generation = _generation;
-    final result = await _read('mark_notification_center_item_read', {
-      'p_organization': organization,
-      'p_scope': {'id': item.id, 'snapshot': snapshot, 'throughSequence': item.sequence > 0 ? item.sequence : snapshot},
-    });
-    if (generation == _generation && result == true) {
-      item.isRead = true;
-      notifyListeners();
-    }
   }
 
   List<NotificationItem> items = [];
@@ -199,8 +179,6 @@ class NotificationCenterController extends ChangeNotifier {
         for (final item in items)
           if (updates[item.id] case final update?)
             NotificationItem.fromJson({
-              'isRead': update.isRead,
-              'isSeen': update.isSeen,
               'id': update.id,
               'kind': update.kind,
               'status': update.status,

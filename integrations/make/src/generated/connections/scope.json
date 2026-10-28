@@ -1,6 +1,0 @@
-[
-  "openid",
-  "offline_access",
-  "festapp:ticket-layouts:read",
-  "festapp:orders:read"
-]
