@@ -129,6 +129,10 @@ put('manifest.json',manifest);
 return files;
 }
 
+function assertGeneratedPath(path) {
+    assert(/^[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/.test(path) &&
+        !path.split('/').some(part => part === '.' || part === '..'), 'Invalid generated path');
+}
 // Never follow symlinks, including the generated root. Only this tree is owned.
 async function inventory(directory, prefix = '') {
     const stat = await lstat(fileURLToPath(directory).replace(/\/$/, ''));
@@ -136,6 +140,7 @@ async function inventory(directory, prefix = '') {
     const paths = [];
     for (const entry of await readdir(directory, { withFileTypes: true })) {
         assert(!entry.isSymbolicLink(), 'Symlink in generated tree');
+        assertGeneratedPath(entry.name);
         const path = prefix + entry.name;
         if (entry.isDirectory()) paths.push(...await inventory(new URL(entry.name+'/', directory), path+'/'));
         else { assert(entry.isFile(), 'Non-regular generated file'); paths.push(path); }
@@ -143,12 +148,12 @@ async function inventory(directory, prefix = '') {
     return paths;
 }
 export async function writeGenerated(files, { check = false, directory = new URL('src/generated/', root) } = {}) {
+    for (const path of files.keys()) assertGeneratedPath(path);
     try { await lstat(directory); } catch (error) { if (error.code !== 'ENOENT' || check) throw error; await mkdir(directory, {recursive:true}); }
     const actual = await inventory(directory);
     if (check) assert.deepEqual(actual.sort(), [...files.keys()].sort(), 'Generated file set drift');
     else for (const path of actual) if (!files.has(path)) await unlink(new URL(path, directory));
     for (const [path, content] of files) {
-        assert(!path.split('/').some(p => p === '..' || p === '') && !path.startsWith('/'), 'Invalid generated path');
         const target = new URL(path, directory);
         if (check) assert.equal(await readFile(target,'utf8'), content, 'Canonical generated drift: '+path);
         else { await mkdir(new URL('.',target),{recursive:true}); await writeFile(target,content); }

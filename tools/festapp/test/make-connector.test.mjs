@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import { assemble, writeGenerated } from '../../../integrations/make/scripts/build.mjs';
-import { loadToken, createSdk, evidenceWriter, runInactiveScenario, assertReviewerContext, ensureScenariosInactive } from '../../../integrations/make/scripts/lib/make-sdk.mjs';
+import { loadToken, createSdk, evidenceWriter, runInactiveScenario, assertReviewerContext, ensureScenariosInactive, assertReviewerFixture } from '../../../integrations/make/scripts/lib/make-sdk.mjs';
 import { orderDataSchemas } from '../src/operations/orders.mjs';
 import { MAKE_CLIENT_ID, MAKE_SCOPES, MAKE_READ_OPERATIONS, MAKE_LIMITS } from '../src/remote/make-contract.mjs';
 import { scopesForOperation } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
@@ -130,4 +130,24 @@ test('reviewer guards fail closed on foreign ownership or schedules; cleanup fai
     let active=true;
     const result=await ensureScenariosInactive(async path=>{if(path.endsWith('/stop'))throw new Error('stop failed');return{scenario:{id:1,isActive:active}};},[1]);
     assert.deepEqual(result,{cleanupFailures:[1],bothScenariosInactive:false});
+});
+
+test('generator rejects encoded path escapes before deleting any files', async t => {
+    const directory=await temporary(t);await writeFile(new URL('stale.json',directory),'retain until valid generation');
+    for(const path of ['../escape.json','%2e%2e/escape.json','file#fragment.json','file?query.json']) {
+        await assert.rejects(writeGenerated(new Map([[path,'{}']]),{directory}),/Invalid generated path/);
+        assert.equal(await readFile(new URL('stale.json',directory),'utf8'),'retain until valid generation');
+    }
+    // A percent-encoded directory name on disk must not be interpreted by URL.
+    await mkdir(join(new URL(directory).pathname,'%2e%2e'));
+    await assert.rejects(writeGenerated(new Map(),{directory}),/Invalid generated path/);
+    assert.equal(await readFile(new URL('stale.json',directory),'utf8'),'retain until valid generation');
+});
+
+test('review fixture checks stable identities while preserving private canary metadata', async () => {
+    const fixture=await json('review/demo-data.json'), actual=structuredClone(fixture);
+    actual.orders[0].hostileNote=true;actual.orders.reverse();
+    assert.doesNotThrow(()=>assertReviewerFixture(actual,fixture,fixture.marker));
+    actual.orders[0].occasionId++;
+    assert.throws(()=>assertReviewerFixture(actual,fixture,fixture.marker));
 });

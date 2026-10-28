@@ -116,3 +116,14 @@ export async function ensureScenariosInactive(request, ids) {
     } catch { /* Failure is recorded, never represented as success. */ }
     return { cleanupFailures: failures, bothScenariosInactive: inactive };
 }
+
+export function assertReviewerFixture(actual, expected, marker) {
+    assert.equal(actual.marker, marker);
+    assert.equal(expected.marker, marker);
+    assert.equal(actual.unitId, expected.unitId);
+    assert.deepEqual(actual.occasionIds, expected.occasionIds);
+    // Private receipt metadata (for example hostileNote canaries) is not an
+    // identity field and must not become a second fixture contract.
+    const identities = receipt => receipt.orders.map(({id,occasionId,symbol,state}) => ({id,occasionId,symbol,state})).sort((a,b)=>a.id-b.id);
+    assert.deepEqual(identities(actual), identities(expected));
+}

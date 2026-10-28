@@ -1,4 +1,4 @@
-import { loadToken, createSdk, evidenceWriter, evidenceDirectory, runInactiveScenario, cleanSourceRevision, safeFailure, assertReviewerContext, ensureScenariosInactive } from './lib/make-sdk.mjs';
+import { loadToken, createSdk, evidenceWriter, evidenceDirectory, runInactiveScenario, cleanSourceRevision, safeFailure, assertReviewerContext, ensureScenariosInactive, assertReviewerFixture } from './lib/make-sdk.mjs';
 import{readFile}from'node:fs/promises';
 import{homedir}from'node:os';
 import{createHash}from'node:crypto';
@@ -11,11 +11,16 @@ assert.equal(app.organizationId,9450617);assert.equal(app.teamId,3387186);
 const context=JSON.parse(await readFile(new URL('src/reviewer.json',root),'utf8'));
 const scenarioIds=[context.positiveScenarioId,context.guardrailsScenarioId];
 const request=createSdk(app,await loadToken());
-const demo=JSON.parse(await readFile(homedir()+'/'+context.fixtureReceipt,'utf8'));assert.equal(demo.marker,context.fixtureMarker);
-const expected=JSON.parse(await readFile(new URL('review/demo-data.json',root),'utf8'));
-assert.deepEqual(demo.occasionIds,expected.occasionIds);assert.deepEqual(demo.orders,expected.orders);
-const event=demo.occasionIds[0],order=demo.orders.find(o=>o.occasionId===event).id;
 const module=(id,name,mapper)=>({id,module:'app#'+app.name+':'+name,version:app.version,parameters:{__IMTCONN__:context.connectionId},mapper,metadata:{designer:{x:id*200,y:id*80}}});
+const receipt={at:new Date().toISOString(),app:app.name,version:app.version,zone:app.zone,generatedManifestSha256:createHash('sha256').update(await readFile(new URL('src/generated/manifest.json',root))).digest('hex'),positive:null,cases:[],bothScenariosInactive:false};
+const checkpoint=evidenceWriter(evidenceDirectory(),'qualification',{sourceRevision,freeze:context.freeze});
+const save=()=>checkpoint(receipt);
+let preflightComplete=false;
+try {
+const demo=JSON.parse(await readFile(homedir()+'/'+context.fixtureReceipt,'utf8'));
+const expected=JSON.parse(await readFile(new URL('review/demo-data.json',root),'utf8'));
+assertReviewerFixture(demo,expected,context.fixtureMarker);
+const event=demo.occasionIds[0],order=demo.orders.find(o=>o.occasionId===event).id;
 const positive={name:'vstupenky.online qualification',flow:[module(1,'salesReport',{occasionId:event}),{id:2,module:'builtin:BasicRouter',version:1,mapper:null,metadata:{designer:{x:250,y:0}},routes:[
  {flow:[module(3,'listOccasions',{limit:10}),module(7,'apiCall',{url:'/make/v1/operations/orders.list',method:'POST',body:'{"occasionId":{{if(3.capabilities.`ticket_layouts.read` = false; '+event+'; 0)}},"limit":1}'})]},
  {flow:[module(4,'listOrders',{occasionId:event,limit:52})]},
@@ -24,11 +29,6 @@ const positive={name:'vstupenky.online qualification',flow:[module(1,'salesRepor
  ]}],metadata:{version:1,scenario:{roundtrips:1,maxErrors:1,sequential:true},designer:{orphans:[]},zone:app.zone}};
 const setBlueprint=async(id,blueprint)=>{const previous=(await request('/scenarios/'+id+'/blueprint')).response;await request('/scenarios/'+id,'PATCH',{blueprint:JSON.stringify(blueprint),baseVersion:previous.version,scheduling:JSON.stringify({type:'on-demand'})});};
 const run=id=>runInactiveScenario(request,id);
-const receipt={at:new Date().toISOString(),app:app.name,version:app.version,zone:app.zone,generatedManifestSha256:createHash('sha256').update(await readFile(new URL('src/generated/manifest.json',root))).digest('hex'),positive:null,cases:[],bothScenariosInactive:false};
-const checkpoint=evidenceWriter(evidenceDirectory(),'qualification',{sourceRevision,freeze:context.freeze});
-const save=()=>checkpoint(receipt);
-let preflightComplete=false;
-try {
 await assertReviewerContext(request,app,context);preflightComplete=true;
 await setBlueprint(context.positiveScenarioId,positive);const result=await run(context.positiveScenarioId);receipt.positive={scenarioId:context.positiveScenarioId,...result,modules:[]};await save();assert.equal(result.status,1,'all five modules and mapping consumers must succeed');
 for(const [id,bundles]of [[1,1],[3,1],[4,52],[5,1],[6,1],[7,1]]){const log=(await request('/scenarios/'+context.positiveScenarioId+'/modules/'+id+'/logs?pg[limit]=5')).moduleLogs.find(x=>x.executionId===result.executionId);assert.equal(log?.bundles,bundles,'module '+id);receipt.positive.modules.push({id,bundles:log.bundles,status:log.status});}
