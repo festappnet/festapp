@@ -80,6 +80,8 @@ class SingleDataGridController<T extends ITrinaRowModel> {
           stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
       final checkedIds = visibleCheckedRows
           .map((row) => fromPlutoJson(row.toJson()).id).whereType<Object>().toSet();
+      final selectedIds = stateManager.currentSelectingRows
+          .map((row) => fromPlutoJson(row.toJson()).id).whereType<Object>().toSet();
       rows = data.map((item) {
         final row = item.toTrinaRow(context);
         row.cells[firstColumnTypeId] = TrinaCell(value: 'delete');
@@ -93,6 +95,16 @@ class SingleDataGridController<T extends ITrinaRowModel> {
         } else {
           stateManager.sortDescending(sorted);
         }
+      }
+      if (stateManager.selectingMode.isRow) {
+        stateManager.clearCurrentSelecting(notify: false);
+        final visible = stateManager.refRows.filterOrOriginalList;
+        for (var i = 0; i < visible.length; i++) {
+          if (selectedIds.contains(fromPlutoJson(visible[i].toJson()).id)) {
+            stateManager.toggleSelectingRow(i, notify: false);
+          }
+        }
+        stateManager.notifyListeners();
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted || !isGridLoaded) return;
