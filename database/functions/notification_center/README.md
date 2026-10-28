@@ -166,3 +166,24 @@ includes snapshotAt. Native grid readiness is awaited without a two-second rende
 deadline, and controller replacement remounts its own grid state. Automatic clean
 refresh preserves checked model IDs, including selections made while fetch was
 in flight, while existing filters still clear hidden selection.
+
+
+## Personal read batches (2026-10-28)
+
+`read_state.sql` owns the server classification and per-recipient closed batch
+receipts. The legacy `read_through_sequence` remains a frozen transition baseline;
+`seen_through_sequence` advances when the center opens. Opening does not read the
+items. Own `order_created`/`order_cancelled` activity is history, never new for its
+actor, while eligible colleagues still receive it as unread.
+
+Unread IDs end in `:pending:<afterSequence>`. Reading seals a bounded receipt;
+closed IDs end in `:batch:<receipt UUID>`. Legacy history and own activity use
+`:legacy`/`:self`. The server returns `isRead`/`isSeen` and precise sequence bounds.
+Counts, contact previews and selected orders use the same eligible batch. The
+existing orders RPC records an explicit `markRead` within its successful
+transaction, not a per-order client request. Errors remain separate incidents;
+reading never resolves them. New arrivals beyond the captured bound remain new.
+
+Migration `20261028130000_notification_personal_read_batches.sql` installs the
+schema/helpers and producer, overview, badge, selector and orders RPC changes
+before the Flutter release. No historical customer-event backfill is required.

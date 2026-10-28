@@ -28,7 +28,7 @@ BEGIN
  IF p_ids IS NOT NULL THEN lim:=greatest(1,cardinality(p_ids)); END IF;
  IF p_open THEN
   INSERT INTO public.notification_center_user_state(organization,recipient) VALUES(p_organization,auth.uid()) ON CONFLICT DO NOTHING;
-  SELECT last_delivery_sequence,read_through_sequence INTO snap,previous_read
+  SELECT last_delivery_sequence,greatest(read_through_sequence,seen_through_sequence) INTO snap,previous_read
    FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid() FOR UPDATE;
   anchor:=clock_timestamp();
  ELSE
@@ -39,8 +39,9 @@ BEGIN
  context:=md5(jsonb_build_array('occasion-kind-overview',auth.uid(),p_organization,p_current_occasion,snap,extract(epoch FROM anchor),p_timezone)::text);
  cursor:=public.notification_center_time_cursor_internal(p_cursor,context);
  WITH visible AS MATERIALIZED (
-  SELECT v.*,(event).kind NOT IN ('email_problem','bank_problem') AND (event).occasion IS NOT NULL grouped
+  SELECT v.*,b.batch_id,b.is_read,b.after_sequence,b.through_sequence,(event).kind NOT IN ('email_problem','bank_problem') AND (event).occasion IS NOT NULL grouped
   FROM public.notification_center_visible_internal(p_organization,snap,p_current_occasion) v
+  CROSS JOIN LATERAL public.notification_center_batch_internal(v.event,v.delivery) b
   WHERE public.notification_center_in_center_internal(v.event,anchor)),
  -- Resolve absent legacy facts in batches, never one client request per row.
  legacy_orders AS MATERIALIZED (
@@ -69,24 +70,24 @@ BEGIN
    count(*) OVER bucket n,count(captured_places) OVER bucket known_counts,sum(captured_places) OVER bucket total_places,
    bool_or(captured_places>1 OR resolved_context->'allowsMultiple'='true'::jsonb) OVER bucket has_multiple,
    max((delivery).sequence) OVER bucket latest FROM classified WHERE grouped
-  WINDOW bucket AS(PARTITION BY (event).occasion,(event).kind)),
+  WINDOW bucket AS(PARTITION BY batch_id)),
  combined AS (
   SELECT (event).id::text id,section,(event).occurred_at at,event,delivery,calendar_day,
-   0::bigint activity_count,(delivery).sequence sequence,NULL::bigint place_count,false multiple_places FROM classified WHERE NOT grouped
+   0::bigint activity_count,(delivery).sequence sequence,NULL::bigint place_count,false multiple_places,batch_id,is_read,after_sequence,through_sequence FROM classified WHERE NOT grouped
   UNION ALL
-  SELECT 'occasion-kind:'||(event).occasion||':'||(event).kind,section,(event).occurred_at,event,delivery,
-   calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END,coalesce(has_multiple,false) FROM ranked WHERE rank=1),
+  SELECT batch_id,section,(event).occurred_at,event,delivery,
+   calendar_day,n,latest,CASE WHEN has_multiple AND known_counts=n THEN total_places END,coalesce(has_multiple,false),batch_id,is_read,after_sequence,through_sequence FROM ranked WHERE rank=1),
  catalog AS MATERIALIZED (
   SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) catalog_position FROM
    (SELECT * FROM combined ORDER BY section,at DESC,id DESC LIMIT 101) bounded),
  rows AS (
   SELECT *,row_number() OVER(ORDER BY section,at DESC,id DESC) position FROM catalog
-  WHERE catalog_position<=100 AND (p_ids IS NULL OR id IN (SELECT public.notification_center_rollup_id_internal(requested) FROM unnest(p_ids) requested)) AND (cursor IS NULL OR section>(cursor->>'section')::int
+  WHERE catalog_position<=100 AND (p_ids IS NULL OR EXISTS(SELECT 1 FROM unnest(p_ids) requested WHERE requested=id OR (id LIKE '%:batch:%' AND requested=regexp_replace(id,':batch:.*$','')||':pending:'||after_sequence) OR (requested ~ '^(occasion-kind:[0-9]+:[a-z_]+|order-day:)' AND requested !~ ':(pending|batch|self|legacy)(:|$)' AND public.notification_center_rollup_id_internal(requested)=regexp_replace(id,':(pending|batch):.*$|:(self|legacy)$','')))) AND (cursor IS NULL OR section>(cursor->>'section')::int
    OR (section=(cursor->>'section')::int AND (at,id)<((cursor->>'time')::timestamptz,cursor->>'id')))
   ORDER BY section,at DESC,id DESC LIMIT lim+1),
- page AS (SELECT *,public.notification_center_dto(event,delivery) dto,
+ page AS (SELECT *,public.notification_center_dto(event,delivery)||jsonb_build_object('isRead',is_read,'isSeen',is_read OR sequence<=greatest(coalesce((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid()),0),coalesce(previous_read,0))) dto,
   coalesce((SELECT requested FROM unnest(p_ids) WITH ORDINALITY r(requested,position)
-    WHERE public.notification_center_rollup_id_internal(requested)=rows.id ORDER BY r.position LIMIT 1),id) response_id
+    WHERE requested=rows.id OR (rows.id LIKE '%:batch:%' AND requested=regexp_replace(rows.id,':batch:.*$','')||':pending:'||after_sequence) OR public.notification_center_rollup_id_internal(requested)=regexp_replace(rows.id,':(pending|batch):.*$|:(self|legacy)$','') ORDER BY r.position LIMIT 1),id) response_id
   FROM rows WHERE position<=lim)
  SELECT coalesce((SELECT jsonb_agg(CASE WHEN activity_count=0 THEN dto||jsonb_build_object('section',section,'day',calendar_day)
   WHEN NOT public.notification_center_order_activity_internal((event).kind) THEN
@@ -94,11 +95,11 @@ BEGIN
      'data',(dto->'data')||jsonb_build_object('eventCount',activity_count))
   ELSE dto||jsonb_build_object('id',response_id,'section',section,'day',calendar_day,'sequence',sequence,'data',
    (CASE WHEN activity_count=1 THEN dto->'data' ELSE jsonb_build_object('contact',dto#>'{data,contact}') END)-'orderId'-'orderSymbol'
-   ||jsonb_build_object('activityCount',activity_count,'relatedOrders',true,'allowsMultiple',multiple_places)
+   ||jsonb_build_object('activityCount',activity_count,'relatedOrders',true,'allowsMultiple',multiple_places,'afterSequence',after_sequence,'throughSequence',sequence)
    ||jsonb_strip_nulls(jsonb_build_object('placeCount',place_count))
    ||jsonb_build_object('previewContacts',(SELECT jsonb_agg(
     public.notification_center_dto(r.event,r.delivery)#>'{data,contact}' ORDER BY r.rank)
-    FROM ranked r WHERE (r.event).occasion=(page.event).occasion AND (r.event).kind=(page.event).kind
+    FROM ranked r WHERE r.batch_id=page.batch_id
      AND r.rank<=3))) END ORDER BY position) FROM page),'[]'),
   (SELECT jsonb_build_object('context',context,'section',section,'time',at,'id',id) FROM page ORDER BY position DESC LIMIT 1),
   (SELECT count(*)>lim FROM rows),(SELECT count(*)>100 FROM catalog) INTO items,tail,more,truncated;
@@ -109,7 +110,7 @@ BEGIN
   WHERE oc.organization=p_organization AND NOT public.is_demo_occasion(oc.id)
    AND (coalesce(ou.is_editor_order_view,false) OR public.notification_center_app_admin_internal(p_organization,oc.id,auth.uid()));
   -- A failed overview never acknowledges: data and watermark commit together.
-  UPDATE public.notification_center_user_state SET read_through_sequence=greatest(read_through_sequence,snap)
+  UPDATE public.notification_center_user_state SET seen_through_sequence=greatest(seen_through_sequence,snap)
   WHERE organization=p_organization AND recipient=auth.uid();
  END IF;
  badge:=public.get_notification_center_badge(p_organization);

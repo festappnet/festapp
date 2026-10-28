@@ -22,7 +22,8 @@ BEGIN
  SELECT * INTO s FROM public.notification_center_user_state WHERE organization=p_organization AND recipient=auth.uid();
  RETURN jsonb_build_object('feedSupported',true,'timelineSupported',true,'enabled',true,'lastSequence',coalesce(s.last_delivery_sequence,0),'readThrough',coalesce(s.read_through_sequence,0),
  'unread',EXISTS(SELECT 1 FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
- WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>coalesce(s.read_through_sequence,0)
+ WHERE d.organization=p_organization AND d.recipient=auth.uid() AND d.sequence>greatest(coalesce(s.seen_through_sequence,0),coalesce(s.read_through_sequence,0))
+ AND NOT (SELECT is_read FROM public.notification_center_batch_internal(e,d))
  AND public.notification_center_in_center_internal(e,anchor)
  AND public.notification_center_allowed(e,auth.uid()) AND public.notification_center_unmuted(e,auth.uid())));
 END $$;

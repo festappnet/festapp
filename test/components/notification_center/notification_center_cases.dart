@@ -142,13 +142,14 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(
-        find.bySemanticsLabel(RegExp('NotificationCenter.newNotification')),
+        find.bySemanticsLabel(RegExp('NotificationCenter.unreadNotification')),
         findsOneWidget,
       );
       final oldRow = find.byKey(const ValueKey('notification-item-4'));
       final newRow = find.byKey(const ValueKey('notification-item-5'));
+      expect(tester.getTopLeft(newRow).dy, lessThan(tester.getTopLeft(oldRow).dy));
       expect(tester.widget<Material>(oldRow).color, Colors.transparent);
-      expect(tester.widget<Material>(newRow).color, Colors.transparent);
+      expect(tester.widget<Material>(newRow).color, isNot(Colors.transparent));
       final oldAge = tester.widget<Text>(
         find.byKey(const ValueKey('notification-age-4')),
       );
@@ -159,12 +160,12 @@ void main() {
       expect(newAge.style?.fontWeight, FontWeight.w500);
       expect(newAge.style?.color, isNot(oldAge.style?.color));
       for (final entry in [
-        (oldRow, FontWeight.w500),
-        (newRow, FontWeight.w500),
+        (oldRow, FontWeight.w400),
+        (newRow, FontWeight.w600),
       ]) {
         final title = find.descendant(
           of: entry.$1,
-          matching: find.text('NotificationCenter.kinds.order_created'),
+          matching: find.byKey(ValueKey('notification-action-${entry.$1 == oldRow ? '4' : '5'}')),
         );
         expect(tester.widget<Text>(title).style?.fontWeight, entry.$2);
       }
@@ -975,6 +976,24 @@ void main() {
     await refresh;
     expect(c.items, isEmpty);
   });
+  test('server read state overrides seen watermark and item read is one scoped RPC', () async {
+    final requests = <Map<String, dynamic>>[];
+    final c = NotificationCenterController(read: (name, params) async {
+      if (name == 'mark_notification_center_item_read') { requests.add(params); return true; }
+      return <String, dynamic>{};
+    });
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 3);
+    c.snapshot = 10; c.previousReadThrough = 10;
+    final item = NotificationItem.fromJson({'id':'occasion-kind:1:form_opened:pending:0','kind':'form_opened','sequence':7,'isRead':false,'isSeen':true});
+    expect(c.isUnread(item), isTrue, reason:'seen is independent of read');
+    await c.markRead(item);
+    expect(requests.single['p_scope'], {'id':item.id,'snapshot':10,'throughSequence':7});
+    expect(c.isUnread(item), isFalse);
+    await c.markRead(item);
+    expect(requests, hasLength(1));
+  });
+
   test('selected group scope survives route and rights invalidation', () {
     final c=NotificationCenterController();
     addTearDown(c.dispose);
@@ -983,7 +1002,7 @@ void main() {
     final scope=c.selectionScope(row('occasion-kind:1:order_created',data:{'activityCount':6}));
     c.configure(userId:'u',organizationId:3,occasionId:2,invalidate:true);
     expect(c.snapshot,0);
-    expect(scope,{'id':'occasion-kind:1:order_created','organization':3,'snapshot':42,'timezone':'Europe/Prague','snapshotAt':'2026-10-28T00:00:00.000Z'});
+    expect(scope,{'id':'occasion-kind:1:order_created','organization':3,'snapshot':42,'timezone':'Europe/Prague','snapshotAt':'2026-10-28T00:00:00.000Z','throughSequence':42,'markRead':false});
   });
 
 }

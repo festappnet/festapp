@@ -4375,7 +4375,10 @@
     "duplicateBlock": "Use the {{tickets}} block only once."
   },
   "NotificationCenter": {
-    "lifecycleHint": "Activity from 30 days. Opening marks notifications as read, not resolved. Active problems remain until fixed.",
+    "unreadHeading": "Unread",
+    "readHeading": "Read",
+    "unreadNotification": "Unread notification",
+    "lifecycleHint": "Activity from the last 30 days. Only the item you open is marked as read. Active problems remain until fixed.",
     "historyLimit": "Showing up to 100 notifications. Older activity is in orders and email history.",
     "newOrders": "New orders",
     "cancelledOrders": "Cancelled orders",

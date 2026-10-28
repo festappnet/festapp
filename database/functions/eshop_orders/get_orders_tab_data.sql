@@ -34,6 +34,10 @@ BEGIN
       FROM jsonb_array_elements(v_orders_data#>'{data,orders}') o
       WHERE (o->>'id')::bigint IN (SELECT value::bigint FROM jsonb_array_elements_text(v_notification_ids));
     END IF;
+    IF p_notification_group->>'markRead'='true' THEN
+      PERFORM public.mark_notification_center_item_read(
+        (p_notification_group->>'organization')::bigint,p_notification_group);
+    END IF;
     -- No orders means no delivery status. Do not resolve an ambiguous event slug.
     RETURN (v_orders_data->'data') || jsonb_build_object('notification_order_ids',v_notification_ids,'forms', v_forms_data->'data', 'email_delivery',
       CASE WHEN jsonb_array_length(v_orders_data#>'{data,orders}') = 0

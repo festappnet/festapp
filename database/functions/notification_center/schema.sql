@@ -22,6 +22,7 @@ CREATE TABLE public.notification_center_recipients (
 CREATE TABLE public.notification_center_user_state (
  organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL,
  last_delivery_sequence bigint NOT NULL DEFAULT 0, read_through_sequence bigint NOT NULL DEFAULT 0,
+ seen_through_sequence bigint NOT NULL DEFAULT 0,
  PRIMARY KEY(organization,recipient), CHECK(read_through_sequence<=last_delivery_sequence)
 );
 CREATE TABLE public.notification_center_deliveries (
@@ -31,6 +32,15 @@ CREATE TABLE public.notification_center_deliveries (
  UNIQUE(organization,recipient,sequence)
 );
 CREATE INDEX notification_center_personal_history ON public.notification_center_deliveries(organization,recipient,group_key,sequence DESC);
+CREATE TABLE public.notification_center_read_batches (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+ recipient uuid NOT NULL, group_key text NOT NULL,
+ after_sequence bigint NOT NULL, through_sequence bigint NOT NULL,
+ read_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ CHECK(after_sequence>=0 AND through_sequence>after_sequence),
+ UNIQUE(organization,recipient,group_key,through_sequence)
+);
 CREATE TABLE public.notification_center_preferences (
  organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL, occasion bigint NOT NULL,
  muted boolean NOT NULL DEFAULT false, PRIMARY KEY(organization,recipient,occasion)
@@ -44,7 +54,7 @@ CREATE INDEX notification_center_feed_snapshot ON public.notification_center_del
 CREATE INDEX notification_center_feed_revision ON public.notification_center_deliveries(event_id,recipient,sequence DESC);
 CREATE INDEX notification_center_availability_due ON public.notification_center_source_state(next_evaluation_at,organization,source_key) WHERE next_evaluation_at IS NOT NULL;
 DO $$ DECLARE t text; BEGIN
- FOREACH t IN ARRAY ARRAY['organizations','events','recipients','user_state','deliveries','preferences','source_state'] LOOP
+ FOREACH t IN ARRAY ARRAY['organizations','events','recipients','user_state','deliveries','preferences','source_state','read_batches'] LOOP
   EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY','notification_center_'||t);
   EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC,anon,authenticated,service_role','notification_center_'||t);
  END LOOP;

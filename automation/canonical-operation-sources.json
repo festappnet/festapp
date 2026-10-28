@@ -359,6 +359,7 @@
     "authoring/lifecycle.sql",
     "authoring/order_deletion.sql",
     "notification_center/order_selection.sql",
+    "notification_center/read_state.sql",
     "notification_center/daily_overview.sql",
     "notification_center/center_policy.sql"
   ]

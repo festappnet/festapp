@@ -15,9 +15,9 @@ BEGIN
  INSERT INTO public.notification_center_organizations(organization) VALUES(org);
  e:=public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author);
  PERFORM assert_eq(public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author),e,'dedupe identity');
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_recipients WHERE event_id=e),1::bigint,'verified author excluded');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_recipients WHERE event_id=e),2::bigint,'actor receives own activity as read history');
  PERFORM public.project_notification_center(); PERFORM public.project_notification_center();
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE event_id=e),1::bigint,'fanout retry dedupes');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE event_id=e),2::bigint,'fanout retry dedupes each recipient');
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
  PERFORM assert_true((public.get_notification_center_badge(org)->>'unread')::boolean,'new event is unread');
  result:=public.open_notification_center(org,oc,1);
