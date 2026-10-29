@@ -136,7 +136,18 @@ export async function collectPwaShellManifest(buildDir) {
     '/festapp-version.json', '/manifest.json', '/manifest.webmanifest',
     '/AssetManifest.json', '/FontManifest.json',
   ]);
+  // The release emitter stamps these HTML dependencies with the same identity
+  // as main. Keep mutable URLs available to runtime readers, but install each
+  // executable once. Older builds without an immutable alias retain the core
+  // fallback, including the recovery guard needed for an offline handoff.
+  const shellVersion = flutterMain.match(/^\/main\.dart\.([0-9][0-9A-Za-z.+-]*)\.js$/)?.[1];
+  const redundantShellAliases = new Set([
+    '/festapp_update_prompt.js', '/festapp_flutter_bootstrap_guard.js',
+    '/festapp_pwa_bridge.js',
+  ].filter((url) => shellVersion && knownResources.includes(
+    url.replace(/\.js$/, `.${shellVersion}.js`))));
   const coreResources = knownResources.filter((url) =>
+    !redundantShellAliases.has(url) && (
     url === flutterEntry || url === webClientEntry ||
     // Every lazy web module belongs to the same immutable build. Open forms
     // must still open their seat selector after a newer deployment replaces assets.
@@ -146,7 +157,7 @@ export async function collectPwaShellManifest(buildDir) {
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
     /^\/festapp_(?:update_prompt|flutter_bootstrap_guard|pwa_bridge)\.[0-9][0-9A-Za-z.+-]*\.js$/.test(url) ||
-    /^\/main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(url.split('?')[0]));
+    /^\/main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(url.split('?')[0])));
   const total = (resources) => resources.reduce(
     (sum, url) => sum + (byUrl.get(url)?.bytes ?? 0), 0);
 
