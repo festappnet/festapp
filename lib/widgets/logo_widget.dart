@@ -34,6 +34,7 @@ class LogoWidget extends StatelessWidget {
       isDarkMode: ThemeConfig.isDarkMode(context),
       forceDark: forceDark,
       programVariant: programVariant,
+      compact: MediaQuery.sizeOf(context).width <= 600,
     );
 
     // If the asset file is an SVG, use SvgPicture; otherwise, use Image.
@@ -55,10 +56,17 @@ String resolveLogoAsset({
   required bool isDarkMode,
   required bool? forceDark,
   required bool programVariant,
+  bool compact = false,
 }) {
   // An explicit dark request is a contrast requirement and must win over the
   // optional program variant. Schedule headers use both flags on dark app bars.
-  if (forceDark == true || (forceDark != false && isDarkMode)) {
+  final dark = forceDark == true || (forceDark != false && isDarkMode);
+  if (compact && Uri.parse(AppConfig.webLink).host == 'vstupenky.online') {
+    return dark
+        ? 'assets/icons/vstupenky-symbol.dark.svg'
+        : 'assets/icons/vstupenky-symbol.svg';
+  }
+  if (dark) {
     return AppConfig.darkLogoAsset;
   }
   return programVariant ? AppConfig.programLogoAsset : AppConfig.logoAsset;
