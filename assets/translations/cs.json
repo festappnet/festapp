@@ -4609,6 +4609,11 @@
     "clearSearch": "Vymazat hledání"
   },
   "AppearanceColors": {
+    "style": "Barevný styl",
+    "paletteHint": "Vyberte paletu nebo upravte její barvy níže.",
+    "custom": "Vlastní barvy",
+    "inherited": "Výchozí barvy",
+    "palette": "Paleta: {name}",
     "gradient": "Dvoubarevný přechod",
     "hint": "Zapněte přechod a přidejte druhou barvu. Při vypnutí se druhá barva zachová.",
     "theme": "Tematická barva",

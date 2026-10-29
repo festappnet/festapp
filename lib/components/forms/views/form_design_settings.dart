@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/appearance_color_strings.dart';
 import 'package:fstapp/widgets/appearance_color_controls.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
@@ -233,8 +234,126 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
     }
   }
 
+  Map<String, dynamic>? get _selectedPalette {
+    final definition = widget.form.definition;
+    for (final preset in _colorPresets) {
+      if (definition.primaryColor == preset['primary'] &&
+          (definition.backgroundMode != 'gradient' ||
+              definition.secondaryColor == preset['secondary'])) {
+        return preset;
+      }
+    }
+    return null;
+  }
+
+  Widget _paletteChoices(Map<String, dynamic>? selected) {
+    final gradient = widget.form.definition.backgroundMode == 'gradient';
+    final visible = _showAllPresets
+        ? _colorPresets
+        : [
+            ..._colorPresets.take(6),
+            if (selected != null && !_colorPresets.take(6).contains(selected))
+              selected,
+          ];
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+        final availableColumns = (constraints.maxWidth / (140 * scale)).floor();
+        final columns = availableColumns >= 6
+            ? 6
+            : availableColumns >= 3
+            ? 3
+            : availableColumns >= 2
+            ? 2
+            : 1;
+        final width = (constraints.maxWidth - (columns - 1) * 8) / columns;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final preset in visible)
+              SizedBox(
+                width: width,
+                child: Semantics(
+                  selected: selected == preset,
+                  child: OutlinedButton(
+                    key: ValueKey('form-palette-${preset['name']}'),
+                    onPressed: widget.enabled
+                        ? () => _applyPreset(preset)
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(12),
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: selected == preset
+                          ? theme.colorScheme.onSecondaryContainer
+                          : theme.colorScheme.onSurface,
+                      backgroundColor: selected == preset
+                          ? theme.colorScheme.secondaryContainer
+                          : null,
+                      side: BorderSide(
+                        color: selected == preset
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline,
+                        width: selected == preset ? 2 : 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: theme.colorScheme.outline,
+                            ),
+                            color: Color(preset['primary']),
+                            gradient: gradient
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(preset['primary']),
+                                      Color(preset['secondary']),
+                                    ],
+                                  )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(preset['name'])),
+                        if (selected == preset) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.check, size: 18),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final selected = _selectedPalette;
+    final definition = widget.form.definition;
+    final inherited =
+        definition.primaryColor == null &&
+        (definition.backgroundMode != 'gradient' ||
+            definition.secondaryColor == null);
+    final status = selected != null
+        ? AppearanceColorStrings.palette(selected['name'])
+        : inherited
+        ? AppearanceColorStrings.inherited
+        : AppearanceColorStrings.custom;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -256,100 +375,46 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          Text(FormStrings.designPresets,
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              ...(_showAllPresets ? _colorPresets : _colorPresets.take(6))
-                  .map((preset) {
-                return InkWell(
-                  onTap: widget.enabled ? () => _applyPreset(preset) : null,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          // Show vertical split: Left=Primary, Right=Secondary (Light Mode BG hint)
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(preset['primary']),
-                              Color(preset['primary']),
-                              Color(preset['secondary']),
-                              Color(preset['secondary'])
-                            ],
-                            stops: const [0.0, 0.5, 0.5, 1.0],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(blurRadius: 2, color: Colors.black26)
-                          ],
-                          border: (widget.form.definition.primaryColor ==
-                                      preset['primary'] &&
-                                  widget.form.definition.secondaryColor ==
-                                      preset['secondary'])
-                              ? Border.all(color: Colors.black, width: 2)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(preset['name'],
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                );
-              }),
-              // Show More / Less Button
-              InkWell(
-                onTap: () => setState(() => _showAllPresets = !_showAllPresets),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme.of(context).cardColor,
-                        border: Border.all(color: Colors.grey.withOpacity(0.5)),
-                      ),
-                      child: Icon(_showAllPresets
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(_showAllPresets ? FormStrings.less : FormStrings.more,
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            AppearanceColorStrings.style,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 24),
-          Text(FormStrings.customColors,
-              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              status,
+              key: const ValueKey('form-palette-status'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(AppearanceColorStrings.paletteHint),
           const SizedBox(height: 16),
+          _paletteChoices(selected),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            key: const ValueKey('form-palettes-more'),
+            onPressed: () => setState(() => _showAllPresets = !_showAllPresets),
+            icon: Icon(_showAllPresets ? Icons.expand_less : Icons.expand_more),
+            label: Text(_showAllPresets ? FormStrings.less : FormStrings.more),
+          ),
+          const SizedBox(height: 8),
           AppearanceColorControls(
             gradient: widget.form.definition.backgroundMode == 'gradient',
             primaryColor: Color(
-              widget.form.definition.primaryColor ?? 0xff2196f3,
+              widget.form.definition.primaryColor ?? Theme.of(context).primaryColor.toARGB32(),
             ),
             secondaryColor: Color(
               widget.form.definition.secondaryColor ??
                   widget.form.definition.primaryColor ??
-                  0xff2196f3,
+                  Theme.of(context).primaryColor.toARGB32(),
             ),
             onGradientChanged: widget.enabled
                 ? (value) => setState(() {
                     var definition = widget.form.definition;
                     if (value) {
-                      final primary = definition.primaryColor ?? 0xff2196f3;
+                      final primary = definition.primaryColor ?? Theme.of(context).primaryColor.toARGB32();
                       definition = definition
                           .withPrimaryColor(primary)
                           .withSecondaryColor(
@@ -365,7 +430,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
             onPrimaryPressed: widget.enabled
                 ? () => _pickColor(
                     context,
-                    Color(widget.form.definition.primaryColor ?? 0xff2196f3),
+                    Color(widget.form.definition.primaryColor ?? Theme.of(context).primaryColor.toARGB32()),
                     (color) => setState(() {
                       widget.form.definition = widget.form.definition
                           .withPrimaryColor(color.toARGB32());
@@ -379,7 +444,7 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                     Color(
                       widget.form.definition.secondaryColor ??
                           widget.form.definition.primaryColor ??
-                          0xff2196f3,
+                          Theme.of(context).primaryColor.toARGB32(),
                     ),
                     (color) => setState(() {
                       widget.form.definition = widget.form.definition

@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,7 +33,19 @@ class _Fonts implements FormFontCatalog {
 void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
-  setUpAll(() {
+  setUpAll(() async {
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader('PalettePreview')..addFont(
+          Future.value(
+            ByteData.sublistView(
+              File('supabase/functions/_shared/ticket-assets/font.ttf')
+                  .readAsBytesSync(),
+            ),
+          ),
+        ))
+        .load();
     environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
       translations: jsonDecode(
@@ -147,4 +163,166 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final width in [320.0, 390.0, 800.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        testWidgetsWithEnvironment(
+          () => environment,
+          'palette state, keyboard and layout at $width / $scale / $brightness',
+          (tester) async {
+            tester.view.physicalSize = Size(width, 1100);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            final capture = GlobalKey();
+            final form = FormEditorDraft();
+            // A previously selected palette outside the first six is discoverable.
+            form.definition = form.definition
+                .withPrimaryColor(0xff5d4037)
+                .withSecondaryColor(0xff123456)
+                .withBackgroundMode('solid');
+            Future<void> mount() async {
+              await environment.pumpWidget(
+                tester,
+                MaterialApp(
+                  builder: DependencyMaterialBridge.builder,
+                  theme: ThemeData(
+                    fontFamily: 'PalettePreview',
+                    brightness: brightness,
+                    primaryColor: const Color(0xff116655),
+                  ),
+                  home: RepaintBoundary(
+                    key: capture,
+                    child: Scaffold(
+                      body: MediaQuery(
+                        data: MediaQueryData(
+                          textScaler: TextScaler.linear(scale),
+                        ),
+                        child: FormDesignSettings(
+                          form: form,
+                          onChanged: () {},
+                          loadFonts: () async => _Fonts(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              await tester.pumpAndSettle();
+            }
+
+            Future<void> screenshot(String state) async {
+              if (!const bool.fromEnvironment('CAPTURE_PALETTE_UI') ||
+                  width == 320) {
+                return;
+              }
+              await tester.ensureVisible(
+                find.byKey(const ValueKey('form-palette-status')),
+              );
+              await tester.pumpAndSettle();
+              await tester.runAsync(() async {
+                final boundary =
+                    capture.currentContext!.findRenderObject()!
+                        as RenderRepaintBoundary;
+                final image = await boundary.toImage(pixelRatio: 1);
+                final bytes = await image.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                final dir = Directory('/tmp/festapp-palette-ui');
+                await dir.create(recursive: true);
+                await File(
+                  '${dir.path}/palette-$state-$width-${scale}x-${brightness.name}.png',
+                ).writeAsBytes(bytes!.buffer.asUint8List());
+                image.dispose();
+              });
+            }
+
+            await mount();
+            expect(
+              find.text(AppearanceColorStrings.palette('Cozy')),
+              findsOneWidget,
+            );
+            final cozy = find.byKey(const ValueKey('form-palette-Cozy'));
+            expect(cozy, findsOneWidget);
+            final swatches = tester
+                .widgetList<Container>(
+                  find.descendant(of: cozy, matching: find.byType(Container)),
+                )
+                .map((w) => w.decoration)
+                .whereType<BoxDecoration>();
+            expect(swatches.where((d) => d.gradient != null), isEmpty);
+            expect(find.text(FormStrings.customColors), findsNothing);
+            // Native palette buttons participate in keyboard traversal.
+            var selectedByKeyboard = false;
+            for (var i = 0; i < 12 && !selectedByKeyboard; i++) {
+              await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+              await tester.pump();
+              final focus = FocusManager.instance.primaryFocus;
+              if (focus?.context
+                      ?.findAncestorWidgetOfExactType<OutlinedButton>()
+                      ?.key ==
+                  const ValueKey('form-palette-Ocean')) {
+                await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+                await tester.pumpAndSettle();
+                selectedByKeyboard = true;
+              }
+            }
+            expect(selectedByKeyboard, true);
+            expect(
+              find.text(AppearanceColorStrings.palette('Ocean')),
+              findsOneWidget,
+            );
+            expect(form.definition.backgroundMode, 'solid');
+            final primary = find.byKey(
+              const ValueKey('appearance-color-primary'),
+            );
+            await tester.ensureVisible(primary);
+            await tester.tap(primary);
+            await tester.pumpAndSettle();
+            await tester.enterText(
+              find.widgetWithText(TextField, FormStrings.hexCodeLabel),
+              '#123456',
+            );
+            await tester.tap(find.text(FormStrings.buttonGotIt));
+            await tester.pumpAndSettle();
+            expect(find.text(AppearanceColorStrings.custom), findsOneWidget);
+            await screenshot('custom');
+            // Returning to a stored palette color restores its name without stored IDs.
+            form.definition = form.definition.withPrimaryColor(0xff263238);
+            await tester.pumpWidget(const SizedBox.shrink());
+            await mount();
+            expect(
+              find.text(AppearanceColorStrings.palette('Night')),
+              findsOneWidget,
+            );
+            await screenshot('selected');
+            form.definition = form.definition.withBackgroundMode('gradient');
+            await tester.pumpWidget(const SizedBox.shrink());
+            await mount();
+            expect(find.text(AppearanceColorStrings.custom), findsOneWidget);
+            form.definition = form.definition.withSecondaryColor(0xffeceff1);
+            await tester.pumpWidget(const SizedBox.shrink());
+            await mount();
+            expect(
+              find.text(AppearanceColorStrings.palette('Night')),
+              findsOneWidget,
+            );
+            form.definition = form.definition.withBackgroundMode('solid');
+            await tester.pumpWidget(const SizedBox.shrink());
+            await mount();
+            final reset = find.byTooltip(
+              '${FormStrings.resetToDefault}: ${AppearanceColorStrings.theme}',
+            );
+            await tester.ensureVisible(reset);
+            await tester.tap(reset);
+            await tester.pumpAndSettle();
+            expect(form.definition.primaryColor, isNull);
+            expect(find.text(AppearanceColorStrings.inherited), findsOneWidget);
+            expect(find.text('#116655'), findsOneWidget);
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
 }
