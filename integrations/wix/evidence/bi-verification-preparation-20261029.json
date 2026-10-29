@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-29T09:16:23.549975+00:00",
+  "status": "prepared-oauth-verified-awaiting-wix-test-procedure-confirmation",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "instanceId": "5ebf65f5-1d62-43a1-a7f6-f04b06f22354",
+  "qualificationPurpose": "Erel requested one BI event to verify receipt before Partner Billed activation.",
+  "sourceRequest": {
+    "gmailMessageId": "1a186cc331d539c7",
+    "gmailThreadId": "1a18198a75444077",
+    "receivedAt": "2026-10-29T08:34:51+00:00",
+    "explicitSyntheticOrZeroEventApproval": false
+  },
+  "candidate": {
+    "endpoint": "https://www.wixapis.com/apps/v1/billing-event",
+    "method": "POST",
+    "billingType": "CHARGE",
+    "grossRevenue": "0",
+    "netRevenue": "0",
+    "wixShare": "0",
+    "currency": "USD",
+    "createdDateAssignedAndPersistedBeforeApprovedSend": true,
+    "qualificationOnly": true,
+    "notASourceSettlement": true,
+    "vendorAcceptanceRequired": true
+  },
+  "oauthPreflight": {
+    "provider": "integrations/wix/billing/dispatcher.mjs#wixBillingProvider",
+    "accessTokenObtained": true,
+    "tokenPersisted": false,
+    "oauthHttpStatus": 200,
+    "tokenInfoHttpStatus": 200,
+    "active": true,
+    "subjectType": "APP",
+    "appAndInstanceMatched": true
+  },
+  "independentCritic": {
+    "result": "Prepare zero-only event; obtain Wix confirmation before posting a synthetic CHARGE. Decimal zero support alone does not establish an approved test mode.",
+    "conditions": [
+      "Use only the specified app and own QA installation",
+      "All three monetary amounts must be zero for this candidate",
+      "Persist an exclusive immutable attempt before provider I/O; never blindly retry",
+      "Keep qualification evidence separate from service-fee settlements and normal billing delivery",
+      "Zero-value transport qualification does not validate fee, FX or share arithmetic"
+    ]
+  },
+  "clarificationSent": {
+    "gmailMessageId": "1a186f14ad37be72",
+    "gmailThreadId": "1a18198a75444077",
+    "recipient": "support4@wix.com",
+    "state": "SENT",
+    "questions": [
+      "May we send one qualification-only CHARGE with gross/net/share USD0 on the specified QA installation?",
+      "If nonzero is required, what supported procedure excludes or reconciles test amounts?",
+      "Can qualification be sent before external billing is enabled, and how should the external-billing/payout blockers be resolved?"
+    ]
+  },
+  "billingPostAttempted": false,
+  "billingActivationChanged": false,
+  "productionMoneyOrDeliveryRecordsChanged": false,
+  "marketplaceSubmitted": false,
+  "resumeAfter": "Wix confirms the supported test procedure; preserve exclusive attempt evidence, use the verified installation-scoped provider, then notify Erel with the actual result."
+}

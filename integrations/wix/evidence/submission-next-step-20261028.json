@@ -1,9 +1,9 @@
 {
-  "checkedAt": "2026-10-28",
-  "status": "addendum-completed-activation-request-sent-native-publication-blocked",
+  "checkedAt": "2026-10-29",
+  "status": "bi-verification-prepared-awaiting-wix-zero-event-approval",
   "existingExpertThreadId": "1a18198a75444077",
-  "lastReceivedMessageId": "1a1825fe56ce9706",
-  "lastSentMessageId": "1a18358487893fcd",
+  "lastReceivedMessageId": "1a186cc331d539c7",
+  "lastSentMessageId": "1a186f14ad37be72",
   "soleTraderReplyReceived": false,
   "completedEnvelopeReceiptFound": true,
   "followupDraft": {
@@ -75,5 +75,12 @@
       "approved billing/reporting implementation receipt",
       "verified current store assets/test credentials/privacy/support"
     ]
+  },
+  "biVerification": {
+    "receipt": "integrations/wix/evidence/bi-verification-preparation-20261029.json",
+    "oauthVerified": true,
+    "vendorTestProcedureConfirmed": false,
+    "eventSent": false,
+    "clarificationSent": true
   }
 }
