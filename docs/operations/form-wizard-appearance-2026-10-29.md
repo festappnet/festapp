@@ -20,3 +20,16 @@ Public form rendering also uses the primary color when a gradient has no
 secondary override, and clears an explicit background when its primary color
 is reset. Two public-theme runtime tests passed for retained, missing and
 reset colors.
+
+Final UI refinement by the requested Astra Medium agent uses one shared
+AppearanceColorControls widget in both editors. Solid mode labels the editable
+color as the theme color; gradient mode exposes first and second colors.
+Outlined buttons expose the label and hex, support keyboard operation and stack
+on narrow screens or with large text. Wizard color controls are immediately
+visible below presets. Shared copy is translated into six app locales.
+
+Final refinement validation: 31 targeted Flutter tests passed, including
+320/390/800px layouts at normal and doubled text size, keyboard activation,
+actual form hex edits and Wizard font/preset regressions. Targeted analyzer
+reported no errors or warnings; only two existing form deprecations remain.
+The final Impeccable detector reported no findings.
