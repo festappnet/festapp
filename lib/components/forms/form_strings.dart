@@ -133,6 +133,11 @@ class FormStrings {
       'FeatureFormSettings.labelVariableSymbol'.tr();
   static String get vsTypeRandom => 'FeatureFormSettings.vsTypeRandom'.tr();
   static String get vsTypeSequence => 'FeatureFormSettings.vsTypeSequence'.tr();
+  static String get invalidVariableSymbolPolicy =>
+      'FeatureFormSettings.invalidVariableSymbolPolicy'.tr();
+  static String get repairVariableSymbolPolicy =>
+      'FeatureFormSettings.repairVariableSymbolPolicy'.tr();
+
   static String get labelStartingNumber =>
       'FeatureFormSettings.labelStartingNumber'.tr();
   static String get helperStartingNumber =>

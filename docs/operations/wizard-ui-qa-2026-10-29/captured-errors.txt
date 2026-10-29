@@ -1,0 +1,10 @@
+UI A: Creation could not be confirmed. Retry the same request.
+Backend A: Unsupported shared font
+UI B: Creation could not be confirmed. Retry the same request.
+Backend B: sequence requires starting number
+Backend email preview: Draft revision conflict
+Captured local database log aggregation (--since 4m):
+  439929 Draft revision conflict
+  1 sequence requires starting number
+Browser navigated to about:blank; active PostgREST requests subsequently 0.
+No equivalent load or mutation was performed on production.

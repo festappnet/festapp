@@ -78,7 +78,7 @@ BEGIN
  BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Missing bank confirmation accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  payload:=payload||jsonb_build_object('bankAccountId',bank_id,'bankAccountFingerprint','stale');
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,5);
- BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Changed bank details accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Changed bank details accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  EXECUTE 'RESET ROLE';
  -- Image and promotion validation happen before creating any event.
  draft:=gen_random_uuid();

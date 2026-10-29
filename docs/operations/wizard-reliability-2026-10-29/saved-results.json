@@ -1,0 +1,95 @@
+[
+  {
+    "vs": {
+      "type": "sequence",
+      "starting_number": 260001
+    },
+    "font": "Roboto Slab",
+    "form": 5,
+    "open": true,
+    "tone": null,
+    "title": "QA 20261029 B - vstupenky",
+    "hidden": true,
+    "prices": [
+      175.0
+    ],
+    "replyTo": "qa-b@example.test",
+    "occasion": 5,
+    "customHtml": null,
+    "quantities": [
+      3
+    ],
+    "ticketFont": "builtin:roboto-slab-static:b93b5ad2eada842f450bff812f180ac517c82916c9d0dda446322e8d275b4f09",
+    "customSubject": null,
+    "ticketEnabled": true
+  },
+  {
+    "vs": null,
+    "font": "Open Sans",
+    "form": 88,
+    "open": false,
+    "tone": "informal",
+    "title": "Reliability Ocean 20261029",
+    "hidden": true,
+    "prices": [
+      100.0
+    ],
+    "replyTo": "ocean-preview@example.test",
+    "occasion": 85,
+    "customHtml": null,
+    "quantities": [
+      1
+    ],
+    "ticketFont": "gf:5af20f022c70222f0e960f45a033366eb2582c982031a715f9cafc05acbc51a5",
+    "customSubject": null,
+    "ticketEnabled": true
+  },
+  {
+    "vs": {
+      "type": "sequence",
+      "starting_number": 260002
+    },
+    "font": "Lato",
+    "form": 102,
+    "open": false,
+    "tone": null,
+    "title": "Reliability Lavender 20261029",
+    "hidden": true,
+    "prices": [
+      100.0
+    ],
+    "replyTo": null,
+    "occasion": 99,
+    "customHtml": null,
+    "quantities": [
+      1
+    ],
+    "ticketFont": "gf:5ced1045820caaac87af3f61ded09bacc90881f158d04c59dcce436fd02ad368",
+    "customSubject": null,
+    "ticketEnabled": true
+  },
+  {
+    "vs": {
+      "type": "sequence",
+      "starting_number": 260001
+    },
+    "font": "Roboto Slab",
+    "form": 104,
+    "open": false,
+    "tone": null,
+    "title": "Reliability Gala copy 20261029",
+    "hidden": true,
+    "prices": [
+      0.0
+    ],
+    "replyTo": null,
+    "occasion": 101,
+    "customHtml": "<h3>{{occasionTitle}}</h3>\n<p>Ahoj, potvrzujeme Tvou registraci na akci <strong>{{occasionTitle}}</strong>.</p>\n{{balanceReasoning}}\n{{fullOrder}}\n<p>Těšíme se na setkání!</p>\n<p>Organizační tým {{occasionTitle}}{{occasionTitle}}</p>\n",
+    "quantities": [
+      1
+    ],
+    "ticketFont": null,
+    "customSubject": "{{occasionTitle}} - Potvrzení objednávky - {{orderSymbol}}{{orderSymbol}}",
+    "ticketEnabled": false
+  }
+]

@@ -1,0 +1,6 @@
+{"is_open": true, "occasion": 5, "reply_to": "qa-b@example.test", "form_data": {"design": {"font_family": "Roboto Slab", "primary_color": "#14284B", "background_mode": "gradient", "secondary_color": "#A87F28"}, "schedule": {"end_time": "2026-12-01T10:30:00+00:00", "start_time": "2026-10-29T10:18:44.165476+00:00", "enable_countdown": false, "sale_preparation": false}, "variable_symbol": {"type": "sequence", "starting_number": 260001}, "reminder_interval_seconds": 43200}, "delivery_mode": "pdf_attachment", "ticket_enabled": true, "deadline_seconds": 259200}
+email||t|f|null
+ticket||t|f|{"max_tickets": 3}
+product_type|Admission|f|f|null
+text|Odkud prijedete?|t|f|null
+QA vstup 175|175.00

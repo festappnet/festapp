@@ -137,7 +137,7 @@ BEGIN
      (jsonb_typeof(d.data#>'{defaultConfiguration,forms}')='array' AND
       jsonb_array_length(d.data#>'{defaultConfiguration,forms}')>0) THEN RETURN to_jsonb(d); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
+    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = 'PT409';
   END IF;
   policy:=public.abuse_effective_rules_v1('occasion.draft',d.unit,d.organization);
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,0,false,true,policy);
@@ -185,7 +185,7 @@ BEGIN
   END IF;
   IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN RETURN to_jsonb(d); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001'; END IF;
+    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = 'PT409'; END IF;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(p_data::text),false,false);
   UPDATE public.occasion_setup_drafts SET data = p_data, current_step = p_step,
     revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
@@ -203,7 +203,7 @@ BEGIN
   IF NOT FOUND THEN RETURN; END IF;
   IF d.unit <> p_unit THEN RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501'; END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
+    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = 'PT409';
   END IF;
   DELETE FROM public.occasion_setup_drafts WHERE id = p_id;
 END $$;
