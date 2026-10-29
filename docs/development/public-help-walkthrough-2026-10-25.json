@@ -626,6 +626,78 @@
       "capturedAt": "2026-10-25T13:58:19.071400+00:00",
       "workflow": "administration",
       "alt": "Payment instructions and deadline for an existing form."
+    },
+    {
+      "mediaId": "cs/joomla/01-install",
+      "file": "cs/joomla/01-install.png",
+      "sha256": "edeeebabd6ca91c304cd2bf1eb7abdf41675736ae78d66b90d402b23284520bf",
+      "capturedAt": "2026-10-29T16:53:36.612670+00:00",
+      "captureStep": "joomla-01-install",
+      "alt": "Úspěšná instalace modulu vstupenky.online v administraci Joomly."
+    },
+    {
+      "mediaId": "cs/joomla/02-module",
+      "file": "cs/joomla/02-module.png",
+      "sha256": "418808928d529dd519add2b0ce6f14fe135961df6073654e3698dbb13b3074b3",
+      "capturedAt": "2026-10-29T16:53:43.222323+00:00",
+      "captureStep": "joomla-02-module",
+      "alt": "Nastavení modulu s veřejným odkazem, automatickou výškou, vlastní pozicí ticket-article a veřejným přístupem."
+    },
+    {
+      "mediaId": "cs/joomla/03-article",
+      "file": "cs/joomla/03-article.png",
+      "sha256": "a4f7bafc01af1af14aafa4e17a2aeaad824fa0fdf4b47c01a3b4f7465646ca8d",
+      "capturedAt": "2026-10-29T16:54:05.562815+00:00",
+      "captureStep": "joomla-03-article",
+      "alt": "Editor článku Joomla s vloženým kódem loadmoduleid 111."
+    },
+    {
+      "mediaId": "cs/joomla/04-result",
+      "file": "cs/joomla/04-result.png",
+      "sha256": "6f3863a6d4d90c48b3af1ff17794c261cbd3e9e29d67d42960d261d8ec5420dd",
+      "capturedAt": "2026-10-29T16:58:03.360359+00:00",
+      "captureStep": "joomla-04-result",
+      "alt": "Zveřejněný článek Joomla se zobrazeným prodejním formulářem a odkazem do nové záložky."
+    },
+    {
+      "mediaId": "cs/joomla/05-mobile",
+      "file": "cs/joomla/05-mobile.png",
+      "sha256": "b33a037519c431f10cb4e4c6a48a55faeba5ab8c5fcfa82aa7e1fccf82a46215",
+      "capturedAt": "2026-10-29T16:58:58.920685+00:00",
+      "captureStep": "joomla-05-mobile",
+      "alt": "Prodejní formulář v článku Joomla na úzké obrazovce s tlačítkem Výběr místa."
+    },
+    {
+      "mediaId": "en/joomla/01-install",
+      "file": "en/joomla/01-install.png",
+      "sha256": "d81941824ddeb38459b95e1e5ba9c6a95515263f14639ba8e1b6e1a897d87065",
+      "capturedAt": "2026-10-29T16:51:16.027050+00:00",
+      "captureStep": "joomla-01-install",
+      "alt": "Successful installation of the vstupenky.online module in Joomla."
+    },
+    {
+      "mediaId": "en/joomla/02-module",
+      "file": "en/joomla/02-module.png",
+      "sha256": "3d8541c625715f10032de96bbba4994514a579016cf1c5140dd44a68f1d74c9f",
+      "capturedAt": "2026-10-29T16:52:39.520721+00:00",
+      "captureStep": "joomla-02-module",
+      "alt": "Module settings with the saved public form URL, automatic height, custom ticket-article position and Public access."
+    },
+    {
+      "mediaId": "en/joomla/03-article",
+      "file": "en/joomla/03-article.png",
+      "sha256": "57a2ed0b13d425f179a3878cda110a588c9c650b37c30d76603d4b3b5e66cb50",
+      "capturedAt": "2026-10-29T16:52:56.961929+00:00",
+      "captureStep": "joomla-03-article",
+      "alt": "Joomla article editor containing the loadmoduleid 111 code."
+    },
+    {
+      "mediaId": "cs/joomla/06-seats",
+      "file": "cs/joomla/06-seats.png",
+      "sha256": "f06132e4c2851cf2e6c62f2a8a0ed4786ba5c7bfcd49307649fb22f851cce609",
+      "capturedAt": "2026-10-29T17:19:07.933697+00:00",
+      "captureStep": "joomla-06-seats-selected",
+      "alt": "Plánek v Joomle na mobilu s vybraným místem označeným fajfkou, souhrnem jedné vstupenky za 120 Kč a tlačítkem Pokračovat."
     }
   ],
   "chapters": [
@@ -946,6 +1018,44 @@
       "bootstrap": "Local activation discovery disabled; app.startApplication initialization uses installed current v219 contract instead of the legacy contract selected by the loopback marker. Real SQL authorization and UI stay active.",
       "interactionNote": "Screens reached through actual public administration routes; generic headless pointer activation of the retained bank underlay did not open its editor, so account and tab deep links were used. This chapter does not certify bank-list pointer interaction.",
       "privateEvidence": ".private/help-structure-20261025/interaction-log.jsonl"
+    },
+    {
+      "id": "joomla-module-installation",
+      "guides": [
+        "joomla"
+      ],
+      "date": "2026-10-29",
+      "environment": "Disposable Joomla 6.1.4 / PHP 8.4.27 on 127.0.0.1:59916. Official Czech language pack 6.1.4.1. Released module 1.0.1 ZIP downloaded from GitHub and SHA-256 verified. Real local service client/backend transport, synthetic forms; light theme.",
+      "steps": [
+        "Install the public vstupenky.online.zip through System > Install > Extensions; capture the successful installer message.",
+        "Content > Site Modules > New > vstupenky.online. Configure public form URL /form/embedded-synthetic, descriptive title, Automatic height, appearance enabled, Published, Public, title hidden. Open the Position selector, type ticket-article, press Enter, then save. Wait for saved form before the next action.",
+        "Leave Menu Assignment set to all pages (0). Save and close; module ID in this disposable run is 111.",
+        "Create a published Public article through the native editor. Insert {loadmoduleid 111} and feature it for the local homepage. Save and reopen to check persistence; capture editor.",
+        "Repeat captures in Czech after installing official cs-CZ pack and switching administrator language. Change sample titles through the native module/article editors.",
+        "For the public result, use the shorter existing /form/embedded-seats fixture; set real LocalizationService locale to cs in the isolated iframe storage. Capture published Joomla article at 1440 px and article main at 390 px.",
+        "At 320 px check no horizontal overflow, one iframe and one helper; verify automatic height and native fallback link opens a new tab.",
+        "Exercise template-position rendering through Joomla native save forms, then restore the article/module state.",
+        "Completed follow-up: provision dedicated canonical Supabase festapp-joomla-help-20261029 at 59931/59932. Use the shared updated V2 embed seed, verify twelve bindings and one module iframe/helper. Open the real picker, activate A1, read aria-pressed and unexpired PostgreSQL lease, capture at 390px, zoom, activate A1 again, verify lease removal, check 320px parent/frame overflow and close with Escape."
+      ],
+      "screenshots": [
+        "cs/joomla/01-install",
+        "cs/joomla/02-module",
+        "cs/joomla/03-article",
+        "cs/joomla/04-result",
+        "cs/joomla/05-mobile",
+        "en/joomla/01-install",
+        "en/joomla/02-module",
+        "en/joomla/03-article",
+        "cs/joomla/06-seats"
+      ],
+      "boundaries": [
+        "Joomla UI and module behavior are real. External service is the existing disposable Supabase fixture, reached by browser-local DNS mapping and HTTPS transport proxy.",
+        "Synthetic authored event/header/field names remain English where present; they are fixture content rather than translated Joomla or client controls.",
+        "An initial missing publicform validation rule was caused by a root-owned namespace cache created by the Docker CLI readiness probe. Restore cache ownership to www-data and reinstall the unchanged public ZIP. No module fix or rebuild was needed.",
+        "Only Joomla 6 was freshly walked through for this guide; Joomla 5 support refers to existing module acceptance evidence.",
+        "English guide remains preview-only under the existing publication gate.",
+        "The initial legacy-fixture failure is resolved in the follow-up receipt. Earlier screenshots remain historical captures from the old service fixture; the selected-seat screenshot uses dedicated API 59931 with current canonical migrations. One actual seat hold was acquired and released; zero orders, payments or email delivery."
+      ]
     }
   ],
   "notVerified": [

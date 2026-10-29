@@ -1,0 +1,33 @@
+<p class="lead">Do Joomly vložíte prodej vstupenek pomocí modulu vstupenky.online. Nainstalujete ZIP, vložíte veřejný odkaz formuláře a modul zobrazíte v článku nebo v pozici šablony.</p>
+
+<h2 id="priprava">Připravte formulář a stáhněte modul</h2>
+<ol><li>Ve vstupenky.online připravte akci a <a href="/napoveda/prodejni-formular/">prodejní formulář</a>. Zkopírujte jeho <strong>Současný uložený odkaz</strong>. Účet pořadatele je samostatný od účtu Joomly.<span class="guide-step-link">{{APP_LINK:forms}}</span></li><li>Stáhněte soubor <strong>vstupenky.online.zip</strong> z <a href="https://extensions.joomla.org/extension/vstupenky-online/" target="_blank" rel="noopener">oficiálního záznamu v Joomla Extensions Directory</a> přes tlačítko pro stažení. ZIP nerozbalujte.</li><li>Přihlaste se do administrace svého webu Joomla účtem, který může instalovat rozšíření a upravovat moduly a články. Modul podporuje Joomla 5 a 6; snímky níže ukazují Joomlu 6.</li></ol>
+<p>Modul je ke stažení zdarma. Prodej, platby a další funkce navazující služby se řídí podmínkami a cenou sjednanou s pořadatelem.</p>
+
+<h2 id="instalace">Nainstalujte ZIP do Joomly</h2>
+<ol><li>V levém menu otevřete <strong>Systém</strong>. V části <strong>Instalace</strong> zvolte <strong>Rozšíření</strong>.</li><li>Na kartě pro nahrání balíčku vyberte stažený soubor <strong>vstupenky.online.zip</strong> nebo jej přetáhněte do nahrávací plochy.</li><li>Počkejte na zprávu o úspěšné instalaci modulu.</li></ol>
+{{MEDIA:cs/joomla/01-install}}
+
+<h2 id="modul">Vytvořte a nastavte modul</h2>
+<ol><li>Otevřete <strong>Obsah → Moduly stránek → Nový</strong> a vyberte <strong>vstupenky.online</strong>. Pokud už modul existuje, můžete jej místo toho otevřít ze seznamu.</li><li>Zadejte název, například <strong>Prodej vstupenek</strong>. Do pole <strong>Uložený veřejný odkaz na formulář</strong> vložte zkopírovaný odkaz <code>https://vstupenky.online/form/VAS-FORMULAR</code>. Použijte vlastní odkaz bez <code>?embed=1</code>, dalších parametrů nebo části za <code>#</code>.</li><li>V poli <strong>Přístupný název iframe</strong> popište formulář, například <strong>Vstupenky na náš ples</strong>. Pomáhá návštěvníkům používajícím čtečku obrazovky.</li><li>Ponechte <strong>Automatickou</strong> výšku a zapnuté <strong>Převzít vzhled webu</strong>. Počáteční výška může zůstat <strong>800</strong> pixelů.</li><li>Nastavte stav na <strong>Zveřejněno</strong> a přístup na <strong>Public</strong> (veřejný). Zobrazení názvu modulu můžete skrýt.</li></ol>
+{{MEDIA:cs/joomla/02-module}}
+
+<h2 id="clanek">Zobrazte formulář uvnitř článku</h2>
+<ol><li>Modulu nastavte vlastní pozici, například <code>ticket-article</code>. Název napište do výběru pozice a potvrďte. Použijte pozici, kterou Vaše šablona nevykresluje, aby se formulář nezobrazoval na stránce dvakrát.</li><li>Na kartě <strong>Přiřazení nabídky</strong> povolte zobrazení na požadovaných stránkách. Nejjednodušší nastavení je na všech stránkách; vlastní pozice zajistí, že se modul objeví tam, kde ho vložíte do článku.</li><li>Uložte a zavřete modul. V seznamu modulů si poznamenejte jeho <strong>ID</strong>.</li><li>V <strong>Systém → Správa → Pluginy</strong> ověřte, že je zapnutý plugin <strong>Obsah - Načítání modulů</strong>.</li><li>Otevřete nebo vytvořte článek a na samostatný řádek vložte <code>{loadmoduleid 123}</code>. Číslo <code>123</code> nahraďte skutečným ID svého modulu. Nevkládejte HTML kód ani iframe.</li><li>Článek zveřejněte, nastavte veřejný přístup a zpřístupněte jej návštěvníkům například položkou nabídky. Uložte změny a otevřete veřejnou stránku.</li></ol>
+{{MEDIA:cs/joomla/03-article}}
+
+<h2 id="pozice">Alternativa: zobrazení v pozici šablony</h2>
+<p>Chcete-li formulář mimo obsah článku, vyberte u modulu skutečnou pozici své šablony a na kartě <strong>Přiřazení nabídky</strong> určete stránky, kde se má zobrazit. V tomto případě do článku nevkládejte <code>{loadmoduleid …}</code>. Názvy a šířka pozic záleží na použité šabloně; pro plánek sálu zvolte dostatečně široké místo.</p>
+
+<h2 id="kontrola">Ověřte zveřejněný výsledek</h2>
+<ul><li>Otevřete veřejnou stránku bez přihlášení a také na mobilu. Formulář se má zobrazit jednou, v celé šířce dostupného obsahu.</li><li>Zkontrolujte název akce, nabídku vstupenek a výšku formuláře. Pokud akce nabízí místenky, ověřte otevření a zavření plánku. Zkušební rezervaci nebo objednávku provádějte pouze na své testovací akci.</li><li>Pod formulářem vyzkoušejte odkaz <strong>Otevřít formulář v nové záložce</strong>. Umožní pokračovat i při omezení vloženého obsahu.</li></ul>
+{{MEDIA:cs/joomla/04-result}}
+{{MEDIA:cs/joomla/05-mobile}}
+<h3 id="vyber-mista">Výběr místa na mobilu</h3>
+<p>Pokud formulář nabízí místenky, otevřete <strong>Výběr místa</strong>. Klepnutím vyberte volné místo; vybrané místo se označí fajfkou. Nahoře zkontrolujte počet vstupenek a cenu. Tlačítkem <strong>Pokračovat</strong> se vraťte do formuláře. Stejné místo můžete opětovným klepnutím uvolnit.</p>
+{{MEDIA:cs/joomla/06-seats}}
+
+<h2 id="potize">Když se formulář nezobrazuje</h2>
+<ul><li><strong>V článku zůstává text {loadmoduleid …}:</strong> ověřte zapnutí pluginu Načítání modulů a správné číslo ID.</li><li><strong>Článek je prázdný:</strong> zkontrolujte zveřejnění, veřejný přístup a přiřazení nabídky modulu i článku. Pozice <code>ticket-article</code> sama o sobě obsah na web nepřidá; potřebuje kód v článku.</li><li><strong>Formulář se zobrazuje dvakrát:</strong> pro vložení do článku změňte pozici modulu na vlastní nepoužitou pozici.</li><li><strong>Odkaz nejde uložit:</strong> použijte uložený veřejný odkaz začínající <code>https://vstupenky.online/form/</code>, nikoli adresu administrace. Parametry a fragment odstraňte.</li><li><strong>Formulář je oříznutý nebo se nenačítá:</strong> vyčistěte cache webu a případného optimalizačního pluginu. Správce webu může ověřit blokování externího obsahu; další možnosti najdete v <a href="/napoveda/reseni-potizi/">řešení potíží s vložením</a>.</li></ul>
+<h2 id="sprava">Další správa a aktualizace</h2>
+<p>Vstupenky, kapacity, objednávky a platby spravujete ve vstupenky.online. Joomla ukládá odkaz a nastavení zobrazení, nepotřebuje heslo ani API klíč služby. Změna nabídky formuláře se projeví při novém načtení stránky. Změníte-li veřejný odkaz, upravte jej také v modulu. Aktualizace modulu najdete v běžné správě aktualizací rozšíření Joomly.</p>

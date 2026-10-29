@@ -1,0 +1,91 @@
+{
+  "verifiedAt": "2026-10-29T17:00:44.519831+00:00",
+  "joomla": "6.1.4",
+  "module": "1.0.1",
+  "zipSha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
+  "nativeModuleId": 111,
+  "nativeArticleId": 1,
+  "article": {
+    "iframeCount": 1,
+    "helperCount": 1
+  },
+  "templatePosition": {
+    "iframeCount": 1,
+    "helperCount": 1
+  },
+  "nativeSaveReload": true,
+  "restored": true,
+  "browserChecks": {
+    "width320": {
+      "viewport": 320,
+      "scrollWidth": 320
+    },
+    "width390": {
+      "viewport": 390,
+      "scrollWidth": 390
+    },
+    "automaticHeight": 522,
+    "fallbackOpenedNewTab": true,
+    "ordersSubmitted": 0,
+    "seatsSelected": 1,
+    "seatMapOpened": true,
+    "selectedSeat": "A1",
+    "selectedStateAriaPressed": true,
+    "unexpiredServerLeaseVerified": true,
+    "seatReleasedThroughUI": true,
+    "serverLeaseCleared": true,
+    "zoom": {
+      "before": "0 0 440 190",
+      "after": "43.99999999999999 19 352 152",
+      "zoomOutEnabled": true
+    },
+    "escapeClosesMap": true,
+    "mapMobile320": {
+      "pageWidth": 320,
+      "pageScrollWidth": 320,
+      "iframeWidth": 288,
+      "iframeScrollWidth": 288
+    },
+    "activeHoldsAfterTest": 0
+  },
+  "boundary": "Disposable Joomla and real local client/helper via task-only DNS/HTTPS transport to dedicated canonical Supabase API59931; no production operations.",
+  "notVerified": [
+    "No purchase, payment or email delivery; Joomla 5 not freshly exercised for this content.",
+    "No production help deployment."
+  ],
+  "helpValidation": {
+    "targetedTests": 5,
+    "passed": 5,
+    "failed": 0,
+    "localesRendered": [
+      "cs",
+      "en"
+    ],
+    "selfContainedPreview": true,
+    "czechImagesDecoded": 6,
+    "mobilePreview": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "totalScreenshots": 9
+  },
+  "completedAt": "2026-10-29T17:22:17.973907+00:00",
+  "fixtureBackend": {
+    "project": "festapp-joomla-help-20261029",
+    "api": "http://127.0.0.1:59931",
+    "databasePort": 59932,
+    "migrationHead": "20261029180000",
+    "schemaVersion": 2,
+    "seatBindings": 12
+  },
+  "resolvedBlocker": {
+    "cause": "The reused WordPress backend had branch-specific migration history and no canonical V2 blueprint schema.",
+    "resolution": "Created a separate canonical disposable backend and replaced legacy embed fixture objects with V2 geometry and twelve seat bindings.",
+    "durableFixes": [
+      "web_client/tests/fixtures/embedded-checkout/tenant.sql",
+      "web_client/tests/fixtures/embedded-checkout/vite.config.mjs",
+      "integrations/joomla/scripts/environment.py"
+    ],
+    "originalBackendChanged": false
+  }
+}

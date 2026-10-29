@@ -128,6 +128,16 @@
     "preview": "cs/wordpress/03-custom-html"
   },
   {
+    "id": "joomla",
+    "category": "integrations",
+    "slug": "joomla",
+    "label": "Joomla",
+    "preview": "cs/joomla/02-module",
+    "title": "Jak vložit prodej vstupenek do Joomly",
+    "seoTitle": "Joomla: instalace modulu a vložení prodeje vstupenek",
+    "description": "Nainstalujte modul vstupenky.online do Joomly 5 nebo 6. Nastavte veřejný odkaz a vložte formulář do článku nebo pozice šablony."
+  },
+  {
     "slug": "webnode",
     "title": "Jak vložit prodej vstupenek do Webnode",
     "seoTitle": "Webnode: vložení formuláře pro prodej vstupenek",

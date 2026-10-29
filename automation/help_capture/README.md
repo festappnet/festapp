@@ -53,6 +53,29 @@ a reset local fixture. Use fresh accessibility refs after each state change.
 Record actual outcomes, timestamps and hashes in both registries. Preserve
 explicitly unverified steps; do not infer success from a screenshot alone.
 
+The `joomla-module-installation` chapter adds the public ZIP install, module
+configuration, native article save and public desktop/mobile result. Start the
+disposable Joomla environment with `integrations/joomla/scripts/environment.py`.
+The CLI readiness probe now runs as `www-data`, so the namespace cache remains
+writable by the web installer. Use the official matching cs-CZ language package
+for Czech administration captures. Follow the recorded local HTTPS/DNS fixture
+boundary; never navigate a synthetic form URL against production. English
+captures use the English Joomla administration.
+
+The completed seating follow-up uses its own current-schema Supabase project
+`festapp-joomla-help-20261029` (API 59931, PostgreSQL 59932). The Vite fixture
+checks its disposable identity before allowing that API. Load the canonical
+baseline, reference tenants, ledger and forward migrations using the same
+extension-owner/ownership steps as `automation/bootstrap_local_db.sh`; then
+load `supabase/seed.sql`, `web_client/tests/fixtures/embedded-checkout/tenant.sql`
+and the WordPress fixture fixes. Remove the synthetic migration reference
+organization before the embed tenant's fresh-backend check; do not load demo
+occasion data into this dedicated embed fixture. Register its disposable marker.
+The shared embed seed creates V2 geometry and one binding for each of twelve
+places directly. Older branch-specific databases with incompatible ledgers
+must not be reused for this capture. The completion receipt records a real A1
+hold/release through the UI, verified in PostgreSQL, and zero submitted orders.
+
 Generate and inspect self-contained static previews, then run the targeted gates:
 
 ```sh
