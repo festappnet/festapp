@@ -159,6 +159,8 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
                               absorbing: _pending,
                               child: BlueprintPlanEditor(
                                   controller: controller,
+                                  openGalleryOnStart:
+                                      widget.initialDocument == null,
                                   loadTextResources: widget.loadTextResources,
                                   nativeTextPreview: true,
                                   unitId: widget.unitId,

@@ -40,6 +40,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
     _form?.definition.isCardDesign,
     _form?.definition.primaryColor,
     _form?.definition.secondaryColor,
+    _form?.definition.backgroundMode,
     _form?.definition.fontFamily,
     _form?.definition.countdownStyle,
   ];

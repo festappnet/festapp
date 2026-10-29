@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String appearanceLabel(String key) => 'OccasionSetup.ui.$key'.tr();
+
   static String emailSuffixWarning(String suffix, {bool informal = false}) =>
       'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'
           .tr(namedArgs: {'suffix': suffix});

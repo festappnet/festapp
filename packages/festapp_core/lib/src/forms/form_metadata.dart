@@ -55,6 +55,7 @@ abstract final class FormMetadata {
       'is_card_design',
       'primary_color',
       'secondary_color',
+      'background_mode',
       'font_family',
       'countdown_style',
     ],

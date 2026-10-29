@@ -1,0 +1,40 @@
+{
+  "source": "7d9f2ff62 (later HEAD 00f05276d adds documentation only)",
+  "backend": "festapp-wizard-backend-qa-20261029",
+  "api": "http://127.0.0.1:56921",
+  "ui": "http://127.0.0.1:56982",
+  "ocean": {
+    "occasion": 85,
+    "venue_updated": true,
+    "form_unchanged": true,
+    "products_unchanged": true,
+    "ticket_layout_unchanged": true,
+    "reply_to_preserved": true
+  },
+  "new_event": {
+    "occasion": 136,
+    "form": 139,
+    "title": "QA parity D - renamed",
+    "hidden": true,
+    "listing_intent": false,
+    "link": "qa-parity-d-20261029",
+    "form_title_after_edit": "QA parity D form after wizard",
+    "tone_after_edit": "informal",
+    "design": {
+      "font_family": "Open Sans",
+      "primary_color": "#14532D",
+      "background_mode": "gradient",
+      "secondary_color": "#365314"
+    },
+    "schedule": {
+      "end_time": "2026-12-01T15:00:00+00:00",
+      "start_time": "2026-10-30T14:53:52.893+00:00",
+      "enable_countdown": false,
+      "sale_preparation": false
+    },
+    "blueprints": 0,
+    "ticket_limit": 1,
+    "price": 0
+  },
+  "assertions": "passed"
+}

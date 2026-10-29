@@ -58,6 +58,7 @@ class BlueprintPlanEditor extends StatefulWidget {
       this.interactionEnabled = true,
       this.nativeTextPreview = false,
       this.showGallery = true,
+      this.openGalleryOnStart = true,
       this.onEditRequested,
       this.onNodeActivated,
       this.uploadBitmap,
@@ -67,7 +68,7 @@ class BlueprintPlanEditor extends StatefulWidget {
   final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final int? occasionId, unitId;
-  final bool busy, interactionEnabled, showGallery;
+  final bool busy, interactionEnabled, showGallery, openGalleryOnStart;
 
   /// Authorized editor hosts may preview draft labels in reservation mode.
   /// This never enables geometry tools or replaces canonical save preparation.
@@ -651,6 +652,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                               interactionEnabled: widget.interactionEnabled,
                               nativeTextPreview: widget.nativeTextPreview,
                               showGallery: widget.showGallery,
+                              openGalleryOnStart: widget.openGalleryOnStart,
                               onEditRequested: widget.onEditRequested,
                               onNodeActivated: widget.onNodeActivated))),
                 ])))));

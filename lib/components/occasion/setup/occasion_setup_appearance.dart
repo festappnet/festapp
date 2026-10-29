@@ -193,20 +193,33 @@ class OccasionSetupAppearance {
       ];
 
   static Map<String, dynamic> read(Map data) {
-    if (data['appearance'] is Map)
-      return Map<String, dynamic>.from(data['appearance']);
+    final current = data['appearance'] as Map?;
     final design =
         ((data['formDraft'] as Map?)?['data'] as Map?)?['design'] as Map?;
-    if (design != null && design.isNotEmpty)
-      return {
+    if (design != null && design.isNotEmpty) {
+      final resolved = <String, dynamic>{
         'id': 'custom',
         'preserveSource': true,
         'primary': _hex(design['primary_color'], '4465A6'),
-        'secondary': _hex(design['secondary_color'], '4465A6'),
+        'secondary': _hex(
+          design['secondary_color'],
+          _hex(design['primary_color'], '4465A6'),
+        ),
         'gradient': design['background_mode'] == 'gradient',
         'fontFamily': design['font_family'] ?? 'Roboto',
       };
-    return Map<String, dynamic>.from(presets.first);
+      if (current != null &&
+          const [
+            'primary',
+            'secondary',
+            'gradient',
+            'fontFamily',
+          ].every((key) => current[key] == resolved[key])) {
+        return Map<String, dynamic>.from(current);
+      }
+      return resolved;
+    }
+    return Map<String, dynamic>.from(current ?? presets.first);
   }
 
   static String _hex(dynamic raw, String fallback) {

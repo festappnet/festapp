@@ -407,6 +407,21 @@ class FormDefinition {
     return copyWith(data: {...?data, metaDesign: section});
   }
 
+  String? get backgroundMode => _designData['background_mode'] as String?;
+
+  FormDefinition withBackgroundMode(String? value) {
+    if (value != null && !const ['solid', 'gradient'].contains(value)) {
+      throw ArgumentError.value(value, 'backgroundMode');
+    }
+    final section = Map<String, dynamic>.from(_designData);
+    if (value == null) {
+      section.remove('background_mode');
+    } else {
+      section['background_mode'] = value;
+    }
+    return copyWith(data: {...?data, metaDesign: section});
+  }
+
   String? get fontFamily {
     if (_designData.containsKey(metaFontFamily)) {
       return _designData[metaFontFamily];

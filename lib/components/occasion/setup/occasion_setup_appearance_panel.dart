@@ -1,3 +1,6 @@
+import 'package:fstapp/widgets/appearance_color_controls.dart';
+import 'package:fstapp/components/_shared/appearance_color_strings.dart';
+
 import 'occasion_setup_strings.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -60,44 +63,31 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
   final TextStyle Function(String family, TextStyle base)? fontStyle;
   final String? customLabel;
 
-  Widget _colorControl(
+  void _pickColor(
     BuildContext context,
     String label,
     Color color,
     ValueChanged<Color> onChanged,
   ) {
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-      onPressed: () => showDialog<void>(
-        context: context,
-        builder: (context) => AppAlertDialog(
-          title: Text(label),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: color,
-              onColorChanged: onChanged,
-              enableAlpha: false,
-              hexInputBar: true,
-            ),
+    showDialog<void>(
+      context: context,
+      builder: (context) => AppAlertDialog(
+        title: Text(label),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: color,
+            onColorChanged: onChanged,
+            enableAlpha: false,
+            hexInputBar: true,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hotovo'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppearanceColorStrings.done),
+          ),
+        ],
       ),
-      icon: Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-        ),
-      ),
-      label: Text(label),
     );
   }
 
@@ -260,44 +250,30 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            ExpansionTile(
-              key: ValueKey('appearance-custom-${selectedPresetId == null}'),
-              initiallyExpanded: selectedPresetId == null,
-              tilePadding: EdgeInsets.zero,
-              title: Text(
-                customLabel ?? OccasionSetupStrings.ui('custom_appearance'),
+            Text(
+              customLabel ?? OccasionSetupStrings.ui('custom_appearance'),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            AppearanceColorControls(
+              gradient: gradient,
+              primaryColor: primaryColor,
+              secondaryColor: secondaryColor,
+              onGradientChanged: onGradientChanged,
+              onPrimaryPressed: () => _pickColor(
+                context,
+                gradient
+                    ? AppearanceColorStrings.first
+                    : AppearanceColorStrings.theme,
+                primaryColor,
+                onPrimaryChanged,
               ),
-              children: [
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(OccasionSetupStrings.ui('two_color_gradient')),
-                  value: gradient,
-                  onChanged: onGradientChanged,
-                ),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      _colorControl(
-                        context,
-                        OccasionSetupStrings.ui('primary_color'),
-                        primaryColor,
-                        onPrimaryChanged,
-                      ),
-                      if (gradient)
-                        _colorControl(
-                          context,
-                          OccasionSetupStrings.ui('secondary_color'),
-                          secondaryColor,
-                          onSecondaryChanged,
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+              onSecondaryPressed: () => _pickColor(
+                context,
+                AppearanceColorStrings.second,
+                secondaryColor,
+                onSecondaryChanged,
+              ),
             ),
             const SizedBox(height: 24),
             formPreview,
