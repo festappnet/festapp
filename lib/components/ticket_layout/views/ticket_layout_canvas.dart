@@ -837,6 +837,8 @@ class TicketLayoutPainter extends CustomPainter {
         doc.area,
         Paint()
           ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               for (final c in doc.canvasGradient!)
                 Color(int.parse('ff$c', radix: 16))

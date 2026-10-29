@@ -96,6 +96,12 @@ void main() {
         );
         final clean = find.byKey(const ValueKey('appearance-preset-clean'));
         final formal = find.byKey(const ValueKey('appearance-preset-formal'));
+        final gradientSwatch = tester.widgetList<Container>(
+          find.descendant(of: formal, matching: find.byType(Container)),
+        ).map((widget) => widget.decoration).whereType<BoxDecoration>()
+          .map((decoration) => decoration.gradient).whereType<LinearGradient>().single;
+        expect(gradientSwatch.begin, Alignment.topLeft);
+        expect(gradientSwatch.end, Alignment.bottomRight);
         final originalSize = tester.getSize(clean);
         await tester.ensureVisible(formal);
         await tester.tap(formal);

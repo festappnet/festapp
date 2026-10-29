@@ -44,7 +44,7 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   if(t.canvasGradient) {
     const [a,b]=t.canvasGradient.map(hex=>[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255));
     const shading=doc.context.register(doc.context.obj({ShadingType:2,ColorSpace:'DeviceRGB',
-      Coords:[area.x,area.y,area.x+area.width,area.y],
+      Coords:[area.x,area.y+area.height,area.x+area.width,area.y],
       Function:{FunctionType:2,Domain:[0,1],C0:a,C1:b,N:1},Extend:[true,true]}));
     page.node.Resources()!.set(PDFName.of('Shading'),doc.context.obj({SharedGradient:shading}));
     const opacity=page.node.newExtGState('GradientOpacity',doc.context.register(doc.context.obj({Type:'ExtGState',ca:t.canvasOpacity??1})));
