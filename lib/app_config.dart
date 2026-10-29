@@ -46,7 +46,7 @@ class AppConfig {
   static const String logoAsset = 'assets/icons/vstupenky.svg';
   static const String darkLogoAsset = 'assets/icons/vstupenky.dark.svg';
   static const String programLogoAsset = 'assets/icons/vstupenky.svg';
-  static const String loadingSymbolAsset = 'assets/icons/vstupenky-symbol.svg';
+  static const String loadingStyle = 'vstupenky-outline';
   static const String defaultAdministrationRoute = NavigationPaths.admin;
 
   static int organization = 1;

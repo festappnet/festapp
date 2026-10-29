@@ -228,61 +228,14 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
 done
 WEB_LOADING_STYLE="${WEB_LOADING_STYLE:-spinner}"
 WEB_LOADING_BACKGROUND="${WEB_LOADING_BACKGROUND:-#242424}"
-case "$WEB_LOADING_STYLE" in spinner|tickets) ;; *) echo "Error: invalid WEB_LOADING_STYLE"; exit 1 ;; esac
+case "$WEB_LOADING_STYLE" in spinner|vstupenky-outline) ;; *) echo "Error: invalid WEB_LOADING_STYLE"; exit 1 ;; esac
 [[ "$WEB_LOADING_BACKGROUND" =~ ^#[0-9A-Fa-f]{6}$ ]] || { echo "Error: invalid WEB_LOADING_BACKGROUND"; exit 1; }
-if [ "$WEB_LOADING_STYLE" = tickets ]; then
-    for asset_path in "${LOADING_SYMBOL_ASSET:-}" "${WEB_LOADING_SYMBOL_ASSET:-}"; do
-        [ -n "$asset_path" ] && [ -f "$PROJECT_ROOT/$asset_path" ] || { echo "Error: ticket loader requires configured symbol assets"; exit 1; }
-    done
-fi
-# The loading wordmark is derived from the configured brand logo, never from
-# the square PWA installation icon.
-python3 - "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/$LOGO_ASSET" "$PROJECT_ROOT/web_client/public/brand-logo-light.svg" "${WEB_LOADING_SYMBOL_ASSET:-}" "$PROJECT_ROOT" "${WEB_BRAND_ICON_DIR:-}" "${LOADING_SYMBOL_ASSET:-}" <<'LOADING_LOGO'
-import base64
-import struct
-import sys
-from pathlib import Path
-
-source, target, light, light_target = map(Path, sys.argv[1:5])
-symbol, project_root, icon_dir, light_symbol = sys.argv[5:]
-data = source.read_bytes()
-if source.suffix.lower() == '.svg':
-    target.write_bytes(data)
-elif data.startswith(b'\x89PNG\r\n\x1a\n'):
-    width, height = struct.unpack('>II', data[16:24])
-    image = base64.b64encode(data).decode('ascii')
-    target.write_text(
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
-        f'<image width="{width}" height="{height}" href="data:image/png;base64,{image}"/>'
-        '</svg>\n')
-else:
-    raise SystemExit('Error: loading brand logo must be SVG or PNG')
-# Emit the light logo with the same SVG/PNG adapter.
-light_target.parent.mkdir(parents=True, exist_ok=True)
-if light.suffix.lower() == '.svg':
-    light_target.write_bytes(light.read_bytes())
-else:
-    data = light.read_bytes()
-    width, height = struct.unpack('>II', data[16:24])
-    image = base64.b64encode(data).decode('ascii')
-    light_target.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"><image width="{width}" height="{height}" href="data:image/png;base64,{image}"/></svg>\n')
-root = Path(project_root)
-(root / 'web/loading-symbol.svg').write_bytes((root / symbol).read_bytes() if symbol else target.read_bytes())
-(root / 'web_client/public/loading-symbol-light.svg').write_bytes((root / light_symbol).read_bytes() if light_symbol else light_target.read_bytes())
-if icon_dir:
-    import shutil
-    for name in ('favicon.ico','favicon-16x16.png','favicon-32x32.png','android-chrome-192x192.png','android-chrome-512x512.png','apple-touch-icon.png'):
-        shutil.copyfile(root / icon_dir / name, root / 'web' / name)
-    shutil.copyfile(root / icon_dir / 'favicon.ico', root / 'web_client/favicon.ico')
-LOADING_LOGO
-mkdir -p "$PROJECT_ROOT/web_client/public"
-cp "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/web_client/public/brand-logo.svg"
-cp "$PROJECT_ROOT/web/loading-symbol.svg" "$PROJECT_ROOT/web_client/public/loading-symbol.svg"
-for icon in favicon.ico favicon-16x16.png favicon-32x32.png android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png; do
-    if [ -f "$PROJECT_ROOT/web/$icon" ]; then
-        cp "$PROJECT_ROOT/web/$icon" "$PROJECT_ROOT/web_client/public/$icon"
-    fi
-done
+python3 "$PROJECT_ROOT/automation/configure_brand_assets.py" --root "$PROJECT_ROOT" \
+    --logo "$LOGO_ASSET" --dark-logo "$DARK_LOGO_ASSET" \
+    --loading-style "$WEB_LOADING_STYLE" \
+    --animation "${WEB_LOADING_ANIMATION_ASSET:-}" \
+    --dark-animation "${WEB_LOADING_DARK_ANIMATION_ASSET:-}" \
+    --icon-dir "${WEB_BRAND_ICON_DIR:-}"
 [ -f "$PROJECT_ROOT/web/$WEB_LOADING_LOGO_ASSET" ] || {
     echo "Error: configured web loading asset does not exist: $WEB_LOADING_LOGO_ASSET"; exit 1;
 }
@@ -740,7 +693,7 @@ PY
     sed_inplace "s|static const String darkLogoAsset = '.*';|static const String darkLogoAsset = '$DARK_LOGO_ASSET';|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String programLogoAsset = '.*';|static const String programLogoAsset = '$PROGRAM_LOGO_ASSET';|g" "$FLUTTER_CONFIG"
 
-    sed_inplace "s|static const String loadingSymbolAsset = '.*';|static const String loadingSymbolAsset = '${LOADING_SYMBOL_ASSET:-}';|g" "$FLUTTER_CONFIG"
+    sed_inplace "s|static const String loadingStyle = '.*';|static const String loadingStyle = '$WEB_LOADING_STYLE';|g" "$FLUTTER_CONFIG"
 
     # Update Organization
     if [ ! -z "$ORGANIZATION_ID" ]; then

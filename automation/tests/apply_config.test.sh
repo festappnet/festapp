@@ -53,6 +53,7 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/assets/icons"
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
+cp "$PROJECT_ROOT/automation/configure_brand_assets.py" "$TMP_ROOT/automation/configure_brand_assets.py"
 cp "$PROJECT_ROOT/automation/google-auth-links.py" "$TMP_ROOT/automation/google-auth-links.py"
 cp "$PROJECT_ROOT/automation/configure_fonts.js" "$TMP_ROOT/automation/configure_fonts.js"
 mkdir -p "$TMP_ROOT/automation/fonts"
@@ -559,14 +560,14 @@ if [ $fail -ne 0 ]; then
 fi
 # Ticket motion is opt-in and resets when returning to a normal tenant.
 cp "$FIXTURE_CONF" "$TMP_ROOT/automation/tickets.conf"
-printf '\nWEB_LOADING_STYLE=tickets\nLOADING_SYMBOL_ASSET=assets/icons/fstapplogo.svg\nWEB_LOADING_SYMBOL_ASSET=assets/icons/fstapplogo.dark.svg\nWEB_LOADING_BACKGROUND=#19243b\n' >> "$TMP_ROOT/automation/tickets.conf"
+printf '\nWEB_LOADING_STYLE=vstupenky-outline\nWEB_LOADING_ANIMATION_ASSET=assets/icons/fstapplogo.svg\nWEB_LOADING_DARK_ANIMATION_ASSET=assets/icons/fstapplogo.dark.svg\nWEB_LOADING_BACKGROUND=#19243b\n' >> "$TMP_ROOT/automation/tickets.conf"
 bash "$TMP_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/tickets.conf" > "$TMP_ROOT/ticket-brand.log" 2>&1
-assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="tickets"'
-assert_contains "$TMP_ROOT/web_client/index.html" 'data-loading-style="tickets"'
-assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingSymbolAsset = 'assets/icons/fstapplogo.svg';"
-cmp "$TMP_ROOT/web/loading-symbol.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
+assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="vstupenky-outline"'
+assert_contains "$TMP_ROOT/web_client/index.html" 'data-loading-style="vstupenky-outline"'
+assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingStyle = 'vstupenky-outline';"
+cmp "$TMP_ROOT/web/loading-animation.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
 bash "$TMP_ROOT/automation/apply_config.sh" "$FIXTURE_CONF" > "$TMP_ROOT/reset-brand.log" 2>&1
 assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="spinner"'
-assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingSymbolAsset = '';"
+assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingStyle = 'spinner';"
 
 echo "✅ apply_config.sh test passed"

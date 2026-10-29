@@ -154,13 +154,9 @@
     <style>
         .startup-spinner{width:32px;height:32px;border:3px solid #ddd;border-top-color:#3879bc;border-radius:50%;animation:startup-spin .8s linear infinite}
 
-        .startup-spinner img{display:none}
-        .startup-spinner[data-loading-style="tickets"]{width:auto;height:48px;border:0;border-radius:0;animation:none;display:flex;gap:12px;align-items:center}
-        .startup-spinner[data-loading-style="tickets"][hidden]{display:none}
-        .startup-spinner[data-loading-style="tickets"] img{display:block;width:36px;height:24px;object-fit:contain;animation:ticket-welcome 1.6s cubic-bezier(.2,.7,.2,1) infinite}
-        .startup-spinner img:nth-child(2){animation-delay:.18s}.startup-spinner img:nth-child(3){animation-delay:.36s}
-        @keyframes ticket-welcome{0%,100%{transform:translateY(5px) rotate(-7deg);opacity:.4}45%{transform:translateY(-5px) rotate(4deg);opacity:1}}
-        @media(prefers-reduced-motion:reduce){.startup-spinner img{animation:none!important;transform:none;opacity:1}}
+        .startup-spinner .startup-brand{display:none}
+        .startup-spinner[data-loading-style="vstupenky-outline"]{width:min(72vw,280px);height:auto;aspect-ratio:904/715;border:0;border-radius:0;animation:none}
+        .startup-spinner[data-loading-style="vstupenky-outline"] .startup-brand{display:block;width:100%;height:auto}
         .startup-spinner[hidden]{display:none}
         @keyframes startup-spin{to{transform:rotate(360deg)}}
         @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
@@ -170,7 +166,7 @@
 <body>
     <div id="web-client-startup" role="status"
          style="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;color:#333;font:16px sans-serif;padding:24px;text-align:center">
-        <span class="startup-spinner" data-loading-style="tickets" aria-hidden="true"><img src="/loading-symbol-light.svg" alt=""><img src="/loading-symbol-light.svg" alt=""><img src="/loading-symbol-light.svg" alt=""></span>
+        <span class="startup-spinner" data-loading-style="vstupenky-outline" aria-hidden="true"><img class="startup-brand" src="/loading-animation-light.svg" alt=""></span>
         <p hidden></p>
         <button hidden
                 style="padding:12px 20px;font:inherit;cursor:pointer">Try again</button>

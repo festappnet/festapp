@@ -1,12 +1,18 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 
-/// Startup motion belongs to the selected tenant, not the Festapp platform.
+part 'brand_loading_paths.dart';
+
+/// Product-level loading. Small action spinners keep their existing controls.
+/// Other tenants retain their own brand and the normal progress indicator.
 class BrandLoadingIndicator extends StatefulWidget {
-  const BrandLoadingIndicator({super.key});
+  final double width;
+
+  const BrandLoadingIndicator({super.key, this.width = 240});
 
   @override
   State<BrandLoadingIndicator> createState() => _BrandLoadingIndicatorState();
@@ -16,14 +22,15 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
     with SingleTickerProviderStateMixin {
   late final _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: _brandCycle,
   );
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (AppConfig.loadingSymbolAsset.isEmpty ||
-        MediaQuery.disableAnimationsOf(context)) {
+    if (AppConfig.loadingStyle != 'vstupenky-outline' ||
+        MediaQuery.disableAnimationsOf(context) ||
+        !TickerMode.valuesOf(context).enabled) {
       _controller.stop();
     } else {
       _controller.repeat();
@@ -38,48 +45,161 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    if (AppConfig.loadingSymbolAsset.isEmpty) {
+    if (AppConfig.loadingStyle != 'vstupenky-outline') {
       return const CircularProgressIndicator();
     }
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final color = Theme.of(context).colorScheme.primary;
     return Semantics(
-      label: AppConfig.appName,
-      liveRegion: true,
+      label: CommonStrings.loading,
       child: ExcludeSemantics(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) => SizedBox(
-            height: 48,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (index) {
-                final wave = reduceMotion
-                    ? 0.0
-                    : math.sin((_controller.value - index * .1125) * math.pi * 2);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Transform.translate(
-                    offset: Offset(0, wave * 5),
-                    child: Transform.rotate(
-                      angle: wave * .08,
-                      child: Opacity(
-                        opacity: reduceMotion ? 1 : .7 - wave * .3,
-                        child: SvgPicture.asset(
-                          AppConfig.loadingSymbolAsset,
-                          width: 48,
-                          height: 28,
-                          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: widget.width,
+            maxHeight: widget.width / _brandViewBox.size.aspectRatio,
+          ),
+          child: AspectRatio(
+            aspectRatio: _brandViewBox.size.aspectRatio,
+            child: CustomPaint(
+              painter: _BrandLoadingPainter(
+                animation: _controller,
+                reducedMotion: MediaQuery.disableAnimationsOf(context),
+                ink: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xffffffff)
+                    : const Color(0xff19243b),
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _LogoPart {
+  final List<_StrokePath> strokes;
+  late final Path path = _mergePaths();
+  final bool blue;
+  final double drawStart;
+  final double drawEnd;
+  final List<Offset> fill;
+  final List<Offset> outline;
+  _LogoPart({
+    required List<Path> paths,
+    required this.blue,
+    required this.drawStart,
+    required this.drawEnd,
+    required this.fill,
+    required this.outline,
+  }) : strokes = paths.map(_StrokePath.new).toList();
+
+  Path _mergePaths() {
+    final result = Path();
+    for (final stroke in strokes) {
+      result.addPath(stroke.path, Offset.zero);
+    }
+    return result;
+  }
+}
+
+class _StrokePath {
+  final Path path;
+  late final List<ui.PathMetric> metrics = path.computeMetrics().toList();
+  late final double length = metrics.fold<double>(
+    0,
+    (sum, metric) => sum + metric.length,
+  );
+  _StrokePath(this.path);
+}
+
+class _BrandLoadingPainter extends CustomPainter {
+  final Animation<double> animation;
+  final bool reducedMotion;
+  final Color ink;
+
+  _BrandLoadingPainter({
+    required this.animation,
+    required this.reducedMotion,
+    required this.ink,
+  }) : super(repaint: animation);
+
+  static double _opacity(List<Offset> stops, double phase) {
+    for (var i = 1; i < stops.length; i++) {
+      if (phase <= stops[i].dx) {
+        final a = stops[i - 1];
+        final b = stops[i];
+        return a.dy + (b.dy - a.dy) * (phase - a.dx) / (b.dx - a.dx);
+      }
+    }
+    return stops.last.dy;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final scale = math.min(
+      size.width / _brandViewBox.width,
+      size.height / _brandViewBox.height,
+    );
+    canvas.save();
+    canvas.translate(
+      (size.width - _brandViewBox.width * scale) / 2,
+      (size.height - _brandViewBox.height * scale) / 2,
+    );
+    canvas.scale(scale);
+    canvas.translate(-_brandViewBox.left, -_brandViewBox.top);
+    final phase = animation.value;
+    for (final part in _brandLogoParts) {
+      final color = part.blue ? const Color(0xff80bdf2) : ink;
+      final opacity = reducedMotion ? 1.0 : _opacity(part.fill, phase);
+      if (opacity > 0) {
+        canvas.drawPath(
+          part.path,
+          Paint()..color = color.withValues(alpha: opacity),
+        );
+      }
+    }
+    if (!reducedMotion) {
+      for (final part in _brandLogoParts) {
+        final opacity = _opacity(part.outline, phase);
+        if (opacity <= 0) continue;
+        final progress =
+            ((phase - part.drawStart) / (part.drawEnd - part.drawStart)).clamp(
+              0.0,
+              1.0,
+            );
+        if (progress <= 0) continue;
+        final contour = Path();
+        // SVG dash offset restarts on each contour using the compound path's
+        // normalized length. Keep Flutter and browser stroke behavior aligned.
+        for (final stroke in part.strokes) {
+          for (final metric in stroke.metrics) {
+            contour.addPath(
+              metric.extractPath(
+                0,
+                math.min(metric.length, stroke.length * progress),
+              ),
+              Offset.zero,
+            );
+          }
+        }
+        canvas.drawPath(
+          contour,
+          Paint()
+            ..color = (part.blue ? const Color(0xff80bdf2) : ink).withValues(
+              alpha: opacity,
+            )
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.25 / scale
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
+      }
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _BrandLoadingPainter oldDelegate) =>
+      oldDelegate.animation != animation ||
+      oldDelegate.reducedMotion != reducedMotion ||
+      oldDelegate.ink != ink;
 }

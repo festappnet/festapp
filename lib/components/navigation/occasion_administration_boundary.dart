@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/last_administration_context.dart';
@@ -45,13 +46,17 @@ class RightsAdministrationAccess implements AdministrationAccess {
     // A denied/failed refresh leaves this link selected with invalidated
     // capabilities. Retry must ask SQL again, rather than cache that denial.
     await RightsService.updateAppData(
-        link: link, force: loadedLink == link, refreshOffline: false);
+      link: link,
+      force: loadedLink == link,
+      refreshOffline: false,
+    );
     final allowed = loadedLink != null && canAccess(reservations: reservations);
     if (allowed) {
       await LastAdministrationContext.instance.remember(
-          AppConfig.organization,
-          RightsService.currentUser()?.id,
-          '/$loadedLink/${reservations ? 'reservations' : 'admin'}');
+        AppConfig.organization,
+        RightsService.currentUser()?.id,
+        '/$loadedLink/${reservations ? 'reservations' : 'admin'}',
+      );
     }
     return allowed;
   }
@@ -62,12 +67,13 @@ class OccasionAdministrationBoundary extends StatefulWidget {
   final WidgetBuilder builder;
   final WidgetBuilder? loadingBuilder;
   final AdministrationAccess access;
-  const OccasionAdministrationBoundary(
-      {super.key,
-      required this.builder,
-      this.loadingBuilder,
-      this.reservations = false,
-      this.access = const RightsAdministrationAccess()});
+  const OccasionAdministrationBoundary({
+    super.key,
+    required this.builder,
+    this.loadingBuilder,
+    this.reservations = false,
+    this.access = const RightsAdministrationAccess(),
+  });
   @override
   State<OccasionAdministrationBoundary> createState() =>
       _OccasionAdministrationBoundaryState();
@@ -94,7 +100,8 @@ class _OccasionAdministrationBoundaryState
   void didChangeDependencies() {
     super.didChangeDependencies();
     ModalRoute.of(
-        context); // Reload retained context when native Back reveals it.
+      context,
+    ); // Reload retained context when native Back reveals it.
     context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
     final root = context.router.root;
     if (_root != root) {
@@ -102,8 +109,9 @@ class _OccasionAdministrationBoundaryState
       _root = root;
       root.addListener(_contextChanged);
     }
-    final link = context.routeData.inheritedPathParams
-        .getString(AppRouter.linkFormatted);
+    final link = context.routeData.inheritedPathParams.getString(
+      AppRouter.linkFormatted,
+    );
     if (_link == link) {
       _contextChanged();
       return;
@@ -121,13 +129,15 @@ class _OccasionAdministrationBoundaryState
         if (!_inactive) {
           // Preserve the active route for Back, but never the editor state.
           final data = context.routeData;
-          final nested =
-              context.router.innerRouterOf<RoutingController>(data.name);
+          final nested = context.router.innerRouterOf<RoutingController>(
+            data.name,
+          );
           final segments = nested?.currentSegments ?? <RouteMatch>[];
           RouteMatch? restored;
           for (final segment in segments.reversed) {
             restored = segment.copyWith(
-                children: restored == null ? null : [restored]);
+              children: restored == null ? null : [restored],
+            );
           }
           if (restored != null) {
             data.pendingChildren
@@ -148,7 +158,8 @@ class _OccasionAdministrationBoundaryState
       if (_inactive) setState(() => _inactive = false);
       if (_loadFailed) {
         if (widget.access.loadedLink != _link ||
-            !widget.access.canAccess(reservations: widget.reservations)) return;
+            !widget.access.canAccess(reservations: widget.reservations))
+          return;
         setState(() {
           _loadFailed = false;
           _loadErrored = false;
@@ -187,17 +198,25 @@ class _OccasionAdministrationBoundaryState
       return;
     }
     try {
-      final allowed =
-          await widget.access.load(link, reservations: widget.reservations);
+      final allowed = await widget.access.load(
+        link,
+        reservations: widget.reservations,
+      );
       if (!mounted || generation != _generation) return;
       final canonical = widget.access.loadedLink;
       if (allowed && canonical != null && canonical != link) {
         final current = _root!.urlState.uri.toString();
-        final target =
-            canonicalPublicPath(current, 'occasion', link, canonical);
+        final target = canonicalPublicPath(
+          current,
+          'occasion',
+          link,
+          canonical,
+        );
         if (target != current) {
-          final matches =
-              _root!.matcher.match(target, includePrefixMatches: false);
+          final matches = _root!.matcher.match(
+            target,
+            includePrefixMatches: false,
+          );
           if (matches != null) {
             _root!.markUrlStateForReplace();
             await _root!.navigateAll(matches);
@@ -237,35 +256,51 @@ class _OccasionAdministrationBoundaryState
     // Do not retain drafts on a hidden root occasion, including native Back.
     if (_inactive) return const SizedBox.shrink();
     final failure = Scaffold(
-        body: Center(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(_loadErrored ? CommonStrings.contextLoadFailed : 'Access denied'),
-      TextButton(
-          onPressed: () {
-            if (!_loading) _load(_link!, ++_generation);
-          },
-          child: Text(CommonStrings.retry)),
-    ])));
-    final loading = widget.loadingBuilder?.call(context) ??
-        const Scaffold(body: Center(child: CircularProgressIndicator()));
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _loadErrored ? CommonStrings.contextLoadFailed : 'Access denied',
+            ),
+            TextButton(
+              onPressed: () {
+                if (!_loading) _load(_link!, ++_generation);
+              },
+              child: Text(CommonStrings.retry),
+            ),
+          ],
+        ),
+      ),
+    );
+    final loading =
+        widget.loadingBuilder?.call(context) ??
+        const Scaffold(body: Center(child: BrandLoadingIndicator(width: 200)));
     if (!_ready)
       return _loading
           ? loading
           : _denied
-              ? failure
-              : loading;
+          ? failure
+          : loading;
     final waiting = _loading || widget.access.loadedLink != _link;
     // Previously authorized retained editors stay mounted behind the denial
     // screen. Initial denial never creates them; restored access keeps the same
     // native nested route stack and unsaved draft.
-    return Stack(fit: StackFit.expand, children: [
-      Offstage(
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Offstage(
           offstage: _denied || waiting,
           child: TickerMode(
-              enabled: !_denied && !waiting,
-              child: KeyedSubtree(
-                  key: ValueKey(_link), child: widget.builder(context)))),
-      if (waiting) loading else if (_denied) failure,
-    ]);
+            enabled: !_denied && !waiting,
+            child: KeyedSubtree(
+              key: ValueKey(_link),
+              child: widget.builder(context),
+            ),
+          ),
+        ),
+        if (waiting) loading else if (_denied) failure,
+      ],
+    );
   }
 }

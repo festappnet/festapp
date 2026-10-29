@@ -268,7 +268,7 @@ test('public help and plugin downloads do not enter the installed app cache', ()
 
 test('brand and startup symbols install with the shell for an offline cold start', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-brand-cache-'));
-  const assets = ['loading-logo.svg', 'loading-symbol.svg', 'loading-symbol-light.svg',
+  const assets = ['loading-logo.svg', 'loading-animation.svg', 'loading-animation-light.svg',
     'brand-logo.svg', 'brand-logo-light.svg'];
   try {
     for (const name of ['flutter', 'webclient', 'main.dart.js', ...assets]) {

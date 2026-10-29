@@ -58,7 +58,7 @@ web/organizers/ball-ticket-sales
 web/organizers/seating-reservations
 web/organizer-pages.json
 
-web/loading-symbol.svg
 web_client/public/brand-logo-light.svg
-web_client/public/loading-symbol.svg
-web_client/public/loading-symbol-light.svg
+web/loading-animation.svg
+web_client/public/loading-animation.svg
+web_client/public/loading-animation-light.svg

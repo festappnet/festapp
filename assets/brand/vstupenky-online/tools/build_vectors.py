@@ -33,7 +33,7 @@ def lettering(text, x, y, width, height):
     for ch in text:
         glyph=glyphs[cmap[ord(ch)]]
         contour=pathops.Path()
-        glyph.draw(TransformPen(contour.getPen(),(1,0,0,-1,pos,0)))
+        glyph.draw(TransformPen(contour.getPen(glyphs),(1,0,0,-1,pos,0)))
         contours.append(contour)
         bp=BoundsPen(glyphs); glyph.draw(bp)
         if bp.bounds:
@@ -80,6 +80,25 @@ for dark in [False,True]:
         (ROOT/f'vstupenky-online-linkedin-{size}{suffix}.png').write_bytes(resvg_py.svg_to_bytes(svg_string=square,width=size,height=size))
     for size in [32,64,180]:
         (ROOT/f'vstupenky-online-icon-{size}{suffix}.png').write_bytes(resvg_py.svg_to_bytes(svg_string=icon,width=size,height=size))
+
+# The Czech sharing card uses the same product logo instead of a legacy text mark.
+header_svg=ET.parse(ROOT/'vstupenky-online-header.svg').getroot()
+header_svg.set('x','72');header_svg.set('y','38');header_svg.set('width','240');header_svg.set('height','52')
+card='<path fill="#ebf1f6" d="M0 0H1200V630H0Z"/>'+ET.tostring(header_svg,encoding='unicode')
+card+='<g fill="#4465a6">'+lettering('Vstupenky',72,172,430,75)+'</g>'
+card+='<g fill="#19243b">'+lettering('pro Vaši akci.',72,258,520,75)+'</g>'
+card+='<g fill="#253759">'+lettering('Vlastní plánek. Vlastní vstupenka.',72,371,535,30)+lettering('QR platby bez transakčních poplatků.',72,414,575,30)+'</g>'
+card+='<g fill="#dfebf6" stroke="#b1c8df" stroke-width="1.5"><path fill="none" d="M810 60H1290V515H1050M1000 515H810V60M824 74H1276V501H1065M985 501H824V74"/>'
+for cx,cy in [(907,187),(1184,187),(907,367),(1184,367)]:
+    card+=f'<rect x="{cx-36}" y="{cy-26}" width="72" height="52"/>'
+    for dx,dy in [(-21,-40),(0,-40),(21,-40),(-21,40),(0,40),(21,40),(-50,0),(50,0)]:
+        card+=f'<circle cx="{cx+dx}" cy="{cy+dy}" r="7"/>'
+card+='<rect x="1003" y="150" width="104" height="255"/></g>'
+social_svg=save('vstupenky-online-social',svg(card,'Vstupenky pro Vaši akci. vstupenky.online','0 0 1200 630',(1200,630)))
+(ROOT.parents[2]/'web/organizers-media/organizers-social.png').write_bytes((ROOT/'vstupenky-online-social.png').read_bytes())
+
+from outline_animation import emit_outline_assets
+emit_outline_assets(ROOT)
 
 icons=ROOT/'web-icons'; icons.mkdir(exist_ok=True)
 icon_svg=(ROOT/'vstupenky-online-icon-dark.svg').read_text()
