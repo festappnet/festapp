@@ -17,6 +17,7 @@ const disabled = [
   '/unit-ball/event', '/demo/eventEdit/42', '/demo/reception', '/demo/cleaning/1', '/map-editor',
 ];
 const preserved = [
+  '/team-invitation', '/team-invitation/',
   '/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/',
   '/', '/napoveda/', '/events', '/events/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
   '/demo/reservations/orders/current',
@@ -87,6 +88,11 @@ test('stamped hosting worker redirects disabled screens before loading Flutter',
     for (const pathname of preserved.filter(p => !p.includes('.js') && !p.includes('.wasm') && !p.includes('.json'))) {
       const response = await worker.fetch(new Request('https://fixture.invalid' + pathname), { ASSETS: assets });
       assert.notEqual(response.status, 302, pathname);
+    }
+    for (const pathname of ['/team-invitation?token=qa-proof', '/team-invitation/?token=qa-proof']) {
+      const response = await worker.fetch(new Request('https://fixture.invalid' + pathname), { ASSETS: assets });
+      assert.equal(response.status, 200, pathname);
+      assert.equal(await response.text(), '/flutter', pathname);
     }
     const supported = await workerFor(true, dir);
     for (const pathname of ['/demo/admin/info/information']) {
@@ -191,4 +197,23 @@ test('web client does not initialize Flutter for unsupported public links', asyn
     AppConfig.isAppSupported = previousSupported;
     globalThis.window = previousWindow;
   }
+});
+
+test('team invitations load the Flutter auth page without an occasion slug lookup', async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'festapp-team-invitation-route-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const worker = await workerFor(false, dir);
+  let lookups = 0;
+  t.mock.method(globalThis, 'fetch', async () => {
+    lookups++;
+    return Response.json(null);
+  });
+  for (const suffix of ['?token=qa-proof', '/?token=qa-proof']) {
+    const response = await worker.fetch(new Request('https://fixture.invalid/team-invitation' + suffix), {
+      SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'public-fixture', ASSETS: assets,
+    });
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), '/flutter');
+  }
+  assert.equal(lookups, 0);
 });

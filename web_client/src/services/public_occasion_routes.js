@@ -8,7 +8,7 @@ export function isPublicOccasionAppPath(pathname) {
         'form', 'order', 'login', 'login-qr', 'admin', 'transfer', 'organizationEdit', 'unit', 'signup',
         'settings', 'install', 'instanceInstall', 'scan', 'check', 'map-editor',
         'resetPassword', 'forgotPassword', 'reset-password', 'forgot-password',
-        'google-auth', 'app', 'privacy', 'terms', 'support', 'delete-account',
+        'google-auth', 'team-invitation', 'app', 'privacy', 'terms', 'support', 'delete-account',
         'flutter', 'webclient', 'auth_bridge', 'assets', 'web-assets', 'canvaskit',
         'pro-poradatele', 'organizers-page', 'events', 'napoveda',
     ]);

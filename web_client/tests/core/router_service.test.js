@@ -305,6 +305,7 @@ test('RouterService.handleInitialLoad', async (t) => {
     });
 
     for (const path of [
+        '/team-invitation?token=qa-token-that-must-survive',
         '/event-a/admin/events/suspicious?day=2026-10-03',
         '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10',
         '/unit/5/edit/bank-accounts/9/users?panel=properties',
