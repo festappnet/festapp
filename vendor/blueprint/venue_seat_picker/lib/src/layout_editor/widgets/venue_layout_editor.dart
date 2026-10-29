@@ -34,6 +34,7 @@ class VenueLayoutEditor extends StatefulWidget {
     this.canvasBottomOverlay,
     this.canvasHeader,
     this.showGallery = true,
+    this.openGalleryOnStart = true,
     this.onTemplateSelected,
     this.onImportBackground,
     this.seatPresentation = const {},
@@ -113,6 +114,10 @@ class VenueLayoutEditor extends StatefulWidget {
   final void Function(LayoutNode node, String name)? onRenameNode;
   final Widget Function(BuildContext, LayoutNode)? inspectorBuilder;
   final bool showGallery;
+
+  /// Hosts that already selected a template can retain gallery access without
+  /// prompting again when that template is intentionally empty.
+  final bool openGalleryOnStart;
   final ValueChanged<LayoutTemplate>? onTemplateSelected;
 
   /// Host-owned image picker, decoder and portable resource registration.
@@ -250,7 +255,10 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       }
       return c.pasteSelectionText(text);
     });
-    if (widget.showGallery && _canEdit && c.document.nodes.isEmpty) {
+    if (widget.showGallery &&
+        widget.openGalleryOnStart &&
+        _canEdit &&
+        c.document.nodes.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _canEdit) _gallery();
       });

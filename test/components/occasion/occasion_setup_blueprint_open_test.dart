@@ -62,7 +62,7 @@ void main() {
   });
   tearDownAll(() => backend.dispose());
   testWidgets(
-      'selecting a hall template opens the draft without canonical text requests',
+      'selected blank plan opens once and keeps manual template selection',
       (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
@@ -133,12 +133,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Vytvořit nový plánek'));
     await tester.pumpAndSettle();
-    // Use the first populated template, independently of its catalog ID.
+    // Select the deliberately empty template through the wizard gallery.
     final choices = find.byWidgetPredicate((w) =>
         w.key is ValueKey<String> &&
         (w.key as ValueKey<String>).value.startsWith('layout-template-'));
     expect(choices, findsAtLeastNWidgets(2));
-    await tester.tap(choices.at(1));
+    await tester.tap(choices.at(0));
     for (var i = 0;
         i < 5 && find.byType(BlueprintLayoutDemo).evaluate().isEmpty;
         i++) {
@@ -149,6 +149,17 @@ void main() {
     expect(find.byType(BlueprintLayoutDemo), findsOneWidget,
         reason:
             '${find.byType(Text).evaluate().map((e) => (e.widget as Text).data).whereType<String>().toList()} requests: ${backend.requests.map((r) => r.url.path).toList()}');
+    expect(choices, findsNothing,
+        reason: 'An explicitly selected blank plan must not reopen the gallery');
+    final manualGallery = find.byKey(const ValueKey('palette-templates'));
+    expect(manualGallery, findsOneWidget);
+    await tester.tap(manualGallery);
+    await tester.pumpAndSettle();
+    expect(choices, findsAtLeastNWidgets(2));
+    await tester.tap(choices.at(1));
+    await tester.pumpAndSettle();
+    expect(choices, findsNothing);
+    expect(find.byType(BlueprintLayoutDemo), findsOneWidget);
     expect(textRequests, 0);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
