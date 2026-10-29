@@ -132,6 +132,7 @@ export class RouterService {
     }
 
     static flutterRoutes = [
+        '/team-invitation',
         '/reset-password',
         '/forgot-password',
         '/resetPassword',

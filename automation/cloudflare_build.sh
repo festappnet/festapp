@@ -125,7 +125,7 @@ const PUBLIC_WEB_ANALYTICS = null; // stamped from the public hostname registry
 const WEB_CLIENT_EXACT = new Set(["/", "/events"]);
 
 // Flutter SPA routes (admin / handover).
-const FLUTTER_PREFIXES = ["/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
+const FLUTTER_PREFIXES = ["/team-invitation", "/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
 
 // auth_bridge.html alias — RouterService still posts to /auth_bridge.html.
 const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);
