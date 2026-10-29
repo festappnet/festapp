@@ -1,0 +1,60 @@
+{
+  "releasedAt": "2026-10-29",
+  "web": {
+    "tenant": "festapptickets",
+    "branch": "prod/festapptickets",
+    "sourceMainSha": "2e05dd51bc6c13a751ca6b89ae8fcd26246af1bb",
+    "tenantSha": "09da6e8b8c18fe0d1dc4bdb53400ca91e1e9ca68",
+    "previousProductionSha": "0d2c6715fbc3859c9c2721d6d19085551bc51113",
+    "version": "0.20.448+953",
+    "productionOrigin": "https://vstupenky.online",
+    "checks": {
+      "tenantDrift": "passed using checker from sourceMainSha",
+      "previousProductionAncestor": true,
+      "flutterWebCompile": "passed",
+      "javascriptTestSuite": {
+        "passed": 106,
+        "failed": 0
+      },
+      "webClientBuild": "passed",
+      "pwaCacheBudget": "passed",
+      "cspGeneration": "passed",
+      "webBuildVerification": "passed for version 0.20.448+953",
+      "directCloudflareUpload": "completed with Wrangler OAuth",
+      "backendTicketHelper": "separately deployed and verified by coordinating agent; source unchanged by subsequent test-only main commit",
+      "liveVersionAssetAndLegalProbes": "passed; 3 consecutive coherent probes for version 0.20.448+953"
+    },
+    "artifacts": {
+      "versionManifestSha256": "f7337eb212b6f79ced26307a717b4201afe5be9df477fc66a23d335902e90d0d",
+      "workerSha256": "b689301c928a929a84860407ca5632337d4ce26af32469aab839e184943d695e"
+    }
+  },
+  "backend": {
+    "status": "success",
+    "sourceMain": "43965824506d75fd92af1daa92cb359e246ade2e",
+    "functionPath": "supabase/functions/_shared/generateTicket.ts",
+    "oldSha256": "b057d62811dc8cb10ba6ca4264026ebca38cd7f90f9517146e0da055bad00d56",
+    "finalSha256": "bdc3ce4a603cc3c2c7e80c4b73c044aeebf239856ae7f4664962c789e253a35f",
+    "databaseSchemaOrDataChanged": false,
+    "emailDrained": true,
+    "previousPauseRestored": true,
+    "restartGuardPassed": true,
+    "workerProbePassed": true,
+    "containerRunning": true,
+    "unrelatedFunctionFilesManifestSha256": "4b5917ddd25c5076778f75922c59a3c4b9007f0486adf0080ea9254d19e67ec8",
+    "health": {
+      "alerts": [],
+      "producerAccessOk": true,
+      "paused": false
+    },
+    "canonicalProductionFilesMatched": 320,
+    "containerIdentityRetained": true
+  },
+  "targetedValidation": {
+    "themeWidgetTests": 3,
+    "actualChromeTests": 3,
+    "appearanceFlutterTests": 35,
+    "actualPdfGradientTests": 2,
+    "allWebClientJavaScriptTests": 106
+  }
+}
