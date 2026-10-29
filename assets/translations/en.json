@@ -426,6 +426,8 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "invalidVariableSymbolPolicy": "Choose a valid payment reference policy. For a sequence, enter a whole starting number from 1 to 9999999999.",
+    "repairVariableSymbolPolicy": "Repair advanced payment reference settings",
     "labelShowBeforeStartMessage": "Show information before registration opens",
     "helperBeforeStartMessage": "Publish event information, images or a seating plan below the countdown. Registration will open at the scheduled time.",
     "labelBeforeStartMessage": "Information before registration opens",

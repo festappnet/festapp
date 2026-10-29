@@ -1,0 +1,21 @@
+BEGIN
+DO
+ROLLBACK
+NOTICE:  PASS clean
+NOTICE:  PASS gala
+NOTICE:  PASS energy
+NOTICE:  PASS nature
+NOTICE:  PASS soft
+NOTICE:  PASS contrast
+NOTICE:  FAIL ocean: Unsupported shared font
+NOTICE:  FAIL royal: Unsupported shared font
+NOTICE:  FAIL lavender: Unsupported shared font
+NOTICE:  FAIL citrus: Unsupported shared font
+NOTICE:  FAIL sunset: Unsupported shared font
+NOTICE:  PASS wine
+NOTICE:  FAIL terracotta: Unsupported shared font
+NOTICE:  FAIL forest: Unsupported shared font
+NOTICE:  FAIL graphite: Unsupported shared font
+NOTICE:  FAIL rose: Unsupported shared font
+NOTICE:  FAIL azure: Unsupported shared font
+NOTICE:  FAIL cream: Unsupported shared font

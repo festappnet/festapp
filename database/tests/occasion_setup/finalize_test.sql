@@ -26,8 +26,8 @@ BEGIN
  'nodes',jsonb_build_array(jsonb_build_object('id',source_node_id,'kind','seat','width',40,'height',40,
  'transform',jsonb_build_object('x',60,'y',60,'rotation',0)))),layout_revision=1 WHERE id=plan;
  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(plan,source_node_id,seat);
- INSERT INTO public.forms(occasion,title,link,blueprint,is_open)
- VALUES(source_id,'Registration','form-'||gen_random_uuid(),plan,true) RETURNING id INTO form_id;
+ INSERT INTO public.forms(occasion,title,link,blueprint,is_open,data)
+ VALUES(source_id,'Registration','form-'||gen_random_uuid(),plan,true,'{"variable_symbol":{"type":"sequence","starting_number":260001}}') RETURNING id INTO form_id;
  INSERT INTO public.form_fields(form,title,type,product_type,"order") VALUES(form_id,'Seats','product_type',source_type,0);
  INSERT INTO public.form_fields(form,title,type,"order") VALUES(form_id,'Ticket','ticket',1);
  layout:=jsonb_build_object('schemaVersion',3,'templates',jsonb_build_object('wide',jsonb_build_object(
@@ -53,7 +53,7 @@ BEGIN
  BEGIN
   PERFORM public.finalize_occasion_setup_draft(draft_id,1,command);
   RAISE EXCEPTION 'Stale finalization accepted';
- EXCEPTION WHEN serialization_failure THEN NULL; END;
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  response:=public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command);
  new_id:=(response->'data'->>'occasionId')::bigint;
  PERFORM assert_eq(public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command),response,'Same-command replay');
@@ -65,6 +65,8 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.occasions),before_count+1,'Exactly one event');
  PERFORM assert_true((SELECT is_hidden AND NOT is_open FROM public.occasions WHERE id=new_id),'New event hidden and closed');
  PERFORM assert_true((SELECT NOT is_open FROM public.forms WHERE occasion=new_id),'Form closed');
+ PERFORM assert_eq((SELECT data->'variable_symbol' FROM public.forms WHERE occasion=new_id),(SELECT data->'variable_symbol' FROM public.forms WHERE id=form_id),'Copy retains the explicit source sequence policy');
+ PERFORM assert_eq((SELECT data#>>'{variable_symbol,starting_number}' FROM public.forms WHERE id=form_id),'260001','Copy never resets the source sequence floor');
  PERFORM assert_eq((SELECT count(*) FROM eshop.spots WHERE occasion=new_id),1::bigint,'All seats copied');
  PERFORM assert_true((SELECT bool_and(s.id<>seat AND s.product<>source_product AND p.occasion=new_id AND s.secret IS NULL AND s.secret_expiration_time IS NULL AND s.order_product_ticket IS NULL) FROM eshop.spots s JOIN eshop.products p ON p.id=s.product WHERE s.occasion=new_id),'New seat/product identities and no occupancy');
  SELECT product_type INTO new_type FROM eshop.products WHERE occasion=new_id LIMIT 1;

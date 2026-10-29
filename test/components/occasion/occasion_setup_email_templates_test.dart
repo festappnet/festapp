@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -208,4 +209,41 @@ void main() {
             r.url.path.contains('delete_entity_email_template')),
         isEmpty);
   });
+  testWidgets('catalog debounces new snapshots, discards old results and stops after an error', (tester) async {
+    final translations = jsonDecode(File('assets/translations/cs.json').readAsStringSync());
+    final first = Completer<Map<String,dynamic>>();
+    var draft = <String,dynamic>{};
+    var calls = 0;
+    var failRead = false;
+    late StateSetter edit;
+    await WidgetEnvironmentFixture(locale:const Locale('cs'),translations:translations).pumpWidget(tester,
+      MaterialApp(builder:DependencyMaterialBridge.builder,home:Scaffold(body:SingleChildScrollView(child:StatefulBuilder(builder:(context,update) {
+        edit=update;
+        return OccasionSetupEmailTemplates(draft:draft,onChanged:(_){},loadPreview:(snapshot) async {
+          calls++;
+          if (calls==1) return first.future;
+          if (failRead) throw StateError('finite conflict');
+          final result=catalog(snapshot);
+          result['emailTemplates'][0]['template']['subject']='Current defaults';
+          return result;
+        });
+      })))));
+    await tester.pump(const Duration(milliseconds:350));
+    expect(calls,1);
+    edit(()=>draft={'communicationDefaults':{'senderAddress':'sample@example.invalid'}});
+    await tester.pump();await tester.pump(const Duration(milliseconds:350));
+    await tester.pumpAndSettle();
+    expect(calls,2);
+    first.complete(catalog({}));await tester.pumpAndSettle();
+    expect(tester.widget<EmailTemplateCard>(find.byType(EmailTemplateCard).first).template.subject,'Current defaults');
+    failRead=true;
+    edit(()=>draft={...draft,'replyToEmail':'new@example.invalid'});
+    await tester.pump();await tester.pump(const Duration(milliseconds:350));await tester.pumpAndSettle();
+    expect(calls,3);
+    await tester.pump(const Duration(seconds:2));expect(calls,3);
+    failRead=false;
+    await tester.tap(find.text('Zkusit znovu'));await tester.pumpAndSettle();
+    expect(calls,4);expect(find.byType(EmailTemplateCard),findsNWidgets(5));
+  });
+
 }

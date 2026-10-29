@@ -1,3 +1,8 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+
+import 'setup_draft_conflict.dart';
+import 'setup_email_preview_coordinator.dart';
+import 'setup_payment_configuration.dart';
 import '../../ticket_layout/ticket_delivery_strings.dart';
 
 import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
@@ -129,6 +134,21 @@ class OccasionSetupPage extends StatefulWidget {
 
 class _OccasionSetupPageState extends State<OccasionSetupPage> {
   final _store = OccasionSetupDrafts(Supabase.instance.client);
+  late final _emailPreview = SetupEmailPreviewCoordinator.forClient(
+    Supabase.instance.client,
+    confirmRevision: () async {
+      if (!await _flush()) throw StateError('Draft save failed');
+      // Capture the saved identity synchronously, before another async read.
+      return SetupPreviewRevision(_stored.id, _stored.revision);
+    },
+    onConflict: () {
+      if (!mounted) return;
+      setState(() {
+        _conflict = true;
+        _error = OccasionSetupStrings.conflict;
+      });
+    },
+  );
   late OccasionSetupDraft _stored;
   late Map<String, dynamic> _data;
   late TextEditingController _linkController;
@@ -410,38 +430,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<Map<String, dynamic>> _loadEmailPreview(
     Map<String, dynamic> snapshot,
-  ) async {
-    if (!await _flush()) throw StateError('Draft save failed');
-    if (snapshot['previewMessageType'] == 'order_tickets') {
-      final data = await Supabase.instance.client.rpc(
-        'get_occasion_setup_email_preview',
-        params: {
-          'p_id': _stored.id,
-          'p_expected_revision': _stored.revision,
-          'p_message_type': 'order_tickets',
-          'p_occasion': null,
-          'p_delivery_mode': null,
-        },
-      );
-      return Map<String, dynamic>.from(data as Map);
-    }
-    final response = await Supabase.instance.client.functions.invoke(
-      'occasion-setup-email-preview',
-      body: {
-        'draftId': _stored.id,
-        'revision': _stored.revision,
-        if (snapshot['previewMessageType'] != null)
-          'messageType': snapshot['previewMessageType'],
-        if (snapshot['previewTicketCount'] != null)
-          'sampleTicketCount': snapshot['previewTicketCount'],
-        if (snapshot['previewMessageType'] == 'order_tickets')
-          'deliveryMode':
-              (snapshot['ticketDraft'] as Map?)?['delivery_mode'] ??
-              'pdf_attachment',
-      },
-    );
-    return Map<String, dynamic>.from(response.data as Map);
-  }
+  ) => _emailPreview.load(snapshot);
 
   void _ensureDefaultForm(Map<String, dynamic> draft) {
     final existing = draft['formDraft'];
@@ -599,9 +588,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   void _persistFormControls(Map<String, dynamic> draft) {
     final form = draft['formDraft'];
     if (form is! Map) return;
-    final days = int.tryParse(draft['deadline'] as String? ?? '');
-    form['deadline_duration_seconds'] = days == null ? null : days * 86400;
+    draft['formDraft'] = SetupPaymentConfiguration.projectForm(draft);
     serializeCommunicationDraft(draft);
+    final projected = draft['formDraft'] as Map;
+    _inlineFormBundle?.form.definition = _inlineFormBundle!.form.definition
+        .copyWith(
+          data: Map<String, dynamic>.from(projected['data'] as Map? ?? {}),
+          deadlineDurationSeconds:
+              projected['deadline_duration_seconds'] as int?,
+        );
   }
 
   Future<Map<String, dynamic>> _prepareBlueprint(Map plan) async {
@@ -635,6 +630,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   void _save() {
     if (_stored.isFinalized) return;
+    _emailPreview.invalidate();
     _dirty = true;
     _debounce?.cancel();
     if (!_conflict && _error == null) {
@@ -744,7 +740,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _error = null;
       } catch (e) {
         if (e is PostgrestException &&
-            (e.code == '22023' || e.code == '40001')) {
+            (e.code == '22023' || isSetupDraftConflict(e))) {
           try {
             final current = await _store.get(_stored.id);
             if (current.isFinalized) {
@@ -761,7 +757,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           }
         }
         _dirty = true;
-        _conflict = e is PostgrestException && e.code == '40001';
+        _conflict = isSetupDraftConflict(e);
         _error = _conflict
             ? OccasionSetupStrings.conflict
             : OccasionSetupStrings.saveFailed;
@@ -821,6 +817,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _finalizeCommand = null;
         _finalizeDraft = null;
       }
+      if (isSetupDraftConflict(error) && mounted) {
+        setState(() {
+          _conflict = true;
+          _error = OccasionSetupStrings.conflict;
+        });
+      }
       if (mounted)
         setState(
           () => _finalizeError = eventCreated
@@ -858,6 +860,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       final current = await _store.get(_stored.id);
       if (!mounted) return;
       setState(() {
+        _emailPreview.invalidate();
         _stored = current;
         _data = Map.of(current.data);
         OccasionSetupStory.normalize(_data, AppConfig.isAppSupported);
@@ -886,6 +889,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   @override
   void dispose() {
+    _emailPreview.dispose();
     _debounce?.cancel();
     _linkController.dispose();
     super.dispose();
@@ -1005,13 +1009,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (q.key == 'saleTiming')
       return OccasionSetupSales.valid(d, DateTime.now());
     if (q.key == 'form')
-      return _stepReady(
-        d,
-        3,
-        includePricing: false,
-        includePayments: false,
-        includeCommunication: false,
-      );
+      return SetupPaymentConfiguration.validPolicy(d) &&
+          _stepReady(
+            d,
+            3,
+            includePricing: false,
+            includePayments: false,
+            includeCommunication: false,
+          );
     if (q.key == 'pricing')
       return _stepReady(
         d,
@@ -1019,7 +1024,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         includePayments: false,
         includeCommunication: false,
       );
-    if (q.key == 'payments') return OccasionSetupStory.paymentSetupReady(d);
+    if (q.key == 'payments')
+      return SetupPaymentConfiguration.validPolicy(d) &&
+          OccasionSetupStory.paymentSetupReady(d);
     if (q.key == 'paymentTiming')
       return _deadlineReady(d) &&
           communicationDraftValid(d, includeReply: false);
@@ -1603,6 +1610,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (OccasionSetupReferences(d).hasIssues) {
       issues.add(MapEntry(3, OccasionSetupStrings.copy('invalidReferences')));
     }
+    if (d['formEnabled'] != false &&
+        !SetupPaymentConfiguration.validPolicy(d)) {
+      issues.add(MapEntry(3, FormStrings.invalidVariableSymbolPolicy));
+    }
     if (OccasionSetupStory.hasPaidProducts(d) &&
         !OccasionSetupStory.paymentSetupReady(d)) {
       issues.add(
@@ -2140,7 +2151,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       if (d['paymentMethod'] == 'stripe')
         return Text(OccasionSetupStrings.story('stripeReservation'));
       return OccasionSetupCommunication(
-        key: const ValueKey('payment-timing'),
+        key: ValueKey('payment-timing-$_formEpoch'),
         paymentTiming: true,
         draftId: _stored.id,
         unitId: _stored.unit,
@@ -2159,7 +2170,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (_questions[_questionIndex(d)].key == 'communication') {
       return OccasionSetupCommunication(
-        key: const ValueKey('communication'),
+        key: ValueKey('communication-$_formEpoch'),
         onBusyChanged: (busy) => setState(() => _presentationUploading = busy),
         loadPreview: _loadEmailPreview,
         draftId: _stored.id,
@@ -2270,6 +2281,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (!SetupPaymentConfiguration.validPolicy(d)) ...[
+              Text(FormStrings.invalidVariableSymbolPolicy),
+              TextButton(
+                onPressed: _repairPaymentPolicy,
+                child: Text(FormStrings.repairVariableSymbolPolicy),
+              ),
+            ],
             if (referenceIssues) ...[
               Text(OccasionSetupStrings.copy('invalidReferences')),
               OutlinedButton(
@@ -2550,9 +2568,59 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
+  Future<void> _repairPaymentPolicy() async {
+    final key = GlobalKey<FormState>();
+    final raw = SetupPaymentConfiguration.policy(_data);
+    var policy = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AppAlertDialog(
+          title: Text(FormStrings.repairVariableSymbolPolicy),
+          onClose: () => Navigator.of(dialogContext).pop(),
+          content: SizedBox(
+            width: 440,
+            child: Form(
+              key: key,
+              child: FormVariableSymbolSettings(
+                value: policy,
+                onChanged: (value) => update(() => policy = value),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (key.currentState!.validate() &&
+                    formVariableSymbolPolicyValid(policy)) {
+                  Navigator.of(dialogContext).pop(policy);
+                }
+              },
+              child: Text(CommonStrings.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    _change(
+      (draft) => SetupPaymentConfiguration.repairPolicy(draft, result),
+      changesConfiguration: true,
+    );
+  }
+
   Widget _paymentSettings(Map<String, dynamic> d) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      if (!SetupPaymentConfiguration.validPolicy(d)) ...[
+        Text(FormStrings.invalidVariableSymbolPolicy),
+        TextButton(
+          onPressed: _repairPaymentPolicy,
+          child: Text(FormStrings.repairVariableSymbolPolicy),
+        ),
+      ],
       if (d['paymentChoicesEnabled'] == true) ...[
         PaymentMethodCards(
           value: FormPaymentMethod.values.firstWhere(
@@ -2591,24 +2659,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               _change((x) => x.addAll(patch), changesConfiguration: true),
         ),
         const SizedBox(height: 24),
-        FormVariableSymbolSettings(
-          value: Map<String, dynamic>.from(
-            ((d['formDraft'] as Map?)?['data']
-                        as Map?)?[FormDefinition.metaVariableSymbol]
-                    as Map? ??
-                {},
-          ),
-          onChanged: (value) => _change((x) {
-            final form = x['formDraft'] as Map;
-            final meta = Map<String, dynamic>.from(form['data'] as Map? ?? {});
-            meta[FormDefinition.metaVariableSymbol] = value;
-            form['data'] = meta;
-            _inlineFormBundle?.form.definition = _inlineFormBundle!
-                .form
-                .definition
-                .copyWith(data: meta);
-          }, changesConfiguration: true),
-        ),
       ],
     ],
   );

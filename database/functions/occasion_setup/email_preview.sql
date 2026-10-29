@@ -25,7 +25,7 @@ BEGIN
    public.can_create_occasion(d.unit) IS NOT TRUE THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-  RAISE serialization_failure USING MESSAGE='Draft revision conflict'; END IF;
+  RAISE SQLSTATE 'PT409' USING MESSAGE='Draft revision conflict'; END IF;
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft is finalized'; END IF;
  END IF;
  SELECT data INTO unit_data FROM public.units WHERE id=d.unit AND organization=d.organization;
