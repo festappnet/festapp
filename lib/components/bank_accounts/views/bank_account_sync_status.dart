@@ -1,6 +1,9 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../bank_account_strings.dart';
+
 import 'package:festapp_core/eshop.dart';
+
 import '../../eshop/orders_strings.dart';
 import 'bank_sync_warning_button.dart';
 
@@ -8,25 +11,23 @@ import 'bank_sync_warning_button.dart';
 class BankAccountSyncStatus extends StatelessWidget {
   final BankAccountModel account;
   final bool showHelp;
-  const BankAccountSyncStatus(
-      {super.key, required this.account, this.showHelp = true});
+  const BankAccountSyncStatus({
+    super.key,
+    required this.account,
+    this.showHelp = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (account.type.toUpperCase() == 'CASH') return const SizedBox.shrink();
-    final state = account.bankSync?.state;
-    final warning = account.bankSyncWarning ??
-        (state == 'connected'
-            ? null
-            : BankSyncWarning(
-                code: switch (state) {
-                  'suspended' => 'suspended',
-                  'degraded' => 'bank_error',
-                  _ => 'not_configured',
-                },
-                bankAccountTitle:
-                    account.title ?? BankAccountStrings.bankAccount,
-              ));
+    // The authorized server projection owns the diagnosis. In particular,
+    // form bank choices include bank_sync_warning but omit bank_sync details.
+    // Missing connection details must never fabricate a configuration failure
+    // (or a healthy status when the connection itself is unknown).
+    final warning = account.bankSyncWarning;
+    if (warning == null && account.bankSync?.state != 'connected') {
+      return const SizedBox.shrink();
+    }
     return Row(
       children: [
         if (warning != null && showHelp)
@@ -35,10 +36,9 @@ class BankAccountSyncStatus extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(8),
             child: Icon(
-                warning == null
-                    ? Icons.check_circle_outline
-                    : Icons.info_outline,
-                size: 20),
+              warning == null ? Icons.check_circle_outline : Icons.info_outline,
+              size: 20,
+            ),
           ),
         Flexible(
           child: Text(

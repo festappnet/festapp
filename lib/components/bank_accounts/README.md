@@ -60,7 +60,10 @@ A bank cooldown or transient failure after the full persisted-token digest check
 
 Account admins can pause/resume automatic synchronization without replacing the
 token. The connection status, order payment warnings and form/unit bank cards
-share safe operational details. See
+share the server-owned `bank_sync_warning` diagnosis. Form bank choices omit
+`bank_sync` connection details even for connected accounts. Missing details or
+an unknown state must never create a warning or claim a healthy connection;
+only an explicit connected state can show the positive status. See
 [health and incident notifications](../../../docs/operations/banksync/HEALTH-ALERTS.md).
 
 ## Local payment-reference reservations
