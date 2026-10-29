@@ -19,6 +19,9 @@ class LogoWidget extends StatelessWidget {
   /// asset through `PROGRAM_LOGO_ASSET` when needed.
   final bool programVariant;
 
+  /// Keep the brand symbol without lettering, regardless of screen width.
+  final bool symbolOnly;
+
   const LogoWidget({
     super.key,
     this.onTap,
@@ -26,6 +29,7 @@ class LogoWidget extends StatelessWidget {
     this.width,
     this.forceDark,
     this.programVariant = false,
+    this.symbolOnly = false,
   });
 
   @override
@@ -34,7 +38,7 @@ class LogoWidget extends StatelessWidget {
       isDarkMode: ThemeConfig.isDarkMode(context),
       forceDark: forceDark,
       programVariant: programVariant,
-      compact: MediaQuery.sizeOf(context).width <= 600,
+      compact: symbolOnly || MediaQuery.sizeOf(context).width <= 600,
     );
 
     // If the asset file is an SVG, use SvgPicture; otherwise, use Image.
