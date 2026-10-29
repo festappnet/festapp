@@ -15,3 +15,8 @@ widget/legacy suite covering actual primary and secondary hex edits and mode
 round-trips. All 12 PostgreSQL settings tests passed against the protected local
 disposable database. Targeted Dart analysis reported only existing info-level
 notices, no errors or warnings. Impeccable detector returned no findings.
+
+Public form rendering also uses the primary color when a gradient has no
+secondary override, and clears an explicit background when its primary color
+is reset. Two public-theme runtime tests passed for retained, missing and
+reset colors.

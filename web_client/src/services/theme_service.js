@@ -228,9 +228,10 @@ export class ThemeService {
         document.body.style.backgroundColor = blendedBg;
 
         const explicitBackground = formModel.backgroundMode;
-        const background = explicitBackground === 'gradient'
-            ? `linear-gradient(90deg, ${formModel.primaryColor}, ${formModel.secondaryColor})`
-            : explicitBackground === 'solid' ? formModel.primaryColor : null;
+        const background = !formModel.primaryColor ? null
+            : explicitBackground === 'gradient'
+                ? `linear-gradient(90deg, ${formModel.primaryColor}, ${formModel.secondaryColor || formModel.primaryColor})`
+                : explicitBackground === 'solid' ? formModel.primaryColor : null;
         if (background) {
             root.dataset.sharedAppearance = 'true';
             root.style.setProperty('--form-background', background);
