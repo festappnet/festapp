@@ -7,3 +7,7 @@ Scope: vstupenky.online (main source and the selected Czech ticketing tenant onl
 3. Add three gently moving tickets to HTML and Flutter startup, controlled by optional tenant settings. Respect reduced motion and existing ready/error/retry lifecycle. Other tenants default to their existing spinner.
 4. Validate the configuration generator, public shell/header/startup contracts and targeted Flutter diagnostics; inspect desktop/mobile and startup previews. Update the LinkedIn company avatar to the canonical square export.
 5. Report source changes, actual published effects and remaining production release scope separately. No rollout to other tenants.
+
+## Selected animation and vector correction
+
+The user selected the infinite **Celý podpis** outline-to-fill loop. Its canonical lettering uses a true boolean union per row, with glyph overlaps removed and counters retained. The animation consumes these same compound paths; it does not reconstruct or stagger individual letters. The selected interactive preview is under `docs/previews/vstupenky-loading-outline-2026-10-29/` and rebuilds from the canonical SVG. Filled-logo raster comparison stayed within 0.006% materially changed pixels (antialiasing); loop continuity, unified contours and reduced motion were checked in headless Chrome. Production rollout remains outstanding; the current published source bootstrap still has the earlier three-ticket animation.
