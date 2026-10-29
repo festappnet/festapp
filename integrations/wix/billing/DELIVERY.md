@@ -90,3 +90,43 @@ addendum, native activation, settlement source and acquisition evidence, then en
 that app. Its signed addendum reference must equal the projected agreement
 reference. Such a change is blocked until those facts exist. No operational secret
 provisioning, activation or real event was performed in this implementation.
+
+## Dormant zero-value BI qualification
+
+Wix requested a BI event on 2026-10-29. The existing live instance-scoped OAuth
+and token-info checks succeeded; this does not prove billing permission or BI
+receipt. The API documents charges/refunds, without a dedicated test flag.
+A zero-only qualification proposal has been sent to Erel; vendor acceptance is
+still awaited. See `../evidence/bi-verification-preparation-20261029.json`.
+
+`qualification.mjs` reuses the production provider and strict dispatch response
+checks, with one fixed owned QA installation and CHARGE gross/net/share USD0.
+It never creates settlements, normal delivery rows, refunds or activation.
+No sender parameters can select another installation or monetary amount.
+`pnpm run billing:qualify inspect` reads local attempt state without network I/O.
+
+After independently verifying Wix's actual approval of this exact zero-only
+protocol, retain a private operator-reviewed JSON receipt with schemaVersion1,
+the assigned appId and QA instanceId from `qualificationTarget`,
+zeroValueChargeApproved=true and wixApprovalMessageId pointing to that approval.
+The existing preparation receipt is not approval and is rejected. A supplied
+message ID is an operator assertion, not automated verification of vendor consent.
+Inject WIX_APP_SECRET only through the protected process environment and run:
+
+```
+pnpm run billing:qualify send .private/reviewed-zero-qualification-approval.json
+pnpm run billing:qualify inspect
+```
+
+The sender reserves an exclusive mode600 JSONL attempt in the repository's git
+common directory, so all its worktrees share the same fence. Its timestamp,
+payload and reviewed approval reference are synced to disk, including the parent
+directory, before OAuth or billing provider I/O. Any existing attempt blocks
+another send, including authorization rejection, process death, unknown response,
+partial file or confirmed delivery. There is no reset or retry command. Preserve
+and reconcile such evidence with Wix instead of deleting the file or using
+another clone. A new supported protocol requires a separate reviewed decision.
+
+A confirmed local result proves strict response matching; Erel must still verify
+BI ingestion. Zero values cannot validate fee, FX or revenue-share arithmetic.
+No live billing POST has been performed, and the normal activation gate remains.

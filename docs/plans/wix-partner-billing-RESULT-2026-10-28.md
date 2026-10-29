@@ -229,3 +229,35 @@ dokládá přesnou shodu se zapečetěným balíčkem, HTTP/content types/CORS a
 Nativní registrace se nezměnila. Release check zůstává záměrně blokovaný chybějící
 aktivací, aktuálními editor receipts, billing implementation receipt a ověřením
 store assets; žádná podmínka nebyla oslabena.
+
+## BI ověření požadované Wixem 29. října
+
+Erelova zpráva `1a186cc331d539c7` požaduje doručení jedné BI události a následné
+upozornění pro jeho kontrolu. Přístup přes existující `wixBillingProvider` již
+prošel skutečným OAuth i token-info (HTTP200, správná aplikace a vlastní QA
+instalace, typ APP). Token ani app secret nebyly uloženy do evidence.
+
+[Příprava ověření](../../integrations/wix/evidence/bi-verification-preparation-20261029.json)
+obsahuje návrh jedné qualification-only CHARGE s gross/net/share USD0. Kritická
+kontrola vyžaduje potvrzení Wixu, protože obecné API reportuje skutečné charge/refund
+a nulové decimal hodnoty samy nepotvrzují testovací režim. Konkrétní dotaz byl
+odeslán Erelovi (`1a186f14ad37be72`, ověřeno SENT), včetně otázky na ne-nulový test
+a možnost ověření před aktivací. Samotný billing POST nebyl proveden; zdroj
+příjmů, delivery journal ani activation nebyly změněny. Po potvrzení postupu
+lze provést jediný zdokumentovaný pokus, bez automatického opakování, a jeho
+skutečný výsledek předat Erelovi.
+
+## Následný nezávislý audit BI přípravy
+
+[Kritik](wix-bi-verification-CRITIC-2026-10-29.md) ověřil skutečné emaily i úzký
+význam OAuth evidence. Našel jednu P3 nepřesnost v přípravné evidenci času; ta je
+opravená. Doplněn byl dosud chybějící dormant sender s jedinou pevnou QA instalací,
+CHARGE USD0, povinným reviewed vendor approval a fsynced exclusive journalem
+sdíleným přes git common directory. Pád, paralelní volání, neznámý výsledek ani
+odmítnutí neopravňují další pokus. Nezávisle prošlo 20/20 cílených testů bez skipů.
+CLI inspect ukazuje `not-attempted`; žádný billing POST ani activation neproběhly.
+
+Publikace připraveného nástroje byla kritikem schválena. Odeslání stále čeká na
+potvrzení konkrétního testovacího postupu Wixem; přijetí BI události a aktivace
+se následně ověřují zvlášť. Širší editor/store qualification zůstává samostatnou
+nedokončenou částí marketplace práce, nikoli hotovým výsledkem tohoto auditu.
