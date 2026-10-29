@@ -2865,10 +2865,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ? OccasionSetupSales.text(d, 'question')
               : item.key == 'promotion' && !AppConfig.isAppSupported
               ? OccasionSetupStrings.story('listingTitle')
-              : OccasionSetupStrings.question(
-                  item.key,
-                  hasTickets: OccasionSetupStory.hasTickets(d),
-                ),
+              : OccasionSetupStrings.story('${item.key}Question'),
       ],
       currentIndex: index,
       eventTitle:
