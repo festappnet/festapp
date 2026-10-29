@@ -77,6 +77,27 @@ user-header.header-hidden {
     gap: 8px;
 }
 
+.btn-admin[aria-busy="true"] {
+    cursor: progress;
+}
+
+.admin-loading-spinner {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: admin-navigation-spin .8s linear infinite;
+}
+
+@keyframes admin-navigation-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-loading-spinner { animation: none; }
+}
+
 .btn-sign-in:hover, .btn-admin:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);

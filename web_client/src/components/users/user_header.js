@@ -2,6 +2,7 @@ import { ACCOUNT_CONNECTIONS_PATH } from './account_connections_links.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
+import { ToastHelper } from '../ui/toast.js';
 import './user_header.css';
 import { RightsService } from '../../services/rights_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
@@ -14,6 +15,10 @@ export class UserHeader extends HTMLElement {
         super();
         this.user = null;
         this.context = null;
+        this._adminNavigationPending = false;
+        this._onPageShow = (event) => {
+            if (event.persisted) this._setAdminNavigationPending(false);
+        };
         this._handleContextChange = this._handleContextChange.bind(this);
     }
 
@@ -39,6 +44,7 @@ export class UserHeader extends HTMLElement {
         this.ticking = false;
         
         window.addEventListener('scroll', this._onScroll, { passive: true });
+        window.addEventListener('pageshow', this._onPageShow);
         
         // Main owns backend activation and the initial rights fetch. Starting a
         // request from custom-element upgrade would race Supabase initialization
@@ -48,7 +54,38 @@ export class UserHeader extends HTMLElement {
     disconnectedCallback() {
         RightsService.removeListener(this._handleContextChange);
         window.removeEventListener('scroll', this._onScroll);
+        window.removeEventListener('pageshow', this._onPageShow);
         this.querySelector('#user-popover-wrapper')?.remove();
+    }
+
+    _setAdminNavigationPending(pending) {
+        this._adminNavigationPending = pending;
+        this._updateAdminNavigationButton(this.querySelector('.btn-admin'));
+    }
+
+    _updateAdminNavigationButton(button) {
+        if (!button) return;
+        const pending = this._adminNavigationPending;
+        button.disabled = pending;
+        button.setAttribute('aria-busy', String(pending));
+        button.setAttribute('aria-label', pending
+            ? `${CommonStrings.myEvents}: ${CommonStrings.loading}` : CommonStrings.myEvents);
+        button.querySelector('.admin-text').textContent = pending ? CommonStrings.loading : CommonStrings.myEvents;
+        const icon = button.querySelector('[aria-hidden]');
+        icon.className = pending ? 'admin-loading-spinner' : 'material-icons';
+        icon.textContent = pending ? '' : 'grid_view';
+    }
+
+    async _openMyEvents() {
+        if (this._adminNavigationPending) return;
+        this._setAdminNavigationPending(true);
+        try {
+            await RouterService.navigateToAdmin();
+            // Keep feedback until the destination replaces this document.
+        } catch (_) {
+            this._setAdminNavigationPending(false);
+            ToastHelper.showError(CommonStrings.error);
+        }
     }
 
     _handleContextChange(context) {
@@ -186,7 +223,9 @@ export class UserHeader extends HTMLElement {
                  adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
                  adminBtn.title = CommonStrings.myEvents;
                  adminBtn.innerHTML = `<i class="material-icons" aria-hidden="true">grid_view</i><span class="admin-text">${CommonStrings.myEvents}</span>`;
-                 adminBtn.onclick = () => RouterService.navigateToAdmin();
+                 adminBtn.type = 'button';
+                 adminBtn.onclick = () => this._openMyEvents();
+                 this._updateAdminNavigationButton(adminBtn);
                  actions.appendChild(adminBtn);
              }
 
