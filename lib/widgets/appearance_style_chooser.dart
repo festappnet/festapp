@@ -74,6 +74,7 @@ class _AppearanceStyleChooserState extends State<AppearanceStyleChooser> {
               ChoiceChip(
                 key: ValueKey('appearance-style-${palette.id}'),
                 selected: selected == palette,
+                showCheckmark: false,
                 onSelected: widget.onSelected == null
                     ? null
                     : (_) => widget.onSelected!(palette),
@@ -97,7 +98,25 @@ class _AppearanceStyleChooserState extends State<AppearanceStyleChooser> {
                         : null,
                   ),
                 ),
-                label: Text(palette.label),
+                label: Builder(
+                  builder: (context) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: Text(palette.label)),
+                      if (selected == palette) ...[
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.check,
+                          key: const ValueKey(
+                            'appearance-style-selected-check',
+                          ),
+                          size: 18,
+                          color: DefaultTextStyle.of(context).style.color,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
           ],
         ),

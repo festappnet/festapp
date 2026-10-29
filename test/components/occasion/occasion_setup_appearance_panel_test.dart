@@ -109,6 +109,33 @@ void main() {
             );
             await tester.pumpAndSettle();
             final name = AppearancePalettes.byId('form-night').label;
+            final selectedChip = find.byKey(
+              const ValueKey('appearance-style-form-night'),
+            );
+            expect(
+              tester.widget<ChoiceChip>(selectedChip).showCheckmark,
+              false,
+            );
+            final check = find.byKey(
+              const ValueKey('appearance-style-selected-check'),
+            );
+            expect(
+              find.descendant(of: selectedChip, matching: check),
+              findsOneWidget,
+            );
+            final checkColor = tester.widget<Icon>(check).color!;
+            final surface = Theme.of(tester.element(check))
+                .colorScheme
+                .secondaryContainer;
+            final lighter =
+                checkColor.computeLuminance() > surface.computeLuminance()
+                ? checkColor.computeLuminance()
+                : surface.computeLuminance();
+            final darker =
+                checkColor.computeLuminance() < surface.computeLuminance()
+                ? checkColor.computeLuminance()
+                : surface.computeLuminance();
+            expect((lighter + .05) / (darker + .05), greaterThanOrEqualTo(3));
             expect(
               find.text(AppearanceColorStrings.palette(name)),
               findsOneWidget,
