@@ -53,6 +53,15 @@ class NotificationCenterController extends ChangeNotifier {
   int? organization, currentOccasion;
   String? user;
   int _generation = 0, _revision = 0, _badgeRequest = 0;
+  Future<void>? _badgeInFlight;
+  (int, int)? _badgeScope;
+
+  void _invalidateBadge() {
+    _badgeRequest++;
+    _badgeInFlight = null;
+    _badgeScope = null;
+  }
+
   bool enabled = false,
       unread = false,
       loading = false,
@@ -66,10 +75,11 @@ class NotificationCenterController extends ChangeNotifier {
   // Preserve the pre-open watermark while the server acknowledges this snapshot.
   // A missing watermark on older backends must not label every row as new.
   int? previousReadThrough;
-  bool isUnread(NotificationItem item) =>
-      item.isRead != null ? !item.isRead! : previousReadThrough != null &&
-      item.sequence > previousReadThrough! &&
-      item.sequence <= snapshot;
+  bool isUnread(NotificationItem item) => item.isRead != null
+      ? !item.isRead!
+      : previousReadThrough != null &&
+            item.sequence > previousReadThrough! &&
+            item.sequence <= snapshot;
   DateTime? snapshotAt;
   DateTime? snapshotDay;
   Map<String, dynamic> get _overviewScope => {
@@ -88,7 +98,8 @@ class NotificationCenterController extends ChangeNotifier {
       'snapshot': snapshot,
       'timezone': displayTimezone,
       'snapshotAt': snapshotAt?.toUtc().toIso8601String(),
-      if (item.data['afterSequence'] != null) 'afterSequence': item.data['afterSequence'],
+      if (item.data['afterSequence'] != null)
+        'afterSequence': item.data['afterSequence'],
       'throughSequence': item.sequence > 0 ? item.sequence : snapshot,
       'markRead': isUnread(item),
     };
@@ -99,7 +110,11 @@ class NotificationCenterController extends ChangeNotifier {
     final generation = _generation;
     final result = await _read('mark_notification_center_item_read', {
       'p_organization': organization,
-      'p_scope': {'id': item.id, 'snapshot': snapshot, 'throughSequence': item.sequence > 0 ? item.sequence : snapshot},
+      'p_scope': {
+        'id': item.id,
+        'snapshot': snapshot,
+        'throughSequence': item.sequence > 0 ? item.sequence : snapshot,
+      },
     });
     if (generation == _generation && result == true) {
       item.isRead = true;
@@ -247,14 +262,31 @@ class NotificationCenterController extends ChangeNotifier {
   void setForeground(bool value) {
     if (foreground == value) return;
     foreground = value;
+    if (!value) _invalidateBadge();
     _schedule();
     if (value && user != null) unawaited(refreshBadge());
   }
 
-  Future<void> refreshBadge() async {
+  Future<void> refreshBadge() {
     if (_unsupported || user == null || organization == null || !foreground) {
-      return;
+      return Future.value();
     }
+    final scope = (_generation, _revision);
+    final pending = _badgeInFlight;
+    if (pending != null && _badgeScope == scope) return pending;
+    _badgeScope = scope;
+    late final Future<void> read;
+    read = _readBadge().whenComplete(() {
+      if (identical(_badgeInFlight, read)) {
+        _badgeInFlight = null;
+        _badgeScope = null;
+      }
+    });
+    _badgeInFlight = read;
+    return read;
+  }
+
+  Future<void> _readBadge() async {
     final generation = _generation,
         revision = _revision,
         request = ++_badgeRequest;
@@ -336,7 +368,8 @@ class NotificationCenterController extends ChangeNotifier {
           .toList();
       nextCursor = result['nextCursor'];
       truncated = result['truncated'] == true;
-      _badgeRequest++; // Reject badge reads that began while acknowledgement was pending.
+      // Reject and release badge reads begun before acknowledgement completed.
+      _invalidateBadge();
       unread = false;
     } catch (error) {
       if (generation == _generation &&
@@ -405,6 +438,7 @@ class NotificationCenterController extends ChangeNotifier {
       });
       if (generation != _generation) return false;
       occasion['muted'] = muted;
+      _invalidateBadge();
       notifyListeners();
       unawaited(refreshBadge());
       return true;

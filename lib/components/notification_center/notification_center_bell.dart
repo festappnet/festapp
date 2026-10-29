@@ -1,10 +1,13 @@
 import 'dart:convert';
+
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
+
 import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,6 +15,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
+
 import 'notification_center_controller.dart';
 import 'notification_center_panel.dart';
 import 'notification_center_strings.dart';
@@ -23,12 +27,12 @@ class NotificationBellIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        'assets/icons/notification-bell.svg',
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        excludeFromSemantics: true,
-      );
+    'assets/icons/notification-bell.svg',
+    width: 24,
+    height: 24,
+    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    excludeFromSemantics: true,
+  );
 }
 
 class NotificationCenterBell extends StatefulWidget {
@@ -53,8 +57,9 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     OrderEmailIssue.changes.addListener(_deliveryChanged);
     WidgetsBinding.instance.addObserver(this);
     RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
-    auth = Supabase.instance.client.auth.onAuthStateChange
-        .listen((_) => _contextChanged());
+    auth = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (_) => _contextChanged(),
+    );
   }
 
   @override
@@ -69,21 +74,27 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     _routeChanged();
   }
 
-  void _routeChanged() {
+  bool _contextUpdateScheduled = false, _pendingInvalidation = false;
+
+  void _scheduleContextUpdate({bool invalidate = false}) {
+    _pendingInvalidation |= invalidate;
+    if (_contextUpdateScheduled) return;
+    _contextUpdateScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _contextChanged();
+      _contextUpdateScheduled = false;
+      final invalidate = _pendingInvalidation;
+      _pendingInvalidation = false;
+      if (mounted) _contextChanged(invalidate: invalidate);
     });
   }
+
+  void _routeChanged() => _scheduleContextUpdate();
 
   void _deliveryChanged() {
     controller.refresh();
   }
 
-  void _rightsChanged() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _contextChanged(invalidate: true);
-    });
-  }
+  void _rightsChanged() => _scheduleContextUpdate(invalidate: true);
 
   void _contextChanged({bool invalidate = false}) {
     if (!mounted) return;
@@ -95,19 +106,22 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       return;
     }
     final visible = isVisibleRouteInstance(context);
-    controller.setForeground(_resumed && visible);
+    if (!visible || !_resumed) controller.setForeground(false);
     if (!visible) return;
     final path = context.router.root.urlState.uri.pathSegments;
     final current = RightsService.currentOccasion();
     // Unit administration must never inherit the previous occasion's priority.
-    final occasion =
-        path.isNotEmpty && path.first == current?.link ? current?.id : null;
+    final occasion = path.isNotEmpty && path.first == current?.link
+        ? current?.id
+        : null;
     controller.configure(
-        userId: userId,
-        organizationId:
-            RightsService.currentUnit()?.organization ?? AppConfig.organization,
-        occasionId: occasion,
-        invalidate: invalidate);
+      userId: userId,
+      organizationId:
+          RightsService.currentUnit()?.organization ?? AppConfig.organization,
+      occasionId: occasion,
+      invalidate: invalidate,
+    );
+    controller.setForeground(_resumed);
   }
 
   @override
@@ -122,84 +136,97 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     unawaited(controller.open());
     final desktop = MediaQuery.sizeOf(context).width >= 720;
     final bell = _bellKey.currentContext?.findRenderObject() as RenderBox?;
-    final overlay = Navigator.of(context, rootNavigator: true)
-        .overlay!
-        .context
-        .findRenderObject() as RenderBox;
+    final overlay =
+        Navigator.of(
+              context,
+              rootNavigator: true,
+            ).overlay!.context.findRenderObject()
+            as RenderBox;
     final anchor = bell == null
         ? null
         : bell.localToGlobal(Offset.zero, ancestor: overlay) & bell.size;
     NotificationItem? target;
-    Map<String,dynamic>? selection;
+    Map<String, dynamic>? selection;
     await showDialog<void>(
-        context: context,
-        barrierColor: desktop ? Colors.transparent : Colors.black54,
-        builder: (dialogContext) => NotificationCenterPanel(
-            controller: controller,
-            anchor: anchor,
-            onDetail: (item) {
-              selection = controller.selectionScope(item);
-              if (item.isSummary && selection == null) {
-                unawaited(controller.open());
-                return;
-              }
-              target = item;
-              Navigator.of(dialogContext).pop();
-            }));
+      context: context,
+      barrierColor: desktop ? Colors.transparent : Colors.black54,
+      builder: (dialogContext) => NotificationCenterPanel(
+        controller: controller,
+        anchor: anchor,
+        onDetail: (item) {
+          selection = controller.selectionScope(item);
+          if (item.isSummary && selection == null) {
+            unawaited(controller.open());
+            return;
+          }
+          target = item;
+          Navigator.of(dialogContext).pop();
+        },
+      ),
+    );
     if (!mounted) return;
     controller.close();
     focus.requestFocus();
     if (target != null) await _detail(target!, selection);
   }
 
-  Future<void> _detail(NotificationItem item, Map<String,dynamic>? selection) async {
+  Future<void> _detail(
+    NotificationItem item,
+    Map<String, dynamic>? selection,
+  ) async {
     final data = item.data;
-    if (data['relatedOrders'] != true) await ExceptionHandler.guard(context, futureFunction: () => controller.markRead(item));
+    if (data['relatedOrders'] != true) {
+      await ExceptionHandler.guard(
+        context,
+        futureFunction: () => controller.markRead(item),
+      );
+    }
     if (!mounted) return;
     final link = item.occasionLink;
     if (link != null && data['orderId'] is int) {
       await pushRootPath(
-          context.router.root,
-          Uri(pathSegments: [
-            '',
-            link,
-            'reservations',
-            'orders',
-            'current'
-          ], queryParameters: {
+        context.router.root,
+        Uri(
+          pathSegments: ['', link, 'reservations', 'orders', 'current'],
+          queryParameters: {
             'orderId': data['orderId'].toString(),
             if (data['messageId'] != null)
-              'orderMessageId': data['messageId'].toString()
-          }).toString());
+              'orderMessageId': data['messageId'].toString(),
+          },
+        ).toString(),
+      );
       return;
     }
     if (data['messageId'] != null) {
       if (link != null) {
         await pushRootPath(
-            context.router.root,
-            Uri(pathSegments: [
-              '',
-              link,
-              'reservations',
-              'orders',
-              'email-history'
-            ], queryParameters: {
-              'messageId': data['messageId'].toString()
-            }).toString());
+          context.router.root,
+          Uri(
+            pathSegments: ['', link, 'reservations', 'orders', 'email-history'],
+            queryParameters: {'messageId': data['messageId'].toString()},
+          ).toString(),
+        );
       } else {
         await showDialog<void>(
-            context: context,
-            builder: (_) => EmailDeliveryHistory(
-                organizationId: controller.organization,
-                messageId: data['messageId'].toString()));
+          context: context,
+          builder: (_) => EmailDeliveryHistory(
+            organizationId: controller.organization,
+            messageId: data['messageId'].toString(),
+          ),
+        );
       }
       return;
     }
     if (link != null && data['relatedOrders'] == true) {
       await pushRootPath(
-          context.router.root,
-          Uri(pathSegments: ['', link, 'reservations', 'orders', 'current'],
-            queryParameters: selection != null ? {'notificationGroup': jsonEncode(selection)} : null).toString());
+        context.router.root,
+        Uri(
+          pathSegments: ['', link, 'reservations', 'orders', 'current'],
+          queryParameters: selection != null
+              ? {'notificationGroup': jsonEncode(selection)}
+              : null,
+        ).toString(),
+      );
       return;
     }
     final account = data['bankAccountId'];
@@ -207,37 +234,47 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     if (account is int &&
         unit is int &&
         RightsService.hasBankCapability(
-            account, AuthorizationCapabilities.bankSyncManage)) {
-      await pushRootPath(context.router.root,
-          '/unit/$unit/edit/bank-accounts/$account/connection');
+          account,
+          AuthorizationCapabilities.bankSyncManage,
+        )) {
+      await pushRootPath(
+        context.router.root,
+        '/unit/$unit/edit/bank-accounts/$account/connection',
+      );
       return;
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(NotificationCenterStrings.text('unavailable'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(NotificationCenterStrings.text('unavailable'))),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) => !_authenticated || !controller.enabled
-          ? const SizedBox.shrink()
-          : IconButton(
-              key: _bellKey,
-              focusNode: focus,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              tooltip: NotificationCenterStrings.text(
-                  controller.unread ? 'unread' : 'title'),
-              onPressed: _open,
-              icon: Badge(
-                  isLabelVisible: controller.unread,
-                  smallSize: 8,
-                  child: NotificationBellIcon(
-                      color: widget.color ??
-                          Theme.of(context).appBarTheme.foregroundColor ??
-                          Theme.of(context).colorScheme.onSurface)),
-            ));
+    listenable: controller,
+    builder: (context, _) => !_authenticated || !controller.enabled
+        ? const SizedBox.shrink()
+        : IconButton(
+            key: _bellKey,
+            focusNode: focus,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            tooltip: NotificationCenterStrings.text(
+              controller.unread ? 'unread' : 'title',
+            ),
+            onPressed: _open,
+            icon: Badge(
+              isLabelVisible: controller.unread,
+              smallSize: 8,
+              child: NotificationBellIcon(
+                color:
+                    widget.color ??
+                    Theme.of(context).appBarTheme.foregroundColor ??
+                    Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+  );
   @override
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);

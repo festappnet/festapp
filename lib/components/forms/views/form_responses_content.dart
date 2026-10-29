@@ -1,9 +1,11 @@
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
+
 import '../models/form_bundle.dart';
 import '../waitlist_strings.dart';
 import 'waitlist_offers_dialog.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
@@ -17,10 +19,24 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 class FormResponsesContent extends StatefulWidget {
   final String formLink;
-  const FormResponsesContent({super.key, required this.formLink});
+  final Future<List<FormFieldDefinition>> Function(String)? loadFields;
+  final Future<ReservationsBundle> Function({
+    String? occasionLink,
+    String? formLink,
+    bool includeOrderDetails,
+    bool includeSpots,
+    bool includeOrdersHistory,
+  })?
+  loadOrders;
+  const FormResponsesContent({
+    super.key,
+    required this.formLink,
+    this.loadFields,
+    this.loadOrders,
+  });
 
   @override
-  _FormResponsesContentState createState() => _FormResponsesContentState();
+  State<FormResponsesContent> createState() => _FormResponsesContentState();
 }
 
 class _FormResponsesContentState extends State<FormResponsesContent> {
@@ -42,15 +58,20 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
 
   Future<void> loadData() async {
     if (_formLink == null) return;
-    var ff = await DbForms.getAllFormFields(_formLink!);
-    if (mounted) {
+    final link = _formLink!;
+    final ff = await (widget.loadFields ?? DbForms.getAllFormFields)(link);
+    if (mounted && link == _formLink) {
       setState(() {
         formFieldModels = ff;
         controller = SingleDataGridController<FormResponseModel>(
           context: context,
           loadData: () async {
             final link = _formLink!;
-            final bundle = await DbOrders.getAllOrdersBundle(formLink: link);
+            final bundle =
+                await (widget.loadOrders ?? DbOrders.getAllOrdersBundle)(
+                  formLink: link,
+                  includeOrderDetails: true,
+                );
             if (mounted && link == _formLink) {
               setState(() {
                 _capacityForm = bundle.forms
@@ -59,7 +80,10 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
                 _orders = bundle.orders;
               });
             }
-            return DbForms.getAllResponses(link);
+            return bundle.orders
+                .where((order) => order.form?.definition.link == link)
+                .map((order) => FormResponseModel.fromOrder(order, ff))
+                .toList();
           },
           fromPlutoJson: (Map<String, dynamic> json) {
             return FormResponseModel.fromPlutoJson(json, formFieldModels ?? []);
@@ -80,8 +104,9 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
                   EshopColumns.productCategories,
             },
           ),
-          exportOptions:
-              ExportOptions(fileName: "${_formLink ?? ""}-responses"),
+          exportOptions: ExportOptions(
+            fileName: "${_formLink ?? ""}-responses",
+          ),
         );
       });
     }
@@ -96,30 +121,37 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    final capacity = _capacityForm?.definition.capacity;
-    final canSendOffers = _capacityForm?.definition.waitlistEnabled == true &&
-        RightsService.canUpdateOrders();
-    return Column(children: [
-      if (_capacityForm?.definition.capacity case final capacity?)
-        Padding(
+    return Column(
+      children: [
+        if (_capacityForm?.definition.capacity case final capacity?)
+          Padding(
             padding: const EdgeInsets.all(16),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (capacity.enabled) WaitlistCapacitySummary(capacity: capacity),
-              if (_capacityForm!.definition.waitlistEnabled &&
-                  RightsService.canUpdateOrders())
-                TextButton(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (capacity.enabled)
+                  WaitlistCapacitySummary(capacity: capacity),
+                if (_capacityForm!.definition.waitlistEnabled &&
+                    RightsService.canUpdateOrders())
+                  TextButton(
                     onPressed: () async {
                       await showDialog(
-                          context: context,
-                          builder: (_) => WaitlistOffersDialog(
-                              form: _capacityForm!, orders: _orders));
+                        context: context,
+                        builder: (_) => WaitlistOffersDialog(
+                          form: _capacityForm!,
+                          orders: _orders,
+                        ),
+                      );
                       await refreshData();
                     },
-                    child: Text(WaitlistStrings.send)),
-            ])),
-      Expanded(child: SingleTableDataGrid<FormResponseModel>(controller!)),
-    ]);
+                    child: Text(WaitlistStrings.send),
+                  ),
+              ],
+            ),
+          ),
+        Expanded(child: SingleTableDataGrid<FormResponseModel>(controller!)),
+      ],
+    );
   }
 
   static List<String> columnIdentifiers = [
@@ -128,6 +160,6 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     EshopColumnIds.TICKET_PRODUCTS_EXTENDED,
     EshopColumnIds.ORDER_STATE,
     EshopColumnIds.ORDER_WAITLIST,
-    EshopColumnIds.RESPONSES
+    EshopColumnIds.RESPONSES,
   ];
 }

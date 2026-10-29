@@ -5,10 +5,8 @@ import 'package:collection/collection.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/form_commands.dart';
 import 'package:fstapp/components/forms/supabase_form_commands.dart';
-import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 
@@ -198,10 +196,7 @@ class DbForms {
   }) async {
     final response = await _supabase.rpc(
       'get_forms_by_link',
-      params: {
-        'occasion_link': occasionLink,
-        if (formLink != null) 'form_link': formLink,
-      },
+      params: {'occasion_link': occasionLink, 'form_link': ?formLink},
     );
 
     return List<FormBundle>.from(response.map((f) => FormBundle.fromJson(f)));
@@ -316,22 +311,6 @@ class DbForms {
     var b = BlueprintModel.fromJson(response["data"]);
     b.assignAllSpotsWithBlueprint();
     return b;
-  }
-
-  static Future<List<FormResponseModel>> getAllResponses(
-    String formLink,
-  ) async {
-    var allFields = await getAllFormFields(formLink);
-    var ordersBundle = await DbOrders.getAllOrdersBundle(
-      formLink: formLink,
-      includeOrderDetails: true,
-    );
-    var onlyFormOrders = ordersBundle.orders.where(
-      (o) => o.form?.definition.link == formLink,
-    );
-    return List<FormResponseModel>.from(
-      onlyFormOrders.map((x) => FormResponseModel.fromOrder(x, allFields)),
-    );
   }
 
   static Future<List<FormFieldDefinition>> getAllFormFields(
