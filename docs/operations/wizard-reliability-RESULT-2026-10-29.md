@@ -1,10 +1,12 @@
-# Wizard reliability - local implementation and verification
+# Wizard reliability - implementation and verified release
 
-Implemented locally on `fix/wizard-reliability-20261029` in
+**Production update:** version `0.20.446+951` was deployed to `prod/festapptickets` after PRs #659/#660 merged. Compatible Edge/SQL, tenant ancestry/drift, build gates and three live version/assets/legal probes passed. See the [release receipt](releases/festapptickets-wizard-reliability-2026-10-29.json).
+
+Initial local implementation was on `fix/wizard-reliability-20261029` in
 `/Users/miakh/source/festapp-wizard-reliability-20261029`, based on fetched
 `origin/main` `2095a9ba49bf1a7cd3a76f9e5be98d8407e95825`. The original dirty checkout
-was preserved. No commit, push, production migration, Edge reload or deployment
-was performed.
+was preserved. The following local evidence predates the separately authorized
+production release recorded above.
 
 ## Result
 
@@ -120,12 +122,24 @@ and its existing SQL path remains unchanged.
 The named browser, owned Flutter server, local Edge process and QA project were
 stopped; QA data was retained in its local backup. Other projects were left running.
 
-## Remaining release work
+## Production release and cleanup
 
-Production is unchanged. A separately authorized release must first publish
-compatible Edge/client recognition, verify tenant activation/backend identity and
-all ten exact catalog IDs, apply the migration through the protected canonical
-workflow and perform the guarded Edge reload. Then build locally and deploy only
-`prod/festapptickets` via `automation/deploy_direct.sh`, with routine execution
-delegated under AGENTS.md, tenant drift/ancestry checks and live-version probes.
-No other tenant or GitHub Deploy dispatch is included.
+PRs #659/#660 are merged. Backend source `9a2076d3c67de05a8ffca9546c62c7549e54c1f8`
+was applied with exact SQL/Edge fingerprints and ledger digest after a fresh
+pgBackRest differential/archive check. All ten exact font IDs already existed.
+The canonical Functions guard restarted the existing container; email pause was
+restored to false, no health alerts appeared and the two preexisting unknown
+outcomes stayed unchanged.
+
+Web source `7d9f2ff628187053e4efe2a71a51be27a8ea48a4` adds the tested PWA recovery-script
+cache correction to that backend source. Tenant commit
+`83169e14699a25f4c8733601e235a12d9628c37e` was built locally and uploaded directly via
+`automation/deploy_direct.sh` to version `0.20.446+951`. No other tenant or GitHub
+Deploy dispatch was used. The live browser smoke rendered the homepage and
+account-entry dialog without submitting an account or creating production fixtures.
+
+Finished task branches/worktrees were removed after a verified Git bundle and
+protected file archives. Unready work and final integration drafts were retained
+on `archive/work-in-progress-20261029` and in the workstation recovery archive;
+they were not silently included in the release. Release notes are a documentation
+follow-up and do not require another build or deployment.
