@@ -56,7 +56,12 @@ test('theme preference persists between marketing and application and follows sy
         ThemeService.init();
         assert.equal(document.body.classList.contains('dark-mode'), true);
         ThemeService.setMode('auto');
-        assert.equal(localStorage.getItem('theme'), null);
+        assert.equal(localStorage.getItem('theme'), 'auto');
         assert.equal(ThemeService.currentMode, 'auto');
+        // Explicit system mode must win over the previous admin cache too.
+        localStorage.setItem('adaptive_theme_preferences', JSON.stringify(JSON.stringify({theme_mode:0})));
+        ThemeService.init();
+        assert.equal(ThemeService.currentMode, 'auto');
+        assert.equal(document.body.classList.contains('dark-mode'), true);
     } finally { Object.assign(globalThis, previous); dom.window.close(); }
 });
