@@ -24,7 +24,7 @@ class OccasionSetupStoryShell extends StatefulWidget {
     this.onQuestionSelected,
     this.onNext,
     this.nextLabel = 'Pokračovat',
-    this.allQuestionsLabel = 'Všechny otázky',
+    this.allQuestionsLabel,
     this.visitedLabel = 'Rozpracováno',
     this.contextLabel,
     this.primaryAction,
@@ -39,7 +39,7 @@ class OccasionSetupStoryShell extends StatefulWidget {
   final Set<String> completedKeys;
   final Set<String> visitedKeys;
   final ValueChanged<String>? onQuestionSelected;
-  final String allQuestionsLabel;
+  final String? allQuestionsLabel;
   final String visitedLabel;
   final String? contextLabel;
   final List<String> questionTitles;
@@ -107,6 +107,42 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
     super.dispose();
   }
 
+  Widget _questionMenu(
+    int index, {
+    required bool enabled,
+    required Widget child,
+  }) {
+    if (!enabled || widget.onQuestionSelected == null) return child;
+    return PopupMenuButton<String>(
+      tooltip:
+          widget.allQuestionsLabel ??
+          MaterialLocalizations.of(context).showMenuTooltip,
+      initialValue: _keyAt(index),
+      onSelected: widget.onQuestionSelected,
+      itemBuilder: (context) => [
+        for (var target = 0; target < widget.questionTitles.length; target++)
+          PopupMenuItem<String>(
+            value: _keyAt(target),
+            height: 48,
+            child: Semantics(
+              label: widget.questionTitles[target],
+              selected: target == widget.currentIndex,
+              child: Text('${_numberedLabelAt(target)} · ${_stateAt(target)}'),
+            ),
+          ),
+      ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(
+          children: [
+            Expanded(child: child),
+            const Icon(Icons.expand_more, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _navigation(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -139,30 +175,37 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
                             width: count == 1 || largeText
                                 ? constraints.maxWidth
                                 : activeWidth,
-                            child: Semantics(
-                              label: widget.questionTitles[index],
-                              value: _stateAt(index),
-                              selected: true,
-                              child: DecoratedBox(
-                                key: ValueKey('story-target-${_keyAt(index)}'),
-                                decoration: BoxDecoration(
-                                  color: colors.primaryContainer,
-                                  border: Border.all(
-                                    color: colors.primary,
-                                    width: 1.5,
+                            child: _questionMenu(
+                              index,
+                              enabled: !interactive || largeText,
+                              child: Semantics(
+                                label: widget.questionTitles[index],
+                                value: _stateAt(index),
+                                selected: true,
+                                child: DecoratedBox(
+                                  key: ValueKey(
+                                    'story-target-${_keyAt(index)}',
                                   ),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
+                                  decoration: BoxDecoration(
+                                    color: colors.primaryContainer,
+                                    border: Border.all(
+                                      color: colors.primary,
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
                                   ),
-                                  child: Text(
-                                    _numberedLabelAt(index),
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      color: colors.onPrimaryContainer,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
+                                    child: Text(
+                                      _numberedLabelAt(index),
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                            color: colors.onPrimaryContainer,
+                                          ),
                                     ),
                                   ),
                                 ),

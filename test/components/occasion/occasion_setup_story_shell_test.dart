@@ -266,4 +266,36 @@ void main() {
       expect(find.text('Basics'), findsNothing);
     });
   }
+  testWidgets('narrow navigation exposes every question through the active pill',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final selected = <String>[];
+    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: OccasionSetupStoryShell(
+      questionTitles: List.generate(18, (i) => 'Full question $i'),
+      questionLabels: List.generate(18, (i) => i == 8 ? 'Verification' : 'Step $i'),
+      questionKeys: List.generate(18, (i) => 'key-$i'),
+      questionNumbers: List.generate(18, (i) => i == 8 ? null : i + 1),
+      currentIndex: 0,
+      onQuestionSelected: selected.add,
+      eventTitle: 'Draft', status: 'Saved', questionCount: 'Question 1 of 17',
+      segmentStates: const ['Completed', 'Current', 'Upcoming'],
+      leaveLabel: 'Leave', backLabel: 'Back', onLeave: () {}, onBack: () {},
+      child: const Text('Question content'),
+    ))));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Show menu'), findsOneWidget);
+    expect(tester.getSize(find.byTooltip('Show menu')).height, greaterThanOrEqualTo(48));
+    await tester.tap(find.byTooltip('Show menu'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Verification · Upcoming'));
+    await tester.tap(find.text('Verification · Upcoming'));
+    await tester.pumpAndSettle();
+    expect(selected, ['key-8']);
+    expect(tester.takeException(), isNull);
+  });
+
 }
