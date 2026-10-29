@@ -1,0 +1,84 @@
+{
+  "releasedAt": "2026-10-29",
+  "web": {
+    "tenant": "festapptickets",
+    "branch": "prod/festapptickets",
+    "sourceMainSha": "6f7283346e85df30eaaf3df158744827e4d2ba44",
+    "tenantSha": "0d2c6715fbc3859c9c2721d6d19085551bc51113",
+    "previousProductionSha": "83169e14699a25f4c8733601e235a12d9628c37e",
+    "version": "0.20.447+952",
+    "deploymentUrl": "https://92fdb37e.vstupenkyonline.pages.dev",
+    "productionOrigin": "https://vstupenky.online",
+    "checks": {
+      "tenantDrift": "passed using checker from sourceMainSha",
+      "previousProductionAncestor": true,
+      "pwaCore": {
+        "files": 58,
+        "bytes": 26191211,
+        "limitBytes": 26214400
+      },
+      "pwaKnown": {
+        "files": 264,
+        "bytes": 61412974,
+        "limitBytes": 67108864
+      },
+      "cspGeneration": "passed",
+      "webBuildVerification": "passed for version 0.20.447+952",
+      "directCloudflareUpload": "completed with Wrangler OAuth; local build artifacts reused after successful canonical build",
+      "liveVersionAssetAndLegalProbes": "passed; 3 consecutive coherent probes for version 0.20.447+952"
+    },
+    "artifacts": {
+      "versionManifestSha256": "ad1854bfdbdcfb265f5010e42c536e84a548d0e103cccba3209169d4f0aeced2",
+      "workerSha256": "24ac997d85f160fed1bb43c03843b317cd7c15920ae93f38542336ec145520c0"
+    }
+  },
+  "backend": {
+    "acls": {
+      "apply_form_settings_internal(jsonb,jsonb)": "{postgres=X/postgres}",
+      "form_settings_from_metadata_internal(jsonb)": "{postgres=X/postgres}",
+      "form_settings_keys_internal()": "{postgres=X/postgres}",
+      "normalize_form_metadata_internal(jsonb)": "{postgres=X/postgres}"
+    },
+    "backup": {
+      "archive_check_passed": true,
+      "at": 1793287143.850112,
+      "backup_stop": 1793287130,
+      "label": "20261025-031939F_20261029-151757D",
+      "type": "diff"
+    },
+    "dataUnchangedByAggregate": true,
+    "formsAfter": {
+      "gradient": 2,
+      "missing": 124,
+      "solid": 0,
+      "total": 126,
+      "unexpected": {}
+    },
+    "formsBefore": {
+      "gradient": 2,
+      "missing": 124,
+      "solid": 0,
+      "total": 126,
+      "unexpected": {}
+    },
+    "fourFunctionParity": {
+      "apply_form_settings_internal(jsonb,jsonb)": true,
+      "form_settings_from_metadata_internal(jsonb)": true,
+      "form_settings_keys_internal()": true,
+      "normalize_form_metadata_internal(jsonb)": true
+    },
+    "ledgerVerified": true,
+    "migrationApplied": true,
+    "migrationSha256": "6be98bb009364b16233eacae1f69421f6bc726e44e058b8f7664b761ef9baad9",
+    "migrationVersion": "20261029130000",
+    "sourceMain": "4ef4bdd52b2cb8f568851ca6a0a3e4f81e782405"
+  },
+  "validation": {
+    "colorUiFlutterTests": 31,
+    "formSettingsPostgresTests": 12,
+    "publicThemeRuntimeTests": 2,
+    "blueprintRegressionJourney": 1,
+    "wizardNavigationWidgetTests": 11,
+    "mobileMenuAndOfflineRetry": "passed in isolated real Flutter UI; scope limitations in wizard-followup-ui-additional-2026-10-29.md"
+  }
+}

@@ -33,3 +33,16 @@ Final refinement validation: 31 targeted Flutter tests passed, including
 actual form hex edits and Wizard font/preset regressions. Targeted analyzer
 reported no errors or warnings; only two existing form deprecations remain.
 The final Impeccable detector reported no findings.
+
+Released to vstupenky.online as **0.20.447+952**, including the separately
+validated blank-plan gallery and narrow-screen Wizard navigation fixes. Local
+canonical build, tenant drift/ancestry, PWA, CSP and build verification passed.
+Three consecutive production version/asset/legal probes passed.
+[Combined release receipt](releases/festapptickets-form-appearance-2026-10-29.json).
+
+Completed implementation/release worktrees and branches were removed after
+preserving original patch-equivalent commits in the protected cleanup archive.
+Unfinished independent Joomla/Shoptet work and newly requested further QA stay
+isolated from clean main. This release does not claim exhaustive payment,
+email, OAuth, date-picker or delivery-mode end-to-end coverage; further QA is
+a separate active task.
