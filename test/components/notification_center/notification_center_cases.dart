@@ -59,6 +59,126 @@ void main() {
     addTearDown(logs.dispose);
   });
   test(
+    'overlapping badge refreshes share pending work but later refresh is fresh',
+    () async {
+      final first = Completer<dynamic>();
+      var calls = 0;
+      final c = NotificationCenterController(
+        read: (_, _) {
+          calls++;
+          return calls == 1 ? first.future : Future.value(badge(unread: false));
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      final refreshes = [c.refreshBadge(), c.refreshBadge(), c.refresh()];
+      expect(calls, 1);
+      first.complete(badge());
+      await Future.wait(refreshes);
+      expect(c.unread, isTrue);
+      await c.refreshBadge();
+      expect(calls, 2);
+      expect(c.unread, isFalse);
+    },
+  );
+  test(
+    'identity switch does not share or apply the previous pending badge',
+    () async {
+      final old = Completer<dynamic>(), current = Completer<dynamic>();
+      var calls = 0;
+      final c = NotificationCenterController(
+        read: (_, _) => ++calls == 1 ? old.future : current.future,
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'old', organizationId: 1);
+      c.configure(userId: 'current', organizationId: 2);
+      final refresh = c.refreshBadge();
+      expect(calls, 2);
+      old.complete(badge());
+      await Future<void>.delayed(Duration.zero);
+      final shared = c.refreshBadge();
+      expect(calls, 2);
+      expect(c.enabled, isFalse);
+      current.complete(badge(unread: false));
+      await Future.wait([refresh, shared]);
+      expect(c.unread, isFalse);
+      await c.refreshBadge();
+      expect(calls, 3);
+    },
+  );
+  test(
+    'background invalidates pending badge and foreground requests fresh data',
+    () async {
+      final old = Completer<dynamic>(), current = Completer<dynamic>();
+      var calls = 0;
+      final c = NotificationCenterController(
+        read: (_, _) => ++calls == 1 ? old.future : current.future,
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      c.setForeground(false);
+      old.complete(badge());
+      await Future<void>.delayed(Duration.zero);
+      expect(c.enabled, isFalse);
+      c.setForeground(true);
+      final refresh = c.refreshBadge();
+      expect(calls, 2);
+      current.complete(badge(unread: false));
+      await refresh;
+      expect(c.enabled, isTrue);
+      expect(c.unread, isFalse);
+    },
+  );
+  test('failed shared badge read releases pending work for retry', () async {
+    final pending = Completer<dynamic>();
+    var calls = 0;
+    final c = NotificationCenterController(
+      read: (_, _) => ++calls == 1 ? pending.future : Future.value(badge()),
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    final refresh = c.refreshBadge();
+    expect(calls, 1);
+    pending.completeError(StateError('offline'));
+    await refresh;
+    await c.refreshBadge();
+    expect(calls, 2);
+    expect(c.unread, isTrue);
+  });
+  test('disposing rejects completion of a shared badge read', () async {
+    final pending = Completer<dynamic>();
+    final c = NotificationCenterController(read: (_, _) => pending.future);
+    c.configure(userId: 'u', organizationId: 1);
+    final refresh = c.refreshBadge();
+    c.dispose();
+    pending.complete(badge());
+    await refresh;
+    expect(c.enabled, isFalse);
+  });
+  test('successful mute starts a fresh badge read instead of joining pre-mute work', () async {
+    final old = Completer<dynamic>(), current = Completer<dynamic>();
+    var polls = 0;
+    final c = NotificationCenterController(
+      read: (name, _) async {
+        if (name == 'get_notification_center_badge') {
+          return ++polls == 1 ? old.future : current.future;
+        }
+        return <String, dynamic>{};
+      },
+    );
+    addTearDown(c.dispose);
+    c.configure(userId: 'u', organizationId: 1);
+    expect(await c.mute({'id': 7}, true), isTrue);
+    final refresh = c.refreshBadge();
+    expect(polls, 2);
+    old.complete(badge());
+    await Future<void>.delayed(Duration.zero);
+    expect(c.unread, isFalse);
+    current.complete(badge(unread: false));
+    await refresh;
+    expect(c.unread, isFalse);
+  });
+  test(
     'unread rows retain the pre-open watermark until the next open',
     () async {
       var watermark = 4;
@@ -147,7 +267,10 @@ void main() {
       );
       final oldRow = find.byKey(const ValueKey('notification-item-4'));
       final newRow = find.byKey(const ValueKey('notification-item-5'));
-      expect(tester.getTopLeft(newRow).dy, lessThan(tester.getTopLeft(oldRow).dy));
+      expect(
+        tester.getTopLeft(newRow).dy,
+        lessThan(tester.getTopLeft(oldRow).dy),
+      );
       expect(tester.widget<Material>(oldRow).color, Colors.transparent);
       expect(tester.widget<Material>(newRow).color, isNot(Colors.transparent));
       final oldAge = tester.widget<Text>(
@@ -165,7 +288,9 @@ void main() {
       ]) {
         final title = find.descendant(
           of: entry.$1,
-          matching: find.byKey(ValueKey('notification-action-${entry.$1 == oldRow ? '4' : '5'}')),
+          matching: find.byKey(
+            ValueKey('notification-action-${entry.$1 == oldRow ? '4' : '5'}'),
+          ),
         );
         expect(tester.widget<Text>(title).style?.fontWeight, entry.$2);
       }
@@ -198,7 +323,7 @@ void main() {
         if (name == 'get_notification_center_badge') {
           polls++;
           if (polls == 1) return badge();
-          return polling.future;
+          return polls == 2 ? polling.future : badge(unread: false);
         }
         return pending.future;
       },
@@ -211,6 +336,8 @@ void main() {
     pending.complete(opened());
     await open;
     expect(c.failed, isFalse);
+    await c.refreshBadge();
+    expect(polls, 3);
     polling.complete(badge());
     await poll;
     expect(c.unread, isFalse);
@@ -309,8 +436,9 @@ void main() {
   test('pagination failure retains items and snapshot', () async {
     final c = NotificationCenterController(
       read: (name, params) async {
-        if (name == 'get_notification_center_daily_overview')
+        if (name == 'get_notification_center_daily_overview') {
           throw StateError('offline');
+        }
         return badge();
       },
     );
@@ -749,8 +877,9 @@ void main() {
       final c = NotificationCenterController(
         read: (name, params) async {
           calls.add(params['p_open'] == true ? 'open_daily' : name);
-          if (name == 'get_notification_center_badge')
+          if (name == 'get_notification_center_badge') {
             return badge(unread: false);
+          }
           expect(params['p_ids'], ['summary']);
           return {
             'items': [
@@ -847,16 +976,25 @@ void main() {
         // At 2x text the later occasion can be outside ListView's cache extent.
         if (scale == 1) {
           expect(find.text('Same title'), findsNWidgets(2));
-          expect(find.textContaining('NotificationCenter.today'), findsNWidgets(2));
+          expect(
+            find.textContaining('NotificationCenter.today'),
+            findsNWidgets(2),
+          );
         } else {
           expect(find.text('Same title'), findsWidgets);
           expect(find.textContaining('NotificationCenter.today'), findsWidgets);
         }
-        expect(find.textContaining('NotificationCenter.daysAgo.other'), findsOneWidget);
+        expect(
+          find.textContaining('NotificationCenter.daysAgo.other'),
+          findsOneWidget,
+        );
         final age = find.byKey(const ValueKey('notification-age-old'));
         expect(
-          tester.widget<Text>(age).textSpan?.toPlainText() ?? tester.widget<Text>(age).data,
-          contains('NotificationCenter.daysAgo.other · NotificationCenter.orders.other'),
+          tester.widget<Text>(age).textSpan?.toPlainText() ??
+              tester.widget<Text>(age).data,
+          contains(
+            'NotificationCenter.daysAgo.other · NotificationCenter.orders.other',
+          ),
         );
         final ageHeaders = find.ancestor(
           of: age,
@@ -870,13 +1008,20 @@ void main() {
               find.byKey(const ValueKey('notification-preview-names')),
             )
             .data!;
-        final previewWidget = tester.widget<Text>(find.byKey(const ValueKey('notification-preview-names')));
+        final previewWidget = tester.widget<Text>(
+          find.byKey(const ValueKey('notification-preview-names')),
+        );
         expect(previewWidget.maxLines, 1);
         expect(previewWidget.overflow, TextOverflow.ellipsis);
         // This suite deliberately has no translation catalog; long missing-key
         // placeholders may force the safe activity-title fallback at any width.
-        expect(preview, anyOf(contains('Jan Novák'),
-            'NotificationCenter.activityCounts.order_created.other'));
+        expect(
+          preview,
+          anyOf(
+            contains('Jan Novák'),
+            'NotificationCenter.activityCounts.order_created.other',
+          ),
+        );
         expect(tester.takeException(), isNull);
       }
     },
@@ -978,31 +1123,63 @@ void main() {
   });
   test('server read state overrides seen watermark and item read is one scoped RPC', () async {
     final requests = <Map<String, dynamic>>[];
-    final c = NotificationCenterController(read: (name, params) async {
-      if (name == 'mark_notification_center_item_read') { requests.add(params); return true; }
-      return <String, dynamic>{};
-    });
+    final c = NotificationCenterController(
+      read: (name, params) async {
+        if (name == 'mark_notification_center_item_read') {
+          requests.add(params);
+          return true;
+        }
+        return <String, dynamic>{};
+      },
+    );
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 3);
-    c.snapshot = 10; c.previousReadThrough = 10;
-    final item = NotificationItem.fromJson({'id':'occasion-kind:1:form_opened:batch:0','kind':'form_opened','sequence':7,'isRead':false,'isSeen':true});
-    expect(c.isUnread(item), isTrue, reason:'seen is independent of read');
+    c.snapshot = 10;
+    c.previousReadThrough = 10;
+    final item = NotificationItem.fromJson({
+      'id': 'occasion-kind:1:form_opened:batch:0',
+      'kind': 'form_opened',
+      'sequence': 7,
+      'isRead': false,
+      'isSeen': true,
+    });
+    expect(c.isUnread(item), isTrue, reason: 'seen is independent of read');
     await c.markRead(item);
-    expect(requests.single['p_scope'], {'id':item.id,'snapshot':10,'throughSequence':7});
+    expect(requests.single['p_scope'], {
+      'id': item.id,
+      'snapshot': 10,
+      'throughSequence': 7,
+    });
     expect(c.isUnread(item), isFalse);
     await c.markRead(item);
     expect(requests, hasLength(1));
   });
 
   test('selected group scope survives route and rights invalidation', () {
-    final c=NotificationCenterController();
+    final c = NotificationCenterController();
     addTearDown(c.dispose);
-    c.configure(userId:'u',organizationId:3);
-    c.snapshot=42;c.snapshotAt=DateTime.utc(2026,10,28);c.displayTimezone='Europe/Prague';
-    final scope=c.selectionScope(row('occasion-kind:1:order_created',data:{'activityCount':6}));
-    c.configure(userId:'u',organizationId:3,occasionId:2,invalidate:true);
-    expect(c.snapshot,0);
-    expect(scope,{'id':'occasion-kind:1:order_created','organization':3,'snapshot':42,'timezone':'Europe/Prague','snapshotAt':'2026-10-28T00:00:00.000Z','throughSequence':42,'markRead':false});
+    c.configure(userId: 'u', organizationId: 3);
+    c.snapshot = 42;
+    c.snapshotAt = DateTime.utc(2026, 10, 28);
+    c.displayTimezone = 'Europe/Prague';
+    final scope = c.selectionScope(
+      row('occasion-kind:1:order_created', data: {'activityCount': 6}),
+    );
+    c.configure(
+      userId: 'u',
+      organizationId: 3,
+      occasionId: 2,
+      invalidate: true,
+    );
+    expect(c.snapshot, 0);
+    expect(scope, {
+      'id': 'occasion-kind:1:order_created',
+      'organization': 3,
+      'snapshot': 42,
+      'timezone': 'Europe/Prague',
+      'snapshotAt': '2026-10-28T00:00:00.000Z',
+      'throughSequence': 42,
+      'markRead': false,
+    });
   });
-
 }

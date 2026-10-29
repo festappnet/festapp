@@ -1,6 +1,12 @@
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/eshop/db_orders.dart';
+import 'package:fstapp/components/eshop/models/order_model.dart';
+import 'package:fstapp/components/forms/views/form_responses_content.dart';
+import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
+import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
+import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
 
@@ -44,6 +50,110 @@ void main() {
       ) as Map<String, dynamic>,
     );
   });
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'responses read each source once and refresh once on tab return',
+    (tester) async {
+      var fieldsReads = 0, ordersReads = 0;
+      final form = FormEditorDraft(
+        id: 1,
+        link: 'selected',
+        title: 'Selected',
+      ).toBundle();
+      final other = FormEditorDraft(id: 2, link: 'other').toBundle();
+      final orders = [
+        OrderModel(
+          id: 1,
+          form: form,
+          orderSymbol: '1',
+          state: 'ordered',
+          data: {
+            FormMetadata.metaFields: [
+              {'42': 'Answer'},
+            ],
+          },
+        ),
+        OrderModel(id: 2, form: other, orderSymbol: '2', state: 'ordered'),
+      ];
+      late TabController tabs;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Builder(
+            builder: (context) {
+              tabs = TabController(length: 2, vsync: tester);
+              return Scaffold(
+                body: TabBarView(
+                  controller: tabs,
+                  children: [
+                    AdminTabActivity(
+                      controller: tabs,
+                      index: 0,
+                      child: FormResponsesContent(
+                        formLink: 'selected',
+                        loadFields: (link) async {
+                          expect(link, 'selected');
+                          fieldsReads++;
+                          return [
+                            FormFieldDefinition(
+                              id: 42,
+                              title: 'Question',
+                              type: FormMetadata.fieldTypeText,
+                            ),
+                          ];
+                        },
+                        loadOrders:
+                            ({
+                              String? occasionLink,
+                              String? formLink,
+                              bool includeOrderDetails = false,
+                              bool includeSpots = false,
+                              bool includeOrdersHistory = false,
+                            }) async {
+                              expect(formLink, 'selected');
+                              expect(includeOrderDetails, isTrue);
+                              ordersReads++;
+                              return ReservationsBundle(
+                                orders: orders,
+                                forms: [form],
+                              );
+                            },
+                      ),
+                    ),
+                    const Text('Other tab'),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final grid = tester
+          .widget<SingleTableDataGrid<FormResponseModel>>(
+            find.byType(SingleTableDataGrid<FormResponseModel>),
+          )
+          .controller;
+      expect(fieldsReads, 1);
+      expect(ordersReads, 1);
+      expect(grid.rows, hasLength(1));
+      expect(grid.rows.single.cells['42']!.value, 'Answer');
+      tabs.index = 1;
+      await tester.pumpAndSettle();
+      tabs.index = 0;
+      await tester.pumpAndSettle();
+      expect(fieldsReads, 1);
+      expect(ordersReads, 2);
+      await grid.reloadData();
+      await tester.pumpAndSettle();
+      expect(fieldsReads, 1);
+      expect(ordersReads, 3);
+      expect(tester.takeException(), isNull);
+      await _environment.pumpWidget(tester, const SizedBox.shrink());
+      tabs.dispose();
+    },
+  );
   for (final canManage in [true, false]) {
     for (final hasCzkAccount in [true, false]) {
       testWidgetsWithEnvironment(
