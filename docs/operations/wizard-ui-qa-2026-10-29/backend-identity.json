@@ -1,0 +1,15 @@
+{
+  "tenant": "festapptickets",
+  "organization": 3,
+  "activation_generation": 1,
+  "backend": "canonical",
+  "source_sha": "2095a9ba49bf1a7cd3a76f9e5be98d8407e95825",
+  "local_and_production_function_hashes_equal": {
+    "finalize_occasion_setup_draft": "dbd02aaaffbb59b0823aa99de0048cc9",
+    "get_occasion_setup_email_preview": [
+      "1f74230e5690e78c4822c6ffb889c319",
+      "0bbe46bacb3df44117ce0b3901058b4b"
+    ],
+    "normalize_occasion_setup_appearance_internal": "56619fc0f7fc0de78f1221084a9a5073"
+  }
+}

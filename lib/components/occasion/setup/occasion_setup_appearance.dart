@@ -1,3 +1,4 @@
+import 'occasion_setup_font_ids.dart';
 import 'occasion_setup_strings.dart';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -43,28 +44,7 @@ class OccasionSetupAppearance {
   static String themeColor(String hex, Map appearance) =>
       ticketThemeColor(hex, appearance['primary'], appearance['secondary']);
 
-  static const fonts = {
-    'Roboto':
-        'builtin:roboto-unpacked:24438383f80387edbbd3a199d7b257258db7003f5b291a7d3fb6fa89483ae57f',
-    'Roboto Slab':
-        'builtin:roboto-slab-static:b93b5ad2eada842f450bff812f180ac517c82916c9d0dda446322e8d275b4f09',
-    'Russo One':
-        'builtin:russo-one-unpacked:54b087e1ffbcfe8837d59e8cbda823e5690cbb8101afe23b31f3a6c70b6dad6b',
-    'Open Sans':
-        'gf:5af20f022c70222f0e960f45a033366eb2582c982031a715f9cafc05acbc51a5',
-    'Lato':
-        'gf:5ced1045820caaac87af3f61ded09bacc90881f158d04c59dcce436fd02ad368',
-    'Montserrat':
-        'gf:7ec20755dbe4985c2505b42bbdfcf2456dd0f2acd8801d9725b2c82c9f9b6433',
-    'Oswald':
-        'gf:7db4b9ec4ca16025a7c9285c80407f59d9b9316377dd90713741c4db69b729b6',
-    'Poppins':
-        'gf:2dd6eb23c4972b346197d272c4e2479b89ed240ece4d2b0e0cd89f0c1caa2710',
-    'Inter':
-        'gf:15b294b67f2f8bbc04d990023ef4aec66502b87dc9040d84abe5f896ccb693de',
-    'Playfair Display':
-        'gf:775cd3f92411b97cc374e0d8909c5caf3713508120866dc62b08f7a20213ba6d',
-  };
+  static const fonts = occasionSetupFontIds;
   static List<Map<String, dynamic>> get presets => [
         {
           'id': 'clean',

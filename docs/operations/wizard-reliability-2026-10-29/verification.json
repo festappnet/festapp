@@ -1,0 +1,59 @@
+{
+  "base": "2095a9ba49bf1a7cd3a76f9e5be98d8407e95825",
+  "branch": "fix/wizard-reliability-20261029",
+  "worktree": "/Users/miakh/source/festapp-wizard-reliability-20261029",
+  "verification": "standard",
+  "migration": "supabase/migrations/20261029120000_wizard_reliability.sql",
+  "migrationSha256": "18ebdbfe9c2b303ceb8695d8d5f2a74bf5e076d9f7c87b81301fd668f635b721",
+  "flutter": {
+    "appearancePreviewPayment": 21,
+    "emailTemplates": 7,
+    "copy": 8,
+    "storyCommunication": 33
+  },
+  "core": {
+    "formVariableSymbolPolicy": 1
+  },
+  "edge": {
+    "emailPreview": 12
+  },
+  "sql": {
+    "wizardSuites": 10,
+    "canonicalAllocator": 1
+  },
+  "mappingCheck": "passed",
+  "migrationParity": "passed",
+  "diffCheck": "passed",
+  "analyzer": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 54
+  },
+  "ui": {
+    "createdOccasions": [
+      85,
+      99,
+      101
+    ],
+    "restoredLegacyDraft": true,
+    "customTemplateReopened": true,
+    "templateResetRestoredInheritance": true,
+    "twoWindowConflictPreservedLocalEdits": true,
+    "delayedPreviewStatuses": [
+      409,
+      200
+    ]
+  },
+  "cleanup": {
+    "browserClosed": true,
+    "flutterStopped": true,
+    "edgeStopped": true,
+    "qaBackendStoppedWithBackup": true
+  },
+  "production": {
+    "migrated": false,
+    "deployed": false,
+    "pushed": false
+  },
+  "recordedAtUtc": "2026-10-29T11:28:41.771927+00:00"
+}

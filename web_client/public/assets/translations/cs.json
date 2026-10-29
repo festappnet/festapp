@@ -377,6 +377,8 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "invalidVariableSymbolPolicy": "Nastavte platnou strategii VS. U číselné řady zadejte celé počáteční číslo od 1 do 9999999999.",
+    "repairVariableSymbolPolicy": "Opravit pokročilé nastavení VS",
     "labelShowBeforeStartMessage": "Zobrazit informace před zahájením",
     "helperBeforeStartMessage": "Pod odpočtem můžete zveřejnit informace o akci, obrázky nebo plánek sálu. Přihlašování se otevře až v nastavený čas.",
     "labelBeforeStartMessage": "Informace před zahájením",

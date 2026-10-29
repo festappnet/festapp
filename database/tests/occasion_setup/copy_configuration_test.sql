@@ -38,7 +38,7 @@ BEGIN
  draft:=public.save_occasion_setup_draft((draft->>'id')::uuid,(draft->>'revision')::bigint,
    jsonb_set(jsonb_set(draft->'data','{defaultConfiguration,forms}','[]'),'{formDraft,title}','"Keep my form"')||'{"title":"Keep my title"}',0);
  BEGIN PERFORM public.initialize_occasion_setup_draft_defaults((draft->>'id')::uuid,1);
-  RAISE EXCEPTION 'Stale default repair accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+  RAISE EXCEPTION 'Stale default repair accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  saved:=public.initialize_occasion_setup_draft_defaults((draft->>'id')::uuid,(draft->>'revision')::bigint);
  PERFORM assert_eq(saved#>>'{data,title}','Keep my title','Repair retains event edits');
  PERFORM assert_eq(saved#>>'{data,formDraft,title}','Keep my form','Repair retains form edits');

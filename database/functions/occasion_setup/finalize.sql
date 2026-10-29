@@ -21,7 +21,7 @@ BEGIN
   encode(extensions.digest(convert_to(jsonb_build_object('draft',p_id,'revision',p_expected_revision)::text,'UTF8'),'sha256'),'hex'));
  IF started->>'disposition'='replay' THEN RETURN started->'response'; END IF;
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
- IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
+ IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE SQLSTATE 'PT409' USING MESSAGE='Draft changed in another session'; END IF;
  payload := public.normalize_occasion_setup_appearance_internal(d.data);
  payment_method:=payload->>'paymentMethod';
  IF payment_method IS NOT NULL AND payment_method NOT IN ('stripe','bank','both') THEN
@@ -119,7 +119,7 @@ BEGIN
   IF bank_currencies IS NULL OR NOT required_currencies <@ bank_currencies THEN
    RAISE invalid_parameter_value USING MESSAGE='Bank account currency mismatch'; END IF;
   IF bank_fingerprint IS DISTINCT FROM payload->>'bankAccountFingerprint' THEN
-   RAISE serialization_failure USING MESSAGE='Bank account details changed; select again'; END IF;
+   RAISE SQLSTATE 'PT409' USING MESSAGE='Bank account details changed; select again'; END IF;
  END IF;
  -- Active form choices own enabled features, not whether an editor was visited.
  has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(

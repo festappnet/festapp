@@ -10,7 +10,7 @@ const headers = {
 type ReadContext = (
   authorization: string,
   params: Record<string, unknown>,
-) => Promise<{ data: any; error: { code?: string } | null }>;
+) => Promise<{ data: any; error: { code?: string; message?: string } | null }>;
 
 export function previewHandler(readContext: ReadContext) {
   return async (req: Request) => {
@@ -67,7 +67,8 @@ export function previewHandler(readContext: ReadContext) {
         p_delivery_mode: input.deliveryMode ?? null,
       });
       if (error) {
-        const status = error.code === "40001"
+        const status = (error.code === "PT409" ||
+          (error.code === "40001" && error.message === "Draft revision conflict"))
           ? 409
           : error.code === "42501"
           ? 403

@@ -1,3 +1,5 @@
+import 'setup_email_preview_coordinator_cases.dart' as preview_reliability;
+import 'setup_payment_configuration_cases.dart' as payment_configuration;
 import 'package:fstapp/components/occasion/setup/occasion_setup_form_preview.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/app_config.dart';
@@ -10,6 +12,8 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart'
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 
 void main() {
+  group('preview reliability', preview_reliability.main);
+  group('payment configuration', payment_configuration.main);
   Map<String, dynamic> draft(
           {bool tickets = true, bool formEnabled = true, num price = 0}) =>
       {

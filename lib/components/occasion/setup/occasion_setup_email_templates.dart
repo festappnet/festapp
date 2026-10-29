@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'occasion_setup_strings.dart';
 import '../../images/image_area.dart';
 import '../../images/db_images.dart';
@@ -39,27 +40,51 @@ class _OccasionSetupEmailTemplatesState
   bool _loading = false;
   bool _failed = false;
   int _generation = 0;
+  Timer? _debounce;
+  String? _requestedDraft;
+
+  void _schedule() {
+    final snapshot = jsonEncode(widget.draft);
+    if (snapshot == _requestedDraft) return;
+    _requestedDraft = snapshot;
+    _generation++;
+    _debounce?.cancel();
+    _loading = true;
+    _failed = false;
+    _catalog = null;
+    _debounce = Timer(const Duration(milliseconds: 300), _load);
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _schedule();
   }
 
   @override
   void didUpdateWidget(covariant OccasionSetupEmailTemplates oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.draft['sourceId'] != widget.draft['sourceId'] ||
-        oldWidget.draft['copyEmails'] != widget.draft['copyEmails']) _load();
+    _schedule();
   }
 
   Future<void> _load() async {
+    _debounce?.cancel();
+    _requestedDraft = jsonEncode(widget.draft);
+    final snapshot = jsonDecode(_requestedDraft!) as Map<String, dynamic>;
     final generation = ++_generation;
     setState(() {
       _loading = true;
       _failed = false;
     });
     try {
-      final result = await widget.loadPreview(widget.draft);
+      final result = await widget.loadPreview(snapshot);
       if (!mounted || generation != _generation) return;
       if (result['emailTemplates'] is! List || result['emailScope'] is! Map)
         throw StateError('Email templates unavailable');

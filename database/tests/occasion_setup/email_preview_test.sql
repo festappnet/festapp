@@ -44,7 +44,7 @@ BEGIN
  PERFORM assert_eq(result->'resolved'->'wrapper'->>'html','<destination>{{content}}</destination>','Destination wrapper inherited');
  BEGIN PERFORM public.get_occasion_setup_email_preview(foreign_draft,1); RAISE EXCEPTION 'Foreign draft accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.get_occasion_setup_email_preview(gen_random_uuid(),1); RAISE EXCEPTION 'Missing draft accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.get_occasion_setup_email_preview(draft,2); RAISE EXCEPTION 'Stale revision accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN PERFORM public.get_occasion_setup_email_preview(draft,2); RAISE EXCEPTION 'Stale revision accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  EXECUTE 'RESET ROLE';
  UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('bankAccountId',bank_id,'deadline','3') WHERE id=draft;
  EXECUTE 'SET LOCAL ROLE authenticated';

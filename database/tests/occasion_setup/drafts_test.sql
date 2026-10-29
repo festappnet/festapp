@@ -34,8 +34,8 @@ BEGIN
   PERFORM assert_eq((saved->>'revision')::int,2,'Save advances revision');
   PERFORM assert_eq(public.save_occasion_setup_draft(id,1,'{"title":"Saved draft"}',0),saved,'Save retry is idempotent');
   PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_occasion_setup_drafts(target)) x WHERE x->>'id'=id::text),'Saved draft can be resumed');
-  BEGIN PERFORM public.save_occasion_setup_draft(id,1,'{"title":"stale"}',0); RAISE EXCEPTION 'stale save accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
-  BEGIN PERFORM public.delete_occasion_setup_draft(id,target,1); RAISE EXCEPTION 'stale delete accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+  BEGIN PERFORM public.save_occasion_setup_draft(id,1,'{"title":"stale"}',0); RAISE EXCEPTION 'stale save accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
+  BEGIN PERFORM public.delete_occasion_setup_draft(id,target,1); RAISE EXCEPTION 'stale delete accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
   BEGIN PERFORM public.save_occasion_setup_draft(id,2,'[]',0); RAISE EXCEPTION 'invalid data accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   BEGIN PERFORM public.get_occasion_setup_drafts(foreign_unit); RAISE EXCEPTION 'foreign unit read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.create_occasion_setup_draft(gen_random_uuid(),foreign_unit); RAISE EXCEPTION 'foreign unit write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;

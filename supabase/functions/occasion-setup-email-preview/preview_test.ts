@@ -110,13 +110,20 @@ Deno.test("endpoint forwards user JWT and draft revision; denied/stale requests 
       response.headers.get("Cache-Control") === "no-store",
   );
   assert((await response.json()).revision === 3);
-  for (const [code, status] of [["42501", 403], ["40001", 409]] as const) {
+  for (const [code, status] of [["42501", 403], ["PT409", 409], ["40001", 409], ["22023", 400], ["XX000", 503]] as const) {
     const denied = previewHandler(async () => ({
       data: null,
-      error: { code },
+      error: { code, message: code === "40001" ? "Draft revision conflict" : undefined },
     }));
     assert((await denied(request(valid))).status === status);
   }
+  let calls = 0;
+  const serialization = previewHandler(async () => {
+    calls++;
+    return {data: null, error: {code: "40001", message: "could not serialize access due to concurrent update"}};
+  });
+  assert((await serialization(request(valid))).status === 503);
+  assert(calls === 1);
 });
 
 Deno.test("preview reflects configured ticket/product content and retains authored email CSS", async () => {

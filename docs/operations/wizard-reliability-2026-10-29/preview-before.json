@@ -1,0 +1,1 @@
+{"frontend_invocations": 0, "http_stale_requests": 1, "db_stale_conflicts": 957, "http_status": "timeout", "http_seconds": 0.261, "direct_sql_calls": 1, "direct_sql_conflicts": 1}

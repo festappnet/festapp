@@ -30,7 +30,7 @@ BEGIN
  result:=public.get_occasion_setup_email_preview(draft_id,(d->>'revision')::bigint,'order_tickets',NULL,NULL);
  IF result->>'deliveryMode'<>'inline_qr' OR result->>'messageType'<>'order_tickets' THEN RAISE EXCEPTION 'Preview lost mode'; END IF;
  BEGIN PERFORM public.get_occasion_setup_email_preview(draft_id,(d->>'revision')::bigint+1,'order_tickets',NULL,NULL);
-  RAISE EXCEPTION 'Stale preview accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+  RAISE EXCEPTION 'Stale preview accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  BEGIN PERFORM public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,jsonb_set(payload,'{ticketDraft,delivery_mode}','"bad"'),5);
   RAISE EXCEPTION 'Invalid mode draft accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  result:=public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,gen_random_uuid());

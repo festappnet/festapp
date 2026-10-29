@@ -4,7 +4,7 @@ import 'package:festapp_core/forms.dart';
 
 import '../form_strings.dart';
 
-/// Canonical form metadata controls, shared by the form editor and setup.
+/// Advanced form authoring and explicit repair of legacy setup policies.
 class FormVariableSymbolSettings extends StatelessWidget {
   final Map<String, dynamic> value;
   final ValueChanged<Map<String, dynamic>> onChanged;
@@ -17,12 +17,17 @@ class FormVariableSymbolSettings extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final type = value[FormDefinition.metaType] as String? ?? 'random';
+    final type = value[FormDefinition.metaType] ?? 'random';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          initialValue: type,
+          initialValue: const ['random', 'sequence'].contains(type)
+              ? type
+              : null,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (v) =>
+              v == null ? FormStrings.invalidVariableSymbolPolicy : null,
           isExpanded: true,
           decoration: InputDecoration(
             labelText: FormStrings.labelVariableSymbol,
@@ -39,7 +44,12 @@ class FormVariableSymbolSettings extends StatelessWidget {
             ),
           ],
           onChanged: enabled
-              ? (v) => onChanged({...value, FormDefinition.metaType: v})
+              ? (v) {
+                  final next = {...value, FormDefinition.metaType: v};
+                  if (v == 'random')
+                    next.remove(FormDefinition.metaStartingNumber);
+                  onChanged(next);
+                }
               : null,
         ),
         if (type == 'sequence') ...[
@@ -54,8 +64,17 @@ class FormVariableSymbolSettings extends StatelessWidget {
               border: const OutlineInputBorder(),
               counterText: '',
             ),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (text) =>
+                formVariableSymbolPolicyValid({
+                  'type': 'sequence',
+                  'starting_number': int.tryParse(text ?? ''),
+                })
+                ? null
+                : FormStrings.invalidVariableSymbolPolicy,
             keyboardType: TextInputType.number,
             maxLength: 10,
+            maxLengthEnforcement: MaxLengthEnforcement.none,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (v) => onChanged({
               ...value,
