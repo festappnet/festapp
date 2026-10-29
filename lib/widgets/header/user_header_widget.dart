@@ -37,22 +37,9 @@ class UserHeaderWidget extends StatefulWidget {
 class _UserHeaderWidgetState extends State<UserHeaderWidget> {
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _userKey = GlobalKey();
-  AdaptiveThemeMode? _currentThemeMode;
 
   // Define the popover width as a constant.
   static const double _popoverWidth = 300;
-
-  @override
-  void initState() {
-    super.initState();
-    AdaptiveTheme.getThemeMode().then((mode) {
-      if (mounted) {
-        setState(() {
-          _currentThemeMode = mode;
-        });
-      }
-    });
-  }
 
   /// Returns the first letter of the user's name in uppercase.
   String _getUserInitial() {
@@ -106,47 +93,46 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                   style: TextStyle(
                       fontSize: 16, color: ThemeConfig.blackColor(context))),
               const SizedBox(height: 8),
-              ToggleButtons(
-                isSelected: [
-                  _currentThemeMode == AdaptiveThemeMode.dark,
-                  _currentThemeMode == AdaptiveThemeMode.system,
-                  _currentThemeMode == AdaptiveThemeMode.light,
-                ],
-                onPressed: (int index) {
-                  AdaptiveThemeMode mode;
-                  if (index == 0) {
-                    mode = AdaptiveThemeMode.dark;
-                  } else if (index == 1) {
-                    mode = AdaptiveThemeMode.system;
-                  } else {
-                    mode = AdaptiveThemeMode.light;
-                  }
-                  AdaptiveTheme.of(context).setThemeMode(mode);
-                  setState(() {
-                    _currentThemeMode = mode;
-                  });
-                },
-                borderRadius: BorderRadius.circular(8.0),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(CommonStrings.dark,
-                        style:
-                            TextStyle(color: ThemeConfig.blackColor(context))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(CommonStrings.auto,
-                        style:
-                            TextStyle(color: ThemeConfig.blackColor(context))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(CommonStrings.light,
-                        style:
-                            TextStyle(color: ThemeConfig.blackColor(context))),
-                  ),
-                ],
+              Builder(
+                builder: (context) => ToggleButtons(
+                  isSelected: [
+                    AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark,
+                    AdaptiveTheme.of(context).mode == AdaptiveThemeMode.system,
+                    AdaptiveTheme.of(context).mode == AdaptiveThemeMode.light,
+                  ],
+                  onPressed: (int index) {
+                    AdaptiveThemeMode mode;
+                    if (index == 0) {
+                      mode = AdaptiveThemeMode.dark;
+                    } else if (index == 1) {
+                      mode = AdaptiveThemeMode.system;
+                    } else {
+                      mode = AdaptiveThemeMode.light;
+                    }
+                    AdaptiveTheme.of(context).setThemeMode(mode);
+                  },
+                  borderRadius: BorderRadius.circular(8.0),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Text(CommonStrings.dark,
+                          style:
+                              TextStyle(color: ThemeConfig.blackColor(context))),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Text(CommonStrings.auto,
+                          style:
+                              TextStyle(color: ThemeConfig.blackColor(context))),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Text(CommonStrings.light,
+                          style:
+                              TextStyle(color: ThemeConfig.blackColor(context))),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

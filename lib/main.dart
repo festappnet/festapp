@@ -12,7 +12,7 @@ import 'package:fstapp/services/auth_session_storage.dart';
 
 import 'dart:async';
 
-import 'package:adaptive_theme/adaptive_theme.dart';
+import 'widgets/synced_adaptive_theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/config/url_strategy_noop.dart'
     if (dart.library.html) 'package:fstapp/config/url_strategy_web.dart';
@@ -633,7 +633,7 @@ class _MyAppState extends State<MyApp> {
 
     Intl.defaultLocale = context.locale.toString();
     var baseTheme = ThemeConfig.theme();
-    return AdaptiveTheme(
+    return SyncedAdaptiveTheme(
       light: baseTheme,
       dark: ThemeConfig.theme(brightness: Brightness.dark),
       initial: ThemeConfig.defaultThemeMode,
