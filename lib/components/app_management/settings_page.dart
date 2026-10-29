@@ -35,7 +35,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isPlatformSupported = true;
   bool _notificationError = false;
   LanguageModel? _currentLanguage;
-  AdaptiveThemeMode? _themeMode;
 
   @override
   void didChangeDependencies() {
@@ -50,9 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
         (language) =>
             language.locale.languageCode == currentLocale.languageCode);
     bool isAppInstalled = PlatformHelper.isPwaInstalledOrNative();
-    var themeMode = await AdaptiveTheme.getThemeMode();
     setState(() {
-      _themeMode = themeMode;
       _notificationsEnabled = isEnabled;
       _currentLanguage = currentLanguage;
       _isAppInstalled = isAppInstalled;
@@ -75,10 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
       !_isAppInstalled && _isPlatformSupported && _isPromptEnabled;
 
   void _setThemeMode(AdaptiveThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
-      AdaptiveTheme.of(context).setThemeMode(mode);
-    });
+    AdaptiveTheme.of(context).setThemeMode(mode);
   }
 
   @override
@@ -180,9 +174,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 16),
                         ToggleButtons(
                           isSelected: [
-                            _themeMode == AdaptiveThemeMode.dark,
-                            _themeMode == AdaptiveThemeMode.system,
-                            _themeMode == AdaptiveThemeMode.light,
+                            AdaptiveTheme.of(context).mode ==
+                                AdaptiveThemeMode.dark,
+                            AdaptiveTheme.of(context).mode ==
+                                AdaptiveThemeMode.system,
+                            AdaptiveTheme.of(context).mode ==
+                                AdaptiveThemeMode.light,
                           ],
                           onPressed: (int index) {
                             if (index == 0) {

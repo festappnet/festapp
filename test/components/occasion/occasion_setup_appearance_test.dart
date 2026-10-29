@@ -46,6 +46,7 @@ void main() {
       final appearance = {
         ...OccasionSetupAppearance.presets[1],
         'id': 'custom',
+        'gradient': true,
         'fontFamily': entry.key
       };
       final data = draft();
@@ -57,12 +58,40 @@ void main() {
           OccasionSetupAppearance.ticketBackground('concert_stub', appearance),
           contains('palette-14284B-A87F28-concert_stub'));
     }
-    expect(
-        OccasionSetupAppearance.presets
-            .where(
-                (p) => p['gradient'] == true && p['primary'] != p['secondary'])
-            .length,
-        greaterThanOrEqualTo(4));
+    expect(OccasionSetupAppearance.presets.every((p) => p['gradient'] == false), true);
+  });
+  test('style selection defaults to one color and preserves explicit gradient choice', () {
+    final data = draft();
+    for (final preset in OccasionSetupAppearance.presets) {
+      OccasionSetupAppearance.apply(data,
+          OccasionSetupAppearance.selectPreset(data, preset['id']));
+      expect(OccasionSetupAppearance.read(data)['gradient'], false);
+      expect(data['formDraft']['data']['design']['background_mode'], 'solid');
+      expect(data['ticketDraft']['layout']['templates']['wide'].containsKey('canvasGradient'), false);
+    }
+    OccasionSetupAppearance.apply(data, {
+      ...OccasionSetupAppearance.read(data), 'gradient': true,
+    });
+    for (final preset in OccasionSetupAppearance.presets) {
+      OccasionSetupAppearance.apply(data,
+          OccasionSetupAppearance.selectPreset(data, preset['id']));
+      expect(OccasionSetupAppearance.read(data)['gradient'], true);
+      expect(data['formDraft']['data']['design']['background_mode'], 'gradient');
+      expect(data['ticketDraft']['layout']['templates']['wide']['canvasGradient'],
+          [preset['primary'], preset['secondary']]);
+    }
+  });
+  test('font-only edits keep a fresh theme solid and dormant secondary has no effect', () {
+    final data = draft();
+    for (final font in OccasionSetupAppearance.fonts.keys) {
+      final appearance = {...OccasionSetupAppearance.read(data), 'id': 'custom', 'fontFamily': font};
+      OccasionSetupAppearance.apply(data, appearance);
+      expect(OccasionSetupAppearance.read(data)['gradient'], false);
+      expect(data['formDraft']['data']['design']['font_family'], font);
+    }
+    final solid = {...OccasionSetupAppearance.presets[1], 'gradient': false};
+    expect(OccasionSetupAppearance.themeColor('DDCCBB', solid),
+        OccasionSetupAppearance.themeColor('DDCCBB', {...solid, 'secondary': 'FF0000'}));
   });
   for (final app in [false, true]) {
     for (final tickets in [false, true]) {
@@ -168,7 +197,7 @@ void main() {
       () {
     final d = draft();
     OccasionSetupAppearance.apply(
-        d, Map.of(OccasionSetupAppearance.presets[1]));
+        d, {...OccasionSetupAppearance.presets[1], 'gradient': true});
     final layout =
         Map<String, dynamic>.from((d['ticketDraft'] as Map)['layout']);
     validateTicketLayout(layout);

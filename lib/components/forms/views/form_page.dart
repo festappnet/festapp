@@ -1059,10 +1059,11 @@ class _FormPageState extends State<FormPage> {
               color: primary,
               gradient: sharedDesign?['background_mode'] == 'gradient' &&
                       form!.definition.secondaryColor != null
-                  ? LinearGradient(colors: [
-                      primary,
-                      Color(form!.definition.secondaryColor!)
-                    ])
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [primary, Color(form!.definition.secondaryColor!)],
+                    )
                   : null),
           child: Padding(
               padding: const EdgeInsets.all(12),

@@ -86,6 +86,8 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
                   color: color('primary'),
                   gradient: appearance['gradient'] == true
                       ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                           colors: [color('primary'), color('secondary')],
                         )
                       : null,

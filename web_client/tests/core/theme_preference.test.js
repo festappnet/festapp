@@ -35,3 +35,26 @@ test('manual theme controls both page and native controls independently of the O
  assert.equal(document.body.classList.contains('dark-mode'),false);
  assert.equal(document.body.style.colorScheme,'light');
 });
+
+
+test('public client inherits an existing admin light preference instead of the dark OS', t=>{
+ const dom=new JSDOM('<!doctype html><body></body>',{url:'https://fixture.invalid'});
+ const previous=Object.fromEntries(['window','document','localStorage'].map(key=>[key,globalThis[key]]));
+ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage});
+ dom.window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});
+ t.after(()=>{Object.assign(globalThis,previous);ThemeService._mediaQueryListener=null;ThemeService._lastFormModel=null;dom.window.close();});
+ localStorage.setItem('adaptive_theme_preferences',JSON.stringify(JSON.stringify({theme_mode:0,default_theme_mode:0})));
+ ThemeService.init();
+ assert.equal(ThemeService.currentMode,'light');
+ assert.equal(document.body.classList.contains('dark-mode'),false);
+ assert.equal(localStorage.getItem(AppConfig.Keys.theme),'light');
+ ThemeService.setMode('auto');
+ assert.equal(localStorage.getItem(AppConfig.Keys.theme),'auto');
+ ThemeService.init();
+ assert.equal(ThemeService.currentMode,'auto');
+ assert.equal(document.body.classList.contains('dark-mode'),true);
+ localStorage.setItem(AppConfig.Keys.theme,'light');
+ window.dispatchEvent(new window.Event('focus'));
+ assert.equal(ThemeService.currentMode,'light');
+ assert.equal(document.body.classList.contains('dark-mode'),false);
+});

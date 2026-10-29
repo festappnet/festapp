@@ -201,6 +201,8 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                                     : _previewColor(preset.primaryColor),
                                 gradient: preset.gradient
                                     ? LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                         colors: [
                                           _previewColor(preset.primaryColor),
                                           _previewColor(preset.secondaryColor),

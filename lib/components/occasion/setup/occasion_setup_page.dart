@@ -2833,16 +2833,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             label: p['label'] as String,
             primaryColor: color(p['primary']),
             secondaryColor: color(p['secondary']),
-            gradient: p['gradient'] as bool,
+            gradient: a['gradient'] as bool,
             fontFamily: p['fontFamily'] as String,
           ),
       ],
       selectedPresetId: a['id'] as String?,
-      onPresetSelected: (id) => apply(
-        Map<String, dynamic>.from(
-          OccasionSetupAppearance.presets.firstWhere((p) => p['id'] == id),
-        ),
-      ),
+      onPresetSelected: (id) =>
+          apply(OccasionSetupAppearance.selectPreset(d, id)),
       fontStyle: (family, base) => catalog.families.contains(family)
           ? catalog
                 .getTextTheme(family, TextTheme(bodyMedium: base))

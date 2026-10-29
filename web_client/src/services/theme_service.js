@@ -2,6 +2,22 @@ import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 import { ColorUtils } from '../utils/color_utils.js';
 
+// Read the previous admin preference only while migrating a browser with no
+// shared choice yet. New selections always use the canonical `theme` key.
+function savedThemeMode() {
+    const saved = browserStorage.getItem(AppConfig.Keys.theme);
+    if (['light', 'dark', 'auto'].includes(saved)) return saved;
+    for (const key of ['adaptive_theme_preferences', 'flutter.adaptive_theme_preferences']) {
+        try {
+            let legacy = JSON.parse(browserStorage.getItem(key));
+            if (typeof legacy === 'string') legacy = JSON.parse(legacy);
+            const mode = {0:'light', 1:'dark', 2:'auto'}[legacy?.theme_mode];
+            if (mode) { browserStorage.setItem(AppConfig.Keys.theme, mode); return mode; }
+        } catch { /* Malformed legacy data must not prevent opening a page. */ }
+    }
+    return null;
+}
+
 export class ThemeService {
     static isDark = false;
 
@@ -9,7 +25,7 @@ export class ThemeService {
 
     static init() {
         // Load saved preference
-        const saved = browserStorage.getItem(AppConfig.Keys.theme); // 'light', 'dark', or null/missing for auto
+        const saved = savedThemeMode();
         
         if (saved && (saved === 'light' || saved === 'dark')) {
             ThemeService.currentMode = saved;
@@ -45,6 +61,7 @@ export class ThemeService {
             window.addEventListener('pageshow', event => {
                 if (event.persisted) syncPreference();
             });
+            window.addEventListener('focus', syncPreference);
         }
 
         ThemeService.apply();
@@ -73,7 +90,7 @@ export class ThemeService {
         ThemeService.currentMode = mode;
         
         if (mode === 'auto') {
-            browserStorage.removeItem(AppConfig.Keys.theme);
+            browserStorage.setItem(AppConfig.Keys.theme, 'auto');
             ThemeService.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         } else {
             ThemeService.isDark = (mode === 'dark');
@@ -230,7 +247,7 @@ export class ThemeService {
         const explicitBackground = formModel.backgroundMode;
         const background = !formModel.primaryColor ? null
             : explicitBackground === 'gradient'
-                ? `linear-gradient(90deg, ${formModel.primaryColor}, ${formModel.secondaryColor || formModel.primaryColor})`
+                ? `linear-gradient(135deg, ${formModel.primaryColor}, ${formModel.secondaryColor || formModel.primaryColor})`
                 : explicitBackground === 'solid' ? formModel.primaryColor : null;
         if (background) {
             root.dataset.sharedAppearance = 'true';

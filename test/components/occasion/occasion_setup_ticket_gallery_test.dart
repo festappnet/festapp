@@ -108,7 +108,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: OccasionSetupTicketGallery(
-                appearance: Map.of(OccasionSetupAppearance.presets[1]),
+                appearance: {...OccasionSetupAppearance.presets[1], 'gradient': true},
                 currentTemplate: template.toJson(),
                 loadResources: () async {
                   attempts++;
