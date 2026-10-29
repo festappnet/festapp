@@ -194,6 +194,11 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
             gradient: widget.form.definition.backgroundMode == 'gradient',
             onSelected: widget.enabled ? _applyPreset : null,
             controls: AppearanceColorControls(
+              paletteName: AppearancePalettes.match(
+                widget.form.definition.primaryColor,
+                widget.form.definition.secondaryColor,
+                widget.form.definition.backgroundMode == 'gradient',
+              )?.label,
               gradient: widget.form.definition.backgroundMode == 'gradient',
               primaryColor: Color(
                 widget.form.definition.primaryColor ??

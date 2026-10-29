@@ -47,6 +47,7 @@ void main() {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: AppearanceColorControls(
+                          paletteName: 'Přírodní',
                           gradient: gradient,
                           primaryColor: const Color(0xff216445),
                           secondaryColor: const Color(0xff146475),
@@ -68,7 +69,10 @@ void main() {
           final secondary = find.byKey(
             const ValueKey('appearance-color-secondary'),
           );
-          expect(find.text(AppearanceColorStrings.theme), findsOneWidget);
+          expect(
+            find.text('${AppearanceColorStrings.theme} - Přírodní'),
+            findsOneWidget,
+          );
           expect(find.text('#216445'), findsOneWidget);
           expect(secondary, findsNothing);
           // Tab traversal reaches the native button; Enter invokes the same edit action.
@@ -92,8 +96,14 @@ void main() {
           expect(primaryEdits, 1);
           await tester.tap(find.byType(SwitchListTile));
           await tester.pumpAndSettle();
-          expect(find.text(AppearanceColorStrings.first), findsOneWidget);
-          expect(find.text(AppearanceColorStrings.second), findsOneWidget);
+          expect(
+            find.text('${AppearanceColorStrings.first} - Přírodní'),
+            findsOneWidget,
+          );
+          expect(
+            find.text('${AppearanceColorStrings.second} - Přírodní'),
+            findsOneWidget,
+          );
           if (width >= 600 && scale == 1) {
             expect(
               tester.getTopLeft(secondary).dy,

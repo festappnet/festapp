@@ -127,8 +127,8 @@ void main() {
       );
       expect(form.definition.secondaryColor, 0xffa87f28);
       expect(find.text(AppearanceColorStrings.second), findsNothing);
-      Future<void> pick(String label, String hex) async {
-        final control = find.widgetWithText(OutlinedButton, label);
+      Future<void> pick(String id, String hex) async {
+        final control = find.byKey(ValueKey('appearance-color-$id'));
         await tester.ensureVisible(control);
         await tester.tap(control);
         await tester.pumpAndSettle();
@@ -140,7 +140,7 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      await pick(AppearanceColorStrings.theme, '#216445');
+      await pick('primary', '#216445');
       expect(form.definition.primaryColor, 0xff216445);
       expect(form.definition.secondaryColor, 0xffa87f28);
 
@@ -154,7 +154,7 @@ void main() {
       expect(form.definition.backgroundMode, 'gradient');
       expect(form.definition.secondaryColor, 0xffa87f28);
       expect(find.text(AppearanceColorStrings.second), findsOneWidget);
-      await pick(AppearanceColorStrings.second, '#146475');
+      await pick('secondary', '#146475');
       expect(form.definition.secondaryColor, 0xff146475);
       draft['formDraft'] = form.definition.toJson();
       final gradient = OccasionSetupAppearance.read(draft);
