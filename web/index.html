@@ -131,9 +131,9 @@
   <meta name="apple-mobile-web-app-title" content="vstupenky.online">
   <link rel="manifest" href="site.webmanifest" />
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
-  <meta name="theme-color" content="#242424">
+  <meta name="theme-color" content="#19243b">
   <meta name="color-scheme" content="dark">
-  <style>html, body { background-color: #242424; }</style>
+  <style>html, body { background-color: #19243b; }</style>
 
   <title>vstupenky.online</title>
   <script>
@@ -534,7 +534,7 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: #242424;
+      background: #19243b; /* startup-surface */
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -580,14 +580,22 @@
   .loader::after {
     margin: 8px;
   }
+
+  [data-loading-style="vstupenky-outline"] .initial-logo {
+    width: min(72vw, 300px);
+    max-width: 300px;
+    max-height: none;
+  }
+  [data-loading-style="vstupenky-outline"] .loader { display: none; }
+  @media (prefers-reduced-motion: reduce) { .loader, .loader::before { animation: none; } }
   @keyframes l16 {
     100%{transform: rotate(1turn)}
   }
 </style>
 
-  <div class="main-content" id="loader-content">
-    <img class="initial-logo" src="loading-logo.svg" alt="">
-    <div class="loader" role="status" aria-label="Načítání aplikace"></div>
+  <div class="main-content" id="loader-content" data-loading-style="vstupenky-outline" role="status" aria-label="Načítání aplikace">
+    <img class="initial-logo" src="loading-animation.svg" alt="">
+    <div class="loader" aria-hidden="true"></div>
   </div>
 </body>
 </html>

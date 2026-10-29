@@ -1,0 +1,11 @@
+{
+  "reference": "concepts/selected-wide-no-head.png",
+  "method": "analytic ticket geometry; boolean union of Roboto Bold glyphs, then flattened into SVG coordinates",
+  "lettering_font": "Roboto Bold",
+  "lettering_tracking_em": -0.035,
+  "lettering_paths_per_row": 1,
+  "glyph_overlap_boundaries_removed": true,
+  "counters_preserved": true,
+  "embedded_raster_images": 0,
+  "live_text_elements": 0
+}

@@ -366,3 +366,8 @@ body.dark-mode .topic-layout-image{background:#dce1df}
 .media-play-action svg{width:15px;height:15px;fill:currentColor}
 .media-surface:hover .media-play-action{background:var(--accent)}
 .media-surface[aria-pressed="true"] .media-play-action svg{display:none}
+
+/* Configured product identity; the separate Festapp origin signature stays intact. */
+.brand-image{display:block;width:min(240px,38vw);height:52px;object-fit:contain;object-position:left center}
+.brand-on-dark{display:none}body.dark-mode .brand-on-light{display:none}body.dark-mode .brand-on-dark{display:block}
+@media(max-width:480px){.site-header .brand-image{width:130px;height:44px}.site-header{gap:10px}.site-header .header-actions{gap:10px}}

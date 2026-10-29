@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_banner.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
@@ -15,10 +16,14 @@ Future<void> resetNestedTabs(RoutingController parent, String routeName) async {
   while (nested != null) {
     if (nested is TabsRouter && nested.stack.isNotEmpty) {
       final first = nested.stack.first.routeData;
-      await nested.navigate(PageRouteInfo(first.name,
+      await nested.navigate(
+        PageRouteInfo(
+          first.name,
           args: first.args,
           rawPathParams: first.params.rawMap,
-          rawQueryParams: parent.root.urlState.uri.queryParametersAll));
+          rawQueryParams: parent.root.urlState.uri.queryParametersAll,
+        ),
+      );
     }
     nested = nested.innerRouterOf<RoutingController>(nested.current.name);
   }
@@ -30,11 +35,12 @@ class RoutedTabDefinition {
   final PageRouteInfo route;
   final String label;
   final IconData icon;
-  const RoutedTabDefinition(
-      {required this.slug,
-      required this.route,
-      required this.label,
-      required this.icon});
+  const RoutedTabDefinition({
+    required this.slug,
+    required this.route,
+    required this.label,
+    required this.icon,
+  });
 }
 
 class RoutedTabScaffold extends StatelessWidget {
@@ -42,12 +48,13 @@ class RoutedTabScaffold extends StatelessWidget {
   final bool administration;
   final bool reservations;
   final Widget Function(BuildContext, Widget, TabController)? builder;
-  const RoutedTabScaffold(
-      {super.key,
-      required this.tabs,
-      this.administration = false,
-      this.reservations = false,
-      this.builder});
+  const RoutedTabScaffold({
+    super.key,
+    required this.tabs,
+    this.administration = false,
+    this.reservations = false,
+    this.builder,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,64 +63,85 @@ class RoutedTabScaffold extends StatelessWidget {
     if (tabs.isEmpty) return const Center(child: Text('Unavailable'));
     // A disabled, known section is normalized before any child is constructed.
     final pending = context.routeData.pendingChildren;
-    final retained =
-        context.router.innerRouterOf<TabsRouter>(context.routeData.name);
-    final requested =
-        pending.isNotEmpty ? pending.first.name : retained?.current.name;
+    final retained = context.router.innerRouterOf<TabsRouter>(
+      context.routeData.name,
+    );
+    final requested = pending.isNotEmpty
+        ? pending.first.name
+        : retained?.current.name;
     if (requested != null && !tabs.any((t) => t.route.routeName == requested)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
         final parent = context.routeData;
-        context.router.replace(PageRouteInfo(parent.name,
+        context.router.replace(
+          PageRouteInfo(
+            parent.name,
             args: parent.args,
             rawPathParams: parent.params.rawMap,
             rawQueryParams: parent.queryParams.rawMap,
-            initialChildren: [tabs.first.route]));
+            initialChildren: [tabs.first.route],
+          ),
+        );
       });
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: BrandLoadingIndicator(width: 200));
     }
     return AutoTabsRouter.tabBar(
-        routes: tabs.map((t) => t.route).toList(),
-        physics: const NeverScrollableScrollPhysics(),
-        builder: (context, child, controller) {
-          child = AdminTabActivity(
-              controller: controller,
-              routeNames: tabs.map((t) => t.route.routeName).toList(),
-              parentActive: parentActive,
-              child: child);
-          if (builder != null) return builder!(context, child, controller);
-          if (administration) {
-            final scaffold = Scaffold(
-                appBar: AppPanelHelper.buildAdaptiveAdminAppBar(context,
-                    activeTabs: tabs, tabController: controller),
-                body: SafeArea(top: false, child: child));
-            final page = reservations
-                ? Column(children: [
+      routes: tabs.map((t) => t.route).toList(),
+      physics: const NeverScrollableScrollPhysics(),
+      builder: (context, child, controller) {
+        child = AdminTabActivity(
+          controller: controller,
+          routeNames: tabs.map((t) => t.route.routeName).toList(),
+          parentActive: parentActive,
+          child: child,
+        );
+        if (builder != null) return builder!(context, child, controller);
+        if (administration) {
+          final scaffold = Scaffold(
+            appBar: AppPanelHelper.buildAdaptiveAdminAppBar(
+              context,
+              activeTabs: tabs,
+              tabController: controller,
+            ),
+            body: SafeArea(top: false, child: child),
+          );
+          final page = reservations
+              ? Column(
+                  children: [
                     const SafeArea(bottom: false, child: RedStripWidget()),
-                    Expanded(child: scaffold)
-                  ])
-                : scaffold;
-            return RightsService.isDemoReadOnly
-                ? DemoOccasionOverlay(child: page)
-                : page;
-          }
-          return Column(children: [
+                    Expanded(child: scaffold),
+                  ],
+                )
+              : scaffold;
+          return RightsService.isDemoReadOnly
+              ? DemoOccasionOverlay(child: page)
+              : page;
+        }
+        return Column(
+          children: [
             Container(
-                color: ThemeConfig.backgroundColor(context),
-                alignment: Alignment.centerLeft,
-                child: TabBar(
-                    controller: controller,
-                    onTap: (index) => resetNestedTabs(
-                        context.tabsRouter, tabs[index].route.routeName),
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    tabs: tabs
-                        .map((t) =>
-                            DataGridHelper.buildTab(context, t.icon, t.label))
-                        .toList())),
-            Expanded(child: child)
-          ]);
-        });
+              color: ThemeConfig.backgroundColor(context),
+              alignment: Alignment.centerLeft,
+              child: TabBar(
+                controller: controller,
+                onTap: (index) => resetNestedTabs(
+                  context.tabsRouter,
+                  tabs[index].route.routeName,
+                ),
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: tabs
+                    .map(
+                      (t) => DataGridHelper.buildTab(context, t.icon, t.label),
+                    )
+                    .toList(),
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        );
+      },
+    );
   }
 }
 

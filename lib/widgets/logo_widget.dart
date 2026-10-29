@@ -42,7 +42,7 @@ class LogoWidget extends StatelessWidget {
             logoAsset,
             height: height,
             width: width,
-            semanticsLabel: 'Festapp logo',
+            semanticsLabel: AppConfig.appName,
           )
         : Image.asset(logoAsset, height: height, width: width);
 

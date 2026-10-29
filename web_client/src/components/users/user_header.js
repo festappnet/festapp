@@ -146,16 +146,12 @@ export class UserHeader extends HTMLElement {
 
         // Logo
         const ticketBrand = new URL(AppConfig.webLink).hostname === 'vstupenky.online';
-        const logo = document.createElement(ticketBrand ? 'span' : 'img');
-        if (ticketBrand) {
-            logo.className = 'header-wordmark';
-            logo.textContent = 'vstupenky.online';
-        } else {
-            logo.src = '/brand-logo.svg';
-            logo.alt = AppConfig.appName;
-            logo.className = 'header-logo';
-            logo.style.height = '56px';
-        }
+        const logo = document.createElement('img');
+        logo.src = '/brand-logo.svg';
+        logo.alt = AppConfig.appName;
+        logo.className = 'header-logo';
+        logo.width = 240;
+        logo.height = 52;
         logo.style.cursor = 'pointer';
         const homeLink = document.createElement('a');
         homeLink.href = '/';

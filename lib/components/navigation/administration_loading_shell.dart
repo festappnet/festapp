@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
@@ -10,36 +11,51 @@ import 'package:fstapp/data_services/rights_service.dart';
 class AdministrationLoadingShell extends StatelessWidget {
   final bool reservations;
   final bool unit;
-  const AdministrationLoadingShell(
-      {super.key, this.reservations = false, this.unit = false});
+  const AdministrationLoadingShell({
+    super.key,
+    this.reservations = false,
+    this.unit = false,
+  });
   @override
   Widget build(BuildContext context) {
     if (RightsService.occasionLinkModel == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: BrandLoadingIndicator(width: 200)),
+      );
     }
     final tabs = unit
         ? null
         : reservations
-            ? AdministrationTabs.reservations
-            : AdministrationTabs.administration;
+        ? AdministrationTabs.reservations
+        : AdministrationTabs.administration;
     final active = context.router.root.currentSegments;
-    final selected = tabs?.indexWhere((tab) =>
-            active.any((route) => route.name == tab.route.routeName)) ??
+    final selected =
+        tabs?.indexWhere(
+          (tab) => active.any((route) => route.name == tab.route.routeName),
+        ) ??
         0;
     final scaffold = Scaffold(
-        appBar:
-            AppPanelHelper.buildAdaptiveAdminAppBar(context, activeTabs: tabs),
-        body: const Center(child: CircularProgressIndicator()));
+      appBar: AppPanelHelper.buildAdaptiveAdminAppBar(
+        context,
+        activeTabs: tabs,
+      ),
+      body: const Center(child: BrandLoadingIndicator(width: 200)),
+    );
     final chrome = IgnorePointer(
-        child: ExcludeFocus(
-            child: DefaultTabController(
-                length: tabs?.length ?? 0,
-                initialIndex: selected < 0 ? 0 : selected,
-                child: scaffold)));
+      child: ExcludeFocus(
+        child: DefaultTabController(
+          length: tabs?.length ?? 0,
+          initialIndex: selected < 0 ? 0 : selected,
+          child: scaffold,
+        ),
+      ),
+    );
     if (!reservations && !unit) return chrome;
-    return Column(children: [
-      const SafeArea(bottom: false, child: RedStripWidget()),
-      Expanded(child: chrome),
-    ]);
+    return Column(
+      children: [
+        const SafeArea(bottom: false, child: RedStripWidget()),
+        Expanded(child: chrome),
+      ],
+    );
   }
 }

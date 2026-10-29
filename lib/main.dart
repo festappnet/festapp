@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:intl/intl.dart' show Intl;
 import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
@@ -224,7 +225,7 @@ class _FestappBootstrapState extends State<FestappBootstrap> {
         settings: settings,
         builder: (_) => const Scaffold(
           key: FestappBootstrap.loadingKey,
-          body: Center(child: CircularProgressIndicator()),
+          body: Center(child: BrandLoadingIndicator()),
         ),
       );
 
