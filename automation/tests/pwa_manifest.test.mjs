@@ -109,7 +109,8 @@ test('worker and budget share normalized resource sets and raw bytes', async () 
   }
 });
 
-test('precache contains the immutable main selected by the deployed Flutter HTML', async () => {
+for (const immutableShell of [false, true]) {
+test(`offline handoff uses the selected main and recovery scripts (immutable shell=${immutableShell})`, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-main-identity-'));
   try {
     await writeFile(path.join(root, 'flutter'), 'flutter');
@@ -122,7 +123,11 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
     await writeFile(path.join(root, 'festapp-version.json'), JSON.stringify({
       version: '1.0.0+1', main: 'main.dart.1.0.0-1.js',
     }));
-    await writeFile(path.join(root, 'festapp_flutter_bootstrap_guard.js'), 'guard');
+    const recoveryScripts = ['festapp_flutter_bootstrap_guard', 'festapp_pwa_bridge', 'festapp_update_prompt'];
+    for (const script of recoveryScripts) {
+      await writeFile(path.join(root, `${script}.js`), script);
+      if (immutableShell) await writeFile(path.join(root, `${script}.1.0.0-1.js`), script);
+    }
     const manifest = await collectPwaShellManifest(root);
     assert.ok(manifest.coreResources.includes('/main.dart.1.0.0-1.js_1.part.js'));
     assert.ok(!manifest.knownResources.includes('/main.dart.js_1.part.js'));
@@ -131,7 +136,12 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
     assert.ok(!manifest.knownResources.includes('/main.dart.js'),
       'do not duplicate the same executable under the mutable alias');
     assert.ok(!manifest.knownResources.includes('/main.dart.0.9.0-9.js'));
-    assert.ok(manifest.coreResources.includes('/festapp_flutter_bootstrap_guard.js'));
+    for (const script of recoveryScripts) {
+      const installed = `/${script}${immutableShell ? '.1.0.0-1' : ''}.js`;
+      assert.ok(manifest.coreResources.includes(installed));
+      assert.equal(manifest.coreResources.includes(`/${script}.js`), !immutableShell);
+      assert.ok(manifest.knownResources.includes(`/${script}.js`), 'mutable URL remains available for runtime readers');
+    }
 
     const generated = spawnSync(process.execPath, [
       path.resolve(import.meta.dirname, '../generate_pwa_service_worker.mjs'),
@@ -176,8 +186,11 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
     assert.equal(await (await fetchThroughWorker(new Request(
       'https://app.test/main.dart.1.0.0-1.js'))).text(), 'main',
       'homepage-to-Flutter handoff must load the exact main while the network is unavailable');
-    assert.equal(await (await fetchThroughWorker(new Request(
-      'https://app.test/festapp_flutter_bootstrap_guard.js'))).text(), 'guard');
+    for (const script of recoveryScripts) {
+      const installed = `/${script}${immutableShell ? '.1.0.0-1' : ''}.js`;
+      assert.equal(await (await fetchThroughWorker(new Request(`https://app.test${installed}`))).text(), script,
+        'HTML recovery dependencies must work on the first offline handoff');
+    }
     entries.set('/main.dart.1.0.0-1.js', new Response('corrupted main'));
     context.fetch = async () => new Response(JSON.stringify({
       version: '1.0.0+1', main: 'main.dart.1.0.0-1.js',
@@ -215,6 +228,7 @@ test('precache contains the immutable main selected by the deployed Flutter HTML
     await rm(root, { recursive: true, force: true });
   }
 });
+}
 
 test('lazy web modules and their styles install with the shell before a deployment can remove them', async () => {
  const dir=await mkdtemp(path.join(tmpdir(),'festapp-web-modules-'));
