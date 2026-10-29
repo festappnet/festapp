@@ -1,0 +1,102 @@
+{
+  "status": "deployed-and-verified",
+  "checkedAtUtc": "2026-10-29T14:56:29.712795+00:00",
+  "pullRequests": [
+    {
+      "number": 659,
+      "url": "https://github.com/festappnet/festapp/pull/659",
+      "status": "merged"
+    },
+    {
+      "number": 660,
+      "url": "https://github.com/festappnet/festapp/pull/660",
+      "status": "merged"
+    }
+  ],
+  "web": {
+    "tenant": "festapptickets",
+    "branch": "prod/festapptickets",
+    "sourceMainSha": "7d9f2ff628187053e4efe2a71a51be27a8ea48a4",
+    "tenantSha": "83169e14699a25f4c8733601e235a12d9628c37e",
+    "previousProductionSha": "ed1554e14a7ab0e8d79abd390f193e4914b17fcd",
+    "version": "0.20.446+951",
+    "deploymentUrl": "https://9a76a9e0.vstupenkyonline.pages.dev",
+    "productionOrigin": "https://vstupenky.online",
+    "backendReceipt": "/tmp/festapp-wizard-production/backend-receipt.json",
+    "checks": {
+      "tenantDrift": "passed using checker from sourceMainSha",
+      "previousProductionAncestor": true,
+      "pwaCore": {
+        "files": 58,
+        "bytes": 26187649,
+        "limitBytes": 26214400
+      },
+      "pwaKnown": {
+        "files": 264,
+        "bytes": 61407815,
+        "limitBytes": 67108864
+      },
+      "cloudflareBuildVerification": "passed",
+      "directCloudflareUpload": "completed with Wrangler OAuth; skip-build reused validated compilation and completed PWA/Cloudflare gates",
+      "liveVersionAssetAndLegalProbes": "passed; 3 consecutive coherent probes for version 0.20.446+951"
+    },
+    "artifacts": {
+      "versionManifestSha256": "1fa4e7fbe7d7248c59e34545311cc69786fa7ebb95b5df87180fd4df239a12f1",
+      "workerSha256": "89bf206a0f65ca72bdc808f620f822f94b00bd8b7808c56d5308c5c824cec1fb"
+    }
+  },
+  "backend": {
+    "sourceMain": "9a2076d3c67de05a8ffca9546c62c7549e54c1f8",
+    "migrationVersion": "20261029120000",
+    "migrationSha256": "18ebdbfe9c2b303ceb8695d8d5f2a74bf5e076d9f7c87b81301fd668f635b721",
+    "target": {
+      "hostname": "festapp-supabase-rehearsal-01",
+      "database": "festapp_rehearsal_20260909220601",
+      "organization": 3
+    },
+    "backup": {
+      "at": 1793284343.7198002,
+      "backup_stop": 1793284324,
+      "label": "20261025-031939F_20261029-143101D",
+      "type": "diff",
+      "archive_check_passed": true
+    },
+    "tenExactFontsPresent": true,
+    "edgeHandlerSha256": "1e72f451dc2419548b0aef1a88e2cf329b64db81dfef1ba2c7db84125ca2090f",
+    "edgeReloadedWithCanonicalGuard": true,
+    "migrationApplied": true,
+    "functionBodyParity": true,
+    "aclProbe": "passed",
+    "originalPauseRestored": true,
+    "finishedAtUtc": "2026-10-29T14:40:55Z"
+  },
+  "emailHealth": {
+    "paused": false,
+    "alerts": [],
+    "producerAccessOk": true,
+    "unknownBefore": 2,
+    "unknownAfter": 2
+  },
+  "pwaRemedy": {
+    "commit": "7d9f2ff628187053e4efe2a71a51be27a8ea48a4",
+    "changed": "Install only the immutable recovery-script alias in core when available; keep mutable runtime URLs and legacy fallback. Cache budgets unchanged.",
+    "testsPassed": 10,
+    "savedCoreBytes": 33998,
+    "unchangedFlutterAndWebCompilationReused": true
+  },
+  "publicSmoke": {
+    "homepageRendered": true,
+    "createAccountEntryRendered": true,
+    "accountSubmitted": false,
+    "productionFixturesCreated": false,
+    "isolatedHeadlessBrowserClosed": true
+  },
+  "cleanup": {
+    "archivedBranch": "archive/work-in-progress-20261029",
+    "archivedCommit": "10b86ee8a70a72009228bf24be56b503817127e6",
+    "initialRegisteredWorktrees": 27,
+    "remoteMergedBranchesDeleted": 63,
+    "recoveryBundleVerified": true,
+    "unreadyWorkPreservedAndNotReleased": true
+  }
+}
