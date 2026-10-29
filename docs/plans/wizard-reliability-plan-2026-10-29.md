@@ -1,9 +1,9 @@
 # Spolehlivé dokončení průvodce a náhledy e-mailů bez smyček
 
-Datum: 2026-10-29  
-Stav: lokálně realizováno a cíleně ověřeno; produkční vydání neprovedeno. Výsledek: [receipt](../operations/wizard-reliability-RESULT-2026-10-29.md).  
-Ověření při realizaci: standard; při nasazení navíc povinné produkční brány  
-Rozsah tenantů: pouze `prod/festapptickets` / vstupenky.online  
+Datum: 2026-10-29
+Stav: lokálně realizováno a cíleně ověřeno; produkční vydání neprovedeno. Výsledek: [receipt](../operations/wizard-reliability-RESULT-2026-10-29.md).
+Ověření při realizaci: standard; při nasazení navíc povinné produkční brány
+Rozsah tenantů: pouze `prod/festapptickets` / vstupenky.online
 Autorizace: uživatel zadal realizaci execution promptu. Implementace a izolované lokální ověření jsou povolené; commit/push a produkční vydání tím nejsou provedené.
 
 ## Cíl
