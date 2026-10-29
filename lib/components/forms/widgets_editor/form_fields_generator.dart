@@ -32,12 +32,13 @@ class FormFieldsGenerator extends StatefulWidget {
   final VoidCallback? onChanged;
   final bool editingEnabled;
   final bool expandProducts;
-  const FormFieldsGenerator(
-      {super.key,
-      required this.bundle,
-      this.onChanged,
-      this.editingEnabled = true,
-      this.expandProducts = false});
+  const FormFieldsGenerator({
+    super.key,
+    required this.bundle,
+    this.onChanged,
+    this.editingEnabled = true,
+    this.expandProducts = false,
+  });
 
   @override
   _FormFieldsGeneratorState createState() => _FormFieldsGeneratorState();
@@ -99,8 +100,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           form.relatedFields = updatedList;
 
           for (int i = 0; i < form.relatedFields.length; i++) {
-            form.relatedFields[i].definition =
-                form.relatedFields[i].definition.copyWith(order: i);
+            form.relatedFields[i].definition = form.relatedFields[i].definition
+                .copyWith(order: i);
           }
 
           if (selectedIndex == oldIndex) {
@@ -121,12 +122,18 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     FormFieldDraft field,
     List<FormFieldDraft> displayList,
   ) {
-    final isProduct = field.definition.type == FormMetadata.fieldTypeTicket ||
+    final isProduct =
+        field.definition.type == FormMetadata.fieldTypeTicket ||
         field.definition.type == FormMetadata.fieldTypeProductType;
     final isSelected =
         selectedIndex == index || widget.expandProducts && isProduct;
+    // The ticket flag also disables ticket issuance for application-only forms.
+    // Its container and product choices remain active in that mode.
     final effectiveOpacity =
-        (field.definition.isHidden ?? false) ? kHiddenOpacity : 1.0;
+        field.definition.type != FormMetadata.fieldTypeTicket &&
+            (field.definition.isHidden ?? false)
+        ? kHiddenOpacity
+        : 1.0;
 
     return GestureDetector(
       key: field.definition.id != null
@@ -155,18 +162,22 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (widget.expandProducts && isProduct) ...[
-                Text(FormStrings.productsAndPrices,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.expandProducts && isProduct) ...[
+                  Text(
+                    FormStrings.productsAndPrices,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (isSelected)
+                  _buildFieldItemSelected(field, displayList, index)
+                else
+                  _buildFieldItemNonSelected(field),
               ],
-              if (isSelected)
-                _buildFieldItemSelected(field, displayList, index)
-              else
-                _buildFieldItemNonSelected(field),
-            ]),
+            ),
           ),
         ),
       ),
@@ -174,17 +185,21 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   }
 
   Widget _selectionOptionsError() => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Semantics(
-          liveRegion: true,
-          child: Text(FormStrings.selectionOptionsRequired,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8),
+    child: Semantics(
+      liveRegion: true,
+      child: Text(
+        FormStrings.selectionOptionsRequired,
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      ),
+    ),
+  );
 
   Widget _buildFieldItemNonSelected(FormFieldDraft field) {
     final icon = FormHelper.fieldTypeIcons[field.definition.type];
-    final bool hidden = field.definition.isHidden ?? false;
+    final bool hidden =
+        field.definition.type != FormMetadata.fieldTypeTicket &&
+        (field.definition.isHidden ?? false);
     final requiredStar = (field.definition.isRequired ?? false)
         ? TextSpan(
             text: ' *',
@@ -287,22 +302,23 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               Text(
                 OrderItemStrings.itemSingular,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ).tr(),
             ],
           )
         else ...[
           TextFormField(
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             decoration: InputDecoration(
               border: const UnderlineInputBorder(),
-              hintText:
-                  FormHelper.fieldTypeToLocale(field.definition.type ?? ''),
+              hintText: FormHelper.fieldTypeToLocale(
+                field.definition.type ?? '',
+              ),
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
             initialValue: field.definition.title,
@@ -319,8 +335,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                   defaultDescription: defaultDescription,
                   onDescriptionChanged: (newDescription) {
                     _refresh(() {
-                      field.definition = field.definition
-                          .copyWith(description: newDescription);
+                      field.definition = field.definition.copyWith(
+                        description: newDescription,
+                      );
                     });
                   },
                   occasionId: form.definition.occasionId!,
@@ -352,12 +369,14 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                       child: Row(
                         children: [
                           Icon(
-                              FormHelper.fieldTypeIcons[field.definition.type]),
+                            FormHelper.fieldTypeIcons[field.definition.type],
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               FormHelper.fieldTypeToLocale(
-                                  field.definition.type!),
+                                field.definition.type!,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -385,19 +404,23 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                                   FormMetadata.fieldTypeSelectMany) &&
                           (newType == FormMetadata.fieldTypeSelectOne ||
                               newType == FormMetadata.fieldTypeSelectMany))) {
-                        field.definition =
-                            field.definition.copyWith(data: null);
+                        field.definition = field.definition.copyWith(
+                          data: null,
+                        );
                         field.options.clear();
                       }
-                      field.definition =
-                          field.definition.copyWith(type: newType);
+                      field.definition = field.definition.copyWith(
+                        type: newType,
+                      );
                       if ((field.definition.title?.isEmpty ?? true)) {
                         field.definition = field.definition.copyWith(
-                            title: FormHelper.fieldTypeToLocale(newType));
+                          title: FormHelper.fieldTypeToLocale(newType),
+                        );
                       }
                       if (FormMetadata.isAlwaysRequired(newType)) {
-                        field.definition =
-                            field.definition.copyWith(isRequired: true);
+                        field.definition = field.definition.copyWith(
+                          isRequired: true,
+                        );
                       }
                     }),
                   ),
@@ -428,35 +451,46 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Checkbox(
-                    value: FormMetadata.isAlwaysRequired(
-                            field.definition.type ?? '') ||
+                    value:
+                        FormMetadata.isAlwaysRequired(
+                          field.definition.type ?? '',
+                        ) ||
                         (field.definition.isRequired ?? false),
-                    onChanged: FormMetadata.isAlwaysRequired(
-                            field.definition.type ?? '')
-                        ? null
-                        : (value) => _refresh(() => field.definition =
-                            field.definition.copyWith(isRequired: value)),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    FormStrings.show,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Switch(
-                    value: !(field.definition.isHidden ?? false),
                     onChanged:
-                        (field.definition.type == FormMetadata.fieldTypeEmail ||
-                                isTicket)
-                            ? null
-                            : (value) => _refresh(() => field.definition =
-                                field.definition.copyWith(isHidden: !value)),
+                        FormMetadata.isAlwaysRequired(
+                          field.definition.type ?? '',
+                        )
+                        ? null
+                        : (value) => _refresh(
+                            () => field.definition = field.definition.copyWith(
+                              isRequired: value,
+                            ),
+                          ),
                   ),
                 ],
               ),
+              if (!isTicket)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      FormStrings.show,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Switch(
+                      value: !(field.definition.isHidden ?? false),
+                      onChanged:
+                          (field.definition.type ==
+                                  FormMetadata.fieldTypeEmail ||
+                              isTicket)
+                          ? null
+                          : (value) => _refresh(
+                              () => field.definition = field.definition
+                                  .copyWith(isHidden: !value),
+                            ),
+                    ),
+                  ],
+                ),
             ],
             buildActions: (isCompact) => Row(
               mainAxisSize: MainAxisSize.min,
@@ -467,24 +501,30 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                     if (value == "add_description") {
                       _refresh(() {
                         if (HtmlHelper.isHtmlEmptyOrNull(
-                            field.definition.description)) {
-                          field.definition = field.definition
-                              .copyWith(description: defaultDescription);
+                          field.definition.description,
+                        )) {
+                          field.definition = field.definition.copyWith(
+                            description: defaultDescription,
+                          );
                         }
                       });
                     } else if (value == "delete_field") {
                       deleteField();
                     } else if (value == "show_deposit_description") {
                       _refresh(() {
-                        field.definition = field.definition
-                            .copyWith(data: field.definition.data ?? {});
-                        var current = field.definition.data![
-                                TicketHolder.metaShowDepositDescription] ??
+                        field.definition = field.definition.copyWith(
+                          data: field.definition.data ?? {},
+                        );
+                        var current =
+                            field.definition.data![TicketHolder
+                                .metaShowDepositDescription] ??
                             true;
-                        field.definition = field.definition.copyWith(data: {
-                          ...?field.definition.data,
-                          TicketHolder.metaShowDepositDescription: !current
-                        });
+                        field.definition = field.definition.copyWith(
+                          data: {
+                            ...?field.definition.data,
+                            TicketHolder.metaShowDepositDescription: !current,
+                          },
+                        );
                       });
                     }
                   },
@@ -501,9 +541,11 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                     // Ticket Specific Options
                     if (isTicket &&
                         FeatureService.isFeatureEnabled(
-                            FeatureConstants.deposit)) {
-                      bool showDeposit = field.definition
-                              .data?[TicketHolder.metaShowDepositDescription] ??
+                          FeatureConstants.deposit,
+                        )) {
+                      bool showDeposit =
+                          field.definition.data?[TicketHolder
+                              .metaShowDepositDescription] ??
                           true;
                       items.add(const PopupMenuDivider());
                       items.add(
@@ -546,7 +588,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                     tooltip: field.definition.canDelete
                         ? CommonStrings.delete
                         : FormStrings.deletionReason(
-                            field.definition.deleteBlockedReason),
+                            field.definition.deleteBlockedReason,
+                          ),
                     icon: const Icon(Icons.delete),
                     onPressed: field.definition.canDelete ? deleteField : null,
                   ),
@@ -629,9 +672,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
               ),
               child: Text(
                 FormStrings.answerText,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
+                style: Theme.of(context).textTheme.bodyLarge
                     ?.copyWith(color: Theme.of(context).hintColor),
               ),
             ),
@@ -639,9 +680,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         } else {
           return Text(
             FormStrings.answerText,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
+            style: Theme.of(context).textTheme.bodyLarge
                 ?.copyWith(color: Colors.grey),
           );
         }
@@ -649,8 +688,9 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
   }
 
   List<String> get _availableFieldTypes {
-    final existingTypes =
-        widget.bundle.form.relatedFields.map((f) => f.definition.type).toList();
+    final existingTypes = widget.bundle.form.relatedFields
+        .map((f) => f.definition.type)
+        .toList();
     return FormHelper.fieldTypeIcons.keys.where((type) {
       if ([
         FormMetadata.fieldTypeText,
