@@ -246,3 +246,18 @@ a možnost ověření před aktivací. Samotný billing POST nebyl proveden; zdr
 příjmů, delivery journal ani activation nebyly změněny. Po potvrzení postupu
 lze provést jediný zdokumentovaný pokus, bez automatického opakování, a jeho
 skutečný výsledek předat Erelovi.
+
+## Následný nezávislý audit BI přípravy
+
+[Kritik](wix-bi-verification-CRITIC-2026-10-29.md) ověřil skutečné emaily i úzký
+význam OAuth evidence. Našel jednu P3 nepřesnost v přípravné evidenci času; ta je
+opravená. Doplněn byl dosud chybějící dormant sender s jedinou pevnou QA instalací,
+CHARGE USD0, povinným reviewed vendor approval a fsynced exclusive journalem
+sdíleným přes git common directory. Pád, paralelní volání, neznámý výsledek ani
+odmítnutí neopravňují další pokus. Nezávisle prošlo 20/20 cílených testů bez skipů.
+CLI inspect ukazuje `not-attempted`; žádný billing POST ani activation neproběhly.
+
+Publikace připraveného nástroje byla kritikem schválena. Odeslání stále čeká na
+potvrzení konkrétního testovacího postupu Wixem; přijetí BI události a aktivace
+se následně ověřují zvlášť. Širší editor/store qualification zůstává samostatnou
+nedokončenou částí marketplace práce, nikoli hotovým výsledkem tohoto auditu.

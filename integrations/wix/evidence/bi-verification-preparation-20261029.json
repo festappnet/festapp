@@ -19,7 +19,6 @@
     "netRevenue": "0",
     "wixShare": "0",
     "currency": "USD",
-    "createdDateAssignedAndPersistedBeforeApprovedSend": true,
     "qualificationOnly": true,
     "notASourceSettlement": true,
     "vendorAcceptanceRequired": true
@@ -59,5 +58,40 @@
   "billingActivationChanged": false,
   "productionMoneyOrDeliveryRecordsChanged": false,
   "marketplaceSubmitted": false,
-  "resumeAfter": "Wix confirms the supported test procedure; preserve exclusive attempt evidence, use the verified installation-scoped provider, then notify Erel with the actual result."
+  "resumeAfter": "Wix confirms the supported test procedure; preserve exclusive attempt evidence, use the verified installation-scoped provider, then notify Erel with the actual result.",
+  "sendRequirements": {
+    "createdDateMustBeAssignedAndPersistedBeforeProviderIO": true,
+    "exclusiveAttemptMustBeDurableBeforeProviderIO": true,
+    "existingAttemptMustBlockReplay": true,
+    "vendorApprovalMustBeIndependentlyVerified": true
+  },
+  "senderImplementation": {
+    "module": "integrations/wix/billing/qualification.mjs",
+    "cli": "integrations/wix/scripts/qualify-billing-event.mjs",
+    "targetAndZeroAmountsHardcoded": true,
+    "attemptSharedAcrossRepositoryWorktrees": true,
+    "automaticRetry": false,
+    "approvalReceiptCreated": false,
+    "liveEventSent": false,
+    "targetedTests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "independentlyRerun": true
+    },
+    "sharedAttemptInspection": "not-attempted"
+  },
+  "retrospectiveAudit": {
+    "report": "docs/plans/wix-bi-verification-CRITIC-2026-10-29.md",
+    "materialFindings": 0,
+    "fixedFindings": [
+      {
+        "id": "WIX-BI-C01",
+        "severity": "P3",
+        "fixed": true
+      }
+    ],
+    "dormantSenderApprovedForPublication": true,
+    "liveSendApproved": false
+  }
 }

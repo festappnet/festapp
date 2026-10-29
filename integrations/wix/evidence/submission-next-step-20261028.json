@@ -81,6 +81,9 @@
     "oauthVerified": true,
     "vendorTestProcedureConfirmed": false,
     "eventSent": false,
-    "clarificationSent": true
+    "clarificationSent": true,
+    "senderImplementedAndTested": true,
+    "sharedAttemptState": "not-attempted",
+    "criticReport": "docs/plans/wix-bi-verification-CRITIC-2026-10-29.md"
   }
 }

@@ -14,7 +14,8 @@
     "release:check": "node scripts/check-release.mjs",
     "package": "node scripts/package.mjs",
     "billing:prepare": "node scripts/prepare-billing.mjs",
-    "billing:operations": "node scripts/billing-operations.mjs"
+    "billing:operations": "node scripts/billing-operations.mjs",
+    "billing:qualify": "node scripts/qualify-billing-event.mjs"
   },
   "dependencies": {
     "@wix/editor": "1.979.0",
