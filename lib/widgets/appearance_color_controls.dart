@@ -15,6 +15,7 @@ class AppearanceColorControls extends StatelessWidget {
     this.onPrimaryReset,
     this.onSecondaryReset,
     this.resetLabel,
+    this.paletteName,
   });
 
   final bool gradient;
@@ -26,6 +27,7 @@ class AppearanceColorControls extends StatelessWidget {
   final VoidCallback? onPrimaryReset;
   final VoidCallback? onSecondaryReset;
   final String? resetLabel;
+  final String? paletteName;
 
   Widget _color(
     BuildContext context,
@@ -67,7 +69,10 @@ class AppearanceColorControls extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: theme.textTheme.labelLarge),
+                      Text(
+                        paletteName == null ? label : '$label - $paletteName',
+                        style: theme.textTheme.labelLarge,
+                      ),
                       Text(hex, style: theme.textTheme.bodySmall),
                     ],
                   ),

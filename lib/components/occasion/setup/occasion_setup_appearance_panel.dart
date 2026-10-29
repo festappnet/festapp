@@ -1,4 +1,5 @@
 import 'package:fstapp/widgets/appearance_style_chooser.dart';
+import 'package:fstapp/components/_shared/appearance_palettes.dart';
 import 'package:fstapp/widgets/appearance_color_controls.dart';
 import 'package:fstapp/components/_shared/appearance_color_strings.dart';
 
@@ -124,6 +125,11 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           gradient: gradient,
           onSelected: (palette) => onPresetSelected(palette.id),
           controls: AppearanceColorControls(
+            paletteName: AppearancePalettes.match(
+              primaryColor.toARGB32(),
+              secondaryColor.toARGB32(),
+              gradient,
+            )?.label,
             gradient: gradient,
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
