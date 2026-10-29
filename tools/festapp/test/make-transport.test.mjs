@@ -14,10 +14,8 @@ import { validateMakePage } from '../src/remote/make-transport.mjs';
 const privateKey = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey;
 const secret = 'NEVER_DELIVER_BUYER_TEXT';
 const row = id => ({ id, occasionId: 7, symbol: String(id).padStart(10, 'A'), state: 'ordered',
-    createdAt: null, updatedAt: null, revision: 'a'.repeat(64),
-    customer: { name: secret, surname: secret, email: secret }, note: secret,
-    ticketCount: 1, price: '100.00', currency: 'CZK', allowedActions: ['view','cancel'],
-    payment: { method: secret, variableSymbol: secret, deadline: secret, amount: '100.00', paid: '0.00', returned: '0.00' },
+    ticketCount: 1, price: '100.00', currency: 'CZK', allowedActions: ['view'],
+    payment: { amount: '100.00', paid: '0.00', returned: '0.00' },
 });
 
 async function setup(t) {
@@ -30,11 +28,11 @@ async function setup(t) {
                 valid: { tickets: { total: 52 } }, money_by_currency: [{ currency: 'CZK', net_received: '0.00' }],
                 warnings: [{ code: 'fixture_warning' }] }, waitingTickets: 0 });
         }
-        if (!url.pathname.endsWith('/get_operator_orders_v1')) return;
+        if (!url.pathname.endsWith('/get_operator_order_summaries_v1')) return;
         if (fail) return reply({ message: secret }, fail);
         const args = JSON.parse(init.body);
         if (args.p_order) return reply({ occasionId: 7, orders: missingDetail ? [] : [row(wrongDetail ? args.p_order + 1 : args.p_order)], nextCursor: null });
-        let rows = source.filter(r => !args.p_before || r.id < args.p_before);
+        let rows = source.filter(r => (!args.p_before || r.id < args.p_before) && (!args.p_symbol || r.symbol === args.p_symbol));
         const more = rows.length > args.p_limit;
         rows = rows.slice(0, args.p_limit);
         return reply({ occasionId: 7, orders: rows, nextCursor: malformedCursor ? 999 : more ? rows.at(-1).id : null });
@@ -126,6 +124,7 @@ test('Make HTTP transport uses real OAuth tokens, canonical projections and live
     f.wrongDetail(true); r = await call('orders.inspect', { occasionId: 7, orderId: 1 }); assert.equal(r.status, 502); assert.equal(r.body.data, undefined); f.wrongDetail(false);
     f.missingDetail(true); assert.equal((await call('orders.inspect', { occasionId: 7, orderId: 1 })).status, 404); f.missingDetail(false);
     f.malformedCursor(true); assert.equal((await call('orders.list', { occasionId: 7, limit: 50 })).status, 502); f.malformedCursor(false);
+    assert(!f.calls.some(c => c.url.pathname.endsWith('/get_operator_orders_v1')), 'summary never dispatches full RPC');
     const reads = f.calls.length; assert.equal((await call('orders.report', { occasionId: 8 })).status, 403); assert.equal(f.calls.length, reads);
     for (const op of ['orders.cancel','payments.record','ticket_layouts.inspect','unknown']) assert.equal((await call(op, { occasionId: 7 })).status, 403);
     assert.equal((await f.post(tokens.access_token, 'orders.report', { occasionId: 7 }, { origin: 'https://foreign.example' })).status, 403);

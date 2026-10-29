@@ -1,10 +1,9 @@
-import { mkdir, rmdir } from 'node:fs/promises';
+import { acquireProcessLock, rejectLegacyLock } from './process-lock.mjs';
 import { join } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 import { createClient } from '@supabase/supabase-js';
 import {
     configHome,
-    privateRoot,
+    digest,
     boundedFetch,
     verifyActivation,
 } from '../context/profile.mjs';
@@ -59,36 +58,20 @@ export class SessionOwner {
             store = new KeychainStore(),
             root = configHome(),
             fetchImpl = fetch,
+            lockStrategy,
         } = {},
     ) {
         this.profile = profile;
         this.store = store;
         this.root = root;
         this.fetch = boundedFetch(fetchImpl);
+        this.lockStrategy = lockStrategy ?? (async action => {
+            await rejectLegacyLock(join(this.root, 'locks', this.profile.binding));
+            const release = await acquireProcessLock(this.root, `profile-${digest(this.profile.binding)}.sqlite`, { timeoutMs: 10000 });
+            try { return await action(); } finally { release(); }
+        });
     }
-    async locked(action) {
-        await privateRoot(this.root);
-        const dir = join(this.root, 'locks');
-        await mkdir(dir, { recursive: true, mode: 0o700 });
-        const path = join(dir, this.profile.binding);
-        const deadline = Date.now() + 10000;
-        while (true) {
-            try {
-                await mkdir(path, { mode: 0o700 });
-                break;
-            } catch (error) {
-                if (error.code !== 'EEXIST') throw error;
-                if (Date.now() >= deadline)
-                    throw new OperationError('SESSION_BUSY', true);
-                await delay(50);
-            }
-        }
-        try {
-            return await action();
-        } finally {
-            await rmdir(path);
-        }
-    }
+    async locked(action) { return this.lockStrategy(action); }
     client(accessToken) {
         return createClient(
             this.profile.backendOrigin,

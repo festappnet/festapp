@@ -1,3 +1,4 @@
+import { boundedRetryAfter } from "./retry-after.ts";
 import { handleMcpManagement } from "./management.ts";
 import type { Session, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import type { McpTenant } from "./config.ts";
@@ -10,6 +11,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
   const { config, admin } = deps;
   const headers = { "Access-Control-Allow-Origin": config.tenantOrigin,
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Expose-Headers": "Retry-After",
     "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin",
     "Cache-Control": "no-store", "Content-Type": "application/json" };
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -44,6 +46,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
         body: JSON.stringify({ ...payload, request: body.request, tenantId: config.tenantId,
           tenantOrigin: config.tenantOrigin, organizationId: config.organizationId }),
       });
+      if (result.status === 429) throw Object.assign(new Error(), { rateLimited: true, retryAfter: boundedRetryAfter(result.headers.get("Retry-After")) });
       if (!result.ok) throw new Error();
       return await result.json();
     };
@@ -71,8 +74,13 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
       session: { access_token: minted.access_token, refresh_token: minted.refresh_token } });
     transferred = true;
     return json({ ...result, issuer: config.issuer });
-  } catch {
+  } catch (error) {
     if (minted && !transferred) await admin.auth.admin.signOut(minted.access_token, "local").catch(() => undefined);
+    if (error && typeof error === "object" && "rateLimited" in error && "retryAfter" in error) {
+      const response = json({ error: "connection_unavailable" }, 429);
+      response.headers.set("Retry-After", String(error.retryAfter));
+      return response;
+    }
     return json({ error: "connection_unavailable" }, 403);
   }
 }

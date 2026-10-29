@@ -1,3 +1,4 @@
+import { boundedRetryAfter } from "./retry-after.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import type { McpTenant } from "./config.ts";
 
@@ -25,7 +26,11 @@ export async function handleMcpManagement(req: Request, body: Record<string, unk
     body: JSON.stringify({ operation: revoke ? "revoke" : "list", ...(revoke ? { connectionId: body.connectionId } : {}),
       accessToken, tenantId: deps.config.tenantId, tenantOrigin: deps.config.tenantOrigin, organizationId: deps.config.organizationId }),
   });
-  if (!result.ok) return json({ error: "connection_unavailable" }, [401, 403, 429].includes(result.status) ? result.status : 503);
+  if (!result.ok) {
+    const response = json({ error: "connection_unavailable" }, [401, 403, 429].includes(result.status) ? result.status : 503);
+    if (result.status === 429) response.headers.set("Retry-After", String(boundedRetryAfter(result.headers.get("Retry-After"))));
+    return response;
+  }
   const output = await result.json();
   if (revoke) {
     if (output.connectionId !== body.connectionId || output.revoked !== true) throw new Error();

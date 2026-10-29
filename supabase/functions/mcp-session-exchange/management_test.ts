@@ -15,7 +15,7 @@ function fixture({ invalid = false, organization = 3, upstream = 200 } = {}) {
       assertEquals(body.accessToken, "app-access");
       assertEquals(body.tenantId, "fixture"); assertEquals(body.organizationId, 3);
       assertEquals((init!.headers as Record<string, string>)["X-Festapp-Mcp-Broker"], config.brokerSecret);
-      return Response.json(body.operation === "list" ? { connections: [], access_token: "must-not-leak" } : { connectionId: body.connectionId, revoked: true }, { status: upstream });
+      return Response.json(body.operation === "list" ? { connections: [], access_token: "must-not-leak" } : { connectionId: body.connectionId, revoked: true }, { status: upstream, headers: { "Retry-After": "999999" } });
     }) as typeof fetch,
   };
   const request = (body: unknown, origin = config.tenantOrigin, authenticated = true) => handleMcpExchange(new Request("https://api.invalid/mcp-session-exchange", {
@@ -47,4 +47,11 @@ Deno.test("management rejects foreign origin, missing/invalid identity, tenant a
 });
 Deno.test("management does not turn issuer refusal into success", async () => {
   const f = fixture({ upstream: 403 }); assertEquals((await f.request({ operation: "connections.revoke", connectionId: "foreign" })).status, 403);
+});
+
+Deno.test("management preserves bounded Retry-After and does not retry mutations", async () => {
+  const f = fixture({ upstream: 429 });
+  const response = await f.request({ operation: "connections.revoke", connectionId: "owned" });
+  assertEquals(response.status, 429); assertEquals(response.headers.get("Retry-After"), "3600");
+  assertEquals(f.calls.length, 2);
 });

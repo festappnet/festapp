@@ -274,7 +274,7 @@
     "public.swap_spot_tickets_client_sync_v1(bigint,bigint,uuid)": {
       "anon": false,
       "authenticated": true,
-      "service_role": false
+      "service_role": true
     },
     "public.register_blueprint_text_resources(bigint,uuid,jsonb)": {
       "anon": false,
@@ -1174,7 +1174,7 @@
     "public.game_update_settings_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,uuid)": {
       "anon": false,
       "authenticated": true,
-      "service_role": false
+      "service_role": true
     },
     "public.get_email_authoring_payment_accounts(bigint,bigint)": {
       "anon": false,
@@ -2297,6 +2297,541 @@
       "service_role": true
     },
     "public.release_blueprint_holds_client_sync_v1(bigint[],uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.operator_order_facts_internal_v1(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.operator_order_summary_internal_v1(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.stage_wix_billing_delivery(uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_wix_billing_delivery(uuid,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_wix_billing_delivery(uuid,text,text,uuid,text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.inspect_wix_billing_delivery(uuid,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.reconcile_wix_billing_delivery(uuid,text,text,uuid,text,text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_replacement_invoice_preparation(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.mark_replacement_invoice_dispatch(bigint,uuid,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.release_replacement_invoice_preparation(bigint,uuid,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.complete_replacement_invoice_preparation(bigint,uuid,uuid,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.cancel_tickets_command_internal(bigint[],uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_wix_checkout_configuration_internal()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.issue_wix_checkout_origin_internal(text,uuid,uuid,bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.repair_order_email_client_sync_v1(bigint,text,text,bigint,text,uuid,boolean,uuid,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_client_commits_scoped_internal_v1(bigint,timestamp with time zone,uuid,integer,jsonb,boolean,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_waitlist_offer_proposal_internal(bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_waitlist_offer_proposal(bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_timeline(bigint,bigint,bigint,timestamp with time zone,jsonb,jsonb,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_timeline_group(bigint,bigint,bigint,timestamp with time zone,bigint,jsonb,jsonb,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_timeline_group_updates(bigint,bigint,bigint,timestamp with time zone,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.notification_center_order_selection(bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_overview(bigint,bigint,bigint,jsonb,integer,text[])": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.mark_notification_center_item_read(bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.check_email_template_scope_internal(text,bigint,bigint,bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_email_template_catalog(text,bigint,bigint,bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_email_template(text,bigint,bigint,bigint,text,text,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_email_banner(text,bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_email_banner(text,bigint,bigint,bigint,text,text,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_email_template_preview_context(text,bigint,bigint,bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.save_game_settings_command_internal_v1(bigint,timestamp with time zone,timestamp with time zone,uuid,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.game_update_settings_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,uuid,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_game_settings_for_authoring_v1(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_configuration_settings(text,bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_configuration_settings(text,bigint,bigint,bigint,bigint,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.manage_occasion_public_link(bigint,bigint,bigint,uuid,bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.manage_game_settings(bigint,bigint,bigint,uuid,bigint,timestamp with time zone,timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.register_service_fee_agreement(uuid,bigint,text,integer,timestamp with time zone,timestamp with time zone)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.end_service_fee_agreement(uuid,timestamp with time zone,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.register_service_fee_acquisition(bigint,text,timestamp with time zone,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.record_service_fee_settlement(jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.export_wix_service_fee_receipts(bigint,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_occasion_media_job(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.start_occasion_lifecycle(bigint,bigint,bigint,text,uuid,bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.record_occasion_media_step(uuid,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.finish_occasion_media_job(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_pending_occasion_media_jobs(bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_occasion_setup_authoring(bigint,bigint,uuid,bigint,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.check_lifecycle_source_scope(bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_authoring_history(bigint,bigint,bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.manage_scanner_authoring(bigint,bigint,bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.require_program_domain_internal_v1(bigint,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.manage_program_authoring(bigint,bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.manage_unit_agenda(bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.delete_unit_client_sync_v1(bigint,uuid,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_delegated_order_deletion_context(bigint,bigint,bigint,bigint,uuid,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.delete_delegated_order_client_sync_v1(bigint,bigint,bigint,bigint,uuid,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.delete_order_history_client_sync_v1(bigint,uuid,bigint,bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.begin_delegated_bank_sync_operation(uuid,bigint,text,text,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_card_refund_authoring(bigint,bigint,bigint,bigint,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.set_stripe_unit_paused_client_sync_v1(bigint,boolean,boolean,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.begin_stripe_disconnect_client_sync_v1(bigint,boolean,uuid,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.authorize_authoring_export(bigint,bigint,bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_authoring_export_page(bigint,bigint,bigint,text,jsonb,text,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.manage_blueprint_authoring(bigint,bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_delegated_ticket_layout(bigint,bigint,bigint,uuid,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.check_delegated_render_scope(bigint,bigint,bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.register_delegated_blueprint_text_resources(bigint,bigint,bigint,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.update_unit_user_internal_v1(jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.publish_unit_user_access_change_internal_v1(uuid,bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.prepare_profile_change_internal_v1(jsonb,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.lock_people_scope_internal_v1(bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.manage_people(bigint,bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.update_unit_user(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_form_payment_options(bigint,bigint,bigint,bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_form(bigint,bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_admin_waitlist_acceptance(jsonb,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_form_catalog_page(bigint,bigint,bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_form_for_authoring(bigint,bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_form_public_link(bigint,bigint,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_form_editor_bundle_internal(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_form_waitlist_context(bigint,bigint,bigint,bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.execute_admin_waitlist_command_client_sync_v1(jsonb,text,jsonb,uuid,uuid,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.preview_admin_form_order(bigint,bigint,bigint,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.create_admin_form_order(bigint,bigint,bigint,bigint,jsonb,text,uuid,uuid,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_edit_ticket_layout_as_actor_internal_v1(uuid,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.can_edit_game_settings(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.can_write_blueprints_as_actor_internal_v1(uuid,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_event_feedback_export_page_internal_v1(bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_event_feedback_export_for_edit(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.preview_blueprint_seat_swap(bigint,bigint,bigint,bigint,bigint,bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.swap_blueprint_seats(bigint,bigint,bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,text,uuid,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_prepare_layout_resources_as_actor_internal_v1(uuid,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.cancel_blueprint_tickets(bigint,bigint,bigint,bigint,bigint[],bigint[],text,uuid,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_blueprint_hold_release(bigint,bigint,bigint,bigint[],boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.release_blueprint_holds(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,text,uuid,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)": {
       "anon": false,
       "authenticated": true,
       "service_role": false

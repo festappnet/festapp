@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { mkdtemp, rm, chmod, symlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { acquireProcessLock } from '../src/auth/process-lock.mjs';
+import { openRemoteStorage } from '../src/remote/storage.mjs';
+
+for (const write of [false, true]) test(`root owner excludes competitors and recovers after SIGKILL, write=${write}`, async t => {
+    const root = await mkdtemp(join(tmpdir(), 'festapp-kernel-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const key = randomBytes(32);
+    const script = `import {openRemoteStorage} from ${JSON.stringify(new URL('../src/remote/storage.mjs',import.meta.url).href)};
+      const s=await openRemoteStorage(process.argv[1],Buffer.from(process.argv[2],'hex'));
+      if(process.argv[3]==='true')s.put('Test','value',{safe:'persisted'});
+      process.stdout.write('ready\\n');setInterval(()=>{},1000);`;
+    const child = spawn(process.execPath, ['--input-type=module','-e',script,root,key.toString('hex'),String(write)], { stdio: ['ignore','pipe','inherit'] });
+    t.after(() => { if (child.exitCode === null) child.kill('SIGKILL'); });
+    await once(child.stdout,'data');
+    await assert.rejects(openRemoteStorage(root,key), {code:'SESSION_BUSY'});
+    child.kill('SIGKILL'); await once(child,'exit');
+    const s = await openRemoteStorage(root,key);
+    assert.deepEqual(s.get('Test','value'),write?{safe:'persisted'}:undefined);
+    await s.close(); await s.close();
+    await assert.rejects(openRemoteStorage(root,randomBytes(32)));
+    const again=await openRemoteStorage(root,key); await again.close();
+});
+test('local kernel anchor excludes another process and survives its death', async t => {
+    const {digest}=await import('../src/context/profile.mjs');
+    const anchor=`profile-${digest('profile-test')}.sqlite`;
+    const root=await mkdtemp(join(tmpdir(),'festapp-profile-'));t.after(()=>rm(root,{recursive:true,force:true}));
+    const child=spawn(process.execPath,['--input-type=module','-e',`import {SessionOwner} from ${JSON.stringify(new URL('../src/auth/session.mjs',import.meta.url).href)};await new SessionOwner({binding:'profile-test'},{root:process.argv[1]}).locked(()=>{process.stdout.write('ready');return new Promise(()=>setInterval(()=>{},1000));});`,root],{stdio:['ignore','pipe','inherit']});
+    t.after(()=>child.kill('SIGKILL'));await once(child.stdout,'data');
+    await assert.rejects(acquireProcessLock(root,anchor),{code:'SESSION_BUSY'});
+    child.kill('SIGKILL');await once(child,'exit');const release=await acquireProcessLock(root,anchor);release();release();
+    await chmod(join(root,anchor),0o644);await assert.rejects(acquireProcessLock(root,anchor));
+    await symlink('/tmp',join(root,'bad.sqlite'));await assert.rejects(acquireProcessLock(root,'bad.sqlite'));
+});

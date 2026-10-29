@@ -64,14 +64,16 @@ Before login and every operation/resource read, activation must match the pinned
 manifest digest, generation and tenant. Manifest data never selects the credential
 destination. The backend origin/key/organization hash reuses release tooling.
 Redirects fail closed. Every operation reloads refresh state under the same
-cross-process directory lock, persists rotation before reading domain data,
+cross-process SQLite kernel lock, persists rotation before reading domain data,
 validates Auth identity/MFA and reads the user's organization with their own JWT.
 No JWT-claim-only authorization or service credential is used.
 
-Lock acquisition is bounded to 10 seconds. A crashed process can leave its empty
-profile lock directory under `locks/`; after confirming all operator processes
-using that profile have stopped, remove only that exact empty directory and retry.
-Do not remove a lock while another process may still rotate its session.
+Local profile lock acquisition waits asynchronously for at most 10 seconds.
+SQLite releases the exclusive lock when a process dies; stable `profile-*.sqlite`
+anchors must never be deleted. Hosted sessions share a bounded per-binding queue,
+protected across processes by the separate `remote-owner.sqlite` kernel lock.
+Legacy directory locks are migration conflicts: stop every old owner before
+removing precisely identified empty legacy directories. Never mix protocols.
 
 ## Start MCP
 
@@ -180,6 +182,15 @@ FESTAPP_MCP_TEST_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB pnpm --dir tools/festapp 
 DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB node web_client/scripts/run_db_tests.js database/tests/ticket_layout_mcp_read_test.sql
 ```
 
+The complete SQL source-parity gate is `pnpm --dir tools/festapp exec node
+test/run-source-parity.mjs`. It requires an already migrated disposable database,
+never installs selected functions to make parity pass, and rolls back assertions.
+The dedicated hardening fixture uses project `festapp-mcp-hardening-20261029`
+on loopback 61032. Its guard requires both `FESTAPP_MCP_TEST_DATABASE_URL` and
+`FESTAPP_AUTHORIZATION_DATABASE_URL` to match, plus the exact project marker,
+disabled cron and paused email workers with no worker URL.
+
+
 Tests cover activation/tenant/ordinary-role boundaries, session rotation,
 revocation/MFA, secure-persistence failure, fixed schemas, actual SDK stdio
 interoperability, shared CLI/MCP results and a synthetic canonical PDF rendered
@@ -260,12 +271,19 @@ node tools/festapp/src/remote/main.mjs serve /absolute/private/config.json --sec
 
 Secret initialization is exclusive. Keep the AES storage key, cookie keys and
 issuer signing key stable across restarts. The server binds only loopback;
-canonical requests require the exact Host and trusted HTTPS proxy header.
+canonical requests require the exact Host, trusted HTTPS proxy header and one
+Caddy-overwritten `X-Festapp-Client-IP`. The health probe requires Host/peer/proto
+but is exempt from IP quotas. Public quotas are fixed 60-second windows (240/IP,
+60/grant, 5/login or management flow), with bounded memory and Retry-After.
 `Dockerfile.remote`, `remote-compose.yml` and `Caddyfile.remote` prepare the
 bounded sidecar, leaving the existing API release separate. Only one process
-may own its SQLite volume. After an unclean stop, verify that process is stopped
-before removing only its empty `remote-process.lock`; never clear another
-operator's per-profile refresh lock while it is active.
+may own its SQLite volume. SIGKILL releases the separate kernel lock automatically;
+never delete or replace SQLite lock anchors. Close storage only after requests drain.
+
+Order-summary clients use only `get_operator_order_summaries_v1`: SQL returns
+safe facts directly, without customer data or revisions. Exact symbols are
+filtered before pagination; missing migration fails closed without full RPC fallback.
+
 
 The MCP boundary uses stable `@modelcontextprotocol/server` 2.3.1 and
 `@modelcontextprotocol/node` 2.1.1, explicitly serving protocol `2026-07-28`

@@ -139,3 +139,24 @@ test('preview artifact cannot cross authenticated users', async (t) => {
     });
     await assert.rejects(ops.readArtifact(uri), { code: 'FORBIDDEN' });
 });
+
+test('summary executor dispatches only the dedicated RPC and rejects full DTO/errors without fallback', async () => {
+    const { invokeOrderOperation } = await import('../src/operations/orders.mjs');
+    const calls = [];
+    const owner = { orderSummaryOnly: true, profile: { organizationId: 1 } };
+    const safe = { id: 7, occasionId: 7, symbol: 'ABCDEFGHIJ', state: 'ordered', ticketCount: 0,
+        price: '1.00', currency: 'CZK', allowedActions: ['view'], payment: null };
+    let response = { data: { occasionId: 7, orders: [safe], nextCursor: null } };
+    const client = { rpc: async (name, args) => { calls.push({name,args}); return response; } };
+    await invokeOrderOperation(owner,client,'orders.list',{occasionId:7,before:99,search:'ABCDEFGHIJ'});
+    assert.equal(calls[0].name,'get_operator_order_summaries_v1'); assert.equal(calls[0].args.p_before,99);
+    assert.equal(calls[0].args.p_symbol,'ABCDEFGHIJ'); assert(!('p_search' in calls[0].args));
+    for (const failure of [
+        {data:{occasionId:7,orders:[{...safe,customer:{email:'PRIVATE'}}],nextCursor:null}},
+        {error:{code:'PGRST202',status:404}}, {error:{status:401}}, {error:{status:504}},
+    ]) {
+        response=failure;
+        await assert.rejects(invokeOrderOperation(owner,client,'orders.inspect',{occasionId:7,orderId:7}));
+    }
+    assert.equal(calls.length,5); assert(calls.every(c=>c.name==='get_operator_order_summaries_v1'));
+});
