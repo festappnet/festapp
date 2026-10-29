@@ -15,3 +15,6 @@ docs/plans/evidence/canonical-authorization-20261020/** linguist-generated=true
 
 # Preserve the official Wix report template CRLF bytes.
 integrations/wix/reporting/partner-billed-report-template.csv text eol=crlf whitespace=cr-at-eol
+
+# Preserve the official report template bytes, including its CRLF endings.
+integrations/wix/reporting/partner-billed-report-template.csv -text whitespace=cr-at-eol
