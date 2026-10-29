@@ -190,7 +190,7 @@ class AppPanelHelper {
 
         if (FeatureService.isFeatureEnabled(FeatureConstants.form,
                 features: currentOccasion.features) &&
-            RightsService.canSeeReservations()) {
+            RightsService.canAccessReservationsWorkspace()) {
           availableActions.add(reservationsAction);
         }
 
@@ -803,10 +803,10 @@ class AppPanelHelper {
 
             final actions = <_ActionMenuItem>[];
 
-            // Condition for Reservations: Feature enabled AND user has order view rights
+            // Reservations includes form editors without order-read access.
             if (FeatureService.isFeatureEnabled(FeatureConstants.form,
                     features: currentOccasion.features) &&
-                RightsService.canSeeReservations()) {
+                RightsService.canAccessReservationsWorkspace()) {
               actions.add(_ActionMenuItem(
                   label: AdministrationStrings.reservations,
                   icon: Icons.shopping_cart,

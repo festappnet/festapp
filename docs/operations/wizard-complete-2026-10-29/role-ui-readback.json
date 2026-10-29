@@ -1,0 +1,14 @@
+{
+  "editor": {
+    "forms_open": true,
+    "order_requests": 0,
+    "form_creation_visible": true,
+    "edit_controls_visible": true
+  },
+  "read_only": {
+    "forms_open": true,
+    "order_requests": 0,
+    "form_creation_visible": false,
+    "edit_controls_visible": false
+  }
+}

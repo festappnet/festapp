@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
@@ -165,7 +166,8 @@ class _FormsTabState extends State<FormsListView> {
         toolbarHeight: 44.0,
         automaticallyImplyLeading: false,
         actions: [
-          if (!RightsService.isDemoReadOnly)
+          if (!RightsService.isDemoReadOnly &&
+                      RightsService.hasCapability(AuthorizationCapabilities.formsCreate))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
               child: ElevatedButton.icon(
@@ -269,7 +271,8 @@ class FormCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (!RightsService.isDemoReadOnly)
+              if (!RightsService.isDemoReadOnly &&
+                      RightsService.hasCapability(AuthorizationCapabilities.formsCreate))
                 PopupMenuButton<String>(
                   elevation: 0,
                   icon: Icon(Icons.more_vert,

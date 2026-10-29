@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -136,7 +137,8 @@ class _FormDetailPageState extends State<FormDetailPage> {
                 toolbarHeight: 44,
                 title: _buildBreadcrumbs(),
                 actions: [
-                  if (!RightsService.isDemoReadOnly)
+                  if (!RightsService.isDemoReadOnly &&
+                      RightsService.hasCapability(AuthorizationCapabilities.formsCreate))
                     Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: 6, horizontal: 4),
