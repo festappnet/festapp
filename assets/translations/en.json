@@ -4607,6 +4607,24 @@
     "clearSearch": "Clear search"
   },
   "AppearanceColors": {
+    "names": {
+      "ocean": "Sky",
+      "forest": "Meadow",
+      "sunset": "Orange",
+      "lavender": "Violet",
+      "night": "Midnight",
+      "berry": "Blackberry",
+      "teal": "Teal",
+      "gold": "Amber",
+      "cherry": "Cherry",
+      "royal": "Sapphire",
+      "slate": "Slate",
+      "cozy": "Cocoa",
+      "mint": "Mint",
+      "coral": "Coral",
+      "indigo": "Indigo",
+      "lime": "Olive"
+    },
     "style": "Color style",
     "paletteHint": "Choose a palette or adjust its colors below.",
     "custom": "Custom colors",

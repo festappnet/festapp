@@ -2581,6 +2581,24 @@
     "createEvent": "Utwórz nowe wydarzenie"
   },
   "AppearanceColors": {
+    "names": {
+      "ocean": "Błękitny",
+      "forest": "Łąkowy",
+      "sunset": "Pomarańczowy",
+      "lavender": "Fioletowy",
+      "night": "Nocny",
+      "berry": "Jeżynowy",
+      "teal": "Morski",
+      "gold": "Bursztynowy",
+      "cherry": "Wiśniowy",
+      "royal": "Szafirowy",
+      "slate": "Łupkowy",
+      "cozy": "Kakaowy",
+      "mint": "Miętowy",
+      "coral": "Koralowy",
+      "indigo": "Indygowy",
+      "lime": "Oliwkowy"
+    },
     "style": "Styl kolorystyczny",
     "paletteHint": "Wybierz paletę lub dostosuj jej kolory poniżej.",
     "custom": "Własne kolory",
