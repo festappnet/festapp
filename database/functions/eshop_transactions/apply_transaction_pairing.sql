@@ -15,6 +15,9 @@ DECLARE
   v_target eshop.payment_info%ROWTYPE;
   v_old_payment_info_id bigint;
   v_order_id bigint;
+  v_order_ids bigint[];
+  v_order_bindings jsonb;
+  v_locked_order_bindings jsonb;
 BEGIN
   PERFORM public.check_bank_account_writable((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id));
   PERFORM public.check_bank_account_writable((SELECT bank_account FROM eshop.payment_info WHERE id=p_payment_info_id));
@@ -31,6 +34,23 @@ BEGIN
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_TRANSACTION_NOT_FOUND'; END IF;
   v_old_payment_info_id := v_transaction.payment_info;
+
+  -- The transaction row stabilizes the old target (also held by ingest/matcher).
+  -- Acquire every stored old/new form and order before either payment row,
+  -- matching product edit and cancellation. Never trust a caller's scope list.
+  SELECT coalesce(array_agg(id ORDER BY id),'{}'::bigint[]),
+    coalesce(jsonb_agg(jsonb_build_array(id,form,payment_info) ORDER BY id),'[]'::jsonb)
+  INTO v_order_ids,v_order_bindings
+  FROM eshop.orders WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id);
+  PERFORM public.lock_order_capacity_scope_internal(v_order_ids);
+  SELECT coalesce(jsonb_agg(jsonb_build_array(id,form,payment_info) ORDER BY id),'[]'::jsonb)
+  INTO v_locked_order_bindings
+  FROM eshop.orders WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id);
+  IF v_order_bindings IS DISTINCT FROM v_locked_order_bindings THEN
+    RAISE EXCEPTION 'PAIRING_ORDER_SCOPE_CHANGED' USING ERRCODE='40001';
+  END IF;
+  PERFORM 1 FROM eshop.payment_info WHERE id IN (v_old_payment_info_id,p_payment_info_id)
+  ORDER BY id FOR UPDATE;
 
   IF p_actor_kind='user' THEN
     FOR v_order_id IN SELECT id FROM eshop.orders
