@@ -2,6 +2,27 @@ import 'package:test/test.dart';
 import 'package:festapp_core/forms.dart';
 
 void main() {
+  test('wizard background survives the form editor settings snapshot', () {
+    for (final mode in ['solid', 'gradient']) {
+      final data = <String, dynamic>{
+        'design': {
+          'primary_color': '#14284B',
+          'secondary_color': '#A87F28',
+          'background_mode': mode,
+          'font_family': 'Roboto Slab',
+        },
+      };
+      final saved = FormMetadata.authoringSettingsSnapshot(data);
+      expect(saved['design']['background_mode'], mode);
+      final form = FormDefinition.fromJson({'data': data});
+      expect(form.backgroundMode, mode);
+      final cleared = form.withBackgroundMode(null);
+      expect(cleared.backgroundMode, isNull);
+      expect(cleared.primaryColor, form.primaryColor);
+      expect(cleared.secondaryColor, form.secondaryColor);
+      expect(cleared.fontFamily, form.fontFamily);
+    }
+  });
   test('setup forms accept explicitly null schedule dates', () {
     final form = FormDefinition.fromJson({
       'data': {

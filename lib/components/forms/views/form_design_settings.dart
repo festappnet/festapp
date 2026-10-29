@@ -352,7 +352,49 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                   }),
               widget.form.definition.primaryColor != null),
           const SizedBox(height: 24),
-          // Secondary color is now auto-calculated.
+          SwitchListTile(
+            title: Text(FormStrings.appearanceLabel('two_color_gradient')),
+            value: widget.form.definition.backgroundMode == 'gradient',
+            onChanged: widget.enabled
+                ? (value) {
+                    setState(() {
+                      var definition = widget.form.definition;
+                      if (value) {
+                        final primary = definition.primaryColor ?? 0xff2196f3;
+                        definition = definition
+                            .withPrimaryColor(primary)
+                            .withSecondaryColor(
+                              definition.secondaryColor ?? primary,
+                            );
+                      }
+                      widget.form.definition = definition.withBackgroundMode(
+                        value ? 'gradient' : 'solid',
+                      );
+                      widget.onChanged();
+                    });
+                  }
+                : null,
+          ),
+          if (widget.form.definition.backgroundMode == 'gradient')
+            _buildColorPickerRow(
+              FormStrings.appearanceLabel('secondary_color'),
+              Color(
+                widget.form.definition.secondaryColor ??
+                    widget.form.definition.primaryColor ??
+                    0xff2196f3,
+              ),
+              (color) => setState(() {
+                widget.form.definition = widget.form.definition
+                    .withSecondaryColor(color.toARGB32());
+                widget.onChanged();
+              }),
+              () => setState(() {
+                widget.form.definition = widget.form.definition
+                    .withSecondaryColor(null);
+                widget.onChanged();
+              }),
+              widget.form.definition.secondaryColor != null,
+            ),
           const Divider(),
           const SizedBox(height: 24),
           Text(FormStrings.typography,
