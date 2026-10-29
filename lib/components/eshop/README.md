@@ -19,6 +19,19 @@ The HTTP response confirms the committed order and reports `delivery: queued`
 with an optional confirmation receipt. Email acceptance and later provider
 feedback are separate facts.
 
+## Payment reconciliation and history
+
+`reconcile_order_payment_internal_v1` in
+[`recalculate_order_payment_status.sql`](../../../database/functions/eshop_orders/recalculate_order_payment_status.sql)
+owns bank-fact and product-edit eligibility, preserving the saved deposit,
+protected ticket states and provider boundary. Actual product changes invalidate
+email content once; receipt replay and unchanged commands add no effects.
+The helper writes no order history. Product edits append one final snapshot;
+creation, accepted delivery and cancellation keep their existing snapshot owners.
+Manual mark-paid does not enqueue delivery. See the
+[payment lifecycle plan](../../../docs/plans/payment-lifecycle-unification-plan-2026-10-29.md)
+for the transition, history and concurrency contracts.
+
 ## Gotchas
 
 - **Stringly Typed**: `OrderModel` fields mapped from `Tb` class strings. Renames break silently.

@@ -22,9 +22,8 @@ DECLARE
   v_old_products     jsonb;
   v_old_ids          bigint[];
   v_new_ids          bigint[];
-  v_paid             numeric;
   v_price            numeric;
-  v_new_state        text;
+  v_reconciliation   jsonb;
   v_occasion_features jsonb;
   v_form_settings     jsonb;
   v_deadline_duration_seconds bigint;
@@ -192,45 +191,9 @@ BEGIN
        WHERE id = v_order_id;
   END IF;
 
-  /* 5a) decide new state based on money received */
-  SELECT COALESCE(pi.paid,0), o.price
-    INTO v_paid, v_price
-    FROM eshop.orders o
-    LEFT JOIN eshop.payment_info pi ON o.payment_info = pi.id
-   WHERE o.id = v_order_id;
-
-  v_new_state := CASE
-                   WHEN v_paid >= v_price AND v_price > 0 THEN 'paid'
-                   WHEN v_price <= 0 THEN 'paid'
-                   ELSE 'ordered'
-                 END;
-
-  IF v_new_state = 'paid' THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM eshop.tickets t
-      JOIN eshop.order_product_ticket opt ON opt.ticket = t.id
-      WHERE opt."order" = v_order_id AND t.state <> 'sent'
-    ) THEN
-      v_new_state := 'sent';
-    END IF;
-  END IF;
-
-  PERFORM public.cancel_order_email_intents(v_order_id);
-  UPDATE eshop.orders
-     SET email_payment_version=email_payment_version+1, state      = v_new_state,
-         updated_at = now()
-   WHERE id = v_order_id;
-
-  -- A price edit can pay off the order without the usual paid transition.
-  -- Email acceptance only projects paid tickets to sent, so keep eligible
-  -- tickets in step with the order before creating its delivery intent.
-  IF v_new_state = 'paid' THEN
-    UPDATE eshop.tickets t
-       SET state = 'paid', updated_at = now()
-      FROM eshop.order_product_ticket opt
-     WHERE opt.ticket = t.id AND opt."order" = v_order_id
-       AND t.state IN ('ordered', 'expired');
-  END IF;
+  /* 5a) the shared owner decides eligibility and owns one invalidation. */
+  v_reconciliation := public.reconcile_order_payment_internal_v1(v_order_id,'product_edit');
+  SELECT price INTO v_price FROM eshop.orders WHERE id=v_order_id;
 
   IF v_price > 0 THEN
     -- If there's a balance due, set/update the payment deadline.
@@ -251,14 +214,13 @@ BEGIN
   END IF;
 
   PERFORM public.apply_allocations(v_order_id);
-  PERFORM public.enqueue_paid_order_tickets(v_order_id);
 
   /* 6) append history */
   INSERT INTO eshop.orders_history("order", data, state, price, currency_code)
   VALUES (
     v_order_id,
     v_new_data,
-    v_new_state,
+    v_reconciliation->>'final_state',
     (SELECT price FROM eshop.orders WHERE id = v_order_id),
     v_currency_code
   );
