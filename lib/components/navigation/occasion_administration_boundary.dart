@@ -31,7 +31,7 @@ class RightsAdministrationAccess implements AdministrationAccess {
   bool canAccess({required bool reservations}) =>
       isSignedIn &&
       (reservations
-          ? RightsService.canSeeReservations()
+          ? RightsService.canAccessReservationsWorkspace()
           : RightsService.canSeeAdministration());
   @override
   Future<bool> load(String link, {required bool reservations}) async {

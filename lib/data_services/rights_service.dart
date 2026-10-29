@@ -315,6 +315,11 @@ class RightsService {
   static bool canSeeReservations() =>
       hasCapability(AuthorizationCapabilities.ordersRead);
 
+  /// Workspace entry also serves form editors who cannot read orders.
+  static bool canAccessReservationsWorkspace() =>
+      canSeeReservations() ||
+      hasCapability(AuthorizationCapabilities.formsCatalogRead);
+
   static bool canSeeAdministration() =>
       hasCapability(AuthorizationCapabilities.navigationAdministration);
 

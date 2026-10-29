@@ -138,15 +138,17 @@ class AdministrationTabs {
             ]
           : const [];
   static List<RoutedTabDefinition> get reservations => [
-        orders,
-        tickets,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
+        if (RightsService.canSeeReservations()) ...[orders, tickets],
+        if (RightsService.canSeeReservations() &&
+            FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
           blueprint,
-        form,
-        products,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.services))
+        if (RightsService.hasCapability(
+            AuthorizationCapabilities.formsCatalogRead)) form,
+        if (RightsService.canSeeReservations()) products,
+        if (RightsService.canSeeReservations() &&
+            FeatureService.isFeatureEnabled(FeatureConstants.services))
           inventoryPools,
-        report,
+        if (RightsService.canSeeReservations()) report,
         emailTemplates,
         users,
         if (RightsService.hasCapability(

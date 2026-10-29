@@ -216,7 +216,7 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
       actions: [
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.storno),
+          child: Text(CommonStrings.cancel),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _submit,

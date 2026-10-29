@@ -588,7 +588,7 @@ class RouterService {
           return RightsService.currentUser()?.id == userId &&
               RightsService.currentLink == parts.first &&
               (parts.last == 'reservations' || !AppConfig.isAppSupported
-                  ? RightsService.canSeeReservations()
+                  ? RightsService.canAccessReservationsWorkspace()
                   : RightsService.canSeeAdministration());
         } catch (_) {
           final state = RightsService.occasionLinkModel;

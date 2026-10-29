@@ -107,6 +107,8 @@ void main() {
             'occasion_user': {'is_editor_view': true},
             'capabilities': {
               'navigation.administration': context['link'] != 'access-revoked',
+              if (context['link'] == 'access-recovery')
+                'forms.catalog.read': true,
               if (context['unit_id'] == 12) 'media.unit.write': true,
             },
             if (context['unit_id'] == 12) 'user_info': {'id': 'self-user'},
@@ -560,6 +562,20 @@ void main() {
             reason: 'Boundary joins the existing refresh instead of invalidating it again',
           );
           contextGate = null;
+        }
+        if (!revoked) {
+          expect(RightsService.canSeeReservations(), isFalse);
+          expect(RightsService.canAccessReservationsWorkspace(), isTrue);
+          expect(
+            await const RightsAdministrationAccess().load(
+              link,
+              reservations: true,
+            ),
+            isTrue,
+            reason:
+                'Form editors enter the workspace without order-read rights',
+          );
+          expect(RightsService.canSeeReservations(), isFalse);
         }
         final initialReads = contexts.length;
         contextFailures = 1;
