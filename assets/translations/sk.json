@@ -2606,6 +2606,11 @@
     "createEvent": "Založiť novú akciu"
   },
   "AppearanceColors": {
+    "style": "Farebný štýl",
+    "paletteHint": "Vyberte paletu alebo upravte jej farby nižšie.",
+    "custom": "Vlastné farby",
+    "inherited": "Predvolené farby",
+    "palette": "Paleta: {name}",
     "gradient": "Dvojfarebný prechod",
     "hint": "Zapnite prechod a pridajte druhú farbu. Pri vypnutí sa druhá farba zachová.",
     "theme": "Tematická farba",

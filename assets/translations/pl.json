@@ -2581,6 +2581,11 @@
     "createEvent": "Utwórz nowe wydarzenie"
   },
   "AppearanceColors": {
+    "style": "Styl kolorystyczny",
+    "paletteHint": "Wybierz paletę lub dostosuj jej kolory poniżej.",
+    "custom": "Własne kolory",
+    "inherited": "Kolory domyślne",
+    "palette": "Paleta: {name}",
     "gradient": "Gradient dwukolorowy",
     "hint": "Włącz gradient, aby dodać drugi kolor. Po wyłączeniu drugi kolor pozostanie zapisany.",
     "theme": "Kolor motywu",

@@ -2579,6 +2579,11 @@
     "createEvent": "Neue Veranstaltung erstellen"
   },
   "AppearanceColors": {
+    "style": "Farbstil",
+    "paletteHint": "Wählen Sie eine Palette oder passen Sie ihre Farben unten an.",
+    "custom": "Eigene Farben",
+    "inherited": "Standardfarben",
+    "palette": "Palette: {name}",
     "gradient": "Zweifarbiger Verlauf",
     "hint": "Aktivieren Sie den Verlauf, um eine zweite Farbe hinzuzufügen. Beim Ausschalten bleibt die zweite Farbe gespeichert.",
     "theme": "Themenfarbe",

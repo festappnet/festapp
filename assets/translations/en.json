@@ -4607,6 +4607,11 @@
     "clearSearch": "Clear search"
   },
   "AppearanceColors": {
+    "style": "Color style",
+    "paletteHint": "Choose a palette or adjust its colors below.",
+    "custom": "Custom colors",
+    "inherited": "Default colors",
+    "palette": "Palette: {name}",
     "gradient": "Two-color gradient",
     "hint": "Turn on the gradient to add a second color. Turning it off keeps your second color saved.",
     "theme": "Theme color",
