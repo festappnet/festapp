@@ -2826,18 +2826,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     void custom(String key, dynamic value) =>
         apply({...a, 'id': 'custom', key: value});
     return OccasionSetupAppearancePanel(
-      presets: [
-        for (final p in OccasionSetupAppearance.presets)
-          OccasionSetupAppearancePreset(
-            id: p['id'] as String,
-            label: p['label'] as String,
-            primaryColor: color(p['primary']),
-            secondaryColor: color(p['secondary']),
-            gradient: a['gradient'] as bool,
-            fontFamily: p['fontFamily'] as String,
-          ),
-      ],
-      selectedPresetId: a['id'] as String?,
       onPresetSelected: (id) =>
           apply(OccasionSetupAppearance.selectPreset(d, id)),
       fontStyle: (family, base) => catalog.families.contains(family)

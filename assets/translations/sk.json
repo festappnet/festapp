@@ -2606,6 +2606,24 @@
     "createEvent": "Založiť novú akciu"
   },
   "AppearanceColors": {
+    "names": {
+      "ocean": "Nebeský",
+      "forest": "Lúčny",
+      "sunset": "Oranžový",
+      "lavender": "Fialový",
+      "night": "Polnočný",
+      "berry": "Černicový",
+      "teal": "Petrolejový",
+      "gold": "Jantárový",
+      "cherry": "Čerešňový",
+      "royal": "Zafírový",
+      "slate": "Bridlicový",
+      "cozy": "Kakaový",
+      "mint": "Mätový",
+      "coral": "Koralový",
+      "indigo": "Indigový",
+      "lime": "Olivový"
+    },
     "style": "Farebný štýl",
     "paletteHint": "Vyberte paletu alebo upravte jej farby nižšie.",
     "custom": "Vlastné farby",

@@ -167,19 +167,6 @@ void main() {
                         child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: OccasionSetupAppearancePanel(
-                    presets: [
-                      for (final p in OccasionSetupAppearance.presets)
-                        OccasionSetupAppearancePreset(
-                            id: p['id'],
-                            label: p['label'],
-                            primaryColor: Color(
-                                int.parse('FF${p['primary']}', radix: 16)),
-                            secondaryColor: Color(
-                                int.parse('FF${p['secondary']}', radix: 16)),
-                            gradient: p['gradient'],
-                            fontFamily: p['fontFamily'])
-                    ],
-                    selectedPresetId: 'gala',
                     onPresetSelected: (_) {},
                     fontFamily: 'Roboto',
                     fontFamilies: OccasionSetupAppearance.fonts.keys.toList(),
@@ -202,8 +189,15 @@ void main() {
                 ))))),
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('appearance-preset-cream')),
-          findsOneWidget);
+      expect(find.byKey(const ValueKey('appearance-style-cream')), findsNothing);
+      final more = find.byKey(const ValueKey('appearance-styles-more'));
+      await tester.ensureVisible(more);
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('appearance-style-cream')), findsOneWidget);
+      await tester.ensureVisible(more);
+      await tester.tap(more);
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await capture(tester, key, 'appearance-${size.width.toInt()}');
       await tester.ensureVisible(find.text('Open templates'));

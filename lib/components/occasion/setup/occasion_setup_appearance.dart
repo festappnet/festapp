@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/appearance_palettes.dart';
 import 'occasion_setup_font_ids.dart';
 import 'occasion_setup_strings.dart';
 import 'dart:convert';
@@ -47,157 +48,27 @@ class OccasionSetupAppearance {
 
   static const fonts = occasionSetupFontIds;
   static List<Map<String, dynamic>> get presets => [
-        {
-          'id': 'clean',
-          'label': OccasionSetupStrings.ui('clean'),
-          'primary': '4465A6',
-          'secondary': '4465A6',
-          'gradient': false,
-          'fontFamily': 'Roboto',
-        },
-        {
-          'id': 'gala',
-          'label': OccasionSetupStrings.ui('gala'),
-          'primary': '14284B',
-          'secondary': 'A87F28',
-          'gradient': false,
-          'fontFamily': 'Roboto Slab',
-        },
-        {
-          'id': 'energy',
-          'label': OccasionSetupStrings.ui('energetic'),
-          'primary': 'BB350C',
-          'secondary': '8B182E',
-          'gradient': false,
-          'fontFamily': 'Russo One',
-        },
-        {
-          'id': 'nature',
-          'label': OccasionSetupStrings.ui('natural'),
-          'primary': '216445',
-          'secondary': '146475',
-          'gradient': false,
-          'fontFamily': 'Roboto',
-        },
-        {
-          'id': 'soft',
-          'label': OccasionSetupStrings.ui('soft'),
-          'primary': '885268',
-          'secondary': 'B89A68',
-          'gradient': false,
-          'fontFamily': 'Roboto Slab',
-        },
-        {
-          'id': 'contrast',
-          'label': OccasionSetupStrings.ui('contrast'),
-          'primary': '111111',
-          'secondary': '111111',
-          'gradient': false,
-          'fontFamily': 'Roboto',
-        },
-        {
-          'id': 'ocean',
-          'label': OccasionSetupStrings.ui('palette_ocean'),
-          'primary': '075985',
-          'secondary': '0F766E',
-          'gradient': false,
-          'fontFamily': 'Open Sans'
-        },
-        {
-          'id': 'royal',
-          'label': OccasionSetupStrings.ui('palette_royal'),
-          'primary': '312E81',
-          'secondary': '7E22CE',
-          'gradient': false,
-          'fontFamily': 'Playfair Display'
-        },
-        {
-          'id': 'lavender',
-          'label': OccasionSetupStrings.ui('palette_lavender'),
-          'primary': '6D28D9',
-          'secondary': 'A855A0',
-          'gradient': false,
-          'fontFamily': 'Lato'
-        },
-        {
-          'id': 'citrus',
-          'label': OccasionSetupStrings.ui('palette_citrus'),
-          'primary': '3F6212',
-          'secondary': 'A16207',
-          'gradient': false,
-          'fontFamily': 'Montserrat'
-        },
-        {
-          'id': 'sunset',
-          'label': OccasionSetupStrings.ui('palette_sunset'),
-          'primary': 'C2410C',
-          'secondary': '9D174D',
-          'gradient': false,
-          'fontFamily': 'Poppins'
-        },
-        {
-          'id': 'wine',
-          'label': OccasionSetupStrings.ui('palette_wine'),
-          'primary': '701A3C',
-          'secondary': '9F1239',
-          'gradient': false,
-          'fontFamily': 'Roboto Slab'
-        },
-        {
-          'id': 'terracotta',
-          'label': OccasionSetupStrings.ui('palette_terracotta'),
-          'primary': '9A3412',
-          'secondary': '92400E',
-          'gradient': false,
-          'fontFamily': 'Oswald'
-        },
-        {
-          'id': 'forest',
-          'label': OccasionSetupStrings.ui('palette_forest'),
-          'primary': '14532D',
-          'secondary': '365314',
-          'gradient': false,
-          'fontFamily': 'Open Sans'
-        },
-        {
-          'id': 'graphite',
-          'label': OccasionSetupStrings.ui('palette_graphite'),
-          'primary': '334155',
-          'secondary': '475569',
-          'gradient': false,
-          'fontFamily': 'Inter'
-        },
-        {
-          'id': 'rose',
-          'label': OccasionSetupStrings.ui('palette_rose'),
-          'primary': '9D174D',
-          'secondary': 'BE185D',
-          'gradient': false,
-          'fontFamily': 'Playfair Display'
-        },
-        {
-          'id': 'azure',
-          'label': OccasionSetupStrings.ui('palette_azure'),
-          'primary': '1D4ED8',
-          'secondary': '0369A1',
-          'gradient': false,
-          'fontFamily': 'Montserrat'
-        },
-        {
-          'id': 'cream',
-          'label': OccasionSetupStrings.ui('palette_cream'),
-          'primary': '785A38',
-          'secondary': 'A16207',
-          'gradient': false,
-          'fontFamily': 'Lato'
-        },
+        for (final palette in AppearancePalettes.all.where((p) => p.fontFamily != null))
+          {
+            'id': palette.id,
+            'label': palette.label,
+            'primary': palette.primaryHex,
+            'secondary': palette.secondaryHex,
+            'gradient': false,
+            'fontFamily': palette.fontFamily,
+          },
       ];
 
-  /// A style changes the palette and font, never the user's color mode.
-  static Map<String, dynamic> selectPreset(Map data, String id) => {
-        ...presets.firstWhere((preset) => preset['id'] == id),
-        'gradient': read(data)['gradient'] == true,
-      };
+  /// Color choices retain the independently selected font and color mode.
+  static Map<String, dynamic> selectPreset(Map data, String id) {
+    final palette = AppearancePalettes.byId(id);
+    return {
+      ...read(data),
+      'id': id,
+      'primary': palette.primaryHex,
+      'secondary': palette.secondaryHex,
+    };
+  }
 
   static Map<String, dynamic> read(Map data) {
     final current = data['appearance'] as Map?;

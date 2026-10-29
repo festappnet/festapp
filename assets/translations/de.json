@@ -2579,6 +2579,24 @@
     "createEvent": "Neue Veranstaltung erstellen"
   },
   "AppearanceColors": {
+    "names": {
+      "ocean": "Himmelblau",
+      "forest": "Wiese",
+      "sunset": "Orange",
+      "lavender": "Violett",
+      "night": "Mitternacht",
+      "berry": "Brombeere",
+      "teal": "Petrol",
+      "gold": "Bernstein",
+      "cherry": "Kirsche",
+      "royal": "Saphir",
+      "slate": "Schiefer",
+      "cozy": "Kakao",
+      "mint": "Minze",
+      "coral": "Koralle",
+      "indigo": "Indigo",
+      "lime": "Olive"
+    },
     "style": "Farbstil",
     "paletteHint": "Wählen Sie eine Palette oder passen Sie ihre Farben unten an.",
     "custom": "Eigene Farben",

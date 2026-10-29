@@ -4609,6 +4609,24 @@
     "clearSearch": "Vymazat hledání"
   },
   "AppearanceColors": {
+    "names": {
+      "ocean": "Nebeský",
+      "forest": "Luční",
+      "sunset": "Oranžový",
+      "lavender": "Fialový",
+      "night": "Půlnoční",
+      "berry": "Ostružinový",
+      "teal": "Petrolejový",
+      "gold": "Jantarový",
+      "cherry": "Třešňový",
+      "royal": "Safírový",
+      "slate": "Břidlicový",
+      "cozy": "Kakaový",
+      "mint": "Mátový",
+      "coral": "Korálový",
+      "indigo": "Indigový",
+      "lime": "Olivový"
+    },
     "style": "Barevný styl",
     "paletteHint": "Vyberte paletu nebo upravte její barvy níže.",
     "custom": "Vlastní barvy",

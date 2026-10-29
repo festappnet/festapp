@@ -1,3 +1,5 @@
+import 'package:fstapp/components/_shared/appearance_palettes.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -217,7 +219,7 @@ void main() {
                 return;
               }
               await tester.ensureVisible(
-                find.byKey(const ValueKey('form-palette-status')),
+                find.byKey(const ValueKey('appearance-style-status')),
               );
               await tester.pumpAndSettle();
               await tester.runAsync(() async {
@@ -228,7 +230,7 @@ void main() {
                 final bytes = await image.toByteData(
                   format: ui.ImageByteFormat.png,
                 );
-                final dir = Directory('/tmp/festapp-palette-ui');
+                final dir = Directory('/tmp/festapp-unified-appearance');
                 await dir.create(recursive: true);
                 await File(
                   '${dir.path}/palette-$state-$width-${scale}x-${brightness.name}.png',
@@ -239,10 +241,16 @@ void main() {
 
             await mount();
             expect(
-              find.text(AppearanceColorStrings.palette('Cozy')),
+              find.text(
+                AppearanceColorStrings.palette(
+                  AppearancePalettes.byId('form-cozy').label,
+                ),
+              ),
               findsOneWidget,
             );
-            final cozy = find.byKey(const ValueKey('form-palette-Cozy'));
+            final cozy = find.byKey(
+              const ValueKey('appearance-style-form-cozy'),
+            );
             expect(cozy, findsOneWidget);
             final swatches = tester
                 .widgetList<Container>(
@@ -259,9 +267,9 @@ void main() {
               await tester.pump();
               final focus = FocusManager.instance.primaryFocus;
               if (focus?.context
-                      ?.findAncestorWidgetOfExactType<OutlinedButton>()
+                      ?.findAncestorWidgetOfExactType<ChoiceChip>()
                       ?.key ==
-                  const ValueKey('form-palette-Ocean')) {
+                  const ValueKey('appearance-style-clean')) {
                 await tester.sendKeyEvent(LogicalKeyboardKey.enter);
                 await tester.pumpAndSettle();
                 selectedByKeyboard = true;
@@ -269,7 +277,11 @@ void main() {
             }
             expect(selectedByKeyboard, true);
             expect(
-              find.text(AppearanceColorStrings.palette('Ocean')),
+              find.text(
+                AppearanceColorStrings.palette(
+                  AppearancePalettes.byId('clean').label,
+                ),
+              ),
               findsOneWidget,
             );
             expect(form.definition.backgroundMode, 'solid');
@@ -292,7 +304,11 @@ void main() {
             await tester.pumpWidget(const SizedBox.shrink());
             await mount();
             expect(
-              find.text(AppearanceColorStrings.palette('Night')),
+              find.text(
+                AppearanceColorStrings.palette(
+                  AppearancePalettes.byId('form-night').label,
+                ),
+              ),
               findsOneWidget,
             );
             await screenshot('selected');
@@ -304,7 +320,11 @@ void main() {
             await tester.pumpWidget(const SizedBox.shrink());
             await mount();
             expect(
-              find.text(AppearanceColorStrings.palette('Night')),
+              find.text(
+                AppearanceColorStrings.palette(
+                  AppearancePalettes.byId('form-night').label,
+                ),
+              ),
               findsOneWidget,
             );
             form.definition = form.definition.withBackgroundMode('solid');
