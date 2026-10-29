@@ -42,16 +42,7 @@ user-header.header-hidden {
 /* Removed .logo img as we apply class directly to img now or verify structure */
 
 .header-actions { display: flex; align-items: center; gap: var(--spacing-md); }
-.header-wordmark {
-    display: block;
-    color: white;
-    font-family: Futura, 'Century Gothic', sans-serif;
-    font-size: clamp(16px, 4.4vw, 24px);
-    font-weight: 600;
-    letter-spacing: -.045em;
-    line-height: 1;
-    white-space: nowrap;
-}
+
 
 
 .btn-sign-in, .btn-admin, .btn-add-event {

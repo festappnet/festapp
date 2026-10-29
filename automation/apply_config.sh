@@ -226,15 +226,25 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
         echo "Error: configured asset does not exist: $asset_path"; exit 1;
     }
 done
+WEB_LOADING_STYLE="${WEB_LOADING_STYLE:-spinner}"
+WEB_LOADING_BACKGROUND="${WEB_LOADING_BACKGROUND:-#242424}"
+case "$WEB_LOADING_STYLE" in spinner|tickets) ;; *) echo "Error: invalid WEB_LOADING_STYLE"; exit 1 ;; esac
+[[ "$WEB_LOADING_BACKGROUND" =~ ^#[0-9A-Fa-f]{6}$ ]] || { echo "Error: invalid WEB_LOADING_BACKGROUND"; exit 1; }
+if [ "$WEB_LOADING_STYLE" = tickets ]; then
+    for asset_path in "${LOADING_SYMBOL_ASSET:-}" "${WEB_LOADING_SYMBOL_ASSET:-}"; do
+        [ -n "$asset_path" ] && [ -f "$PROJECT_ROOT/$asset_path" ] || { echo "Error: ticket loader requires configured symbol assets"; exit 1; }
+    done
+fi
 # The loading wordmark is derived from the configured brand logo, never from
 # the square PWA installation icon.
-python3 - "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg" <<'LOADING_LOGO'
+python3 - "$PROJECT_ROOT/$DARK_LOGO_ASSET" "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/$LOGO_ASSET" "$PROJECT_ROOT/web_client/public/brand-logo-light.svg" "${WEB_LOADING_SYMBOL_ASSET:-}" "$PROJECT_ROOT" "${WEB_BRAND_ICON_DIR:-}" "${LOADING_SYMBOL_ASSET:-}" <<'LOADING_LOGO'
 import base64
 import struct
 import sys
 from pathlib import Path
 
-source, target = map(Path, sys.argv[1:])
+source, target, light, light_target = map(Path, sys.argv[1:5])
+symbol, project_root, icon_dir, light_symbol = sys.argv[5:]
 data = source.read_bytes()
 if source.suffix.lower() == '.svg':
     target.write_bytes(data)
@@ -247,9 +257,27 @@ elif data.startswith(b'\x89PNG\r\n\x1a\n'):
         '</svg>\n')
 else:
     raise SystemExit('Error: loading brand logo must be SVG or PNG')
+# Emit the light logo with the same SVG/PNG adapter.
+light_target.parent.mkdir(parents=True, exist_ok=True)
+if light.suffix.lower() == '.svg':
+    light_target.write_bytes(light.read_bytes())
+else:
+    data = light.read_bytes()
+    width, height = struct.unpack('>II', data[16:24])
+    image = base64.b64encode(data).decode('ascii')
+    light_target.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"><image width="{width}" height="{height}" href="data:image/png;base64,{image}"/></svg>\n')
+root = Path(project_root)
+(root / 'web/loading-symbol.svg').write_bytes((root / symbol).read_bytes() if symbol else target.read_bytes())
+(root / 'web_client/public/loading-symbol-light.svg').write_bytes((root / light_symbol).read_bytes() if light_symbol else light_target.read_bytes())
+if icon_dir:
+    import shutil
+    for name in ('favicon.ico','favicon-16x16.png','favicon-32x32.png','android-chrome-192x192.png','android-chrome-512x512.png','apple-touch-icon.png'):
+        shutil.copyfile(root / icon_dir / name, root / 'web' / name)
+    shutil.copyfile(root / icon_dir / 'favicon.ico', root / 'web_client/favicon.ico')
 LOADING_LOGO
 mkdir -p "$PROJECT_ROOT/web_client/public"
 cp "$PROJECT_ROOT/web/loading-logo.svg" "$PROJECT_ROOT/web_client/public/brand-logo.svg"
+cp "$PROJECT_ROOT/web/loading-symbol.svg" "$PROJECT_ROOT/web_client/public/loading-symbol.svg"
 for icon in favicon.ico favicon-16x16.png favicon-32x32.png android-chrome-192x192.png android-chrome-512x512.png apple-touch-icon.png; do
     if [ -f "$PROJECT_ROOT/web/$icon" ]; then
         cp "$PROJECT_ROOT/web/$icon" "$PROJECT_ROOT/web_client/public/$icon"
@@ -435,6 +463,20 @@ PY
     if [ ! -z "$THEME_SEED_2" ]; then
         sed_inplace "s|--festapp-loading-accent: [^;]*;|--festapp-loading-accent: $THEME_SEED_2;|" "$FLUTTER_INDEX"
     fi
+    python3 - "$FLUTTER_INDEX" "$PROJECT_ROOT/web_client/index.html" "$WEB_LOADING_STYLE" "$WEB_LOADING_BACKGROUND" <<'BRAND_LOADER'
+import re, sys
+from pathlib import Path
+flutter, client, style, background = sys.argv[1:]
+for filename in [flutter, client]:
+    p = Path(filename); text = p.read_text()
+    text = re.sub(r'data-loading-style="[^"]*"', f'data-loading-style="{style}"', text)
+    p.write_text(text)
+p = Path(flutter); text = p.read_text()
+text = re.sub(r'(<meta name="theme-color" content=")[^"]*', lambda m: m[1] + background, text)
+text = re.sub(r'(html, body \{ background-color: )#[0-9a-fA-F]{6}', lambda m: m[1] + background, text)
+text = re.sub(r'(background: )#[0-9a-fA-F]{6}(; /\* startup-surface \*/)', lambda m: m[1] + background + m[2], text)
+p.write_text(text)
+BRAND_LOADER
     echo "✔ Updated web/index.html"
 else
     echo "Warning: $FLUTTER_INDEX not found."
@@ -559,6 +601,7 @@ for name, value in zip(names, sys.argv[2:]):
 path.write_text(source, encoding="utf-8")
 PY
     sed_inplace "s|static backendActivationCanonicalOrganizationId = .*;|static backendActivationCanonicalOrganizationId = ${BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID:-0};|g" "$APP_CONFIG"
+
 
     # Update Organization
     if [ ! -z "$ORGANIZATION_ID" ]; then
@@ -696,6 +739,8 @@ PY
     sed_inplace "s|static const String logoAsset = '.*';|static const String logoAsset = '$LOGO_ASSET';|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String darkLogoAsset = '.*';|static const String darkLogoAsset = '$DARK_LOGO_ASSET';|g" "$FLUTTER_CONFIG"
     sed_inplace "s|static const String programLogoAsset = '.*';|static const String programLogoAsset = '$PROGRAM_LOGO_ASSET';|g" "$FLUTTER_CONFIG"
+
+    sed_inplace "s|static const String loadingSymbolAsset = '.*';|static const String loadingSymbolAsset = '${LOADING_SYMBOL_ASSET:-}';|g" "$FLUTTER_CONFIG"
 
     # Update Organization
     if [ ! -z "$ORGANIZATION_ID" ]; then

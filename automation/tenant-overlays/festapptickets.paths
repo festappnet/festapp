@@ -8,3 +8,8 @@ web/apple-touch-icon.png
 web/favicon*.png
 web/favicon.ico
 web_client/favicon.ico
+
+assets/icons/vstupenky.svg
+assets/icons/vstupenky.dark.svg
+assets/icons/vstupenky-symbol.svg
+assets/icons/vstupenky-symbol.dark.svg

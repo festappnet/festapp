@@ -27,6 +27,12 @@ The Flutter startup screen selects it with `WEB_LOADING_LOGO_ASSET=loading-logo.
 and lays out the wordmark above its loading indicator. Its accent color is
 generated from `THEME_SEED_2`, matching the dark-theme brand accent. Installation/PWA icons
 remain separate brand assets; custom tenant startup assets remain configurable.
+`WEB_LOADING_STYLE=tickets` opts a tenant into the ticket rhythm, using
+`LOADING_SYMBOL_ASSET` (Flutter/light web) and `WEB_LOADING_SYMBOL_ASSET` (dark
+web). The default is the existing spinner. `WEB_LOADING_BACKGROUND` defaults to
+`#242424`. `WEB_BRAND_ICON_DIR` optionally selects an existing icon export set.
+The generator emits the normal/dark logos for public headers and footers;
+product assets do not replace the separate Festapp platform signature.
 
 Translations under `assets/translations/` are shared application content owned
 by `main`. Tenant overlays must not replace whole translation catalogs.

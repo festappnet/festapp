@@ -135,6 +135,8 @@ export async function collectPwaShellManifest(buildDir) {
     '/festapp_flutter_bootstrap_guard.js',
     '/festapp-version.json', '/manifest.json', '/manifest.webmanifest',
     '/AssetManifest.json', '/FontManifest.json',
+    '/loading-logo.svg', '/loading-symbol.svg', '/loading-symbol-light.svg',
+    '/brand-logo.svg', '/brand-logo-light.svg',
   ]);
   // The release emitter stamps these HTML dependencies with the same identity
   // as main. Keep mutable URLs available to runtime readers, but install each

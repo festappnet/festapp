@@ -131,9 +131,9 @@
   <meta name="apple-mobile-web-app-title" content="vstupenky.online">
   <link rel="manifest" href="site.webmanifest" />
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
-  <meta name="theme-color" content="#242424">
+  <meta name="theme-color" content="#19243b">
   <meta name="color-scheme" content="dark">
-  <style>html, body { background-color: #242424; }</style>
+  <style>html, body { background-color: #19243b; }</style>
 
   <title>vstupenky.online</title>
   <script>
@@ -534,7 +534,7 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: #242424;
+      background: #19243b; /* startup-surface */
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -580,14 +580,26 @@
   .loader::after {
     margin: 8px;
   }
+
+  .ticket-loader { display: none; align-items: center; justify-content: center; gap: 16px; height: 48px; }
+  .ticket-loader img { width: 48px; height: 28px; object-fit: contain; animation: ticket-welcome 1.6s cubic-bezier(.2,.7,.2,1) infinite; }
+  .ticket-loader img:nth-child(2) { animation-delay: .18s; }
+  .ticket-loader img:nth-child(3) { animation-delay: .36s; }
+  [data-loading-style="tickets"] .loader { display: none; }
+  [data-loading-style="tickets"] .ticket-loader { display: flex; }
+  @keyframes ticket-welcome { 0%,100% { transform: translateY(5px) rotate(-7deg); opacity:.4; } 45% { transform: translateY(-5px) rotate(4deg); opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .ticket-loader img, .loader, .loader::before { animation: none; transform: none; opacity: 1; } }
   @keyframes l16 {
     100%{transform: rotate(1turn)}
   }
 </style>
 
-  <div class="main-content" id="loader-content">
+  <div class="main-content" id="loader-content" data-loading-style="tickets">
     <img class="initial-logo" src="loading-logo.svg" alt="">
-    <div class="loader" role="status" aria-label="Načítání aplikace"></div>
+    <div class="loading-progress" role="status" aria-label="Načítání aplikace">
+      <div class="loader" aria-hidden="true"></div>
+      <div class="ticket-loader" aria-hidden="true"><img src="loading-symbol.svg" alt=""><img src="loading-symbol.svg" alt=""><img src="loading-symbol.svg" alt=""></div>
+    </div>
   </div>
 </body>
 </html>

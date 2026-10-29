@@ -108,6 +108,7 @@ touch "$TMP_ROOT/assets/icons/fstapplogo.svg" \
       "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" \
       "$TMP_ROOT/web/android-chrome-192x192.png"
 printf '<svg xmlns="http://www.w3.org/2000/svg"><text>Configured loading brand</text></svg>\n' > "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
+cp "$TMP_ROOT/assets/icons/fstapplogo.dark.svg" "$TMP_ROOT/assets/icons/fstapplogo.svg"
 
 # theme_config.css is optional but typically present.
 if [ -f "$PROJECT_ROOT/web_client/src/theme_config.css" ]; then
@@ -556,4 +557,16 @@ if [ $fail -ne 0 ]; then
     echo "❌ apply_config.sh test FAILED"
     exit 1
 fi
+# Ticket motion is opt-in and resets when returning to a normal tenant.
+cp "$FIXTURE_CONF" "$TMP_ROOT/automation/tickets.conf"
+printf '\nWEB_LOADING_STYLE=tickets\nLOADING_SYMBOL_ASSET=assets/icons/fstapplogo.svg\nWEB_LOADING_SYMBOL_ASSET=assets/icons/fstapplogo.dark.svg\nWEB_LOADING_BACKGROUND=#19243b\n' >> "$TMP_ROOT/automation/tickets.conf"
+bash "$TMP_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/tickets.conf" > "$TMP_ROOT/ticket-brand.log" 2>&1
+assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="tickets"'
+assert_contains "$TMP_ROOT/web_client/index.html" 'data-loading-style="tickets"'
+assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingSymbolAsset = 'assets/icons/fstapplogo.svg';"
+cmp "$TMP_ROOT/web/loading-symbol.svg" "$TMP_ROOT/assets/icons/fstapplogo.dark.svg"
+bash "$TMP_ROOT/automation/apply_config.sh" "$FIXTURE_CONF" > "$TMP_ROOT/reset-brand.log" 2>&1
+assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="spinner"'
+assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingSymbolAsset = '';"
+
 echo "✅ apply_config.sh test passed"

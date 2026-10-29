@@ -43,9 +43,10 @@ class AppConfig {
     'FESTAPP_PUSH_APP_GENERATION',
     defaultValue: pushAppGeneration,
   );
-  static const String logoAsset = 'assets/icons/fstapplogo.svg';
-  static const String darkLogoAsset = 'assets/icons/fstapplogo.dark.svg';
-  static const String programLogoAsset = 'assets/icons/fstapplogo.svg';
+  static const String logoAsset = 'assets/icons/vstupenky.svg';
+  static const String darkLogoAsset = 'assets/icons/vstupenky.dark.svg';
+  static const String programLogoAsset = 'assets/icons/vstupenky.svg';
+  static const String loadingSymbolAsset = 'assets/icons/vstupenky-symbol.svg';
   static const String defaultAdministrationRoute = NavigationPaths.admin;
 
   static int organization = 1;

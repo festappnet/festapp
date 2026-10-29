@@ -45,8 +45,8 @@ test('create-event invitation respects the tenant and explicit registration perm
         header.render();
         assert.equal(document.querySelectorAll('h1').length, 1);
         assert.equal(header.querySelectorAll('.user-header-container').length, 1);
-        assert.equal(header.querySelector('.header-wordmark')?.textContent ?? null,
-            link === 'https://vstupenky.online' ? 'vstupenky.online' : null);
+        assert.equal(header.querySelector('.header-logo')?.getAttribute('src'), '/brand-logo.svg');
+        assert.equal(header.querySelector('.header-logo')?.alt, AppConfig.appName);
         const button = header.querySelector('.btn-add-event');
         assert.equal(!!button, visible, `${link}, ${JSON.stringify(organization)}`);
         assert.ok(header.querySelector('.btn-sign-in'), 'existing users can still sign in');

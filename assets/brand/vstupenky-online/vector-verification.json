@@ -1,0 +1,8 @@
+{
+  "reference": "concepts/selected-wide-no-head.png",
+  "method": "analytically mapped ticket; lettering outlined from Roboto Bold, matching the selected landing preview",
+  "foreground_intersection_over_union": 0.67577,
+  "embedded_raster_images": 0,
+  "live_text_elements": 0,
+  "note": "Flat canonical colors replace generated gradients, highlights and texture. Symbol follows source geometry; Roboto Bold lettering replaces the generated lettering by explicit user request. Whole-logo overlap therefore includes an intentional typography change."
+}
