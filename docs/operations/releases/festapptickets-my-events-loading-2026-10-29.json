@@ -1,0 +1,34 @@
+{
+  "tenant": "festapptickets",
+  "branch": "prod/festapptickets",
+  "sourceMainSha": "45450fac35340150dc15ff498dfb8448a35afcee",
+  "tenantSha": "9a62bbaa13553c927a0237f1beec563b3e37ff25",
+  "previousProductionSha": "09da6e8b8c18fe0d1dc4bdb53400ca91e1e9ca68",
+  "version": "0.20.449+954",
+  "deploymentUrl": "https://0b08aefd.vstupenkyonline.pages.dev",
+  "productionOrigin": "https://vstupenky.online",
+  "checks": {
+    "tenantDrift": "passed using checker from sourceMainSha",
+    "previousProductionAncestor": true,
+    "flutterWebCompile": "passed",
+    "javascriptTestSuite": {
+      "passed": 107,
+      "failed": 0
+    },
+    "webClientBuild": "passed",
+    "pwaCacheBudget": "passed",
+    "cspGeneration": "passed",
+    "webBuildVerification": "passed for version 0.20.449+954",
+    "directCloudflareUpload": "completed with Wrangler OAuth",
+    "liveVersionAssetAndLegalProbes": "passed; 3 consecutive coherent probes for version 0.20.449+954"
+  },
+  "artifacts": {
+    "versionManifestSha256": "5949a23a25bfabead2665dfb55b9b9e3cedc920b32654365e4b5b5a5ad3dd6b8",
+    "workerSha256": "cd61af3529f5de87248e49430e560e70b95c9f426f4b23c620a7c3454c359b38"
+  },
+  "behavior": "My events immediately shows translated loading text and spinner, blocks duplicate clicks, retains feedback through navigation and rights rerenders, restores on back/forward cache, and recovers with the existing error toast for retry.",
+  "targetedValidation": {
+    "headerTests": 3,
+    "visualCheck": "Actual shared UserHeader in isolated headless static fixture: desktop1280px and mobile390px, delayed navigation. Fixture navigation was held pending; no real accounts or backend calls."
+  }
+}
