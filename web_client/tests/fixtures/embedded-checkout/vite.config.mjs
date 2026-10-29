@@ -7,6 +7,11 @@ if (status.API_URL === 'http://127.0.0.1:59921') {
         'psql','-X','-U','postgres','-d','postgres','-Atqc',
         "select project from festapp_test_support.disposable_environment where singleton"],{encoding:'utf8'}).trim();
     if (marker !== 'festapp-wix-qa-20261025') throw Error('Dedicated Wix backend marker required');
+} else if (status.API_URL === 'http://127.0.0.1:59931') {
+    const marker = execFileSync('docker',['exec','supabase_db_festapp-joomla-help-20261029',
+        'psql','-X','-U','postgres','-d','postgres','-Atqc',
+        "select project from festapp_test_support.disposable_environment where singleton"],{encoding:'utf8'}).trim();
+    if (marker !== 'festapp-joomla-help-20261029') throw Error('Dedicated Joomla backend marker required');
 } else if (status.API_URL !== 'http://127.0.0.1:59821') throw Error('Disposable embed backend required');
 export default {
     root: new URL('../../..', import.meta.url).pathname,

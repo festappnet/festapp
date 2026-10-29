@@ -34,7 +34,7 @@ def wait_ready(container, port, expected_version, credentials, timeout=90):
             )
             if configured.returncode == 0:
                 version = subprocess.run(
-                    ['docker', 'exec', container, 'php', 'cli/joomla.php', '--version'],
+                    ['docker', 'exec', '--user', 'www-data', container, 'php', 'cli/joomla.php', '--version'],
                     capture_output=True, text=True, timeout=5,
                 )
                 if version.returncode == 0 and expected_version in version.stdout:

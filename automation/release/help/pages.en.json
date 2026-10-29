@@ -128,6 +128,16 @@
     "preview": "en/wordpress/03-custom-html"
   },
   {
+    "id": "joomla",
+    "category": "integrations",
+    "slug": "joomla",
+    "label": "Joomla",
+    "preview": "en/joomla/02-module",
+    "title": "Add ticket sales to Joomla",
+    "seoTitle": "Joomla ticket module: installation and article embedding",
+    "description": "Install the vstupenky.online module in Joomla 5 or 6, configure your public form URL and display ticket sales in an article or template position."
+  },
+  {
     "id": "webnode",
     "category": "integrations",
     "slug": "webnode",

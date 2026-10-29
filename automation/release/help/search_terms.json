@@ -125,6 +125,13 @@
       "ruční párování",
       "najít a propojit transakci",
       "platba u jiné objednávky"
+    ],
+    "joomla": [
+      "jumla",
+      "joomla modul",
+      "instalace rozšíření",
+      "loadmoduleid",
+      "vstupenky do článku"
     ]
   },
   "en": {
@@ -237,6 +244,12 @@
       "unmatched bank payment",
       "manual matching",
       "link a transaction"
+    ],
+    "joomla": [
+      "joomla module",
+      "install extension",
+      "loadmoduleid",
+      "ticket form in article"
     ]
   }
 }

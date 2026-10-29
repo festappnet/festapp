@@ -41,9 +41,18 @@ Cloudflare binds each guide to its generated CSP profile and includes it in the
 sitemap. Help documents/assets are network content, outside the installed app
 cache. No checkout is loaded by the HTML code generator.
 
-Public guides currently support HTML embeds only, including WordPress Custom HTML.
-Keep unpublished plugins, their setup screenshots and ZIP downloads out of the help
-until they are actually published.
+Public guides cover HTML embeds, WordPress Custom HTML, Webnode and the published
+Joomla vstupenky.online module. The Joomla guide links to the public JED listing
+instead of shipping a ZIP with the help. Keep unpublished plugins, their setup
+screenshots and ZIP downloads out of the help until they are actually published.
+
+The Joomla walkthrough (2026-10-29) uses the released 1.0.1 ZIP in disposable
+Joomla 6.1.4, with six Czech and three English screenshots. Its chapter in the
+canonical capture catalogue records native install/save/article steps and the
+local-service boundary. The follow-up uses a dedicated current-schema backend
+`festapp-joomla-help-20261029` on API 59931/DB 59932. The canonical V2 seed
+supports all twelve places; a real hold/release, zoom, Escape and mobile width
+passed. No purchase or production operation is claimed.
 
 Generate a disposable static preview without a server:
 

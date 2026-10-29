@@ -26,19 +26,35 @@ BEGIN
  UPDATE public.forms SET link=public.reserve_public_link_internal('form',frm,'embedded-synthetic',true) WHERE id=frm;
 END $$;
 NOTIFY pgrst,'reload schema';
+-- Reuse the canonical prepared number-symbol resources used by blueprint tests.
+\ir ../../../../database/tests/blueprint/fixtures.sql
 -- No email queue worker is started. No external provider credentials are supplied.
 SELECT cron.unschedule(jobid) FROM cron.job;
 DO $$
 DECLARE f bigint; seat_form bigint; oc bigint; bp bigint; pr bigint; sid bigint;
+ node uuid; nodes jsonb:='[]'; previous_role text:=current_setting('request.jwt.claim.role',true);
 BEGIN
  SELECT id,occasion INTO f,oc FROM public.forms WHERE link='embedded-synthetic';
  SELECT id INTO pr FROM eshop.products LIMIT 1;
- INSERT INTO eshop.blueprints(organization,occasion,title,configuration,objects)
- VALUES(1,oc,'Synthetic seats','{"dimensions":{"width":8,"height":6}}','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(organization,occasion,title)
+ VALUES(1,oc,'Synthetic seats') RETURNING id INTO bp;
  FOR i IN 1..12 LOOP
+  node:=gen_random_uuid();
   INSERT INTO eshop.spots(occasion,blueprint,product,title) VALUES(oc,bp,pr,'A'||i) RETURNING id INTO sid;
-  UPDATE eshop.blueprints SET objects=objects||jsonb_build_array(jsonb_build_object('id',sid,'type','spot','x',(i-1)%6,'y',(i-1)/6,'title','A'||i)) WHERE id=bp;
+  nodes:=nodes||jsonb_build_array(jsonb_build_object('id',node,'kind','seat','width',40,'height',40,
+   'transform',jsonb_build_object('x',40+((i-1)%6)*64,'y',40+((i-1)/6)*64,'rotation',0)));
+  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,blocked,product_assignment_mode)
+   VALUES(bp,node,sid,false,'override');
  END LOOP;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM public.register_blueprint_text_resources(oc,NULL,public.blueprint_test_number_resources_internal());
+ PERFORM set_config('request.jwt.claim.role',coalesce(previous_role,''),true);
+ UPDATE eshop.blueprints SET layout=jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,
+  'canvas',jsonb_build_object('x',0,'y',0,'width',440,'height',190,'fill','#ffffffff'),
+  'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,
+  'textPolicy',jsonb_build_object('language','und','direction','auto'),
+  'nodes',nodes,'selectionUnits','[]'::jsonb,'attachments','[]'::jsonb,'sections','[]'::jsonb,'presets','[]'::jsonb),
+  layout_revision=1 WHERE id=bp;
  UPDATE public.occasions SET features=features||'[{"code":"blueprint","is_enabled":true}]'::jsonb WHERE id=oc;
  INSERT INTO public.forms(occasion,title,link,is_open,header,data,blueprint)
  SELECT occasion,'Synthetic seats','embedded-seats',true,'<h1>Synthetic seats</h1>',data,bp FROM public.forms WHERE id=f RETURNING id INTO seat_form;
