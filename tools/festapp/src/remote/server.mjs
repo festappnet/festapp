@@ -1,3 +1,4 @@
+import { createRateLimiter, clientIdentity } from './rate-limit.mjs';
 import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import {PreviewArtifacts} from '../operations/preview.mjs';
 import express from 'express';
@@ -21,7 +22,7 @@ import { makeStatus, validateMakePage, makeDocumentation } from './make-transpor
 const nonce = () => randomBytes(32).toString('base64url');
 const cookieName = 'festapp_mcp_management';
 
-export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecret, fetchImpl = fetch, audit = () => {} } = {}) {
+export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecret, fetchImpl = fetch, audit = () => {}, rateLimiter = createRateLimiter() } = {}) {
     check(cookieKeys?.length >= 2 && cookieKeys.every(k => typeof k === 'string' && k.length >= 32), 'INVALID_COOKIE_KEYS');
     check(jwks?.keys?.length > 0, 'INVALID_ISSUER_KEYS');
     // Account-switch form POSTs may redirect to a registered web callback.
@@ -101,11 +102,17 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const artifacts = new PreviewArtifacts();
     let totalActive = 0;
     const limit = (bucket, max) => {
-        const key = digest(bucket);
-        const old = storage.get('Rate', key) ?? { n: 0 };
-        check(old.n < max, 'TEMPORARILY_LIMITED');
-        storage.put('Rate', key, { n: old.n + 1 }, old.expires ? (old.expires - Date.now()) / 1000 : 60);
-        if (!old.expires) storage.put('Rate', key, { n: 1, expires: Date.now() + 60000 }, 60);
+        const at = bucket.indexOf(':');
+        const type = bucket.slice(0, at);
+        try { rateLimiter(type, bucket.slice(at + 1), max); }
+        catch (error) { audit({ event: 'rate_limit', bucket: type, outcome: 'rejected' }); throw error; }
+    };
+    const limited = (req, res, error) => {
+        res.set('Retry-After', String(error?.retryAfter ?? 60));
+        audit({ event: 'rate_limit', route: req.path.startsWith('/tenant-') ? 'broker' : req.path.startsWith('/make/') ? 'make' : req.path === '/mcp' ? 'mcp' : 'issuer', outcome: 'rejected' });
+        return (req.path === '/make/v1' || req.path.startsWith('/make/v1/'))
+            ? res.status(429).json({ ok: false, error: { code: 'TEMPORARILY_LIMITED', message: 'TEMPORARILY_LIMITED', retryable: true } })
+            : res.sendStatus(429);
     };
     app.use((req, res, next) => {
         const expected = new URL(config.issuer);
@@ -121,7 +128,10 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             // hash of its account-switch auto-submit script when it renders it.
             'Content-Security-Policy': `default-src 'none'; script-src; style-src 'unsafe-inline'; form-action ${formAction}; frame-ancestors 'none'; base-uri 'none'` });
         if (canonical) res.set('Strict-Transport-Security', 'max-age=31536000');
-        try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
+        if (req.method === 'GET' && req.path === '/healthz') return next();
+        let ip;
+        try { ip = clientIdentity(req, canonical); } catch { return res.sendStatus(400); }
+        try { limit(`http:${ip}`, 240); next(); } catch (error) { limited(req, res, error); }
     });
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
     app.get('/make/v1', (_req, res) => res.json(makeDocumentation(config,
@@ -305,8 +315,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             }
         }
         const count = active.get(token.grantId) ?? 0;
-        if (count >= 2 || totalActive >= 16) return res.sendStatus(429);
-        try { limit(`grant:${token.grantId}`, 60); } catch { return res.sendStatus(429); }
+        if (count >= 2 || totalActive >= 16) return limited(req, res);
+        try { limit(`grant:${token.grantId}`, 60); } catch (error) { return limited(req, res, error); }
         active.set(token.grantId, count + 1); totalActive++;
         let handler;
         const requestId = randomUUID();
@@ -355,7 +365,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     // revocation ordered before the next exchange can issue credentials.
     let tokenQueue = Promise.resolve(), tokenWaiting = 0;
     app.post('/token', async (req, res) => {
-        if (tokenWaiting >= 8) return res.sendStatus(429);
+        if (tokenWaiting >= 8) return limited(req, res);
         tokenWaiting++;
         const previous = tokenQueue;
         let release;
@@ -365,9 +375,10 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         finally { tokenWaiting--; release(); }
     });
     app.use(provider.callback());
-    app.use((error, _req, res, _next) => {
+    app.use((error, req, res, _next) => {
         if (res.headersSent) return res.end();
         const safe = safeError(error);
+        if (safe.code === 'TEMPORARILY_LIMITED') return limited(req, res, error);
         res.status(safe.code === 'FORBIDDEN' ? 403 : safe.code === 'TEMPORARILY_LIMITED' ? 429 : 400)
             .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusť připojení znovu.</p>'));
     });

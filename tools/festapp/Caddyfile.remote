@@ -22,6 +22,7 @@ mcp.vstupenky.online {
     reverse_proxy 127.0.0.1:3399 {
         header_up Host mcp.vstupenky.online
         header_up X-Forwarded-Proto https
+        header_up X-Festapp-Client-IP {client_ip}
         header_up -Forwarded
     }
     # Intentionally no access log: auth URLs can contain login context.

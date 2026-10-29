@@ -37,6 +37,9 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  for(const file of ['forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql'])
   await db.query(await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8'));
  await db.query('RESET ROLE');
+ await db.query('SET LOCAL ROLE postgres');
+ await db.query(await readFile(new URL('../../../supabase/migrations/20261029180000_operator_order_summaries.sql',import.meta.url),'utf8').then(s=>s.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'')));
+ await db.query('RESET ROLE');
  const f=await fixture(db,1);
  const form=Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Order MCP form',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id",[f.occasion])).rows[0].id);
  const field=Number((await db.query("insert into form_fields(form,title,type) values($1,'Email','email') returning id",[form])).rows[0].id);

@@ -102,7 +102,11 @@
     "public.stripe_ticket_requires_online_internal(bigint)",
     "public.stripe_unit_feature_enabled_internal(bigint)",
     "public.set_stripe_unit_feature(bigint,boolean)",
-    "public.get_app_config_v218(jsonb)"
+    "public.get_app_config_v218(jsonb)",
+    "public.operator_order_facts_internal_v1(bigint)",
+    "public.operator_order_summary_internal_v1(bigint)",
+    "public.operator_order_snapshot_internal_v1(bigint,boolean)",
+    "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)"
   ],
   "retiredSignatures": [
     "public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)",

@@ -1,3 +1,5 @@
+import { rejectLegacyLock } from '../auth/process-lock.mjs';
+import { join } from 'node:path';
 import { SessionOwner } from '../auth/session.mjs';
 import { digest } from '../context/profile.mjs';
 import { check, OperationError } from '../errors.mjs';
@@ -8,6 +10,10 @@ import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE, MCP_PERMISSIONS, scopesForOp
 export function boundOwner(config, storage, binding, options = {}) {
     return new SessionOwner(Object.freeze({ ...config.profile, binding }), {
         ...options, root: storage.root, store: storage.backendStore,
+        lockStrategy: async action => {
+            await rejectLegacyLock(join(storage.root, 'locks', binding));
+            return storage.runSessionExclusive(binding, action);
+        },
     });
 }
 

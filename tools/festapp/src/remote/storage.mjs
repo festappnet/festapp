@@ -1,6 +1,7 @@
+import { acquireProcessLock, rejectLegacyLock, createSessionQueue } from '../auth/process-lock.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { lstat, mkdir, rmdir, chmod } from 'node:fs/promises';
+import { lstat, chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import { privateRoot, digest } from '../context/profile.mjs';
 
@@ -9,8 +10,10 @@ import { privateRoot, digest } from '../context/profile.mjs';
 export async function openRemoteStorage(root, key) {
     if (!Buffer.isBuffer(key) || key.length !== 32) throw new Error('INVALID_STORAGE_KEY');
     await privateRoot(root);
-    const lock = join(root, 'remote-process.lock');
-    await mkdir(lock, { mode: 0o700 });
+    await rejectLegacyLock(join(root, 'remote-process.lock'));
+    const release = await acquireProcessLock(root, 'remote-owner.sqlite');
+    const runSessionExclusive = createSessionQueue();
+    let closed = false;
     let db;
     try {
         const file = join(root, 'remote.sqlite');
@@ -39,6 +42,7 @@ export async function openRemoteStorage(root, key) {
         };
         const store = {
             root,
+            runSessionExclusive,
             get(model, id) {
                 const row = db.prepare('SELECT * FROM records WHERE model=? AND id=? AND expires>?').get(model, digest(id), Date.now());
                 return row ? unseal(model, digest(id), row.value) : undefined;
@@ -105,11 +109,11 @@ export async function openRemoteStorage(root, key) {
                 },
                 remove: async binding => store.remove('Backend', binding),
             },
-            async close() { db.close(); await rmdir(lock); },
+            async close() { if (closed) return; closed = true; try { db.close(); } finally { release(); } },
         };
         // Detect a wrong/missing key before accepting traffic, even after restart.
         const sentinel = store.get('Metadata', 'encryption');
         if (!sentinel) store.put('Metadata', 'encryption', { version: 1 }, 86400 * 3650);
         return store;
-    } catch (e) { db?.close(); await rmdir(lock); throw e; }
+    } catch (e) { try { db?.close(); } finally { release(); } throw e; }
 }

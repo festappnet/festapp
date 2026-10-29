@@ -4,7 +4,7 @@ import { handleMcpExchange } from "./handler.ts";
 
 const actor = "00000000-0000-4000-8000-000000000001";
 const config = { tenantId: "fixture", tenantOrigin: "https://tenant.invalid", issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) };
-function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, organization = 3, access = { type: "occasions", occasionIds: [7] } as Record<string, unknown> } = {}) {
+function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, limited = "", organization = 3, access = { type: "occasions", occasionIds: [7] } as Record<string, unknown> } = {}) {
   const calls: string[] = [];
   const admin = {
     auth: { getUser: (token: string) => { calls.push(`proof:${token}`); return Promise.resolve({ error: invalidProof ? {} : null, data: { user: { id: actor } } }); },
@@ -17,6 +17,7 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
       assertEquals((init!.headers as Record<string, string>)["X-Festapp-Mcp-Broker"], config.brokerSecret);
       const body = JSON.parse(init!.body as string); calls.push(body.operation);
       assertEquals(body.tenantId, "fixture"); assertEquals(body.organizationId, 3);
+      if (body.operation === limited) return new Response(null, { status: 429, headers: { "Retry-After": "17" } });
       if (body.operation === "prepare") { assertEquals(body.access, access); return Response.json({ lease: "lease", userId: wrongActor ? "other" : actor, organizationId: 3 }); }
       if (body.operation === "check") return Response.json({ valid: true, userId: actor });
       if (body.operation === "complete") {
@@ -72,4 +73,16 @@ Deno.test("explicit organizer selection reaches the broker unchanged and uses on
 Deno.test("versioned consent reaches the issuer unchanged without adding exchange authority", async () => {
   const f = fixture({ access: { consentVersion: 2, selection: { type: "occasions", occasionIds: [7] }, permissions: ["festapp:orders:read", "festapp:payments:write"] } });
   assertEquals((await f.request()).status, 200);
+});
+
+Deno.test("broker 429 preserves Retry-After without replay or extra session minting", async () => {
+  for (const operation of ["details", "status", "prepare", "complete"]) {
+    const f = fixture({ limited: operation });
+    const response = await f.request(["details", "status"].includes(operation) ? operation : "approve");
+    assertEquals(response.status, 429); assertEquals(response.headers.get("Retry-After"), "17");
+    assertEquals(response.headers.get("Access-Control-Expose-Headers"), "Retry-After");
+    assertEquals(f.calls.filter(c => c === operation).length, 1);
+    assertEquals(f.calls.filter(c => c === "mint").length, operation === "complete" ? 1 : 0);
+    if (operation === "complete") assertEquals(f.calls.at(-1), "revoke:local");
+  }
 });

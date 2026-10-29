@@ -1,3 +1,4 @@
+import { createRateLimiter } from '../src/remote/rate-limit.mjs';
 import {canonicalPreview} from './render-fixture.mjs';
 import {receipt as layoutReceipt} from './layout-fixture.mjs';
 import {MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
@@ -31,7 +32,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch } = {}) {
+async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -47,9 +48,10 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
-    const config = parseRemoteConfig(raw);
+    const parsedConfig = parseRemoteConfig(raw);
+    const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];
-    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r) });
+    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r), rateLimiter });
     server.on('request', service.app);
     t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const jar = new Map();
@@ -778,17 +780,18 @@ const orderRow = id => ({ id, occasionId: 7, symbol: 'FIXTURE-' + id, state: id 
 for (const version of ['2026-07-28', '2025-11-25']) test(`public ChatGPT order projection excludes private fields on ${version} wire`, async t => {
     const secret = 'PRIVATE-CHILD-DOCUMENT-EMAIL';
     const backend = (url, init) => {
-        if (!url.pathname.endsWith('/get_operator_orders_v1')) return pilotBackend(url, init);
+        const summary = url.pathname.endsWith('/get_operator_order_summaries_v1');
+        if (!summary && !url.pathname.endsWith('/get_operator_orders_v1')) return pilotBackend(url, init);
         const row = { ...orderRow(51), symbol: '8M6K9Q6A3V',
             customer: { name: secret, surname: secret, email: secret }, note: secret,
-            responses: [{ '1': secret }], formFields: [{ id: 1, title: secret, type: 'id_document' }],
-            payment: { method: secret, variableSymbol: secret, deadline: secret, amount: '100.00', paid: '0.00', returned: '0.00' },
-            tickets: [{ id: 1, state: 'ordered', products: [{ id: 1, title: secret, price: '100.00', currentPrice: '100.00' }] }] };
+            payment: { method: secret, variableSymbol: secret, deadline: secret, amount: '100.00', paid: '0.00', returned: '0.00' } };
+        if (!summary) return reply({ occasionId: 7, orders: [row], nextCursor: null });
         const args = JSON.parse(init.body);
-        if (args.p_search === 'ABC1234567') return reply({ occasionId: 7,
-            orders: [{ ...row, ...(args.p_before ? { id: 50, symbol: 'ABC1234567' } : {}) }], nextCursor: args.p_before ? null : 51 });
-        if (args.p_search === 'TOOMANY123') return reply({ occasionId: 7, orders: [row], nextCursor: (args.p_before ?? 55) - 1 });
-        return reply({ occasionId: 7, orders: [row], nextCursor: null });
+        const safe = { id: row.id, occasionId: 7, symbol: row.symbol, state: row.state,
+            ticketCount: row.ticketCount, price: row.price, currency: row.currency,
+            allowedActions: ['view'], payment: { amount: '100.00', paid: '0.00', returned: '0.00' } };
+        if (args.p_symbol === 'ABC1234567') return reply({ occasionId: 7, orders: [{ ...safe, id: 50, symbol: args.p_symbol }], nextCursor: null });
+        return reply({ occasionId: 7, orders: !args.p_symbol || args.p_symbol === safe.symbol ? [safe] : [], nextCursor: null });
     };
     const f = await setup(t, { tenant: true, pilot: true, publicClient: true, fetchImpl: backend });
     const tokens = await connectTenant(f, { clientId: 'arbitrary-summary-client', scopes: [READ_SCOPE, 'festapp:orders:read'] });
@@ -815,14 +818,11 @@ for (const version of ['2026-07-28', '2025-11-25']) test(`public ChatGPT order p
     assert.equal(contactMatch.structuredContent.data.nextCursor, null);
     const laterMatch = await response('tools/call', { name: 'festapp_orders_list', arguments: { occasionId: 7, search: 'ABC1234567', limit: 1 } });
     assert.deepEqual(laterMatch.structuredContent.data.orders.map(row => row.id), [50]);
-    const incomplete = await response('tools/call', { name: 'festapp_orders_list', arguments: { occasionId: 7, search: 'TOOMANY123', limit: 1 } });
-    assert.equal(incomplete.isError, true);
-    assert.equal(incomplete.structuredContent.error.code, 'UNAVAILABLE');
-    assert.equal(incomplete.structuredContent.data, undefined);
     const invalid = await response('tools/call', { name: 'festapp_orders_list', arguments: { occasionId: 7, search: 'child@example.invalid' } });
     assert.equal(invalid.isError, true);
     const context = await response('tools/call', { name: 'festapp_context_inspect', arguments: {} });
     assert.equal(context.structuredContent.data.userId, undefined);
+    assert(!f.calls.some(c => c.url.pathname.endsWith('/get_operator_orders_v1')));
     // The ordinary operator/native contract continues to include the full DTO.
     await f.owner.login('fixture@example.test', 'fixture-password');
     const native = new Operations({ ...f.owner, orderSummaryOnly: false,
@@ -1072,4 +1072,50 @@ test('hosted artwork qualifies its writes and shares private preview artifacts a
  assert.equal(Buffer.from((await client.readResource({uri:pdf.uri})).contents[0].blob,'base64').subarray(0,5).toString(),'%PDF-');
  const saved=await client.callTool({name:'festapp_ticket_layouts_save',arguments:saveRequest});assert.equal(saved.structuredContent.ok,true,JSON.stringify(saved));assert.equal(writes.length,1);
  denied=true;await assert.rejects(client.readResource({uri:pdf.uri}));
+});
+
+test('real HTTP quotas reject N+1, preserve Make JSON and health, reset without new consent', async t => {
+    let now = 0;
+    const f = await setup(t, { tenant: true, rateLimiter: createRateLimiter({ now: () => now }) });
+    const params = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code', redirect_uri: f.issuer + '/callback',
+        scope: READ_SCOPE, resource: f.config.resource, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) });
+    const auth = await f.browser('/auth?' + params);
+    const redirect = await f.browser(auth.headers.get('location'));
+    const request = new URL(redirect.headers.get('location')).searchParams.get('request');
+    const status = () => fetch(f.issuer + '/tenant-connection', { method: 'POST', headers: {
+        'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) }, body: JSON.stringify({
+            operation: 'status', request, accessToken: supabaseToken, tenantId: f.config.profile.tenantId,
+            organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin }) });
+    const prepared = await fetch(f.issuer + '/tenant-connection', { method: 'POST', headers: {
+        'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) }, body: JSON.stringify({
+            operation: 'prepare', request, accessToken: supabaseToken, tenantId: f.config.profile.tenantId,
+            organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin,
+            access: { type: 'occasions', occasionIds: [7] } }) });
+    assert.equal(prepared.status, 200); await prepared.json();
+    const first = await status(); assert.equal(first.status, 200); const baseline = await first.json();
+    // Consume the remaining shared egress quota, including discovery.
+    let rejected;
+    for (let i = 0; i < 240; i++) {
+        const r = await fetch(f.issuer + '/.well-known/oauth-protected-resource');
+        await r.text(); if (r.status === 429) { rejected = r; break; }
+    }
+    assert.equal(rejected.status, 429); assert.equal(rejected.headers.get('Retry-After'), '60');
+    const denied = await status(); assert.equal(denied.status, 429); await denied.text();
+    const make = await fetch(f.issuer + '/make/v1'); assert.equal(make.status, 429); assert.equal((await make.json()).error.code, 'TEMPORARILY_LIMITED');
+    assert.equal((await f.browser('/healthz')).status, 200);
+    now = 60000;
+    const resumed = await status(); assert.equal(resumed.status, 200); assert.deepEqual(await resumed.json(), baseline);
+    assert.equal(f.storage.values('Delegation').length, 0);
+});
+
+test('canonical HTTP rejects missing/multiple client IP and isolates normalized identities', async t => {
+    const f = await setup(t, { canonical: true });
+    const get = headers => fetch(f.issuer + '/.well-known/oauth-protected-resource', { headers: { 'x-forwarded-proto': 'https', ...headers } });
+    assert.equal((await get({})).status, 400);
+    assert.equal((await get({ 'x-festapp-client-ip': '192.0.2.1, 192.0.2.2' })).status, 400);
+    for (let i = 0; i < 240; i++) { const r = await get({ 'x-festapp-client-ip': '192.0.2.1' }); assert.equal(r.status, 200); await r.text(); }
+    assert.equal((await get({ 'x-festapp-client-ip': '::ffff:192.0.2.1' })).status, 429);
+    assert.equal((await get({ 'x-festapp-client-ip': '192.0.2.2', 'x-forwarded-for': '192.0.2.1' })).status, 200);
+    assert.equal((await fetch(f.issuer + '/healthz', { headers: { 'x-forwarded-proto': 'https' } })).status, 200);
+    assert.equal((await fetch(f.issuer + '/healthz')).status, 400);
 });

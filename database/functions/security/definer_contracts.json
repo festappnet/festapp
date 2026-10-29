@@ -1307,7 +1307,10 @@
     },
     "863f5cf480cd4d16b5e522bd52a244f2ab5b1b106b2ef78a324850fbe86d5152": {
       "signature": "public.get_notification_center_badge(bigint)",
-      "source": "database/functions/notification_center/core.sql"
+      "source": "database/functions/notification_center/core.sql",
+      "additionalSources": [
+        "database/functions/notification_center/center_policy.sql"
+      ]
     },
     "979bc5653debc38b276ecca45b582ec1e1e027d50aea879034f05ee46b37dc47": {
       "signature": "public.get_notification_center_group(bigint,text,bigint,bigint,integer)",
@@ -1703,7 +1706,10 @@
     },
     "723a5119ae272990503898135b90caf542a9d6eecbb0dcd17e8911408b705ebb": {
       "signature": "public.can_write_blueprints(bigint)",
-      "source": "database/functions/user_permissions/feature_operations.sql"
+      "source": "database/functions/user_permissions/feature_operations.sql",
+      "additionalSources": [
+        "database/functions/user_permissions/blueprint_authoring.sql"
+      ]
     },
     "47e82616e1fc57a9ab9d96ca9051323ff532944fe00c19405aac72410c268914": {
       "signature": "public.can_copy_inventory_target(bigint)",
@@ -2328,6 +2334,458 @@
     "612bd54ebbc625aa4a42c0f19ab7fe3068a9559c7e90e5b1abb08cafb99ea438": {
       "signature": "public.release_blueprint_holds_client_sync_v1(bigint[],uuid)",
       "source": "database/functions/eshop/release_blueprint_holds_client_sync_v1.sql"
+    },
+    "a1edd5564dc440ae41e2d2860ec6e5b1297de038967a836e5f0949b3eda99bb4": {
+      "signature": "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)",
+      "source": "database/functions/eshop_orders/operator_orders.sql"
+    },
+    "258878e85f87bfe5fcbb1c59fa0f0a23faf3da445e80ba0b6c1289582bb796cf": {
+      "signature": "public.stage_wix_billing_delivery(uuid,jsonb)",
+      "source": "database/functions/wix_billing/delivery.sql"
+    },
+    "32f10d77af77d46a2db0f7e542489611ab5ca64c0a25a77bfd9b6a69e90c6d04": {
+      "signature": "public.claim_wix_billing_delivery(uuid,text,text)",
+      "source": "database/functions/wix_billing/delivery.sql"
+    },
+    "0e71f3ca12f8a2fd5a3feb4e9f22ed19124b6d75b2e0f128740329d452151d12": {
+      "signature": "public.finish_wix_billing_delivery(uuid,text,text,uuid,text,jsonb)",
+      "source": "database/functions/wix_billing/delivery.sql"
+    },
+    "5ebfb340b2f3874a79ddc797bc79b6c3a73c4f78f4e606e33a38cde878fe1581": {
+      "signature": "public.inspect_wix_billing_delivery(uuid,text,text)",
+      "source": "database/functions/wix_billing/delivery.sql"
+    },
+    "247ea25eb1fe853a94a192206240ecd2fdf9088e78eb3889d63d49e9535c759e": {
+      "signature": "public.reconcile_wix_billing_delivery(uuid,text,text,uuid,text,text,text,text)",
+      "source": "database/functions/wix_billing/delivery.sql"
+    },
+    "a118dc8c18da2aec255f80ba870b43a788ff2715c467f5b71211e9fe95193c04": {
+      "signature": "public.claim_replacement_invoice_preparation(bigint,uuid)",
+      "source": "database/functions/eshop_orders/replacement_invoice_preparation.sql"
+    },
+    "93187843ad21b0ac5ebd42a8d437ddaa19fd28396f784e8fc732ea8fd8a6ffdc": {
+      "signature": "public.mark_replacement_invoice_dispatch(bigint,uuid,uuid)",
+      "source": "database/functions/eshop_orders/replacement_invoice_preparation.sql"
+    },
+    "e0fb29a180518262842712bc2c0781bbad47383c0fcfa7ae1432f1974ea22dfa": {
+      "signature": "public.release_replacement_invoice_preparation(bigint,uuid,uuid,boolean)",
+      "source": "database/functions/eshop_orders/replacement_invoice_preparation.sql"
+    },
+    "965fbf716b4a435544de10174f0d66fe256a8da7a80d3b7e90e80c089dedb1cc": {
+      "signature": "public.complete_replacement_invoice_preparation(bigint,uuid,uuid,bigint)",
+      "source": "database/functions/eshop_orders/replacement_invoice_preparation.sql"
+    },
+    "b390b14022be212e39f4c427b2777fa3658ef81b982706edce4bff4e6d873871": {
+      "signature": "public.replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)",
+      "source": "database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql"
+    },
+    "3b865d0aa3010bfeeb24b12f5af67a4e7863f898337803f77214824669884a07": {
+      "signature": "public.cancel_tickets_command_internal(bigint[],uuid,jsonb)",
+      "source": "database/functions/eshop_orders/storno_tickets_client_sync_v1.sql"
+    },
+    "863c85723e497897071dca75af05434d522465908976b74f8d1ea23f957be7da": {
+      "signature": "public.storno_tickets_client_sync_v1(bigint[],uuid)",
+      "source": "database/functions/eshop_orders/storno_tickets_client_sync_v1.sql"
+    },
+    "705f548050271f12f443ac8212d51cce71c6ac619005ccda5249ffd0f4ce0c2c": {
+      "signature": "public.get_wix_checkout_configuration_internal()",
+      "source": "database/functions/eshop_orders/checkout_origin.sql"
+    },
+    "9239b4dc32c1e830e33d73c0cb3655579e73c058cf8b2691d7144dfb923bc006": {
+      "signature": "public.issue_wix_checkout_origin_internal(text,uuid,uuid,bigint,uuid)",
+      "source": "database/functions/eshop_orders/checkout_origin.sql"
+    },
+    "4074a72a8d6d3f387f57a67f4fdaaa0613c26d9e3e08f021d6b1e495d7f59b8c": {
+      "signature": "public.repair_order_email_client_sync_v1(bigint,text,text,bigint,text,uuid,boolean,uuid,text)",
+      "source": "database/functions/eshop_orders/repair_order_email_client_sync_v1.sql"
+    },
+    "d52e9015809550ac3b92a8ccee020af32195ece4c35ece0f38142bee1c48e229": {
+      "signature": "public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb)",
+      "source": "database/functions/eshop_orders/create_ticket_order_client_sync_v1.sql"
+    },
+    "620a1ae1ee62d0f1253bf1a63f520a5ad23c2dfadf660f945333cfbc46415fc4": {
+      "signature": "public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid)",
+      "source": "database/functions/eshop_orders/create_ticket_order_client_sync_v1.sql"
+    },
+    "5de8d829c18b18ca2eaef5c917db4b6581ab7728f842b693895f33cd1a3a537b": {
+      "signature": "public.get_client_commits_scoped_internal_v1(bigint,timestamp with time zone,uuid,integer,jsonb,boolean,boolean)",
+      "source": "database/functions/synchronization/client_audit_reads.sql"
+    },
+    "1c093cbf1e8e4bc15792b7861623be9b638e31f8286f4983351a8c0dca899846": {
+      "signature": "public.get_client_commits_v1(bigint,timestamp with time zone,uuid,integer,jsonb)",
+      "source": "database/functions/synchronization/client_audit_reads.sql"
+    },
+    "8f82296d631320159aba2fe6d68e17807a4c19dc49e50284e48d807fa95ac762": {
+      "signature": "public.get_waitlist_offer_proposal_internal(bigint,bigint,integer)",
+      "source": "database/functions/eshop_waitlist/offers.sql"
+    },
+    "f33e7f70d228fc2c78ce86857a92b5277e050bd361ba7fab002a0941642e9b1c": {
+      "signature": "public.get_waitlist_offer_proposal(bigint)",
+      "source": "database/functions/eshop_waitlist/offers.sql"
+    },
+    "4f93de1cf9e1dd85a04a5331b06802322553da77debc76464aa926f20e30bf7c": {
+      "signature": "public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "7b5b2bfd7f6580364293294aa78c227bb82653e017258fb367e810bc963259df": {
+      "signature": "public.get_notification_center_timeline(bigint,bigint,bigint,timestamp with time zone,jsonb,jsonb,integer)",
+      "source": "database/functions/notification_center/temporal_feed.sql"
+    },
+    "7702a61f42af0939d742824049f484e3221920e0d35f12456e69f2df29d86777": {
+      "signature": "public.get_notification_center_timeline_group(bigint,bigint,bigint,timestamp with time zone,bigint,jsonb,jsonb,integer)",
+      "source": "database/functions/notification_center/temporal_feed.sql"
+    },
+    "a0e1125a38c1db6fd4422d26b07a668d93489f6029ca6e67cf3e343efc2ddffe": {
+      "signature": "public.get_notification_center_timeline_group_updates(bigint,bigint,bigint,timestamp with time zone,jsonb)",
+      "source": "database/functions/notification_center/temporal_feed.sql"
+    },
+    "bfb74f972b64977ab865f1e13f5795be9a125e9e61e2135773c490617cece6eb": {
+      "signature": "public.notification_center_order_selection(bigint,jsonb)",
+      "source": "database/functions/notification_center/order_selection.sql"
+    },
+    "001f9760bee8cd181f6f29fcdfe870613bfdefe5bd29b97767dde94330a8cf04": {
+      "signature": "public.get_notification_center_overview(bigint,bigint,bigint,jsonb,integer,text[])",
+      "source": "database/functions/notification_center/overview.sql"
+    },
+    "84ca8f4982de8611ba0171c9208a5673da34e8d021b1618d728b39475f15a8c6": {
+      "signature": "public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)",
+      "source": "database/functions/notification_center/daily_overview.sql"
+    },
+    "e50349da27c2a33954abe6376156240883d191b5973cd60fbdb35f568838c053": {
+      "signature": "public.mark_notification_center_item_read(bigint,jsonb)",
+      "source": "database/functions/notification_center/read_state.sql"
+    },
+    "6c310c682bd8ac642bb91460943b71b71389f9a073999306316db88bbd004f5c": {
+      "signature": "public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/others/save_occasion_client_sync_v1.sql"
+    },
+    "724609aca545e81e33088384984621dbfde626fd54c9e8b49a3e420757fdb81c": {
+      "signature": "public.check_email_template_scope_internal(text,bigint,bigint,bigint,boolean)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "d08671e569e7d02b416552c545f33c39983167b62e98c363218b9e019954934c": {
+      "signature": "public.get_email_template_catalog(text,bigint,bigint,bigint,text)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "bbf02d21b7ba4b3a5b43b88cfc9edb24c17a8f9a928b524ab730f4cd8699f375": {
+      "signature": "public.manage_email_template(text,bigint,bigint,bigint,text,text,text,jsonb,uuid)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "bfde5a6dad590d8581846365d2115bd4462bc295d1cb844f8d7ea8dd6061d84e": {
+      "signature": "public.get_email_banner(text,bigint,bigint,bigint)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "0a88af4df81e5314e4862c69dac8b662eb29803531251294657522d556a60d4d": {
+      "signature": "public.manage_email_banner(text,bigint,bigint,bigint,text,text,uuid)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "ad4d63ba75f7316c81634a254c7afd302e56bac0e5683f56df6486497abbea1f": {
+      "signature": "public.get_email_template_preview_context(text,bigint,bigint,bigint,text)",
+      "source": "database/functions/others/email_template_commands.sql"
+    },
+    "9600e27fde0e1ee34752893ac6392a1e93dd33d2a8f96d0fc74b29c334571252": {
+      "signature": "public.save_game_settings_command_internal_v1(bigint,timestamp with time zone,timestamp with time zone,uuid,bigint)",
+      "source": "database/functions/others/game_update_settings_client_sync_v1.sql"
+    },
+    "9590d021cafad7977fe61001cb10c4f8079328d307419e9e2bbbd08e1070c287": {
+      "signature": "public.game_update_settings_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,uuid)",
+      "source": "database/functions/others/game_update_settings_client_sync_v1.sql"
+    },
+    "4bad3cdcd5ab40aee2966e91fa71efb6e49496a3fcddb5bba999da51ac443729": {
+      "signature": "public.game_update_settings_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,uuid,bigint)",
+      "source": "database/functions/others/game_update_settings_client_sync_v1.sql"
+    },
+    "f9178d77e6e3c53c73216aa844f01a36fcf3c120abd032b9561ffdfd050a1e4b": {
+      "signature": "public.get_game_settings_for_authoring_v1(bigint)",
+      "source": "database/functions/others/game_update_settings_client_sync_v1.sql"
+    },
+    "e78357f1bdd2465f1690a47e9a61d596baf5672819e7e3a7c6629a7ee4e1ecce": {
+      "signature": "public.get_configuration_settings(text,bigint,bigint,bigint)",
+      "source": "database/functions/others/configuration_authoring.sql"
+    },
+    "6c414ab35ef009717eebf8f4d2eb12cbb90dddb13eb3656d5d3037eec5624d17": {
+      "signature": "public.save_configuration_settings(text,bigint,bigint,bigint,bigint,uuid,jsonb)",
+      "source": "database/functions/others/configuration_authoring.sql"
+    },
+    "81b917c7878515290c50279caa266ddec733e660c05b33027232ccf71a3c0b46": {
+      "signature": "public.manage_occasion_public_link(bigint,bigint,bigint,uuid,bigint,text)",
+      "source": "database/functions/others/configuration_authoring.sql"
+    },
+    "ac033e5b9236c35792700c4a8178a3b04df11edecfff54ac690c876b9df99711": {
+      "signature": "public.manage_game_settings(bigint,bigint,bigint,uuid,bigint,timestamp with time zone,timestamp with time zone)",
+      "source": "database/functions/others/configuration_authoring.sql"
+    },
+    "b7c2f1c5e80e2877c221ca7c3ff05dc1600ddc8211786779eb25116da4b5d6c2": {
+      "signature": "public.register_service_fee_agreement(uuid,bigint,text,integer,timestamp with time zone,timestamp with time zone)",
+      "source": "database/functions/service_fees/source.sql"
+    },
+    "55cc22048397a5cbb077a8e07da4ee6080f90120235fd034714144cb86312a09": {
+      "signature": "public.end_service_fee_agreement(uuid,timestamp with time zone,text)",
+      "source": "database/functions/service_fees/source.sql"
+    },
+    "f80e084ce6595e8f1e4f1fcdbdd370c36bb95b3597ffbc197e30a5734e4e3ad2": {
+      "signature": "public.register_service_fee_acquisition(bigint,text,timestamp with time zone,text)",
+      "source": "database/functions/service_fees/source.sql"
+    },
+    "8bc90b501c9f31dd02010bc2dba57a6120772fdd288bdcda24e1eeab393492c7": {
+      "signature": "public.record_service_fee_settlement(jsonb)",
+      "source": "database/functions/service_fees/source.sql"
+    },
+    "05f7651ea7c019e655705e2dabc3c47bb7235ea670730fb8f8c874fbda05c452": {
+      "signature": "public.export_wix_service_fee_receipts(bigint,text)",
+      "source": "database/functions/service_fees/source.sql"
+    },
+    "662bdd4086d116c9ad45f2e9603d100a7f9ae8badb4a8ef18db1009eab6c3d8d": {
+      "signature": "public.get_occasion_media_job(uuid)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "64d8adf8dcfbf65aad4ee73e8cb2673c01f875b869c11e4a7de2deaac9fb50c0": {
+      "signature": "public.start_occasion_lifecycle(bigint,bigint,bigint,text,uuid,bigint,text)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "a57c8c37edebc9b6a93d93a009e5ccb0276e5b968fd68243197fa93e7c686d91": {
+      "signature": "public.record_occasion_media_step(uuid,integer)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "b7206ed72202598db9f05466880efe99bb7511b87b5fb1d4ade68205e58f9f72": {
+      "signature": "public.finish_occasion_media_job(uuid)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "1abdb20f318b09af5d6f109125c7e37f25b3619ac72a17f2c95517ab891162c7": {
+      "signature": "public.get_pending_occasion_media_jobs(bigint,bigint,integer)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "ce729e779dda1fcb102b34e2efc893a51b75f0a20f20baf12d3f94a4bec4e2af": {
+      "signature": "public.manage_occasion_setup_authoring(bigint,bigint,uuid,bigint,uuid,jsonb)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "d7dd48e6b8134940a5eb297030a967aaaf2a517171c250819688db18ab4576be": {
+      "signature": "public.check_lifecycle_source_scope(bigint,bigint,bigint)",
+      "source": "database/functions/authoring/lifecycle.sql"
+    },
+    "017aaa60c39aaa9410f79b281079e384e2c6fe07c2ffbc7dd2dd25a83ec7a389": {
+      "signature": "public.get_authoring_history(bigint,bigint,bigint,text,jsonb)",
+      "source": "database/functions/authoring/history.sql"
+    },
+    "d257aa2df53bb82fefed4c720a5391cc461846731cb8b9c5b33a02f338a31429": {
+      "signature": "public.manage_scanner_authoring(bigint,bigint,bigint,text,jsonb)",
+      "source": "database/functions/authoring/scanner.sql"
+    },
+    "64108f6ca7c69389121fcfc1d81f21a250ee09cbfb97ba4690c60398ddd02edf": {
+      "signature": "public.require_program_domain_internal_v1(bigint,text,boolean)",
+      "source": "database/functions/authoring/program.sql"
+    },
+    "ee4fcb0bfafbd6d95038e6e56f89bff1da0787910e4e43397e9da71b42b16a48": {
+      "signature": "public.manage_program_authoring(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/authoring/program.sql"
+    },
+    "1b3a1009003c7abc42b180831160765d629ec23db1ad433d14387311ad6aca78": {
+      "signature": "public.manage_unit_agenda(bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/authoring/agenda.sql"
+    },
+    "420f348f56dff917ffafbba98983323e21e8a773438c99c9d91123c9207967d1": {
+      "signature": "public.delete_unit_client_sync_v1(bigint,uuid,bigint)",
+      "source": "database/functions/authoring/agenda.sql"
+    },
+    "dd09709260b63af0ba180f75bdc7c0e22702018a9f2582102cc49628b64c478f": {
+      "signature": "public.get_delegated_order_deletion_context(bigint,bigint,bigint,bigint,uuid,text)",
+      "source": "database/functions/authoring/order_deletion.sql"
+    },
+    "3e611424804ae33940dea8a6f6710747c3eb8ee77147514ba81ec0f173ad1cce": {
+      "signature": "public.delete_delegated_order_client_sync_v1(bigint,bigint,bigint,bigint,uuid,text)",
+      "source": "database/functions/authoring/order_deletion.sql"
+    },
+    "65329a9796b8eb655b0974e44bf01f3ba9272029c858004a6dc024c1593d2bf0": {
+      "signature": "public.delete_order_history_client_sync_v1(bigint,uuid,bigint,bigint,bigint,bigint)",
+      "source": "database/functions/authoring/order_deletion.sql"
+    },
+    "896fe9a392bdad9f9d6d323fc37fcba28f8fb418cbd42e9bbe1c34c6155d7a82": {
+      "signature": "public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/authoring/finance.sql"
+    },
+    "bb08a8855570e6f72a28977b7e2d397704fc05cc514ebbb00aa7121208aabd2f": {
+      "signature": "public.begin_delegated_bank_sync_operation(uuid,bigint,text,text,bigint,bigint)",
+      "source": "database/functions/authoring/finance.sql"
+    },
+    "8c45a124a3c6f7afb02b351cdba2826f6aa1b8bfb070c9b98d8637f9f6d4a95d": {
+      "signature": "public.manage_card_refund_authoring(bigint,bigint,bigint,bigint,jsonb,uuid)",
+      "source": "database/functions/authoring/finance.sql"
+    },
+    "ec1cec526df33e1b52429c74a15c47acecec7fd7183798c0de56a9d27e22b115": {
+      "signature": "public.set_stripe_unit_paused_client_sync_v1(bigint,boolean,boolean,uuid)",
+      "source": "database/functions/authoring/finance.sql"
+    },
+    "b2b077aa676503513dadaaa50cf3f6ea81f70f71079bde91efddd78e08cc324d": {
+      "signature": "public.begin_stripe_disconnect_client_sync_v1(bigint,boolean,uuid,uuid)",
+      "source": "database/functions/authoring/finance.sql"
+    },
+    "f5da6fb95af56cd317a137ae15a4b7f606c7d534c381c046491ead4d1cf93878": {
+      "signature": "public.authorize_authoring_export(bigint,bigint,bigint,text,jsonb)",
+      "source": "database/functions/authoring/exports.sql"
+    },
+    "93b85eb12ac3fef62ef3e744847bf9da55dc48ddcffdfb5dbca426381d6dee2f": {
+      "signature": "public.get_authoring_export_page(bigint,bigint,bigint,text,jsonb,text,integer)",
+      "source": "database/functions/authoring/exports.sql"
+    },
+    "689529addab75a3c89cefe4beb8f4d37db70ce08abef366055f491daebf6f9c2": {
+      "signature": "public.manage_blueprint_authoring(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/authoring/blueprints.sql"
+    },
+    "06c3d4c64ac9ed659f16db7738ccb31f2b3d90b2aabefe9f78ae881c2e9a1a7f": {
+      "signature": "public.save_delegated_ticket_layout(bigint,bigint,bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/authoring/blueprints.sql"
+    },
+    "e1ec574792d329cce0d47149942fdb1f1f2f3817ff55dd7043ae96c87283518b": {
+      "signature": "public.check_delegated_render_scope(bigint,bigint,bigint,boolean)",
+      "source": "database/functions/authoring/blueprints.sql"
+    },
+    "c4d46ae128472a7764195e988368dac7db8c1640dd1bc68146d18845625a777b": {
+      "signature": "public.register_delegated_blueprint_text_resources(bigint,bigint,bigint,uuid,jsonb)",
+      "source": "database/functions/authoring/blueprints.sql"
+    },
+    "cd7a65a69591edc94a6b447333539c0fb47e43b7a9c352f858b88b654ac62f79": {
+      "signature": "public.update_unit_user_internal_v1(jsonb)",
+      "source": "database/functions/users/update_unit_user.sql"
+    },
+    "9841925b42dc4a4e2a98be309b8e8b82eff51dbfc1c7edad12323ac08fe08c83": {
+      "signature": "public.publish_unit_user_access_change_internal_v1(uuid,bigint,uuid)",
+      "source": "database/functions/people/access_fanout.sql"
+    },
+    "a3c37355e7e1ef9055d3c9604f65b6e7738d397d1e41263d61072c2d6129d6d5": {
+      "signature": "public.prepare_profile_change_internal_v1(jsonb,jsonb)",
+      "source": "database/functions/people/profile_changes.sql"
+    },
+    "44bb67815e70777c0217f3e966d3446df628f69919310d8d14c1bcdb3ed08afd": {
+      "signature": "public.lock_people_scope_internal_v1(bigint,bigint,bigint)",
+      "source": "database/functions/people/scope.sql"
+    },
+    "37fbab288de97bf6649a99915f2f62c2ab0cf747fbc73a50e55e458d5735a72e": {
+      "signature": "public.manage_people(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/people/authoring.sql"
+    },
+    "e17b8becc70687eae98f4d14d3b0add1778ba95cecac391f6bed45863eff0d8e": {
+      "signature": "public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/people/unit_user_command.sql"
+    },
+    "56d3f8a55d4237e6888cca3711202c926290a06585618e06dfdccd7b243f5869": {
+      "signature": "public.update_unit_user(jsonb)",
+      "source": "database/functions/people/unit_user_command.sql"
+    },
+    "699f5da4d575e1bf50fab912da0d360573a98d86c2215cc4a22efdb11854648d": {
+      "signature": "public.get_form_payment_options(bigint,bigint,bigint,bigint,boolean)",
+      "source": "database/functions/eshop_forms/form_payment_options.sql"
+    },
+    "1a337a578059a9cefd3f7f13114878ab5cc11dfa08e8bfda6b428434df0778d8": {
+      "signature": "public.manage_form(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/eshop_forms/admin_form_commands.sql"
+    },
+    "53eb13f149a2f42407cf1e7139323b9befd2b1a614b5b1ce8f967bdb35e6486a": {
+      "signature": "public.preview_admin_waitlist_acceptance(jsonb,jsonb,uuid)",
+      "source": "database/functions/eshop_forms/admin_waitlist_acceptance.sql"
+    },
+    "a91180beb38bba580c9a09b641396c8d0021807a06a76dbbdf2ce0fd5809dabd": {
+      "signature": "public.get_form_catalog_page(bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/eshop_forms/admin_form_reads.sql"
+    },
+    "b902619c68cd0b9ffb43a7fd02bd2fecdf08e29facc66b0b20aa0ac9c4334c37": {
+      "signature": "public.get_form_for_authoring(bigint,bigint,bigint,bigint)",
+      "source": "database/functions/eshop_forms/admin_form_reads.sql"
+    },
+    "1091da3eccfe9d87e302cbf9b16b462908ff2791d64bdf9d3153bcbd1eb8ca38": {
+      "signature": "public.get_form_public_link(bigint,bigint,bigint,bigint)",
+      "source": "database/functions/eshop_forms/admin_form_reads.sql"
+    },
+    "917fd6a14742406e5520ebf8c2a4a9cc6424be25f8d407935603b64df98b98c4": {
+      "signature": "public.get_form_editor_bundle_internal(bigint,boolean)",
+      "source": "database/functions/eshop_forms/get_form_for_edit.sql"
+    },
+    "df0b0ec69e5adad29ce399ba12059d3e8a6f5f587b52b1c0d4f2d0bd0da45d67": {
+      "signature": "public.get_form_for_edit(text)",
+      "source": "database/functions/eshop_forms/get_form_for_edit.sql"
+    },
+    "28b3de2af877472d228dbe8bb6a04989952c2f5e7ad31f9eaa32ea81ab11c719": {
+      "signature": "public.get_form_waitlist_context(bigint,bigint,bigint,bigint,text,jsonb)",
+      "source": "database/functions/eshop_forms/admin_form_waitlist.sql"
+    },
+    "bd7d570754313e8117610db43cfd54c5ac58c590cc99e402cc0cf82d81270dc9": {
+      "signature": "public.execute_admin_waitlist_command_client_sync_v1(jsonb,text,jsonb,uuid,uuid,uuid,jsonb)",
+      "source": "database/functions/eshop_forms/admin_form_waitlist.sql"
+    },
+    "a753c9dd26bd92a38e5278f0dd92e83d78919309eb9a161cc1be5cb195627aaf": {
+      "signature": "public.preview_admin_form_order(bigint,bigint,bigint,bigint,jsonb)",
+      "source": "database/functions/eshop_forms/admin_form_orders.sql"
+    },
+    "9e1f4f756d3bd48e85f462abdae2a38422f9ebee88b3b64712ce99cfa29e078c": {
+      "signature": "public.create_admin_form_order(bigint,bigint,bigint,bigint,jsonb,text,uuid,uuid,uuid)",
+      "source": "database/functions/eshop_forms/admin_form_orders.sql"
+    },
+    "03c01b240f99395d02ffbc905f16521c80abc02a1ce576bf279778df8e305451": {
+      "signature": "public.can_edit_ticket_layout_as_actor_internal_v1(uuid,bigint)",
+      "source": "database/functions/user_permissions/ticket_layout.sql"
+    },
+    "a5c57836a546f1991fe0782c89c61437e65737ae4edc05d549e34cdf93ee7a5a": {
+      "signature": "public.can_edit_game_settings(bigint)",
+      "source": "database/functions/user_permissions/game_settings.sql"
+    },
+    "67e16629a4e5266cca65935311007a95bb64a2e5842f20618164b799fcf218ca": {
+      "signature": "public.can_write_blueprints_as_actor_internal_v1(uuid,bigint)",
+      "source": "database/functions/user_permissions/blueprint_authoring.sql"
+    },
+    "542cb8af29eebe64b453724827670916cf455a85445a452a5b651cb6a30bd02c": {
+      "signature": "public.get_event_feedback_export_page_internal_v1(bigint,bigint,integer)",
+      "source": "database/functions/events/get_event_feedback_export_for_edit.sql"
+    },
+    "2b79243a700d41fb9c8822fa70241fe3b7fa6752ee6a9f2b81bb705084f36f54": {
+      "signature": "public.get_event_feedback_export_for_edit(bigint)",
+      "source": "database/functions/events/get_event_feedback_export_for_edit.sql"
+    },
+    "a6ab1b282100f58cf49428adf8658b9e45d8bc86f4c9d35deb2094dfb6d76751": {
+      "signature": "public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb)",
+      "source": "database/functions/eshop/confirm_blueprint_order_change.sql"
+    },
+    "e2404da37c8453df24816e6a39362001374630bf49bcdf6ea9ce7f240258814b": {
+      "signature": "public.release_blueprint_holds_client_sync_v1(bigint[],uuid)",
+      "source": "database/functions/eshop/release_blueprint_holds_client_sync_v1.sql"
+    },
+    "ef00d0abb5a7d5b4e5765328a4629a515d47231ef0275b9fea7c12604fb6682e": {
+      "signature": "public.preview_blueprint_seat_swap(bigint,bigint,bigint,bigint,bigint,bigint,boolean)",
+      "source": "database/functions/blueprint/seat_swap.sql"
+    },
+    "8ba35a5dcbf2501bc59a0144b44cb45cc28b9e01e90012e2e5d6a1ba554bb137": {
+      "signature": "public.swap_blueprint_seats(bigint,bigint,bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,text,uuid,boolean)",
+      "source": "database/functions/blueprint/seat_swap.sql"
+    },
+    "dee8294b27b3fd374cd8ee83f30107306309bb69af1f6bb253b7476580aac31d": {
+      "signature": "public.can_prepare_layout_resources_as_actor_internal_v1(uuid,bigint)",
+      "source": "database/functions/blueprint/resource_admission.sql"
+    },
+    "8c1002e3ab608d6a81030332a6d2561092af2f301a85668704e1de05500a6403": {
+      "signature": "public.swap_spot_tickets_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/blueprint/swap_spot_tickets_client_sync_v1.sql"
+    },
+    "8340da09b2883ddb1d0e2182f77c4f1c58773ff4ab11dac5f456a5e966e6c84b": {
+      "signature": "public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])",
+      "source": "database/functions/blueprint/ticket_cancellation.sql"
+    },
+    "39094cec7c69f539f04f16df8ce75075be44b54f7b982feb9ce362115abfebf3": {
+      "signature": "public.cancel_blueprint_tickets(bigint,bigint,bigint,bigint,bigint[],bigint[],text,uuid,boolean)",
+      "source": "database/functions/blueprint/ticket_cancellation.sql"
+    },
+    "94267e4411bd7ae8b194d440b17dc05edb12c7acaa8a716417b5e9f4d31254eb": {
+      "signature": "public.preview_blueprint_hold_release(bigint,bigint,bigint,bigint[],boolean)",
+      "source": "database/functions/blueprint/hold_release.sql"
+    },
+    "7298611ef9859ab701e6e5e43b6868185f22f63c57b488d5c716cfd1f77072d2": {
+      "signature": "public.release_blueprint_holds(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,text,uuid,boolean)",
+      "source": "database/functions/blueprint/hold_release.sql"
+    },
+    "9552612d776c01e22caf81fd1c641cbf2b3a4fb21984d57726473e919a8aafd1": {
+      "signature": "public.preview_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,boolean)",
+      "source": "database/functions/blueprint/seat_orders.sql"
+    },
+    "14b25c7deb8775357296859bbcd97c21638b450fc259123e7815bac1d3834dad": {
+      "signature": "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)",
+      "source": "database/functions/blueprint/seat_orders.sql"
     }
   }
 }

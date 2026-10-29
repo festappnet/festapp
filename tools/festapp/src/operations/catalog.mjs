@@ -20,7 +20,7 @@ import { inventoryDescriptors, inventoryDataSchemas, invokeInventoryOperation } 
 import { productScheduleDescriptors, productScheduleDataSchemas, invokeProductScheduleOperation } from './product-schedules.mjs';
 import { productDescriptors, productDataSchemas, invokeProductOperation } from './products.mjs';
 import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
-import { publicOrderPage, publicOrderSearch, publicOrders } from './public-orders.mjs';
+import { publicOrderPage, publicOrderSearch } from './public-orders.mjs';
 import { operatorAccess, accessProjection } from './access.mjs';
 import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
@@ -493,8 +493,8 @@ export class Operations {
                         pdf: { uri, mimeType: 'application/pdf' },
                     };
                 }
-                check(dataSchemas[id].safeParse(data).success);
-                if (this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id)) data = publicOrders(data, args);
+                const schema = this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id) ? publicOrderPage : dataSchemas[id];
+                check(schema.safeParse(data).success);
                 if (this.owner.orderSummaryOnly && id === 'context.inspect') {
                     const { userId, ...publicContext } = data;
                     data = publicContext;
