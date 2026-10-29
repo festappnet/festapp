@@ -14,6 +14,7 @@ import 'package:fstapp/services/auth_session_storage.dart';
 import 'dart:async';
 
 import 'widgets/synced_adaptive_theme.dart';
+import 'widgets/synced_locale.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/config/url_strategy_noop.dart'
     if (dart.library.html) 'package:fstapp/config/url_strategy_web.dart';
@@ -98,7 +99,7 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
             .first,
         useOnlyLangCode: true,
         saveLocale: true,
-        child: MyApp(initialRoute: initialRoute),
+        child: SyncedLocale(child: MyApp(initialRoute: initialRoute)),
       ),
     ),
   );
@@ -339,6 +340,7 @@ Future<void> initializeEverything() async {
 
   WebBootstrapBridge.markStartupPhase('S08');
   try {
+    await prepareSharedLocale();
     await EasyLocalization.ensureInitialized();
     AppLogger.debug('EasyLocalization initialized');
   } catch (e) {
