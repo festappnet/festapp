@@ -2577,5 +2577,13 @@
     "noMatches": "Keine passenden Veranstaltungen.",
     "clearSearch": "Suche löschen",
     "createEvent": "Neue Veranstaltung erstellen"
+  },
+  "AppearanceColors": {
+    "gradient": "Zweifarbiger Verlauf",
+    "hint": "Aktivieren Sie den Verlauf, um eine zweite Farbe hinzuzufügen. Beim Ausschalten bleibt die zweite Farbe gespeichert.",
+    "theme": "Themenfarbe",
+    "first": "Erste Farbe",
+    "second": "Zweite Farbe",
+    "done": "Fertig"
   }
 }

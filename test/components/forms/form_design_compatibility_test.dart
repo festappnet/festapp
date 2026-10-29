@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
+import 'package:fstapp/components/_shared/appearance_color_strings.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/form_design_settings.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart';
@@ -96,7 +97,7 @@ void main() {
       expect(appearance['gradient'], true);
       final toggle = find.widgetWithText(
         SwitchListTile,
-        FormStrings.appearanceLabel('two_color_gradient'),
+        AppearanceColorStrings.gradient,
       );
       await tester.ensureVisible(toggle);
       await tester.tap(toggle);
@@ -107,21 +108,11 @@ void main() {
         'solid',
       );
       expect(form.definition.secondaryColor, 0xffa87f28);
-      expect(
-        find.text(FormStrings.appearanceLabel('secondary_color')),
-        findsNothing,
-      );
+      expect(find.text(AppearanceColorStrings.second), findsNothing);
       Future<void> pick(String label, String hex) async {
-        final row = find.ancestor(
-          of: find.text(label),
-          matching: find.byType(Row),
-        );
-        final control = find.descendant(
-          of: row.first,
-          matching: find.byType(GestureDetector),
-        );
-        await tester.ensureVisible(control.first);
-        await tester.tap(control.first);
+        final control = find.widgetWithText(OutlinedButton, label);
+        await tester.ensureVisible(control);
+        await tester.tap(control);
         await tester.pumpAndSettle();
         await tester.enterText(
           find.widgetWithText(TextField, FormStrings.hexCodeLabel),
@@ -131,7 +122,7 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      await pick(FormStrings.primaryColor, '#216445');
+      await pick(AppearanceColorStrings.theme, '#216445');
       expect(form.definition.primaryColor, 0xff216445);
       expect(form.definition.secondaryColor, 0xffa87f28);
 
@@ -144,11 +135,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(form.definition.backgroundMode, 'gradient');
       expect(form.definition.secondaryColor, 0xffa87f28);
-      expect(
-        find.text(FormStrings.appearanceLabel('secondary_color')),
-        findsOneWidget,
-      );
-      await pick(FormStrings.appearanceLabel('secondary_color'), '#146475');
+      expect(find.text(AppearanceColorStrings.second), findsOneWidget);
+      await pick(AppearanceColorStrings.second, '#146475');
       expect(form.definition.secondaryColor, 0xff146475);
       draft['formDraft'] = form.definition.toJson();
       final gradient = OccasionSetupAppearance.read(draft);

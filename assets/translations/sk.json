@@ -2604,5 +2604,13 @@
     "noMatches": "Žiadne zodpovedajúce akcie.",
     "clearSearch": "Vymazať hľadanie",
     "createEvent": "Založiť novú akciu"
+  },
+  "AppearanceColors": {
+    "gradient": "Dvojfarebný prechod",
+    "hint": "Zapnite prechod a pridajte druhú farbu. Pri vypnutí sa druhá farba zachová.",
+    "theme": "Tematická farba",
+    "first": "Prvá farba",
+    "second": "Druhá farba",
+    "done": "Hotovo"
   }
 }

@@ -4607,5 +4607,13 @@
     "otherEvents": "Další dostupné akce",
     "noMatches": "Žádné odpovídající akce.",
     "clearSearch": "Vymazat hledání"
+  },
+  "AppearanceColors": {
+    "gradient": "Dvoubarevný přechod",
+    "hint": "Zapněte přechod a přidejte druhou barvu. Při vypnutí se druhá barva zachová.",
+    "theme": "Tematická barva",
+    "first": "První barva",
+    "second": "Druhá barva",
+    "done": "Hotovo"
   }
 }

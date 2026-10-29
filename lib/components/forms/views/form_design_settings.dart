@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/appearance_color_controls.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -334,67 +335,78 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           Text(FormStrings.customColors,
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          _buildColorPickerRow(
-              FormStrings.primaryColor,
-              widget.form.definition.primaryColor != null
-                  ? Color(widget.form.definition.primaryColor!)
-                  : Colors.blue, (color) {
-            setState(() {
-              widget.form.definition =
-                  widget.form.definition.withPrimaryColor(color.value);
-              widget.onChanged();
-            });
-          },
-              () => setState(() {
-                    widget.form.definition =
-                        widget.form.definition.withPrimaryColor(null);
-                    widget.onChanged();
-                  }),
-              widget.form.definition.primaryColor != null),
-          const SizedBox(height: 24),
-          SwitchListTile(
-            title: Text(FormStrings.appearanceLabel('two_color_gradient')),
-            value: widget.form.definition.backgroundMode == 'gradient',
-            onChanged: widget.enabled
-                ? (value) {
-                    setState(() {
-                      var definition = widget.form.definition;
-                      if (value) {
-                        final primary = definition.primaryColor ?? 0xff2196f3;
-                        definition = definition
-                            .withPrimaryColor(primary)
-                            .withSecondaryColor(
-                              definition.secondaryColor ?? primary,
-                            );
-                      }
-                      widget.form.definition = definition.withBackgroundMode(
-                        value ? 'gradient' : 'solid',
-                      );
-                      widget.onChanged();
-                    });
-                  }
-                : null,
-          ),
-          if (widget.form.definition.backgroundMode == 'gradient')
-            _buildColorPickerRow(
-              FormStrings.appearanceLabel('secondary_color'),
-              Color(
-                widget.form.definition.secondaryColor ??
-                    widget.form.definition.primaryColor ??
-                    0xff2196f3,
-              ),
-              (color) => setState(() {
-                widget.form.definition = widget.form.definition
-                    .withSecondaryColor(color.toARGB32());
-                widget.onChanged();
-              }),
-              () => setState(() {
-                widget.form.definition = widget.form.definition
-                    .withSecondaryColor(null);
-                widget.onChanged();
-              }),
-              widget.form.definition.secondaryColor != null,
+          AppearanceColorControls(
+            gradient: widget.form.definition.backgroundMode == 'gradient',
+            primaryColor: Color(
+              widget.form.definition.primaryColor ?? 0xff2196f3,
             ),
+            secondaryColor: Color(
+              widget.form.definition.secondaryColor ??
+                  widget.form.definition.primaryColor ??
+                  0xff2196f3,
+            ),
+            onGradientChanged: widget.enabled
+                ? (value) => setState(() {
+                    var definition = widget.form.definition;
+                    if (value) {
+                      final primary = definition.primaryColor ?? 0xff2196f3;
+                      definition = definition
+                          .withPrimaryColor(primary)
+                          .withSecondaryColor(
+                            definition.secondaryColor ?? primary,
+                          );
+                    }
+                    widget.form.definition = definition.withBackgroundMode(
+                      value ? 'gradient' : 'solid',
+                    );
+                    widget.onChanged();
+                  })
+                : null,
+            onPrimaryPressed: widget.enabled
+                ? () => _pickColor(
+                    context,
+                    Color(widget.form.definition.primaryColor ?? 0xff2196f3),
+                    (color) => setState(() {
+                      widget.form.definition = widget.form.definition
+                          .withPrimaryColor(color.toARGB32());
+                      widget.onChanged();
+                    }),
+                  )
+                : null,
+            onSecondaryPressed: widget.enabled
+                ? () => _pickColor(
+                    context,
+                    Color(
+                      widget.form.definition.secondaryColor ??
+                          widget.form.definition.primaryColor ??
+                          0xff2196f3,
+                    ),
+                    (color) => setState(() {
+                      widget.form.definition = widget.form.definition
+                          .withSecondaryColor(color.toARGB32());
+                      widget.onChanged();
+                    }),
+                  )
+                : null,
+            onPrimaryReset:
+                widget.enabled && widget.form.definition.primaryColor != null
+                ? () => setState(() {
+                    widget.form.definition = widget.form.definition
+                        .withPrimaryColor(null);
+                    widget.onChanged();
+                  })
+                : null,
+            onSecondaryReset:
+                widget.enabled && widget.form.definition.secondaryColor != null
+                ? () => setState(() {
+                    widget.form.definition = widget.form.definition
+                        .withSecondaryColor(null);
+                    widget.onChanged();
+                  })
+                : null,
+            resetLabel: FormStrings.resetToDefault,
+          ),
+          const SizedBox(height: 24),
           const Divider(),
           const SizedBox(height: 24),
           Text(FormStrings.typography,
@@ -442,36 +454,4 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
     );
   }
 
-  Widget _buildColorPickerRow(String label, Color color,
-      Function(Color) onColorChanged, VoidCallback onClear, bool isSet) {
-    return Row(
-      children: [
-        Expanded(child: Text(label)),
-        GestureDetector(
-          onTap: widget.enabled
-              ? () => _pickColor(context, color, onColorChanged)
-              : null,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.withOpacity(0.5)),
-              boxShadow: const [
-                BoxShadow(blurRadius: 2, color: Colors.black26)
-              ],
-            ),
-            child: const Icon(Icons.edit, size: 20, color: Colors.white54),
-          ),
-        ),
-        if (isSet)
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: FormStrings.resetToDefault,
-            onPressed: widget.enabled ? onClear : null,
-          ),
-      ],
-    );
-  }
 }

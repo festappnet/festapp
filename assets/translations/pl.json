@@ -2579,5 +2579,13 @@
     "noMatches": "Brak pasujących wydarzeń.",
     "clearSearch": "Wyczyść wyszukiwanie",
     "createEvent": "Utwórz nowe wydarzenie"
+  },
+  "AppearanceColors": {
+    "gradient": "Gradient dwukolorowy",
+    "hint": "Włącz gradient, aby dodać drugi kolor. Po wyłączeniu drugi kolor pozostanie zapisany.",
+    "theme": "Kolor motywu",
+    "first": "Pierwszy kolor",
+    "second": "Drugi kolor",
+    "done": "Gotowe"
   }
 }

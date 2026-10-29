@@ -81,7 +81,11 @@ void main() {
         );
         final dropdown = find.byType(DropdownButtonFormField<String>);
         expect(dropdown.hitTestable(), findsOneWidget);
-        expect(find.byType(SwitchListTile).hitTestable(), findsNothing);
+        expect(find.byType(SwitchListTile), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('appearance-color-primary')),
+          findsOneWidget,
+        );
         expect(
           tester.widget<Text>(find.text('Čistý')).style?.fontFamily,
           'Roboto-runtime-alias',

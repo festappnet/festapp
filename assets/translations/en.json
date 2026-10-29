@@ -4605,5 +4605,13 @@
     "otherEvents": "Other accessible events",
     "noMatches": "No matching events.",
     "clearSearch": "Clear search"
+  },
+  "AppearanceColors": {
+    "gradient": "Two-color gradient",
+    "hint": "Turn on the gradient to add a second color. Turning it off keeps your second color saved.",
+    "theme": "Theme color",
+    "first": "First color",
+    "second": "Second color",
+    "done": "Done"
   }
 }
