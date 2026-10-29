@@ -47,6 +47,7 @@ outputs = {
 }
 if args.loading_style == 'vstupenky-outline':
     brand = root / 'assets/brand/vstupenky-online'
+    outputs['web_client/public/brand-wordmark-stacked.svg'] = (brand / 'vstupenky-online-wordmark-dark.svg').read_bytes()
     wordmark = ET.parse(brand / 'vstupenky-online-wordmark-dark.svg').getroot()
     wordmark.set('viewBox', '65 580 1320 200')
     wordmark.set('width', '1320')
@@ -59,6 +60,7 @@ if args.loading_style == 'vstupenky-outline':
     outputs['web_client/public/brand-wordmark.svg'] = ET.tostring(wordmark)
     outputs['web_client/public/brand-symbol.svg'] = (brand / 'vstupenky-online-symbol-dark.svg').read_bytes()
 else:
+    outputs['web_client/public/brand-wordmark-stacked.svg'] = dark
     outputs['web_client/public/brand-wordmark.svg'] = dark
     outputs['web_client/public/brand-symbol.svg'] = dark
 for name in ('favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',

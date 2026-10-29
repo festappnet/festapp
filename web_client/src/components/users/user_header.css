@@ -41,33 +41,28 @@ user-header.header-hidden {
 }
 /* Removed .logo img as we apply class directly to img now or verify structure */
 .header-ticket-brand {
-    container: ticket-brand / inline-size;
-    flex: 1 1 312px;
+    flex: 0 0 auto;
     min-width: 64px;
-    max-width: 312px;
     min-height: 44px;
     display: flex;
     align-items: center;
 }
 .header-brand-lockup { display: flex; align-items: center; gap: 12px; }
 .header-brand-symbol { display: block; width: 64px; height: 44px; object-fit: contain; flex-shrink: 0; }
+.header-brand-lettering { display: none; }
 .header-ticket-brand .header-brand-wordmark {
-    display: none;
-    width: 220px;
+    display: block;
+    width: 132px;
     max-width: 100%;
-    height: auto;
+    height: 48px;
 }
-@container ticket-brand (min-width: 220px) {
-    .header-brand-symbol { display: none; }
-    .header-ticket-brand .header-brand-wordmark { display: block; }
+@media (min-width: 601px) {
+    .header-brand-lettering { display: block; }
 }
-@container ticket-brand (min-width: 300px) {
-    .header-brand-symbol { display: block; }
-}
-@supports not (container-type: inline-size) {
-    @media (min-width: 901px) {
-        .header-ticket-brand .header-brand-wordmark { display: block; }
-        .header-brand-symbol { display: none; }
+@media (min-width: 1101px) {
+    .header-ticket-brand .header-brand-wordmark {
+        width: 220px;
+        height: auto;
     }
 }
 

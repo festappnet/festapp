@@ -171,7 +171,13 @@ export class UserHeader extends HTMLElement {
             logo.classList.add('header-brand-wordmark');
             logo.width = 240;
             logo.height = 28;
-            brand.append(symbol, logo);
+            const wordmark = document.createElement('picture');
+            wordmark.className = 'header-brand-lettering';
+            const stacked = document.createElement('source');
+            stacked.media = '(max-width: 1100px)';
+            stacked.srcset = '/brand-wordmark-stacked.svg';
+            wordmark.append(stacked, logo);
+            brand.append(symbol, wordmark);
             homeLink.appendChild(brand);
         } else {
             homeLink.appendChild(logo);

@@ -52,6 +52,9 @@ test('create-event invitation respects the tenant and explicit registration perm
         if (ticketBrand) {
             assert.equal(symbol.alt, '');
             assert.equal(header.querySelector('.header-ticket-brand').getAttribute('aria-label'), AppConfig.appName);
+            const stacked = header.querySelector('.header-brand-lettering source');
+            assert.equal(stacked.getAttribute('srcset'), '/brand-wordmark-stacked.svg');
+            assert.equal(stacked.media, '(max-width: 1100px)');
         }
         assert.equal(header.querySelector('.header-logo')?.alt, AppConfig.appName);
         const button = header.querySelector('.btn-add-event');
