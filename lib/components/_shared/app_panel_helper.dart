@@ -582,7 +582,7 @@ class AppPanelHelper {
               // Add padding to space it from the screen edge and from the breadcrumbs
               padding:
                   EdgeInsets.fromLTRB(16, compact ? 6 : 8, 24, compact ? 6 : 8),
-              child: LogoWidget(height: 40, forceDark: true),
+              child: LogoWidget(height: 40, forceDark: true, symbolOnly: true),
             ),
           ),
           // Breadcrumbs take up the remaining space
@@ -639,7 +639,7 @@ class AppPanelHelper {
             //   await RouterService.navigateToUnitAdmin(context, currentUnit);
             // }
           },
-          child: LogoWidget(height: 40, forceDark: true),
+          child: LogoWidget(height: 40, forceDark: true, symbolOnly: true),
         ),
       ),
       title: ValueListenableBuilder<OccasionLinkModel?>(
