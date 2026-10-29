@@ -8,6 +8,11 @@ class OccasionSetupStrings {
   static String copyReference(String key, String title) =>
       'OccasionSetup.copy.$key'.tr(namedArgs: {'title': title});
   static String story(String key) => 'OccasionSetup.story.$key'.tr();
+  static String question(String key, {required bool hasTickets}) => story(
+    !hasTickets && const {'form', 'blueprint', 'pricing'}.contains(key)
+        ? '${key}RegistrationQuestion'
+        : '${key}Question',
+  );
   static String readiness(int percent) =>
       'OccasionSetup.story.readiness'.tr(namedArgs: {'percent': '$percent'});
   static String questionNumber(int current, int total) =>
