@@ -35,6 +35,8 @@ web_client/public/client-sync-config.json
 web_client/public/site.webmanifest
 web_client/public/robots.txt
 web_client/public/brand-logo.svg
+web_client/public/brand-symbol.svg
+web_client/public/brand-wordmark.svg
 web_client/public/favicon.ico
 web_client/public/favicon-16x16.png
 web_client/public/favicon-32x32.png

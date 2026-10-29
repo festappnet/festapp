@@ -45,7 +45,14 @@ test('create-event invitation respects the tenant and explicit registration perm
         header.render();
         assert.equal(document.querySelectorAll('h1').length, 1);
         assert.equal(header.querySelectorAll('.user-header-container').length, 1);
-        assert.equal(header.querySelector('.header-logo')?.getAttribute('src'), '/brand-logo.svg');
+        const ticketBrand = new URL(link).hostname === 'vstupenky.online';
+        assert.equal(header.querySelector('.header-logo')?.getAttribute('src'), ticketBrand ? '/brand-wordmark.svg' : '/brand-logo.svg');
+        const symbol = header.querySelector('.header-brand-symbol');
+        assert.equal(symbol?.getAttribute('src'), ticketBrand ? '/brand-symbol.svg' : undefined);
+        if (ticketBrand) {
+            assert.equal(symbol.alt, '');
+            assert.equal(header.querySelector('.header-ticket-brand').getAttribute('aria-label'), AppConfig.appName);
+        }
         assert.equal(header.querySelector('.header-logo')?.alt, AppConfig.appName);
         const button = header.querySelector('.btn-add-event');
         assert.equal(!!button, visible, `${link}, ${JSON.stringify(organization)}`);

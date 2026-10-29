@@ -4,6 +4,7 @@ import argparse
 import base64
 from pathlib import Path
 import struct
+import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 for flag in ('root', 'logo', 'dark-logo', 'loading-style'):
@@ -44,6 +45,22 @@ outputs = {
     'web_client/public/loading-animation.svg': dark_animation,
     'web_client/public/loading-animation-light.svg': animation,
 }
+if args.loading_style == 'vstupenky-outline':
+    brand = root / 'assets/brand/vstupenky-online'
+    wordmark = ET.parse(brand / 'vstupenky-online-wordmark-dark.svg').getroot()
+    wordmark.set('viewBox', '65 580 1320 200')
+    wordmark.set('width', '1320')
+    wordmark.set('height', '200')
+    domain = wordmark.find(".//*[@id='domain']")
+    if domain is None:
+        raise ValueError('The ticketing wordmark requires its domain lettering')
+    # Keep the original outlined lettering, aligned on one desktop baseline.
+    domain.set('transform', 'translate(610 -166)')
+    outputs['web_client/public/brand-wordmark.svg'] = ET.tostring(wordmark)
+    outputs['web_client/public/brand-symbol.svg'] = (brand / 'vstupenky-online-symbol-dark.svg').read_bytes()
+else:
+    outputs['web_client/public/brand-wordmark.svg'] = dark
+    outputs['web_client/public/brand-symbol.svg'] = dark
 for name in ('favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
              'android-chrome-192x192.png', 'android-chrome-512x512.png', 'apple-touch-icon.png'):
     source = root / args.icon_dir / name if args.icon_dir else root / 'web' / name

@@ -156,7 +156,26 @@ export class UserHeader extends HTMLElement {
         const homeLink = document.createElement('a');
         homeLink.href = '/';
         homeLink.className = 'header-home-link';
-        homeLink.appendChild(logo);
+        if (ticketBrand) {
+            homeLink.classList.add('header-ticket-brand');
+            homeLink.setAttribute('aria-label', AppConfig.appName);
+            const brand = document.createElement('span');
+            brand.className = 'header-brand-lockup';
+            const symbol = document.createElement('img');
+            symbol.className = 'header-brand-symbol';
+            symbol.src = '/brand-symbol.svg';
+            symbol.alt = '';
+            symbol.width = 64;
+            symbol.height = 44;
+            logo.src = '/brand-wordmark.svg';
+            logo.classList.add('header-brand-wordmark');
+            logo.width = 240;
+            logo.height = 28;
+            brand.append(symbol, logo);
+            homeLink.appendChild(brand);
+        } else {
+            homeLink.appendChild(logo);
+        }
         container.appendChild(homeLink);
 
         // SEO: Hidden H1
