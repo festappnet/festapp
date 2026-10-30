@@ -197,6 +197,10 @@ void main() {
     expect(find.text('Access denied'), findsNothing);
     expect(find.text('CURRENT CONTENT'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(tester.getSize(find.byType(CircularProgressIndicator)),
+        const Size(24, 24));
+    expect(tester.widget<CircularProgressIndicator>(
+        find.byType(CircularProgressIndicator)).strokeWidth, 2);
     gate.complete();
     await tester.pumpAndSettle();
     expect(find.text('CURRENT CONTENT'), findsOneWidget);

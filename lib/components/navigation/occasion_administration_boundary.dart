@@ -274,7 +274,17 @@ class _OccasionAdministrationBoundaryState
     );
     final loading =
         widget.loadingBuilder?.call(context) ??
-        const Scaffold(body: SizedBox.expand());
+        Scaffold(
+          body: Center(
+            child: SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                semanticsLabel: CommonStrings.loading,
+              ),
+            ),
+          ),
+        );
     if (!_ready)
       return _loading
           ? loading
