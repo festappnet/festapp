@@ -1,10 +1,11 @@
+import { formatDisplayNumber } from './numberFormatting.ts';
 export function formatCurrency(amount: number, currencyCode = "CZK", decimalDigits = 0) {
-  return new Intl.NumberFormat("cs-CZ", {
+  return formatDisplayNumber(amount, "cs-CZ", {
     style: "currency",
     currency: currencyCode,
     minimumFractionDigits: decimalDigits,
     maximumFractionDigits: decimalDigits,
-  }).format(amount);
+  });
 }
 
 export function formatDatetime(

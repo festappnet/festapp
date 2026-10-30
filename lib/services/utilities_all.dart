@@ -1,3 +1,4 @@
+import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,14 +18,13 @@ class Utilities {
     final locale = EasyLocalization.of(context)?.locale.toString() ?? 'cs_CZ';
     final currency = currencyCode ?? 'CZK';
 
-    final NumberFormat currencyFormatter = NumberFormat.currency(
+    return formatDisplayCurrency(
+      price,
       locale: locale,
       name: currency,
       symbol: NumberFormat.simpleCurrency(name: currency).currencySymbol,
       decimalDigits: decimalDigits,
     );
-
-    return currencyFormatter.format(price);
   }
 
   static final RegExp _tabsAndNewLinesPattern = RegExp(r'[\t\n]+');

@@ -1,13 +1,17 @@
+import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class CardRefundDecisionStrings {
   static String text(String key) => 'CardRefundDecision.$key'.tr();
   static String amount(int minor, String currency, {String? locale}) =>
-      NumberFormat.simpleCurrency(
-              locale: locale ?? Intl.getCurrentLocale(),
-              name: currency,
-              decimalDigits: 2)
-          .format(minor / 100);
+      formatDisplayCurrency(
+        minor / 100,
+        locale: locale ?? Intl.getCurrentLocale(),
+        name: currency,
+        decimalDigits: 2,
+        simple: true,
+      );
+
   static String error(Object error) {
     final code = error.toString();
     if (code.contains('STRIPE_REFUND_REVISION_CHANGED')) {

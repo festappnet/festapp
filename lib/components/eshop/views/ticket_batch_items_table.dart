@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/data_grid_number_format.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_header.dart';
 import 'package:fstapp/theme_config.dart';
@@ -55,14 +56,14 @@ class _TicketBatchItemsTableState extends State<TicketBatchItemsTable> {
   Widget build(BuildContext context) {
     TrinaColumn column(String field, String title,
             {double width = 180, bool numeric = false}) =>
-        TrinaColumn(
+        withDisplayNumberFormatting(TrinaColumn(
             title: title,
             field: field,
             width: width,
             type: numeric
                 ? TrinaColumnType.number(format: '#,##0')
                 : TrinaColumnType.text(),
-            enableEditingMode: false);
+            enableEditingMode: false), () => Localizations.localeOf(context).toString());
     final ordinal = column('ordinal', '#', width: 110, numeric: true)
       ..frozen = TrinaColumnFrozen.start
       ..enableRowChecked = true

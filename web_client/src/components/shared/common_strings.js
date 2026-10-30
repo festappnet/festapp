@@ -2,6 +2,7 @@ import { LocalizationService } from '../../services/localization_service.js';
 import { AppConfig } from '../../app_config.js';
 
 export class CommonStrings {
+    static get remove() { return LocalizationService.tr('Common.remove'); }
     static get settings() { return LocalizationService.tr('Common.settings'); }
     static get close() { return LocalizationService.tr('Common.close'); }
     static get accountConnections() { return LocalizationService.tr('FeatureUser.accountConnections'); }

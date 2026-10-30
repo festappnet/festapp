@@ -4,6 +4,10 @@
 
 The package loads its unchanged kernel asset through `loadKernel`; `loadLayoutAssets` validates processed image metadata and bytes. The host does not render raw SVG or implement geometry, gestures or transforms. Closing aborts loading and disposes the shared mount. Missing canonical geometry is a repairable load error, never a legacy renderer fallback.
 
+At minimum zoom, another zoom-out recenters a panned plan at the same scale.
+The shared renderer owns wheel, pinch and `zoomBy` behavior. Its `canZoomOut`
+state keeps the host minus control enabled while recentering is available.
+
 Financial operations, hold ownership, limits, products and order payloads remain in the form/session/server owners. Public presentation never includes administrator customer or order metadata.
 
 `select_spot` owns the complete atomic hold and its original expiry. Checkout

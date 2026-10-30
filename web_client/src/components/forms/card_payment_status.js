@@ -1,10 +1,11 @@
+import { formatDisplayNumber } from '../../utils/formatters.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export const cardPaymentText = key => LocalizationService.tr(`CardPayments.${key}`);
 const states = new Set(['preparing', 'open', 'pending', 'declined', 'paid', 'expired', 'action_required', 'refund_pending', 'partially_refunded', 'refunded', 'disputed']);
 const payable = new Set(['open', 'declined', 'preparing']);
 export function formatCardMoney(value, currency, locale = LocalizationService.currentLocale) {
     if (!/^[A-Z]{3}$/.test(currency || '') || value == null || !/^(0|[1-9][0-9]*)(\.[0-9]{1,2})?$/.test(String(value))) return null;
-    try { return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(value)); }
+    try { return formatDisplayNumber(Number(value), locale, { style: 'currency', currency }); }
     catch { return null; }
 }
 export function cardPaymentState(payment) {

@@ -51,7 +51,7 @@ void main() {
     expect(find.text('Pokračovat k platbě'), findsNothing);
     expect(find.textContaining('soukromý platební odkaz'), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
-    expect(find.textContaining('1\u00a0234,50'), findsOneWidget);
+    expect(find.textContaining('1234,50'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets(

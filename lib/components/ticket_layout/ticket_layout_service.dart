@@ -8,7 +8,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 import 'dart:convert';
 
-import 'package:intl/intl.dart';
+import 'package:festapp_core/formatting.dart';
 
 import 'dart:ui' as ui;
 
@@ -229,12 +229,13 @@ class TicketLayoutResources {
           100;
       final currency = currencies.single as String;
       base['price'] = 'Cena: ' +
-          NumberFormat.currency(
+          formatDisplayCurrency(
+            total,
             locale: 'cs_CZ',
             name: currency,
             symbol: selected.values.first['currency_symbol'] as String,
             decimalDigits: 0,
-          ).format(total);
+          );
     }
     return base;
   }

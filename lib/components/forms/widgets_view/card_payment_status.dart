@@ -1,3 +1,4 @@
+import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import '../card_payment_strings.dart';
@@ -38,8 +39,8 @@ class CardPaymentStatus extends StatefulWidget {
         !RegExp(r'^[A-Z]{3}$').hasMatch(currency) ||
         !RegExp(r'^(0|[1-9][0-9]*)(\.[0-9]{1,2})?$').hasMatch(value.toString()))
       return null;
-    return NumberFormat.currency(locale: locale, name: currency)
-        .format(num.parse(value.toString()));
+    return formatDisplayCurrency(num.parse(value.toString()),
+        locale: locale, name: currency);
   }
 
   @override

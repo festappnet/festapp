@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from '../../utils/formatters.js';
 import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -21,7 +22,7 @@ const line = (parent, tag, text) => {
     const node = document.createElement(tag); node.textContent = text; parent.appendChild(node); return node;
 };
 const date = value => value ? new Date(value).toLocaleString(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }) : overviewText('unknown');
-const money = (value, currency) => value == null ? overviewText('unknown') : new Intl.NumberFormat(LocalizationService.currentLocale, currency ? { style: 'currency', currency: currency.trim() } : {}).format(value);
+const money = (value, currency) => value == null ? overviewText('unknown') : formatDisplayNumber(Number(value), LocalizationService.currentLocale, currency ? { style: 'currency', currency: currency.trim() } : {});
 function section(host, title, className = '') {
     const element = line(host, 'section', ''); element.className = className;
     line(element, 'h2', title); return element;

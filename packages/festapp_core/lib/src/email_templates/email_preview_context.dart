@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+import 'package:festapp_core/formatting.dart';
 
 /// Display-only inputs. These never create an order or enter template storage.
 class EmailPreviewProduct {
@@ -74,11 +74,13 @@ class EmailPreviewContext {
     final previousSecond = zero
         ? 0.0
         : (second.price * (5 / 7) * 100).roundToDouble() / 100;
-    String money(double value) => NumberFormat.simpleCurrency(
+    String money(double value) => formatDisplayCurrency(
+      value,
+      simple: true,
       locale: 'cs_CZ',
       name: first.currency,
       decimalDigits: value == value.roundToDouble() ? 0 : 2,
-    ).format(value);
+    );
     return {
       ...paymentBindings,
       if (occasionTitle != null) 'preview_occasion': occasionTitle!,

@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from '../../utils/formatters.js';
 import QRCode from 'qrcode';
 import { PublicOrderStrings } from './public_order_strings.js';
 import { orderIcon } from './order_icons.js';
@@ -37,10 +38,10 @@ export function renderPaymentDetails(paymentHost, paymentQr, { occasionTitle = '
             const currency = String(paymentQr.currency_code || '');
             const amount = Number(paymentQr.amount);
             const displayedAmount = Number.isFinite(amount)
-                ? new Intl.NumberFormat(document.documentElement.lang || 'cs', {
+                ? formatDisplayNumber(amount, document.documentElement.lang || 'cs', {
                     minimumFractionDigits: currency === 'CZK' ? 0 : 2,
                     maximumFractionDigits: 2,
-                }).format(amount)
+                })
                 : String(paymentQr.amount);
             const paymentAmount = `${displayedAmount} ${currency}`.trim();
             const label = document.createElement('span');

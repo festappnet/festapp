@@ -57,9 +57,9 @@ void main() {
                 products.isNotEmpty &&
                 code == 'TICKET_ORDER_CONFIRMATION' &&
                 scenario.scenario == 'unpaid') {
-              expect(scenario.values['amount'], contains('1\u00a0000'));
+              expect(scenario.values['amount'], contains('1000'));
               expect(
-                  scenario.values['fullOrder'], isNot(contains('2\u00a0000')));
+                  scenario.values['fullOrder'], isNot(contains('2000')));
             }
           }
         }
@@ -176,7 +176,7 @@ void main() {
     expect(scenario.values['occasionTitle'], 'Podzimní koncert');
     expect(scenario.values['fullOrder'], contains('Vstupné: Přízemí'));
     expect(scenario.values['fullOrder'], contains('Balkon'));
-    expect(scenario.values['amount'], contains('1\u00a0200'));
+    expect(scenario.values['amount'], contains('1200'));
     expect(scenario.values['fullOrder'], isNot(contains('Jiná měna')));
   });
   for (final enabled in [true, false]) {

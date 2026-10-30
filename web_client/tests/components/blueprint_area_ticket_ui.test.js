@@ -52,3 +52,19 @@ test('tickets without additional fields show their product without a placeholder
     assert.equal(view.querySelectorAll('.ticket-area-product').length,2);
     assert.doesNotMatch(view.textContent,/Ticket details/);
 });
+
+test('ticket remove button has a localized tooltip and accessible name', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { LocalizationService } = await import('../../src/services/localization_service.js');
+    LocalizationService.translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json', import.meta.url)));
+    const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
+    const session = new FormSession(model);
+    session.setAreaQuantity({nodeId:'standing',productId:9},2,3,{id:9,title:'Admission',price:450,currency_code:'CZK'});
+    const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
+    const buttons = view.querySelectorAll('.btn-remove-ticket');
+    assert.ok(buttons.length > 0);
+    for (const button of buttons) {
+        assert.equal(button.title, 'Odebrat');
+        assert.equal(button.getAttribute('aria-label'), 'Odebrat');
+    }
+});

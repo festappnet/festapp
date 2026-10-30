@@ -19,7 +19,7 @@ test('A08 safe projection cannot supply pay capability; view remains read only e
  assert.match(host.textContent,/soukromý platební odkaz/);
  assert.equal(host.querySelector('a,input,img,canvas'),null);
  assert.equal(host.querySelector('[role=status]').getAttribute('aria-atomic'),'true');
- assert.match(host.textContent,/1\D234,50/);
+ assert.match(host.textContent,/1234,50/);
 });
 test('A15 paid and failed email remain distinct, with no second payment invitation',t=>{
  const host=setup(t);renderCardPaymentStatus(host,payment({status:'paid',received:'1234.50',deliveryState:'suppressed'}),{onPay:()=>assert.fail('must not pay')});

@@ -1,4 +1,7 @@
 [
+ {"currency":"CZK","symbol":"Kč","amount":1350,"expected":"Cena: 1350 Kč"},
+ {"currency":"CZK","symbol":"Kč","amount":9999,"expected":"Cena: 9999 Kč"},
+ {"currency":"CZK","symbol":"Kč","amount":10000,"expected":"Cena: 10 000 Kč"},
  {"currency":"CZK","symbol":"Kč","amount":50,"expected":"Cena: 50 Kč"},
  {"currency":"EUR","symbol":"€","amount":50,"expected":"Cena: 50 €"},
  {"currency":"USD","symbol":"US$","amount":50,"expected":"Cena: 50 US$"}

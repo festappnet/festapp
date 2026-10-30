@@ -1,3 +1,4 @@
+import 'package:festapp_core/formatting.dart';
 import 'product_price_change.dart';
 import 'product_price_wave.dart';
 import 'product_inventory_context_model.dart';
@@ -32,6 +33,7 @@ class ProductModel {
   final int? maximum;
   final int? orderedCount;
   final int? paidCount;
+
   /// Canonical administration count of product-ticket rows in paid/sent orders.
   final int? purchasedCount;
   final int? sentCount;
@@ -405,8 +407,9 @@ class ProductModel {
 
   String getFormattedProductTitle() {
     if (price != null) {
-      final priceString = "${price!.toStringAsFixed(2)} ${currencyCode ?? ''}"
-          .trim();
+      final priceString =
+          "${formatDisplayNumber(price!, decimalDigits: 2)} ${currencyCode ?? ''}"
+              .trim();
       return "$title ($priceString)";
     }
     return title ?? "";
