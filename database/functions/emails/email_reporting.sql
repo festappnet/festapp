@@ -58,6 +58,19 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
   WHERE (EXISTS(SELECT 1 FROM messages m WHERE m.message_id=ANY(c.path)
     AND (m.rs IN ('bounce','complaint','reject','rendering_failure','dead','suppressed','unknown','retry_wait','delay','blocked','sending','post_action_failed')
      OR (m.message_kind IN ('order_confirmation','order_tickets') AND m.workflow_state IN ('pending','preparing') AND m.target_time<=now()))))
+   -- Delivered current tickets supersede the obsolete checkout confirmation,
+   -- even though confirmation and ticket repairs intentionally have separate chains.
+   -- Acceptance/open tracking alone, stale snapshots and unrelated message kinds
+   -- must never clear an actionable delivery failure.
+   AND NOT (root.message_kind='order_confirmation' AND o.state IN ('paid','sent')
+    AND EXISTS(SELECT 1 FROM messages tickets WHERE tickets.message_kind='order_tickets'
+     AND tickets.rs IN ('delivery','open','click') AND tickets.delivered_at IS NOT NULL
+     AND tickets.recipient=o.data->>'email' AND tickets.source_version=o.email_payment_version
+     AND (tickets.data->>'repair_payment_fingerprint' IS NULL
+      OR tickets.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))
+     AND tickets.delivered_at>greatest(leaf.created_at,leaf.bounced_at,leaf.complained_at,
+      (SELECT max(provider_time) FROM public.email_delivery_events
+       WHERE message_id=leaf.message_id AND event_type IN ('bounce','complaint','reject','rendering_failure')))))
    AND NOT (leaf.delivered_at IS NOT NULL AND leaf.rs IN ('delivery','open','click')
     AND leaf.recipient=o.data->>'email' AND leaf.source_version=o.email_payment_version
     AND (leaf.data->>'repair_payment_fingerprint' IS NULL OR leaf.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))))
