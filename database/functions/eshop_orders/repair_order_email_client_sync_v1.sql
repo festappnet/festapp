@@ -56,7 +56,7 @@ BEGIN
  IF o.state NOT IN ('ordered','paid','sent') THEN RAISE EXCEPTION 'ORDER_ACTION_NOT_ALLOWED'; END IF;
  IF p_resend IS NULL OR p_email IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='invalid_email_contact'; END IF;
  v_email:=public.normalize_order_email_contact(p_email);
- v_kind:=CASE WHEN o.state='ordered' THEN 'order_confirmation' ELSE 'order_tickets' END;
+ v_kind:=public.order_checkout_email_kind_internal(o.id);
  PERFORM 1 FROM public.email_messages WHERE order_id=o.id ORDER BY id FOR UPDATE;
  SELECT * INTO src FROM public.email_messages WHERE message_id=p_source_message;
  IF p_resend AND src.id IS NOT NULL AND (src.message_kind<>v_kind OR src.last_error='post_action_failed') THEN

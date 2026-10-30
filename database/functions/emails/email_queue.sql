@@ -128,7 +128,8 @@ BEGIN
    AND (p_message.data->>'manual'='true' OR v_order.data->>'email'=p_message.recipient);
  END IF;
  IF p_message.message_kind='order_confirmation' THEN
-  RETURN v_order.state='ordered' AND v_order.email_payment_version=p_message.source_version
+  RETURN public.order_checkout_email_kind_internal(v_order.id)='order_confirmation'
+   AND v_order.state IN ('ordered','paid') AND v_order.email_payment_version=p_message.source_version
    AND v_order.data->>'email'=p_message.recipient;
  END IF;
  IF p_message.message_kind='order_reminder' THEN
