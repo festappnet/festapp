@@ -9,6 +9,11 @@ Forms are NOT simple definitions. `get_form_by_link` RPC returns a massive bundl
 
 If a product isn't showing, check `is_product_dynamically_available` in SQL, not Dart.
 
+The structural `ticket` field remains in the public bundle even when its
+`is_hidden` flag is true. On that field the flag disables ticket issuance;
+it must not suppress application price choices or participant fields.
+Ordinary hidden fields and hidden catalog products remain excluded.
+
 ## Gotchas
 
 - **Never hardcode field IDs**. Find fields by `type` or `data` attributes -- IDs are generated.
