@@ -17,6 +17,8 @@ import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
 
 import 'notification_center_controller.dart';
+import 'notification_item_presenter.dart';
+import 'notification_detail_target.dart';
 import 'notification_center_panel.dart';
 import 'notification_center_strings.dart';
 
@@ -226,6 +228,31 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
               ? {'notificationGroup': jsonEncode(selection)}
               : null,
         ).toString(),
+      );
+      return;
+    }
+    if (NotificationItemPresenter(item).hasFormDetail) {
+      final user = controller.user;
+      final organization = controller.organization;
+      await ExceptionHandler.guard(
+        context,
+        futureFunction: () async {
+          final path = await notificationFormDetailPath(item);
+          if (!mounted ||
+              controller.user != user ||
+              controller.organization != organization) {
+            return;
+          }
+          if (path != null) {
+            await pushRootPath(context.router.root, path);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(NotificationCenterStrings.text('unavailable')),
+              ),
+            );
+          }
+        },
       );
       return;
     }

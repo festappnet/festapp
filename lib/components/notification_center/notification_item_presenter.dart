@@ -9,7 +9,12 @@ class NotificationItemPresenter {
   NotificationItemPresenter(this.item, {this.locale});
   final String? locale;
   final NotificationItem item;
+  bool get hasFormDetail =>
+      const {'form_opened', 'form_closed'}.contains(item.kind) &&
+      item.occasionLink?.isNotEmpty == true &&
+      item.data['formId'] is int;
   bool get hasDetail =>
+      hasFormDetail ||
       (item.occasionLink != null && item.data['relatedOrders'] == true) ||
       item.data['messageId'] is String ||
       (item.occasionLink != null && item.data['orderId'] is int) ||
