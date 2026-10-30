@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
+
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -51,13 +53,41 @@ class SupabaseFormCommands implements FormCommands {
   }
 
   @override
-  Future<Map<String, dynamic>> save(Map<String, dynamic> form) {
+  Future<Map<String, dynamic>> save(Map<String, dynamic> form) async {
     if (form['expected_aggregate_version'] is! int ||
         form['expected_product_versions'] is! Map ||
         form['expected_product_type_versions'] is! Map) {
       throw StateError('Original form and product versions required');
     }
-    return _invoke('update_form_client_sync_v1', {'p_form': form});
+    const operation = 'update_form_client_sync_v1';
+    final parameters = {'p_form': form};
+    if (_transport.principalBinding != null) {
+      final pending = await _transport.pendingIntent(operation, parameters);
+      if (pending != null) {
+        // Resolve the old UUID under the server receipt lock. Never replay an
+        // old document or drop an uncertain command locally to allow a new save.
+        final response = ClientCommandResponse.from(
+          await _transport.resume(
+            pending,
+            recoveryFunction: 'recover_form_save_client_sync_v1',
+          ),
+        );
+        if (response.code == 200) {
+          await applyClientCommandReplacements(response);
+          if (ClientCommandIdentity.fingerprint(
+                jsonDecode(pending.requestJson),
+              ) ==
+              ClientCommandIdentity.fingerprint(parameters)) {
+            return response.data;
+          }
+          throw StateError('FORM_PREVIOUS_SAVE_CONFIRMED');
+        }
+        if (response.code == 410) {
+          throw StateError('FORM_SAVE_RECOVERY_EXPIRED');
+        }
+      }
+    }
+    return _invoke(operation, parameters);
   }
 
   @override

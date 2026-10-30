@@ -609,6 +609,8 @@
     "returnedHelp": "Aby byla platba zaregistrována jako vrácená, odešlete ji zpět se stejným variabilním symbolem jako původní platbu."
   },
   "FormsFeature": {
+    "previousSaveConfirmed": "Předchozí uložení bylo potvrzeno. Načtěte formulář znovu před dalšími úpravami.",
+    "saveRecoveryExpired": "Výsledek staršího uložení již nelze ověřit. Načtěte formulář znovu a ověřte uložené údaje.",
     "showDepositDescription": "Zobrazit popisek zálohy / doplatku u produktů",
     "defaultSelectionHintSingle": "Klikni na radio vedle volby pro nastavení jako výchozí.",
     "defaultSelectionHintMulti": "Zaškrtni checkboxy vedle voleb pro předvolení.",
