@@ -245,10 +245,13 @@ export class ThemeService {
         document.body.style.backgroundColor = blendedBg;
 
         const explicitBackground = formModel.backgroundMode;
+        // Saved colors are accents, not full-strength page paint. Keep the
+        // original form tint for both solid and two-color backgrounds.
+        const secondaryBg = ColorUtils.alphaBlend(secondaryHex, tintOpacity, baseBg);
         const background = !formModel.primaryColor ? null
             : explicitBackground === 'gradient'
-                ? `linear-gradient(135deg, ${formModel.primaryColor}, ${formModel.secondaryColor || formModel.primaryColor})`
-                : explicitBackground === 'solid' ? formModel.primaryColor : null;
+                ? `linear-gradient(135deg, ${blendedBg}, ${formModel.secondaryColor ? secondaryBg : blendedBg})`
+                : explicitBackground === 'solid' ? blendedBg : null;
         if (background) {
             root.dataset.sharedAppearance = 'true';
             root.style.setProperty('--form-background', background);

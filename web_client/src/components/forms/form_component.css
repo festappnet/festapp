@@ -3,6 +3,9 @@
     padding: 24px 10px 20px 10px; 
     max-width: var(--form-max-width, 600px); /* Reduced default or from var */
     margin: 0 auto;
+    /* Long editor links must not widen the mobile layout viewport and push
+       its fixed price outside the screen (also applies inside embeds). */
+    overflow-wrap: anywhere;
     font-family: var(--font-family-base, inherit);
     font-family: var(--font-family-base, inherit);
 }
@@ -813,7 +816,6 @@ body.dark-mode .surcharge-info {
 .organization-identity-close:hover { background:var(--hover-color,rgba(128,128,128,.12)); }
 .organization-identity-close:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
 
-/* Explicit shared appearance keeps labels and inputs on a readable surface. */
+/* Explicit backgrounds use the original gentle form tint. Card layout stays
+   controlled by the saved form design instead of forcing an extra page panel. */
 body[data-shared-appearance] { background: var(--form-background); }
-body[data-shared-appearance] #form-page-container { box-sizing: border-box; margin: 20px auto; border-radius: 12px; background: var(--card-bg, #fff); padding: 24px; }
-@media (max-width: 640px) { body[data-shared-appearance] #form-page-container { margin: 12px; width: calc(100% - 24px); } }
