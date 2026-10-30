@@ -53,6 +53,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   StackRouter? _root;
   bool _resumed = true;
   bool _authenticated = false;
+  Future<bool>? _waitingForContext;
   @override
   void initState() {
     super.initState();
@@ -88,6 +89,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       _pendingInvalidation = false;
       if (mounted) _contextChanged(invalidate: invalidate);
     });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _routeChanged() => _scheduleContextUpdate();
@@ -105,6 +107,32 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     _authenticated = userId != null;
     if (!_authenticated) {
       controller.configure(userId: null, organizationId: null);
+      return;
+    }
+    final pendingContext = RightsService.pendingContextUpdate;
+    if (pendingContext != null) {
+      // Capability invalidation and the final context both notify listeners.
+      // Discard private state immediately, but read the badge only once the
+      // authoritative context has finished loading.
+      controller.setForeground(false);
+      controller.configure(userId: null, organizationId: null);
+      if (!identical(_waitingForContext, pendingContext)) {
+        _waitingForContext = pendingContext;
+        pendingContext.then(
+          (loaded) {
+            if (!mounted || !identical(_waitingForContext, pendingContext)) {
+              return;
+            }
+            _waitingForContext = null;
+            if (loaded) _scheduleContextUpdate(invalidate: true);
+          },
+          onError: (Object _, StackTrace _) {
+            if (identical(_waitingForContext, pendingContext)) {
+              _waitingForContext = null;
+            }
+          },
+        );
+      }
       return;
     }
     final visible = isVisibleRouteInstance(context);
