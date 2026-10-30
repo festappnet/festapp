@@ -1698,6 +1698,7 @@
     "sentFrom": "Odesláno z {appName}"
   },
   "UnitSettings": {
+    "labelOrganizationName": "Název organizace",
     "labelDefaultCommunicationTone": "Výchozí tón komunikace",
     "labelReplyToEmail": "Výchozí e-mail pro odpovědi",
     "labelDefaultTimezone": "Výchozí časová zóna",

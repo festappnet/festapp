@@ -317,7 +317,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                               : null;
                         },
                         decoration: InputDecoration(
-                          labelText: OccasionSettingsStrings.title,
+                          labelText: UnitSettingsStrings.labelOrganizationName,
                         ),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
