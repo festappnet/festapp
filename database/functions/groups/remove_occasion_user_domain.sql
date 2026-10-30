@@ -17,6 +17,11 @@ BEGIN
  DELETE FROM public.event_users WHERE "user"=p_user AND event IN(SELECT id FROM public.events WHERE occasion=p_occasion);
  DELETE FROM public.event_users_saved WHERE "user"=p_user AND event IN(SELECT id FROM public.events WHERE occasion=p_occasion);
  DELETE FROM public.user_news WHERE "user"=p_user AND occasion=p_occasion;
+ -- Membership attention belongs to the deleted application, not the account.
+ DELETE FROM public.notification_center_events e
+ USING public.occasions o
+ WHERE o.id=p_occasion AND e.organization=o.organization AND e.occasion=o.id
+   AND e.kind='occasion_joined' AND e.data->>'userId'=p_user::text;
  DELETE FROM public.occasion_users WHERE "user"=p_user AND occasion=p_occasion;
  DELETE FROM public.client_sync_private_scopes WHERE occasion=p_occasion AND user_id=p_user;
  DELETE FROM public.client_aggregate_versions WHERE aggregate_type='occasion_user' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p_user::text;
