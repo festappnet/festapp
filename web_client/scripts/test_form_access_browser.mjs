@@ -50,6 +50,15 @@ try {
     server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true },
         plugins: [{ name: 'form-access-fixture', configureServer(server) {
             server.middlewares.use(async (req, res, next) => {
+                if (req.url.startsWith('/form/price-position')) {
+                    res.setHeader('Content-Type','text/html');
+                    res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="form-page-container"><div class="form-header"><h1>Weekend registration</h1><p><a href="#">https://example.invalid/RegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaks</a></p></div><form id="dynamic-form"><div style="height:2400px"></div><button type="submit">Continue</button></form></main><script type="module" src="/tests/fixtures/form_access/price_position.js"></script></body></html>');return;
+                }
+                if (req.url.startsWith('/__price_position_host')) {
+                    const native=new URL(req.url,'http://localhost').searchParams.get('native')==='1';
+                    res.setHeader('Content-Type','text/html');
+                    res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}iframe{display:block;width:100%;border:0}header{height:300px}footer{height:600px}</style></head><body><header>Organizer website</header><div ${native?'data-festapp-embed-host':''}><iframe data-festapp-embed src="/form/price-position?embed=1" height="800" title="Registration"></iframe></div><footer>Footer</footer><script src="/embed.js"></script></body></html>`);return;
+                }
                 if (req.url.startsWith('/form/account-access') || req.url === '/' || req.url.startsWith('/?')) {
                     res.setHeader('Content-Type', 'text/html'); res.end(shell); return;
                 }
@@ -110,6 +119,35 @@ try {
         // Each identity gets a fresh browser and daemon namespace. Avoid both
         // detached navigation targets and reconnecting to a closing daemon.
         await browser('close');
+    }
+    // A long editor link must not widen the mobile layout viewport, which
+    // otherwise moves the fixed price beyond the visible screen on Android.
+    for (const width of [390,1280]) {
+        for (const presentation of ['regular','native-embed','legacy-embed']) {
+            const url=presentation==='regular' ? `${origin}/form/price-position`
+                : `${origin}/__price_position_host?native=${presentation==='native-embed'?1:0}`;
+            await openBrowser(url);
+            await browser('set','viewport',String(width),'844');
+            const selector=presentation==='native-embed' ? '[data-festapp-embed-price] button' : '#floating-price-widget';
+            await browser('wait','--fn',presentation==='regular'
+                ? '!!document.getElementById("floating-price-widget")'
+                : 'document.querySelector("iframe").clientHeight > 2000');
+            if(presentation==='native-embed') await browser('wait',selector);
+            for(const y of [450,1000,700]) {
+                await browser('eval',`window.scrollTo(0,${y})`);
+                await browser('wait','--fn',`(() => {
+                    const frame=document.querySelector('iframe');
+                    const doc=frame?frame.contentDocument:document;
+                    const el=${presentation==='native-embed' ? 'document.querySelector("[data-festapp-embed-price] button")' : 'doc.getElementById("floating-price-widget")'};
+                    if(!el || doc.documentElement.scrollWidth>doc.documentElement.clientWidth+1)return false;
+                    const rect=el.getBoundingClientRect();
+                    const top=rect.top+${presentation==='legacy-embed' ? '(frame?.getBoundingClientRect().top||0)' : '0'};
+                    return Math.abs(top-16)<2 && rect.left>=0 && rect.right<=innerWidth+1;
+                })()`);
+            }
+            console.log(`PASS: price position ${presentation} at ${width}px, down and up`);
+            await browser('close');
+        }
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
     await openBrowser(`${origin}/?scenario=guest-login`);
