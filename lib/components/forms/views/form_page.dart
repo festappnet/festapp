@@ -1053,7 +1053,16 @@ class _FormPageState extends State<FormPage> {
     final sharedDesign = form?.definition.data?['design'] as Map?;
     if (['solid', 'gradient'].contains(sharedDesign?['background_mode']) &&
         form?.definition.primaryColor != null) {
-      final primary = Color(form!.definition.primaryColor!);
+      // Match the original form's subtle scaffold tint instead of painting
+      // saved accent colors at full strength around the content.
+      final primary = theme.scaffoldBackgroundColor;
+      final isDark = theme.brightness == Brightness.dark;
+      final secondary = form!.definition.secondaryColor == null
+          ? primary
+          : Color.alphaBlend(
+              Color(form!.definition.secondaryColor!)
+                  .withOpacity(isDark ? 0.05 : 0.07),
+              isDark ? Colors.grey.shade900 : Colors.white);
       bodyContent = DecoratedBox(
           decoration: BoxDecoration(
               color: primary,
@@ -1062,13 +1071,10 @@ class _FormPageState extends State<FormPage> {
                   ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [primary, Color(form!.definition.secondaryColor!)],
+                      colors: [primary, secondary],
                     )
                   : null),
-          child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: ColoredBox(
-                  color: theme.scaffoldBackgroundColor, child: bodyContent)));
+          child: bodyContent);
     }
 
     return Theme(
