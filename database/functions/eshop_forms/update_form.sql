@@ -16,6 +16,7 @@ DECLARE
     deleted_products BIGINT[];
     deletion_reason TEXT;
     deletion_row RECORD;
+    protected_primary_types bigint[];
 
     form_id          BIGINT;               -- ID of the form being created/updated
     occasion_id      BIGINT;               -- ID of the occasion to which the form belongs
@@ -132,6 +133,9 @@ BEGIN
 
         -- Explicit removals are part of this save transaction, never inferred from
         -- omitted fields in partial/older-client payloads. Exceptions roll back the save.
+        SELECT coalesce(array_agg(DISTINCT pt.id),'{}'::bigint[]) INTO protected_primary_types
+        FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
+        WHERE ff.form=form_id AND pt.type='spot';
         SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_fields
         FROM jsonb_array_elements_text(COALESCE(input_data->'deleted_field_ids', '[]'::jsonb));
         SELECT COALESCE(array_agg(value::bigint), '{}'::bigint[]) INTO deleted_products
@@ -619,6 +623,9 @@ BEGIN
                is_open = CASE WHEN input_data ? 'is_open' THEN (input_data->>'is_open')::boolean ELSE is_open END
          WHERE id = form_id;
 
+        IF input_data ? 'form_fields' OR cardinality(deleted_fields)>0 OR cardinality(deleted_products)>0 THEN
+          PERFORM public.assert_form_primary_products_internal(form_id,protected_primary_types);
+        END IF;
         PERFORM public.validate_form_payment_configuration_internal(form_id);
 
         ----------------------------------------------------------------------------

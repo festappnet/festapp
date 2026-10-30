@@ -118,6 +118,7 @@ BEGIN
     INTO productsData
     FROM eshop.products p
     CROSS JOIN LATERAL (SELECT CASE
+      WHEN public.primary_product_delete_blocked_internal(p.id) THEN 'primary_product'
       WHEN EXISTS (SELECT 1 FROM used_products u WHERE u.product = p.id::text) THEN 'orders'
       WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
       WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
@@ -154,7 +155,12 @@ BEGIN
     ), '[]'::jsonb)
     INTO formFieldsData
     FROM public.form_fields ff
-    CROSS JOIN LATERAL (SELECT CASE WHEN EXISTS (
+    CROSS JOIN LATERAL (SELECT CASE
+      WHEN EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=ff.product_type AND pt.type='spot')
+        OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM public.form_fields child
+          JOIN eshop.product_types pt ON pt.id=child.product_type
+          WHERE child.form=ff.form AND child.is_ticket_field AND pt.type='spot')) THEN 'primary_product'
+      WHEN EXISTS (
       SELECT 1 FROM form_snapshots s WHERE
         EXISTS (SELECT 1 FROM jsonb_array_elements(
           CASE WHEN jsonb_typeof(s.data->'fields') = 'array' THEN s.data->'fields' ELSE '[]'::jsonb END) answer

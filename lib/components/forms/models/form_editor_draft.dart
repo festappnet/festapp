@@ -164,7 +164,25 @@ class FormEditorDraft {
     return result;
   }
 
+  String? deletionBlockedReasonFor(FormFieldDraft field) =>
+      field.isPrimaryProductGroup ||
+          (field.definition.type == 'ticket' &&
+              relatedFields.any(
+                (child) =>
+                    child.definition.isTicketField == true &&
+                    child.isPrimaryProductGroup,
+              ))
+      ? 'primary_product'
+      : field.definition.deleteBlockedReason;
+
+  bool canDeleteField(FormFieldDraft field) =>
+      deletionBlockedReasonFor(field) != 'primary_product' &&
+      field.definition.canDelete;
+
   void removeField(FormFieldDraft field) {
+    if (deletionBlockedReasonFor(field) == 'primary_product') {
+      throw StateError('FORM_DELETE_primary_product');
+    }
     final removed = [
       field,
       if (field.definition.type == 'ticket')

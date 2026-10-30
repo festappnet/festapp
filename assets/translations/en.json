@@ -702,6 +702,7 @@
     "textFieldType": "Text",
     "viewMore": "View more",
     "deleteBlocked": {
+      "primary_product": "The primary group and its last visible option cannot be deleted or hidden. You can edit their name and price.",
       "responses": "This field already has a response and cannot be deleted.",
       "orders": "This product has been used in an order and cannot be deleted.",
       "blueprint": "This product is used in a seating plan and cannot be deleted.",

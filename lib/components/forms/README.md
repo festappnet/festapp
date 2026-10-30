@@ -9,6 +9,11 @@ Forms are NOT simple definitions. `get_form_by_link` RPC returns a massive bundl
 
 If a product isn't showing, check `is_product_dynamically_available` in SQL, not Dart.
 
+The structural `ticket` field remains in the public bundle even when its
+`is_hidden` flag is true. On that field the flag disables ticket issuance;
+it must not suppress application price choices or participant fields.
+Ordinary hidden fields and hidden catalog products remain excluded.
+
 ## Gotchas
 
 - **Never hardcode field IDs**. Find fields by `type` or `data` attributes -- IDs are generated.
@@ -61,6 +66,14 @@ field/product. Missing usage metadata keeps saved items non-deletable. The
 editor stages explicit `deleted_field_ids` / `deleted_product_ids`; only the
 existing form-save command applies them in `update_form_internal_v1`. Partial
 settings saves never infer deletion from omitted fields.
+
+The linked `spot` product group is the structural primary offer, even for
+application-only forms with ticket issuance disabled. It and its parent cannot
+be removed, hidden or demoted to an ordinary group. At least one visible variant
+must remain; names and prices stay editable. The editor protects these controls
+locally, and SQL rechecks the invariant atomically for form and catalog saves.
+Catalog mutations lock the affected forms before products so concurrent variant
+deletions cannot each remove the other's last remaining option.
 
 Save checks current answers and current order products (including cancelled
 orders), blueprint spots, inventory links, and shared product groups. Removing

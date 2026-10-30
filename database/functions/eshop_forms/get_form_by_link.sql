@@ -137,7 +137,9 @@ BEGIN
                 )
                 FROM public.form_fields ff
                 LEFT JOIN eshop.product_types pt ON ff.product_type = pt.id
-                WHERE ff.form = f.id AND ff.is_hidden = false
+                -- For the structural ticket field, is_hidden disables ticket
+                -- issuance, not the application and its nested price choices.
+                WHERE ff.form = f.id AND (ff.is_hidden = false OR ff.type = 'ticket')
             )
         )
     )

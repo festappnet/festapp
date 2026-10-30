@@ -10,6 +10,8 @@ DECLARE
   v_input_price NUMERIC;
   v_effective_price NUMERIC;
   v_input_deposit NUMERIC;
+  v_primary_forms bigint[];
+  v_primary_form bigint;
 BEGIN
   -- Extract product id from the input JSON
   v_product_id := (p_input->>'id')::BIGINT;
@@ -31,6 +33,11 @@ BEGIN
     -- Ensure the caller has permission to edit this product's *current* occasion.
     -- This function is expected to raise an exception on failure.
     PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
+
+    SELECT coalesce(array_agg(DISTINCT ff.form),'{}'::bigint[]) INTO v_primary_forms
+    FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
+    JOIN eshop.products p ON p.product_type=pt.id
+    WHERE p.id=v_product_id AND pt.type='spot';
 
     -- VALIDATION: deposit amount must be less than effective price (input price overrides existing)
     v_input_price := NULLIF(p_input->>'price', '')::NUMERIC;
@@ -81,6 +88,10 @@ BEGIN
       is_hidden     = COALESCE(NULLIF(p_input->>'is_hidden', '')::BOOLEAN, p.is_hidden),
       updated_at    = NOW()
     WHERE p.id = v_product_id;
+
+    FOREACH v_primary_form IN ARRAY v_primary_forms LOOP
+      PERFORM public.assert_form_primary_products_internal(v_primary_form);
+    END LOOP;
 
     -- Return the ID of the updated product on success.
     IF p_input ? 'inventory_contexts' THEN
