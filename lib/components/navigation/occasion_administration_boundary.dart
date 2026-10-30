@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/last_administration_context.dart';
@@ -275,7 +274,7 @@ class _OccasionAdministrationBoundaryState
     );
     final loading =
         widget.loadingBuilder?.call(context) ??
-        const Scaffold(body: Center(child: BrandLoadingIndicator(width: 200)));
+        const Scaffold(body: SizedBox.expand());
     if (!_ready)
       return _loading
           ? loading

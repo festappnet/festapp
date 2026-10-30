@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_banner.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
@@ -83,7 +82,7 @@ class RoutedTabScaffold extends StatelessWidget {
           ),
         );
       });
-      return const Center(child: BrandLoadingIndicator(width: 200));
+      return const SizedBox.expand();
     }
     return AutoTabsRouter.tabBar(
       routes: tabs.map((t) => t.route).toList(),

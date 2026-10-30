@@ -1,4 +1,3 @@
-import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
@@ -7,6 +6,7 @@ import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
 /// Preserve known navigation chrome while the new context/access check loads.
+/// Keep internal context switches quiet; branded loading belongs to startup.
 /// No destination content or data-grid controller is constructed here.
 class AdministrationLoadingShell extends StatelessWidget {
   final bool reservations;
@@ -19,9 +19,7 @@ class AdministrationLoadingShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (RightsService.occasionLinkModel == null) {
-      return const Scaffold(
-        body: Center(child: BrandLoadingIndicator(width: 200)),
-      );
+      return const Scaffold(body: SizedBox.expand());
     }
     final tabs = unit
         ? null
@@ -39,7 +37,7 @@ class AdministrationLoadingShell extends StatelessWidget {
         context,
         activeTabs: tabs,
       ),
-      body: const Center(child: BrandLoadingIndicator(width: 200)),
+      body: const SizedBox.expand(),
     );
     final chrome = IgnorePointer(
       child: ExcludeFocus(

@@ -1,5 +1,3 @@
-import 'package:fstapp/widgets/brand_loading_indicator.dart';
-
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -64,7 +62,7 @@ class RoutedDayTabs extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) => days.isEmpty
-      ? const Center(child: BrandLoadingIndicator(width: 200))
+      ? const SizedBox.expand()
       : DefaultTabController(
           length: days.length,
           initialIndex: initialIndex.clamp(0, days.length - 1),
