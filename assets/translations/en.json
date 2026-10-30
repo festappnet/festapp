@@ -609,6 +609,8 @@
     "returnedHelp": "To register a payment as refunded, send it back using the same variable symbol as the original payment."
   },
   "FormsFeature": {
+    "previousSaveConfirmed": "The previous save was confirmed. Reload the form before making further changes.",
+    "saveRecoveryExpired": "The previous save result is no longer available. Reload the form and check the saved values.",
     "showDepositDescription": "Show deposit / surcharge note on products",
     "defaultSelectionHintSingle": "Click the radio next to an option to set it as default.",
     "defaultSelectionHintMulti": "Tick the checkboxes next to options to pre-select them by default.",

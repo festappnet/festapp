@@ -1,6 +1,9 @@
 import '../support/fixtures/client_command_response_fixture.dart';
 
 import 'dart:convert';
+
+import 'package:fstapp/components/forms/supabase_form_commands.dart';
+
 import 'dart:async';
 
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -214,6 +217,120 @@ void main() {
       PathProviderPlatform.instance = provider;
       await directory.delete(recursive: true);
     });
+
+    test(
+      'confirmed old form save never silently applies newer edits',
+      () async {
+        final calls = <String>[];
+        final ids = <String>[];
+        final transport = ClientCommandTransport(
+          (name, parameters) async {
+            calls.add(name);
+            ids.add(parameters['p_command_id'] as String);
+            if (calls.length == 1)
+              throw TimeoutException('acknowledgement lost');
+            expect(name, 'recover_form_save_client_sync_v1');
+            return commandResponseFixture(ids.last, data: {'form_id': 42});
+          },
+          principalBinding: 'backend:form-editor',
+          maxAttempts: 1,
+        );
+        final commands = SupabaseFormCommands.withTransport(transport);
+        final original = <String, dynamic>{
+          'id': 42,
+          'occasion': 7,
+          'title': 'Original',
+          'expected_aggregate_version': 3,
+          'expected_product_versions': <String, dynamic>{},
+          'expected_product_type_versions': <String, dynamic>{},
+        };
+        await expectLater(
+          commands.save(original),
+          throwsA(isA<TimeoutException>()),
+        );
+        await expectLater(
+          commands.save({...original, 'title': 'Changed'}),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              'FORM_PREVIOUS_SAVE_CONFIRMED',
+            ),
+          ),
+        );
+        expect(calls, [
+          'update_form_client_sync_v1',
+          'recover_form_save_client_sync_v1',
+        ]);
+        expect(ids.toSet(), hasLength(1));
+        expect(
+          await transport.pendingIntent('update_form_client_sync_v1', {
+            'p_form': original,
+          }),
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'form save recovers a rolled-back command before changed edits',
+      () async {
+        final calls = <String>[];
+        final ids = <String>[];
+        var failed = false;
+        final transport = ClientCommandTransport(
+          (name, parameters) async {
+            calls.add(name);
+            ids.add(parameters['p_command_id'] as String);
+            if (!failed) {
+              failed = true;
+              throw TimeoutException('save response lost');
+            }
+            if (name == 'recover_form_save_client_sync_v1') {
+              expect((parameters['p_form'] as Map)['title'], 'Original');
+              return commandResponseFixture(
+                ids.last,
+                status: 'rejected',
+                code: 409,
+                data: {'message': 'FORM_SAVE_NOT_APPLIED'},
+              );
+            }
+            expect((parameters['p_form'] as Map)['title'], 'Changed');
+            return commandResponseFixture(ids.last, data: {'form_id': 42});
+          },
+          principalBinding: 'backend:form-editor',
+          maxAttempts: 1,
+        );
+        final commands = SupabaseFormCommands.withTransport(transport);
+        final original = <String, dynamic>{
+          'id': 42,
+          'occasion': 7,
+          'title': 'Original',
+          'expected_aggregate_version': 3,
+          'expected_product_versions': <String, dynamic>{},
+          'expected_product_type_versions': <String, dynamic>{},
+        };
+        await expectLater(
+          commands.save(original),
+          throwsA(isA<TimeoutException>()),
+        );
+        final result = await commands.save({...original, 'title': 'Changed'});
+        expect(result['form_id'], 42);
+        expect(calls, [
+          'update_form_client_sync_v1',
+          'recover_form_save_client_sync_v1',
+          'update_form_client_sync_v1',
+        ]);
+        expect(ids[1], ids[0]);
+        expect(ids[2], isNot(ids[0]));
+        expect(
+          await transport.pendingIntent('update_form_client_sync_v1', {
+            'p_form': original,
+          }),
+          isNull,
+        );
+      },
+    );
 
     test(
       'a mismatched response retains the original ID until confirmed replay',
