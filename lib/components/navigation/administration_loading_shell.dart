@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/admin_page_helper.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
@@ -18,8 +19,17 @@ class AdministrationLoadingShell extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final loading = Center(
+      child: SizedBox.square(
+        dimension: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          semanticsLabel: CommonStrings.loading,
+        ),
+      ),
+    );
     if (RightsService.occasionLinkModel == null) {
-      return const Scaffold(body: SizedBox.expand());
+      return Scaffold(body: loading);
     }
     final tabs = unit
         ? null
@@ -37,7 +47,7 @@ class AdministrationLoadingShell extends StatelessWidget {
         context,
         activeTabs: tabs,
       ),
-      body: const SizedBox.expand(),
+      body: loading,
     );
     final chrome = IgnorePointer(
       child: ExcludeFocus(
