@@ -43,7 +43,9 @@ summary/place totals. Open panels refresh loaded data every 15 seconds through
 one RPC. Background/inactive routes pause. New arrivals wait for explicit refresh,
 and generation/revision/badge fences reject stale identity or snapshot responses.
 Email/bank incidents remain separate, with authorized detail/recovery behavior and
-safe organization-only affected links. Informational rows have no fake navigation.
+safe organization-only affected links. Form opening/closure rows resolve their stored form ID through the authorized
+occasion catalog and open its current editor URL. Missing forms stay unavailable.
+Informational rows without a supported target have no navigation.
 
 Focused tests register as `notification_center` in `default_locale_5_cases.dart`
 through `shared_default_3_test.dart`; relative labels have the existing standalone

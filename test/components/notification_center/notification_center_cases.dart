@@ -1,3 +1,5 @@
+import 'package:fstapp/components/forms/models/form_bundle.dart';
+import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:festapp_core/time.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/notification_center/notification_center_calendar.dart';
@@ -559,11 +561,68 @@ void main() {
         final p = NotificationItemPresenter(row(kind, kind: kind));
         expect(p.details, contains('NotificationCenter.form'));
         expect(p.hasDetail, isFalse);
+        expect(
+          NotificationItemPresenter(row(kind, kind: kind, data: {'formId': 42}))
+              .hasDetail,
+          isTrue,
+        );
       }
       expect(
         NotificationItemPresenter(row('unknown', kind: 'unrecognized')).title,
         'NotificationCenter.title',
       );
+    },
+  );
+  test(
+    'form notifications resolve the exact current form in their occasion',
+    () async {
+      for (final kind in ['form_opened', 'form_closed']) {
+        final item = row(
+          kind,
+          kind: kind,
+          data: {'formId': 42, 'title': 'Old title'},
+        );
+        final path = await notificationFormDetailPath(
+          item,
+          loadForms: (occasion) async {
+            expect(occasion, 'event-1');
+            return [
+              FormBundle.fromJson({'id': 1, 'link': 'other-form'}),
+              FormBundle.fromJson({'id': 42, 'link': 'renamed-form'}),
+            ];
+          },
+        );
+        expect(path, '/event-1/reservations/forms/renamed-form/editor');
+        expect(
+          await notificationFormDetailPath(
+            item,
+            loadForms: (_) async => [
+              FormBundle.fromJson({'id': 1, 'link': 'other-form'}),
+            ],
+          ),
+          isNull,
+        );
+      }
+      for (final item in [
+        row('no-id', kind: 'form_closed'),
+        row(
+          'no-occasion',
+          kind: 'form_opened',
+          occasion: null,
+          data: {'formId': 42},
+        ),
+        row('other-kind', data: {'formId': 42}),
+      ]) {
+        expect(
+          await notificationFormDetailPath(
+            item,
+            loadForms: (_) async {
+              fail('Incomplete or unrelated notifications must not load forms');
+            },
+          ),
+          isNull,
+        );
+      }
     },
   );
   testWidgets(
@@ -838,6 +897,10 @@ void main() {
   testWidgets(
     'summary opens the common destination without expansion or filters',
     (tester) async {
+      tester.view.physicalSize = const Size(1000, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final c = NotificationCenterController();
       addTearDown(c.dispose);
       c.items = [
@@ -850,6 +913,18 @@ void main() {
           },
         ),
         row('form', kind: 'form_closed', section: 0),
+        row(
+          'opened-form',
+          kind: 'form_opened',
+          section: 0,
+          data: {'formId': 42},
+        ),
+        row(
+          'closed-form',
+          kind: 'form_closed',
+          section: 0,
+          data: {'formId': 43},
+        ),
       ];
       final targets = <NotificationItem>[];
       await tester.pumpWidget(
@@ -866,6 +941,17 @@ void main() {
       expect(targets.single.data['relatedOrders'], isTrue);
       expect(targets.single.occasionLink, 'event-1');
       expect(targets.single.data['orderId'], isNull);
+      for (final entry in [('opened-form', 42), ('closed-form', 43)]) {
+        final target = find.byKey(ValueKey('notification-item-${entry.$1}'));
+        await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
+        await tester.tap(target);
+        expect(targets.last.data['formId'], entry.$2);
+      }
+      final noTarget = find.byKey(const ValueKey('notification-item-form'));
+      await tester.ensureVisible(noTarget);
+      await tester.tap(noTarget);
+      expect(targets, hasLength(3));
       expect(tester.takeException(), isNull);
     },
   );
