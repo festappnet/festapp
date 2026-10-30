@@ -123,7 +123,7 @@ BEGIN
  INSERT INTO recovery_fixture VALUES(oid,msg,actor,v);
  UPDATE eshop.orders SET state='storno' WHERE id=oid;
  BEGIN PERFORM pg_temp.repair(oid,'other@example.invalid',src,false); RAISE EXCEPTION 'cancelled edited'; EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'ORDER_ACTION_NOT_ALLOWED' THEN RAISE; END IF; END;
- PERFORM assert_eq(public.get_order_email_summary(oid)#>>'{current_issues,0,resolution}','cancelled','cancellation is informational');
+ PERFORM assert_eq(public.get_order_email_summary(oid)->'current_issues','[]'::jsonb,'cancellation retires actionable delivery issues');
 END $$;
 DO $$
 DECLARE f record; original text; before_contact text; before_count bigint; a jsonb; pending uuid; row public.email_messages;
