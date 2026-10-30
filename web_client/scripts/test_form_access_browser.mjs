@@ -138,6 +138,9 @@ try {
                 await browser('wait','--fn',`(() => {
                     const frame=document.querySelector('iframe');
                     const doc=frame?frame.contentDocument:document;
+                    const container=doc.getElementById('form-page-container');
+                    const bounds=container.getBoundingClientRect();
+                    if(bounds.left<12 || bounds.right>doc.documentElement.clientWidth-12)return false;
                     const el=${presentation==='native-embed' ? 'document.querySelector("[data-festapp-embed-price] button")' : 'doc.getElementById("floating-price-widget")'};
                     if(!el || doc.documentElement.scrollWidth>doc.documentElement.clientWidth+1)return false;
                     const rect=el.getBoundingClientRect();

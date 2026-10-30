@@ -1,8 +1,12 @@
 /* Form Page Layout */
 #form-page-container {
     padding: 24px 10px 20px 10px; 
-    max-width: var(--form-max-width, 600px); /* Reduced default or from var */
-    margin: 0 auto;
+    /* Keep the original 12px breathing room without widening mobile pages.
+       Include the existing inner padding in the desktop width limit. */
+    box-sizing: border-box;
+    width: calc(100% - 24px);
+    max-width: calc(var(--form-max-width, 600px) + 20px);
+    margin: 12px auto;
     /* Long editor links must not widen the mobile layout viewport and push
        its fixed price outside the screen (also applies inside embeds). */
     overflow-wrap: anywhere;
