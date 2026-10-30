@@ -35,6 +35,7 @@ void main() {
   late RootSupabaseFixture fixture;
   Completer<void>? contextGate;
   var badgeReads = 0;
+  var contextReads = 0;
 
   Map<String, dynamic> context() => {
     'code': 200,
@@ -56,6 +57,7 @@ void main() {
     fixture = await RootSupabaseFixture.open((request) async {
       dynamic data;
       if (request.url.path.startsWith('/rest/v1/rpc/get_app_config_')) {
+        contextReads++;
         await contextGate?.future;
         data = context();
       } else if (request.url.path.endsWith('/get_notification_center_badge')) {
@@ -100,6 +102,7 @@ void main() {
   tearDownAll(() => fixture.dispose());
   setUp(() {
     badgeReads = 0;
+    contextReads = 0;
     contextGate = null;
     final rights = RightsContextFixture(
       context: OccasionLinkModel.fromJson(context()),
@@ -179,6 +182,42 @@ void main() {
       1,
       reason: 'clearing capabilities must not issue a preliminary read',
     );
+    expect(badgeReads, 2);
+    expect(contextReads, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('disposed bell never reads after the context completes', (
+    tester,
+  ) async {
+    contextGate = Completer<void>();
+    final update = await beginRefresh(tester);
+    await mount(tester);
+    await tester.pumpWidget(const SizedBox.shrink());
+    contextGate!.complete();
+    await tester.runAsync(update);
+    await flush(tester);
+    expect(badgeReads, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('background bell waits for resume after the context completes', (
+    tester,
+  ) async {
+    await mount(tester);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    contextGate = Completer<void>();
+    final update = await beginRefresh(tester);
+    await flush(tester);
+    contextGate!.complete();
+    await tester.runAsync(update);
+    await flush(tester);
+    expect(badgeReads, 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await flush(tester);
     expect(badgeReads, 2);
     await tester.pumpWidget(const SizedBox.shrink());
   });

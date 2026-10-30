@@ -39,22 +39,36 @@ class RightsUnitAdministrationAccess implements UnitAdministrationAccess {
   bool get hasOccasion => RightsService.currentOccasionId() != null;
   @override
   bool get canAccess => RightsService.hasCapability(
-      AuthorizationCapabilities.unitAdministrationRead);
+    AuthorizationCapabilities.unitAdministrationRead,
+  );
   @override
   Future<void> load(int unitId, {required bool force}) async {
-    await RightsService.updateAppData(
-        unitId: unitId, force: true, refreshOffline: false);
+    final pending = RightsService.pendingContextUpdate;
+    final joined = pending != null && await pending;
+    // Reuse the authoritative refresh already in flight for this unit. A
+    // different context still needs its own read before the page can use it.
+    if (!joined || currentUnit?.id != unitId || hasOccasion) {
+      await RightsService.updateAppData(
+        unitId: unitId,
+        force: true,
+        refreshOffline: false,
+      );
+    }
     if (isSignedIn && currentUnit?.id == unitId && canAccess) {
-      await LastAdministrationContext.instance.remember(AppConfig.organization,
-          RightsService.currentUser()?.id, '/unit/$unitId/edit');
+      await LastAdministrationContext.instance.remember(
+        AppConfig.organization,
+        RightsService.currentUser()?.id,
+        '/unit/$unitId/edit',
+      );
     }
   }
 
   @override
   Future<List<OccasionModel>> occasions(int unitId) async {
     final value = dashboard;
-    if (value == null || value.unitId != unitId)
+    if (value == null || value.unitId != unitId) {
       throw StateError('Missing unit dashboard');
+    }
     return value.occasions;
   }
 }

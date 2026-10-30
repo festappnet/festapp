@@ -1,5 +1,7 @@
 import '../support/fixtures/client_command_response_fixture.dart';
 
+import 'package:fstapp/components/navigation/unit_administration_access.dart';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -184,6 +186,48 @@ void main() {
     );
     expect(contexts.single['unit_id'], 999);
     expect(contexts.single['link'], isNull);
+  });
+
+  test('unit entry joins an active refresh for the same unit', () async {
+    contextGate = Completer<void>();
+    final refreshing = RightsService.updateAppData(
+      unitId: 999,
+      force: true,
+      refreshOffline: false,
+    );
+    await Future<void>.delayed(Duration.zero);
+    final joining = const RightsUnitAdministrationAccess().load(
+      999,
+      force: true,
+    );
+    contextGate!.complete();
+    await refreshing;
+    await joining;
+    expect(
+      contexts.length,
+      1,
+      reason: 'joining must not supersede or repeat the active context read',
+    );
+    expect(RightsService.currentUnit()?.id, 999);
+  });
+
+  test('unit entry replaces a different pending unit context', () async {
+    contextGate = Completer<void>();
+    final refreshing = RightsService.updateAppData(
+      unitId: 998,
+      force: true,
+      refreshOffline: false,
+    );
+    await Future<void>.delayed(Duration.zero);
+    final joining = const RightsUnitAdministrationAccess().load(
+      999,
+      force: false,
+    );
+    contextGate!.complete();
+    await refreshing;
+    await joining;
+    expect(contexts.map((data) => data['unit_id']), [998, 999]);
+    expect(RightsService.currentUnit()?.id, 999);
   });
 
   test('implicit startup keeps the configured landing occasion', () async {

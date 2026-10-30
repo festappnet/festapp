@@ -157,7 +157,12 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _resumed = state == AppLifecycleState.resumed;
-    _contextChanged();
+    if (_resumed) {
+      // Merge resume with context invalidations queued while frames were paused.
+      _scheduleContextUpdate();
+    } else {
+      controller.setForeground(false);
+    }
   }
 
   Future<void> _open() async {
