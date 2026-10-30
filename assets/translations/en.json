@@ -1697,6 +1697,7 @@
     "sentFrom": "Sent from {appName}"
   },
   "UnitSettings": {
+    "labelOrganizationName": "Organization name",
     "labelDefaultCommunicationTone": "Default communication tone",
     "labelReplyToEmail": "Reply-To Email",
     "labelDefaultTimezone": "Default Timezone",

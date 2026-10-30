@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class UnitSettingsStrings {
+  static String get labelOrganizationName =>
+      'UnitSettings.labelOrganizationName'.tr();
   static String get labelReplyToEmail => 'UnitSettings.labelReplyToEmail'.tr();
   static String get labelDefaultCommunicationTone =>
       'UnitSettings.labelDefaultCommunicationTone'.tr();
