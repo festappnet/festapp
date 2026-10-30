@@ -52,7 +52,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
       OR (leaf.data->>'repair_payment_fingerprint' IS NOT NULL AND leaf.data->>'repair_payment_fingerprint' IS DISTINCT FROM public.order_email_payment_fingerprint(o.id))) THEN 'stale_delivery'
     WHEN leaf.message_id<>root.message_id AND leaf.rs IN ('pending','preparing','accepted','open','click','sending','blocked') THEN 'waiting_repair'
     ELSE leaf.rs END resolution,
-   (root.message_kind<>CASE WHEN o.state='ordered' THEN 'order_confirmation' ELSE 'order_tickets' END) obsolete
+   (root.message_kind<>public.order_checkout_email_kind_internal(o.id)) obsolete
   FROM leaves c JOIN messages root ON root.message_id=c.root JOIN messages leaf ON leaf.message_id=c.leaf
   JOIN eshop.orders o ON o.id=p_order
   WHERE (EXISTS(SELECT 1 FROM messages m WHERE m.message_id=ANY(c.path)
