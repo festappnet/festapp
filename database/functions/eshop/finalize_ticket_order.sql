@@ -60,6 +60,7 @@ DECLARE
     v_product_deposit NUMERIC;
     v_total_deposit NUMERIC := 0;
     v_payment_method text;
+    v_payment_instructions jsonb;
     v_stripe_connection uuid;
     v_stripe_attempt uuid;
 BEGIN
@@ -249,92 +250,11 @@ BEGIN
           INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method,stripe_connection_id)
           VALUES(calculated_price,first_currency_code,now,'stripe',v_stripe_connection) RETURNING id INTO payment_info_id;
         ELSE
-          IF calculated_price>0 AND coalesce(form_data#>'{payments,bankEnabled}','true'::jsonb)<>'true'::jsonb THEN
-            RAISE EXCEPTION 'BANK_PAYMENT_NOT_CONFIGURED'; END IF;
-        -- Determine the bank account details based on the form and supported currency fallback using unit accounts only
-        -- Modified Bank Account Selection: Exclude CASH Accounts
-        IF bank_account_id IS NULL THEN
-            SELECT uba.bank_account, ba.account_number, ba.account_number_human_readable, ba.creditor_name
-            INTO bank_account_id, account_number, account_number_human_readable, creditor_name
-            FROM eshop.unit_bank_accounts uba
-            JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-            WHERE uba.unit = (SELECT unit FROM public.occasions WHERE id = occasion_id)
-              AND ba.supported_currencies @> ARRAY[first_currency_code]
-              AND (ba.type IS DISTINCT FROM 'CASH') -- EXCLUDE CASH ACCOUNTS
-            ORDER BY uba.priority ASC, ba.id ASC
-            LIMIT 1;
+          IF input_data->>'payment_type' = 'full' THEN v_total_deposit:=0; END IF;
+          INSERT INTO eshop.payment_info(amount,deposit_amount,currency_code,created_at)
+          VALUES(calculated_price,NULLIF(v_total_deposit,0),first_currency_code,now)
+          RETURNING id INTO payment_info_id;
 
-            IF bank_account_id IS NULL THEN
-                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
-                    'code', 1018,
-                    'message', 'No available bank account supports the required currency',
-                    'required_currency', first_currency_code
-                )::TEXT;
-            END IF;
-        ELSE
-            -- Validate manually selected account: Exclude CASH Accounts
-            PERFORM 1
-            FROM eshop.unit_bank_accounts uba
-            JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-            WHERE uba.unit = (SELECT unit FROM public.occasions WHERE id = occasion_id)
-              AND ba.id = bank_account_id
-              AND ba.supported_currencies @> ARRAY[first_currency_code]
-              AND (ba.type IS DISTINCT FROM 'CASH'); -- EXCLUDE CASH ACCOUNTS
-
-            IF NOT FOUND THEN
-                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT(
-                    'code', 1018,
-                    'message', 'The specified bank account does not support the required currency, is not linked, or is invalid (CASH type)',
-                    'expected_currency', first_currency_code,
-                    'provided_bank_account', bank_account_id
-                )::TEXT;
-            END IF;
-
-            SELECT b.account_number, b.account_number_human_readable, b.creditor_name
-            INTO account_number, account_number_human_readable, creditor_name
-            FROM eshop.bank_accounts b
-            WHERE b.id = bank_account_id;
-        END IF;
-
-        -- A configured account holder takes precedence. Otherwise use the
-        -- occasion's organization name for EPC payment instructions.
-        IF upper(trim(first_currency_code)) = 'EUR' AND NULLIF(trim(creditor_name), '') IS NULL THEN
-          SELECT left(trim(regexp_replace(title, '[[:space:][:cntrl:]]+', ' ', 'g')), 70)
-          INTO creditor_name
-          FROM public.organizations
-          WHERE id = organization_id;
-        END IF;
-
-        -- If user chose to pay full amount, skip deposit
-        IF input_data->>'payment_type' = 'full' THEN
-            v_total_deposit := 0;
-        END IF;
-
-        -- Generate a variable symbol and create the payment info record
-        IF calculated_price>0 AND NOT public.payment_reference_scope_enabled_internal(form_id) THEN
-          generated_variable_symbol := public.generate_payment_variable_symbol(bank_account_id, form_id);
-        END IF;
-        INSERT INTO eshop.payment_info (bank_account, variable_symbol, amount, deposit_amount, currency_code, created_at)
-        VALUES (bank_account_id, generated_variable_symbol, calculated_price, NULLIF(v_total_deposit, 0), first_currency_code, now)
-        RETURNING id INTO payment_info_id;
-        IF calculated_price>0 AND public.payment_reference_scope_enabled_internal(form_id) THEN
-          UPDATE eshop.orders SET payment_info=payment_info_id WHERE id=order_id;
-          generated_variable_symbol:=public.reserve_order_payment_reference_internal(payment_info_id,form_id);
-          UPDATE eshop.payment_info SET variable_symbol=generated_variable_symbol WHERE id=payment_info_id;
-        END IF;
-
-        IF upper(trim(first_currency_code)) = 'EUR' AND calculated_price > 0 THEN
-          IF creditor_name IS NULL OR length(trim(creditor_name)) NOT BETWEEN 1 AND 70 THEN
-            RAISE EXCEPTION 'EUR_CREDITOR_NAME_REQUIRED';
-          END IF;
-          IF account_number IS NULL OR NOT public.is_valid_iban(account_number) THEN
-            RAISE EXCEPTION 'EUR_VALID_IBAN_REQUIRED';
-          END IF;
-          generated_creditor_reference := public.generate_creditor_reference(generated_variable_symbol);
-          UPDATE eshop.payment_info
-          SET creditor_reference = generated_creditor_reference
-          WHERE id = payment_info_id AND creditor_reference IS NULL;
-        END IF;
 
         END IF;
 
@@ -347,6 +267,14 @@ BEGIN
           data          = order_data,
           updated_at    = now
         WHERE id = order_id;
+
+        v_payment_instructions:=public.ensure_order_payment_instructions_internal(order_id);
+        bank_account_id:=(v_payment_instructions->>'bank_account')::bigint;
+        generated_variable_symbol:=(v_payment_instructions->>'variable_symbol')::bigint;
+        generated_creditor_reference:=v_payment_instructions->>'creditor_reference';
+        account_number:=v_payment_instructions->>'account_number';
+        account_number_human_readable:=v_payment_instructions->>'account_number_human_readable';
+        creditor_name:=v_payment_instructions->>'creditor_name';
 
         -- Apply inventory allocations. This will raise an overbooking error if spots are unavailable.
         PERFORM apply_allocations(order_id);

@@ -232,6 +232,16 @@ retain the guarded legacy allocator until separately authorized activation. The
 preexisting BankSync issuance API is retired in source; its historical registry
 is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
 
+Form checkout and product repricing issue payment instructions through
+`ensure_order_payment_instructions_internal(order_id)`. Zero-value and fully
+paid orders need no new bank reference. When a free bank order gains an unpaid
+balance, this owner resolves its configured eligible unit account and reserves
+its VS (plus EUR RF) atomically with the edit; missing configuration rolls back
+the edit. Issued references retain their receiving account and identity. Stripe
+retains its provider-owned checkout/attempt lifecycle and immutable-price edit
+boundary; the bank instruction owner never creates a Stripe charge or bank VS.
+Prepaid batch sales retain their cash transaction owner and need no bank request.
+
 ## Platform service fees
 
 `database/functions/service_fees/` owns evidenced organizer contracts, customer

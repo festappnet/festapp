@@ -29,6 +29,11 @@ BEGIN
             'eligibility_changed',false,'email_payment_version',v_order.email_payment_version);
     END IF;
 
+    IF p_reason='product_edit' THEN
+        PERFORM public.ensure_order_payment_instructions_internal(p_order_id);
+        SELECT * INTO v_payment FROM eshop.payment_info WHERE id=v_order.payment_info;
+    END IF;
+
     -- The saved deposit is a commercial snapshot, capped by the current price.
     v_eligible := coalesce(v_order.price,0)<=0 OR coalesce(v_payment.paid,0)>=
         least(coalesce(v_payment.deposit_amount,v_order.price),v_order.price);
