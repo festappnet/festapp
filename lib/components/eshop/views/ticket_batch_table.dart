@@ -1,3 +1,4 @@
+import 'package:fstapp/components/single_data_grid/data_grid_number_format.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_header.dart';
 import 'package:fstapp/theme_config.dart';
@@ -15,7 +16,7 @@ class TicketBatchTable extends StatelessWidget {
   Widget build(BuildContext context) {
     TrinaColumn column(String field, String label,
             {bool numeric = false, double width = 120}) =>
-        TrinaColumn(
+        withDisplayNumberFormatting(TrinaColumn(
             title: label,
             field: field,
             width: width,
@@ -48,7 +49,7 @@ class TicketBatchTable extends StatelessWidget {
                                         ? Theme.of(context).colorScheme.primary
                                         : null),
                                 maxLines: 1,
-                                overflow: TextOverflow.ellipsis))))));
+                                overflow: TextOverflow.ellipsis)))))), () => Localizations.localeOf(context).toString());
     return Container(
         padding: const EdgeInsets.all(3),
         color: ThemeConfig.whiteColor(context),

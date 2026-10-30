@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from '../utils/formatters.js';
 // Imported only by the local preview HTML, never by the production client.
 import kernelUrl from '@festapp/venue-layout/kernel?url';
 import {loadKernel,loadLayoutAssets,mount} from '@festapp/venue-layout';
@@ -11,7 +12,7 @@ function summary(){
  const seats=adapter?.selectedSeats||[],totals=new Map();
  for(const s of seats){const p=s.productModel;if(p)totals.set(p.currency_code,(totals.get(p.currency_code)||0)+p.price);}
  $('#selection').textContent=`Vybraná místa: ${seats.length}`;
- $('#price').textContent=[...totals].map(([currency,total])=>currency?new Intl.NumberFormat('cs',{style:'currency',currency}).format(total):`${total} (měna neuvedena)`).join(' + ')||'0 Kč';
+ $('#price').textContent=[...totals].map(([currency,total])=>currency?formatDisplayNumber(total,'cs',{style:'currency',currency}):`${total} (měna neuvedena)`).join(' + ')||'0 Kč';
  $('#cart').hidden=!seats.length;
 }
 async function show(key){

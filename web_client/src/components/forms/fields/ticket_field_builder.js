@@ -254,6 +254,7 @@ export class TicketFieldBuilder {
                 removeBtn.type = 'button';
                 removeBtn.className = 'btn-remove-ticket'; 
                 removeBtn.title = CommonStrings.remove;
+                removeBtn.setAttribute('aria-label', CommonStrings.remove);
                 removeBtn.innerHTML = '<i class="material-icons">close</i>';
                 
                 removeBtn.onclick = async () => {

@@ -1,3 +1,4 @@
+import 'data_grid_number_format.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/locale_date_time.dart';
@@ -181,6 +182,8 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
       Localizations.localeOf(widget.controller.context).languageCode,
     );
     for (final column in widget.controller.columns) {
+      withDisplayNumberFormatting(
+          column, () => Localizations.localeOf(context).toString());
       if (column.formatter != null) continue;
       String locale() => Localizations.localeOf(context).toString();
       if (column.type is TrinaColumnTypeDate) {

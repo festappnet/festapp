@@ -198,7 +198,7 @@ class EshopColumns {
             field: EshopColumnIds.PRODUCT_PRICE,
             type: TrinaColumnType.number(
                 negative: false,
-                format: "#.##",
+                format: "#,##0.##",
                 locale: context.locale.languageCode),
             textAlign: TrinaColumnTextAlign.end,
             width: 80,
@@ -276,7 +276,7 @@ class EshopColumns {
             field: EshopColumnIds.PRODUCT_DEPOSIT,
             type: TrinaColumnType.number(
                 negative: false,
-                format: "#.##",
+                format: "#,##0.##",
                 locale: context.locale.languageCode),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,
@@ -290,7 +290,7 @@ class EshopColumns {
             // Negative amounts allowed (slevy) — only used in virtual mode anyway.
             type: TrinaColumnType.number(
                 negative: true,
-                format: "#.##",
+                format: "#,##0.##",
                 locale: context.locale.languageCode),
             textAlign: TrinaColumnTextAlign.end,
             width: 100,

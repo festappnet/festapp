@@ -1904,6 +1904,7 @@
     "noExistingParticipants": "No more participants are available. This unit has no participants yet, or everyone has already been added. Return to the list and use Add to create a new participant."
   },
   "Common": {
+    "remove": "Remove",
     "fieldCannotBeEmpty": "Field cannot be empty",
     "invalidFormat": "Invalid format",
     "back": "Back",

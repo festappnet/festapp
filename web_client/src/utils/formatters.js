@@ -1,3 +1,6 @@
+import { formatDisplayNumber } from '../../../supabase/functions/_shared/numberFormatting.ts';
+export { formatDisplayNumber };
+
 /**
  * Formats a price with the given currency code.
  * @param {number} price - The price value.
@@ -9,18 +12,12 @@
 export function formatPrice(price, currencyCode, decimals = 2, locale = 'cs-CZ') {
     if (price === null || price === undefined) return '';
     try {
-        const formatter = new Intl.NumberFormat(locale, {
+        return formatDisplayNumber(Number(price), locale, {
             style: 'currency',
             currency: currencyCode || 'CZK',
             minimumFractionDigits: 0, // Allow integers to be compact
             maximumFractionDigits: decimals,
-            useGrouping: true,
         });
-        
-        // Custom fix for Czech locale to ensure proper spacing if needed, 
-        // though standard Intl usually handles it well. 
-        // Some browsers use non-breaking space which is good.
-        return formatter.format(price);
     } catch (e) {
         console.error("Error formatting price:", e);
         return `${price} ${currencyCode || ''}`;

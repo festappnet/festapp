@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from '../_shared/numberFormatting.ts';
 import { documentLimits, boundDocumentInput, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { fetchPublicBinary, fetchPublicImage } from '../fetch-http-data/safeFetch.ts';
 import { PDFDocument, rgb, PageSizes, PDFFont } from "npm:pdf-lib";
@@ -271,7 +272,7 @@ async function generateAgreement(data: any, config: AgreementConfig, limits: Ret
   leftY -= (smallFontSize + spaceBelowLabel + 4);
 
   (data.calculation.items || []).forEach((item: any) => {
-    const pricePerPersonText = (item.pricePerPerson ?? 0).toLocaleString('cs-CZ') + ` ${item.currency || 'Kč'}`;
+    const pricePerPersonText = formatDisplayNumber((item.pricePerPerson ?? 0), 'cs-CZ') + ` ${item.currency || 'Kč'}`;
 
     // Wrap any meta surcharge sub-line and compute how much extra height the row needs.
     // The cell rectangles are drawn at rowHeight (not just fieldHeight) so the main item
@@ -561,7 +562,7 @@ Deno.serve(async (req: Request) => {
     // PDF uses raw 3-letter codes ("150 EUR") to match the organizer info section,
     // unlike the email which prefers Intl currency style ("150 €").
     const pdfFormatAmount = (abs: number, currency: string) =>
-        `${abs.toLocaleString('cs-CZ')} ${currency}`;
+        `${formatDisplayNumber(abs, 'cs-CZ')} ${currency}`;
 
     const calculationItems = flatProducts.map((p: any) => {
         const title = p.title || '';
@@ -645,7 +646,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const totalPriceDisplay = orderAmount > 0
-        ? `${orderAmount.toLocaleString('cs-CZ')} ${orderCurrency}`
+        ? `${formatDisplayNumber(orderAmount, 'cs-CZ')} ${orderCurrency}`
         : 'N/A';
 
     // Format per-currency meta surcharge sums for the PDF.
@@ -657,13 +658,13 @@ Deno.serve(async (req: Request) => {
         items: calculationItems,
         zaloha: {
             castka: isDepositPayment
-                ? `${depositAmount.toLocaleString('cs-CZ')} ${orderCurrency}`
-                : (orderAmount > 0 ? `${orderAmount.toLocaleString('cs-CZ')} ${orderCurrency}` : 'Dle pokynů'),
+                ? `${formatDisplayNumber(depositAmount, 'cs-CZ')} ${orderCurrency}`
+                : (orderAmount > 0 ? `${formatDisplayNumber(orderAmount, 'cs-CZ')} ${orderCurrency}` : 'Dle pokynů'),
             uhraditDo: formatDate(payment_info?.deadline),
         },
         doplatek: {
             totalAmount: doplatekAmount,
-            castka: doplatekAmount > 0 ? `${doplatekAmount.toLocaleString('cs-CZ')} ${orderCurrency}` : '',
+            castka: doplatekAmount > 0 ? `${formatDisplayNumber(doplatekAmount, 'cs-CZ')} ${orderCurrency}` : '',
             uhraditDo: doplatekUhraditDo || 'Dle pokynů',
         },
         isDepositPayment,

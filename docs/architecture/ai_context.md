@@ -124,6 +124,7 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
   `PopScope` guards. `StandardDialog` is the compact content adapter. Native
   date/time pickers and public song/game views keep their specialized controls.
 - **Localization**: `*_strings.dart` files with static getters (`CommonStrings.save`) not `"key".tr()`
+- **Number display**: Group digits only from absolute 10000; smaller values have no grouping separator. Keep locale decimal/currency conventions and monetary precision. Dart uses `festapp_core/formatting.dart`; web and Edge Functions use `supabase/functions/_shared/numberFormatting.ts` (web re-export in `utils/formatters.js`). Exact server decimals use `formatExactDisplayNumber`. Stored values, identifiers and editable input formats remain canonical.
 - **Date/time display**: Use locale-aware Intl skeletons (`DateFormat.yMd`, `jm`, `jms`, etc.) with the interface locale. `main` keeps `Intl.defaultLocale` in sync for context-free presentation helpers. Grid values stay canonical for sorting and editor/RPC round trips; localize their display with `LocaleDateTime` formatters. Explicit patterns belong only to stored/wire formats or internal picker controller values, never user-facing labels or tooltips.
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI
