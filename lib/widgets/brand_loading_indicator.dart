@@ -20,10 +20,26 @@ class BrandLoadingIndicator extends StatefulWidget {
 
 class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
     with SingleTickerProviderStateMixin {
+  bool _pulsing = false;
   late final _controller = AnimationController(
     vsync: this,
     duration: _brandCycle,
-  );
+  )..addStatusListener(_onStatus);
+
+  void _onStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || _pulsing) return;
+    setState(() => _pulsing = true);
+    _controller.repeat(period: _brandPulseCycle, min: 0, max: 1);
+  }
+
+  void _animate() {
+    if (_controller.isAnimating) return;
+    if (_pulsing) {
+      _controller.repeat(period: _brandPulseCycle);
+    } else {
+      _controller.forward();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -33,7 +49,7 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
         !TickerMode.valuesOf(context).enabled) {
       _controller.stop();
     } else {
-      _controller.repeat();
+      _animate();
     }
   }
 
@@ -61,6 +77,7 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
             child: CustomPaint(
               painter: _BrandLoadingPainter(
                 animation: _controller,
+                pulsing: _pulsing,
                 reducedMotion: MediaQuery.disableAnimationsOf(context),
                 ink: Theme.of(context).brightness == Brightness.dark
                     ? const Color(0xffffffff)
@@ -112,11 +129,13 @@ class _StrokePath {
 
 class _BrandLoadingPainter extends CustomPainter {
   final Animation<double> animation;
+  final bool pulsing;
   final bool reducedMotion;
   final Color ink;
 
   _BrandLoadingPainter({
     required this.animation,
+    required this.pulsing,
     required this.reducedMotion,
     required this.ink,
   }) : super(repaint: animation);
@@ -146,10 +165,19 @@ class _BrandLoadingPainter extends CustomPainter {
     );
     canvas.scale(scale);
     canvas.translate(-_brandViewBox.left, -_brandViewBox.top);
-    final phase = animation.value;
+    final phase = pulsing ? 1.0 : animation.value;
+    final pulseProgress = animation.value < 0.5
+        ? animation.value * 2
+        : (1 - animation.value) * 2;
+    final pulseOpacity = pulsing && !reducedMotion
+        ? 1 -
+              (1 - _brandPulseMinOpacity) *
+                  Curves.easeInOut.transform(pulseProgress)
+        : 1.0;
     for (final part in _brandLogoParts) {
       final color = part.blue ? const Color(0xff80bdf2) : ink;
-      final opacity = reducedMotion ? 1.0 : _opacity(part.fill, phase);
+      final opacity =
+          (reducedMotion ? 1.0 : _opacity(part.fill, phase)) * pulseOpacity;
       if (opacity > 0) {
         canvas.drawPath(
           part.path,
@@ -200,6 +228,7 @@ class _BrandLoadingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BrandLoadingPainter oldDelegate) =>
       oldDelegate.animation != animation ||
+      oldDelegate.pulsing != pulsing ||
       oldDelegate.reducedMotion != reducedMotion ||
       oldDelegate.ink != ink;
 }

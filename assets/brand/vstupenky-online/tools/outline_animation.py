@@ -29,6 +29,7 @@ def emit_outline_assets(root):
     timeline = json.loads((root / 'source/loading-timeline.json').read_text())
     duration = timeline['durationMs']
     parts = timeline['parts']
+    pulse = timeline['pulse']
     for dark in (False, True):
         suffix = '-dark' if dark else ''
         svg = ET.parse(root / f'vstupenky-online-transparent{suffix}.svg').getroot()
@@ -44,14 +45,21 @@ def emit_outline_assets(root):
             for kind in ('fill','outline'):
                 frames = ''.join(f'{number(t*100)}%{{opacity:{number(v)}}}' for t,v in times[kind])
                 css.append(f'@keyframes vstupenky-{kind}-{name}{{{frames}}}')
-                css.append(f'.vstupenky-loading .{kind}-{name}{{animation:vstupenky-{kind}-{name} {duration}ms linear infinite}}')
+                css.append(f'.vstupenky-loading .{kind}-{name}{{animation:vstupenky-{kind}-{name} {duration}ms linear forwards}}')
             a,b = times['draw']
             css.append(f'@keyframes vstupenky-draw-{name}{{0%,{number(a*100)}%{{stroke-dashoffset:1}}{number(b*100)}%,100%{{stroke-dashoffset:0}}}}')
-            css.append(f'.vstupenky-loading .outline-{name} path{{animation:vstupenky-draw-{name} {duration}ms linear infinite}}')
+            css.append(f'.vstupenky-loading .outline-{name} path{{animation:vstupenky-draw-{name} {duration}ms linear forwards}}')
+        css += [
+            '.vstupenky-loading .filled>g{opacity:1}.vstupenky-loading .outline>g{opacity:0}',
+            '@keyframes vstupenky-pulse{0%,100%{opacity:1}50%{opacity:' + number(pulse['minOpacity']) + '}}',
+            f'.vstupenky-loading .pulse{{animation:vstupenky-pulse {pulse["durationMs"]}ms ease-in-out {duration}ms infinite}}',
+        ]
+        css.append('@media(prefers-reduced-motion:reduce){.vstupenky-loading .pulse{animation:none;opacity:1}}')
         css.append('@media(prefers-reduced-motion:reduce){.vstupenky-loading .filled>g{animation:none;opacity:1}.vstupenky-loading .outline{display:none}}')
         ET.SubElement(out, NS+'style').text = '\n'.join(css)
+        pulse_layer = ET.SubElement(out, NS+'g', {'class': 'pulse'})
         for kind in ('fill','outline'):
-            layer = ET.SubElement(out,NS+'g',{'class':'filled' if kind=='fill' else 'outline'})
+            layer = ET.SubElement(pulse_layer,NS+'g',{'class':'filled' if kind=='fill' else 'outline'})
             for name in parts:
                 g = copy.deepcopy(groups[name]); color = g.attrib.pop('fill')
                 g.attrib.pop('id'); g.set('class',kind+'-'+name)
@@ -69,6 +77,8 @@ def emit_outline_assets(root):
             "// Canonical unioned SVG geometry and source/loading-timeline.json.",
             "part of 'brand_loading_indicator.dart';", '',
             f'const _brandCycle = Duration(milliseconds: {duration});',
+            f'const _brandPulseCycle = Duration(milliseconds: {pulse["durationMs"]});',
+            f'const _brandPulseMinOpacity = {number(pulse["minOpacity"])};',
             'const _brandViewBox = Rect.fromLTWH('+', '.join(map(str,timeline['viewBox']))+');',
             'final _brandLogoParts = <_LogoPart>[']
     for name, times in parts.items():

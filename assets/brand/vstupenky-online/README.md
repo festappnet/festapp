@@ -20,4 +20,4 @@ Rebuild with `uv run assets/brand/vstupenky-online/tools/build_vectors.py`. The 
 
 ## Loading animation
 
-`vstupenky-online-loading.svg` and `vstupenky-online-loading-dark.svg` implement the approved 4.4-second infinite whole-signature outline/fill loop. `source/loading-timeline.json` is the single timing source. Rebuilding emits both CSS/SVG animations and `lib/widgets/brand_loading_paths.dart`; Flutter uses these exact paths in a native painter. The unioned word rows are stroked as whole contours. Reduced motion displays the full static logo, and application readiness never waits for a cycle to finish.
+`vstupenky-online-loading.svg` and `vstupenky-online-loading-dark.svg` implement the 4.4-second whole-signature outline/fill reveal, played once, followed by a gentle 2.2-second opacity pulse (76-100%). `source/loading-timeline.json` is the single timing source. Rebuilding emits both CSS/SVG animations and `lib/widgets/brand_loading_paths.dart`; Flutter uses these exact paths in a native painter. The unioned word rows are stroked as whole contours. Reduced motion displays the full static logo, and application readiness never waits for a cycle to finish.
