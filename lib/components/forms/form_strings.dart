@@ -55,6 +55,12 @@ class FormStrings {
 
   static String saveError(Object error) {
     final message = error.toString();
+    if (message.contains('FORM_PREVIOUS_SAVE_CONFIRMED')) {
+      return 'FormsFeature.previousSaveConfirmed'.tr();
+    }
+    if (message.contains('FORM_SAVE_RECOVERY_EXPIRED')) {
+      return 'FormsFeature.saveRecoveryExpired'.tr();
+    }
     if (message.contains('FORM_SELECTION_OPTIONS_REQUIRED')) {
       return selectionOptionsRequired;
     }

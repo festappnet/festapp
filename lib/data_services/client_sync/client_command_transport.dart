@@ -190,7 +190,12 @@ class ClientCommandTransport {
     );
   }
 
-  Future<Object?> resume(ClientCommandIntent intent) async {
+  /// A domain recovery RPC may seal an uncommitted request instead of executing
+  /// it. It receives the original bytes and UUID and must return that receipt.
+  Future<Object?> resume(
+    ClientCommandIntent intent, {
+    String? recoveryFunction,
+  }) async {
     if (principalBinding != intent.principalBinding) {
       throw StateError('Command principal changed');
     }
@@ -202,7 +207,7 @@ class ClientCommandTransport {
         stored.requestJson != intent.requestJson) {
       throw StateError('Pending intent changed');
     }
-    final result = await invoke(intent.operation, {
+    final result = await invoke(recoveryFunction ?? intent.operation, {
       ...parameters,
       'p_command_id': intent.commandId,
     });
