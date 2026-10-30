@@ -760,6 +760,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (widget.toolbarActions != null) widget.toolbarActions!,
         HtmlView(
+            profile: controller.profile,
             html: controller.html,
             embeddedBlock: controller.embeddedBlock,
             imageBytesResolver: controller.media.previewBytes),
@@ -1357,6 +1358,7 @@ class _PreservedBuilder implements ComponentBuilder {
     return BoxComponent(
         key: context.componentKey,
         child: HtmlView(
+            profile: controller.profile,
             html: node.html,
             imageBytesResolver: controller.media.previewBytes));
   }

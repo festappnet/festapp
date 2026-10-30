@@ -5,9 +5,45 @@ import 'package:cached_network_image_platform_interface/cached_network_image_pla
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_view.dart';
+import 'package:fstapp/components/html/html_document_codec.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 void main() {
+  testWidgets('existing app descriptions inherit theme while songs keep styles', (
+    tester,
+  ) async {
+    const source =
+        '<p style="font-family:Arial;color:red;text-align:center">Description</p>';
+    for (final profile in [
+      HtmlContentProfile.appContent,
+      HtmlContentProfile.songContent,
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: HtmlView(
+              html: source,
+              profile: profile,
+              offlineOverride: false,
+            ),
+          ),
+        ),
+      );
+      final rendered = tester.widget<HtmlWithAppLinksWidget>(
+        find.byType(HtmlWithAppLinksWidget),
+      );
+      expect(rendered.html, contains('text-align:center'));
+      expect(
+        rendered.html.contains('Arial'),
+        profile == HtmlContentProfile.songContent,
+      );
+      expect(
+        rendered.html.contains('color:red'),
+        profile == HtmlContentProfile.songContent,
+      );
+    }
+  });
   testWidgets(
     'HTML links launch directly without an asynchronous capability probe',
     (tester) async {

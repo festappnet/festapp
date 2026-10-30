@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_media_service.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+import 'package:fstapp/components/html/html_editor_document.dart';
 import 'package:image/image.dart' as image;
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_editor/super_editor.dart';
@@ -33,6 +34,24 @@ Uint8List png(int red) {
 }
 
 void main() {
+  test('app paste strips fonts and colors before editor projection', () async {
+    final controller = RichHtmlEditorController(
+      owner: const HtmlMediaOwner.none(),
+    );
+    addTearDown(controller.dispose);
+    await controller.pasteHtml(
+      '<p style="font-family:Arial;color:red;text-align:center">'
+      '<strong>Pasted</strong></p>',
+    );
+    final node = controller.editor.document
+        .whereType<PreservedHtmlNode>()
+        .single;
+    expect(node.html, isNot(contains('Arial')));
+    expect(node.html, isNot(contains('color:')));
+    expect(node.html, contains('text-align:center'));
+    expect(controller.html, contains('<strong>Pasted</strong>'));
+  });
+  TestWidgetsFlutterBinding.ensureInitialized();
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
       'rich clipboard preserves text and all images and avoids duplicate bitmap representations',

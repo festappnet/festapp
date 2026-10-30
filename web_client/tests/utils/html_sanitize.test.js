@@ -1,6 +1,8 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { sanitizeHtml, SafeHtml, html } from '../../src/utils/html.js';
 
 const dom = new JSDOM('', { url: 'https://forms.example/' });
@@ -11,6 +13,22 @@ const render = value => {
     node.innerHTML = sanitizeHtml(value);
     return node;
 };
+
+test('app HTML adapters are generated from the canonical policy', () => {
+    execFileSync(process.execPath, [new URL('../../../automation/generate_html_content_policy.mjs', import.meta.url).pathname, '--check']);
+});
+
+const cases = JSON.parse(readFileSync(new URL('../../../shared/html/app-content-cases.json', import.meta.url), 'utf8'));
+for (const entry of cases) {
+    test(`canonical app HTML: ${entry.name}`, () => {
+        const node = render(entry.html);
+        assert.equal(node.querySelector(entry.selector)?.textContent, entry.text);
+        if (entry.aligned) assert.equal(node.querySelector(entry.aligned).style.textAlign, 'center');
+        if (entry.table) assert.equal(node.querySelector(entry.table)?.textContent, 'Cell');
+        assert.doesNotMatch(node.innerHTML, /Arial|color:|face=|bgcolor=/i);
+        assert.equal(sanitizeHtml(node.innerHTML).toString(), node.innerHTML);
+    });
+}
 
 test('rich HTML retains editor formatting, links, images and layout attributes', () => {
     const value = `<h2>Title</h2><p class="description" style="color: red; text-align: center">Hello
@@ -27,7 +45,7 @@ test('rich HTML retains editor formatting, links, images and layout attributes',
     for (const tag of ['h2', 'p', 'strong', 'em', 'u', 's', 'code', 'figure', 'figcaption', 'ul', 'li', 'table', 'tbody', 'td']) {
         assert.ok(node.querySelector(tag), `retains ${tag}`);
     }
-    assert.equal(node.querySelector('p').style.color, 'red');
+    assert.equal(node.querySelector('p').style.color, '');
     assert.equal(node.querySelector('p').style.textAlign, 'center');
     assert.deepEqual([...node.querySelectorAll('a')].map(a => a.getAttribute('href')),
         ['https://example.com/order?a=1&b=2', 'mailto:info@example.com', 'tel:+420123456789', '/info', '#details']);
@@ -37,6 +55,25 @@ test('rich HTML retains editor formatting, links, images and layout attributes',
     assert.equal(node.querySelector('td').colSpan, 2);
     assert.match(node.querySelectorAll('img')[1].src, /^data:image\/png/);
     assert.match(html`<div>${result}</div>`.toString(), /<strong>bold<\/strong>/);
+});
+
+test('legacy and pasted descriptions inherit the configured font and theme', () => {
+    const node = render(`<style>p { font-family: Arial; color: red }</style>
+        <h2><span style="FONT-FAMILY: Arial,sans-serif !important; color: red">Title</span></h2>
+        <p style="font: italic 18px Arial; background: red; text-align: center">
+        <font face="Arial" color="red"><strong>Text</strong></font></p>
+        <ul><li style="font-family: Arial; background-color: blue; font-weight: bold">Item</li></ul>`);
+    assert.equal(node.querySelector('style, font'), null);
+    for (const el of node.querySelectorAll('*')) {
+        for (const property of ['font-family', 'font', 'color', 'background', 'background-color']) {
+            assert.equal(el.style.getPropertyValue(property), '', `${el.tagName}: ${property}`);
+        }
+    }
+    assert.equal(node.querySelector('p').style.textAlign, 'center');
+    assert.equal(node.querySelector('li strong').textContent, 'Item');
+    assert.equal(node.querySelector('strong').textContent, 'Text');
+    assert.equal(node.querySelector('h2').textContent, 'Title');
+    assert.equal(sanitizeHtml(node.innerHTML).toString(), node.innerHTML);
 });
 
 for (const url of ['javascript:alert(1)', 'java&#x09;script:alert(1)', 'java&#10;script:alert(1)',

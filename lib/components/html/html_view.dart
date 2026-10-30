@@ -85,6 +85,7 @@ class HtmlWithAppLinksWidget extends HtmlWidget {
 
 class HtmlView extends StatefulWidget {
   final String html;
+  final HtmlContentProfile profile;
   final HtmlEmbeddedBlock? embeddedBlock;
   final double fontSize;
   final bool isSelectable;
@@ -101,6 +102,7 @@ class HtmlView extends StatefulWidget {
   const HtmlView({
     super.key,
     required this.html,
+    this.profile = HtmlContentProfile.appContent,
     this.embeddedBlock,
     this.fontSize = 18,
     this.isSelectable = false,
@@ -134,7 +136,7 @@ class _HtmlViewState extends State<HtmlView> {
 
     Widget content = HtmlWithAppLinksWidget(
       context,
-      linkifyHtmlText(widget.html),
+      linkifyHtmlText(normalizeHtmlContentStyles(widget.html, widget.profile)),
       renderMode: RenderMode.listView,
       textStyle:
           htmlTextStyle(context, fontSize: widget.fontSize, color: textColor),

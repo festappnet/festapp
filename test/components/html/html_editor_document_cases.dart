@@ -12,6 +12,20 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  test('CSS font emphasis becomes editable semantics on load and save', () async {
+    final controller = RichHtmlEditorController(
+      initialHtml: '<p style="font:italic bold 18px Arial;color:red">Text</p>',
+      owner: const HtmlMediaOwner.none(),
+    );
+    addTearDown(controller.dispose);
+    final node = controller.editor.document.first as TextNode;
+    expect(node.text.getAllAttributionsAt(0), containsAll([boldAttribution, italicsAttribution]));
+    expect(controller.hasUserChanges, isFalse);
+    final saved = await controller.prepareForSave();
+    expect(saved, controller.html);
+    expect(parser.parseFragment(saved).querySelector('p strong em')!.text, 'Text');
+    expect(saved, isNot(contains('Arial')));
+  });
   test('standalone HTML links retain editor attribution, style and target', () {
     const url = 'https://docs.google.com/spreadsheets/d/carpool/edit';
     const html =
@@ -351,8 +365,9 @@ void main() {
       expect(controller.html, contains('{{name}}'));
     },
   );
-  test('app policy is dirty only and does not rewrite email or song CSS', () {
-    const html = '<p><span style="color:#aabbcc">www.example.com</span></p>';
+  test('app policy strips imported styles and preserves email or song CSS', () {
+    const html =
+        '<p><span style="color:#aabbcc;font-family:Arial">www.example.com</span></p>';
     for (final profile in HtmlContentProfile.values) {
       final controller = RichHtmlEditorController(
         initialHtml: html,
@@ -360,7 +375,13 @@ void main() {
         profile: profile,
       );
       addTearDown(controller.dispose);
-      expect(controller.html, html);
+      final baseline = controller.html;
+      if (profile == HtmlContentProfile.appContent) {
+        expect(baseline, isNot(contains('color:')));
+        expect(baseline, isNot(contains('Arial')));
+      } else {
+        expect(baseline, html);
+      }
       final node = controller.editor.document.first as TextNode;
       controller.editor.execute([
         InsertTextRequest(
@@ -380,7 +401,7 @@ void main() {
         expect(controller.html, isNot(contains('<a')));
       }
       controller.undo();
-      expect(controller.html, html);
+      expect(controller.html, baseline);
     }
   });
   test('editing direct table cells retains th/td and all cell attributes', () {

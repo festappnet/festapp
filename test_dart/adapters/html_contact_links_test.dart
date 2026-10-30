@@ -1,4 +1,6 @@
 import 'package:test/test.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:fstapp/components/html/html_document_codec.dart';
 import 'package:html/parser.dart' as parser;
 
@@ -9,6 +11,53 @@ List<String> links(String html) => parser
     .toList();
 
 void main() {
+  final cases = jsonDecode(File('shared/html/app-content-cases.json').readAsStringSync()) as List;
+  for (final entry in cases) {
+    test('canonical app HTML: ${entry['name']}', () {
+      final result = normalizeHtmlContentStyles(entry['html'] as String, HtmlContentProfile.appContent);
+      final root = parser.parseFragment(result);
+      expect(root.querySelector(entry['selector'] as String)?.text, entry['text']);
+      if (entry['aligned'] != null) {
+        expect(root.querySelector(entry['aligned'] as String)!.attributes['style'], contains('text-align:center'));
+      }
+      if (entry['table'] != null) expect(root.querySelector(entry['table'] as String)?.text, 'Cell');
+      expect(result, isNot(matches(RegExp(r'Arial|color:|face=|bgcolor=', caseSensitive: false))));
+      expect(normalizeHtmlContentStyles(result, HtmlContentProfile.appContent), result);
+    });
+  }
+  test('app HTML drops font and color overrides on legacy and pasted content', () {
+    const source =
+        '<style>p { font-family: Arial; color: red }</style>'
+        '<h2><span style="FONT-FAMILY:Arial,sans-serif!important;color:red">Title</span></h2>'
+        '<p style="font:italic 18px Arial;background:red;text-align:center">'
+        '<font face="Arial" color="red"><strong>Text</strong></font></p>'
+        '<ul><li style="font-family:Arial;background-color:blue;font-weight:bold">Item</li></ul>';
+    final result = normalizeHtmlContentStyles(
+      source,
+      HtmlContentProfile.appContent,
+    );
+    final root = parser.parseFragment(result);
+    expect(root.querySelector('style'), isNull);
+    expect(result.toLowerCase(), isNot(contains('arial')));
+    expect(result, isNot(contains('color:')));
+    expect(result, isNot(contains('background:')));
+    expect(
+      root.querySelector('p')!.attributes['style'],
+      contains('text-align:center'),
+    );
+    expect(root.querySelector('li strong')!.text, 'Item');
+    expect(root.querySelector('strong')!.text, 'Text');
+    expect(
+      normalizeHtmlContentStyles(result, HtmlContentProfile.appContent),
+      result,
+    );
+    for (final profile in [
+      HtmlContentProfile.emailContent,
+      HtmlContentProfile.songContent,
+    ]) {
+      expect(normalizeHtmlContentStyles(source, profile), source);
+    }
+  });
   group('html_contact_links', () {
     for (final entry in {
       '731140198': '731140198',

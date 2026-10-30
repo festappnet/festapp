@@ -52,7 +52,8 @@ class DataGridHelper {
             HtmlFieldIdentity(rendererContext.row.key, field),
             read: () => cell.value as String?,
             write: (html) => cell.value = html,
-            owner: owner);
+            owner: owner,
+            profile: profile);
       return ElevatedButton(
           onPressed: () async {
             final initial = cell.value as String?;

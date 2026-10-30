@@ -1,0 +1,34 @@
+[
+  {
+    "name": "pasted font shorthand retains bold and italic",
+    "html": "<p style=\"font:italic bold 18px Arial;color:red;text-align:center\">Hello</p>",
+    "selector": "p strong em",
+    "text": "Hello",
+    "aligned": "p"
+  },
+  {
+    "name": "inline emphasis becomes editor semantics",
+    "html": "<h2><span style=\"FONT-FAMILY:Arial;font-weight:700;font-style:italic;text-decoration:underline line-through;color:red\">Title</span></h2>",
+    "selector": "h2 span strong em u s",
+    "text": "Title"
+  },
+  {
+    "name": "nested list and table blocks remain intact",
+    "html": "<div style=\"font-weight:bold;font-family:Arial;color:red\"><ul><li>One<ul><li>Two</li></ul></li></ul><table><tbody><tr><td>Cell</td></tr></tbody></table></div>",
+    "selector": "ul li ul li strong",
+    "text": "Two",
+    "table": "table td strong"
+  },
+  {
+    "name": "legacy font attributes cannot override theme",
+    "html": "<p bgcolor=\"red\"><font face=\"Arial\" color=\"red\"><b>Old</b></font></p>",
+    "selector": "p b",
+    "text": "Old"
+  },
+  {
+    "name": "CSS comments and important longhands respect precedence",
+    "html": "<p style=\"font-family:Arial; font-weight:normal; font-weight:700!important; font-weight:normal; color:/*copied*/red\">Priority</p>",
+    "selector": "p strong",
+    "text": "Priority"
+  }
+]

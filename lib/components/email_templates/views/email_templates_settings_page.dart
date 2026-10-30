@@ -671,6 +671,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 widget.emailTemplatesResponse.occasion!.id,
               )
             : HtmlMediaOwner.unit(widget.emailTemplatesResponse.unit.id),
+        profile: HtmlContentProfile.emailContent,
       );
       widget.template.subject = _subject;
       widget.template.html = _htmlContent;

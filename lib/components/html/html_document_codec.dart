@@ -1,5 +1,9 @@
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
+import 'package:csslib/parser.dart' as css;
+import 'package:csslib/visitor.dart' as css_ast;
+
+import 'app_content_policy.g.dart';
 
 enum HtmlContentProfile { appContent, songContent, emailContent }
 
@@ -82,34 +86,173 @@ bool _linkifyHtmlRoot(dom.Node root) {
   return changed;
 }
 
-/// Legacy app styling/link policy applies only to an edited draft. Song and
-/// email content retain typography, whitespace and template/layout CSS.
-String applyHtmlContentProfile(String html, HtmlContentProfile profile) {
+/// App descriptions inherit the configured font and theme, including legacy
+/// HTML and pasted content. Songs and emails retain their authored styles.
+String normalizeHtmlContentStyles(String html, HtmlContentProfile profile) {
   if (profile != HtmlContentProfile.appContent) return html;
-  final root = HtmlDocumentCodec.decode(html).copyRoot();
+  final fullDocument = RegExp(
+    r'<!doctype\s|<(?:html|head|body)(?:\s|>)',
+    caseSensitive: false,
+  ).hasMatch(html);
+  final dom.Node root = fullDocument
+      ? parser.parse(html)
+      : parser.parseFragment(html);
+  final baseline = _serialize(root);
   void visit(dom.Node parent) {
-    for (final child in parent.nodes) {
+    for (final child in List<dom.Node>.of(parent.nodes)) {
       if (child is dom.Element) {
-        final css = child.attributes['style'];
-        if (css != null) {
-          final retained = css
-              .split(';')
-              .where((entry) => !{'color', 'background-color'}
-                  .contains(entry.split(':').first.trim().toLowerCase()))
-              .join(';');
-          if (retained.trim().isEmpty) {
-            child.attributes.remove('style');
-          } else {
-            child.attributes['style'] = retained;
-          }
+        if (appHtmlRemovedElements.contains(child.localName)) {
+          child.remove();
+          continue;
         }
-        child.attributes.remove('color');
+        _normalizeAppElementStyles(child);
+        for (final attribute in appHtmlRemovedAttributes) {
+          child.attributes.remove(attribute);
+        }
         visit(child);
       }
     }
   }
 
   visit(root);
+  final result = _serialize(root);
+  return result == baseline ? html : result;
+}
+
+// Parse declarations so semicolons in strings and CSS comments cannot bypass
+// the app policy. Unrelated safe layout declarations retain their source text.
+void _normalizeAppElementStyles(dom.Element element) {
+  final source = element.attributes['style'];
+  if (source == null) return;
+  final errors = <css.Message>[];
+  final sheet = css.parse('x {$source}', errors: errors);
+  if (errors.isNotEmpty) {
+    element.attributes.remove('style');
+    return;
+  }
+  final declarations = sheet.topLevels
+      .whereType<css_ast.RuleSet>()
+      .expand((rule) => rule.declarationGroup.declarations)
+      .whereType<css_ast.Declaration>()
+      .toList();
+  final values = <String, ({String value, bool important})>{};
+  void set(String property, String value, bool important) {
+    if (values[property]?.important != true || important) {
+      values[property] = (value: value, important: important);
+    }
+  }
+
+  for (final declaration in declarations) {
+    final property = declaration.property.toLowerCase();
+    final raw = declaration.span.text;
+    final value = raw
+        .substring(raw.indexOf(':') + 1)
+        .replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '')
+        .replaceFirst(RegExp(r'!\s*important\s*$', caseSensitive: false), '')
+        .trim()
+        .toLowerCase();
+    if (property == 'font') {
+      // Only style/weight survive the font shorthand; the app owns the family.
+      final prefix = value
+          .split(RegExp(r'(?:\d*\.)?\d+(?:px|pt|em|rem|%|pc|in|cm|mm)\b'))
+          .first;
+      final tokens = prefix.split(RegExp(r'\s+'));
+      set(
+        'font-weight',
+        tokens.firstWhere(
+          (token) => appHtmlEmphasis
+              .firstWhere((rule) => rule.property == 'font-weight')
+              .values
+              .contains(token),
+          orElse: () => 'normal',
+        ),
+        declaration.important,
+      );
+      set(
+        'font-style',
+        tokens.firstWhere(
+          (token) => {'italic', 'oblique'}.contains(token),
+          orElse: () => 'normal',
+        ),
+        declaration.important,
+      );
+    } else {
+      set(
+        property == 'text-decoration' ? 'text-decoration-line' : property,
+        value,
+        declaration.important,
+      );
+    }
+  }
+  final tags = <String>[];
+  final converted = <String>{};
+  for (final rule in appHtmlEmphasis) {
+    final tokens = (values[rule.property]?.value ?? '').split(RegExp(r'\s+'));
+    if (tokens.any(rule.values.contains)) {
+      tags.add(rule.tag);
+      converted.add(rule.property);
+      if (rule.property == 'text-decoration-line') {
+        converted.add('text-decoration');
+      }
+    }
+  }
+  final retained = declarations
+      .where((declaration) {
+        final property = declaration.property.toLowerCase();
+        return !appHtmlRemovedProperties.contains(property) &&
+            !converted.contains(property);
+      })
+      .map((declaration) => declaration.span.text)
+      .join(';');
+  if (retained.isEmpty) {
+    element.attributes.remove('style');
+  } else {
+    element.attributes['style'] = retained;
+  }
+  _wrapAppEmphasis(element, tags);
+}
+
+// Wrap inline runs, keeping lists, tables and other block structure valid.
+void _wrapAppEmphasis(dom.Element element, List<String> tags) {
+  if (tags.isEmpty) return;
+  final run = <dom.Node>[];
+  void flush() {
+    if (run.isEmpty) return;
+    final index = element.nodes.indexOf(run.first);
+    dom.Element? outer;
+    dom.Element? inner;
+    for (final tag in tags) {
+      final wrapper = dom.Element.tag(tag);
+      if (inner != null) inner.nodes.add(wrapper);
+      outer ??= wrapper;
+      inner = wrapper;
+    }
+    for (final node in run) {
+      node.remove();
+      inner!.nodes.add(node);
+    }
+    element.nodes.insert(index, outer!);
+    run.clear();
+  }
+
+  for (final child in List<dom.Node>.of(element.nodes)) {
+    if (child is dom.Element &&
+        appHtmlBlockElements.contains(child.localName)) {
+      flush();
+      _wrapAppEmphasis(child, tags);
+    } else {
+      run.add(child);
+    }
+  }
+  flush();
+}
+
+/// Apply the same app styles at export and normalize contact links on edits.
+String applyHtmlContentProfile(String html, HtmlContentProfile profile) {
+  if (profile != HtmlContentProfile.appContent) return html;
+  final root = HtmlDocumentCodec.decode(
+    normalizeHtmlContentStyles(html, profile),
+  ).copyRoot();
   _linkifyHtmlRoot(root);
   return _serialize(root);
 }
