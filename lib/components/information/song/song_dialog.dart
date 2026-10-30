@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/information/information_strings.dart';
 import '../../html/html_view.dart';
+import '../../html/html_document_codec.dart';
 
 class SongDialog extends StatefulWidget {
   final String title;
@@ -108,6 +109,7 @@ class _SongDialogState extends State<SongDialog> {
                           padding: const EdgeInsets.all(12),
                           alignment: Alignment.topCenter,
                           child: HtmlView(
+                            profile: HtmlContentProfile.songContent,
                             html:
                                 "<div style='text-align: center;'><h3>${widget.title}</h3>${widget.description}</div>",
                             isSelectable: true,

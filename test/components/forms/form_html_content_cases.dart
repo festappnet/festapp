@@ -28,7 +28,8 @@ void main() {
     addTearDown(coordinator.dispose);
     final src = await coordinator.media
         .addBytes(png, const HtmlMediaOwner.occasion(12));
-    final html = '<img src="$src" alt="Test">';
+    final html = '<p style="font:italic bold 18px Arial;color:red">Text</p>'
+        '<img src="$src" alt="Test">';
     final option = FormOptionDraft('one', 'One', description: html);
     final product = ProductModel(description: html);
     final type = ProductTypeModel(description: html, products: [product]);
@@ -67,6 +68,9 @@ void main() {
     ]) {
       expect(value, contains('https://assets.test/form.png'));
       expect(value, isNot(contains('html-draft.invalid')));
+      expect(value, isNot(contains('Arial')));
+      expect(value, isNot(contains('color:')));
+      expect(value, contains('<strong><em>Text</em></strong>'));
     }
     expect(uploads, 1);
     expect(form.definition.data![FormDefinition.metaPaymentMessage],

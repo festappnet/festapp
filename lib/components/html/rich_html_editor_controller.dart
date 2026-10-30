@@ -87,7 +87,7 @@ class RichHtmlEditorController extends ChangeNotifier {
       documentLayoutResolver: () => layoutKey.currentState as DocumentLayout);
 
   void _load(String? value) {
-    _codec = HtmlEditorDocument(value,
+    _codec = HtmlEditorDocument(normalizeHtmlContentStyles(value ?? '', profile),
         tokenCodes: authoring?.codes ?? const {},
         blockCodes: authoring?.codes
                 .where((c) => authoring!.entry(c)?.block == true)
@@ -654,6 +654,7 @@ class RichHtmlEditorController extends ChangeNotifier {
   }
 
   Iterable<DocumentNode> _pasteContent(String html) {
+    html = normalizeHtmlContentStyles(html, profile);
     if (authoring?.singleLine == true) {
       final fragment = html_parser.parseFragment(html);
       for (final br in fragment.querySelectorAll('br')) {
@@ -785,9 +786,10 @@ class HtmlSaveCoordinator extends ChangeNotifier {
   void registerValue(HtmlFieldIdentity identity,
       {required String? Function() read,
       required void Function(String) write,
-      required HtmlMediaOwner owner}) {
+      required HtmlMediaOwner owner,
+      HtmlContentProfile profile = HtmlContentProfile.appContent}) {
     _bindings.putIfAbsent(
-        identity, () => _HtmlBinding(read, write, owner, read() ?? ''));
+        identity, () => _HtmlBinding(read, write, owner, read() ?? '', profile));
   }
 
   Future<void> prepareWhere(bool Function(HtmlFieldIdentity) accepts) async {
@@ -797,7 +799,8 @@ class HtmlSaveCoordinator extends ChangeNotifier {
       final html = binding.read();
       if (html == null) continue;
       binding.write(await prepare(html, binding.owner,
-          originalHtml: _originals[html] ?? binding.original));
+          originalHtml: _originals[html] ?? binding.original,
+          profile: binding.profile));
     }
   }
 
@@ -826,13 +829,15 @@ class HtmlSaveCoordinator extends ChangeNotifier {
 
   BuildContext? _saveContext;
   Future<String> prepare(String html, HtmlMediaOwner owner,
-      {String? originalHtml}) async {
+      {String? originalHtml,
+      HtmlContentProfile profile = HtmlContentProfile.appContent}) async {
     final context = _saveContext;
     if (context != null &&
         !await confirmHtmlUploadRetry(context, media, html: html))
       throw StateError('Image retry cancelled');
     return media.prepareHtml(
-        html, originalHtml ?? _originals[html] ?? html, owner);
+        normalizeHtmlContentStyles(html, profile),
+        originalHtml ?? _originals[html] ?? html, owner);
   }
 
   Future<void> save(Future<void> Function() writer, {BuildContext? context}) {
@@ -967,11 +972,12 @@ class HtmlFieldIdentity {
 }
 
 class _HtmlBinding {
-  _HtmlBinding(this.read, this.write, this.owner, this.original);
+  _HtmlBinding(this.read, this.write, this.owner, this.original, this.profile);
   final String? Function() read;
   final void Function(String) write;
   final HtmlMediaOwner owner;
   final String original;
+  final HtmlContentProfile profile;
 }
 
 class _IgnoreSubjectNewline extends EditCommand {

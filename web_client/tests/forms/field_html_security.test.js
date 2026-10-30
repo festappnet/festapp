@@ -24,7 +24,7 @@ const field = { id: 101, title: attackTitle, description, isRequired: true, data
 function assertSafeDescription(root) {
     assert.equal(root.querySelector('[onerror], [onclick], script, iframe'), null);
     assert.ok(root.querySelector('strong'));
-    assert.equal(root.querySelector('p').style.color, 'red');
+    assert.equal(root.querySelector('p').style.color, '');
     assert.equal(root.querySelector('a').href, 'https://example.com/info');
     assert.equal(root.querySelectorAll('a')[1].hasAttribute('href'), false);
     assert.equal(root.querySelector('img').getAttribute('src'), '/safe.jpg');

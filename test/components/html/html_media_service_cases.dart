@@ -16,6 +16,22 @@ final png = Uint8List.fromList(
 const owner = HtmlMediaOwner.occasion(12);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('unopened app fields normalize on save while song and email profiles survive', () async {
+    const html = '<p style="font-family:Arial;color:red">Text</p>';
+    final coordinator = HtmlSaveCoordinator();
+    addTearDown(coordinator.dispose);
+    final app = await coordinator.prepare(html, const HtmlMediaOwner.none());
+    expect(app, '<p>Text</p>');
+    for (final profile in [HtmlContentProfile.songContent, HtmlContentProfile.emailContent]) {
+      expect(await coordinator.prepare(html, const HtmlMediaOwner.none(), profile: profile), html);
+      var value = html;
+      coordinator.registerValue(HtmlFieldIdentity(profile.name, 'description'),
+          read: () => value, write: (next) => value = next,
+          owner: const HtmlMediaOwner.none(), profile: profile);
+      await coordinator.prepareWhere((id) => id.entity == profile.name);
+      expect(value, html);
+    }
+  });
   test('file import accepts a real JPEG and preserves its bytes', () async {
     final bytes = Uint8List.fromList(
       image.encodeJpg(image.Image(width: 2, height: 2)),

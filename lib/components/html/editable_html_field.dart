@@ -250,6 +250,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         children: [
           Expanded(
             child: HtmlView(
+              profile: widget.profile,
               embeddedBlock: widget.embeddedBlock,
               html: (widget.html?.isNotEmpty ?? false)
                   ? widget.html!
