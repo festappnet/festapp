@@ -49,6 +49,16 @@ class FormFieldDraft {
         options = value.options.map(FormOptionDraft.fromDefinition).toList();
   factory FormFieldDraft.fromJson(Map<String, dynamic> json) =>
       FormFieldDraft.fromDefinition(FormFieldDefinition.fromJson(json));
+  bool get isPrimaryProductGroup =>
+      definition.type == FormMetadata.fieldTypeProductType &&
+      definition.productType?.type == ProductModel.spotType;
+
+  bool canRemovePrimaryVariantAt(int index) =>
+      !isPrimaryProductGroup ||
+      definition.productType!.products!.asMap().entries.any(
+        (entry) => entry.key != index && entry.value.isHidden != true,
+      );
+
   bool get hasInvalidSelectionOptions =>
       (definition.type == FormMetadata.fieldTypeSelectOne ||
           definition.type == FormMetadata.fieldTypeSelectMany) &&

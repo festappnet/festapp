@@ -702,6 +702,7 @@
     "textFieldType": "Text",
     "viewMore": "Zobrazit více",
     "deleteBlocked": {
+      "primary_product": "Základní skupinu a její poslední viditelnou variantu nelze smazat ani skrýt. Název a cenu můžete upravit.",
       "responses": "Toto pole již má odpověď, proto ho nelze smazat.",
       "orders": "Produkt již byl použit v objednávce, proto ho nelze smazat.",
       "blueprint": "Produkt je použit v plánku míst, proto ho nelze smazat.",

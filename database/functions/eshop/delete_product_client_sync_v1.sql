@@ -8,6 +8,7 @@ BEGIN
  hash:=encode(extensions.digest(convert_to((jsonb_build_object('productId',p_product_id)||CASE WHEN p_expected_version IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('expectedVersion',p_expected_version) END)::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'inventory.product.delete',oc,actor,hash);
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;
+ PERFORM public.lock_primary_product_forms_internal(p_product_id);
  PERFORM public.lock_product_order_dependencies_internal_v1(p_product_id);
  SELECT t.title INTO title FROM eshop.products t WHERE id=p_product_id AND occasion=oc FOR UPDATE;
  IF NOT FOUND THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',404,jsonb_build_object('productId',p_product_id)); END IF;
