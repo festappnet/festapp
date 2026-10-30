@@ -187,3 +187,14 @@ reading never resolves them. New arrivals beyond the captured bound remain new.
 Migration `20261028130000_notification_personal_read_batches.sql` installs the
 schema/helpers and producer, overview, badge, selector and orders RPC changes
 before the Flutter release. No historical customer-event backfill is required.
+
+## Deleted applications and orders
+
+Hard deletion removes the matching `occasion_joined` or order notifications in
+its existing domain command transaction. Order deletion also removes email
+problem attention and email source observations before deleting the messages.
+Recipient and delivery rows cascade, so summaries, contact previews and badges
+all derive from the remaining events. Cancellation alone retains its history.
+The service-only `notification_center_purge_deleted_internal(organization)`
+repairs historical orphan attention for one explicitly selected tenant; it
+never deletes an application, order, live message or another tenant's history.

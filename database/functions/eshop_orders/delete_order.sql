@@ -70,6 +70,20 @@ BEGIN
     RAISE EXCEPTION 'Order not found or occasion changed.';
   END IF;
 
+  -- Delete attention while message identities still exist. Cascading recipients
+  -- and deliveries make every overview, count and badge agree immediately.
+  DELETE FROM public.notification_center_events e
+  USING public.occasions oc
+  WHERE oc.id=order_oc AND e.organization=oc.organization AND e.occasion=order_oc
+    AND (e.data->>'orderId'=delete_order_internal_v1.order_id::text
+      OR (e.kind='email_problem' AND e.data->>'messageId' IN (
+        SELECT m.message_id::text FROM public.email_messages m
+        WHERE m.order_id=delete_order_internal_v1.order_id AND m.organization=oc.organization)));
+  DELETE FROM public.notification_center_source_state s
+  USING public.email_messages m
+  WHERE m.order_id=delete_order_internal_v1.order_id
+    AND s.organization=m.organization AND s.source_key='email:'||m.message_id;
+
   -- Remove every queued/reminder/provider record for this order. log_emails
   -- and address suppressions are independent audit/safety records and remain.
   DELETE FROM public.email_delivery_events e
