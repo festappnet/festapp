@@ -37,6 +37,10 @@ from the shared time owner. The zone, snapshot instant and returned snapshot day
 are frozen for pagination/refresh and relative labels. PostgreSQL computes day
 boundaries in that zone, including DST; UTC offsets are never guessed.
 
+The bell clears its private state while the shared context refresh is pending,
+then reads the badge after the authoritative context completes. Context invalidation
+and browser resume share one scheduled update, including when frames were paused.
+
 When closed, only the lightweight existing badge RPC runs every 60 seconds: it
 checks for an eligible unseen delivery without hydrating contacts or computing
 summary/place totals. Open panels refresh loaded data every 15 seconds through
