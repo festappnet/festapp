@@ -32,7 +32,10 @@ export function confirmationSubstitutions(
     amount: paymentPresentation.amount,
     accountNumber: paymentInfo.account_number_human_readable,
     iban: formatIBAN(paymentInfo.account_number),
-    variableSymbol: paymentReferenceValue(paymentInfo),
+    // Free registrations have no payment reference; preserve one if already set.
+    variableSymbol: paymentReferenceValue(paymentInfo, {
+      required: Number(paymentInfo.amount) > 0,
+    }),
     deadline: formatDatetime(paymentInfo.deadline, lang),
     fullOrder: generateFullOrder(
       order.data,

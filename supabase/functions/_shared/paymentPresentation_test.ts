@@ -6,8 +6,30 @@ import {
   buildEpcSctPayload,
   buildSpdPayload,
   isValidCreditorReference,
+  paymentReferenceValue,
   presentPayment,
 } from "./paymentPresentation.ts";
+
+Deno.test("payment references remain required unless absence is explicitly permitted", () => {
+  for (const currency_code of ["CZK", "EUR"]) {
+    const payment = { currency_code, amount: 0 };
+    assertThrows(() => paymentReferenceValue(payment));
+    assertEquals(paymentReferenceValue(payment, { required: false }), "");
+  }
+  assertEquals(
+    paymentReferenceValue({ currency_code: "CZK", variable_symbol: " 123 " }, {
+      required: false,
+    }),
+    "123",
+  );
+  assertEquals(
+    paymentReferenceValue({
+      currency_code: "EUR",
+      creditor_reference: " RF18539007547034 ",
+    }, { required: false }),
+    "RF18539007547034",
+  );
+});
 
 Deno.test("CZK presentation preserves SPD and numeric VS", () => {
   const payment = {
