@@ -10,13 +10,16 @@ export interface PaymentPresentation {
   currency: string;
 }
 
-export function paymentReferenceValue(payment: any): string {
+export function paymentReferenceValue(
+  payment: any,
+  options: { required?: boolean } = {},
+): string {
   const currency = String(payment?.currency_code ?? "").trim().toUpperCase();
   const value = currency === "EUR"
     ? payment?.creditor_reference
     : payment?.variable_symbol;
   const normalized = String(value ?? "").trim();
-  if (!normalized) {
+  if (!normalized && options.required !== false) {
     throw new Error(
       currency === "EUR" ? "EUR_REFERENCE_REQUIRED" : "VS_REQUIRED",
     );
