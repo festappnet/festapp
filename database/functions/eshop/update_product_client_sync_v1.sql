@@ -39,6 +39,7 @@ BEGIN
   ELSE v_users:='{}'::uuid[]; END IF;
   -- Context replacement recalculates allocations: acquire the same outer order
   -- parents before saving a product, never product then order in this command.
+  PERFORM public.lock_primary_product_forms_internal(v_product);
   PERFORM public.lock_product_order_dependencies_internal_v1(v_product);
   IF v_product IS NOT NULL THEN
     PERFORM 1 FROM eshop.products WHERE id=v_product AND occasion=v_occasion FOR UPDATE;

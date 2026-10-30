@@ -19,6 +19,8 @@ class TicketProductEditorRow extends StatefulWidget {
   final VoidCallback onDelete;
   final VoidCallback? onChanged;
   final List<String> availableCurrencies;
+  final bool canHide;
+  final bool canDelete;
 
   const TicketProductEditorRow({
     super.key,
@@ -27,6 +29,8 @@ class TicketProductEditorRow extends StatefulWidget {
     required this.onDelete,
     this.onChanged,
     required this.availableCurrencies,
+    this.canHide = true,
+    this.canDelete = true,
   });
 
   @override
@@ -248,7 +252,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
             ),
             Switch(
               value: !(widget.product.isHidden ?? false),
-              onChanged: (value) {
+              onChanged: !widget.canHide ? null : (value) {
                 _refresh(() => widget
                     .replaceProduct(widget.product.copyWith(isHidden: !value)));
               },
@@ -280,11 +284,12 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
           icon: const Icon(Icons.more_vert),
         ),
         IconButton(
-          tooltip: widget.product.canDelete
+          tooltip: widget.canDelete && widget.product.canDelete
               ? CommonStrings.delete
-              : FormStrings.deletionReason(widget.product.deleteBlockedReason),
+              : FormStrings.deletionReason(widget.canDelete
+                  ? widget.product.deleteBlockedReason : 'primary_product'),
           icon: const Icon(Icons.delete),
-          onPressed: widget.product.canDelete ? widget.onDelete : null,
+          onPressed: widget.canDelete && widget.product.canDelete ? widget.onDelete : null,
         ),
       ],
     );

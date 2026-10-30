@@ -26,6 +26,10 @@ BEGIN
   -- Authorization check. This function is expected to throw on failure.
   PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
 
+  IF public.primary_product_delete_blocked_internal(p_product_id) THEN
+    RAISE EXCEPTION 'FORM_DELETE_primary_product';
+  END IF;
+
   -- Safety Check: Ensure the product is not part of any existing orders.
   SELECT COUNT(*) INTO v_order_count
     FROM eshop.order_product_ticket

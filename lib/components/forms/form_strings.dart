@@ -64,6 +64,7 @@ class FormStrings {
       'blueprint',
       'inventory',
       'shared',
+      'primary_product',
       'changed'
     ]) {
       if (message.contains('FORM_DELETE_$reason')) {

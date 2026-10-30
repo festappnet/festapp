@@ -67,6 +67,14 @@ editor stages explicit `deleted_field_ids` / `deleted_product_ids`; only the
 existing form-save command applies them in `update_form_internal_v1`. Partial
 settings saves never infer deletion from omitted fields.
 
+The linked `spot` product group is the structural primary offer, even for
+application-only forms with ticket issuance disabled. It and its parent cannot
+be removed, hidden or demoted to an ordinary group. At least one visible variant
+must remain; names and prices stay editable. The editor protects these controls
+locally, and SQL rechecks the invariant atomically for form and catalog saves.
+Catalog mutations lock the affected forms before products so concurrent variant
+deletions cannot each remove the other's last remaining option.
+
 Save checks current answers and current order products (including cancelled
 orders), blueprint spots, inventory links, and shared product groups. Removing
 a ticket container includes its nested fields; removing a product field also

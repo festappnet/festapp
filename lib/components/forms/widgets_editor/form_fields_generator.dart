@@ -272,7 +272,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     final String defaultDescription = CommonStrings.description;
     final form = widget.bundle.form;
     void deleteField() {
-      if (!field.definition.canDelete) return;
+      if (!form.canDeleteField(field)) return;
       _refresh(() {
         displayList.remove(field);
         form.removeField(field);
@@ -561,12 +561,12 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                       items.add(
                         PopupMenuItem<String>(
                           value: "delete_field",
-                          enabled: field.definition.canDelete,
+                          enabled: form.canDeleteField(field),
                           child: Tooltip(
-                            message: field.definition.canDelete
+                            message: form.canDeleteField(field)
                                 ? CommonStrings.delete
                                 : FormStrings.deletionReason(
-                                    field.definition.deleteBlockedReason,
+                                    form.deletionBlockedReasonFor(field),
                                   ),
                             child: Row(
                               children: [
@@ -585,13 +585,13 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 ),
                 if (!isCompact)
                   IconButton(
-                    tooltip: field.definition.canDelete
+                    tooltip: form.canDeleteField(field)
                         ? CommonStrings.delete
                         : FormStrings.deletionReason(
-                            field.definition.deleteBlockedReason,
+                            form.deletionBlockedReasonFor(field),
                           ),
                     icon: const Icon(Icons.delete),
-                    onPressed: field.definition.canDelete ? deleteField : null,
+                    onPressed: form.canDeleteField(field) ? deleteField : null,
                   ),
               ],
             ),

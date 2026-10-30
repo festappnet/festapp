@@ -491,12 +491,14 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                     FormStrings.show,
                     Switch(
                       value: !groupIsHidden,
-                      onChanged: (val) {
-                        ptField.definition = ptField.definition.copyWith(
-                          isHidden: !val,
-                        );
-                        refresh();
-                      },
+                      onChanged: ptField.isPrimaryProductGroup
+                          ? null
+                          : (val) {
+                              ptField.definition = ptField.definition.copyWith(
+                                isHidden: !val,
+                              );
+                              refresh();
+                            },
                     ),
                   ),
                   PopupMenuButton<String>(
@@ -522,13 +524,13 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                     icon: const Icon(Icons.more_vert),
                   ),
                   IconButton(
-                    tooltip: ptField.definition.canDelete
+                    tooltip: form.canDeleteField(ptField)
                         ? CommonStrings.delete
                         : FormStrings.deletionReason(
-                            ptField.definition.deleteBlockedReason,
+                            form.deletionBlockedReasonFor(ptField),
                           ),
                     icon: const Icon(Icons.delete),
-                    onPressed: !ptField.definition.canDelete
+                    onPressed: !form.canDeleteField(ptField)
                         ? null
                         : () {
                             form.removeField(ptField);
@@ -537,6 +539,14 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                   ),
                 ],
               ),
+              if (ptField.isPrimaryProductGroup)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    FormStrings.deletionReason('primary_product'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               // Description Editor
               if (!HtmlHelper.isHtmlEmptyOrNull(
                 ptField.definition.productType?.description,
@@ -577,6 +587,10 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                         child: TicketProductEditorRow(
                           readProduct: () =>
                               ptField.definition.productType!.products![i],
+                          canDelete: ptField.canRemovePrimaryVariantAt(i),
+                          canHide:
+                              group.products![i].isHidden == true ||
+                              ptField.canRemovePrimaryVariantAt(i),
                           replaceProduct: (product) {
                             final products = [
                               ...ptField.definition.productType!.products!,
@@ -588,6 +602,13 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                           },
                           onChanged: refresh,
                           onDelete: () {
+                            if (!ptField.canRemovePrimaryVariantAt(i) ||
+                                !ptField
+                                    .definition
+                                    .productType!
+                                    .products![i]
+                                    .canDelete)
+                              return;
                             final products = [
                               ...ptField.definition.productType!.products!,
                             ];
