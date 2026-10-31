@@ -45,7 +45,7 @@ if args.check:
         raise SystemExit('Notification forward migration differs from manifest sources')
     print('Notification feed migration and canonical tables match')
 else:
-    if args.output and out.exists() and out.read_text() != text:
+    if out.exists() and out.read_text() != text:
         raise SystemExit('Refusing to overwrite an existing different output')
     out.write_text(text)
     tables.write_text(canonical_tables)

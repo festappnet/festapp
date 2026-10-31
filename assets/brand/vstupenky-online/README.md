@@ -1,5 +1,7 @@
 # vstupenky.online
 
+The canonical public contact email for vstupenky.online is **info@vstupenky.online**, confirmed by the owner on 2026-10-29. Use it on regional brand profiles and in contact copy.
+
 The selected identity is the wide ticket / V mark **without the head**, based on `concepts/selected-wide-no-head.png`, approved as the direction on 2026-10-29. Earlier exploratory images remain in `concepts/` for provenance.
 
 ## Canonical vector assets

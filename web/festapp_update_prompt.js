@@ -9,6 +9,7 @@
   const runtimeRecoveryStorageKey = 'festappRuntimeRecoveryVersion';
   const bannerId = 'festapp-update-banner';
   let checkInFlight = false;
+  let lastVersionCheckAt = null;
   let runtimeRecoveryInFlight = false;
 
   // Compatibility boundary for installations created before Festapp's worker.
@@ -615,6 +616,11 @@
     if (checkInFlight || !currentVersion || navigator.onLine === false) {
       return;
     }
+    // Focus, visibility and the startup timer can arrive separately, after a
+    // fast response has already completed. Reuse that recent network truth.
+    if (lastVersionCheckAt !== null && Date.now() - lastVersionCheckAt < 30000) {
+      return;
+    }
     checkInFlight = true;
 
     try {
@@ -635,6 +641,7 @@
       if (!latestVersion) {
         return;
       }
+      lastVersionCheckAt = Date.now();
       if (latestVersion === currentVersion) {
         // A network navigation can already serve the new HTML while the tab is
         // still controlled by the previous worker. In that mixed state the

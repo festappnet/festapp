@@ -1,6 +1,6 @@
 {
-  "name": "notification-center-personal-read-batches-2026-10-28",
-  "output": "supabase/migrations/20261028130000_notification_personal_read_batches.sql",
+  "name": "notification-center-source-alignment-2026-10-31",
+  "output": "supabase/migrations/20261031120000_notification_center_source_alignment.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -18,7 +18,10 @@
     "20261028013000_notification_category_rollups.sql",
     "20261028020000_notification_center_lifecycle.sql",
     "20261028030000_notification_new_orders_exclude_cancelled.sql",
-    "20261028120000_notification_center_current_rollups.sql"
+    "20261028120000_notification_center_current_rollups.sql",
+    "20261028130000_notification_personal_read_batches.sql",
+    "20261030093000_notification_deleted_entities.sql",
+    "20261031110000_notification_current_participants.sql"
   ],
   "sources": [
     "notification_center/read_state.sql",
@@ -45,6 +48,9 @@
     "20261028013000_notification_category_rollups.sql": "28bb314bba0e108ec5a9aeda474bafd6f560dbdb790e399efabfb29cdf3b5c08",
     "20261028020000_notification_center_lifecycle.sql": "c28d6e45b85e666abc781ed754a267032b2ab25d48ef9258278235ce55dbafbe",
     "20261028030000_notification_new_orders_exclude_cancelled.sql": "82e9042156c562e2c8f9ed48d4efbd7cb16bc31beba0cdfa6a69a6ccc1434c65",
-    "20261028120000_notification_center_current_rollups.sql": "55596efa8ae0e9af14da00c6d38fe495cccb834f790c8bde4b68d9618a76bc3e"
+    "20261028120000_notification_center_current_rollups.sql": "55596efa8ae0e9af14da00c6d38fe495cccb834f790c8bde4b68d9618a76bc3e",
+    "20261028130000_notification_personal_read_batches.sql": "9561d5fe6d17689dc295fd26cda0cc0b103d0f6280471be3c4ab5b2ac6ec5cd9",
+    "20261030093000_notification_deleted_entities.sql": "08895f68a956a7a1907aaee4daacbab6f06519415a7c5ae245c67dbbfb7c536f",
+    "20261031110000_notification_current_participants.sql": "81a682010ec9c6540a09974071854e97c0710d64944ad1a6a7007ad620bd6f08"
   }
 }
