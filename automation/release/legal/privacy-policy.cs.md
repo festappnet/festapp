@@ -1,6 +1,6 @@
 # Ochrana osobních údajů - Vstupenky.online
 
-Účinnost: 27. října 2026. Verze: 1.3.
+Účinnost: 20. října 2026. Verze: 1.2.
 
 ## Kdo odpovídá za vaše údaje
 
@@ -32,14 +32,6 @@ Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy,
 
 Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
 
-## Volitelné propojení s ChatGPT
-
-Pokud svůj účet propojíte s ChatGPT od OpenAI, vyberete akce nebo pořadatele a povolíte rozsah přístupu. Konektor předává do ChatGPT údaje potřebné pro Vámi požadovanou operaci pouze v tomto rozsahu a podle Vašich aktuálních oprávnění. Čtecí připojení umožňuje přehled akcí, prodejní souhrny, hledání a detail objednávek a čtení podkladů vstupenek; nezakládá objednávky, nemění platby ani neodesílá vstupenky.
-
-Veřejný konektor ChatGPT předává názvy a identifikátory akcí, identifikátory a symboly objednávek, počty a stavy objednávek a vstupenek, částky, měny, údaje o úhradách a podklady vzhledu vstupenek. Z objednávek nepředává jména, příjmení, e-maily, poznámky ani odpovědi a definice polí přihlášek. Hledání podporuje přesný symbol objednávky, nikoli kontaktní údaje. Identifikátory a symboly nejsou anonymní údaje. Konektor je určen pořadatelům; neslouží ke zpracování údajů dětí ani údajů z dokladů. Do názvů akcí a podkladů vzhledu vstupenek proto tyto údaje nevkládejte. Obsah se může stát součástí Vaší konverzace. Zahrnujte jen údaje, které smíte k danému účelu zpřístupnit.
-
-OpenAI zpracovává předané údaje podle podmínek a nastavení Vašeho účtu ChatGPT. Samotné omezení konektoru na čtení neznamená, že se žádné osobní údaje nepředávají. Propojení je dobrovolné a bez něj lze systém používat běžným způsobem. Přístup kdykoliv odvoláte ve správě propojení účtu. Odvolání zastaví další přístup konektoru, ale samo neodstraní obsah dřívějších konverzací v ChatGPT; ten spravujete u OpenAI.
-
 ## Kde údaje zpracováváme
 
 Hlavní databázi a účty provozujeme na serverech Hetzner, které sami spravujeme. Cloudflare zajišťuje web, ochranu provozu, soubory a šifrované zálohy. Údaje mají v potřebném rozsahu také pořadatel a jeho pověřené osoby.
@@ -61,3 +53,8 @@ V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace.
 Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
 
 Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+
+
+## Souhrnné měření veřejných stránek
+
+Na veřejných stránkách tohoto webu používáme Cloudflare Web Analytics pro souhrnné počty návštěv, zobrazení a zdrojových webů. Měření nepoužívá analytické cookies, trvalý identifikátor návštěvníka ani fingerprinting a nepropojujeme je s účty, registracemi nebo objednávkami. Administrace, přihlašovací stránky a soukromé části aplikace jsou z měření vyloučeny. Cloudflare při přenosu technicky přijímá IP adresu a další síťové údaje; blokování skriptu zabrání tomuto měření, nikoli serverovým provozním záznamům.
