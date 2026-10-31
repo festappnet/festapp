@@ -91,7 +91,7 @@ jobs:
             --passphrase-fd 0 --symmetric --cipher-algo AES256 \
             --output "$RUNNER_TEMP/play-report.json.gpg" "$RUNNER_TEMP/play-report.json"
       - name: Store encrypted report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: google-play-${{ matrix.tenant }}-${{ matrix.operation }}-${{ github.run_id }}
           path: ${{ runner.temp }}/play-report.json.gpg

@@ -45,7 +45,7 @@ jobs:
           RELEASE_MANIFEST: ${{ secrets[steps.target.outputs.secret_name] }}
           RECIPIENT_PUBLIC_KEY_BASE64: ${{ inputs.recipient_public_key_base64 }}
         run: node automation/release/seal_local_release_manifest.mjs "$RUNNER_TEMP/sealed-release-input.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.tenant_id }}-local-release-input
           path: ${{ runner.temp }}/sealed-release-input.json
