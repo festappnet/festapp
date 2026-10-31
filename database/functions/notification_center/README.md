@@ -198,3 +198,14 @@ all derive from the remaining events. Cancellation alone retains its history.
 The service-only `notification_center_purge_deleted_internal(organization)`
 repairs historical orphan attention for one explicitly selected tenant; it
 never deletes an application, order, live message or another tenant's history.
+
+## Current source and immutable history
+
+The forward manifest now targets
+`20261031120000_notification_center_source_alignment.sql`, including the shared
+current-membership policy for participant attention. The prior personal-batch,
+deleted-entity and current-participant migrations are sealed prerequisites with
+verified digests. The assembler checks current canonical SQL against the new
+forward output and refuses to replace any differing existing output, including
+its default destination. Historical migrations are never regenerated after a
+source change; advance the manifest to a new forward migration instead.
