@@ -328,4 +328,4 @@ settings owner (including MCP). Missing/null values follow the visitor's device.
 The design editor saves this with its normal draft; it never changes the admin's
 personal theme. Both public clients apply the appearance locally to the form;
 JavaScript restores the personal preference and previous theme styles on exit.
-The forward migration is `20261031120000_form_design_theme_mode.sql`.
+The forward migration is `20261031191700_form_design_theme_mode.sql`.
