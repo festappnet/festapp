@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "hvezdamorska",
+  "baseMainSha": "0c3f8b142ffbb048f0efbd18ed89a2cca17b9587",
+  "release": {
+    "version": "0.20.474+980",
+    "note": "Configured avatar font metrics"
+  }
+}
