@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "hvezdamorska",
+  "baseMainSha": "354786d600954a6de000d2d8da53a0a0e5c0ddc0",
+  "release": {
+    "version": "0.20.473+979",
+    "note": "Unified web improvements"
+  }
+}
