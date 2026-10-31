@@ -5,6 +5,10 @@ recovery. Festapp never retries Fio from the health monitor. Every five minutes
 it reads BankSync account metadata and ingress state, then records an observation.
 The legacy BankSync error strings are decoded only in `bankSyncRemote.ts` into
 an allowlist of safe codes. Raw errors and token material never reach the client.
+The notification-center adapter translates detailed temporary Fio failures to
+its existing `bank_sync_retry_required` reason before committing a leased
+observation. The notification-center SQL reason allowlist remains authoritative;
+new account-health codes must never be forwarded to that contract implicitly.
 
 Festapp SQL owns the diagnosis, incident lifetime and notification policy.
 `bank_sync_problem` is the shared diagnosis for account settings, order readers

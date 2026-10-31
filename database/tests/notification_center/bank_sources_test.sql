@@ -57,7 +57,8 @@ BEGIN
  FOREACH minute IN ARRAY ARRAY[3,8,19] LOOP
   UPDATE public.notification_center_bank_health SET next_at='-infinity' WHERE connection_id=conn;
   claim:=public.claim_notification_center_bank_health();SELECT (x->>'token')::uuid INTO tok FROM jsonb_array_elements(claim) x WHERE (x->>'id')::bigint=conn;
-  PERFORM public.complete_notification_center_bank_health(conn,tok,NULL,'transport_unavailable',ts+make_interval(mins=>minute));
+  PERFORM public.complete_notification_center_bank_health(conn,tok,NULL,
+   CASE WHEN minute=8 THEN 'bank_sync_retry_required' ELSE 'transport_unavailable' END,ts+make_interval(mins=>minute));
   PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='bank_problem'),
    CASE WHEN minute=19 THEN 2 ELSE 1 END::bigint,'transport tolerance and dedupe');
  END LOOP;
