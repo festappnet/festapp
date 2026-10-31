@@ -28,9 +28,7 @@ import 'package:fstapp/widgets/time_data_range_picker.dart';
 class OccasionCreationHelper {
   static Future<UnitModel?> createCopy(
       BuildContext context, OccasionModel source,
-      {int? sourceUnitId,
-      List<OccasionModel> existingOccasions = const [],
-      ValueChanged<OccasionModel>? onCreated}) async {
+      {int? sourceUnitId}) async {
     final copyLocale = context.locale.languageCode;
     final destinations = await ExceptionHandler.guard(context,
         futureFunction: () => DbUnits.getOccasionCopyUnits(source.id!));
@@ -39,13 +37,6 @@ class OccasionCreationHelper {
     final target = await showOccasionCopyTargetDialog(context, destinations,
         sourceUnitId: sourceUnitId ?? source.unit);
     if (target == null || !context.mounted) return null;
-    if (AppConfig.occasionSetupEnabled) {
-      final created = await createNewOccasion(
-          context, target, existingOccasions,
-          source: source, copyLocale: copyLocale);
-      if (created != null) onCreated?.call(created);
-      return target;
-    }
     bool mediaCopied = false;
     final created = await DialogHelper.showProgressDialogAsync(
         context, UnitStrings.createCopy, 1,

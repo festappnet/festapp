@@ -24,6 +24,10 @@ services, and lifecycle (Duplication/Deletion).
 
 **Hybrid Logic**:
 
+The Copy action creates a complete occasion directly, including when the setup
+wizard is enabled. It does not create a setup draft. After copying, the dashboard
+reloads the current Unit or navigates to the selected destination Unit.
+
 1. **SQL**: Calls `duplicate_occasion_client_sync_v1` (or the
    `duplicate_occasion` facade) to copy the database row and related tables.
    The optional target Unit defaults to the source. The caller must manage
