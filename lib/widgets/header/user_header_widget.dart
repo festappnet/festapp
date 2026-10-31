@@ -1,3 +1,4 @@
+import 'package:fstapp/widgets/avatar_initial.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:fstapp/components/users/user_strings.dart';
@@ -236,9 +237,11 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                           color: ThemeConfig.brandAccentColor,
                         ),
                         child: Center(
-                          child: Text(
-                            _getUserInitial(),
-                            style: const TextStyle(
+                          child: AvatarInitial(
+                            initial: _getUserInitial(),
+                            capHeightRatio: ThemeConfig.boldCapHeightRatio,
+                            style: TextStyle(
+                              fontFamily: ThemeConfig.fontFamily,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -387,24 +390,17 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
               color: ThemeConfig.brandAccentColor,
             ),
             child: Center(
-              // The bundled bold face has 0.682em cap height and 0.318em
-              // descent. Center the capital itself, rather than its line box.
-              child: Transform.translate(
-                  offset: Offset(
-                      0, MediaQuery.textScalerOf(context).scale(20) * .159),
-                  child: Text(
-                    _getUserInitial(),
-                    textHeightBehavior: const TextHeightBehavior(
-                        applyHeightToFirstAscent: false,
-                        applyHeightToLastDescent: false),
-                    style: TextStyle(
-                      fontFamily: ThemeConfig.fontFamily,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      height: 1,
-                      color: Colors.white,
-                    ),
-                  )),
+              child: AvatarInitial(
+                initial: _getUserInitial(),
+                capHeightRatio: ThemeConfig.boldCapHeightRatio,
+                style: TextStyle(
+                  fontFamily: ThemeConfig.fontFamily,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  height: 1,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ))),
     );
