@@ -502,6 +502,17 @@ class _OrdersContentState extends State<OrdersContent> {
     }
   }
 
+  void _revealNotificationOrders(
+      SingleDataGridController<OrderModel> grid, Set<int> ids) {
+    // Keep Active unless a selected order needs the broader view.
+    final hasInactiveOrder = grid.stateManager.refRows.originalList.any((row) =>
+        ids.contains(OrderGridFilters.order(row)?.id) &&
+        !OrderGridFilters.orderIsActive(row));
+    grid.stateManager.setFilterRows([]);
+    grid.additionalFilterEnabled = !hasInactiveOrder;
+    grid.applyRowFilter();
+  }
+
   Future<void> _selectNotificationOrders(SingleDataGridController<OrderModel> grid,
       Set<int> ids, String target, int generation) async {
     bool owns() => mounted && generation == _loadGeneration &&
@@ -510,10 +521,7 @@ class _OrdersContentState extends State<OrdersContent> {
     if (!await grid.whenLoaded) return;
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted || !owns() || !grid.isGridLoaded) return;
-    // Reveal all matching rows, including cancellations hidden by Active.
-    grid.toggleAdditionalFilter(false);
-    grid.stateManager.setFilterRows([]);
-    grid.applyRowFilter();
+    _revealNotificationOrders(grid, ids);
     final manager = grid.stateManager;
     manager.setSelectingMode(TrinaGridSelectingMode.row, notify: false);
     manager.clearCurrentSelecting(notify: false);
@@ -545,17 +553,13 @@ class _OrdersContentState extends State<OrdersContent> {
         int.tryParse(
                 context.routeData.queryParams.optString('orderId') ?? '') ==
             orderId;
-    // The native grid mounts asynchronously after its controller is assigned.
-    for (var i = 0; i < 100 && owns() && !grid.isGridLoaded; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-    }
-    if (!mounted || !owns()) return;
+    if (!await grid.whenLoaded) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !owns() || !grid.isGridLoaded) return;
     void focusRow({bool reveal = false}) {
       if (!owns() || !grid.isGridLoaded) return;
       if (reveal) {
-        grid.toggleAdditionalFilter(false);
-        grid.stateManager.setFilterRows([]);
-        grid.applyRowFilter();
+        _revealNotificationOrders(grid, {orderId});
       }
       final rows = grid.stateManager.refRows.filterOrOriginalList;
       final index =
