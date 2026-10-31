@@ -15,6 +15,7 @@ import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
 
 import '../fonts/ticket_font_ids.dart';
+import '../fonts/font_resource_loading.dart';
 
 import 'package:flutter/services.dart';
 import 'package:fstapp/services/storage_helper.dart';
@@ -419,7 +420,10 @@ class TicketLayoutService {
     });
   }
 
-  Future<TicketFontResource> font(int occasionId, String id) async {
+  Future<TicketFontResource> font(int occasionId, String id) =>
+      readFontResource(() => _readFont(occasionId, id));
+
+  Future<TicketFontResource> _readFont(int occasionId, String id) async {
     final builtins = (await TicketPreviewAssets.shared.manifest)['fonts'] as Map;
     if (builtins.containsKey(id)) {
       return _cache(id, () async => (await TicketPreviewAssets.shared.font(id))!);
@@ -431,7 +435,7 @@ class TicketLayoutService {
       'fontProtocol': 2,
       'fontId': id,
     });
-    if (identity != identityKey()) throw StateError('Ticket context changed');
+    if (identity != identityKey()) throw FontResourceContextChanged();
     return _register(reply);
   }
 

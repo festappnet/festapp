@@ -113,6 +113,7 @@ VenueLayoutDocument tableLayout({
 }
 
 List<Map<String, dynamic>> _anchors(LayoutNode table, int count) {
+  table = table.copyWith(properties: surfaceGeometryProperties(table));
   final seating = TableSeating.fromTable(table),
       inset = seating.edgePadding * 2,
       offset = seating.offset;

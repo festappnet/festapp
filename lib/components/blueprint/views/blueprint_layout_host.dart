@@ -17,6 +17,7 @@ import '../blueprint_text_preparation.dart';
 import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
 import 'package:fstapp/components/eshop/ticket_batch_strings.dart';
 import 'dart:async';
+import '../../fonts/font_resource_loading.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'blueprint_plan_editor.dart';
@@ -83,9 +84,18 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   int _assetGeneration = 0;
   Future<BlueprintTextResources>? _fontCatalog;
   // Public viewers use saved outlines; this editor loads native faces on demand.
-  Future<BlueprintTextResources> get _fonts =>
-      _fontCatalog ??= widget.loadTextResources?.call() ??
-          BlueprintTextResources.load(controller.snapshot.occasionId);
+  Future<BlueprintTextResources> get _fonts => _fontCatalog ??= _loadFonts();
+
+  Future<BlueprintTextResources> _loadFonts() async {
+    try {
+      return await readFontResource(() => Future<BlueprintTextResources>.sync(() =>
+          widget.loadTextResources?.call() ??
+          BlueprintTextResources.load(controller.snapshot.occasionId)));
+    } catch (_) {
+      _fontCatalog = null;
+      rethrow;
+    }
+  }
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _canOrder => RightsService.canUpdateOrders();
   bool get _busy =>
