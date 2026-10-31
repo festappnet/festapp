@@ -103,6 +103,7 @@ void main() {
         isTrue,
       );
       for (final mode in ['dark', 'light', 'system']) {
+        await tester.ensureVisible(find.byKey(ValueKey('form-theme-$mode')));
         await tester.tap(find.byKey(ValueKey('form-theme-$mode')));
         await tester.pumpAndSettle();
         expect(form.toEditedJson()['settings']['design']['theme_mode'], mode);

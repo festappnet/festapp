@@ -186,40 +186,6 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 16),
-          Text(
-            FormStrings.formAppearance,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final mode in ['system', 'light', 'dark'])
-                ChoiceChip(
-                  key: ValueKey('form-theme-$mode'),
-                  label: Text(switch (mode) {
-                    'light' => FormStrings.appearanceLight,
-                    'dark' => FormStrings.appearanceDark,
-                    _ => FormStrings.appearanceSystem,
-                  }),
-                  selected: widget.form.definition.themeMode == mode,
-                  onSelected: widget.enabled
-                      ? (_) => setState(() {
-                          widget.form.definition = widget.form.definition
-                              .withThemeMode(mode);
-                          widget.onChanged();
-                        })
-                      : null,
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            FormStrings.formAppearanceHint,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
           AppearanceStyleChooser(
@@ -310,6 +276,40 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                   : null,
               resetLabel: FormStrings.resetToDefault,
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            FormStrings.formAppearance,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final mode in ['system', 'light', 'dark'])
+                ChoiceChip(
+                  key: ValueKey('form-theme-$mode'),
+                  label: Text(switch (mode) {
+                    'light' => FormStrings.appearanceLight,
+                    'dark' => FormStrings.appearanceDark,
+                    _ => FormStrings.appearanceSystem,
+                  }),
+                  selected: widget.form.definition.themeMode == mode,
+                  onSelected: widget.enabled
+                      ? (_) => setState(() {
+                          widget.form.definition = widget.form.definition
+                              .withThemeMode(mode);
+                          widget.onChanged();
+                        })
+                      : null,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            FormStrings.formAppearanceHint,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 24),
           const Divider(),

@@ -427,8 +427,8 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Vzhled formuláře",
-    "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Volba Systém se řídí nastavením jejich zařízení.",
-    "appearanceSystem": "Systém",
+    "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Automatický vzhled se řídí nastavením jejich zařízení.",
+    "appearanceSystem": "Podle systému",
     "appearanceLight": "Světlý",
     "appearanceDark": "Tmavý",
     "invalidVariableSymbolPolicy": "Nastavte platnou strategii VS. U číselné řady zadejte celé počáteční číslo od 1 do 9999999999.",
