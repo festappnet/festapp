@@ -10,6 +10,9 @@ class ThemeConfig {
   static const AdaptiveThemeMode defaultThemeMode = AdaptiveThemeMode.light;
 
   static final fontFamily = "Futura";
+  // Generated from the configured bold face's OpenType cap-height metric.
+  // ignore: unnecessary_nullable_for_final_variable_declarations
+  static const double? boldCapHeightRatio = 0.682;
 
   /// The single shared Material 3 factory for application and local themes.
   static ThemeData theme({Brightness brightness = Brightness.light}) {
