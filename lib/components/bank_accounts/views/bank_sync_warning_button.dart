@@ -25,6 +25,9 @@ class BankSyncWarningButton extends StatelessWidget {
     final canManage = RightsService.hasBankCapability(
             warning.bankAccountId, AuthorizationCapabilities.bankSyncManage) &&
         warning.bankAccountId != null;
+    final automaticRetry = const {
+      'temporary_failure', 'unavailable', 'stale', 'bank_error'
+    }.contains(warning.code);
     final guidance = warning.code == 'suspended'
         ? OrdersStrings.bankSyncWarningEnable
         : OrdersStrings.bankSyncWarningManage;
@@ -51,7 +54,9 @@ class BankSyncWarningButton extends StatelessWidget {
           ? null
           : [
               '$reason (${OrdersStrings.bankSyncWarningDetailsHint})',
-              contacts.isEmpty
+              automaticRetry
+                  ? OrdersStrings.bankSyncWarningAutomaticRetry
+                  : contacts.isEmpty
                   ? OrdersStrings.bankSyncWarningFallback
                   : '${OrdersStrings.bankSyncWarningContactShort} ${contacts.map((contact) => contact.name.isNotEmpty ? contact.name : contact.email ?? '').join(', ')}',
             ].join('\n'),
@@ -88,7 +93,9 @@ class BankSyncWarningButton extends StatelessWidget {
                   SelectableText(OrdersStrings.bankSyncWarningHelp),
                 ],
                 const SizedBox(height: 16),
-                if (canManage) ...[
+                if (automaticRetry) ...[
+                  SelectableText(OrdersStrings.bankSyncWarningAutomaticRetry),
+                ] else if (canManage) ...[
                   SelectableText(guidance),
                   settingsLink(beforeOpen: () => Navigator.of(context).pop()),
                 ] else ...[

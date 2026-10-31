@@ -2,7 +2,7 @@
 UPDATE public.email_capacity SET paused=true,worker_url=NULL;
 DO $$
 DECLARE v_org bigint:=-971500; v_unit bigint:=-971500; v_bank bigint:=-971500; v_cash bigint:=-971501;
- v_conn bigint; v_user uuid; v_result jsonb; v_message public.email_messages; v_new uuid; v_count integer;
+ v_conn bigint; v_user uuid; v_alias_user uuid; v_incident uuid; v_result jsonb; v_message public.email_messages; v_new uuid; v_count integer;
 BEGIN
  INSERT INTO public.organizations(id,title) VALUES(v_org,'Bank health fixture');
  INSERT INTO public.units(id,title,organization) VALUES(v_unit,'Bank health unit',v_org);
@@ -12,6 +12,11 @@ BEGIN
  INSERT INTO eshop.bank_accounts(id,title,type,account_number) VALUES(v_bank,'Health bank','FIO','971500/2010'),(v_cash,'Cash fixture','CASH',NULL);
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(v_unit,v_bank);
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(v_bank,v_user,true);
+ -- Two authorized identities share a mailbox, as in the real incident.
+ PERFORM public.create_user_for_test('bank_health_alias','bank-health-alias@example.invalid');
+ v_alias_user:=public.get_user_id('bank_health_alias');
+ UPDATE public.user_info SET organization=v_org,email_delivery='bank-health-admin@example.invalid' WHERE id=v_alias_user;
+ INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(v_bank,v_alias_user,true);
  INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
   provider,mode,state,pairing_code,manifest_sha256,legacy_blocked_at,bank_pull_at)
   VALUES('health-fixture','festapp','971500',v_bank,'971500/2010','FIO','api','connected','971500abcd',repeat('a',64),now(),now()) RETURNING id INTO v_conn;
@@ -27,7 +32,7 @@ BEGIN
  PERFORM assert_true(public.bank_sync_warning(v_cash) IS NULL,'cash has no bank warning');
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'fio_token_invalid_or_inactive',true,true,true);
  v_result:=public.bank_sync_warning(v_bank);
- PERFORM assert_eq(v_result->>'code','bank_error','invalid token warns all affected order readers');
+ PERFORM assert_eq(v_result->>'code','token_invalid','invalid token explains required action to affected order readers');
  PERFORM assert_eq(v_result#>>'{contacts,0,email}','bank-health-admin@example.invalid','tooltip identifies account administrator');
  PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),0,'transient error grace period');
  UPDATE eshop.bank_sync_health SET warning_since=now()-interval '11 minutes' WHERE connection_id=v_conn;
@@ -36,6 +41,9 @@ BEGIN
  SELECT * INTO STRICT v_message FROM public.email_messages WHERE code='BANK_SYNC_WARNING' AND organization=v_org;
  PERFORM assert_eq(v_message.recipient,'bank-health-admin@example.invalid','mail goes to bank admin');
  PERFORM assert_true(public.email_intent_valid(v_message),'current warning may be sent');
+ UPDATE eshop.bank_sync_health SET checked_at=now()-interval '11 minutes' WHERE connection_id=v_conn;
+ PERFORM assert_false(public.email_intent_valid(v_message),'expired observation invalidates a delayed notification');
+ UPDATE eshop.bank_sync_health SET checked_at=now() WHERE connection_id=v_conn;
  PERFORM public.record_bank_sync_health(v_org,v_conn,now(),NULL,true,true,true);
  PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'recovery clears row warning');
  PERFORM assert_false(public.email_intent_valid(v_message),'recovery invalidates queued stale email');
@@ -43,7 +51,24 @@ BEGIN
  SELECT incident_id INTO v_new FROM eshop.bank_sync_health WHERE connection_id=v_conn;
  PERFORM assert_true(v_new::text<>v_message.data->>'incident_id','new outage starts new incident');
  UPDATE eshop.bank_sync_health SET warning_since=now()-interval '11 minutes' WHERE connection_id=v_conn;
- PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),1,'new incident sends another warning');
+ PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),0,'temporary failures do not email after only eleven minutes');
+ UPDATE eshop.bank_sync_health SET warning_since=now()-interval '61 minutes' WHERE connection_id=v_conn;
+ PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),1,'persistent retry incident emails once per mailbox after an hour');
+ SELECT incident_id INTO v_incident FROM eshop.bank_sync_health WHERE connection_id=v_conn;
+ PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'fio_temporarily_unavailable',true,true,true);
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','temporary_failure','Fio transient failures retain their own diagnosis');
+ PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'bank_sync_unavailable',NULL,NULL,NULL);
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','unavailable','management failure is not diagnosed as Fio failure');
+ PERFORM assert_true((SELECT incident_id=v_incident AND warning_since<now()-interval '60 minutes' FROM eshop.bank_sync_health WHERE connection_id=v_conn),'changing retry symptoms preserve incident and grace clock');
+ PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),0,'changing retry symptoms do not send more mail');
+ SELECT * INTO STRICT v_message FROM public.email_messages WHERE code='BANK_SYNC_WARNING' AND organization=v_org AND data->>'incident_id'=v_incident::text;
+ PERFORM assert_true(public.email_intent_valid(v_message),'queued observation remains valid for same retry incident');
+ PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'fio_receiving_account_mismatch',true,true,true);
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','account_mismatch','account mismatch is an actionable fault');
+ PERFORM assert_false(public.email_intent_valid(v_message),'new actionable fault invalidates retry advice');
+ PERFORM assert_true((SELECT incident_id<>v_incident AND notified_at IS NULL FROM eshop.bank_sync_health WHERE connection_id=v_conn),'actionable fault starts its own notification incident');
+ UPDATE eshop.bank_sync_health SET warning_since=now()-interval '11 minutes' WHERE connection_id=v_conn;
+ PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),1,'actionable fault is not hidden by prior transient notification');
  UPDATE eshop.bank_sync_connections SET state='suspended' WHERE id=v_conn;
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,NULL,false,false,true);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','suspended','paused bank still warns unpaid orders');
@@ -60,6 +85,9 @@ BEGIN
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,NULL,true,true,true);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','stale','fresh remote observation can confirm stalled polling again');
 
+ PERFORM public.record_bank_sync_health(v_org,v_conn,now(),NULL,true,false,true);
+ PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','connection_disabled','unexpectedly disabled polling requires configuration repair');
+ PERFORM assert_true(public.bank_sync_requires_action('connection_disabled'),'disabled polling must not promise automatic retries');
  PERFORM public.record_bank_sync_health(v_org,v_conn,now(),NULL,true,true,false);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','token_missing','missing token is explained');
  UPDATE eshop.bank_sync_connections SET mode='email',pairing_code=NULL WHERE id=v_conn;
@@ -73,4 +101,5 @@ BEGIN
  PERFORM assert_false(has_function_privilege('authenticated','public.bank_sync_warning(bigint)','EXECUTE'),'contact details not exposed as unrestricted RPC');
  PERFORM assert_false(has_function_privilege('authenticated','public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean)','EXECUTE'),'client cannot forge bank health');
  PERFORM assert_false(has_table_privilege('authenticated','eshop.bank_sync_health','SELECT'),'health ledger private');
+ PERFORM assert_false(has_function_privilege('authenticated','public.bank_sync_alert_ready(bigint)','EXECUTE'),'notification policy remains internal');
 END $$;

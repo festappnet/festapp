@@ -78,6 +78,11 @@ void main() {
     'degraded',
     'unconfigured',
     'stale',
+    'token_invalid',
+    'account_mismatch',
+    'connection_disabled',
+    'temporary_failure',
+    'unavailable',
     'token_missing',
     'email_missing',
     'healthy-form-projection',
@@ -92,6 +97,11 @@ void main() {
         'degraded',
         'unconfigured',
         'stale',
+        'token_invalid',
+        'account_mismatch',
+        'connection_disabled',
+        'temporary_failure',
+        'unavailable',
         'token_missing',
         'email_missing',
       ].contains(status);
@@ -191,7 +201,12 @@ void main() {
         await tester.tap(find.byType(IconButton));
         await tester.pumpAndSettle();
         expect(find.text('Festival account'), findsOneWidget);
-        expect(find.text('admin@example.test'), findsOneWidget);
+        final retry = ['degraded', 'stale', 'temporary_failure', 'unavailable'].contains(status);
+        expect(find.text('admin@example.test'), retry ? findsNothing : findsOneWidget);
+        if (retry) {
+          expect(find.textContaining('Do not replace the token or disable synchronization.'), findsOneWidget);
+          expect(find.byType(Link), findsNothing);
+        }
       }
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -290,7 +305,7 @@ void main() {
           tooltip,
           contains(
             scenario == 'fallback'
-                ? 'Ask the organizer to contact the bank account administrator.'
+                ? 'Automatic retries continue.'
                 : 'Jane Admin',
           ),
         );
@@ -300,7 +315,7 @@ void main() {
         expect(
           find.text(
             scenario == 'fallback'
-                ? 'Ask the organizer to contact the bank account administrator.'
+                ? 'Automatic retries continue. Do not replace the token or disable synchronization. Contact Festapp support if the problem persists.'
                 : 'admin@example.test',
           ),
           findsOneWidget,

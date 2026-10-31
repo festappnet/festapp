@@ -32,7 +32,8 @@ export async function monitorBankSyncHealth(organizationId: number) {
         error = bankSyncAccountError(account.api_last_error);
       }
     } catch {
-      error = 'bank_sync_retry_required';
+      // A failed management read is not evidence that Fio or its token failed.
+      error = 'bank_sync_unavailable';
     }
     await rpc('record_bank_sync_health',{
       p_organization_id:organizationId,p_connection_id:target.connection_id,p_success_at:success,p_error:error,

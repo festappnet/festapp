@@ -11,7 +11,10 @@ export async function refreshNotificationCenterHealth(rpc:Rpc, remote=bankSyncRe
   try{
    if(!/^[0-9]+$/.test(claim.remoteId)) throw Error('invalid_mapping');
    const status=await remote(`/bank-accounts/${claim.remoteId}`);
-   reason=bankSyncAccountError(status.api_last_error);
+   const bankReason=bankSyncAccountError(status.api_last_error);
+   // Account health has a detailed Fio diagnosis. The notification-center SQL
+   // contract groups retryable bank faults under its existing retry reason.
+   reason=bankReason==='fio_temporarily_unavailable'?'bank_sync_retry_required':bankReason;
    success=typeof status.api_last_success_at==='string'?status.api_last_success_at:null;
   }catch(error){
    const code=bankSyncErrorCode(error);

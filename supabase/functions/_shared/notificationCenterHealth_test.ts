@@ -33,3 +33,20 @@ Deno.test('health stops on a failed lease commit and never claims an unbounded b
   return {data:null,error:Error('stale lease')};
  },async()=>({api_last_error:null,api_last_success_at:null})),Error,'notification_health_commit_failed');
 });
+
+for(const raw of ['FioTransientFailure: Fio API 502','FioRateLimited: Fio API 429','TimeoutError: The signal timed out']){
+ Deno.test(`Fio observation ${raw} completes through the notification-center reason contract`,async()=>{
+  const saved:Record<string,unknown>[]=[];
+  const count=await refreshNotificationCenterHealth(async(name,args)=>{
+   if(name==='claim_notification_center_bank_health')return {data:[{id:1,token:'lease',remoteId:'408'}],error:null};
+   assertEquals(name,'complete_notification_center_bank_health');
+   // The actual SQL contract deliberately rejects unrecognized reasons.
+   if(![null,'fio_token_invalid_or_inactive','fio_receiving_account_mismatch','bank_sync_retry_required','transport_unavailable'].includes(args.p_reason as string|null)){
+    return {data:null,error:Error('notification_health_reason_invalid')};
+   }
+   saved.push(args);return {data:null,error:null};
+  },async()=>({api_last_error:raw,api_last_success_at:'2026-10-31T06:50:00Z'}));
+  assertEquals(count,1);assertEquals(saved[0].p_reason,'bank_sync_retry_required');
+  assertEquals(saved[0].p_success_at,'2026-10-31T06:50:00Z');
+ });
+}
