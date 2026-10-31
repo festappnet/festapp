@@ -1,7 +1,7 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "Slunovrat 2026",
+  "short_name": "Slunovrat",
+  "description": "Mobilní aplikace pro Festival Slunovrat.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
