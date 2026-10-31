@@ -70,6 +70,7 @@ export class ThemeService {
     }
 
     static clearFormTheme() {
+        if (!ThemeService._lastFormModel && !ThemeService._formStyleSnapshot) return;
         ThemeService._lastFormModel = null;
         document.getElementById('shared-font-error')?.remove();
         for (const [name, value, priority] of ThemeService._formStyleSnapshot || []) {
