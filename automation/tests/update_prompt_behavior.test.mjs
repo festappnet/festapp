@@ -248,4 +248,56 @@ navigator.language = 'cs';
 windowListeners.get('festapp-update-available')({ detail: { version: '3.0.0+3', reason: 'legacy-cache' } });
 assert.equal(appendedElements.at(-1).children[0].textContent,
   'The app is ready to refresh.', 'saved English must win over the Czech device');
+// Returning to a tab emits visibilitychange and focus; the delayed startup
+// check can follow them too. Completed checks should also share this burst.
+const burstListeners = new Map(), visibilityListeners = new Map(), burstTimers = [];
+let now = 100000, versionReads = 0, versionStatus = 200;
+const burstDocument = {
+  ...document,
+  addEventListener: (type, listener) => visibilityListeners.set(type, listener),
+};
+const burstWindow = {
+  ...window,
+  addEventListener: (type, listener) => burstListeners.set(type, listener),
+  setTimeout: (listener, delay) => { burstTimers.push({ listener, delay }); },
+};
+vm.runInNewContext(source, {
+  ...context,
+  Date: class extends Date { static now() { return now; } },
+  document: burstDocument,
+  window: burstWindow,
+  navigator: {
+    ...navigator,
+    serviceWorker: {
+      ...navigator.serviceWorker,
+      controller: null,
+      getRegistration: async () => null,
+    },
+  },
+  sessionStorage: storage(),
+  fetch: async () => {
+    versionReads++;
+    return new Response(JSON.stringify({ version: '1.0.0+1' }), { status: versionStatus });
+  },
+});
+burstListeners.get('load')();
+await new Promise((resolve) => setImmediate(resolve));
+await burstListeners.get('focus')();
+await new Promise((resolve) => setImmediate(resolve));
+visibilityListeners.get('visibilitychange')();
+await new Promise((resolve) => setImmediate(resolve));
+await burstTimers.find(({ delay }) => delay === 3000).listener();
+assert.equal(versionReads, 1, 'focus, visibility and startup must share a recent successful check');
+now += 30001;
+await burstListeners.get('focus')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(versionReads, 2, 'a later focus must check for new deployments');
+now += 30001;
+versionStatus = 503;
+await burstListeners.get('focus')();
+await new Promise((resolve) => setImmediate(resolve));
+versionStatus = 200;
+await burstListeners.get('focus')();
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(versionReads, 4, 'failed checks must remain immediately retryable');
 console.log('update_prompt_behavior.test: ok');
