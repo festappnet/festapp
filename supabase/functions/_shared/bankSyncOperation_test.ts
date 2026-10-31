@@ -62,9 +62,9 @@ for (const scenario of ['valid','inactive','account-mismatch','throttled','trans
         assertEquals(result.token_saved,true);
         assertEquals(calls.find(c=>c.name==='update_bank_sync_connection_metadata')?.body.p_mode,'api');
         assertEquals(result.state,scenario==='valid'?'connected':'degraded');
-        assertEquals(result.verification_error,scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='account-mismatch'?'fio_receiving_account_mismatch':scenario==='valid'?undefined:'bank_sync_retry_required');
+        assertEquals(result.verification_error,scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='account-mismatch'?'fio_receiving_account_mismatch':scenario==='valid'?undefined:scenario==='transient'?'fio_temporarily_unavailable':'bank_sync_retry_required');
         assertEquals(calls.find(c=>c.name==='record_bank_sync_pull')?.body.p_error,
-          scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='account-mismatch'?'fio_receiving_account_mismatch':scenario==='valid'?null:'bank_sync_retry_required');
+          scenario==='inactive'?'fio_token_invalid_or_inactive':scenario==='account-mismatch'?'fio_receiving_account_mismatch':scenario==='valid'?null:scenario==='transient'?'fio_temporarily_unavailable':'bank_sync_retry_required');
         assertEquals(calls.at(-1)?.body.p_state,'completed');
       }
     } finally { requestHandler=undefined; }

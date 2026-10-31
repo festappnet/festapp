@@ -40,6 +40,8 @@ class OrdersStrings {
       'FeatureOrders.waveAvailabilityNoChange'.tr();
   static String get bankSyncWarningEnable =>
       'FeatureOrders.bankSyncWarningEnable'.tr();
+  static String get bankSyncWarningAutomaticRetry =>
+      'FeatureOrders.bankSyncWarningAutomaticRetry'.tr();
   static String get bankSyncWarningManage =>
       'FeatureOrders.bankSyncWarningManage'.tr();
   static String get bankSyncWarningOpenSettings =>
@@ -65,6 +67,11 @@ class OrdersStrings {
         'not_configured',
         'suspended',
         'bank_error',
+        'temporary_failure',
+        'unavailable',
+        'token_invalid',
+        'account_mismatch',
+        'connection_disabled',
         'stale',
         'token_missing',
         'email_missing'

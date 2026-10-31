@@ -83,8 +83,8 @@ BEGIN
  IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
   IF NOT EXISTS (SELECT 1 FROM eshop.bank_sync_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
     WHERE h.connection_id=(p_message.data->>'connection_id')::bigint
-      AND h.incident_id::text=p_message.data->>'incident_id' AND h.warning_code IS NOT NULL
-      AND c.state IN ('connected','degraded') AND public.bank_sync_problem(c.id) IS NOT NULL
+      AND h.incident_id::text=p_message.data->>'incident_id'
+      AND public.bank_sync_alert_ready(c.id)
       AND EXISTS(SELECT 1 FROM eshop.bank_account_users bau WHERE bau."user"=p_message.recipient_user AND bau.is_admin
         AND (bau.bank_account=c.bank_account_id OR bau.bank_account IN
           (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=c.id)))) THEN RETURN false; END IF;

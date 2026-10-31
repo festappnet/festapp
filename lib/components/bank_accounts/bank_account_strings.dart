@@ -17,8 +17,12 @@ class BankAccountStrings {
       (code == 'fio_token_invalid_or_inactive'
               ? 'BankAccount.fioTokenInactive'
               : code == 'fio_receiving_account_mismatch'
-                  ? 'BankAccount.fioAccountMismatch'
-                  : 'BankAccount.syncRetryRequired')
+              ? 'BankAccount.fioAccountMismatch'
+              : code == 'fio_temporarily_unavailable'
+              ? 'FeatureOrders.bankSyncWarningReasons.temporary_failure'
+              : code == 'bank_sync_unavailable'
+              ? 'FeatureOrders.bankSyncWarningReasons.unavailable'
+              : 'BankAccount.syncRetryRequired')
           .tr();
   static String get tokenSavedNeedsAuthorization =>
       'BankAccount.tokenSavedNeedsAuthorization'.tr();

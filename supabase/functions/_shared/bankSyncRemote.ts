@@ -12,6 +12,11 @@ export function bankSyncAccountError(value: unknown): string | null {
   if (value === null || value === undefined || value === '') return null;
   if (value === FIO_TOKEN_ERROR) return FIO_TOKEN_ERROR;
   if (value === FIO_ACCOUNT_ERROR || value === `Error: ${FIO_ACCOUNT_ERROR}`) return FIO_ACCOUNT_ERROR;
+  // BankSync owns the Fio adapter. Decode only its known error classes here;
+  // never expose an upstream message or infer an invalid token from a 5xx.
+  if (typeof value === 'string' && /^(FioTransientFailure: Fio API 5[0-9]{2}$|FioRateLimited: Fio API (409|429)$|TimeoutError:|AbortError:)/.test(value)) {
+    return 'fio_temporarily_unavailable';
+  }
   return 'bank_sync_retry_required';
 }
 
@@ -31,6 +36,9 @@ export async function bankSyncRemote(path: string, method = 'GET', body?: unknow
       const seconds = Number(result.retry_after_s);
       throw new BankSyncRemoteError('bank_sync_retry_required',
         Number.isFinite(seconds) ? Math.max(30, Math.min(300, Math.ceil(seconds))) : 30);
+    }
+    if (response.status === 503 && path.endsWith('/fio-sync') && result?.error === 'fio_api_transient_failure') {
+      throw new BankSyncRemoteError('fio_temporarily_unavailable');
     }
     // Never pass bank payloads, token material, or arbitrary upstream strings to clients.
     throw new BankSyncRemoteError(response.status === 422 && [FIO_TOKEN_ERROR,FIO_ACCOUNT_ERROR].includes(result?.error)
