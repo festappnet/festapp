@@ -1,13 +1,7 @@
 # Podpora – Festapp
 
-## Technická podpora
+Technické potíže popište na `info@festapp.net`. Uveďte platformu, model zařízení, verzi systému, verzi aplikace a stručný postup, po kterém problém nastal. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
 
-Technické potíže popište na `info@festapp.net`. Uveďte stránku, na které problém nastal, používaný prohlížeč a stručný postup, po kterém se problém projevil. Neposílejte heslo, přihlašovací kód, celý QR kód vstupenky ani jednorázový odkaz ke smazání účtu.
+Dotazy k programu, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
 
-## Kontakt na pořadatele
-
-Dotazy k programu, účasti na plese, táboře či kurzu, přihlášce, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
-
-## Právní informace
-
-Další informace najdete v dokumentech <https://vstupenky.online/privacy/>, <https://vstupenky.online/privacy/choices/> a <https://vstupenky.online/terms/>.
+Zásady ochrany osobních údajů jsou na <https://vstupenky.online/privacy/>, volby a smazání účtu na <https://vstupenky.online/privacy/choices/> a podmínky používání na <https://vstupenky.online/terms/>.
