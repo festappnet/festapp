@@ -122,23 +122,23 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+  <meta name="apple-mobile-web-app-title" content="Hvězda Mořská">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+  <meta name="apple-mobile-web-app-title" content="Hvězda Mořská">
   <link rel="manifest" href="site.webmanifest" />
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
-  <meta name="theme-color" content="#19243b">
+  <meta name="theme-color" content="#242424">
   <meta name="color-scheme" content="dark">
-  <style>html, body { background-color: #19243b; }</style>
+  <style>html, body { background-color: #242424; }</style>
 
-  <title>vstupenky.online</title>
+  <title>Hvězda Mořská</title>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    const oneSignalWebAppId = "73f77f22-961a-4ded-9647-e33a7ac14f90";
+    const oneSignalWebAppId = "b346485b-bfd0-4c06-a87c-861aaa00aa48";
 
    let oneSignalSdkPromise;
    function loadOneSignalSdk() {
@@ -169,7 +169,7 @@
                try {
                  await OneSignal.init({
                        appId: oneSignalWebAppId,
-                       safari_web_id: "web.onesignal.auto.34cabfa2-ddd9-46d0-b8b2-6fad793020e0",
+                       safari_web_id: "web.onesignal.auto.2d9123a5-f6c1-46fe-a6d4-d9acca55dc3d",
                        allowLocalhostAsSecureOrigin: true,
                        persistNotification: false,
                        welcomeNotification: {
@@ -255,7 +255,7 @@
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'hvezdamorska_cutover_v1',
                occasion: ''
              });
              if (callback) callback(null);
@@ -331,7 +331,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.473+979";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -530,11 +530,11 @@
       margin: 0px;
     }
     .main-content {
-      --festapp-loading-accent: #80BDF2;
+      --festapp-loading-accent: #79A3D9;
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: #19243b; /* startup-surface */
+      background: #242424; /* startup-surface */
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -581,20 +581,20 @@
     margin: 8px;
   }
 
-  [data-loading-style="vstupenky-outline"] .initial-logo {
+  [data-loading-style="spinner"] .initial-logo {
     width: min(72vw, 300px);
     max-width: 300px;
     max-height: none;
   }
-  [data-loading-style="vstupenky-outline"] .loader { display: none; }
+  [data-loading-style="spinner"] .loader { display: none; }
   @media (prefers-reduced-motion: reduce) { .loader, .loader::before { animation: none; } }
   @keyframes l16 {
     100%{transform: rotate(1turn)}
   }
 </style>
 
-  <div class="main-content" id="loader-content" data-loading-style="vstupenky-outline" role="status" aria-label="Načítání aplikace">
-    <img class="initial-logo" src="loading-animation.svg" alt="">
+  <div class="main-content" id="loader-content" data-loading-style="spinner" role="status" aria-label="Načítání aplikace">
+    <img class="initial-logo" src="loading-logo.svg" alt="">
     <div class="loader" aria-hidden="true"></div>
   </div>
 </body>
