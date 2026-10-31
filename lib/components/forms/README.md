@@ -320,3 +320,12 @@ serve these cases; there is no second invoice ledger. A pending/closed result
 always refers to its original committed order. Admin tools create bank/invoice
 orders and do not charge a card or refund money; customer online payment remains
 the existing public checkout journey.
+
+## Form appearance
+
+`data.design.theme_mode` accepts `system`, `light`, or `dark` through the shared
+settings owner (including MCP). Missing/null values follow the visitor's device.
+The design editor saves this with its normal draft; it never changes the admin's
+personal theme. Both public clients apply the appearance locally to the form;
+JavaScript restores the personal preference and previous theme styles on exit.
+The forward migration is `20261031120000_form_design_theme_mode.sql`.

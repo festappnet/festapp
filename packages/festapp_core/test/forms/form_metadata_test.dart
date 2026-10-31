@@ -2,6 +2,29 @@ import 'package:test/test.dart';
 import 'package:festapp_core/forms.dart';
 
 void main() {
+  test(
+    'form appearance defaults to system and survives the authoring snapshot',
+    () {
+      final original = FormDefinition(data: {});
+      expect(original.themeMode, 'system');
+      expect(original.data, isEmpty);
+      for (final mode in ['system', 'light', 'dark']) {
+        final form = original.withThemeMode(mode);
+        final settings = FormMetadata.authoringSettingsSnapshot(form.data);
+        expect(settings['design']['theme_mode'], mode);
+        expect(FormDefinition.fromJson({'data': form.data}).themeMode, mode);
+      }
+      expect(() => original.withThemeMode('auto'), throwsArgumentError);
+      expect(
+        FormDefinition(
+          data: {
+            'design': {'theme_mode': 'unknown'},
+          },
+        ).themeMode,
+        'system',
+      );
+    },
+  );
   test('wizard background survives the form editor settings snapshot', () {
     for (final mode in ['solid', 'gradient']) {
       final data = <String, dynamic>{

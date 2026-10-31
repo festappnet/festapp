@@ -19,13 +19,14 @@ export class SettingsWidget {
         
         // Theme Section
         this.renderSection({
+            disabled: !!ThemeService._lastFormModel,
             title: LocalizationService.tr('Common.appearance') || 'Vzhled', // Fallback trans
             options: [
                 { id: 'dark', label: CommonStrings.dark },
                 { id: 'auto', label: CommonStrings.auto },
                 { id: 'light', label: CommonStrings.light }
             ],
-            currentValue: ThemeService.currentMode,
+            currentValue: ThemeService._lastFormModel ? ({system:'auto'}[ThemeService._lastFormModel.themeMode] || ThemeService._lastFormModel.themeMode || 'auto') : ThemeService.currentMode,
             onSelect: (val) => {
                 ThemeService.setMode(val);
                 this.render(); // Re-render to update active state
@@ -56,7 +57,7 @@ export class SettingsWidget {
         }
     }
 
-    renderSection({ title, options, currentValue, onSelect }) {
+    renderSection({ title, options, currentValue, onSelect, disabled = false }) {
         const section = document.createElement('div');
         section.className = 'settings-section';
 
@@ -72,6 +73,7 @@ export class SettingsWidget {
         options.forEach((opt) => {
             const btn = document.createElement('button');
             btn.type = 'button';
+            btn.disabled = disabled;
             btn.textContent = opt.label;
             
             const isActive = opt.id === currentValue;

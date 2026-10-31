@@ -285,6 +285,7 @@ export class FormModel {
         return this._parseColor(this._designData[FormModel.metaSecondaryColor]);
     }
 
+    get themeMode() { return ['light', 'dark'].includes(this._designData.theme_mode) ? this._designData.theme_mode : 'system'; }
     get backgroundMode() { return this._designData.background_mode; }
 
     get fontFamily() {

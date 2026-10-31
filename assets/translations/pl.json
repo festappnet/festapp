@@ -365,6 +365,11 @@
     "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
+    "formAppearance": "Wygląd formularza",
+    "formAppearanceHint": "Wybierz wygląd formularza dla odwiedzających. Opcja System używa ustawień ich urządzenia.",
+    "appearanceSystem": "System",
+    "appearanceLight": "Jasny",
+    "appearanceDark": "Ciemny",
     "embedAction": "Osadź na swojej stronie",
     "embedTitle": "Formularz zamówienia",
     "embedFallback": "Otwórz zamówienie w nowej karcie",

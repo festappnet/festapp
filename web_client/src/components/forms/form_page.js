@@ -56,6 +56,7 @@ export class FormPage extends Component {
     }
 
     clear() {
+        ThemeService.clearFormTheme();
         this.embedBridge?.destroy();
         this.embedBridge = null;
         window.removeEventListener('festapp-embed-step', this.embedStep);

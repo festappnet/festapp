@@ -40,7 +40,9 @@ export class ThemeService {
         if (!ThemeService._mediaQueryListener) {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
             ThemeService._mediaQueryListener = (e) => {
-                if (ThemeService.currentMode === 'auto') {
+                if (ThemeService._lastFormModel) {
+                    ThemeService.applyThemeFromModel(ThemeService._lastFormModel);
+                } else if (ThemeService.currentMode === 'auto') {
                     ThemeService.isDark = e.matches;
                     ThemeService.apply();
                 }
@@ -65,6 +67,19 @@ export class ThemeService {
         }
 
         ThemeService.apply();
+    }
+
+    static clearFormTheme() {
+        ThemeService._lastFormModel = null;
+        document.getElementById('shared-font-error')?.remove();
+        for (const [name, value, priority] of ThemeService._formStyleSnapshot || []) {
+            if (value) document.body.style.setProperty(name, value, priority);
+            else document.body.style.removeProperty(name);
+        }
+        if (ThemeService._sharedAppearance === undefined) delete document.body.dataset.sharedAppearance;
+        else document.body.dataset.sharedAppearance = ThemeService._sharedAppearance;
+        ThemeService._formStyleSnapshot = null;
+        ThemeService.init();
     }
 
     static showFontError(formModel) {
@@ -116,6 +131,11 @@ export class ThemeService {
     }
 
     static apply() {
+        if (ThemeService._lastFormModel) {
+            const mode = ThemeService._lastFormModel.themeMode;
+            ThemeService.isDark = mode === 'dark' ||
+                (mode !== 'light' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+        }
         // Native inputs, checkboxes and select popups must follow the selected
         // application theme, including a manual override of the OS preference.
         document.documentElement.style.colorScheme = ThemeService.isDark ? 'dark' : 'light';
@@ -134,8 +154,15 @@ export class ThemeService {
      */
     static applyThemeFromModel(formModel) {
         if (ThemeService._lastFormModel !== formModel) document.getElementById('shared-font-error')?.remove();
-        ThemeService._lastFormModel = formModel; // Cache for re-application on mode switch
         const root = document.body;
+        if (!ThemeService._formStyleSnapshot) {
+            const properties = ['--background-color', '--btn-secondary-text-color', '--btn-text-color', '--card-bg', '--card-bg-derived', '--countdown-bg', '--countdown-border', '--fab-color', '--fab-text-color', '--font-family-base', '--font-scale', '--form-background', '--input-bg', '--input-border', '--input-font-family', '--input-text', '--label-text-color', '--link-color', '--primary-color', '--secondary-color', '--text-color', '--unselected-widget-border', '--unselected-widget-fill', 'background', 'background-color'];
+            ThemeService._formStyleSnapshot = properties.map(name =>
+                [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]);
+            ThemeService._sharedAppearance = root.dataset.sharedAppearance;
+        }
+        ThemeService._lastFormModel = formModel;
+        ThemeService.apply();
 
         // Fonts
         let familyName = 'inherit';

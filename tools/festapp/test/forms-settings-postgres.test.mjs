@@ -8,7 +8,7 @@ const stored=async(db,id)=>(await db.query('select data from forms where id=$1',
 test('settings executor preserves unrelated metadata and shares UI snapshots, original versions and frozen retries',options,async t=>{
  const {db,f}=await setup(t);const made=await create(db,f);const formId=made.formId;
  await db.query(`update forms set data='{"private_owner":{"keep":true},"schedule":{"sale_preparation":true,"private_flag":7},"design":{"paper_texture":"pattern"}}' where id=$1`,[formId]);
- await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const settings={is_reminder_enabled:true,reminder_interval_seconds:0,communication_tone:'informal',variable_symbol:{type:'sequence',starting_number:12345},payment_message:{type:'occasion_title'},payments:{bankEnabled:true},design:{is_card_design:true,primary_color:'#1255AA',secondary_color:'#FFAABBCC',font_family:'Noto Sans',countdown_style:'normal'},schedule:{start_time:'2030-10-27T01:30:00+02:00',end_time:'2030-10-27T01:30:00+01:00',enable_countdown:true,show_before_start_message:true,before_start_message:'<p>Later</p>',countdown_title:'Soon'}};
+ await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const settings={is_reminder_enabled:true,reminder_interval_seconds:0,communication_tone:'informal',variable_symbol:{type:'sequence',starting_number:12345},payment_message:{type:'occasion_title'},payments:{bankEnabled:true},design:{theme_mode:'dark',is_card_design:true,primary_color:'#1255AA',secondary_color:'#FFAABBCC',font_family:'Noto Sans',countdown_style:'normal'},schedule:{start_time:'2030-10-27T01:30:00+02:00',end_time:'2030-10-27T01:30:00+01:00',enable_countdown:true,show_before_start_message:true,before_start_message:'<p>Later</p>',countdown_title:'Soon'}};
  const args={occasionId:f.occasion,form:formPatch(made.authoring,{settings}),commandId:randomUUID()};
  const result=await ex.ops.invoke('forms.save',args);assert.equal(result.ok,true,JSON.stringify(result));const data=result.data.authoring.form.data;
  for(const [k,v] of Object.entries(settings))assert.deepEqual(typeof v==='object'?Object.fromEntries(Object.keys(v).map(key=>[key,data[k][key]])):data[k],v);
@@ -33,7 +33,7 @@ test('null resets known overrides to inheritance without deleting lifecycle or o
 
 test('invalid SQL settings reject atomically before title/field mutation and cannot patch private lifecycle metadata',options,async t=>{
  const{db,f}=await setup(t);const made=await create(db,f);const before=await stored(db,made.formId);
- const invalid=[{unknown:true},{schedule:{sale_preparation:false}},{design:{paper_texture:'injected'}},{payments:{account_id:'acct_injected'}},{is_reminder_enabled:'true'},{reminder_interval_seconds:-1},{reminder_interval_seconds:1.5},{communication_tone:'casual'},{variable_symbol:{type:'sequence'}},{variable_symbol:{starting_number:10000000000}},{variable_symbol:{type:'sequence',starting_number:'123'}},{payment_message:{type:'custom'}},{design:{primary_color:'red'}},{payments:{stripeConnectionId:'wrong'}},{schedule:{start_time:'2030-01-01T00:00:00'}},{schedule:{start_time:'2031-01-01T00:00:00Z',end_time:'2030-01-01T00:00:00Z'}}];
+ const invalid=[{design:{theme_mode:'auto'}},{design:{theme_mode:true}},{unknown:true},{schedule:{sale_preparation:false}},{design:{paper_texture:'injected'}},{payments:{account_id:'acct_injected'}},{is_reminder_enabled:'true'},{reminder_interval_seconds:-1},{reminder_interval_seconds:1.5},{communication_tone:'casual'},{variable_symbol:{type:'sequence'}},{variable_symbol:{starting_number:10000000000}},{variable_symbol:{type:'sequence',starting_number:'123'}},{payment_message:{type:'custom'}},{design:{primary_color:'red'}},{payments:{stripeConnectionId:'wrong'}},{schedule:{start_time:'2030-01-01T00:00:00'}},{schedule:{start_time:'2031-01-01T00:00:00Z',end_time:'2030-01-01T00:00:00Z'}}];
  await db.query('SET LOCAL ROLE authenticated');
  for(const settings of invalid){await db.query('SAVEPOINT invalid_settings');await assert.rejects(save(db,f,formPatch(made.authoring,{title:'Must rollback',settings})),error=>error.code?.startsWith('22'));await db.query('ROLLBACK TO SAVEPOINT invalid_settings');await db.query('RELEASE SAVEPOINT invalid_settings');assert.deepEqual(await stored(db,made.formId),before);assert.equal((await db.query('select title from forms where id=$1',[made.formId])).rows[0].title,'Synthetic form');}
  const inspected=(await executor(db,f).ops.invoke('forms.inspect',{occasionId:f.occasion,formId:made.formId})).data.authoring;assert.equal(inspected.form.aggregate_version,made.authoring.form.aggregate_version);
@@ -130,4 +130,15 @@ test('wizard design round-trips through the form editor and MCP save without los
  assert.equal(reset.code,200,JSON.stringify(reset));assert.equal(reset.data.authoring.form.data.design.background_mode,undefined);
  assert.equal(reset.data.authoring.form.data.design.primary_color,design.primary_color);
  await denied(db,"select manage_form($1,$2,$3,'save',$4,$5)",[f.occasion,f.org,f.unit,formPatch(reset.data.authoring,{settings:{design:{background_mode:'unsupported'}}}),randomUUID()],'22023');
+});
+
+test('form appearance partial writes preserve unrelated design and reset to system default',options,async t=>{
+ const {db}=await setup(t);
+ let data={design:{primary_color:'#123456'}};
+ for(const mode of ['light','dark','system']){
+  data=(await db.query('select apply_form_settings_internal($1,$2) value',[data,{design:{theme_mode:mode}}])).rows[0].value;
+  assert.deepEqual(data.design,{primary_color:'#123456',theme_mode:mode});
+ }
+ data=(await db.query('select apply_form_settings_internal($1,$2) value',[data,{design:{theme_mode:null}}])).rows[0].value;
+ assert.deepEqual(data,{design:{primary_color:'#123456'}});
 });

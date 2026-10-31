@@ -73,6 +73,52 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => environment,
+    'form appearance edits use the draft and respect read-only mode',
+    (tester) async {
+      final form = FormEditorDraft();
+      var changes = 0;
+      Future<void> mount(bool enabled) async {
+        await environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: FormDesignSettings(
+                form: form,
+                enabled: enabled,
+                onChanged: () => changes++,
+                loadFonts: () async => _Fonts(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await mount(true);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.byKey(const ValueKey('form-theme-system')))
+            .selected,
+        isTrue,
+      );
+      for (final mode in ['dark', 'light', 'system']) {
+        await tester.tap(find.byKey(ValueKey('form-theme-$mode')));
+        await tester.pumpAndSettle();
+        expect(form.toEditedJson()['settings']['design']['theme_mode'], mode);
+      }
+      expect(changes, 3);
+      await mount(false);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.byKey(const ValueKey('form-theme-dark')))
+            .onSelected,
+        isNull,
+      );
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => environment,
     'form editor round-trips one and two colors to the wizard',
     (tester) async {
       final form = FormEditorDraft();

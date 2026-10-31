@@ -426,6 +426,11 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "formAppearance": "Vzhled formuláře",
+    "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Volba Systém se řídí nastavením jejich zařízení.",
+    "appearanceSystem": "Systém",
+    "appearanceLight": "Světlý",
+    "appearanceDark": "Tmavý",
     "invalidVariableSymbolPolicy": "Nastavte platnou strategii VS. U číselné řady zadejte celé počáteční číslo od 1 do 9999999999.",
     "repairVariableSymbolPolicy": "Opravit pokročilé nastavení VS",
     "labelShowBeforeStartMessage": "Zobrazit informace před zahájením",

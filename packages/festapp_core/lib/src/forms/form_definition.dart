@@ -407,6 +407,21 @@ class FormDefinition {
     return copyWith(data: {...?data, metaDesign: section});
   }
 
+  /// Missing/invalid legacy values follow the visitor's device preference.
+  String get themeMode =>
+      const ['light', 'dark'].contains(_designData['theme_mode'])
+      ? _designData['theme_mode'] as String
+      : 'system';
+
+  FormDefinition withThemeMode(String value) {
+    if (!const ['system', 'light', 'dark'].contains(value)) {
+      throw ArgumentError.value(value, 'themeMode');
+    }
+    final section = Map<String, dynamic>.from(_designData);
+    section['theme_mode'] = value;
+    return copyWith(data: {...?data, metaDesign: section});
+  }
+
   String? get backgroundMode => _designData['background_mode'] as String?;
 
   FormDefinition withBackgroundMode(String? value) {

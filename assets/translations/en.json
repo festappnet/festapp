@@ -426,6 +426,11 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "formAppearance": "Form appearance",
+    "formAppearanceHint": "Choose the form’s appearance for visitors. System follows their device settings.",
+    "appearanceSystem": "System",
+    "appearanceLight": "Light",
+    "appearanceDark": "Dark",
     "invalidVariableSymbolPolicy": "Choose a valid payment reference policy. For a sequence, enter a whole starting number from 1 to 9999999999.",
     "repairVariableSymbolPolicy": "Repair advanced payment reference settings",
     "labelShowBeforeStartMessage": "Show information before registration opens",

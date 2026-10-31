@@ -1,3 +1,4 @@
+import 'package:fstapp/theme_config.dart';
 import '../payment_quote_refresh.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -622,7 +623,7 @@ class _FormPageState extends State<FormPage> {
 // ... (imports)
 
   ThemeData _buildFormTheme(BuildContext context) {
-    var theme = Theme.of(context);
+    var theme = _baseFormTheme(context);
     var form = this.form; // Use class member
 
     if (form != null) {
@@ -739,8 +740,23 @@ class _FormPageState extends State<FormPage> {
             identity: form?.organizationIdentity ?? _terminalIdentity)
       ]);
 
+  ThemeData _baseFormTheme(BuildContext context) {
+    if (form == null) return Theme.of(context);
+    final brightness = switch (form!.definition.themeMode) {
+      'light' => Brightness.light,
+      'dark' => Brightness.dark,
+      _ => MediaQuery.platformBrightnessOf(context),
+    };
+    return ThemeConfig.theme(brightness: brightness);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Theme(
+    data: _baseFormTheme(context),
+    child: Builder(builder: _buildContent),
+  );
+
+  Widget _buildContent(BuildContext context) {
     // Check time limits
     bool isClosed = false;
     bool isBeforeStart = false;

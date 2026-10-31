@@ -26,6 +26,7 @@ async function install(db){
  await db.query(await readFile(new URL('../../../supabase/migrations/20261026200000_form_authoring_settings.sql',import.meta.url),'utf8'));
  await db.query(await readFile(new URL('../../../supabase/migrations/20261026210000_form_administration_completion.sql',import.meta.url),'utf8'));
  await db.query(await readFile(new URL('../../../supabase/migrations/20261029130000_form_design_background_mode.sql',import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../../supabase/migrations/20261031120000_form_design_theme_mode.sql',import.meta.url),'utf8'));
 }
 async function setup(t){const db=await openDisposableDatabase(connection);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);return{db,f};}
 function executor(db,f){const calls=[];const client={rpc:async(name,args)=>{await db.query('SAVEPOINT rpc');try{const names=Object.keys(args),values=Object.values(args);const data=(await db.query('select '+name+'('+names.map((n,i)=>n+'=> $'+(i+1)).join(',')+') value',values)).rows[0].value;await db.query('RELEASE SAVEPOINT rpc');calls.push({name,bytes:Buffer.byteLength(JSON.stringify(data))});return{data,error:null};}catch(error){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{data:null,error};}}};
