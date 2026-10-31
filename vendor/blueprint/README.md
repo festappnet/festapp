@@ -16,7 +16,3 @@ source through `tool/archive_check.sh`; registry publication is a separate step.
 Only the npm archive selected by `web_client/package.json` and its lockfile is
 retained. Older host archives are recoverable from Git revision
 `a4296c57687294b34826e59c7b232eef582c9748`; they are not installation inputs.
-
-A qualified web-only update records `webSourceCommit` and
-`webArchiveGateReceiptSha256` separately, with `web-archive-result.json` as its
-receipt. It preserves the existing Dart snapshot and its provenance.

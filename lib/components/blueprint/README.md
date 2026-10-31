@@ -251,7 +251,10 @@ assembly resizing updates only automatic labels and preserves custom names.
 
 Native font preview failures are scoped to active rendered faces. Cache identity
 includes actual face metadata; late failures of abandoned choices do not affect
-the current face, and active load failures offer retry. Text-tool thumbnails use
+the current face. Bundled faces reuse the shared ticket asset manifest and font
+cache; unbundled faces retain their authorized font-service reads. Temporary
+asset and font transport failures recover automatically before reaching the UI.
+Text-tool thumbnails use
 a schematic theme-colored Aa without requiring prepared authored text resources.
 
 Changing a font family normalizes only affected declarations/nodes to an actual
