@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 import {ThemeService} from '../../src/services/theme_service.js';
+import {FormModel} from '../../src/components/forms/form_models.js';
 import {AppConfig} from '../../src/app_config.js';
 
 test('manual theme controls both page and native controls independently of the OS', t=>{
@@ -57,4 +58,41 @@ test('public client inherits an existing admin light preference instead of the d
  window.dispatchEvent(new window.Event('focus'));
  assert.equal(ThemeService.currentMode,'light');
  assert.equal(document.body.classList.contains('dark-mode'),false);
+});
+
+
+test('per-form appearance follows the system, locks explicit modes and restores the personal preference', t=>{
+ const dom=new JSDOM('<!doctype html><body></body>',{url:'https://fixture.invalid'});
+ const previous=Object.fromEntries(['window','document','localStorage'].map(key=>[key,globalThis[key]]));
+ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage});
+ let osDark=true, onChange;
+ dom.window.matchMedia=()=>({matches:osDark,addEventListener(type,fn){onChange=fn;}});
+ ThemeService._lastFormModel=null;ThemeService._mediaQueryListener=null;ThemeService._formStyleSnapshot=null;
+ t.after(()=>{Object.assign(globalThis,previous);ThemeService._mediaQueryListener=null;ThemeService._lastFormModel=null;ThemeService._formStyleSnapshot=null;dom.window.close();});
+ localStorage.setItem(AppConfig.Keys.theme,'light');ThemeService.init();
+ document.body.style.setProperty('--primary-color','#abcdef');
+ const form=mode=>new FormModel({data:{design:{primary_color:'#123456',...(mode?{theme_mode:mode}:{})}}});
+ ThemeService.applyThemeFromModel(form());
+ assert.equal(document.body.style.colorScheme,'dark');
+ const darkColor=document.body.style.getPropertyValue('--primary-color');
+ osDark=false;onChange({matches:false});
+ assert.equal(document.body.style.colorScheme,'light');
+ assert.notEqual(document.body.style.getPropertyValue('--primary-color'),darkColor);
+ ThemeService.applyThemeFromModel(form('dark'));
+ assert.equal(document.body.style.colorScheme,'dark');
+ osDark=true;onChange({matches:true});
+ ThemeService.applyThemeFromModel(form('light'));
+ assert.equal(document.body.style.colorScheme,'light');
+ window.dispatchEvent(new window.Event('focus'));
+ assert.equal(document.body.style.colorScheme,'light');
+ osDark=false;onChange({matches:false});
+ assert.equal(document.body.style.colorScheme,'light');
+ ThemeService.applyThemeFromModel(form('system'));
+ osDark=true;onChange({matches:true});
+ assert.equal(document.body.style.colorScheme,'dark');
+ assert.equal(localStorage.getItem(AppConfig.Keys.theme),'light');
+ ThemeService.clearFormTheme();
+ assert.equal(document.body.style.colorScheme,'light');
+ assert.equal(document.body.style.getPropertyValue('--primary-color'),'#abcdef');
+ assert.equal(ThemeService._lastFormModel,null);
 });

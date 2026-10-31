@@ -363,6 +363,11 @@
     "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
+    "formAppearance": "Formulardarstellung",
+    "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System folgt den Einstellungen ihres Geräts.",
+    "appearanceSystem": "System",
+    "appearanceLight": "Hell",
+    "appearanceDark": "Dunkel",
     "embedAction": "Auf eigener Website einbetten",
     "embedTitle": "Bestellformular",
     "embedFallback": "Bestellung in neuem Tab öffnen",

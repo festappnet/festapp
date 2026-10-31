@@ -5,7 +5,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId"],
- "design":["is_card_design","primary_color","secondary_color","background_mode","font_family","countdown_style"],
+ "design":["is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style"],
  "schedule":["start_time","end_time","enable_countdown","show_before_start_message","before_start_message","countdown_title"]}'::jsonb;
 $$;
 
@@ -111,6 +111,8 @@ BEGIN
     IF path='variable_symbol.type' AND v NOT IN ('"random"'::jsonb,'"sequence"'::jsonb) OR
        path='payment_message.type' AND v NOT IN ('"name_surname"'::jsonb,'"none"'::jsonb,'"occasion_title"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid setting mode: '||path; END IF;
+    IF path='design.theme_mode' AND v NOT IN ('"system"'::jsonb,'"light"'::jsonb,'"dark"'::jsonb) THEN
+     RAISE invalid_parameter_value USING MESSAGE='invalid form theme mode'; END IF;
     IF path='design.background_mode' AND v NOT IN ('"solid"'::jsonb,'"gradient"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid background mode'; END IF;
     IF path IN ('design.primary_color','design.secondary_color') AND (v#>>'{}') !~ '^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$' THEN

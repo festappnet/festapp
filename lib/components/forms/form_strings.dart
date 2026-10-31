@@ -98,6 +98,15 @@ class FormStrings {
       'FeatureFormSettings.labelDeadlineDays'.tr();
   static String get helperDeadlineDays =>
       'FeatureFormSettings.helperDeadlineDays'.tr();
+  static String get formAppearance => 'FeatureFormSettings.formAppearance'.tr();
+  static String get formAppearanceHint =>
+      'FeatureFormSettings.formAppearanceHint'.tr();
+  static String get appearanceSystem =>
+      'FeatureFormSettings.appearanceSystem'.tr();
+  static String get appearanceLight =>
+      'FeatureFormSettings.appearanceLight'.tr();
+  static String get appearanceDark => 'FeatureFormSettings.appearanceDark'.tr();
+
   static String get labelCardDesign =>
       'FeatureFormSettings.labelCardDesign'.tr();
   static String get subtitleCardDesign =>

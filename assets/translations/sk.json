@@ -383,6 +383,11 @@
     "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
   },
   "FeatureFormSettings": {
+    "formAppearance": "Vzhľad formulára",
+    "formAppearanceHint": "Zvoľte vzhľad formulára pre návštevníkov. Voľba Systém sa riadi nastavením ich zariadenia.",
+    "appearanceSystem": "Systém",
+    "appearanceLight": "Svetlý",
+    "appearanceDark": "Tmavý",
     "embedAction": "Vložiť na vlastný web",
     "embedTitle": "Objednávkový formulár",
     "embedFallback": "Otvoriť objednávku na novej karte",
