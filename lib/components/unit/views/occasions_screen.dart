@@ -319,24 +319,14 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
     final sourceUnitId = widget.unit.id;
-    OccasionModel? created;
     final target = await OccasionCreationHelper.createCopy(context, occasion,
-        sourceUnitId: sourceUnitId,
-        existingOccasions: _allOccasions,
-        onCreated: (value) => created = value);
+        sourceUnitId: sourceUnitId);
     if (!mounted || widget.unit.id != sourceUnitId) return;
     if (target == null) {
       await _loadOccasions();
       return;
     }
-    if (AppConfig.occasionSetupEnabled) {
-      if (target.id != widget.unit.id && created != null) {
-        await RouterService.navigateToUnitAdmin(context, target);
-        return;
-      }
-      await _loadOccasions();
-      if (created != null) _highlight(created!);
-    } else if (target.id == widget.unit.id) {
+    if (target.id == widget.unit.id) {
       await _loadOccasions();
     } else {
       await RouterService.navigateToUnitAdmin(context, target);
