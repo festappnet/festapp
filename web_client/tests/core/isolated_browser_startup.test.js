@@ -43,3 +43,16 @@ test('navigation errors propagate without retrying page actions', async () => {
     await assert.rejects(openIsolatedBrowser(browser), /navigation failed/);
     assert.deepEqual(browser.calls, []);
 });
+
+
+test('a launched browser without a page retries only startup before page assertions', async () => {
+    const browser = fixture([{ runtime: { pageCount: 0 } }, { runtime: { pageCount: 1 } }]);
+    await openIsolatedBrowser(browser);
+    assert.deepEqual(browser.calls, ['open', 'info', 'close', 'open', 'info']);
+});
+
+test('repeated empty browser startup is bounded to three fresh sessions', async () => {
+    const browser = fixture(Array.from({ length: 3 }, () => ({ runtime: { pageCount: 0 } })));
+    await assert.rejects(openIsolatedBrowser(browser), /opened no page/);
+    assert.deepEqual(browser.calls, ['open', 'info', 'close', 'open', 'info', 'close', 'open', 'info', 'close']);
+});
