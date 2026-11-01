@@ -9,6 +9,120 @@ const result=await build({entryPoints:[new URL('../src/widget.js',import.meta.ur
 const bundle=result.outputFiles[0].text;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
+test('bundled entry accepts a late native token while Wix is still hydrating',async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
+  try {
+    dom.window.Headers=Headers;
+    dom.window.clientSdk={async invoke(){return 'Site';}};
+    const requests=[];
+    dom.window.fetch=async(url,init)=>{
+      assert.equal(init.signal.aborted,false,'native hydration must not exhaust the request deadline');
+      requests.push({url,init});
+      return {ok:true,json:async()=>({context:'cHJvdmVuYW5jZQ.'+'a'.repeat(64),expiresAt:Math.floor(Date.now()/1000)+86400})};
+    };
+    dom.window.eval(bundle);
+    await tick();
+    const element=dom.window.document.querySelector('vstupenky-online-form');
+    t.mock.timers.tick(20000);
+    await tick();
+    assert.equal(element.mode,'Site','slow native initialization must keep the widget waiting');
+    assert.equal(requests.length,0);
+    assert.equal(element.querySelector('iframe'),null);
+    element.accessTokenListener(async()=>'qa-late-native-token');
+    await tick();
+    assert.equal(requests.length,1);
+    assert.equal(new Headers(requests[0].init.headers).get('authorization'),'qa-late-native-token');
+    assert.ok(element.querySelector('iframe'));
+  } finally {dom.window.close();}
+});
+
+test('bundled entry bounds missing native authentication and aborts a token delivered after expiry',async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
+  try {
+    dom.window.Headers=Headers;
+    dom.window.clientSdk={async invoke(){return 'Site';}};
+    let requests=0;
+    dom.window.fetch=async(url,init)=>{
+      if(init.signal.aborted)throw new dom.window.DOMException('Aborted','AbortError');
+      requests++;
+      throw Error('expired authentication must not send a request');
+    };
+    dom.window.eval(bundle);
+    await tick();
+    const element=dom.window.document.querySelector('vstupenky-online-form');
+    t.mock.timers.tick(61000);
+    await tick();
+    assert.equal(element.mode,'Unavailable');
+    assert.equal(element.querySelector('iframe'),null);
+    element.accessTokenListener(async()=>'qa-expired-native-token');
+    await tick();
+    assert.equal(requests,0);
+    assert.equal(element.querySelector('iframe'),null);
+  } finally {dom.window.close();}
+});
+
+test('hidden time does not expire native authentication and visibility changes retain the remaining budget',async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
+  try {
+    let visibility='hidden', now=0;
+    Object.defineProperty(dom.window.document,'visibilityState',{get:()=>visibility});
+    dom.window.performance.now=()=>now;
+    dom.window.Headers=Headers;
+    dom.window.clientSdk={async invoke(){return 'Site';}};
+    let requests=0;
+    dom.window.fetch=async(url,init)=>{
+      if(init.signal.aborted)throw new dom.window.DOMException('Aborted','AbortError');
+      requests++;
+      throw Error('expired authentication must not send a request');
+    };
+    dom.window.eval(bundle);
+    await tick();
+    const element=dom.window.document.querySelector('vstupenky-online-form');
+    now+=120000;t.mock.timers.tick(120000);await tick();
+    assert.equal(element.mode,'Site');
+    visibility='visible';dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange'));
+    now+=50000;t.mock.timers.tick(50000);await tick();
+    assert.equal(element.mode,'Site');
+    visibility='hidden';dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange'));
+    now+=120000;t.mock.timers.tick(120000);await tick();
+    assert.equal(element.mode,'Site');
+    visibility='visible';dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange'));
+    now+=10001;t.mock.timers.tick(10001);await tick();
+    assert.equal(element.mode,'Unavailable','visibility changes must not reset the visible timeout');
+    element.accessTokenListener(async()=>'qa-expired-after-visible-budget');
+    await tick();
+    assert.equal(requests,0);
+  } finally {dom.window.close();}
+});
+
+test('a native token delivered after a long hidden startup still mounts the verified checkout',async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
+  try {
+    Object.defineProperty(dom.window.document,'visibilityState',{value:'hidden'});
+    dom.window.Headers=Headers;
+    dom.window.clientSdk={async invoke(){return 'Site';}};
+    let requests=0;
+    dom.window.fetch=async(url,init)=>{
+      assert.equal(init.signal.aborted,false);
+      requests++;
+      return {ok:true,json:async()=>({context:'cHJvdmVuYW5jZQ.'+'a'.repeat(64),expiresAt:Math.floor(Date.now()/1000)+86400})};
+    };
+    dom.window.eval(bundle);await tick();
+    t.mock.timers.tick(120000);await tick();
+    const element=dom.window.document.querySelector('vstupenky-online-form');
+    assert.equal(element.mode,'Site');
+    assert.equal(requests,0);
+    element.accessTokenListener(async()=>'qa-hidden-late-token');
+    await tick();
+    assert.equal(requests,1);
+    assert.ok(element.querySelector('iframe'));
+  } finally {dom.window.close();}
+});
+
 test('bundled entry captures script-scoped Wix authentication before a widget is inserted later',async()=>{
   const dom=new JSDOM('<body></body>',{url:'https://wix-site.invalid',runScripts:'dangerously'});
   try {

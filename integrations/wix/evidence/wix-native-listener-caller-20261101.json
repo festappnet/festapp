@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Read-only passive trace on ordinary published Harmony in clean isolated local headless browser; no manual token invocation or token contents recorded.",
+  "traceSha256": "5419b2e59b39aa3939222c6a27538d7f8eb5769c8de79e9079488b9505e284d6",
+  "observed": {"initialCurrentScriptPresent": true, "mode": "Site", "injectionCalls": 1, "proofStatus": 200, "contextPresent": true},
+  "genericWixCaller": "https://static.parastorage.com/services/editor-elements-library/dist/thunderboltBuilder/rb_wixui.thunderboltBuilder[CustomElementComponent_CustomElement].77fd5abf.bundle.min.js:1:22433",
+  "callerCondition": "React effect checks truthy getAppToken prop, waits for custom element definition, then invokes current element's optional accessTokenListener with that prop. Ref existence and listener presence are also prerequisites.",
+  "chromeConsentObservation": {"visibleConsentDialog": false, "visibleConsentText": false, "preferencesOrCookiesRead": false},
+  "limits": "Caller source explains prerequisites but does not establish which prerequisite differs in main Chrome. The observed access-token callback executed only in clean headless control.",
+  "genericSourcePrivatePath": "integrations/wix/.private/native-auth-trace/wix-custom-element-77fd5abf.js"
+}

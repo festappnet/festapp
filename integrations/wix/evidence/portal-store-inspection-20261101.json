@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "source": "Authenticated Wix developer portal, read-only native UI",
+  "listing": {
+    "name": "vstupenky.online",
+    "teaser": "Embed your vstupenky.online ticket form",
+    "descriptionScope": "Existing public form URL, event setup and checkout retained in vstupenky.online; editor placeholder prevents accidental orders",
+    "termsUrl": "https://vstupenky.online/terms/",
+    "demoSiteUrlPresent": false,
+    "mediaImagesObserved": 2,
+    "videoUrlPresent": false,
+    "cdnAssetsMatchHistoricalLocalSha256": true,
+    "assetEvidence": "gallery-20261025.json",
+    "currentCandidateAppearanceMatchVerified": false
+  },
+  "contacts": {"supportEmail": "info@festapp.net", "billingEmail": "info@festapp.net", "urgentEmailPresent": true, "urgentPhonePresent": true},
+  "securityPrivacySavedResponses": {
+    "accessProtected": true,
+    "fullyProtectedBothTransitAndAtRest": false,
+    "cloudProviders": ["Hetzner", "Cloudflare", "Amazon Web Services (SES Frankfurt)"],
+    "sellsPersonalData": false,
+    "complaintsReported": false,
+    "breachOrInvestigationReported": false,
+    "designatedPrivacyFunction": true,
+    "confirmationChecked": true,
+    "scope": "Saved disclosures read back; no independent revalidation of underlying assertions."
+  },
+  "reviewerCredentialsVerified": false,
+  "reviewerAccess": "No working public QA form has been established: all three prior Wix QA hosts point to /form/wix-qa-20261025, which currently renders Formulář nenalezen. No reviewer account or instructions were invented; no reviewer-specific field was located during this inspection.",
+  "privacyAndSupportEndpoints": {"privacyUrl": "https://vstupenky.online/privacy/", "supportUrl": "https://vstupenky.online/support/", "rendered": true, "contact": "info@festapp.net", "emailDeliveryTested": false},
+  "marketplaceSubmitted": false,
+  "note": "Partial inspection only. Do not treat as completion of store assets, reviewer access, privacy or support release gates."
+}

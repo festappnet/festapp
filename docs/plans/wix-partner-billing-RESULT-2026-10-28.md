@@ -261,3 +261,117 @@ Publikace připraveného nástroje byla kritikem schválena. Odeslání stále �
 potvrzení konkrétního testovacího postupu Wixem; přijetí BI události a aktivace
 se následně ověřují zvlášť. Širší editor/store qualification zůstává samostatnou
 nedokončenou částí marketplace práce, nikoli hotovým výsledkem tohoto auditu.
+
+## Pokračování po odpovědi Wixu 1. listopadu
+
+Wix ve zprávě `1a1962120dade694` potvrdil přijetí BI události a udělil přístup
+k cenovým plánům. Žádá oznámení po publikaci aplikace. Tím je čekání na souhlas
+s nulovým testem a kontrolu BI uzavřeno; historický přípravný stav výše již není
+aktuální. [Doklad dokončení](../../integrations/wix/evidence/bi-verification-completion-20261101.json)
+spojuje souhlas z 29. října, odeslané oznámení a dnešní potvrzení Wixu. Read-only
+kontrola společného journalu ověřila `confirmed`, HTTP200, pokus
+`7876ef54-74a5-49ac-828a-a8e0c82ea910`, čas `2026-10-29T14:25:17.034Z`
+a všechny tři částky USD0. Událost se znovu neodesílá.
+
+Přístup k plánům sám nedokládá native external-billing/payout stav, marketplace
+publikaci ani aktivaci běžného dispatcheru. Zbývá aktuální čtení portálu, dokončení
+cenového plánu bez vymyšlené sazby a původní hosting/editor/store release gates.
+Při zahájení navazující kontroly byl zdroj widgetu, jeho dependencies a lockfile
+shodný s preview `f0fed2a0b`. Následný živý test odhalil nefunkční předání tokenu;
+průběh a aktuální omezení popisuje pokračování níže.
+
+### Native účtování odemčeno, živé SDK ověření dosud neprošlo
+
+[Autentizované čtení cenového plánu](../../integrations/wix/evidence/portal-pricing-20261101.json)
+ověřilo `isExternalBilling=true`, zachovaný individuální Custom plán, verzi 1.1
+a nula nativních blockerů. Privacy/support stránky jsou dostupné; podání není
+dokončené jen tím, že Wix zobrazí nula blockerů.
+
+Původní připravený bundle byl krátce nasazen, ale živý Studio test s platným
+formulářem neprošel. Po první [obnově](../../integrations/wix/evidence/hosting-rollback-20261101.json)
+byl doplněn regresní test skutečného bundlovaného SDK s opožděným vložením prvku.
+Odhaluje, že lazy `site.auth()` nemá při konstrukci prvku skriptový kontext.
+Commit `2954fabcf` zachytává auth při načtení skriptu; 42 Wix testů a 54 sdílených
+checkout testů prošlo, čtyři nezměněné DB testy zůstaly v tomto běhu přeskočené.
+
+Ani [opravený bundle](../../integrations/wix/evidence/hosting-auth-fix-20261101.json)
+v živém Studiu nedostal token, a proto byla [produkce podruhé obnovena](../../integrations/wix/evidence/hosting-auth-fix-rollback-20261101.json).
+Režim `Site` funguje, autentizovaný POST na proof endpoint pozorován nebyl.
+Příčina úplného živého selhání není doložena pouhou lokální opravou načasování.
+Produkční API z Wix originu správně odpovídá na neautentizované preflight/rejection
+kontroly. Žádný skutečný nákup, hold ani billing událost tímto pokračováním nevznikly.
+
+Připraven je [samostatný diagnostický preview](../../integrations/wix/evidence/auth-diagnostic-preview-20261101.json)
+s doslovným module-level klientem a listenerem podle [oficiálního kontraktu](../../integrations/wix/evidence/wix-auth-documentation-20261101.json),
+bez checkout iframe a finančních operací. Testuje se přes vývojovou instalaci,
+nikoli dalším slepým přepnutím stabilních produkčních assetů.
+
+[Read-only DB evidence](../../integrations/wix/evidence/backend-readiness-20261101.json)
+potvrzuje oddělený stav: normální dispatcher zůstává vypnutý a delivery journal
+prázdný. Skutečný settlement/acquisition feed nebyl vymyšlen ani aktivován.
+Existující dema vyžadují autentizaci a starý veřejný QA slug neexistuje; nelze je
+vydávat za anonymní funkční reviewer sandbox.
+
+### Rozhodující nativní reprodukce a bezpečný konečný stav
+
+Samotný draft/Test App změnu URL nepřenesl. Proto byla vydána neveřejná hlavní
+testovací verze 2.0 s ruční aktualizací, aktualizována pouze vlastní Studio QA
+instalace a vložen jediný nový prvek na dočasnou stránku.
+[Skutečně načtená diagnostika](../../integrations/wix/evidence/native-auth-diagnostic-result-20261101.json)
+vrátila `mode=Site`, `injectionCount=0`, `proof=timeout`. Jde o nativní výsledek
+zdokumentovaného plného module-level SDK klienta, nikoli simulaci s ručním tokenem.
+Nedokazuje stejnou chybu na všech Wix webech; příčina nepředání tokenu na této
+instalaci zůstává k dořešení s Wix SDK týmem.
+
+[Obnovení verze 2.1](../../integrations/wix/evidence/native-restoration-20261101.json)
+vrátilo běžný stabilní script URL, původní SDK dependency a tag bez nových
+oprávnění/poplatků. Dočasná stránka byla odstraněna a vrací404. Studio homepage
+má původní dva prvky, Harmony původní jeden; původní URL, titulky a styl zůstaly
+zachované. Stabilní widget má SHA `e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025`.
+Přítomnost starého wrapperu neznamená funkční starý QA formulář: ten nadále404.
+
+Ve stávajícím Gmail vlákně je [konkrétní odpověď Erelovi](../../integrations/wix/evidence/vendor-followup-draft-20261101.json),
+draft `r2329189293174415204`. Obsahuje výsledek testu, přesné SDK verze a
+identifikátory aplikace/extension, žádné tokeny. Odeslání vyžaduje výslovný pokyn
+podle pravidel relace pro zprávy třetím stranám; ten zatím nepřišel.
+App Market podání ani běžný financial dispatcher nebyly aktivovány.
+
+Oprava lokálního script-time SDK regresního testu je na main `2954fabcf`.
+[Záznam publikace](../../integrations/wix/evidence/source-publication-20261101.json)
+přiznává procesní odchylku: přímý push prošel s obejitím požadavku na PR; další
+publikace musí respektovat zjištěné pravidlo. Lokální timing fix se nesmí
+vydávat za vyřešené nativní předání tokenu.
+
+### Oprava původní diagnózy a reprodukovatelný výsledek
+
+Porovnání stejného nativního webu a bundle v hlavním Chromu a čistém lokálním
+prohlížeči vyvrátilo plošné selhání Wix SDK. Čistá viditelná záložka dostala
+nativní callback a skutečný proof POST200; skrytá záložka v hlavním Chromu
+inicializaci odkládala. Callback v ní později také přišel, až po našem původním
+12sekundovém limitu. Ani pouhé zvýšení wall-clock limitu na60 sekund nestačilo.
+Nativní provider i reference prvku byly po dokončení hydratace přítomné.
+
+Opravený kód měří60 sekund viditelného čekání, rozpočet při skrytí pozastavuje
+a při opětovném zobrazení zachovává zbývající čas. Po skutečném vypršení request
+zruší; není přidán unsigned fallback ani automatické opakování. Regresní test
+nejprve prokázal původní chybu s opožděným callbackem, poté prošly případy dlouhé
+skryté inicializace, opakovaného hide/show a tokenu doručeného po expiraci.
+
+[Opakovatelný probe](../../integrations/wix/evidence/native-auth-probe-helper-20261101.json)
+prošel na Harmony, Studiu a Editoru: přesný načtený SHA bundle, skutečný POST200
+a podepsaný kontext v iframe i přímém odkazu. [Skrytý Chrome](../../integrations/wix/evidence/visible-time-candidate-20261101.json)
+po75 sekundách správně stále čekal bez falešné chyby. To není tvrzení o dokončené
+platbě nebo neprovedeném foreground testu hlavního profilu. V aktuální suite
+prošlo46 Wix a54 sdílených testů; čtyři nezměněné DB případy byly přeskočeny.
+
+Zkušenosti a přesný postup jsou v [provozním playbooku](../../integrations/wix/OPERATING-PLAYBOOK.md)
+a bezpečný CLI probe v `integrations/wix/scripts/probe-native-auth.py`.
+Původní návrh eskalace na Wix byl nahrazen neodeslanou pravdivou aktualizací;
+externí problém nebyl potvrzen jako příčina.
+
+Veřejný návod pro pořadatele je na `https://wix-guide.festapp-wix.pages.dev/help`
+a očištěný technický postup na `https://wix-guide.festapp-wix.pages.dev/integration-guide`.
+[Ikona ve Wixu](../../integrations/wix/evidence/canonical-icon-20261101.json) odpovídá
+PNG exportu z kanonického SVG a původní CDN bytes byly ověřeny. Profil2.1
+je up-to-date, žádný nový komponentový release tím nevznikl. Skutečná App Market
+publikace zůstává odděleným nedokončeným krokem.

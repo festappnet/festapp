@@ -4,6 +4,9 @@ import {createClient} from '@wix/sdk';
 import registration from '../wix-app.json' with {type:'json'};
 import {registerTicketElement} from './element.js';
 import {CHECKOUT_CONTEXT_ENDPOINT} from './config.js';
+// Wix may defer native token delivery in a background tab. Bound visible
+// waiting time without cancelling authentication before the host can hydrate.
+const CONTEXT_VISIBLE_TIMEOUT_MS = 60_000;
 // Self-managed extensions do not receive the implicit SDK context available
 // to Wix-managed code. Bind frontend APIs to this app's actual site host.
 // Wix identifies this app through document.currentScript. Capture auth now;
@@ -21,7 +24,20 @@ registerTicketElement(window, () => wixClient().wixWindow.viewMode(), {
   injectToken: () => wixClient().auth.getAccessTokenInjector(),
   async context(url) {
     const controller = new AbortController();
-    let timer;
+    let timer, startedAt = null, remaining = CONTEXT_VISIBLE_TIMEOUT_MS;
+    const deadline = new Promise((_, reject) => {
+      controller.signal.addEventListener('abort', () => reject(new Error('CHECKOUT_CONTEXT_UNAVAILABLE')), {once:true});
+    });
+    const updateDeadline = () => {
+      clearTimeout(timer);
+      if (startedAt !== null) remaining = Math.max(0, remaining - (performance.now() - startedAt));
+      startedAt = null;
+      if (document.visibilityState === 'hidden') return;
+      startedAt = performance.now();
+      timer = setTimeout(() => controller.abort(), remaining);
+    };
+    document.addEventListener('visibilitychange', updateDeadline);
+    updateDeadline();
     try {
       return await Promise.race([
         (async () => {
@@ -38,10 +54,11 @@ registerTicketElement(window, () => wixClient().wixWindow.viewMode(), {
           }
           return data.context;
         })(),
-        new Promise((_, reject) => { timer=setTimeout(() => {
-          controller.abort(); reject(new Error('CHECKOUT_CONTEXT_UNAVAILABLE'));
-        },12000); }),
+        deadline,
       ]);
-    } finally { clearTimeout(timer); }
+    } finally {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', updateDeadline);
+    }
   },
 });

@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Passive native auth trace, own background Harmony tab in Chrome/Panerelay, registered script URL interception and proof-only request fences. No manual token injection or native settings changes.",
+  "traceSha256": "208b4be5914061f6220974929ae2199536312d6dc009947d45de87d10c2202b0",
+  "result": {"initialVisibility": "hidden", "mode": "Site", "injectionCallsAtDeadline": 0, "proof": "timeout", "completedAfterMs": 60756, "httpStatus": null},
+  "isolatedHeadlessControl": {"initialVisibility": "visible", "mode": "Site", "injectionCalls": 1, "injectionDelayMs": 4735, "proof": "response", "completedAfterMs": 5641, "httpStatus": 200, "contextPresent": true},
+  "interpretation": "This hidden-tab run did not receive native injection within a 60-second deadline. A separate earlier run observed later injection after its 12-second timeout; neither proves a fixed upper bound or production-visible behavior.",
+  "cleanup": "Participant routes removed and original page reloaded with target guard.",
+  "tokensOrContextsRecorded": false
+}

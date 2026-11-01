@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-01",
+  "origin": "https://dev-sitex1642529107.wix-development-sites.org",
+  "target": "https://api.festapp.net/functions/v1/wix-checkout-context",
+  "checks": [
+    {"method": "OPTIONS", "status": 200},
+    {"method": "GET", "status": 405, "code": "METHOD_NOT_ALLOWED"},
+    {"method": "POST", "body": {}, "status": 400, "code": "INVALID_FORM_LINK"}
+  ],
+  "accessControlAllowOrigin": "https://dev-sitex1642529107.wix-development-sites.org",
+  "scope": "Read-only rejection/preflight probes from published Wix Studio origin. No tokens, orders, holds or billing events. Does not prove a valid checkout or production data access."
+}

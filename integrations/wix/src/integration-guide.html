@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jak připravit a ověřit doplněk Wix - vstupenky.online</title>
+<meta name="description" content="Technický postup pro nativní Wix widget: registrace, ověření instance, testování, účtování a bezpečné vydání.">
+<link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:light;font:18px/1.65 system-ui,sans-serif;color:#19243b;background:#fff}body{margin:0}main{max-width:780px;margin:auto;padding:36px 20px 64px}.brand{max-width:100%;height:auto}h1{font-size:clamp(1.8rem,5vw,2.5rem);line-height:1.2}h2{font-size:1.3rem;margin-top:2rem}a{color:#15579a;text-underline-offset:3px}a:focus-visible{outline:3px solid #15579a;outline-offset:4px}li{margin-bottom:.6rem}code{font-size:.9em;overflow-wrap:anywhere}.notice{background:#edf5fc;border-left:4px solid #80bdf2;padding:16px 20px}footer{border-top:1px solid #ccd6df;margin-top:2rem;padding-top:1rem;font-size:.9rem}
+</style>
+</head>
+<body><main>
+<a href="https://vstupenky.online/"><img class="brand" src="brand-header.svg" width="265" height="58" alt="vstupenky.online - úvodní stránka"></a>
+<h1>Jak připravit a ověřit doplněk Wix</h1>
+<p>Technické poznatky z přípravy nativního widgetu vstupenky.online. Pro samotné vložení formuláře na web použijte <a href="help.html">návod pro pořadatele</a>.</p>
+<p class="notice">Návod zachycuje ověřený postup i chyby, kterým se vyhnout. Veřejné schválení našeho doplňku v App Marketu dosud není dokončené. U jiné aplikace vždy znovu ověřte její oprávnění, smlouvu a skutečný stav vydání.</p>
+
+<h2>1. Zachovejte jedno místo pro prodej</h2>
+<p>Widget má vložit existující veřejný formulář. Ceny, kapacity, rezervace, objednávky a platby patří původní službě. Nevytvářejte ve Wixu druhý checkout ani další zdroj účetních částek.</p>
+<p>Odkaz formuláře ověřte ještě před instalací. Neexistující testovací odkaz není chyba vložení. Neveřejné demo vyžadující přihlášení není vhodná anonymní ukázka pro recenzenta.</p>
+
+<h2>2. Zaregistrujte skutečný nativní widget</h2>
+<p>Pro samostatně hostovaný doplněk použijte Site Widget typu Custom Element se settings panelem. Zapište přidělené ID aplikace a extension, tag prvku, HTTPS adresu skriptu a nastavení. Povolte potřebné frontendové moduly Wix SDK a ověřte uloženou konfiguraci po opětovném načtení.</p>
+<p>Editor a Preview mají zobrazovat zástupný obsah. Skutečný prodejní formulář načítejte až na zveřejněném webu, aby práce v editoru nezpůsobovala rezervace.</p>
+
+<h2>3. Použijte podporované předání identity</h2>
+<p>Řiďte se <a href="https://dev.wix.com/docs/build-apps/develop-your-app/develop-a-self-managed-app/supported-extensions/site-extensions/site-widgets-and-plugins/identify-the-app-instance-in-a-self-managed-site-widget">oficiálním postupem identifikace instance</a>. SDK klient musí znát ID aplikace; vlastní element předává hostiteli listener z <code>getAccessTokenInjector()</code>. Autentizovaný požadavek pak odesílá <code>fetchWithAuth()</code>.</p>
+<p>Ověření tokenu patří na server. Kontext předejte navázaný na konkrétní formulář, aplikaci a instalaci. Neposílejte app secret do prohlížeče a nezapisujte token ani podepsaný kontext do veřejných logů.</p>
+
+<h2>4. Oddělte inicializaci od chybného požadavku</h2>
+<p>SDK může čekat na dokončení nativní inicializace ještě před prvním HTTP požadavkem. Skrytá záložka může tuto práci odkládat. Náš původní limit 12 sekund proto zobrazoval chybu, přestože Wix předal token později.</p>
+<p>Opravený limit počítá čas ve viditelné záložce, zachovává zbývající rozpočet při změně viditelnosti a po skutečném vypršení požadavek zruší. Neřešte podobnou chybu vypnutím ověření nebo automatickým opakováním finančních operací.</p>
+<p>Režim <code>Site</code>, úspěšný preflight a funkční předání tokenu jsou tři různé výsledky. Měřte jejich pořadí. Počet listenerů zachycený při vypršení krátkého limitu nedokazuje, že listener nikdy nepřijde.</p>
+
+<h2>5. Testujte skutečně načtenou verzi</h2>
+<ul>
+<li>Uložení draftu, aktualizace aplikace, publikace webu a podání do App Marketu jsou samostatné kroky.</li>
+<li>Ověřte URL a kontrolní součet skriptu, který stránka opravdu spustila. Samostatné stažení nové verze neprokazuje, že ji již načtená stránka používá.</li>
+<li>Existující prvek může držet starou konfiguraci. Při testu nové adresy skriptu použijte čerstvý prvek na oddělené testovací stránce a po ověření jej odstraňte.</li>
+<li>Porovnejte viditelný a skrytý stav, čistý prohlížeč a běžný profil. Ručně dodaný token v unit testu nenahrazuje skutečné předání od Wixu.</li>
+<li>Testy rezervací a nákupů provádějte na vyhrazených testovacích datech. U veřejné produkce ověřujte čtení bez vytvoření objednávky či blokace míst.</li>
+</ul>
+
+<h2>6. Potvrďte model účtování předem</h2>
+<p>Vyžádejte si písemné potvrzení vhodného modelu a rozsahu reportovaných příjmů. U našeho Partner Billed modelu jde o vlastní servisní poplatky, nikoli nominální cenu vstupenek nebo peníze pořadatelů. Konkrétní sazbu určuje dohoda s pořadatelem.</p>
+<p>Rozlišujte podepsaný dodatek, aktivované oprávnění ve Wixu, potvrzené přijetí BI události a zapnutí běžného finančního reportingu. Jeden úspěšný test nepotvrzuje všechny tyto stavy.</p>
+<p>Syntetickou BI událost odešlete pouze podle postupu potvrzeného Wixem. Neznámý výsledek odeslání nesmí vést k slepému opakování. Uchovejte neměnný záznam pokusu a řešte jeho stav s poskytovatelem.</p>
+
+<h2>7. Připravte veřejný návod a jednotnou identitu</h2>
+<p>Logo odvozujte z jediného schváleného vektorového zdroje. Samostatně ověřte obrázek uložený ve Wixu, veřejnou nápovědu a skutečně načtené assety. Pokud přímé nahrání souboru nepodporuje použitý prohlížečový nástroj, použijte běžný import veřejné URL ve Wix Media Manageru.</p>
+<p>Návod musí odpovídat skutečné dostupnosti aplikace, uvádět platný kontakt a popsat veřejný formulář, ukládání nastavení, publikaci webu i řešení neplatného odkazu. Interní přístupy a provozní tajemství do něj nepatří.</p>
+
+<h2>8. Vydávejte až ověřené podklady</h2>
+<p>Uchovejte zdrojovou revizi, manifest a kontrolní součty všech veřejných souborů. Před nasazením mějte připravenou předchozí verzi. Neúspěšný živý test nejprve obnovte na původní stav, potom pokračujte v diagnostice.</p>
+<p>Počet nula blockerů v dashboardu nepotvrzuje funkční checkout. Před podáním ověřte aktuální prohlížečový postup, informace pro recenzenta, cenu, soukromí, podporu a schválené podmínky. Stav „review pending“ se nesmí vydávat za veřejné schválení.</p>
+<footer><a href="help.html">Návod na vložení formuláře</a> · <a href="mailto:info@vstupenky.online">info@vstupenky.online</a></footer>
+</main></body></html>

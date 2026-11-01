@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Read-only bounded React-fiber metadata of the real native custom element on published Harmony, with the same passive trace bundle in owned Chrome/Panerelay and clean isolated headless; no token getter calls or values inspected.",
+  "traceSha256": "5419b2e59b39aa3939222c6a27538d7f8eb5769c8de79e9079488b9505e284d6",
+  "mainChrome": {"initialFiberPresent": false, "eventualFiberPresent": true, "providerType": "function", "providerTruthy": true, "componentRefMatchesElement": true, "injectionCallsAfterTimeout": 1, "proof": "timeout"},
+  "isolatedHeadless": {"providerType": "function", "providerTruthy": true, "componentRefMatchesElement": true, "injectionCalls": 1, "proof": "response", "httpStatus": 200},
+  "interpretation": "Both environments eventually supplied the native token provider and matching element ref. Main Chrome's callback was observed only after the trace proof timed out; delayed hydration/injection is a plausible explanation, not a precisely timed causal measurement.",
+  "cleanup": "Removed session routes and reloaded owned Harmony page; isolated browser closed.",
+  "incidentalNavigation": "During setup the Panerelay target had changed and a reload landed on an unrelated YouTube tab. Routes were immediately removed; no interaction or audio settings were changed. A new owned tab was used for the comparison."
+}

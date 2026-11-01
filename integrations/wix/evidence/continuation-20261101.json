@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "status": "visible-time-fix-verified-guide-live-canonical-logo-updated-source-publication-pending",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "extensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "resolved": {
+    "biIngestionConfirmed": true,
+    "nativeExternalBillingEnabled": true,
+    "existingCustomPricingPlanCorrect": true
+  },
+  "nativeState": {
+    "latestReleasedVersion": "2.1",
+    "marketplaceSubmitted": false,
+    "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+    "stableWidgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "normalConfigRestored": true,
+    "temporaryPageDeleted": true,
+    "studioPendingUpdateShown": false,
+    "studioInstalledVersionNumberIndependentlyVisible": false
+  },
+  "blockingDiagnostic": {
+    "receipt": "integrations/wix/evidence/native-auth-diagnostic-result-20261101.json",
+    "nativeUnlistedTestVersion": "2.0 major/manual update, only owned Studio updated",
+    "freshWidgetLoadedActualDiagnostic": true,
+    "officialFullModuleClientUsed": true,
+    "mode": "Site",
+    "tokenListenerInvocationCount": 0,
+    "proof": "timeout",
+    "rootCauseEstablished": true,
+    "generalizationToAllWixSitesClaimed": false,
+    "historicalFailureResolvedByCandidate": true,
+    "rootCause": "The widget exhausted a 12-second wall-clock deadline while the native host was still initializing and delivering its token. A 60-second wall-clock increase alone also failed in a hidden tab. The corrected budget counts only visible time.",
+    "currentProofReceipt": "integrations/wix/evidence/native-auth-probe-helper-20261101.json",
+    "hiddenBehaviorReceipt": "integrations/wix/evidence/visible-time-candidate-20261101.json"
+  },
+  "vendorEscalation": {
+    "gmailThreadId": "1a18198a75444077",
+    "gmailDraftId": "r2329189293174415204",
+    "sent": false,
+    "explicitSendInstructionReceived": false,
+    "draftReceipt": "integrations/wix/evidence/vendor-followup-draft-20261101.json",
+    "supersededByLocalFix": true
+  },
+  "source": {
+    "mainSha": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+    "timingRegressionLocallyFixed": true,
+    "liveTokenDeliverySolved": true,
+    "protectedPrRuleBypassDisclosed": "integrations/wix/evidence/source-publication-20261101.json",
+    "furtherPublicationRequiresPr": true,
+    "candidateWidgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+    "productionCandidateDeployed": false,
+    "candidateSourceBranch": "wix/guide-and-canonical-brand"
+  },
+  "validation": {
+    "wixPassed": 46,
+    "sharedCheckoutPassed": 54,
+    "databaseSkipped": 4,
+    "meaning": "No SQL/executor source changed; this run does not claim DB tests passed.",
+    "finalReadinessCommand": "pnpm --dir integrations/wix run release:check evidence/partner-billing-release-inputs-20261101.json",
+    "finalReadinessExitCode": 1,
+    "missingDeclarations": [
+      "Harmony checkout/lifecycle receipt",
+      "Editor checkout/lifecycle receipt",
+      "Studio checkout/lifecycle receipt",
+      "Store assets/reviewer access/privacy/support verification"
+    ],
+    "additionalOperatorHold": "Do not claim purchases, full checkout or reviewer credentials from the proof-only browser probe. Source publication and stable deployment are still pending.",
+    "nativeProbeSites": [
+      "Harmony",
+      "Studio",
+      "Editor"
+    ],
+    "nativeProbeResult": "PASS: actual served candidate hash, POST200, context in iframe/direct link"
+  },
+  "financialState": {
+    "normalDispatcherEnabled": false,
+    "newBillingEventsSent": false,
+    "ordersHoldsPaymentsCreated": false,
+    "productionSqlChanged": false
+  },
+  "resume": "Complete source publication respecting branch rules, deploy the exact validated bundle and verify live read-only native behavior. Retain the separate remaining reviewer/checkout gates before actual App Market submission. Do not resend BI qualification or activate financial dispatch without genuine source evidence.",
+  "publicGuide": "https://wix-guide.festapp-wix.pages.dev/help",
+  "canonicalIconReceipt": "integrations/wix/evidence/canonical-icon-20261101.json",
+  "publicTechnicalGuide": "https://wix-guide.festapp-wix.pages.dev/integration-guide",
+  "fixValidationReceipt": "integrations/wix/evidence/visible-time-fix-validation-20261101.json"
+}

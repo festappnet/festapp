@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "scope": "Wix widget and shared checkout compatibility before stable hosting promotion",
+  "sourceHead": "17937512caa9dea75257490cc513bec394ce73d0",
+  "command": "python3 automation/ci/run.py step wix-contract",
+  "exitCode": 0,
+  "wix": {
+    "passed": 41,
+    "failed": 0,
+    "skipped": 4,
+    "skippedReason": "WIX_BILLING_TEST_DATABASE_URL not supplied; unchanged SQL/executor coverage retains separately recorded PostgreSQL qualification from 2026-10-28, not rerun here."
+  },
+  "build": "passed",
+  "sharedCheckout": {
+    "passed": 54,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtimeSourceUnchangedFromPreview": "f0fed2a0b380d758555e1dc7c9bc8ddef6298665",
+  "runtimeDiffCheck": "git diff f0fed2a0b -- integrations/wix/src integrations/wix/pnpm-lock.yaml: no differences",
+  "historicalBillingIntegrityReview": "docs/plans/wix-partner-billing-CRITIC-2026-10-28.md",
+  "historicalDeployment": "docs/operations/releases/festapptickets-wix-critic-fix-2026-10-28.json",
+  "boundaries": {
+    "databaseTestPassClaimedForThisRun": false,
+    "productionSqlChanged": false,
+    "normalBillingActivated": false,
+    "liveAccountingFactsInvented": false
+  }
+}

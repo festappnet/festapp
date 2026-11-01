@@ -1,0 +1,64 @@
+{
+  "status": "public-guides-preview-refreshed-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "sourceAttribution": {
+    "worktreeBranch": "wix/guide-and-canonical-brand",
+    "baseCommit": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+    "sourceTreeChangesCommitted": false
+  },
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "wix-guide",
+  "environment": "Preview",
+  "previousDeployment": {
+    "deploymentId": "c6194adf-638c-43a8-9de1-fa0e2efbe02f",
+    "uniqueDeploymentUrl": "https://c6194adf.festapp-wix.pages.dev",
+    "helpUrl": "https://c6194adf.festapp-wix.pages.dev/help"
+  },
+  "deploymentId": "54c55c3d-b26d-4bf9-a39f-45b3c840aa30",
+  "uniqueDeploymentUrl": "https://54c55c3d.festapp-wix.pages.dev",
+  "friendlyAliasUrl": "https://wix-guide.festapp-wix.pages.dev",
+  "publicUrls": {
+    "helpUnique": "https://54c55c3d.festapp-wix.pages.dev/help",
+    "helpAlias": "https://wix-guide.festapp-wix.pages.dev/help",
+    "integrationGuideUnique": "https://54c55c3d.festapp-wix.pages.dev/integration-guide",
+    "integrationGuideAlias": "https://wix-guide.festapp-wix.pages.dev/integration-guide",
+    "appIconUnique": "https://54c55c3d.festapp-wix.pages.dev/app-icon.png",
+    "appIconAlias": "https://wix-guide.festapp-wix.pages.dev/app-icon.png"
+  },
+  "artifact": {
+    "archivePath": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "archiveSha256": "b5cd9eb2edce7a32a02cda48f7812daf0ddab2b174cd0d612448dccc40347e28",
+    "manifestSha256": "f831e0d543e4206cf309e3193231d73a80abcaf336e5666eb993fe5a5e158bf3",
+    "widgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+    "appIconPngSha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+    "brandHeaderSvgSha256": "c0a3d15033946bc82ae744fff6c8c108becd3dfa863ecd6b1f17c767e5a5f967",
+    "brandIconSvgSha256": "19b3b81c578628684935eaea2fa228d1eb9bd1eb65f6bf91296a0f732360e417",
+    "helpSha256": "45da90baed37e2989dfbba1ef344454563c1dd6d1b9a8033f69fdfa429e58640",
+    "integrationGuideSha256": "a559cf0eb58782f431fbc7d55c738057734ad03aaba8aaf377fe3b599d986711",
+    "publicAssets": "All nine public files listed in manifest returned HTTP 200 and matched their manifest hashes. The _headers file is deployment metadata, not a public route."
+  },
+  "guideContent": {
+    "contact": "info@vstupenky.online present",
+    "publicationStatus": "Clearly states the add-on is not yet publicly available in Wix App Market",
+    "integrationGuide": "Sanitized public technical guide linked from help; internal runbook not published",
+    "relativeLinks": "brand icons, header logo, help and integration guide links all resolve",
+    "privateInfrastructureOrGmailIdentifiers": "none found"
+  },
+  "headers": {
+    "mimeTypes": "passed for help, PNG and SVG assets",
+    "xContentTypeOptions": "nosniff",
+    "cacheControl": "public, max-age=300, must-revalidate"
+  },
+  "productionStableGuard": {
+    "widgetUrl": "https://festapp-wix.pages.dev/widget.js",
+    "sha256Before": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "sha256After": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "unchanged": true
+  },
+  "scope": {
+    "previewOnly": true,
+    "productionStableChanged": false,
+    "existingPagesProjectOnly": true
+  }
+}
