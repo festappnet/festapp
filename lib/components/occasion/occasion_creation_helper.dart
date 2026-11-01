@@ -1,4 +1,5 @@
 import 'package:fstapp/components/occasion/occasion_copy_dialog.dart';
+import 'package:fstapp/components/occasion/occasion_creation_notice.dart';
 import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/services/dialog_helper.dart';
@@ -37,14 +38,15 @@ class OccasionCreationHelper {
     final target = await showOccasionCopyTargetDialog(context, destinations,
         sourceUnitId: sourceUnitId ?? source.unit);
     if (target == null || !context.mounted) return null;
-    bool mediaCopied = false;
+    ({int occasionId, bool mediaCopied})? result;
     final created = await DialogHelper.showProgressDialogAsync(
         context, UnitStrings.createCopy, 1,
         isBasic: true,
         futures: [
           () async {
-            mediaCopied = await DbOccasions.duplicateOccasion(source.id!,
+            result = await DbOccasions.duplicateOccasion(source.id!,
                 targetUnitId: target.id, locale: copyLocale);
+            OccasionCreationNotice.record(target.id!, result!.occasionId);
           }
         ]);
     if (!context.mounted) return null;
@@ -54,7 +56,7 @@ class OccasionCreationHelper {
     }
     ToastHelper.Show(
         context,
-        mediaCopied
+        result!.mediaCopied
             ? UnitStrings.createCopySuccess
             : UnitStrings.createCopyMediaFailed);
     return target;

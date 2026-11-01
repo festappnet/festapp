@@ -273,12 +273,12 @@ class RouterService {
     await RouterService.navigate(context, "unit/${unit.id!}/edit");
   }
 
-  /// Clear a deleted occasion from the route stack and reload its unit.
+  /// Leave the deleted occasion before the destination reloads its unit.
   static Future<void> replaceWithUnitAdmin(
       BuildContext context, int unitId) async {
     final rootRouter = context.router.root;
-    await RightsService.updateAppData(
-        unitId: unitId, force: true, refreshOffline: false);
+    // The unit route owns its context/dashboard load. Refreshing it while the
+    // deleted occasion is still visible wakes that occasion's access boundary.
     await rootRouter.replaceAll([UnitAdminRoute(id: unitId)]);
   }
 

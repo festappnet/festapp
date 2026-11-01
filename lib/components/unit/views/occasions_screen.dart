@@ -48,6 +48,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   DemoCatalog? _demoCatalog;
   Future<void>? _dashboardLoad;
   bool _dashboardFailed = false;
+  bool _isRefreshing = false;
+  int? _copyingOccasionId;
   void _acceptDashboard(UnitOccasionDashboard dashboard) {
     if (dashboard.unitId != widget.unit.id)
       throw StateError('Unit dashboard scope mismatch');
@@ -60,6 +62,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     _demoCatalog = dashboard.demos;
     _dashboardFailed = false;
     _isLoading = false;
+    _isRefreshing = false;
   }
 
   final _scrollController = ScrollController();
@@ -67,7 +70,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   int? _createdOccasionId;
   Timer? _highlightTimer;
   void _highlight(OccasionModel occasion) {
-    if (!mounted || occasion.unit != widget.unit.id) return;
+    if (!mounted || occasion.unit != widget.unit.id ||
+        !_allOccasions.any((item) => item.id == occasion.id)) return;
     _highlightTimer?.cancel();
     // Creation returns to the new card, including when the old list was filtered.
     _searchController.clear();
@@ -197,10 +201,13 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   void _consumeCreationNotice() {
-    final id = OccasionCreationNotice.take(widget.unit.id!);
+    final id = OccasionCreationNotice.peek(widget.unit.id!);
     if (id == null) return;
     final occasion = _allOccasions.where((o) => o.id == id).firstOrNull;
-    if (occasion != null) _highlight(occasion);
+    if (occasion != null) {
+      OccasionCreationNotice.take(widget.unit.id!);
+      _highlight(occasion);
+    }
   }
 
   void _initializeOccasions() {
@@ -249,9 +256,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     }
   }
 
-  Future<void> _loadOccasions() {
+  Future<void> _loadOccasions({bool afterMutation = false}) async {
     final pending = _dashboardLoad;
-    if (pending != null) return pending;
+    if (pending != null) {
+      await pending;
+      if (!afterMutation || !mounted) return;
+    }
     final request = _fetchDashboard();
     _dashboardLoad = request;
     request.whenComplete(() {
@@ -262,7 +272,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   Future<void> _fetchDashboard() async {
     final unitId = widget.unit.id!;
-    if (!_isLoading) setState(() => _isLoading = true);
+    if (!_isLoading) setState(() => _isRefreshing = true);
     try {
       final dashboard = await DbUnits.getOccasionDashboard(unitId);
       if (!mounted || widget.unit.id != unitId) return;
@@ -274,6 +284,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
       setState(() {
         _dashboardFailed = true;
         _isLoading = false;
+        _isRefreshing = false;
       });
     }
   }
@@ -302,7 +313,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         withoutWizard: withoutWizard);
 
     if (mounted) {
-      await _loadOccasions();
+      await _loadOccasions(afterMutation: created != null);
       if (created != null) _highlight(created);
     }
   }
@@ -318,18 +329,20 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
+    if (_copyingOccasionId != null) return;
     final sourceUnitId = widget.unit.id;
-    final target = await OccasionCreationHelper.createCopy(context, occasion,
-        sourceUnitId: sourceUnitId);
-    if (!mounted || widget.unit.id != sourceUnitId) return;
-    if (target == null) {
-      await _loadOccasions();
-      return;
-    }
-    if (target.id == widget.unit.id) {
-      await _loadOccasions();
-    } else {
-      await RouterService.navigateToUnitAdmin(context, target);
+    setState(() => _copyingOccasionId = occasion.id);
+    try {
+      final target = await OccasionCreationHelper.createCopy(context, occasion,
+          sourceUnitId: sourceUnitId);
+      if (!mounted || widget.unit.id != sourceUnitId || target == null) return;
+      if (target.id == widget.unit.id) {
+        await _loadOccasions(afterMutation: true);
+      } else {
+        await RouterService.navigateToUnitAdmin(context, target);
+      }
+    } finally {
+      if (mounted) setState(() => _copyingOccasionId = null);
     }
   }
 
@@ -359,6 +372,10 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                   controller: _scrollController,
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
+                    if (_isRefreshing)
+                      const SliverToBoxAdapter(
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
                     if (_dashboardFailed)
                       SliverToBoxAdapter(
                           child: TextButton.icon(
@@ -591,10 +608,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
           (context, index) {
             final occasion = occasions[index];
             final card = OccasionEditCard(
-              key: ValueKey(occasion.id),
               occasion: occasion,
               onTap: () => _handleView(occasion),
-              onCreateCopy: () => _handleCreateCopy(occasion),
+              isCopying: _copyingOccasionId == occasion.id,
+              onCreateCopy: _copyingOccasionId == null
+                  ? () => _handleCreateCopy(occasion)
+                  : null,
               isPresent: isPresent,
               isAppLanding: _landing?.enabled == true &&
                   _landing?.occasionId == occasion.id,
@@ -608,10 +627,17 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                       _landing?.occasionId == occasion.id ? null : occasion.id)
                   : null,
             );
-            return occasion.id == _createdOccasionId
-                ? OccasionCreatedHighlight(
-                    key: ValueKey('created-${occasion.id}'), child: card)
-                : card;
+            return KeyedSubtree(
+              key: ValueKey<int>(occasion.id!),
+              child: occasion.id == _createdOccasionId
+                ? OccasionCreatedHighlight(child: card)
+                  : card,
+            );
+          },
+          findChildIndexCallback: (key) {
+            if (key is! ValueKey<int>) return null;
+            final index = occasions.indexWhere((item) => item.id == key.value);
+            return index < 0 ? null : index;
           },
           childCount: occasions.length,
         ),
