@@ -209,3 +209,22 @@ verified digests. The assembler checks current canonical SQL against the new
 forward output and refuses to replace any differing existing output, including
 its default destination. Historical migrations are never regenerated after a
 source change; advance the manifest to a new forward migration instead.
+
+Hidden organization members (`organization_users.is_hidden`) never publish
+`occasion_joined` activity. Item authorization and the live center policy also
+exclude historical joins for currently hidden members, including frozen panels,
+group counts and unread badges. Membership and administration access remain intact.
+
+Personal subject visibility is shared by publication, item authorization, DTOs
+and live center membership. It covers membership IDs, email recipient IDs and
+normalized tenant-scoped email identities, and order/waitlist buyer identities.
+Hidden operators do not suppress visible customers' orders; operational capacity
+and form facts retain their normal meaning. This does not erase accounting or
+security audit records.
+
+The explicit privileged `purge_hidden_notification_history_internal` maintenance
+boundary removes existing hidden-subject events and cascades recipient/delivery
+projections. It clears event-specific read receipts and source-state event links,
+while preserving business entities, shared read batches and sequence watermarks.
+The forward cleanup is scoped to organization 3; publication already rejects
+new hidden-subject activity before an event row exists.

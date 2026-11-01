@@ -54,7 +54,7 @@ BEGIN
                     ), '[]'::jsonb)
                     FROM public.user_groups ug
                     JOIN public.user_info p_ui ON ug."user" = p_ui.id
-                    WHERE ug."group" = ugi.id
+                    WHERE ug."group" = ugi.id AND public.occasion_member_visible_internal(ugi.occasion,p_ui.id)
                 )
             )
         ), '[]'::jsonb)

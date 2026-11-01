@@ -38,13 +38,13 @@ BEGIN
           'birth_date', parent_ui.birth_date
         )
         FROM public.user_info parent_ui
-        WHERE parent_ui.id = uc."user"
+        WHERE parent_ui.id = uc."user" AND public.occasion_member_visible_internal(oc,parent_ui.id)
       )
     )
   ) INTO companions
   FROM public.user_info ui
   LEFT JOIN public.user_companions uc ON ui.id = uc.companion AND uc.occasion=oc
-  WHERE ui.id = ANY(user_ids);
+  WHERE ui.id = ANY(user_ids) AND public.occasion_member_visible_internal(oc,ui.id);
 
   -- If no companions are found, return an empty array
   IF companions IS NULL THEN
