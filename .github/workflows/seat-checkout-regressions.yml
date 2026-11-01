@@ -24,6 +24,10 @@ on:
       - 'lib/components/eshop/db_tickets.dart'
       - 'lib/components/eshop/views/orders_content.dart'
       - 'test/components/eshop/ticket_delivery_request_test.dart'
+      - 'workers/image-worker/**'
+      - 'database/functions/others/**'
+      - 'database/functions/authoring/lifecycle.sql'
+      - 'database/tests/occasion_copy_lifecycle_test.sql'
       - 'supabase/migrations/**'
       - 'supabase/baseline/**'
       - 'automation/baseline.py'
@@ -72,6 +76,8 @@ jobs:
       - name: Install isolated Chromium test runner
         run: bash automation/ci/browser.sh
       - run: python3 automation/ci/run.py step seat-database
+      - name: Copy event media in workerd and delete its inventory through real SQL
+        run: python3 automation/ci/run.py step occasion-lifecycle
       - name: Authorization read-phase upgrade contracts
         env:
           FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}

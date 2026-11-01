@@ -124,3 +124,15 @@ route contraction are operator-run actions after their evidence gates.
 Editor photos use a 1600 px maximum edge, JPEG quality 85 and a 1.5 MiB output budget. Ticket backgrounds use 1600 px, quality 90 and 2 MiB for print detail. The server keeps aspect ratio and never upscales; only an image that exceeds its byte budget receives additional downscaling. These storage dimensions are independent of the 1200 px in-memory preview bound.
 
 HTML import uses the same 20 MB / 40 MP input contract as the shared uploader. It retains original upload bytes and decodes bounded previews; the former editor-only 10 MiB / 16 MP limits are removed.
+
+## Occasion copy regression
+
+`pnpm --dir workers/image-worker run test:lifecycle` runs the actual Worker entrypoint
+in workerd with local R2 and canonical SQL on the disposable database at port 55432.
+Set `IMAGE_LIFECYCLE_DATABASE_URL` for another disposable local database. The test
+rolls back all SQL, checks object bytes and both image references, retries the same
+job, and deletes the copy while preserving its source. RPC transport binds a test
+actor locally; GoTrue/PostgREST and deployed Cloudflare configuration are outside
+this test. The seat-checkout CI lane runs it together with
+`database/tests/occasion_copy_lifecycle_test.sql`, including pending media deletion
+copied scanner settings, and the existing order safety guard.

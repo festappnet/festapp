@@ -60,6 +60,7 @@
       "steps": [
         "seat-install",
         "seat-database",
+        "occasion-lifecycle",
         "seat-authorization",
         "seat-google-auth",
         "seat-contract",
@@ -107,6 +108,7 @@
     "ticket-edge": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts\n",
     "ticket-install": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get",
     "ticket-core": "cd packages/festapp_core\nfvm dart pub get\nfvm dart test test/eshop/customer_label_test.dart\n",
-    "ticket-client": "fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart test/components/notification_center/notification_center_cases.dart test/components/notification_center/notification_center_time_test.dart"
+    "ticket-client": "fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart test/components/notification_center/notification_center_cases.dart test/components/notification_center/notification_center_time_test.dart",
+    "occasion-lifecycle": "pnpm --dir workers/image-worker install --frozen-lockfile\npnpm --dir workers/image-worker run test:lifecycle\nnode web_client/scripts/run_db_tests.js database/tests/occasion_copy_lifecycle_test.sql"
   }
 }
