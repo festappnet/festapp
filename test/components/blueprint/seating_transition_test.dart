@@ -113,6 +113,74 @@ class Fixture {
 
 void main() {
   WidgetEnvironmentFixture.register();
+  testWidgets(
+    'missing product coverage explains the plan repair and opens products',
+    (tester) async {
+      final f = Fixture();
+      addTearDown(f.controller.dispose);
+      f.data = contextData(items: []);
+      f.data['compatibility'] = [
+        {
+          'productId': 5,
+          'productTitle': 'Admission',
+          'admissions': 9,
+          'seats': 0,
+          'standing': false,
+          'reason': 'PRODUCT_MISMATCH',
+        },
+      ];
+      await f.controller.load(discover: true);
+      var closed = 0;
+      final env = WidgetEnvironmentFixture(
+        locale: const Locale('en'),
+        translations: {
+          'SeatingTransition': {
+            'productCoverageMissing':
+                'Assign the purchased product in the plan and save.',
+            'editSeatProducts': 'Edit seat products',
+          },
+        },
+      );
+      await env.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 340,
+              child: SeatingTransitionPanel(
+                controller: f.controller,
+                onClose: () {
+                  closed++;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Edit seat products'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'Assign the purchased product in the plan and save.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Edit seat products'));
+      await tester.pump();
+      expect(closed, 1);
+      expect(
+        f.calls,
+        isEmpty,
+        reason: 'Opening products must not change purchases or assignments',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   test(
     'nine assigned and one waiting is a complete organizer-managed outcome',
     () {

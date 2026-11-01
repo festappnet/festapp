@@ -2659,6 +2659,8 @@
     "removePair": "Entworfene Zuweisung entfernen",
     "unit": "Weisen Sie jeden Platz dieser Einheit ausdrücklich zu",
     "compatibility": "Produkt- und Kapazitätsprüfung",
+    "productCoverageMissing": "Weisen Sie unter Reservierungen und Bestellungen das gekaufte Produkt den entsprechenden Plätzen oder dem Bereich zu und speichern Sie den Plan.",
+    "editSeatProducts": "Platzprodukte bearbeiten",
     "admissions": "Zugelassene Tickets",
     "seats": "Sitzplätze",
     "readRequired": "Zum Anzeigen der Ticketinhaber benötigen Sie Leserechte für Bestellungen.",

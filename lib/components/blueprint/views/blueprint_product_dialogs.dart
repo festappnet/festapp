@@ -254,7 +254,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
         actions: [
           TextButton(
               onPressed: _busy ? null : () => Navigator.of(context).pop(),
-              child: Text(CommonStrings.storno)),
+              child: Text(CommonStrings.cancel)),
           if (widget.canEditCatalog)
             ElevatedButton.icon(
                 icon: const Icon(Icons.add),
@@ -377,7 +377,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.storno),
+          child: Text(CommonStrings.cancel),
         ),
         ElevatedButton(
           onPressed: _save,

@@ -406,7 +406,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveFlight = null;
       if (mounted) setState(() {});
     });
-    setState(() => _saveFlight = future);
+    setState(() {
+      _saveFlight = future;
+    });
     return future;
   }
 
@@ -453,6 +455,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveNoticeTimer = Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _savedNotice = false);
       });
+      await _seating?.load();
       return;
     }
     setState(() => _message = [

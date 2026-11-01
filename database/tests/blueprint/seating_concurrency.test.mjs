@@ -61,6 +61,7 @@ commands.append(Path('supabase/migrations/20261031223000_blueprint_feature_indep
 commands.append(Path('supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql').read_text())
 commands.append(Path('supabase/migrations/20261101121500_occasion_copy_deletion.sql').read_text())
 commands.append(Path('supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql').read_text())
+commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_admissions.sql').read_text())
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
    const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8'});

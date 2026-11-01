@@ -22,8 +22,11 @@ subprocess.run(['deno','bundle','--frozen','--lock='+str(root/'supabase/function
 wasm=(npm_cache/'registry.npmjs.org/harfbuzzjs/1.6.3/dist/harfbuzz.wasm').read_bytes()
 for js in [work/'baseline.js',work/'current.js']:
  source='import {Buffer} from "node:buffer"; import process from "node:process"; var global=globalThis; global.Buffer=Buffer; global.process=process;\n'+js.read_text()
- trie=(npm_cache/'registry.npmjs.org/unicode-properties/2.0.1/data.trie').read_bytes()
- source=source.replace('readFileSync(new URL("./data.trie", import.meta.url))','Uint8Array.from(atob('+json.dumps(base64.b64encode(trie).decode())+'),c=>c.charCodeAt(0))')
+ # Only the frozen historical baseline needs a compatibility rewrite. Never
+ # patch current dependencies here: it concealed the production Save failure.
+ if js.name=='baseline.js':
+  trie=(npm_cache/'registry.npmjs.org/unicode-properties/2.0.1/data.trie').read_bytes()
+  source=source.replace('readFileSync(new URL("./data.trie", import.meta.url))','Uint8Array.from(atob('+json.dumps(base64.b64encode(trie).decode())+'),c=>c.charCodeAt(0))')
  source=source.replace('harfbuzz_default()', 'harfbuzz_default({wasmBinary:Uint8Array.from(atob('+json.dumps(base64.b64encode(wasm).decode())+'),c=>c.charCodeAt(0))})')
  js.write_text(source)
 for flavor,js in [('before',work/'baseline.js'),('after',work/'current.js')]:

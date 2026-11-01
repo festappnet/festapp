@@ -546,8 +546,15 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                           '#${product['productId']}',
                     ),
                     subtitle: Text(
-                      '${_t('admissions')}: ${product['admissions']} · ${_t('seats')}: ${product['seats']} · ${_t('standing')}: ${product['standing'] == true ? _t('standing') : '-'}${product['reason'] == null ? '' : '\n${SeatingTransitionStrings.reason(product['reason'].toString())}'}',
+                      '${_t('admissions')}: ${product['admissions']} · ${_t('seats')}: ${product['seats']} · ${_t('standing')}: ${product['standing'] == true ? _t('standing') : '-'}${product['reason'] == null ? '' : '\n${product['reason'] == 'PRODUCT_MISMATCH' ? _t('productCoverageMissing') : SeatingTransitionStrings.reason(product['reason'].toString())}'}',
                     ),
+                  ),
+                if (data.capabilities.configure &&
+                    data.compatibility.any(
+                        (product) => product['reason'] == 'PRODUCT_MISMATCH'))
+                  TextButton(
+                    onPressed: c.busy || c.uncertain ? null : widget.onClose,
+                    child: Text(_t('editSeatProducts')),
                   ),
               ],
             ),
