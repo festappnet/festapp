@@ -9,6 +9,37 @@ const result=await build({entryPoints:[new URL('../src/widget.js',import.meta.ur
 const bundle=result.outputFiles[0].text;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
+test('bundled entry captures script-scoped Wix authentication before a widget is inserted later',async()=>{
+  const dom=new JSDOM('<body></body>',{url:'https://wix-site.invalid',runScripts:'dangerously'});
+  try {
+    dom.window.Headers=Headers;
+    dom.window.clientSdk={async invoke(){return 'Site';}};
+    let tokenProbes=0;
+    dom.window.wixEmbedsAPI={getAccessTokenFunction(){
+      assert.equal(dom.window.document.currentScript?.tagName,'SCRIPT');
+      tokenProbes++;
+      return async()=>'qa-script-scoped-token';
+    }};
+    const requests=[];
+    dom.window.fetch=async(url,init)=>{
+      requests.push({url,init});
+      return {ok:true,json:async()=>({context:'cHJvdmVuYW5jZQ.'+'a'.repeat(64),expiresAt:Math.floor(Date.now()/1000)+86400})};
+    };
+    const script=dom.window.document.createElement('script');
+    script.textContent=bundle;
+    dom.window.document.head.append(script);
+    assert.equal(dom.window.document.currentScript,null);
+    const element=dom.window.document.createElement('vstupenky-online-form');
+    element.setAttribute('form-url','https://vstupenky.online/form/ukazka');
+    dom.window.document.body.append(element);
+    await tick();
+    assert.equal(tokenProbes,1,'Wix can identify the app only while its script executes');
+    assert.equal(requests.length,1,'delayed widget insertion must reach the proof endpoint without manual token injection');
+    assert.equal(new Headers(requests[0].init.headers).get('authorization'),'qa-script-scoped-token');
+    assert.ok(element.querySelector('iframe'));
+  } finally {dom.window.close();}
+});
+
 test('bundled self-managed entry binds the real Wix SDK to the assigned app before requesting Site mode',async()=>{
   const dom=new JSDOM('<vstupenky-online-form form-url="https://vstupenky.online/form/ukazka"></vstupenky-online-form>',{url:'https://wix-site.invalid',runScripts:'outside-only'});
   try {

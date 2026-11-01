@@ -6,10 +6,13 @@ import {registerTicketElement} from './element.js';
 import {CHECKOUT_CONTEXT_ENDPOINT} from './config.js';
 // Self-managed extensions do not receive the implicit SDK context available
 // to Wix-managed code. Bind frontend APIs to this app's actual site host.
+// Wix identifies this app through document.currentScript. Capture auth now;
+// widget constructors may run later, after that script context is gone.
+const auth = site.auth();
 let client;
 function wixClient() {
   return client ??= createClient({
-    auth:site.auth(),
+    auth,
     host:site.host({applicationId:registration.appId}),
     modules:{wixWindow},
   });
