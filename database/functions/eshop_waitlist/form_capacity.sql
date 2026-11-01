@@ -39,6 +39,12 @@ BEGIN
  n:=CASE WHEN p_input ? 'participant_capacity' THEN (p_input->>'participant_capacity')::integer ELSE f.participant_capacity END;
  enabled:=CASE WHEN p_input ? 'waitlist_enabled' THEN (p_input->>'waitlist_enabled')::boolean ELSE f.waitlist_enabled END;
  bp:=CASE WHEN p_input ? 'blueprint' THEN nullif(p_input->>'blueprint','')::bigint ELSE f.blueprint END;
+ -- Generic saves may neither switch a configured source nor activate its
+ -- still-private target through another form. Publication owns both bindings.
+ IF bp IS DISTINCT FROM f.blueprint AND (
+ EXISTS(SELECT 1 FROM public.form_seating_transitions WHERE form=p_form AND state IN ('organizer_managed','published'))
+ OR EXISTS(SELECT 1 FROM public.form_seating_transitions WHERE blueprint=bp AND state='organizer_managed')) THEN
+ RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','MODE_CHANGED')::text; END IF;
  -- A retained blueprint is inactive when the occasion feature is disabled.
  IF NOT EXISTS (SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
   AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')) THEN bp:=NULL; END IF;
