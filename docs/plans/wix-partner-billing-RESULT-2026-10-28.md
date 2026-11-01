@@ -375,3 +375,19 @@ a očištěný technický postup na `https://wix-guide.festapp-wix.pages.dev/int
 PNG exportu z kanonického SVG a původní CDN bytes byly ověřeny. Profil2.1
 je up-to-date, žádný nový komponentový release tím nevznikl. Skutečná App Market
 publikace zůstává odděleným nedokončeným krokem.
+
+### Produkční nasazení 2026-11-01
+
+PR #681 byl po všech pěti zelených kontrolách sloučen do main jako
+`d07a41b560c3daee5ea8e9b1b011a68022dfc69e` s povolenou administrátorskou výjimkou;
+nejde o nezávislé review. Produkční Pages deployment `50713e1a` servíruje přesné
+byty zapečetěného balíčku. [Release receipt](../operations/releases/wix-runtime-20261101.json)
+obsahuje hashe, readback všech devíti veřejných souborů a zachovaný rollback.
+Nativní probe proti skutečné stabilní adrese bez náhrady skriptu prošel na
+Harmony, Studiu i Editoru: přesný hash, proof POST200 a podepsaný kontext.
+
+Veřejné návody: https://festapp-wix.pages.dev/help a
+https://festapp-wix.pages.dev/integration-guide. Kanonická ikona je uložená ve
+Wix profilu. App Market nebyl odeslán; checkout/reviewer gates a skutečné
+finanční podklady zůstávají oddělené. Nebyly vytvořeny objednávky, rezervace ani
+platby a opakování BI události ani běžný finanční dispatch nebyly spuštěny.

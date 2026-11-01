@@ -1,0 +1,60 @@
+{
+  "status": "production-hosting-published-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "source": {
+    "branch": "main",
+    "commit": "d07a41b560c3daee5ea8e9b1b011a68022dfc69e",
+    "pr": 681,
+    "ci": "all five required checks passed; no independent review claimed",
+    "wixTreeMatchesTestedCandidate": "verified by primary against tested PR head 7a0e3955be8a46c3c89ddce517619b6a48c47643"
+  },
+  "hosting": {
+    "provider": "Cloudflare Pages",
+    "project": "festapp-wix",
+    "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+    "branch": "main",
+    "environment": "Production",
+    "deploymentId": "50713e1a-2b1d-4b23-879c-b4a71a3a2b13",
+    "deploymentUrl": "https://50713e1a.festapp-wix.pages.dev",
+    "stableUrl": "https://festapp-wix.pages.dev",
+    "rollbackDeploymentId": "d24c1383-b704-475e-829e-311608e89f34",
+    "rollbackWidgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
+  },
+  "artifact": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "b5cd9eb2edce7a32a02cda48f7812daf0ddab2b174cd0d612448dccc40347e28",
+    "manifestSha256": "f831e0d543e4206cf309e3193231d73a80abcaf336e5666eb993fe5a5e158bf3",
+    "widgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+    "appIconPngSha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+    "allArchiveMembersMatchManifest": true
+  },
+  "readback": {
+    "manifestPublicAssets": 9,
+    "uniqueAndStableUrls": "all nine manifest-listed public assets returned HTTP 200 and exact sealed bytes",
+    "helpUnique": "https://50713e1a.festapp-wix.pages.dev/help",
+    "helpStable": "https://festapp-wix.pages.dev/help",
+    "integrationGuideUnique": "https://50713e1a.festapp-wix.pages.dev/integration-guide",
+    "integrationGuideStable": "https://festapp-wix.pages.dev/integration-guide",
+    "mimeTypes": "passed for HTML, JavaScript, CSS, SVG and PNG",
+    "cors": "*",
+    "cacheControl": "public, max-age=300, must-revalidate",
+    "xContentTypeOptions": "nosniff"
+  },
+  "backendActivation": {
+    "url": "https://vstupenky.online/backend-activation.json",
+    "status": 200,
+    "tenantId": "festapptickets",
+    "generation": 1,
+    "backend": "canonical",
+    "sha256": "c964ba8e23a79e0a082a280d0a44fe3a424b5168eae0853f33d34c630b1cc31c"
+  },
+  "marketplace": {
+    "nativeAppSubmittedOrPublished": false,
+    "guideStatesTheAppIsNotYetPubliclyAvailableInWixAppMarket": true
+  },
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "otherBranchesProjectsFlutterDatabaseDnsOrBillingChanged": false,
+    "ordersOrHoldsCreated": false
+  }
+}

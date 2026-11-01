@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "checkedAt": "2026-11-01",
-  "status": "visible-time-fix-verified-guide-live-canonical-logo-updated-source-publication-pending",
+  "status": "production-deployed-and-live-native-proof-verified",
   "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
   "extensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
   "resolved": {
@@ -13,7 +13,7 @@
     "latestReleasedVersion": "2.1",
     "marketplaceSubmitted": false,
     "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
-    "stableWidgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "stableWidgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
     "normalConfigRestored": true,
     "temporaryPageDeleted": true,
     "studioPendingUpdateShown": false,
@@ -43,19 +43,23 @@
     "supersededByLocalFix": true
   },
   "source": {
-    "mainSha": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+    "mainSha": "d07a41b560c3daee5ea8e9b1b011a68022dfc69e",
     "timingRegressionLocallyFixed": true,
     "liveTokenDeliverySolved": true,
     "protectedPrRuleBypassDisclosed": "integrations/wix/evidence/source-publication-20261101.json",
     "furtherPublicationRequiresPr": true,
     "candidateWidgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
-    "productionCandidateDeployed": false,
-    "candidateSourceBranch": "wix/guide-and-canonical-brand"
+    "productionCandidateDeployed": true,
+    "candidateSourceBranch": "wix/guide-and-canonical-brand",
+    "mergedPr": 681,
+    "mergeMethod": "squash, permitted administrator exemption; all five checks green; no independent approval claimed"
   },
   "validation": {
     "wixPassed": 46,
     "sharedCheckoutPassed": 54,
     "databaseSkipped": 4,
+    "liveProofReceipt": "integrations/wix/evidence/live-native-auth-20261101.json",
+    "liveProofResult": "Actual stable deployment returned the exact expected widget hash; Harmony, Studio and Editor each returned Site/visible, proof POST 200 and context in iframe and direct link.",
     "meaning": "No SQL/executor source changed; this run does not claim DB tests passed.",
     "finalReadinessCommand": "pnpm --dir integrations/wix run release:check evidence/partner-billing-release-inputs-20261101.json",
     "finalReadinessExitCode": 1,
@@ -65,13 +69,13 @@
       "Studio checkout/lifecycle receipt",
       "Store assets/reviewer access/privacy/support verification"
     ],
-    "additionalOperatorHold": "Do not claim purchases, full checkout or reviewer credentials from the proof-only browser probe. Source publication and stable deployment are still pending.",
+    "additionalOperatorHold": "Do not claim purchases, full checkout or reviewer credentials from proof-only browser probes. App Market reviewer and checkout gates remain separate.",
     "nativeProbeSites": [
       "Harmony",
       "Studio",
       "Editor"
     ],
-    "nativeProbeResult": "PASS: actual served candidate hash, POST200, context in iframe/direct link"
+    "nativeProbeResult": "PASS on actual stable deployment without script override: all three served exact widget hash, proof POST200 and context in iframe/direct link."
   },
   "financialState": {
     "normalDispatcherEnabled": false,
@@ -79,9 +83,10 @@
     "ordersHoldsPaymentsCreated": false,
     "productionSqlChanged": false
   },
-  "resume": "Complete source publication respecting branch rules, deploy the exact validated bundle and verify live read-only native behavior. Retain the separate remaining reviewer/checkout gates before actual App Market submission. Do not resend BI qualification or activate financial dispatch without genuine source evidence.",
-  "publicGuide": "https://wix-guide.festapp-wix.pages.dev/help",
+  "resume": "Finish owned QA demonstration form-link repairs and retain separate reviewer/checkout gates before App Market submission. Do not resend BI qualification or activate financial dispatch without genuine source evidence.",
+  "publicGuide": "https://festapp-wix.pages.dev/help",
   "canonicalIconReceipt": "integrations/wix/evidence/canonical-icon-20261101.json",
-  "publicTechnicalGuide": "https://wix-guide.festapp-wix.pages.dev/integration-guide",
-  "fixValidationReceipt": "integrations/wix/evidence/visible-time-fix-validation-20261101.json"
+  "publicTechnicalGuide": "https://festapp-wix.pages.dev/integration-guide",
+  "fixValidationReceipt": "integrations/wix/evidence/visible-time-fix-validation-20261101.json",
+  "productionReleaseReceipt": "docs/operations/releases/wix-runtime-20261101.json"
 }

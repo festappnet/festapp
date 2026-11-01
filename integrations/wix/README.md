@@ -7,13 +7,13 @@ Repository entry point: [all platform integrations](../README.md).
 
 Latest [continuation receipt](evidence/continuation-20261101.json), 2026-11-01:
 Wix confirmed BI ingestion and native external billing. The premature native
-startup timeout is fixed in the candidate: its budget counts visible time and
+startup timeout is fixed in production: its budget counts visible time and
 pauses in hidden tabs. [The repeatable native probe](evidence/native-auth-probe-helper-20261101.json)
 passed on Harmony, Studio and Editor with actual SDK requests and the exact
-candidate hash. Main Chrome hidden-tab waiting also avoided the old false error.
+deployed hash, without a script override. Main Chrome hidden-tab waiting also avoided the old false error.
 
 Public organizer instructions are available at
-https://wix-guide.festapp-wix.pages.dev/help. The native app icon now matches the
+https://festapp-wix.pages.dev/help. The native app icon now matches the
 canonical brand; [the CDN original was verified](evidence/canonical-icon-20261101.json).
 The full internal procedure and experiment ledger are in
 [OPERATING-PLAYBOOK.md](OPERATING-PLAYBOOK.md). Do not treat the earlier proposed
@@ -22,8 +22,10 @@ token, after our original wall-clock deadline.
 
 Native configuration/profile 2.1 is restored and up to date, with zero native
 checklist blockers. App Market submission is still not performed. Stable Pages
-hosting remains the previous verified widget while the new source/artifacts
-complete publication; a public guide preview is separate from that live widget.
+hosting now serves source `d07a41b560c3daee5ea8e9b1b011a68022dfc69e`, deployed
+as `50713e1a`. Both [help](https://festapp-wix.pages.dev/help) and the
+[technical guide](https://festapp-wix.pages.dev/integration-guide) are live.
+See the [production receipt](../../docs/operations/releases/wix-runtime-20261101.json).
 
 The canonical origin, service-fee source and delivery journal were deployed in
 [the October 28 foundation release](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
