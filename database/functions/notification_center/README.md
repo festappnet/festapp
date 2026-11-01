@@ -214,3 +214,10 @@ Hidden organization members (`organization_users.is_hidden`) never publish
 `occasion_joined` activity. Item authorization and the live center policy also
 exclude historical joins for currently hidden members, including frozen panels,
 group counts and unread badges. Membership and administration access remain intact.
+
+Personal subject visibility is shared by publication, item authorization, DTOs
+and live center membership. It covers membership IDs, email recipient IDs and
+normalized tenant-scoped email identities, and order/waitlist buyer identities.
+Hidden operators do not suppress visible customers' orders; operational capacity
+and form facts retain their normal meaning. This does not erase accounting or
+security audit records.

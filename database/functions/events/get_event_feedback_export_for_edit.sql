@@ -38,7 +38,7 @@ BEGIN
                 'user_name', NULLIF(
                     btrim(CONCAT_WS(' ', ui.name, ui.surname)), ''
                 ),
-                'is_anonymous', f."user" IS NULL
+                'is_anonymous', ui.id IS NULL
             )
             ORDER BY e.start_time ASC, e.title ASC, f.updated_at DESC
         ),
@@ -47,7 +47,7 @@ BEGIN
     INTO v_items
     FROM (SELECT * FROM public.event_feedback WHERE occasion=p_occasion AND (p_after IS NULL OR id>p_after) ORDER BY id LIMIT p_limit) f
     JOIN public.events e ON e.id = f.event
-    LEFT JOIN public.user_info ui ON ui.id = f."user"
+    LEFT JOIN public.user_info ui ON ui.id = f."user" AND public.organization_member_visible_internal(ui.organization,ui.id)
     WHERE f.occasion = p_occasion;
 
     RETURN jsonb_build_object('code', 200, 'data', v_items);

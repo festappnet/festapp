@@ -13,7 +13,7 @@ AS $function$
       'userId',ug."user",'isAdmin',ug.is_admin,'is_admin',ug.is_admin,
       'user_info',jsonb_build_object('id',ui.id,'name',ui.name,'surname',ui.surname))
       ORDER BY ug."user") FROM public.user_groups ug JOIN public.user_info ui
-      ON ui.id=ug."user" WHERE ug."group"=g.id),'[]'::jsonb))
+      ON ui.id=ug."user" WHERE ug."group"=g.id AND public.occasion_member_visible_internal(g.occasion,ui.id)),'[]'::jsonb))
   FROM public.user_group_info g WHERE g.id=p_group;
 $function$
 ;
