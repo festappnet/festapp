@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-01",
+  "site": "https://info9468674.wixsite.com/my-site-3",
+  "scope": "Own background Chrome tab, Panerelay session-scoped interception, no native settings change or manual token injection; same candidate and site as clean headless control.",
+  "candidateSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab",
+  "actualScriptResponse": {"status": 200, "mime": "text/plain", "sha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab"},
+  "validFormControl": {"formLink": "country_bal_vetrkovice", "method": "fresh clone", "listenerType": "function", "modeAfterTimeout": "Unavailable", "contextPresent": false, "iframePresent": false, "directLinkPresent": false, "proofRequestsObserved": 0},
+  "console": {"warnings": 1, "sessionErrorCount": 12, "errBlockedByClientCount": 0, "scope": "Session-wide error buffer; not all errors necessarily relate to test page."},
+  "cleanup": "Removed this participant's routes and reloaded. Original single widget, QA URL, iframe and fallback restored.",
+  "interpretation": "Exact-byte route fulfillment fails in this Chrome/Panerelay environment while clean headless route control passes. This narrows a browser-context or provider difference; cause remains unknown.",
+  "tokensOrContextsRecorded": false
+}

@@ -1,0 +1,38 @@
+{
+  "status": "production-rolled-back-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "main",
+  "environment": "Production",
+  "reason": "The corrected candidate still failed on a fresh valid-form Wix Studio run before the proof network request.",
+  "restorationSourceDeploymentId": "61e14f32-bf4b-41b5-bfa1-208ff0665990",
+  "restoredDeploymentId": "88353d4d-afd9-4ca4-9b70-3823e0558bf3",
+  "restoredDeploymentSource": "7db5e25",
+  "restoredDeploymentUrl": "https://88353d4d.festapp-wix.pages.dev",
+  "stableUrl": "https://festapp-wix.pages.dev",
+  "candidateDeploymentsPreserved": [
+    "94648bcb-8a4f-4fa1-8b5d-7ea6d453607a",
+    "11f27699-042d-44be-8ca4-cb740fb3984b"
+  ],
+  "verifiedAssets": {
+    "widgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "manifestSha256": "6c26988b36600eaeb39ff94b96a8355bb5a7d77f8962f8f8270763863e8d11b5",
+    "routes": [
+      "/manifest.json",
+      "/help.html",
+      "/settings.css",
+      "/settings.html",
+      "/settings.js",
+      "/widget.js"
+    ],
+    "uniqueAndStableUrls": "all six routes returned HTTP 200; bytes matched the known-good prior deployment",
+    "contentTypes": "passed",
+    "cors": "*"
+  },
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "sourceBackendDatabaseTenantDnsNativeWixOrBillingChanged": false,
+    "ordersOrHoldsCreated": false
+  }
+}

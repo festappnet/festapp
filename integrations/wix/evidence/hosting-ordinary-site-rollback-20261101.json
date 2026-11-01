@@ -1,0 +1,30 @@
+{
+  "status": "production-restored-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "reason": "The exact normal candidate failed on ordinary published Harmony: both valid reconnect and fresh clone returned modeSite=Unavailable with no proof request or context. This falsifies the host-context hypothesis for the tested candidate.",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "main",
+  "environment": "Production",
+  "failedTrialDeploymentId": "3b62b9bd-fc4e-4f1c-a22d-2d0e3240d358",
+  "failedTrialSource": "2954fab",
+  "restoredFromDeploymentId": "88353d4d-afd9-4ca4-9b70-3823e0558bf3",
+  "restoredDeploymentId": "d24c1383-b704-475e-829e-311608e89f34",
+  "restoredDeploymentSource": "7db5e25",
+  "restoredDeploymentUrl": "https://d24c1383.festapp-wix.pages.dev",
+  "stableUrl": "https://festapp-wix.pages.dev",
+  "assetReadback": {
+    "widgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "manifestSha256": "6c26988b36600eaeb39ff94b96a8355bb5a7d77f8962f8f8270763863e8d11b5",
+    "routes": ["/manifest.json", "/help.html", "/settings.css", "/settings.html", "/settings.js", "/widget.js"],
+    "uniqueAndStableUrls": "all six returned HTTP 200 and exact restored bytes",
+    "contentTypes": "passed",
+    "cors": "*"
+  },
+  "trialDeploymentPreserved": true,
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "backendDatabaseTenantDnsNativeWixOrBillingChanged": false,
+    "ordersOrHoldsCreated": false
+  }
+}

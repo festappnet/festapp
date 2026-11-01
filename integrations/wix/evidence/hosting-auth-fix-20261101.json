@@ -1,0 +1,43 @@
+{
+  "status": "production-deployed-and-stable-assets-verified",
+  "checkedAtUtc": "2026-11-01",
+  "sourceSha": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "main",
+  "environment": "Production",
+  "deploymentId": "94648bcb-8a4f-4fa1-8b5d-7ea6d453607a",
+  "deploymentUrl": "https://94648bcb.festapp-wix.pages.dev",
+  "artifact": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "b65f53740afd42e145a45e6173c7b7eb4a5a168e77abe834275acdd6d50cc644",
+    "manifestSha256": "24cc646e2398b1d1eb254ea9938cb4a72d254fd3c4def5259fa8ae6431c38faa",
+    "widgetSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab",
+    "allArchiveEntriesMatchManifest": true
+  },
+  "liveReadback": {
+    "stableUrl": "https://festapp-wix.pages.dev",
+    "uniqueDeploymentAndStableUrl": "all six public assets returned HTTP 200 and matched the exact sealed archive bytes at both URLs",
+    "routes": [
+      "/manifest.json",
+      "/help.html",
+      "/settings.css",
+      "/settings.html",
+      "/settings.js",
+      "/widget.js"
+    ],
+    "cors": "*",
+    "contentTypes": "passed",
+    "cacheHeaders": "public, max-age=300, must-revalidate"
+  },
+  "rollbackReserve": {
+    "currentPriorDeployment": "61e14f32-bf4b-41b5-bfa1-208ff0665990",
+    "olderDeployment": "83870904-fef5-4f4f-9c29-480cbcdc75fe",
+    "previousFailedCandidatePreserved": "11f27699-042d-44be-8ca4-cb740fb3984b"
+  },
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "backendDatabaseTenantDnsNativeWixOrBillingChanged": false,
+    "ordersOrHoldsCreated": false
+  }
+}
