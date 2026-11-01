@@ -105,22 +105,11 @@ skryté pole nepřenáší neaktivní konfiguraci. Volba „Bez plánku“ nepř
 uložené objekty. Vybraný prázdný plánek server odmítne před vytvořením akce.
 Původní samostatný prototyp byl přesunut do `lib/components/occasion/setup/`.
 
-V lokální databázi jsou konfigurace šesti skutečných událostí z
-`vstupenky.online`: r48vetrkovice, Skautský tábor 2026, Skautský ples 2026,
-Sportovní ples Větřkovice 2026, Ples obce Větřkovice a Farní ples. Zdrojová
-organizace 3 byla ověřena vůči aktivačnímu dokumentu a kanonickému backendu;
-export běžel v read-only transakci. Jsou to soukromé lokální kopie konfigurace
-bez objednávek, odpovědí, účastníků, plateb a obsazenosti. Lokální statistiky jsou
-proto nulové. Zdrojové události se neměnily. Nastavení platebních účtů se
-nepřenáší; v konceptu je automatická platební trasa určená k pozdějšímu ověření.
-
-Snapshot je uložený pouze v sourozeneckém lokálním backendu s oprávněním 0600;
-není součástí repozitáře. Opakovaný import zachovává existující konfigurace:
-
-```sh
-python3 automation/localize_occasion_setup_media.py ../festapp-wizard-local/vstupenky-source-configurations.json
-node web_client/scripts/import_occasion_setup_sources.js ../festapp-wizard-local/vstupenky-source-configurations.json --refresh-media
-```
+Lokální bootstrap vytváří demonstrační události přímo v kanonickém formátu
+plánků se samostatnými vazbami míst. Historické soukromé snapshoty konfigurace
+ani jejich importér se po globálním cutoveru nepoužívají. Pro nové lokální
+ověření použijte aktuální bootstrap a jeho syntetické demo konfigurace;
+neobnovujte sloupce `objects`, `groups`, `configuration` nebo `background_svg`.
 
 Koncepty jsou v `public.occasion_setup_drafts`, nikdy v `public.occasions`.
 Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý a
