@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "07bf95feaeab7b366517ad1c19be3719312d2f67",
+  "release": {
+    "version": "0.20.478+984"
+  }
+}
