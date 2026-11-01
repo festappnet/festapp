@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "farnostopava",
-  "baseMainSha": "201c8cba0b1dd343d5f4225e61c1af5b3abb9367",
+  "baseMainSha": "05b90d8612adf5a6a1b922d71201fc0db45e7491",
   "release": {
     "version": "0.20.258+742",
     "note": "Canonical blueprint consumer compatibility"
