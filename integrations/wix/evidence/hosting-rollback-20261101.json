@@ -1,0 +1,41 @@
+{
+  "status": "production-rolled-back-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "main",
+  "environment": "Production",
+  "reason": "Real Wix Studio published-site verification found that a valid form URL did not reach iframe/proof POST; Wix SDK token/host initialization stalled before network access. The valid country_bal_vetrkovice form exists and is open. The new widget candidate remains deployed as an immutable deployment for diagnosis.",
+  "rollbackSourceDeploymentId": "83870904-fef5-4f4f-9c29-480cbcdc75fe",
+  "rollbackSourceSha": "7db5e25",
+  "restorationMethod": "Fetched the existing production rollback deployment's public assets, verified every member against its manifest and _headers from the exact rollback source commit, then deployed those unchanged bytes as a new production main deployment.",
+  "restoredDeploymentId": "61e14f32-bf4b-41b5-bfa1-208ff0665990",
+  "restoredDeploymentSource": "7db5e25",
+  "restoredDeploymentUrl": "https://61e14f32.festapp-wix.pages.dev",
+  "stableUrl": "https://festapp-wix.pages.dev",
+  "candidateDeploymentPreserved": {
+    "deploymentId": "11f27699-042d-44be-8ca4-cb740fb3984b",
+    "url": "https://11f27699.festapp-wix.pages.dev",
+    "deleted": false
+  },
+  "assets": {
+    "manifestSha256": "6c26988b36600eaeb39ff94b96a8355bb5a7d77f8962f8f8270763863e8d11b5",
+    "widgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "routesVerifiedAtUniqueAndStableUrls": [
+      "/manifest.json",
+      "/help.html",
+      "/settings.css",
+      "/settings.html",
+      "/settings.js",
+      "/widget.js"
+    ],
+    "allRoutes": "HTTP 200; each response hash and bytes matched the verified rollback assets",
+    "contentTypes": "passed",
+    "cors": "*"
+  },
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "sourceBackendDatabaseTenantDnsOrNativeWixChanges": false,
+    "ordersOrHoldsCreated": false
+  }
+}

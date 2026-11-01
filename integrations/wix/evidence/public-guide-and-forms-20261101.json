@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-11-01",
+  "guide": {"url": "https://wix-guide.festapp-wix.pages.dev/help", "title": "Vložení vstupenek do Wixu - vstupenky.online", "structure": "Czech setup steps, pre-approval notice, troubleshooting and service pricing", "headerLogoLoaded": true, "faviconDeclared": true, "supportMailto": "info@vstupenky.online", "viewportWidth": 320, "documentScrollWidth": 320, "visualScreenshotVerified": false},
+  "publicForms": [
+    {"url": "https://vstupenky.online/form/myfestival2025", "pageTitle": "Testovací ples prázdný - Registration - vstupenky.online", "visible": "Required email, seat selection, disabled Continue, organizer Michael Bujnovský"},
+    {"url": "https://vstupenky.online/form/new-form2026-test", "visible": "Required email, seat selection, disabled Continue"}
+  ],
+  "scope": "Read-only public pages in isolated local headless session. Did not select seats, submit, place holds or make orders; products and prices were not visible. Safe reviewer-purchase sandbox status remains unverified."
+}

@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-01",
+  "script": "integrations/wix/scripts/probe-native-auth.py",
+  "candidateSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+  "form": "country_bal_vetrkovice",
+  "results": {"harmony": "PASS", "studio": "PASS", "editor": "PASS"},
+  "observations": "Each fresh isolated local headless session verified the served bundle SHA-256, reported Site/visible, valid-form proof POST 200 and context present in both iframe and direct link. No tokens printed or manually injected.",
+  "safety": "Public form documents, canonical REST/auth, send-ticket-order and hold paths blocked. No seats selected, holds or orders created. Other backend function paths are not globally blocked by the CLI route patterns; the widget's only exercised backend request was proof.",
+  "limits": "Proof-only runtime observation; does not replace editor lifecycle, Safari, full checkout or payment tests. The first sibling clone was removed by Wix reconciliation despite proof POST 200; the helper now mounts its temporary clone outside the Wix-managed subtree."
+}

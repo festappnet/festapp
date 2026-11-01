@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "status": "superseded-by-user-authorized-panerelay",
+  "browser": "BrowserOS neo",
+  "sessionName": "codex/wix-pricing",
+  "pageId": 42,
+  "loginUrl": "https://users.wix.com/signin",
+  "requestId": "help-01M6B3S182N2XPSFA53BBJ04EJ",
+  "savedWixCredentialsAvailable": false,
+  "portalPricingReadbackPerformed": false,
+  "portalChangesPerformed": false,
+  "marketplaceSubmitted": false,
+  "resume": "Continue authenticated portal work through Panerelay; the earlier BrowserOS login request is no longer the active blocker.",
+  "supersededBy": {
+    "browser": "Existing main Chrome through Panerelay",
+    "userExplicitlyAuthorized": true,
+    "authenticatedWixSessionObserved": true,
+    "newBackgroundTabOpened": true
+  }
+}

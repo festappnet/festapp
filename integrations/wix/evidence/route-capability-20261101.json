@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Fresh isolated local headless browser, no native configuration or account changes; only OPTIONS sent to Wix checkout-context endpoint.",
+  "observations": {
+    "exactRouteWithoutOptionsAccepted": true,
+    "exactRouteAloneOptionsStatus": 200,
+    "broadAbortThenExactOptions": "fetch TypeError",
+    "exactThenBroadAbortOptions": "fetch TypeError"
+  },
+  "interpretation": "An exact no-option route alone passes through, but it did not override an overlapping broad abort in either registration order. This CLI pattern therefore did not establish the required strict backend allowlist. No real checkout UI test was attempted under an insufficient fence.",
+  "cleanup": "Closed exact isolated session.",
+  "ordersHoldsOrChargesCreated": false
+}

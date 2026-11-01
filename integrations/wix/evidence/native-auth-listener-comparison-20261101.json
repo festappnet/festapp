@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Same passive trace bundle, actual registered script URL fulfilled in owned Chrome/Panerelay tab and clean isolated local headless browser on public Harmony. Proof-only safety fences; no token values or manual injection.",
+  "traceBundleSha256": "535496d70e4a8b230f866fad6e5ee9a75eab76875b241fe7c0739a50f8d5e232",
+  "mainChrome": {"buildMarkerObserved": true, "mode": "Site", "injectionCalls": 0, "proof": "timeout", "factoryCallsObserved": 0, "tokenGetterCallsObserved": 0},
+  "isolatedHeadless": {"servedBundleSha256Verified": true, "mode": "Site", "injectionCalls": 1, "proof": "response", "httpStatus": 200, "contextPresent": true, "factoryCallsObserved": 0, "tokenGetterCallsObserved": 0},
+  "interpretation": "The native access-token listener ran in clean headless and did not run in the Chrome/Panerelay test before timeout. A later trace run observed the listener on main Chrome after proof had already timed out; do not infer permanent non-delivery. Factory wrappers observed zero calls in both; this does not prove absence of factory activity.",
+  "cleanup": "Main participant routes removed, original Harmony page reloaded; isolated session closed.",
+  "ordersHoldsChargesOrRawTokens": false
+}

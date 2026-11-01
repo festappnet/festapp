@@ -91,7 +91,14 @@ that app. Its signed addendum reference must equal the projected agreement
 reference. Such a change is blocked until those facts exist. No operational secret
 provisioning, activation or real event was performed in this implementation.
 
-## Dormant zero-value BI qualification
+## Zero-value BI qualification
+
+Completed: Wix approved the zero-value protocol on 2026-10-29, the single attempt
+returned HTTP200, and Erel confirmed BI ingestion on 2026-11-01. See the
+[completion receipt](../evidence/bi-verification-completion-20261101.json).
+The shared journal is confirmed. Do not send again or remove the attempt fence.
+Normal billing remains a separate activation decision. The preparation procedure
+below is retained as history, not an instruction to make another attempt.
 
 Wix requested a BI event on 2026-10-29. The existing live instance-scoped OAuth
 and token-info checks succeeded; this does not prove billing permission or BI
@@ -129,4 +136,5 @@ another clone. A new supported protocol requires a separate reviewed decision.
 
 A confirmed local result proves strict response matching; Erel must still verify
 BI ingestion. Zero values cannot validate fee, FX or revenue-share arithmetic.
-No live billing POST has been performed, and the normal activation gate remains.
+The single approved zero-value qualification POST is now confirmed; the normal
+activation gate remains.

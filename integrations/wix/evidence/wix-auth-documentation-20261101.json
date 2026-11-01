@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-11-01",
+  "source": "https://dev.wix.com/docs/build-apps/develop-your-app/develop-a-self-managed-app/supported-extensions/site-extensions/site-widgets-and-plugins/identify-the-app-instance-in-a-self-managed-site-widget",
+  "scope": "Official frontend instructions for self-managed site widget access-token delivery",
+  "documentedContract": [
+    "Initialize a Wix client with site authentication and site host, supplying the application ID.",
+    "In the custom element constructor assign the client's getAccessTokenInjector() result to this.accessTokenListener.",
+    "Use the client's fetchWithAuth() to pass the access token to the backend."
+  ],
+  "frontendExample": "const myWixClient = createClient({ auth: site.auth(), host: site.host({ applicationId: '<YOUR_APP_ID>' }) });\nclass MyCustomElement extends HTMLElement {\n  constructor() {\n    super();\n    this.accessTokenListener = myWixClient.auth.getAccessTokenInjector();\n  }\n}",
+  "officialExampleClientInitialization": "Module scope before custom element class definition",
+  "publishedStudioHostInspection": "getAccessTokenFunction obtains an app ID from wixTagManager.getAppId and returns an app-instance getter only for a string ID. The tag manager identifies document.currentScript by object identity among embedded nodes associated with appInfo.id; absent identity returns an Error. Current rollback script was classic async and carried no data attributes. Inspection did not invoke the token getter or establish listener invocation.",
+  "nativeExtensionReadback": {"tagName": "vstupenky-online-form", "scriptUrl": "https://festapp-wix.pages.dev/widget.js", "scriptType": "COMMON_JS", "frontendSdkCheckbox": true, "dependencies": [{"packageName": "@wix/site-site", "version": 1}], "tokenSpecificFlagObserved": false, "source": "Authenticated Wix component GET and native UI, 2026-11-01"},
+  "observations": "The documented frontend section does not specify additional scopes for this token injection. This does not establish why the native runtime failed or prove a permission grant.",
+  "noTokensOrSecretsRecorded": true
+}

@@ -5,34 +5,37 @@ and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md
 
 Repository entry point: [all platform integrations](../README.md).
 
-The current objective is the native App Market listing, with installation and
-the widget settings panel. See [the current portal receipt](evidence/portal-20261028.json)
-for progress following Wix's Partner Billed App reply. A generic iframe embed
-does not satisfy this objective.
+Latest [continuation receipt](evidence/continuation-20261101.json), 2026-11-01:
+Wix confirmed BI ingestion and native external billing. The premature native
+startup timeout is fixed in the candidate: its budget counts visible time and
+pauses in hidden tabs. [The repeatable native probe](evidence/native-auth-probe-helper-20261101.json)
+passed on Harmony, Studio and Editor with actual SDK requests and the exact
+candidate hash. Main Chrome hidden-tab waiting also avoided the old false error.
 
-Current release state is recorded in the [execution result](../../docs/plans/wix-partner-billing-RESULT-2026-10-28.md)
-and [production receipt](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
-The canonical origin, service-fee source and delivery journal are deployed, and
-`prod/festapptickets` serves `0.20.444+949`. A real Wix SDK token passed the
-production CORS/issuer flow, and SQL validated the returned signature. No order,
-hold, fee receipt or billing event was created by that read-only probe.
+Public organizer instructions are available at
+https://wix-guide.festapp-wix.pages.dev/help. The native app icon now matches the
+canonical brand; [the CDN original was verified](evidence/canonical-icon-20261101.json).
+The full internal procedure and experiment ledger are in
+[OPERATING-PLAYBOOK.md](OPERATING-PLAYBOOK.md). Do not treat the earlier proposed
+vendor escalation as the current diagnosis: the SDK did eventually supply its
+token, after our original wall-clock deadline.
 
-Stable Wix hosting still serves the previous widget assets. The candidate is
-deployed to a separate [verified preview](evidence/hosting-preview-20261028.json),
-without changing the assigned native widget URLs. The last authenticated
-native receipt records unlisted version 1.1 and a DYNAMIC Custom pricing draft;
-marketplace publication and Partner Billed activation have not been verified.
-The service-fee-only revenue basis, exclusion of organizer proceeds, external
-checkout and zero separate fixed publisher fees are already confirmed by Wix.
-Do not reopen those resolved questions or treat them as executed terms.
+Native configuration/profile 2.1 is restored and up to date, with zero native
+checklist blockers. App Market submission is still not performed. Stable Pages
+hosting remains the previous verified widget while the new source/artifacts
+complete publication; a public guide preview is separate from that live widget.
 
-The owner personally signed the addendum. DocuSign confirms completion by all
-parties, and the signed PDF is privately archived. The
-[completion receipt](evidence/addendum-completion-20261028.json) records the
-follow-up sent to Erel asking to confirm the sole-trader details and activate
-Partner Billed. The native dashboard still blocks external billing permission
-and payout setup; Submit App is disabled. Billing and stable widget/marketplace
-release remain held until actual activation and the existing release gates pass.
+The canonical origin, service-fee source and delivery journal were deployed in
+[the October 28 foundation release](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
+Normal financial dispatch is still disabled pending actual settlement/acquisition
+source evidence. The single approved zero-value BI attempt is confirmed and
+must not be repeated. The owner-signed addendum is complete; fee-only reporting,
+external checkout and zero separate fixed publisher fees remain confirmed.
+
+Retain historical failed trials and rollback receipts with their original input
+hashes. Current verification does not claim a production purchase, payment,
+all-browser certification or unexecuted database tests. The public service and
+checkout remain their existing canonical implementation.
 
 The owner completed signup/login for `info@festapp.net`. Assigned app and widget
 identities are in [wix-app.json](wix-app.json) and the
@@ -81,6 +84,22 @@ pnpm run build
 pnpm run package
 pnpm run release:check
 ```
+
+From the repository root, run the isolated native authentication probe with a
+built widget and an existing public form slug:
+
+```sh
+python3 integrations/wix/scripts/probe-native-auth.py --site harmony --bundle integrations/wix/dist/widget.js --form new-form2026-test
+```
+
+`--site` also accepts `studio` and `editor`. The probe uses a fresh local
+headless browser, blocks checkout pages and order/hold paths, and reports only
+proof and wrapper status. It does not place an order or verify a purchase,
+editor lifecycle, Safari behavior, or Marketplace approval.
+
+Add `--live` after deployment to verify the registered URL without replacing its
+response. The supplied bundle remains the expected hash. A candidate-override
+pass alone is not proof that those bytes are actually deployed.
 
 The last command deliberately exits 1 with the checked-in example inputs. The
 assigned app/extension IDs and hosting are now known; billing approval, verified

@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "nativeRelease": "2.0 major, manual update, unlisted; QA-only version note; no App Market submission",
+  "diagnosticScript": "https://0e0a9a68.festapp-wix.pages.dev/widget.js",
+  "diagnosticSha256": "91085dd358b4a485311482ed5a56255659e4e7f12c25bd0d06486b6b3735b0c3",
+  "setup": "Updated only owned Studio QA app, created one temporary page and freshly inserted one widget, published only that dev site. Literal Wix documented module-level client and constructor token-injector listener; diagnostic makes read-only proof request.",
+  "actualPublishedResult": {"scriptUrlMatchedDiagnostic": true, "build": "native-auth-diagnostic-20261101", "mode": "Site", "injectionCount": 0, "proof": "timeout", "errorName": "Error"},
+  "interpretation": "The native listener was not invoked within the diagnostic timeout on this owned Studio development site. Root cause remains unestablished; this is not evidence for all Wix sites or Wix production environments.",
+  "noTokenOrContextRecorded": true,
+  "ordersHoldsOrChargesCreated": false,
+  "marketplaceSubmitted": false
+}
