@@ -19,6 +19,12 @@ BEGIN
   RETURN;
  END IF;
  reason:=public.email_reporting_state(m);
+ -- A failed preparation/send is an incident now, even while the queue retries.
+ -- Reserve the grace period for ordinary waiting and brief rate limiting.
+ IF reason IN ('retry_wait','unknown') AND nullif(m.last_error,'') IS NOT NULL
+    AND m.last_error<>'throttled' AND (m.expires_at IS NULL OR m.expires_at>p_at) THEN
+  reason:=CASE WHEN m.last_error='preparation_failed' THEN 'rendering_failure' ELSE 'delayed' END;
+ END IF;
  SELECT * INTO old FROM public.notification_center_source_state WHERE organization=m.organization AND source_key=key FOR UPDATE;
  due_at:=coalesce((old.state->>'dueAt')::timestamptz,m.target_time);
  IF reason IN ('unknown','retry_wait','pending','preparing','delay') THEN
