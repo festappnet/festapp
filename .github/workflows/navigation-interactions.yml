@@ -1,5 +1,6 @@
 name: Navigation interaction regressions
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'lib/components/_shared/app_panel_helper.dart'
