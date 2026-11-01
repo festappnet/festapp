@@ -1672,8 +1672,6 @@ $$ LANGUAGE plpgsql;
 
 
 -- SOURCE: users/get_all_user_basics_from_occasion_unit.sql
-DROP FUNCTION IF EXISTS get_all_user_basics_from_occasion_unit;
-
 CREATE OR REPLACE FUNCTION public.get_all_user_basics_from_occasion_unit(p_unit_id bigint)
 RETURNS jsonb
 SECURITY DEFINER
