@@ -72,3 +72,20 @@ BEGIN
  RESET ROLE;
  PERFORM public.assert_true((SELECT blueprint IS NULL FROM public.forms WHERE id=extra),'failed generic attach leaves ordinary mode unchanged');
 END $$;
+
+DO $$
+DECLARE f jsonb; tr uuid; p jsonb; r jsonb; ids uuid[]; fee_type bigint; fee bigint;
+BEGIN
+ f:=public.seating_test_fixture_internal(0,0);tr:=(f->>'transition')::uuid;
+ p:=public.preview_seating_publication(tr)->'data';ids:=ARRAY(SELECT value::uuid FROM jsonb_array_elements_text(p->'transitionIds'));
+ r:=public.publish_seating_transitions(tr,ids,p->>'fingerprint',gen_random_uuid());
+ INSERT INTO public.form_fields(form,type,is_hidden) VALUES((f->>'form')::bigint,'ticket',true);
+ INSERT INTO eshop.product_types(occasion,title,type) VALUES((f->>'occasion')::bigint,'Application fee','other') RETURNING id INTO fee_type;
+ INSERT INTO eshop.products(occasion,product_type,title,price,currency_code) VALUES((f->>'occasion')::bigint,fee_type,'Application fee',0,'CZK') RETURNING id INTO fee;
+ INSERT INTO public.form_fields(form,type,product_type,is_ticket_field,is_required,is_hidden) VALUES((f->>'form')::bigint,'product_type',fee_type,true,true,false);
+ SET LOCAL ROLE authenticated;
+ r:=public.create_ticket_order_client_sync_v1(jsonb_build_object('form',f->'formKey','email','combined-seating@example.invalid','ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',fee))))),gen_random_uuid(),gen_random_uuid());
+ PERFORM public.assert_eq(r->>'status','rejected','application-only fee selection cannot replace the published seat entitlement');
+ PERFORM public.assert_eq(r#>>'{data,errorCode}','ADMISSION_SOURCE_REQUIRES_SEATING','active seat mode takes precedence over hidden ticket containers');
+ RESET ROLE;
+END $$;

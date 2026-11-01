@@ -1089,7 +1089,7 @@ REVOKE ALL ON FUNCTION public.get_form_capacity_snapshot_internal(bigint,timesta
  FROM PUBLIC,anon,authenticated;
 
 -- Source: database/functions/eshop/materialize_ticket_products_internal_v1.sql
--- SHA256: 8d1caf8556a9591d50cf4890297c59b2be8e8846025648823a1e6391cd7b435c
+-- SHA256: 62541a2dfc0ac73c9c3c8bafdf3187125780e7428b2fe512115fe926fcfb17b3
 -- Private product materializer. Callers normalize selection, lock capacity/products,
 -- and determine ticket identity first. It never creates an order or a ticket.
 CREATE OR REPLACE FUNCTION public.materialize_ticket_products_internal_v1(
@@ -1097,6 +1097,8 @@ CREATE OR REPLACE FUNCTION public.materialize_ticket_products_internal_v1(
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE
  is_editor boolean; occasion_id bigint; spot_data record; spot_product record; spot_id bigint;
+ spot_product_id bigint;
+ missing_required_product_field bigint;
  ticket_note text; product_id bigint; ordered_count bigint; field_item jsonb;
  products_array bigint[] := '{}'; product_data record; ticket_products jsonb;
  order_product_ticket_id bigint; first_currency_code text; calculated_price numeric := 0;
@@ -1108,7 +1110,7 @@ BEGIN
  OR NOT EXISTS(SELECT 1 FROM eshop.tickets WHERE id=ticket_id AND occasion=occasion_id AND state='ordered') THEN
   RAISE EXCEPTION 'TICKET_MATERIALIZATION_SCOPE_MISMATCH'; END IF;
             spot_data := NULL;
-            spot_product := NULL;
+            spot_product_id := NULL;
             spot_id := NULL;
             ticket_note := NULL;
 
@@ -1149,6 +1151,7 @@ BEGIN
                 FROM eshop.products i
                 LEFT JOIN eshop.product_types it ON i.product_type = it.id
                 WHERE i.id = spot_data.product;
+                spot_product_id := spot_product.id;
             END IF;
 
             products_array := '{}';
@@ -1167,7 +1170,7 @@ BEGIN
             ticket_products := '[]'::JSONB;
 
             IF spot_id IS NOT NULL THEN
-                products_array := products_array || spot_product.id;
+                products_array := products_array || spot_product_id;
             END IF;
 
             FOREACH product_id IN ARRAY products_array LOOP
@@ -1220,8 +1223,9 @@ BEGIN
                     END IF;
                 END IF;
 
-                IF product_data.type = 'spot' AND spot_product IS NULL THEN
+                IF product_data.type = 'spot' AND spot_product_id IS NULL THEN
                     spot_product := product_data;
+                    spot_product_id := product_data.id;
                 END IF;
 
                 IF product_data.is_hidden THEN
@@ -1251,10 +1255,10 @@ BEGIN
                     v_spot_description TEXT := NULL;
                 BEGIN
                     -- Safe extraction of spot details
-                    IF spot_id IS NOT NULL AND spot_product.id IS NOT NULL THEN
+                    IF spot_id IS NOT NULL AND spot_product_id IS NOT NULL THEN
                          -- Only access fields if we have a spot_id (implies spot_product is fully set from spot lookup)
                          -- AND product_id matches.
-                         IF product_id = spot_product.id THEN
+                         IF product_id = spot_product_id THEN
                              v_spot_title := spot_product.spot_title;
                              v_spot_description := spot_product.description;
                          END IF;
@@ -1296,7 +1300,7 @@ BEGIN
 
                 -- For the spot product, link the generated order product ticket id to the spot record
                 IF spot_id IS NOT NULL THEN
-                    IF product_id = spot_product.id THEN
+                    IF product_id = spot_product_id THEN
                         UPDATE eshop.spots
                         SET order_product_ticket = order_product_ticket_id, secret = NULL, secret_expiration_time = NULL, updated_at = now
                         WHERE id = spot_id;
@@ -1304,9 +1308,47 @@ BEGIN
                 END IF;
             END LOOP;
 
-            -- If no explicit ticket->spot was provided, then at least one of the fields must be a spot product.
-            IF spot_product IS NULL THEN
+            -- Active seat sales still require an actual admission entitlement.
+            -- Hiding ticket issuance cannot turn an auxiliary fee into a
+            -- seatless admission behind the published/legacy seating plan.
+            IF spot_product_id IS NULL AND EXISTS(
+                SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+                WHERE f.id=form_id AND f.blueprint IS NOT NULL
+                  AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')
+            ) THEN
+                RAISE EXCEPTION '%',jsonb_build_object('code',409,
+                  'errorCode','ADMISSION_SOURCE_REQUIRES_SEATING')::text;
+            END IF;
+
+            -- Only explicitly application-only forms may omit admission products.
+            -- Missing/active ticket containers retain the admission requirement.
+            -- Use the ID sentinel: an unassigned record cannot be inspected on
+            -- a fresh database connection with only ordinary fee products.
+            IF spot_product_id IS NULL AND NOT coalesce((
+                SELECT bool_and(ff.is_hidden IS TRUE)
+                FROM public.form_fields ff
+                WHERE ff.form=form_id AND ff.type='ticket'
+            ),false) THEN
                 RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1015, 'message', 'Spot product is missing in ticket fields')::TEXT;
+            END IF;
+
+            -- An application fee is not an admission product. Removing that
+            -- requirement must still reject a missing mandatory fee, including
+            -- requests selecting only an optional dinner or no products at all.
+            IF spot_product_id IS NULL THEN
+                SELECT ff.id INTO missing_required_product_field
+                FROM public.form_fields ff
+                WHERE ff.form=form_id AND ff.type='product_type'
+                  AND ff.is_ticket_field AND ff.is_required AND NOT ff.is_hidden
+                  AND NOT EXISTS(SELECT 1 FROM eshop.products p
+                    WHERE p.id=ANY(products_array) AND p.product_type=ff.product_type)
+                ORDER BY ff.id LIMIT 1;
+                IF FOUND THEN
+                    RAISE EXCEPTION '%',jsonb_build_object('code',400,
+                      'errorCode','REQUIRED_FIELD_MISSING',
+                      'fieldId',missing_required_product_field,
+                      'message','Required product selection missing')::text;
+                END IF;
             END IF;
 
 
@@ -3643,7 +3685,7 @@ GRANT EXECUTE ON FUNCTION public.get_operator_order_report_v1(bigint,bigint,bigi
  public.manage_operator_order_v1(bigint,bigint,bigint,bigint,uuid,text,text,jsonb) TO authenticated;
 
 -- Source: database/functions/blueprint/seating_transition_sync.sql
--- SHA256: e1fecb623eeaba06036aa5edb93a34d05360f26a7f871e0a3e322e02eae34373
+-- SHA256: 6ec2df53294fd5fb56e134c7070545bee3b2c0b95d8d5dd408c02cea2e61a229
 WITH readiness AS MATERIALIZED (
  SELECT coalesce(bool_and(cutover_ready),false) ready FROM public.client_sync_component_sources WHERE registry_version=1
 )
@@ -3651,11 +3693,11 @@ INSERT INTO public.client_sync_component_sources
 (registry_version,component,source_relation,scope_resolver,tracked_columns,canonical_writers,legacy_writers,disposition,test_factory,cutover_ready)
 VALUES
 (1,'private_inventory','public.form_seating_transitions','form_seating_transitions.occasion',ARRAY['form','blueprint','state','revision'],
- ARRAY['save_occasion_client_sync_v1','start_seating_configuration','cancel_seating_configuration','set_ticket_seat_assignments','publish_seating_transitions'],'{}','migrate','database/tests/blueprint/seating_transition_test.sql',(SELECT ready FROM readiness)),
+ ARRAY['save_occasion_client_sync_v1','start_seating_configuration','cancel_seating_configuration','set_ticket_seat_assignments','publish_seating_transitions'],ARRAY[]::text[],'migrate','database/tests/blueprint/seating_transition_test.sql',(SELECT ready FROM readiness)),
 (1,'private_inventory','eshop.spots','spots.occasion',ARRAY['order_product_ticket','state'],
- ARRAY['set_ticket_seat_assignments'],'{}','migrate','database/tests/blueprint/seating_assignment_test.sql',(SELECT ready FROM readiness)),
+ ARRAY['set_ticket_seat_assignments'],ARRAY[]::text[],'migrate','database/tests/blueprint/seating_assignment_test.sql',(SELECT ready FROM readiness)),
 (1,'private_inventory','public.forms','forms.occasion',ARRAY['blueprint','participant_capacity','waitlist_enabled','capacity_revision'],
- ARRAY['publish_seating_transitions','save_occasion_client_sync_v1'],'{}','migrate','database/tests/blueprint/seating_publication_test.sql',(SELECT ready FROM readiness))
+ ARRAY['publish_seating_transitions','save_occasion_client_sync_v1'],ARRAY[]::text[],'migrate','database/tests/blueprint/seating_publication_test.sql',(SELECT ready FROM readiness))
 ON CONFLICT(registry_version,component,source_relation) DO UPDATE SET
  tracked_columns=ARRAY(SELECT DISTINCT unnest(public.client_sync_component_sources.tracked_columns||excluded.tracked_columns)),
  canonical_writers=ARRAY(SELECT DISTINCT unnest(public.client_sync_component_sources.canonical_writers||excluded.canonical_writers));

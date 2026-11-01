@@ -24,8 +24,8 @@ test('seating public commands: actual two-connection serial outcomes and permiss
  const kit=await mkdtemp(`${tmpdir()}/festapp-seating-race-`);
  try{
   // Clone checked dependencies, never reset the shared database or bootstrap a server.
-  execFileSync('pg_dump',[url,'--no-owner','--exclude-extension=pg_cron','--file',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  await writeFile(`${kit}/snapshot.sql`,(await readFile(`${kit}/snapshot.sql`,'utf8')).replace(/^SET transaction_timeout = 0;$/m,'').replace(/^(?:REVOKE|GRANT).*ON FUNCTION graphql_public\.graphql\(.*$/gm,'').replace(/^(?:ALTER DEFAULT PRIVILEGES|REVOKE|GRANT).*\bcron\b.*$/gm,''));
+  execFileSync('pg_dump',[url,'--no-owner','--exclude-schema=cron','--file',`${kit}/snapshot.sql`],{stdio:'pipe'});
+  await writeFile(`${kit}/snapshot.sql`,(await readFile(`${kit}/snapshot.sql`,'utf8')).replace(/^SET transaction_timeout = 0;$/m,'').replace(/^CREATE EXTENSION IF NOT EXISTS pg_cron\b[^;]*;$/gm,'').replace(/^COMMENT ON EXTENSION pg_cron\b[^;]*;$/gm,'').replace(/^(?:REVOKE|GRANT).*ON FUNCTION graphql_public\.graphql\(.*$/gm,'').replace(/^(?:ALTER DEFAULT PRIVILEGES|REVOKE|GRANT).*\bcron\b.*$/gm,''));
   await admin.query(`CREATE DATABASE ${cloneName} TEMPLATE template0`);
   const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
   execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-f',`${kit}/snapshot.sql`],{stdio:'pipe'});

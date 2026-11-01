@@ -14,6 +14,12 @@ The structural `ticket` field remains in the public bundle even when its
 it must not suppress application price choices or participant fields.
 Ordinary hidden fields and hidden catalog products remain excluded.
 
+Application-only checkout accepts ordinary participation fee products without
+requiring an admission (`spot`) product. Required participant product groups
+must still be selected; neither an empty selection nor an optional add-on can
+replace the required fee. Enabled or missing ticket containers retain the
+admission-product requirement.
+
 ## Gotchas
 
 - **Never hardcode field IDs**. Find fields by `type` or `data` attributes -- IDs are generated.

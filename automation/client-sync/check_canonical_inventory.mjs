@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+export function readCanonicalRegistry(root, inventory) {
+  return (inventory.registrySources ?? [inventory.registrySource ?? 'supabase/migrations/20261007130000_canonical_mutation_registry.sql'])
+    .map(source => fs.readFileSync(path.join(root, source), 'utf8')).join('\n');
+}
+
 export function verifyRegistrySlice(inventory, sql) {
   const errors=[];
   // Predicate references are not registry rows. Parse the current scoped INSERT.
@@ -19,7 +24,7 @@ export function verifyRegistrySlice(inventory, sql) {
 }
 export function checkCanonicalInventory(root, dartFiles) {
   const inventory=JSON.parse(fs.readFileSync(path.join(root,'automation/client-sync/canonical-mutation-inventory.json'),'utf8'));
-  const sql=fs.readFileSync(path.join(root,inventory.registrySource ?? 'supabase/migrations/20261007130000_canonical_mutation_registry.sql'),'utf8');
+  const sql=readCanonicalRegistry(root,inventory);
   const errors=verifyRegistrySlice(inventory,sql);
   const forwardSql=inventory.forwardMigrations.map(name=>fs.readFileSync(path.join(root,'supabase/migrations',name),'utf8')).join('\n');
   for(const f of inventory.functions) {

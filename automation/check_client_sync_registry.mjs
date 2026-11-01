@@ -81,6 +81,9 @@ const dartFiles = walk(path.join(root, 'lib')).filter((file) =>
 const facadeOwners = new Map([
   ['save_product_wave_target_client_sync_v1', 'lib/components/eshop/db_eshop.dart'],
   ['duplicate_occasion_client_sync_v1', 'lib/components/occasion/db_occasions.dart'],
+  ['delete_order_history_client_sync_v1', 'lib/components/eshop/db_orders.dart'],
+  ['decide_stripe_partial_refund_client_sync_v1', 'lib/components/stripe_payments/card_refund_decision_api.dart'],
+  ['delete_unit_client_sync_v1', 'lib/components/unit/db_units.dart'],
 ]);
 const misplacedCommandStrings = [];
 for (const file of dartFiles) {
