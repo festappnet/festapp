@@ -1,0 +1,35 @@
+{
+  "releasedAtUtc": "2026-11-01T04:56:09.328154+00:00",
+  "tenant": "festapptickets",
+  "domain": "https://vstupenky.online",
+  "version": "0.20.474+980",
+  "sourceMain": "c4cf1ebc837837107cde5cec43a66bb621970c17",
+  "tenantCommit": "af7e9eb0c6f62b72a9eaeaa0f21df2bf64db7fd7",
+  "previousTenantCommit": "18f442e6376b553d29e556c32b3cb5bb85695bd0",
+  "canonicalBlueprintSource": "3967b08c603d48b17104ed94069e360a395de804",
+  "deploymentUrl": "https://6420e501.vstupenkyonline.pages.dev",
+  "deploymentMethod": "local Flutter/web build, automation/deploy_direct.sh --skip-build --wrangler-oauth --branch prod/festapptickets",
+  "behavior": "Custom tabletop labels fit inside the filled shape, excluding cutouts and holes. Actual glyph/native text bounds determine placement and any necessary shrink. Existing saved plans need no rewrite.",
+  "validation": {
+    "coreTests": 13,
+    "nativeAndSceneCacheTests": 11,
+    "hostFlutterTests": 5,
+    "hostBlueprintJavascriptTests": 50,
+    "archiveConsumerTests": 4,
+    "archivedNpmScenes": 15,
+    "archivedFlutterExampleBrowser": "passed",
+    "actualRobotoUShapeVisual": "entire glyph bounds inside upper filled tabletop, no scene issues",
+    "analyzer": "no issues in changed core/editor files",
+    "tenantDriftAndAncestry": "passed",
+    "build": "verify_web_build passed",
+    "live": "verify_web_deployment passed, 3 consecutive coherent version/assets/legal probes"
+  },
+  "archives": {
+    "venue_layout_core.tar.gz": "e808c97ec7831812f9735945c684e3ffae29559d476264ac51977147222a4874",
+    "venue_seat_picker.tar.gz": "008a39be00206d7ef9b41055efe1c329bf285cfdd96fa894807285fd220d2a6e",
+    "festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz": "9b8313bd5cc410aa14c60cb2d885b014a8e5c034728823704ff3aaf65be636f4"
+  },
+  "databaseChanges": false,
+  "edgeChanges": false,
+  "scope": "Only vstupenky.online web. No other tenant or Android rollout."
+}
