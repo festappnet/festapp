@@ -168,6 +168,41 @@
     "placeNameHelp": "Optional. Name des Veranstaltungsorts oder Adresse. Wird nach dem Hinzufügen zur Vorlage auf dem Ticket angezeigt."
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Letzter erfasster Fehler",
+      "invalidResponse": "Der Kontoauszug konnte nicht gelesen werden. Die Antwort hat ein unerwartetes Format.",
+      "timeUnknown": "Der Fehlerzeitpunkt wurde nicht erfasst.",
+      "recovered": "Nach diesem Fehler wurde bereits ein Kontoauszug erfolgreich abgerufen.",
+      "stage": "Fehlerphase",
+      "code": "Fehlercode",
+      "reference": "Diagnosereferenz",
+      "http": "HTTP-Status",
+      "operation": "Bankanfrage",
+      "transport": "Anfrageweg",
+      "direct": "Direkt",
+      "proxy": "Über Vermittler",
+      "shape": "Antwortstruktur",
+      "stages": {
+        "response_decode": "Lesen der Bankantwort",
+        "bank_http": "HTTP-Antwort der Bank oder des Vermittlers",
+        "account_identity": "Prüfung des Empfängerkontos",
+        "transport": "Übertragung der Anfrage",
+        "bank_sync": "Verarbeitung in BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "In der Antwort fehlt ein gültiger Header accountStatement.info. BankSync kann das Konto nicht sicher prüfen und den Auszug nicht importieren.",
+        "invalid_statement_json": "Die Bank oder der Vermittler hat eine Antwort geliefert, die kein gültiges JSON ist.",
+        "FioTokenInvalidOrInactive": "Fio hat einen ungültigen oder inaktiven Token gemeldet.",
+        "FioRateLimited": "Die Bank oder der Vermittler hat die Anfragerate begrenzt.",
+        "FioTransientFailure": "Die Bank oder der Vermittler hat einen vorübergehenden Serverfehler zurückgegeben.",
+        "FioApiError": "Die Bank oder der Vermittler hat die HTTP-Anfrage abgelehnt.",
+        "fio_receiving_account_mismatch": "Der zurückgegebene Auszug gehört zu einem anderen Empfängerkonto.",
+        "TimeoutError": "Das Zeitlimit der Anfrage wurde überschritten.",
+        "AbortError": "Die Anfrage wurde unterbrochen.",
+        "TypeError": "Die Anfrage oder ihre Verarbeitung ist fehlgeschlagen.",
+        "bank_sync_internal_error": "Die Verarbeitung in BankSync ist fehlgeschlagen. Verwenden Sie die Diagnosereferenz zur Untersuchung."
+      }
+    },
     "synchronizationPending": "Synchronisierung aktiviert. Der nächste Abruf wartet auf die Bankfrist.",
     "automaticSynchronization": "Automatische Synchronisierung",
     "synchronizationEnabled": "Ein",

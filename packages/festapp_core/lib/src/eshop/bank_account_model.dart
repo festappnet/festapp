@@ -189,6 +189,7 @@ class BankSyncConnection {
   final DateTime? bankPullAt;
   final DateTime? receiverCommitAt;
   final String? lastError;
+  final BankSyncFailure? lastFailure;
   final String? tokenMasked;
   BankSyncConnection.fromJson(Map<String, dynamic> json)
     : state = json['state'] as String,
@@ -199,6 +200,11 @@ class BankSyncConnection {
         json['receiver_commit_at']?.toString() ?? '',
       ),
       lastError = json['last_error'] as String?,
+      lastFailure = json['last_failure'] is Map<String, dynamic>
+          ? BankSyncFailure.fromJson(
+              json['last_failure'] as Map<String, dynamic>,
+            )
+          : null,
       tokenMasked = json['token_masked'] as String?;
   Map<String, dynamic> toJson() => {
     'state': state,
@@ -207,6 +213,26 @@ class BankSyncConnection {
     'bank_pull_at': bankPullAt?.toIso8601String(),
     'receiver_commit_at': receiverCommitAt?.toIso8601String(),
     'last_error': lastError,
+    'last_failure': lastFailure?.toJson(),
     'token_masked': tokenMasked,
   };
+}
+
+/// Admin-only safe diagnostic projection supplied by bank-sync-manage.
+class BankSyncFailure {
+  final Map<String, dynamic> _data;
+  BankSyncFailure.fromJson(Map<String, dynamic> json)
+    : _data = Map.unmodifiable(json);
+  String get code => _data['code'] as String;
+  String get stage => _data['stage'] as String;
+  String? get id => _data['id'] as String?;
+  DateTime? get occurredAt =>
+      DateTime.tryParse(_data['occurred_at']?.toString() ?? '');
+  String? get operation => _data['operation'] as String?;
+  String? get transport => _data['transport'] as String?;
+  int? get httpStatus => _data['http_status'] as int?;
+  String? get documentShape => _data['document_shape'] as String?;
+  String? get statementShape => _data['statement_shape'] as String?;
+  String? get infoShape => _data['info_shape'] as String?;
+  Map<String, dynamic> toJson() => Map.of(_data);
 }
