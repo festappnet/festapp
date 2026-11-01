@@ -18,141 +18,166 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 
 class AdministrationTabs {
   static RoutedTabDefinition get info => RoutedTabDefinition(
-      slug: NavigationPaths.info,
-      route: const InformationNavigationRoute(),
-      label: DataGridStrings.tabInfo,
-      icon: Icons.info);
+    slug: NavigationPaths.info,
+    route: const InformationNavigationRoute(),
+    label: DataGridStrings.tabInfo,
+    icon: Icons.info,
+  );
   static RoutedTabDefinition get events => RoutedTabDefinition(
-      slug: NavigationPaths.events,
-      route: const ScheduleNavigationRoute(),
-      label: CommonStrings.schedule,
-      icon: Icons.calendar_month);
+    slug: NavigationPaths.events,
+    route: const ScheduleNavigationRoute(),
+    label: CommonStrings.schedule,
+    icon: Icons.calendar_month,
+  );
   static RoutedTabDefinition get places => RoutedTabDefinition(
-      slug: NavigationPaths.places,
-      route: const PlacesNavigationRoute(),
-      label: CommonStrings.places,
-      icon: Icons.pin_drop);
+    slug: NavigationPaths.places,
+    route: const PlacesNavigationRoute(),
+    label: CommonStrings.places,
+    icon: Icons.pin_drop,
+  );
   static RoutedTabDefinition get speakers => RoutedTabDefinition(
-      slug: NavigationPaths.speakers,
-      route: const SpeakersSectionRoute(),
-      label: SpeakersStrings.manageSpeakers,
-      icon: Icons.record_voice_over);
+    slug: NavigationPaths.speakers,
+    route: const SpeakersSectionRoute(),
+    label: SpeakersStrings.manageSpeakers,
+    icon: Icons.record_voice_over,
+  );
   static RoutedTabDefinition get groups => RoutedTabDefinition(
-      slug: NavigationPaths.groups,
-      route: const GroupsSectionRoute(),
-      label: CommonStrings.groups,
-      icon: Icons.groups);
+    slug: NavigationPaths.groups,
+    route: const GroupsSectionRoute(),
+    label: CommonStrings.groups,
+    icon: Icons.groups,
+  );
   static RoutedTabDefinition get service => RoutedTabDefinition(
-      slug: NavigationPaths.services,
-      route: const ServiceSectionRoute(),
-      label: DataGridStrings.tabService,
-      icon: Icons.food_bank);
+    slug: NavigationPaths.services,
+    route: const ServiceSectionRoute(),
+    label: DataGridStrings.tabService,
+    icon: Icons.food_bank,
+  );
   static RoutedTabDefinition get inventoryPools => RoutedTabDefinition(
-      slug: NavigationPaths.inventoryPools,
-      route: const InventoryPoolsNavigationRoute(),
-      label: InventoryStrings.tabTitle,
-      icon: Icons.view_module_outlined);
+    slug: NavigationPaths.inventoryPools,
+    route: const InventoryPoolsNavigationRoute(),
+    label: InventoryStrings.tabTitle,
+    icon: Icons.view_module_outlined,
+  );
   static RoutedTabDefinition get volunteers => RoutedTabDefinition(
-      slug: NavigationPaths.volunteers,
-      route: const VolunteersSectionRoute(),
-      label: CommonStrings.volunteers,
-      icon: Icons.view_timeline);
+    slug: NavigationPaths.volunteers,
+    route: const VolunteersSectionRoute(),
+    label: CommonStrings.volunteers,
+    icon: Icons.view_timeline,
+  );
   static RoutedTabDefinition get users => RoutedTabDefinition(
-      slug: NavigationPaths.users,
-      route: const UsersSectionRoute(),
-      label: CommonStrings.users,
-      icon: Icons.people);
+    slug: NavigationPaths.users,
+    route: const UsersSectionRoute(),
+    label: CommonStrings.users,
+    icon: Icons.people,
+  );
   static RoutedTabDefinition get game => RoutedTabDefinition(
-      slug: NavigationPaths.game,
-      route: const GameNavigationRoute(),
-      label: CommonStrings.game,
-      icon: Icons.gamepad);
+    slug: NavigationPaths.game,
+    route: const GameNavigationRoute(),
+    label: CommonStrings.game,
+    icon: Icons.gamepad,
+  );
   static RoutedTabDefinition get form => RoutedTabDefinition(
-      slug: NavigationPaths.forms,
-      route: const FormsNavigationRoute(),
-      label: FormStrings.formsTitle,
-      icon: Icons.list);
+    slug: NavigationPaths.forms,
+    route: const FormsNavigationRoute(),
+    label: FormStrings.formsTitle,
+    icon: Icons.list,
+  );
   static RoutedTabDefinition get blueprint => RoutedTabDefinition(
-      slug: NavigationPaths.blueprint,
-      route: const BlueprintSectionRoute(),
-      label: CommonStrings.blueprint,
-      icon: Icons.grid_on);
+    slug: NavigationPaths.blueprint,
+    route: const BlueprintSectionRoute(),
+    label: CommonStrings.blueprint,
+    icon: Icons.grid_on,
+  );
   static RoutedTabDefinition get tickets => RoutedTabDefinition(
-      slug: NavigationPaths.tickets,
-      route: const TicketsSectionRoute(),
-      label: OrderItemStrings.itemsPlural,
-      icon: Icons.local_activity);
+    slug: NavigationPaths.tickets,
+    route: const TicketsSectionRoute(),
+    label: OrderItemStrings.itemsPlural,
+    icon: Icons.local_activity,
+  );
   static RoutedTabDefinition get orders => RoutedTabDefinition(
-      slug: NavigationPaths.orders,
-      route: const OrdersNavigationRoute(),
-      label: DataGridStrings.tabOrders,
-      icon: Icons.shopping_cart);
+    slug: NavigationPaths.orders,
+    route: const OrdersNavigationRoute(),
+    label: DataGridStrings.tabOrders,
+    icon: Icons.shopping_cart,
+  );
   static RoutedTabDefinition get products => RoutedTabDefinition(
-      slug: NavigationPaths.products,
-      route: const ProductsSectionRoute(),
-      label: CommonStrings.products,
-      icon: Icons.category);
+    slug: NavigationPaths.products,
+    route: const ProductsSectionRoute(),
+    label: CommonStrings.products,
+    icon: Icons.category,
+  );
   static RoutedTabDefinition get report => RoutedTabDefinition(
-      slug: NavigationPaths.report,
-      route: const ReportSectionRoute(),
-      label: DataGridStrings.tabReport,
-      icon: Icons.stacked_bar_chart);
+    slug: NavigationPaths.report,
+    route: const ReportSectionRoute(),
+    label: DataGridStrings.tabReport,
+    icon: Icons.stacked_bar_chart,
+  );
   static RoutedTabDefinition get emailTemplates => RoutedTabDefinition(
-      slug: NavigationPaths.emailTemplates,
-      route: const EmailTemplatesSectionRoute(),
-      label: EmailTemplatesStrings.title,
-      icon: Icons.email);
+    slug: NavigationPaths.emailTemplates,
+    route: const EmailTemplatesSectionRoute(),
+    label: EmailTemplatesStrings.title,
+    icon: Icons.email,
+  );
   static RoutedTabDefinition get settings => RoutedTabDefinition(
-      slug: NavigationPaths.settings,
-      route: const SettingsSectionRoute(),
-      label: CommonStrings.settings,
-      icon: Icons.settings);
+    slug: NavigationPaths.settings,
+    route: const SettingsSectionRoute(),
+    label: CommonStrings.settings,
+    icon: Icons.settings,
+  );
   static RoutedTabDefinition get changes => RoutedTabDefinition(
-      slug: NavigationPaths.changes,
-      route: const ChangesSectionRoute(),
-      label: ClientChangesStrings.title,
-      icon: Icons.history);
+    slug: NavigationPaths.changes,
+    route: const ChangesSectionRoute(),
+    label: ClientChangesStrings.title,
+    icon: Icons.history,
+  );
 
   static List<RoutedTabDefinition> get administration =>
       AppConfig.isAppSupported
-          ? [
-              info,
-              if (!AppConfig.isAllUnit) events,
-              places,
-              speakers,
-              if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
-                groups,
-              if (FeatureService.isFeatureEnabled(FeatureConstants.game)) game,
-              if (FeatureService.isFeatureEnabled(FeatureConstants.services))
-                service,
-              if (FeatureService.isFeatureEnabled(FeatureConstants.volunteers))
-                volunteers,
-              emailTemplates,
-              users,
-              if (RightsService.hasCapability(
-                  AuthorizationCapabilities.participantsWrite))
-                changes,
-              if (RightsService.hasCapability(
-                  AuthorizationCapabilities.navigationOccasionSettings))
-                settings
-            ]
-          : const [];
+      ? [
+          info,
+          if (!AppConfig.isAllUnit) events,
+          places,
+          speakers,
+          if (FeatureService.isFeatureEnabled(FeatureConstants.userGroups))
+            groups,
+          if (FeatureService.isFeatureEnabled(FeatureConstants.game)) game,
+          if (FeatureService.isFeatureEnabled(FeatureConstants.services))
+            service,
+          if (FeatureService.isFeatureEnabled(FeatureConstants.volunteers))
+            volunteers,
+          emailTemplates,
+          users,
+          if (RightsService.hasCapability(
+            AuthorizationCapabilities.participantsWrite,
+          ))
+            changes,
+          if (RightsService.hasCapability(
+            AuthorizationCapabilities.navigationOccasionSettings,
+          ))
+            settings,
+        ]
+      : const [];
   static List<RoutedTabDefinition> get reservations => [
-        if (RightsService.canSeeReservations()) ...[orders, tickets],
-        if (RightsService.canSeeReservations() &&
-            FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
-          blueprint,
-        if (RightsService.hasCapability(
-            AuthorizationCapabilities.formsCatalogRead)) form,
-        if (RightsService.canSeeReservations()) products,
-        if (RightsService.canSeeReservations() &&
-            FeatureService.isFeatureEnabled(FeatureConstants.services))
-          inventoryPools,
-        if (RightsService.canSeeReservations()) report,
-        emailTemplates,
-        users,
-        if (RightsService.hasCapability(
-            AuthorizationCapabilities.navigationOccasionSettings))
-          settings
-      ];
+    if (RightsService.canSeeReservations()) ...[orders, tickets],
+    if ((RightsService.canSeeReservations() ||
+            RightsService.hasCapability(
+              AuthorizationCapabilities.formsWrite,
+            )) &&
+        FeatureService.isFeatureEnabled(FeatureConstants.blueprint))
+      blueprint,
+    if (RightsService.hasCapability(AuthorizationCapabilities.formsCatalogRead))
+      form,
+    if (RightsService.canSeeReservations()) products,
+    if (RightsService.canSeeReservations() &&
+        FeatureService.isFeatureEnabled(FeatureConstants.services))
+      inventoryPools,
+    if (RightsService.canSeeReservations()) report,
+    emailTemplates,
+    users,
+    if (RightsService.hasCapability(
+      AuthorizationCapabilities.navigationOccasionSettings,
+    ))
+      settings,
+  ];
 }

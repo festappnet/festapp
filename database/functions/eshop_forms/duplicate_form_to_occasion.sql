@@ -124,6 +124,7 @@ BEGIN
 
     -- Step 8: Return the ID of the newly created form.
     PERFORM public.notification_center_form_created_internal(new_form_id);
+    PERFORM public.assert_form_seating_source_internal(new_form_id);
     RETURN new_form_id;
 END;
 $$;

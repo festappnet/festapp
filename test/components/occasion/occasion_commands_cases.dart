@@ -119,7 +119,7 @@ void main() {
     },
   );
 
-  test('occasion save carries its loaded aggregate version', () async {
+  test('occasion save carries version', () async {
     late String functionName;
     late Map<String, dynamic> parameters;
     final commands = SupabaseOccasionCommands.withTransport(

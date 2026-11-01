@@ -31,7 +31,7 @@ BEGIN
     -- If the order state is 'storno', disallocate all spots and exit.
     IF v_order_state = 'storno' THEN
         UPDATE eshop.spots
-        SET order_product_ticket = NULL, state = NULL, resource = NULL, updated_at = now()
+        SET order_product_ticket = NULL, state = NULL, resource = CASE WHEN blueprint IS NULL THEN NULL ELSE resource END, updated_at = now()
         WHERE order_product_ticket IN (SELECT id FROM eshop.order_product_ticket WHERE "order" = p_order_id);
         RETURN;
     END IF;
@@ -57,11 +57,11 @@ BEGIN
     JOIN eshop.products p ON opt.product = p.id
     JOIN eshop.product_types pt ON p.product_type = pt.id
     WHERE rs.order_product_ticket_id IS NULL
-      AND NOT (v_is_blueprint_enabled AND pt.type = 'spot');
+      AND NOT EXISTS (SELECT 1 FROM eshop.blueprint_seat_bindings sb WHERE sb.spot=cs.id);
 
     IF v_spots_to_disallocate IS NOT NULL AND array_length(v_spots_to_disallocate, 1) > 0 THEN
         UPDATE eshop.spots
-        SET order_product_ticket = NULL, state = NULL, resource = NULL, updated_at = now()
+        SET order_product_ticket = NULL, state = NULL, resource = CASE WHEN blueprint IS NULL THEN NULL ELSE resource END, updated_at = now()
         WHERE id = ANY(v_spots_to_disallocate);
     END IF;
 
@@ -108,6 +108,7 @@ BEGIN
                 FROM eshop.spots s
                 WHERE s.inventory_context = v_item_to_allocate.inventory_context_id
                   AND s.order_product_ticket IS NULL
+                  AND NOT EXISTS(SELECT 1 FROM eshop.blueprint_seat_bindings sb WHERE sb.spot=s.id)
                   AND (s.secret IS NULL OR s.secret_expiration_time IS NULL OR s.secret_expiration_time<=clock_timestamp())
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED

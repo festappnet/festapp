@@ -24,6 +24,8 @@ BEGIN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to view this order history');
     END IF;
 
+    v_order_data:=jsonb_set(v_order_data,'{data,tickets}',public.order_tickets_with_seating_internal(order_id,v_order_data#>'{data,tickets}'));
+
     -- Fetch history items for the order, ordered by creation date
     SELECT jsonb_agg(to_jsonb(h) || jsonb_build_object('order_symbol', v_order_data->>'order_symbol', 'order_sequence', v_order_data->'order_sequence') ORDER BY h.created_at)
     INTO v_history_data

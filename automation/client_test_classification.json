@@ -993,6 +993,111 @@
       "sources": [
         "test/services/organizer_destination_test.dart"
       ]
+    },
+    "test/components/blueprint/seating_transition_test.dart": {
+      "kind": "widget",
+      "reason": "Production seating worklist, mapping review dialogs, responsive layout and draft/recovery interaction require Flutter rendering.",
+      "sources": [
+        "test/components/blueprint/seating_transition_test.dart"
+      ]
+    },
+    "test/components/fonts/ticket_font_recovery_test.dart": {
+      "kind": "environment",
+      "reason": "Font loader retries and actual rendered blueprint draft text require Flutter font loading and widget bindings.",
+      "sources": [
+        "test/components/fonts/ticket_font_recovery_test.dart"
+      ]
+    },
+    "test/components/forms/appearance_color_controls_test.dart": {
+      "kind": "environment",
+      "reason": "Application appearance color controls use translated catalogs, Material widgets and widget environment fixtures.",
+      "sources": [
+        "test/components/forms/appearance_color_controls_test.dart"
+      ]
+    },
+    "test/components/forms/appearance_palettes_test.dart": {
+      "kind": "adapter",
+      "reason": "Flutter application palette definitions and setup drafts are checked against the six shipped localization catalogs.",
+      "sources": [
+        "test/components/forms/appearance_palettes_test.dart"
+      ]
+    },
+    "test/components/forms/form_creation_visibility_test.dart": {
+      "kind": "adapter",
+      "reason": "Application form creation models and feature visibility use Flutter application dependencies.",
+      "sources": [
+        "test/components/forms/form_creation_visibility_test.dart"
+      ]
+    },
+    "test/components/forms/form_design_compatibility_test.dart": {
+      "kind": "adapter",
+      "reason": "Application form design serialization retains legacy Material color settings through its Flutter model boundary.",
+      "sources": [
+        "test/components/forms/form_design_compatibility_test.dart"
+      ]
+    },
+    "test/components/forms/primary_product_guard_test.dart": {
+      "kind": "widget",
+      "reason": "Real product editor widgets must protect the primary admission field and product controls.",
+      "sources": [
+        "test/components/forms/primary_product_guard_test.dart"
+      ]
+    },
+    "test/components/navigation/reservations_capability_tabs_test.dart": {
+      "kind": "environment",
+      "reason": "Rights context fixtures exercise actual application reservation tab composition and initialized event timezone data.",
+      "sources": [
+        "test/components/navigation/reservations_capability_tabs_test.dart"
+      ]
+    },
+    "test/components/notification_center/notification_batch_panel_test.dart": {
+      "kind": "widget",
+      "reason": "Localized notification batch panel layout and rendered interaction use actual fonts and Material widgets.",
+      "sources": [
+        "test/components/notification_center/notification_batch_panel_test.dart"
+      ]
+    },
+    "test/components/notification_center/notification_center_bell_requests_test.dart": {
+      "kind": "widget",
+      "reason": "Notification bell lifecycle requests are exercised through mounted application widgets and retained context.",
+      "sources": [
+        "test/components/notification_center/notification_center_bell_requests_test.dart"
+      ]
+    },
+    "test/components/occasion/breadcrumb_creation_choice_test.dart": {
+      "kind": "widget",
+      "reason": "Breadcrumb creation choices require actual navigation widgets, capabilities and dialog interaction.",
+      "sources": [
+        "test/components/occasion/breadcrumb_creation_choice_test.dart"
+      ]
+    },
+    "test/components/single_data_grid/data_grid_number_format_test.dart": {
+      "kind": "adapter",
+      "reason": "TrinaGrid and Flutter cell formatting adapters consume the portable number formatting policy.",
+      "sources": [
+        "test/components/single_data_grid/data_grid_number_format_test.dart"
+      ]
+    },
+    "test/widgets/avatar_initial_test.dart": {
+      "kind": "environment",
+      "reason": "Avatar cap-height placement is verified with real font assets and dart:ui rendering.",
+      "sources": [
+        "test/widgets/avatar_initial_test.dart"
+      ]
+    },
+    "test/widgets/synced_adaptive_theme_test.dart": {
+      "kind": "widget",
+      "reason": "Mounted adaptive theme synchronization and system preference changes require Flutter widget lifecycle.",
+      "sources": [
+        "test/widgets/synced_adaptive_theme_test.dart"
+      ]
+    },
+    "test/browser/browser_preference_store_test.dart": {
+      "kind": "environment",
+      "reason": "Browser-only root exercises the real localStorage and shared_preferences web implementations through mounted Flutter theme/locale widgets.",
+      "sources": [
+        "test/browser/browser_preference_store_test.dart"
+      ]
     }
   }
 }

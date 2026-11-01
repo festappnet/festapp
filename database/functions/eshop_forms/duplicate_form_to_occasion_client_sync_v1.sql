@@ -14,6 +14,7 @@ BEGIN
     OR NOT public.can_copy_form_target(v_target) THEN
     RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
   IF v_source_occasion IS NULL OR NOT public.can_copy_form_source(v_source_occasion) THEN RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_source_occasion,v_target]);
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'sourceFormId',p_source_form_id,'targetOccasion',v_target,'locale',p_locale)::text,'UTF8'),
     'sha256'),'hex');

@@ -30,7 +30,8 @@ class ArchitectureGuard {
   static const edges = {
     'forms': {'eshop', 'json_values'},
     'program': {'map', 'json_values', 'time'},
-    'eshop': {'json_values', 'time'},
+    'eshop': {'json_values', 'time', 'formatting'},
+    'email_templates': {'formatting'},
     'map': {'json_values'},
   };
 

@@ -33,6 +33,9 @@ BEGIN
   -- ***********************************************************
   -- 1. Delete records that depend on 'events'.
   -- ***********************************************************
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[oc]);
+  DELETE FROM public.form_seating_transitions WHERE occasion=oc;
+
   DELETE FROM public.event_groups
     WHERE event_parent IN (SELECT id FROM public.events WHERE occasion = oc)
        OR event_child  IN (SELECT id FROM public.events WHERE occasion = oc);

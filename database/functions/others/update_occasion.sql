@@ -102,6 +102,7 @@ SET search_path = public, extensions
      occ_id := (input_data->>'id')::BIGINT;
 
      IF occ_id IS NOT NULL THEN
+         PERFORM public.lock_blueprint_scope_internal(ARRAY[occ_id]);
          PERFORM public.check_occasion_writable(occ_id);
          -- This is an UPDATE operation
 
@@ -125,6 +126,16 @@ SET search_path = public, extensions
          IF (input_data ? 'organization' AND (input_data->>'organization')::bigint IS DISTINCT FROM v_org_id)
            OR NOT EXISTS(SELECT 1 FROM public.units WHERE id=final_unit AND organization=v_org_id) THEN
            RAISE insufficient_privilege USING MESSAGE='Occasion tenant cannot change'; END IF;
+
+         IF jsonb_path_exists(coalesce(old_features,'[]'), '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')
+           AND NOT jsonb_path_exists(processed_features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
+           IF EXISTS(SELECT 1 FROM public.forms WHERE occasion=occ_id AND blueprint IS NOT NULL)
+             OR EXISTS(SELECT 1 FROM eshop.spots WHERE occasion=occ_id AND blueprint IS NOT NULL AND
+               (order_product_ticket IS NOT NULL OR (secret IS NOT NULL AND secret_expiration_time>clock_timestamp()))) THEN
+             RAISE EXCEPTION 'ASSIGNMENTS_EXIST'; END IF;
+           UPDATE public.form_seating_transitions SET state='cancelled',revision=revision+1,finished_by=auth.uid(),finished_at=clock_timestamp()
+             WHERE occasion=occ_id AND state='organizer_managed';
+         END IF;
 
          UPDATE public.occasions
             SET updated_at  = now,
@@ -205,11 +216,25 @@ SET search_path = public, extensions
          UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',true) WHERE id=occ_id RETURNING * INTO updated_occ;
      END IF;
 
-     -- Enabling the blueprint feature must not bypass form capacity/waitlist guards,
-     -- including when the stored blueprint already exists.
+     -- Enabling the editor does not switch bounded registrations to seat sales.
+     -- Detach inactive, retained plans only on activation; keep their documents
+     -- and every registration/offer intact for an explicit later form switch.
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
-       FOR v_form_id IN SELECT id FROM public.forms WHERE occasion=occ_id ORDER BY id LOOP
-         PERFORM public.check_form_capacity_settings_internal(v_form_id, '{"blueprint":1}'::jsonb);
+       IF NOT jsonb_path_exists(coalesce(old_features,'[]'::jsonb), '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
+         FOR v_form_id IN SELECT id FROM public.forms
+           WHERE occasion=occ_id AND blueprint IS NOT NULL
+           ORDER BY id FOR UPDATE LOOP
+           UPDATE public.forms SET blueprint=NULL,updated_at=now WHERE id=v_form_id;
+           INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+           VALUES('form','occasion',occ_id,v_form_id::text,1)
+           ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+           SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
+         END LOOP;
+       END IF;
+       -- Validate actual seat-selling forms, rather than a fictitious plan on
+       -- every form in the occasion. Form assignment retains the same guards.
+       FOR v_form_id IN SELECT id FROM public.forms WHERE occasion=occ_id AND blueprint IS NOT NULL ORDER BY id LOOP
+         PERFORM public.check_form_capacity_settings_internal(v_form_id, '{}'::jsonb);
        END LOOP;
      END IF;
 
@@ -260,27 +285,24 @@ SET search_path = public, extensions
      END IF;
      -- Check if the blueprint feature is enabled in the final, saved state
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
-         -- Find the associated form to attach the blueprint to
-         SELECT id, blueprint INTO v_form_id, v_form_blueprint
-           FROM public.forms
-          WHERE occasion = occ_id
-          LIMIT 1;
-
-         -- If a form exists and it doesn't already have a blueprint, create one.
-         IF FOUND AND v_form_blueprint IS NULL THEN
+         -- Prepare a plan even when all forms use capacity/waitlisting.
+         SELECT id INTO new_blueprint_id FROM eshop.blueprints
+          WHERE occasion=occ_id AND (SELECT count(*) FROM eshop.blueprints WHERE occasion=occ_id)=1;
+         IF new_blueprint_id IS NULL AND NOT EXISTS(SELECT 1 FROM eshop.blueprints WHERE occasion=occ_id) THEN
              INSERT INTO eshop.blueprints(occasion, organization, created_at, updated_at,layout)
              VALUES (occ_id, COALESCE(updated_occ.organization, 1), now, now,
-              '{"schemaVersion":1,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1120,"height":2080,"fill":"#ffffffff"},"defaultTextStyle":{"fontId":"builtin:roboto-unpacked:24438383f80387edbbd3a199d7b257258db7003f5b291a7d3fb6fa89483ae57f","size":24,"color":"#222222FF"},"nodes":[]}'::jsonb)
+              '{"schemaVersion":2,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1120,"height":2080,"fill":"#ffffffff"},"styles":{},"seatingDefaults":{},"textPolicy":{"language":"und","direction":"auto"},"nodes":[],"selectionUnits":[],"attachments":[],"sections":[],"presets":[]}'::jsonb)
              RETURNING id INTO new_blueprint_id;
+         END IF;
 
-             UPDATE public.forms
-                SET blueprint = new_blueprint_id,
-                    updated_at = now
-              WHERE id = v_form_id;
-             INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
-             VALUES('form','occasion',occ_id,v_form_id::text,1)
-             ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
-             SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
+         -- Start only an unambiguous, valid organizer configuration. Choosing a
+         -- target/repairing legacy data remains possible after feature enabling.
+         IF (SELECT count(*) FROM eshop.blueprints WHERE occasion=occ_id)=1
+           AND (SELECT layout->>'schemaVersion' FROM eshop.blueprints WHERE id=new_blueprint_id)='2'
+           AND NOT EXISTS(SELECT 1 FROM public.forms WHERE blueprint=new_blueprint_id)
+           AND (SELECT count(*) FROM public.forms WHERE occasion=occ_id)=1 THEN
+           SELECT id INTO v_form_id FROM public.forms WHERE occasion=occ_id;
+           PERFORM public.start_seating_configuration_internal(v_form_id,new_blueprint_id);
          END IF;
      END IF;
  END;

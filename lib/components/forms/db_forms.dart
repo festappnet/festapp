@@ -297,11 +297,15 @@ class DbForms {
   }
 
   static Future<BlueprintModel?> getBlueprintForEdit(
-    String occasionLink,
-  ) async {
+    String occasionLink, {
+    int? blueprintId,
+  }) async {
     final response = await _supabase.rpc(
       'get_blueprint_for_edit',
-      params: {'occasion_link': occasionLink},
+      params: {
+        'occasion_link': occasionLink,
+        if (blueprintId != null) 'p_blueprint_id': blueprintId,
+      },
     );
 
     if (response["code"] != 200) {

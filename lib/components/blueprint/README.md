@@ -270,3 +270,36 @@ faces. Unprofiled plans preserve their original typography and promote label
 leaves shared by all tables to the table kind, so later tables inherit the same
 font and size. Individual differences remain local overrides. Table labels use the
 centered, shrink-to-fit label box by default.
+
+
+## Existing admissions
+
+`form_seating_transitions` records organizer configuration and lifecycle, while
+`eshop.spots.order_product_ticket` remains the sole physical placement authority.
+Enabling editing leaves public sales unchanged. A valid unambiguous source/plan
+starts organizer-managed seating; otherwise organizers choose or repair a target.
+The server derives the current worklist from ticket/item/order ownership, including
+unpaid admissions and accepted offers. All assigned is a successful operating mode
+with waiting/offered tickets shown separately.
+
+Exact item-to-seat preview/commit preserves purchased snapshots, money, ticket
+identity and QR. Complete before/after atomic units are explicit, including across
+forms in one target cohort. Generic inventory allocation excludes canonical seat
+bindings and retains explicit placements. Standing coverage uses existing PIC
+allocations and saved area bindings. Used/printed/ambiguous rights are never
+silently changed or omitted. Current reads enrich historical JSON through
+`order_tickets_with_seating_internal`; old downloaded PDFs do not update themselves.
+
+Optional publication reviews the entire target cohort and dependent admission
+sources, requires resolved queues/payment preparation and full current coverage,
+and explicitly confirms effective sales capacity. It preserves form schedules and
+open/closed state. Ordinary source authoring and every product materializer enforce
+the published addressed-admission contract. Closing the workspace leaves placements
+intact; explicit cancellation requires no placements or conflicting holds.
+
+Aggregate context allows form authors or order readers; private rows require order
+read and assignment additionally requires order write. Configuration/publication
+requires form authoring. Commands share actor/UUID/payload-bound receipts and
+advisory/form/source-parent locks; uncertain outcomes replay the frozen request.
+See [transport contract](../../../docs/plans/blueprint-admission-transition-CONTRACT-2026-11-01.md)
+and [implementation plan](../../../docs/plans/blueprint-admission-transition-plan-2026-10-31.md).

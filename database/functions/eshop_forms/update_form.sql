@@ -102,6 +102,7 @@ BEGIN
 
         IF NOT public.is_service_role() AND NOT public.can_author_forms(occasion_id) THEN RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
         PERFORM public.notification_center_initialized_internal(occasion_org);
+        PERFORM public.lock_blueprint_scope_internal(ARRAY[occasion_id]);
         availability_at:=clock_timestamp();
         form_id := NULLIF(input_data->>'id','')::bigint;
         availability_new:=form_id IS NULL;
@@ -646,6 +647,7 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Prepare a success response
         ----------------------------------------------------------------------------
+        PERFORM public.assert_form_seating_source_internal(form_id);
         result := JSONB_BUILD_OBJECT(
             'code', 200,
             'message', 'Form updated successfully',

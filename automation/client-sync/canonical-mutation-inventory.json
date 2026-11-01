@@ -172,6 +172,26 @@
       ],
       "legacy": [],
       "testFactory": "canonical_group_factory"
+    },
+    {
+      "component": "private_inventory",
+      "relation": "public.form_seating_transitions",
+      "scopeResolver": "form_seating_transitions.occasion",
+      "trackedColumns": [
+        "form",
+        "blueprint",
+        "state",
+        "revision"
+      ],
+      "writers": [
+        "save_occasion_client_sync_v1",
+        "start_seating_configuration",
+        "cancel_seating_configuration",
+        "set_ticket_seat_assignments",
+        "publish_seating_transitions"
+      ],
+      "legacy": [],
+      "testFactory": "database/tests/blueprint/seating_transition_test.sql"
     }
   ],
   "functions": [

@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.get_blueprint_for_edit(
-    occasion_link TEXT
+    occasion_link TEXT, p_blueprint_id bigint
 )
 RETURNS JSONB
 LANGUAGE plpgsql STABLE
@@ -29,17 +29,13 @@ BEGIN
     END IF;
 
     -- Authorization check
-    IF (SELECT can_read_orders(occasion_id)) <> TRUE THEN
+    IF public.can_read_seating_status(occasion_id) IS NOT TRUE THEN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
     END IF;
 
-    -- Fetch the first blueprint_id for the occasion
-    SELECT id
-    INTO blueprint_id
-    FROM eshop.blueprints
-    WHERE occasion = occasion_id
-    ORDER BY id
-    LIMIT 1;
+    IF p_blueprint_id IS NULL AND (SELECT count(*) FROM eshop.blueprints WHERE occasion=occasion_id)>1 THEN
+      RETURN jsonb_build_object('code',409,'reason','BLUEPRINT_SELECTION_REQUIRED'); END IF;
+    SELECT id INTO blueprint_id FROM eshop.blueprints WHERE occasion=occasion_id AND (p_blueprint_id IS NULL OR id=p_blueprint_id);
 
     -- Check if a blueprint exists for the occasion
     IF blueprint_id IS NULL THEN
@@ -73,7 +69,7 @@ BEGIN
     -- Shared lifecycle interpretation; only this released/private UI view
     -- includes the order-product relationship ID needed by its order controls.
     SELECT jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'product',f.product,
-      'order_product_ticket',f.order_product_ticket,'state',f.state) ORDER BY f.id) INTO spotsData
+      'order_product_ticket',CASE WHEN public.can_read_orders(occasion_id) THEN f.order_product_ticket END,'state',f.state) ORDER BY f.id) INTO spotsData
     FROM public.blueprint_spot_facts_internal(occasion_id,ARRAY(SELECT jsonb_array_elements_text(valid_spots)::bigint)) f;
 
     -- Fetch all products of type "spot", "taxi", "food"
@@ -92,6 +88,7 @@ BEGIN
     JOIN eshop.product_types pt ON pt.id = p.product_type
     WHERE pt.occasion = occasion_id;
 
+    IF public.can_read_orders(occasion_id) THEN
     -- Fetch relevant tickets associated with the order_product_ticket in spots
     SELECT jsonb_agg(jsonb_build_object(
         'id', t.id,
@@ -143,6 +140,8 @@ BEGIN
     FROM eshop.order_product_ticket opt
     WHERE opt."order" IN (SELECT id FROM order_ids);
 
+    END IF;
+
     -- Add spots data to the blueprint object
     blueprintData = jsonb_set(
         blueprintData,
@@ -189,5 +188,12 @@ BEGIN
     );
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_blueprint_for_edit(text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_blueprint_for_edit(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_blueprint_for_edit(text,bigint) TO anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.get_blueprint_for_edit(occasion_link text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_blueprint_for_edit(occasion_link,NULL::bigint)
+$$;
+REVOKE ALL ON FUNCTION public.get_blueprint_for_edit(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_blueprint_for_edit(text) TO anon,authenticated,service_role;

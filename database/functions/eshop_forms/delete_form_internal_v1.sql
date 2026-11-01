@@ -9,6 +9,7 @@ DECLARE
     v_product_type_ids_to_check BIGINT[];
     v_deletable_product_type_ids BIGINT[];
 BEGIN
+    IF EXISTS(SELECT 1 FROM public.form_seating_transitions WHERE form=p_form_id AND state='organizer_managed') THEN RAISE EXCEPTION 'ASSIGNMENTS_EXIST'; END IF;
     -- Shared current/historical reference guard, without casting untrusted
     -- legacy data to UUID or repeating a separate definition of form usage.
     SELECT key INTO v_form_key FROM public.forms WHERE id = p_form_id;

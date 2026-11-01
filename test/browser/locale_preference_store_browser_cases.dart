@@ -55,7 +55,7 @@ Widget _app() => EasyLocalization(
 );
 
 void main() {
-  SharedPreferencesPlugin.registerWith(null);
+  setUpAll(() => SharedPreferencesPlugin.registerWith(null));
   setUp(() {
     SharedPreferences.resetStatic();
     web.window.localStorage.removeItem('flutter.locale');

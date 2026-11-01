@@ -362,6 +362,13 @@
     "notification_center/read_state.sql",
     "notification_center/daily_overview.sql",
     "notification_center/center_policy.sql",
-    "eshop_orders/operator_orders.sql"
+    "eshop_orders/operator_orders.sql",
+    "blueprint/seating_transition_schema.sql",
+    "user_permissions/seating_transition_operations.sql",
+    "blueprint/seating_transition_context.sql",
+    "blueprint/seating_transition_lifecycle.sql",
+    "blueprint/seating_assignment.sql",
+    "blueprint/seating_publication.sql",
+    "blueprint/seating_transition_sync.sql"
   ]
 }

@@ -1,5 +1,5 @@
 // Explicit browser target: fvm flutter test --platform chrome --concurrency=1
-// test/browser/theme_preference_store_browser_cases.dart
+// test/browser/browser_preference_store_test.dart
 import 'dart:convert';
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -14,7 +14,7 @@ import 'package:web/web.dart' as web;
 import 'package:fstapp/services/theme_preference/theme_preference_web.dart';
 
 void main() {
-  SharedPreferencesPlugin.registerWith(null);
+  setUpAll(() => SharedPreferencesPlugin.registerWith(null));
   const legacyKeys = [
     'adaptive_theme_preferences',
     'flutter.adaptive_theme_preferences',

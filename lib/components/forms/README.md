@@ -124,7 +124,14 @@ storno do not consume occupied capacity. There is no person ledger or backfill. 
 this limit or waitlisting. A stored blueprint is retained but ignored when the
 occasion blueprint feature is disabled. Form saves preserve omitted
 settings; removing a limit uses an explicit NULL. Live waiting tickets or offers
-block disabling waitlisting, removing the limit and switching to a blueprint.
+block disabling waitlisting, removing the limit and switching a form to a blueprint.
+Enabling blueprint editing preserves ordinary sales and detaches inactive retained
+bindings atomically. Organizer-managed seating is a complete operating mode;
+waiting/offered admissions remain in their existing lifecycle. Configuration and
+placement use the shared [seating transition contract](../blueprint/README.md#existing-admissions).
+Only explicit cohort publication activates seat sales and replaces participant
+capacity with reviewed seat/standing supply. Every materializer rejects seatless
+addressed admissions after publication, including stale and editor payloads.
 
 The server bundle owns `capacity` and `registrationMode`. Public availability
 subtracts eligible tickets, valid offer slots and the priority of active waiting
