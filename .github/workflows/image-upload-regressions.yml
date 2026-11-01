@@ -1,5 +1,6 @@
 name: Image upload regressions
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'workers/image-worker/**'
