@@ -42,10 +42,6 @@ BEGIN
         RETURN jsonb_build_object('code', 404, 'message', 'No blueprint found for this occasion');
     END IF;
 
-    IF EXISTS(SELECT 1 FROM eshop.blueprints WHERE id=blueprint_id AND layout IS NULL) THEN
-      RETURN jsonb_build_object('code',409,'reason','BLUEPRINT_LAYOUT_MIGRATION_REQUIRED');
-    END IF;
-
     -- Fetch blueprint details
     SELECT jsonb_build_object(
         'id', b.id,

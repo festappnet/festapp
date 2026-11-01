@@ -15,8 +15,7 @@ BEGIN
     INSERT INTO public.occasions(organization, unit, title, link, start_time, end_time)
     VALUES (v_org, v_unit, 'Preview occasion', 'blueprint-preview-' || gen_random_uuid(), now(), now() + interval '1 day')
     RETURNING id INTO v_occasion;
-    INSERT INTO eshop.blueprints(organization, occasion, title, objects)
-    VALUES (v_org, v_occasion, 'Preview seats', '[]') RETURNING id INTO v_blueprint;
+    INSERT INTO eshop.blueprints(organization,occasion,title) VALUES (v_org,v_occasion,'Preview seats') RETURNING id INTO v_blueprint;
     INSERT INTO public.forms(occasion, blueprint, title, link, is_open)
     VALUES (v_occasion, v_blueprint, 'Closed form', 'blueprint-form-' || gen_random_uuid(), false)
     RETURNING key INTO v_key;

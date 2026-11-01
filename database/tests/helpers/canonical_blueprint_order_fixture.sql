@@ -12,7 +12,7 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM eshop.spots WHERE occasion=f.occasion AND product IS NOT NULL) THEN RETURN; END IF;
   INSERT INTO eshop.blueprints(occasion,organization,title) SELECT f.occasion,organization,'Finance test layout' FROM public.occasions WHERE id=f.occasion RETURNING * INTO b;
  END IF;
- IF b.layout IS NOT NULL AND NOT EXISTS(SELECT 1 FROM pg_temp.canonical_order_layouts WHERE blueprint=b.id) THEN RETURN; END IF;
+ IF b.layout IS NOT NULL AND jsonb_array_length(coalesce(b.layout->'nodes','[]'::jsonb))>0 AND NOT EXISTS(SELECT 1 FROM pg_temp.canonical_order_layouts WHERE blueprint=b.id) THEN RETURN; END IF;
  INSERT INTO pg_temp.canonical_order_layouts VALUES(b.id) ON CONFLICT DO NOTHING;
  UPDATE eshop.spots SET blueprint=b.id WHERE occasion=f.occasion AND blueprint IS NULL AND product IS NOT NULL;
  nodes:=coalesce(b.layout->'nodes','[]');n:=jsonb_array_length(nodes);

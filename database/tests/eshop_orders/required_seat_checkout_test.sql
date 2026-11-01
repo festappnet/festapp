@@ -18,8 +18,7 @@ BEGIN
  INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
  VALUES('Regression bank','FIO','123/0100',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
- INSERT INTO eshop.blueprints(title,organization,occasion,objects)
- VALUES('Regression seats',org,oc,'[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(title,organization,occasion) VALUES('Regression seats',org,oc) RETURNING id INTO bp;
  INSERT INTO public.forms(occasion,link,is_open,blueprint,bank_account)
  VALUES(oc,gen_random_uuid()::text,true,bp,bank) RETURNING id,key INTO fid,fk;
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Admission','spot',oc) RETURNING id INTO pt;

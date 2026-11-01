@@ -14,7 +14,7 @@ BEGIN
  ASSERT result->>'status'='rejected',result::text;
  ASSERT public.update_blueprint_client_sync_v1(payload,command)=result;
  ASSERT NOT EXISTS(SELECT 1 FROM eshop.blueprint_seat_bindings WHERE blueprint=bp),'rejected aggregate leaves no partial seats';
- ASSERT (SELECT layout IS NULL FROM eshop.blueprints WHERE id=bp);
+ ASSERT (SELECT layout->>'schemaVersion'='2' AND layout_revision=0 FROM eshop.blueprints WHERE id=bp);
  foreign_fixture:=public.blueprint_test_fixture_internal();
  INSERT INTO eshop.spots(occasion,blueprint,title) VALUES((foreign_fixture->>'occasion')::bigint,(foreign_fixture->>'blueprint')::bigint,'Foreign seat') RETURNING id INTO sid;
  payload:=jsonb_set(original,'{seatChanges,0,spotId}',to_jsonb(sid));

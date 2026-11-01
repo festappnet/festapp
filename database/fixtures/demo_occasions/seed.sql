@@ -152,7 +152,7 @@ RETURNS void LANGUAGE plpgsql AS $fixture$
 DECLARE un bigint; oc bigint; bank bigint; f bigint; bp bigint; pt bigint; prod bigint;
  pool bigint; ctx bigint; standing_prod bigint; ticket_prod bigint; unit_price numeric; room bigint; room_slot bigint; ord bigint; pay bigint; ticket bigint; opt bigint; seat bigint;
  source_plan jsonb; source_spot jsonb; previous_data jsonb;
- accepted_ticket bigint; accepted_order bigint; offer uuid; objects jsonb; groups jsonb;
+ accepted_ticket bigint; accepted_order bigint; offer uuid; doc jsonb; ids jsonb; binding jsonb; resource record; collection text;
  k text; title text; summary text; price numeric; amount numeric; paid numeric;
  count_orders integer; count_seats integer; n integer; total integer; idx integer;
  stamp timestamptz; beginning timestamptz; closing timestamptz; state text; person text;
@@ -203,31 +203,34 @@ BEGIN
   INSERT INTO eshop.product_types(occasion,title,type) VALUES(oc,CASE WHEN k='weekend' THEN 'Účastnický poplatek' ELSE 'Vstupné' END,'spot') RETURNING id INTO pt;
   INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,maximum)
   VALUES(oc,pt,CASE k WHEN 'weekend' THEN 'Víkend včetně stravy a ubytování' ELSE 'Základní vstupné' END,price,'CZK',NULL) RETURNING id INTO prod;
-  bp:=NULL; objects:='[]'; groups:='[]';
+  bp:=NULL;
   SELECT content INTO source_plan FROM pg_temp.demo_reference_blueprint;
   IF count_seats>0 THEN
-   INSERT INTO eshop.blueprints(occasion,organization,title,configuration,objects,groups)
-   VALUES(oc,p_org,'Plánek sálu','{"dimensions":{"width":64,"height":42}}','[]','[]') RETURNING id INTO bp;
+   SELECT jsonb_object_agg(node_value->>'id',extensions.gen_random_uuid()) INTO ids
+   FROM jsonb_array_elements(source_plan#>'{layout,nodes}') nodes(node_value);
+   doc:=public.remap_blueprint_layout_ids_internal(source_plan->'layout',ids);
+   PERFORM public.validate_blueprint_layout_internal(doc);
+   INSERT INTO eshop.blueprints(occasion,organization,title,layout)
+   VALUES(oc,p_org,'Plánek sálu',doc) RETURNING id INTO bp;
    FOR idx IN 1..count_seats LOOP
-    INSERT INTO eshop.spots(occasion,blueprint,product,title) VALUES(oc,bp,prod,idx::text) RETURNING id INTO seat;
-    objects:=objects||jsonb_build_array(jsonb_build_object('id',seat,'type','spot','title',idx::text,
-     'group',(idx-1)/10+1,'x',4+((idx-1)%10)*5,'y',9+((idx-1)/10)));
+    binding:=source_plan->'seatBindings'->(idx-1);
+    INSERT INTO eshop.spots(occasion,blueprint,product,title)
+    VALUES(oc,bp,prod,binding->>'title') RETURNING id INTO seat;
+    INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,group_node,selection_unit,blocked,product_assignment_mode)
+    VALUES(bp,(ids->>(binding->>'nodeId'))::uuid,seat,
+      (ids->>(binding->>'groupNodeId'))::uuid,(ids->>(binding->>'selectionUnitId'))::uuid,false,'override');
    END LOOP;
-   FOR idx IN 1..(count_seats/10) LOOP
-    groups:=groups||jsonb_build_array(jsonb_build_object('id',idx,'title',CASE k WHEN 'ball' THEN 'Stůl ' ELSE 'Řada ' END||idx));
-   END LOOP;
-   objects:=objects||'[{"type":"table","title":"PÓDIUM","x":27,"y":2},{"type":"table","title":"VSTUP","x":2,"y":40}]'::jsonb;
-   IF k='ball' THEN
-    objects:='[]';
-    FOR idx IN 1..count_seats LOOP
-     source_spot:=source_plan->'objects'->(idx-1);
-     SELECT id INTO seat FROM eshop.spots WHERE blueprint=bp ORDER BY id OFFSET idx-1 LIMIT 1;
-     objects:=objects||jsonb_build_array(source_spot||jsonb_build_object('id',seat,'title',coalesce(source_spot->>'title',idx::text)));
+   INSERT INTO eshop.blueprint_group_products(blueprint,group_node,product)
+   SELECT bp,group_node,prod FROM eshop.blueprint_seat_bindings WHERE blueprint=bp AND group_node IS NOT NULL GROUP BY group_node;
+   FOREACH collection IN ARRAY ARRAY['textLayouts','numberSymbols'] LOOP
+    FOR resource IN SELECT value FROM jsonb_each(source_plan#>ARRAY['resources',collection]) LOOP
+     INSERT INTO public.blueprint_text_resources(scope_key,occasion,resource_id,resource_kind,payload)
+     VALUES('occasion:'||oc,oc,resource.value->>'id',CASE collection WHEN 'textLayouts' THEN 'text' ELSE 'number' END,resource.value)
+     ON CONFLICT DO NOTHING;
     END LOOP;
-    groups:=source_plan->'groups';
-    UPDATE eshop.blueprints SET configuration=source_plan->'configuration',background_svg=source_plan->>'background_svg' WHERE id=bp;
-   END IF;
-   UPDATE eshop.blueprints SET objects=objects,groups=groups WHERE id=bp;
+   END LOOP;
+   PERFORM public.check_blueprint_text_resources_internal(doc,oc);
+   UPDATE eshop.blueprints SET layout_text_resource_ids=public.blueprint_text_resource_ids_internal(doc,oc) WHERE id=bp;
   END IF;
   INSERT INTO public.forms(occasion,title,link,blueprint,bank_account,is_open,header,header_off,
     participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds,data)

@@ -6,14 +6,14 @@ BEGIN
  IF auth.uid() IS NULL OR oc IS NULL OR public.can_read_orders(oc) IS NOT TRUE THEN
   RAISE insufficient_privilege USING MESSAGE='order editor view required'; END IF;
  SELECT jsonb_build_object('id',b.id,'occasion',b.occasion,'organization',b.organization,'title',b.title,
-  'aggregate_version',coalesce(v.version,0),'configuration',b.configuration,'groups',b.groups,'background_svg',b.background_svg,
-  'objects',coalesce((SELECT jsonb_agg(o-ARRAY['secret','secret_expiration_time','order_product_ticket','state']) FROM jsonb_array_elements(b.objects) o),'[]'),
+  'aggregate_version',coalesce(v.version,0),'layout',b.layout,'layout_revision',b.layout_revision,
+  'layoutResources',public.blueprint_canonical_text_resources_internal(b.layout,b.occasion,NULL,true)||jsonb_build_object('assets',public.blueprint_canonical_asset_resources_internal(b.layout,b.occasion,NULL)),
   'spots',coalesce((SELECT jsonb_agg(jsonb_build_object('id',s.id,'product',s.product,'title',s.title,
    'occupied',s.order_product_ticket IS NOT NULL,'held',s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()) ORDER BY s.id)
    FROM eshop.spots s WHERE s.blueprint=b.id AND s.occasion=oc),'[]')) INTO result
  FROM eshop.blueprints b LEFT JOIN public.client_aggregate_versions v ON v.aggregate_type='blueprint'
  AND v.scope_type='occasion' AND v.scope_id=oc AND v.aggregate_id=b.id::text WHERE b.id=p_blueprint;
- RETURN result;
+ RETURN result||public.blueprint_binding_projection_internal(p_blueprint);
 END $$;
 REVOKE ALL ON FUNCTION public.get_blueprint_for_authoring_v1(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_blueprint_for_authoring_v1(bigint) TO authenticated;

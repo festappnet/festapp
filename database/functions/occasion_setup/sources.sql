@@ -27,13 +27,13 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path = public, extensions AS $$
         FROM public.form_fields ff WHERE ff.form=f.id),'[]'::jsonb)) ORDER BY f.id)
       FROM public.forms f WHERE f.occasion=o.id),'[]'::jsonb),
     'blueprints',COALESCE((SELECT jsonb_agg(jsonb_build_object(
-      'blueprintLayoutDraft',CASE WHEN b.layout IS NULL THEN NULL ELSE jsonb_build_object(
+      'blueprintLayoutDraft',jsonb_build_object(
         'layout',b.layout,
         'seatBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',sb.node_id,'productId',spot.product,'title',spot.title,'groupNodeId',sb.group_node,'selectionUnitId',sb.selection_unit,'blocked',sb.blocked) ORDER BY sb.node_id)
           FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots spot ON spot.id=sb.spot WHERE sb.blueprint=b.id),'[]'),
         'groupProducts',coalesce((SELECT jsonb_agg(jsonb_build_object('groupNodeId',gp.group_node,'productId',gp.product) ORDER BY gp.group_node) FROM eshop.blueprint_group_products gp WHERE gp.blueprint=b.id),'[]'),
-        'areaBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',ab.node_id,'productId',ab.product,'inventoryContextId',ab.inventory_context) ORDER BY ab.node_id) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id),'[]')) END,
-      'id',b.id,'title',b.title,'unavailableReason',CASE WHEN b.layout IS NULL THEN 'legacy_requires_reviewed_geometry' ELSE NULL END) ORDER BY b.id)
+        'areaBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',ab.node_id,'productId',ab.product,'inventoryContextId',ab.inventory_context) ORDER BY ab.node_id) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id),'[]')),
+      'id',b.id,'title',b.title) ORDER BY b.id)
       FROM eshop.blueprints b WHERE b.occasion=o.id),'[]'::jsonb),
     'program',COALESCE((SELECT jsonb_agg(jsonb_build_object('id',e.id,'title',e.title,
       'start_time',e.start_time,'end_time',e.end_time,'description',e.description,

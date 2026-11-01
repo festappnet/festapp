@@ -16,8 +16,7 @@ BEGIN
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(source_id,'Seats','spot') RETURNING id INTO source_type;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)
  VALUES(source_id,source_type,'Admission',690,'CZK') RETURNING id INTO source_product;
- INSERT INTO eshop.blueprints(occasion,organization,title,configuration,groups)
- VALUES(source_id,org,'Hall','{"dimensions":{"width":33,"height":8}}','[]') RETURNING id INTO plan;
+ INSERT INTO eshop.blueprints(occasion,organization,title) VALUES(source_id,org,'Hall') RETURNING id INTO plan;
  INSERT INTO eshop.spots(occasion,blueprint,product,title,secret,secret_expiration_time)
  VALUES(source_id,plan,source_product,'A1',gen_random_uuid(),now()+interval '1 day') RETURNING id INTO seat;
  UPDATE eshop.blueprints SET layout=jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,

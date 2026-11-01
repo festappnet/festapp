@@ -134,6 +134,9 @@
     "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean)",
     "public.notification_center_active_internal(bigint)",
     "public.set_notification_center_activation(bigint,boolean,text)",
-    "public.get_orders_tab_data(text)"
+    "public.get_orders_tab_data(text)",
+    "public.blueprint_legacy_migration_source_internal(bigint)",
+    "public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)",
+    "public.get_blueprint_editor(text)"
   ]
 }

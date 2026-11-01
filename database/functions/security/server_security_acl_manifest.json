@@ -3,7 +3,10 @@
     "migrate_users_to_org",
     "update_spot",
     "apply_allocations_claim_only",
-    "send_email_mailersend"
+    "send_email_mailersend",
+    "blueprint_legacy_migration_source_internal",
+    "migrate_blueprint_layout_reviewed_internal",
+    "get_blueprint_editor"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -224,16 +227,6 @@
     "public.register_blueprint_image_asset(bigint,text,jsonb,bigint,text,bigint)": {
       "anon": false,
       "authenticated": true,
-      "service_role": false
-    },
-    "public.blueprint_legacy_migration_source_internal(bigint)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": false
-    },
-    "public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)": {
-      "anon": false,
-      "authenticated": false,
       "service_role": false
     },
     "public.preview_blueprint_swap(bigint,bigint)": {

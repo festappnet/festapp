@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_resources.dart';
-import 'package:fstapp/components/blueprint/blueprint_legacy_converter.dart';
+import '../../../automation/blueprint-cutover/legacy_converter.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 

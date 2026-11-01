@@ -25,8 +25,7 @@ BEGIN
  UPDATE public.forms SET bank_account=bank WHERE id=(f->>'form')::bigint;
  SELECT id INTO seat FROM eshop.spots WHERE blueprint=(f->>'blueprint')::bigint ORDER BY id LIMIT 1;
  -- A held seat in another blueprint of the same occasion is still unrelated.
- INSERT INTO eshop.blueprints(occasion,organization,title,objects,layout)
- SELECT occasion,organization,'Other blueprint','[]',layout FROM eshop.blueprints WHERE id=(f->>'blueprint')::bigint RETURNING id INTO foreign_bp;
+ INSERT INTO eshop.blueprints(occasion,organization,title,layout) SELECT occasion,organization,'Other blueprint',layout FROM eshop.blueprints WHERE id=(f->>'blueprint')::bigint RETURNING id INTO foreign_bp;
  INSERT INTO eshop.spots(occasion,blueprint,title,product,secret,secret_expiration_time)
  VALUES((f->>'occasion')::bigint,foreign_bp,'Foreign seat',(f->>'product')::bigint,secret,now()+interval '10 minutes') RETURNING id INTO foreign_spot;
  node:=(req#>>'{seatChanges,0,nodeId}')::uuid;

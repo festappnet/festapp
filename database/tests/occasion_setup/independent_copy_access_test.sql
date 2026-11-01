@@ -29,8 +29,7 @@ BEGIN
  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
  VALUES(org,target_unit,'Authorized same-tenant source',gen_random_uuid()::text,now(),now()+interval '1 day')
  RETURNING id INTO allowed_source;
- INSERT INTO eshop.blueprints(occasion,organization,title,objects)
- SELECT id,organization,'Independent source fixture','[]'::jsonb FROM public.occasions
+ INSERT INTO eshop.blueprints(occasion,organization,title) SELECT id,organization,'Independent source fixture' FROM public.occasions
  WHERE id IN(private_source,foreign_source,allowed_source);
  INSERT INTO public.occasion_setup_drafts(id,unit,organization,author,data)
  VALUES(draft_id,target_unit,org,actor,'{}');

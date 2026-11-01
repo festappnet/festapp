@@ -1,14 +1,11 @@
 -- Presentation metadata only. Callers retain their existing order access checks.
 CREATE OR REPLACE FUNCTION public.order_spot_metadata_internal(p_spot bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT jsonb_build_object('spot_title',s.title,'spot_group_title',CASE WHEN b.layout IS NOT NULL THEN (
+ SELECT jsonb_build_object('spot_title',s.title,'spot_group_title',(
    SELECT n->>'label' FROM eshop.blueprint_seat_bindings binding
    CROSS JOIN LATERAL jsonb_array_elements(coalesce(b.layout->'nodes','[]')) n
    WHERE binding.spot=s.id AND binding.blueprint=b.id AND n->>'id'=binding.group_node::text LIMIT 1
- ) ELSE (
-   SELECT g->>'title' FROM jsonb_array_elements(coalesce(b.groups,'[]')) g
-   WHERE g->>'id'=(SELECT obj->>'group' FROM jsonb_array_elements(coalesce(b.objects,'[]')) obj
-     WHERE obj->>'type'='spot' AND obj->>'id'=s.id::text LIMIT 1) LIMIT 1) END)
+))
  FROM eshop.spots s LEFT JOIN eshop.blueprints b ON b.id=s.blueprint AND b.occasion=s.occasion
  WHERE s.id=p_spot;
 $$;
