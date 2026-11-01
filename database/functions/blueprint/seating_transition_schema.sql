@@ -16,3 +16,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS form_seating_transitions_active_form ON public
 CREATE INDEX IF NOT EXISTS form_seating_transitions_target ON public.form_seating_transitions(blueprint,state);
 ALTER TABLE public.form_seating_transitions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.form_seating_transitions FROM PUBLIC,anon,authenticated,service_role;
+-- The service-role email renderer reads seating through invoker SQL helpers.
+GRANT SELECT ON public.form_seating_transitions TO service_role;
