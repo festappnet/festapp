@@ -209,3 +209,8 @@ verified digests. The assembler checks current canonical SQL against the new
 forward output and refuses to replace any differing existing output, including
 its default destination. Historical migrations are never regenerated after a
 source change; advance the manifest to a new forward migration instead.
+
+Hidden organization members (`organization_users.is_hidden`) never publish
+`occasion_joined` activity. Item authorization and the live center policy also
+exclude historical joins for currently hidden members, including frozen panels,
+group counts and unread badges. Membership and administration access remain intact.

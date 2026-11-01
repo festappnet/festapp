@@ -1,6 +1,6 @@
 {
-  "name": "notification-center-source-alignment-2026-10-31",
-  "output": "supabase/migrations/20261031120000_notification_center_source_alignment.sql",
+  "name": "notification-hidden-participants-2026-11-01",
+  "output": "supabase/migrations/20261101170000_hidden_participant_notifications.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -21,15 +21,12 @@
     "20261028120000_notification_center_current_rollups.sql",
     "20261028130000_notification_personal_read_batches.sql",
     "20261030093000_notification_deleted_entities.sql",
-    "20261031110000_notification_current_participants.sql"
+    "20261031110000_notification_current_participants.sql",
+    "20261031120000_notification_center_source_alignment.sql"
   ],
   "sources": [
-    "notification_center/read_state.sql",
     "notification_center/core.sql",
-    "notification_center/center_policy.sql",
-    "notification_center/daily_overview.sql",
-    "notification_center/order_selection.sql",
-    "eshop_orders/get_orders_tab_data.sql"
+    "notification_center/center_policy.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -51,6 +48,7 @@
     "20261028120000_notification_center_current_rollups.sql": "55596efa8ae0e9af14da00c6d38fe495cccb834f790c8bde4b68d9618a76bc3e",
     "20261028130000_notification_personal_read_batches.sql": "9561d5fe6d17689dc295fd26cda0cc0b103d0f6280471be3c4ab5b2ac6ec5cd9",
     "20261030093000_notification_deleted_entities.sql": "08895f68a956a7a1907aaee4daacbab6f06519415a7c5ae245c67dbbfb7c536f",
-    "20261031110000_notification_current_participants.sql": "81a682010ec9c6540a09974071854e97c0710d64944ad1a6a7007ad620bd6f08"
+    "20261031110000_notification_current_participants.sql": "81a682010ec9c6540a09974071854e97c0710d64944ad1a6a7007ad620bd6f08",
+    "20261031120000_notification_center_source_alignment.sql": "eff278098d8d20e156d3791f120eab586c9f14ce5c8f95a5cd69478d83282e7b"
   }
 }
