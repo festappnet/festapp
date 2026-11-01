@@ -2661,6 +2661,8 @@
     "removePair": "Usuń robocze przypisanie",
     "unit": "Proszę jawnie przypisać każde miejsce w tej grupie",
     "compatibility": "Zgodność produktów i pojemności",
+    "productCoverageMissing": "W sekcji Rezerwacje i zamówienia przypisz zakupiony produkt do odpowiednich miejsc lub strefy, a następnie zapisz plan.",
+    "editSeatProducts": "Edytuj produkty miejsc",
     "admissions": "Przyjęte bilety",
     "seats": "Miejsca",
     "readRequired": "Do wyświetlenia posiadaczy biletów potrzebne jest uprawnienie odczytu zamówień.",

@@ -8,6 +8,9 @@ BEGIN
  c:=public.get_seating_transition_context(tid)->'data';
  PERFORM public.assert_eq((c#>>'{counts,unassigned}')::int,9,'all nine ordinary unpaid admissions included');
  PERFORM public.assert_eq((c#>>'{counts,waiting}')::int,1,'waiting separate');
+ PERFORM public.assert_eq(jsonb_array_length(c->'compatibility'),1,'waiting-only null product is not an admission compatibility group');
+ PERFORM public.assert_eq((c#>>'{compatibility,0,productId}')::bigint,(f->>'product')::bigint,'compatibility references the purchased admission product');
+ PERFORM public.assert_eq((c#>>'{compatibility,0,admissions}')::int,9,'waiting does not inflate purchased admission demand');
  r:=public.start_seating_configuration(frm,bp,gen_random_uuid());
  PERFORM public.assert_eq(r#>>'{data,transitionId}',tid::text,'resume stable identity');
  BEGIN INSERT INTO public.form_seating_transitions(occasion,form,blueprint,started_by) VALUES(occ,frm,bp,actor); RAISE EXCEPTION 'direct row write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
