@@ -154,7 +154,7 @@ jobs:
             --passphrase-fd 0 --symmetric --cipher-algo AES256 \
             --output "$RUNNER_TEMP/candidate/android-candidate.tar.gpg" "$RUNNER_TEMP/candidate.tar"
       - name: Store the candidate as a private GitHub artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
           path: ${{ runner.temp }}/candidate
