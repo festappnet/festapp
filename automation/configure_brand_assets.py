@@ -39,7 +39,9 @@ else:
     animation, dark_animation = normal, dark
 outputs = {
     'web/loading-logo.svg': dark,
+    'web/loading-logo-light.svg': normal,
     'web/loading-animation.svg': dark_animation,
+    'web/loading-animation-light.svg': animation,
     'web_client/public/brand-logo.svg': dark,
     'web_client/public/brand-logo-light.svg': normal,
     'web_client/public/loading-animation.svg': dark_animation,

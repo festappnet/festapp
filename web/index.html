@@ -133,7 +133,58 @@
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
   <meta name="theme-color" content="#19243b">
   <meta name="color-scheme" content="dark">
-  <style>html, body { background-color: #19243b; }</style>
+  <style>
+    html, body { background-color: #19243b; }
+    html[data-startup-theme="light"],
+    html[data-startup-theme="light"] body,
+    html[data-startup-theme="light"] .main-content { background: #ffffff; }
+  </style>
+  <script id="festapp-startup-theme">
+    // Use the same browser preference as ThemeService and SyncedAdaptiveTheme,
+    // before the first paint and before Flutter restores its theme.
+    (function () {
+      const systemTheme = window.matchMedia?.('(prefers-color-scheme: dark)');
+      function applyStartupTheme() {
+        if (window.__FESTAPP_APP_READY__) return;
+        let mode;
+        try {
+          mode = localStorage.getItem('theme');
+          if (!['light', 'dark', 'auto'].includes(mode)) {
+            for (const key of ['adaptive_theme_preferences', 'flutter.adaptive_theme_preferences']) {
+              try {
+                let legacy = JSON.parse(localStorage.getItem(key));
+                if (typeof legacy === 'string') legacy = JSON.parse(legacy);
+                mode = {0: 'light', 1: 'dark', 2: 'auto'}[legacy?.theme_mode];
+                if (mode) { localStorage.setItem('theme', mode); break; }
+              } catch { /* Ignore malformed legacy preferences. */ }
+            }
+          }
+        } catch { /* Storage may be unavailable in private/embedded browsers. */ }
+        const dark = mode === 'dark' || (mode !== 'light' && !!systemTheme?.matches);
+        const root = document.documentElement;
+        root.dataset.startupTheme = dark ? 'dark' : 'light';
+        root.style.colorScheme = root.dataset.startupTheme;
+        document.querySelector('meta[name="color-scheme"]').content = root.dataset.startupTheme;
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        themeColor.dataset.darkColor ||= themeColor.content;
+        themeColor.content = dark ? themeColor.dataset.darkColor : '#ffffff';
+        const logo = document.querySelector('.initial-logo');
+        if (logo) {
+          logo.dataset.darkSrc ||= logo.getAttribute('src');
+          const source = logo.dataset.darkSrc;
+          logo.setAttribute('src', !dark && ['loading-animation.svg', 'loading-logo.svg'].includes(source)
+            ? source.replace('.svg', '-light.svg') : source);
+        }
+      }
+      window.applyFestappStartupTheme = applyStartupTheme;
+      applyStartupTheme();
+      systemTheme?.addEventListener('change', applyStartupTheme);
+      window.addEventListener('storage', event => {
+        if (event.key === 'theme' || event.key === null) applyStartupTheme();
+      });
+      window.addEventListener('pageshow', applyStartupTheme);
+    })();
+  </script>
 
   <title>vstupenky.online</title>
   <script>
@@ -597,5 +648,6 @@
     <img class="initial-logo" src="loading-animation.svg" alt="">
     <div class="loader" aria-hidden="true"></div>
   </div>
+  <script>window.applyFestappStartupTheme();</script>
 </body>
 </html>
