@@ -1,7 +1,7 @@
 # Seating transition for existing admissions
 
 Date: 2026-10-31
-Status: Implemented, validated and integrated into canonical main on 2026-11-01; production not deployed
+Status: Implemented, validated, integrated into canonical main and deployed to vstupenky.online as 0.20.473+979 on 2026-11-01
 Verification: standard (authorization, commercial identity, inventory, concurrency)
 Architecture and UI/UX review: `gpt-6-astra`, `medium`, 2026-11-01; findings integrated below.
 Authority: this document supersedes the earlier prepare-or-cancel prototype and
