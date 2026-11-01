@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Isolated headless --live helper against actual deployed widget without source override; no token manipulation, holds, orders or payments.",
+  "deployment": "50713e1a",
+  "expectedAndServedWidgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+  "form": "country_bal_vetrkovice",
+  "results": {"harmony": "PASS", "studio": "PASS", "editor": "PASS"},
+  "observations": "Each site returned matched bundle hash, Site/visible, proof POST 200 and context present in iframe and direct link.",
+  "limits": "Proof and wrapper only; no actual buyer checkout, order, payment, seat selection or editor settings mutation in this probe. Helper fences known unsafe paths, not a general untrusted-code sandbox."
+}
