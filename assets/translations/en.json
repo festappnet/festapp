@@ -4698,6 +4698,8 @@
     "removePair": "Remove draft pair",
     "unit": "Assign every seat in this unit explicitly",
     "compatibility": "Product and supply compatibility",
+    "productCoverageMissing": "Under Reservations and orders, assign the purchased product to the corresponding seats or area, then save the plan.",
+    "editSeatProducts": "Edit seat products",
     "admissions": "Admissions",
     "seats": "Seats",
     "readRequired": "Order-read access is required to view ticket holders.",

@@ -114,9 +114,10 @@ BEGIN
  WITH a AS MATERIALIZED(SELECT * FROM public.seating_admissions_internal(p_transition))
  SELECT coalesce(jsonb_agg(jsonb_build_object('productId',product_id,'productTitle',product_title,'admissions',n,'seats',seat_count,'standing',area_count>0,
  'reason',CASE WHEN seat_count>0 AND area_count>0 THEN 'PLACEMENT_MODE_AMBIGUOUS' WHEN seat_count=0 AND area_count=0 THEN 'PRODUCT_MISMATCH' WHEN seat_count>0 AND seat_count<n THEN 'INVENTORY_CONFLICT' END) ORDER BY product_id),'[]') INTO compat
- FROM (SELECT product_id,max(product_title) product_title,count(*) FILTER(WHERE category NOT IN ('waiting','offered')) n,
+ FROM (SELECT product_id,max(product_title) product_title,count(*) n,
  (SELECT count(*) FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot WHERE sb.blueprint=tr.blueprint AND s.product=a.product_id AND NOT sb.blocked) seat_count,
- (SELECT count(*) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=tr.blueprint AND ab.product=a.product_id) area_count FROM a GROUP BY product_id) q;
+ (SELECT count(*) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=tr.blueprint AND ab.product=a.product_id) area_count
+ FROM a WHERE category NOT IN ('waiting','offered') AND product_id IS NOT NULL GROUP BY product_id) q;
  RETURN jsonb_build_object('code',200,'data',jsonb_build_object('transitionId',tr.id,'blueprintId',tr.blueprint,'state',tr.state,'revision',tr.revision,
  'layoutRevision',(SELECT layout_revision FROM eshop.blueprints WHERE id=tr.blueprint),'cohort',cohort,'counts',totals,'items',rows_data,'nextCursor',last_id,'seats',seats,'compatibility',compat,
  'publicationAvailable',coalesce(public.can_author_forms(tr.occasion),false),'capabilities',jsonb_build_object('configure',coalesce(public.can_author_forms(tr.occasion),false),'readHolders',read_holders,'assign',public.can_assign_existing_admissions(tr.occasion))));

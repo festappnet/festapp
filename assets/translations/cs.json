@@ -4700,6 +4700,8 @@
     "removePair": "Odebrat rozpracované přiřazení",
     "unit": "Přiřaďte výslovně všechna místa v této skupině",
     "compatibility": "Kompatibilita produktů a kapacity",
+    "productCoverageMissing": "V režimu Rezervace a objednávky přiřaďte zakoupený produkt příslušným místům nebo zóně a plánek uložte.",
+    "editSeatProducts": "Upravit produkty míst",
     "admissions": "Přijaté vstupenky",
     "seats": "Místa",
     "readRequired": "Pro zobrazení držitelů potřebujete oprávnění ke čtení objednávek.",
