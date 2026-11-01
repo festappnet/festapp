@@ -188,6 +188,41 @@
     "placeNameHelp": "Nepovinné. Názov sály alebo adresa. Na vstupenke sa zobrazí po pridaní do šablóny."
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Posledná zaznamenaná chyba",
+      "invalidResponse": "Bankový výpis sa nepodarilo prečítať. Odpoveď má neočakávaný formát.",
+      "timeUnknown": "Čas chyby nebol zaznamenaný.",
+      "recovered": "Po tejto chybe už prebehlo úspešné stiahnutie výpisu.",
+      "stage": "Fáza zlyhania",
+      "code": "Kód chyby",
+      "reference": "Diagnostická referencia",
+      "http": "HTTP stav",
+      "operation": "Banková požiadavka",
+      "transport": "Cesta požiadavky",
+      "direct": "Priamo",
+      "proxy": "Cez sprostredkovateľa",
+      "shape": "Štruktúra odpovede",
+      "stages": {
+        "response_decode": "Čítanie odpovede banky",
+        "bank_http": "HTTP odpoveď banky alebo sprostredkovateľa",
+        "account_identity": "Overenie prijímacieho účtu",
+        "transport": "Prenos požiadavky",
+        "bank_sync": "Spracovanie v BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "V odpovedi chýba platná hlavička accountStatement.info. BankSync nemôže bezpečne overiť účet a importovať výpis.",
+        "invalid_statement_json": "Banka alebo sprostredkovateľ vrátili odpoveď, ktorá nie je platný JSON.",
+        "FioTokenInvalidOrInactive": "Fio oznámilo neplatný alebo neaktívny token.",
+        "FioRateLimited": "Banka alebo sprostredkovateľ obmedzili početnosť požiadaviek.",
+        "FioTransientFailure": "Banka alebo sprostredkovateľ vrátili dočasnú chybu servera.",
+        "FioApiError": "Banka alebo sprostredkovateľ odmietli HTTP požiadavku.",
+        "fio_receiving_account_mismatch": "Vrátený výpis patrí inému prijímaciemu účtu.",
+        "TimeoutError": "Vypršal časový limit požiadavky.",
+        "AbortError": "Požiadavka bola prerušená.",
+        "TypeError": "Zlyhala požiadavka alebo jej spracovanie.",
+        "bank_sync_internal_error": "Zlyhalo spracovanie v BankSync. Na dohľadanie použite diagnostickú referenciu."
+      }
+    },
     "synchronizationPending": "Synchronizácia je zapnutá. Načítanie čaká na limit banky.",
     "automaticSynchronization": "Automatická synchronizácia",
     "synchronizationEnabled": "Zapnuté",
