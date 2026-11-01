@@ -2,9 +2,9 @@
   "documentVersion": 2,
   "resourceProtocol": 2,
   "archives": {
-    "venue_layout_core.tar.gz": "e808c97ec7831812f9735945c684e3ffae29559d476264ac51977147222a4874",
-    "venue_seat_picker.tar.gz": "008a39be00206d7ef9b41055efe1c329bf285cfdd96fa894807285fd220d2a6e",
-    "festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz": "9b8313bd5cc410aa14c60cb2d885b014a8e5c034728823704ff3aaf65be636f4"
+    "venue_layout_core.tar.gz": "7b6448d6a40cdea97b0882f6104742d287013c309e267306bbb71896839b9b69",
+    "venue_seat_picker.tar.gz": "e6ed5b594419f1624abc8939984fbff6dd7a3bed6460f6dcb3ae0b665b91b9c7",
+    "festapp-venue-layout-0.3.8-fcab9011e3a1.tgz": "fcab9011e3a1c739bbce9a0a38bc787123d45afaacec024df0db10c29a03d6ef"
   },
   "files": {
     "venue_layout_core/CHANGELOG.md": "841b357250f6818016361720928c4b9a83b33abf68749a1a548a21504202e872",
@@ -348,6 +348,6 @@
     "venue_seat_picker/tool/qa_raster.mjs": "f802a3d7869e91b91f0706e603f3fe8375de4ccedee620a8dc9d7bdf9bc61d04",
     "venue_seat_picker/tool/report_demo.py": "2fc6604817784416c4714623a4209a65e969eac22e26961b5af25d49ad68a4b6"
   },
-  "sourceCommit": "3967b08c603d48b17104ed94069e360a395de804",
-  "archiveGateReceiptSha256": "db054ed24841f8b6bf140feac7e122e6dffefb0fc9308a4f6d62ed8cd1c91902"
+  "sourceCommit": "3fc52fb304d05c5d2fbadc0c6c5853cd2bd569f2",
+  "archiveGateReceiptSha256": "7a222dd66aa8c42bf0e0cc9c30309cdd10ca6a027d8f039619be995b7f796e12"
 }
