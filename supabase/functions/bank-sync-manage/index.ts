@@ -1,4 +1,4 @@
-import { bankSyncRemote, bankSyncAccountError, bankSyncErrorCode } from '../_shared/bankSyncRemote.ts';
+import { bankSyncRemote, bankSyncAccountError, bankSyncLastFailure, bankSyncErrorCode } from '../_shared/bankSyncRemote.ts';
 import { runBankSyncOperation } from "../_shared/bankSyncOperation.ts";
 import { sealBankSyncToken } from "../_shared/bankSyncToken.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       if (recorded.error) throw new Error('status_update_failed');
       const refreshed = await user.rpc('get_bank_sync_connection', {p_bank_account_id:input.account_id});
       if (refreshed.error) throw new Error('status_read_failed');
-      return json({...refreshed.data,token_masked:remote.api_token_prefix ? `${remote.api_token_prefix}********` : null});
+      return json({...refreshed.data,last_failure:bankSyncLastFailure(remote),token_masked:remote.api_token_prefix ? `${remote.api_token_prefix}********` : null});
     } catch { return json({...status,last_error:status.last_error ?? 'bank_sync_retry_required'}); }
   }
   if (input.operation === 'update_details') {

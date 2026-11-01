@@ -2106,6 +2106,41 @@
     "saving": "Saving…"
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Last recorded error",
+      "invalidResponse": "The bank statement could not be read. The response has an unexpected format.",
+      "timeUnknown": "The error time was not recorded.",
+      "recovered": "The latest bank pull succeeded after this error.",
+      "stage": "Failure stage",
+      "code": "Error code",
+      "reference": "Diagnostic reference",
+      "http": "HTTP status",
+      "operation": "Bank request",
+      "transport": "Request route",
+      "direct": "Direct",
+      "proxy": "Via relay",
+      "shape": "Response structure",
+      "stages": {
+        "response_decode": "Reading the bank response",
+        "bank_http": "HTTP response from the bank or relay",
+        "account_identity": "Verifying the receiving account",
+        "transport": "Request transport",
+        "bank_sync": "BankSync processing"
+      },
+      "reasons": {
+        "missing_statement_info": "The response is missing a valid accountStatement.info header. BankSync cannot safely verify the account and import the statement.",
+        "invalid_statement_json": "The bank or relay returned a response that is not valid JSON.",
+        "FioTokenInvalidOrInactive": "Fio reported an invalid or inactive token.",
+        "FioRateLimited": "The bank or relay limited the request rate.",
+        "FioTransientFailure": "The bank or relay returned a temporary server error.",
+        "FioApiError": "The bank or relay rejected the HTTP request.",
+        "fio_receiving_account_mismatch": "The returned statement belongs to a different receiving account.",
+        "TimeoutError": "The request timed out.",
+        "AbortError": "The request was interrupted.",
+        "TypeError": "The request or its processing failed.",
+        "bank_sync_internal_error": "BankSync processing failed. Use the diagnostic reference to investigate."
+      }
+    },
     "organizationSettings": "organization settings",
     "settingsTitle": "Bank Account Settings",
     "generalTab": "General",

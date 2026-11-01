@@ -170,6 +170,41 @@
     "placeNameHelp": "Opcjonalne. Nazwa obiektu lub adres. Pojawi się na bilecie po dodaniu do szablonu."
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Ostatni zarejestrowany błąd",
+      "invalidResponse": "Nie udało się odczytać wyciągu bankowego. Odpowiedź ma nieoczekiwany format.",
+      "timeUnknown": "Czas błędu nie został zarejestrowany.",
+      "recovered": "Po tym błędzie wyciąg został już pomyślnie pobrany.",
+      "stage": "Etap awarii",
+      "code": "Kod błędu",
+      "reference": "Identyfikator diagnostyczny",
+      "http": "Status HTTP",
+      "operation": "Żądanie bankowe",
+      "transport": "Droga żądania",
+      "direct": "Bezpośrednio",
+      "proxy": "Przez pośrednika",
+      "shape": "Struktura odpowiedzi",
+      "stages": {
+        "response_decode": "Odczyt odpowiedzi banku",
+        "bank_http": "Odpowiedź HTTP banku lub pośrednika",
+        "account_identity": "Weryfikacja rachunku odbiorcy",
+        "transport": "Przesyłanie żądania",
+        "bank_sync": "Przetwarzanie w BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "W odpowiedzi brakuje prawidłowego nagłówka accountStatement.info. BankSync nie może bezpiecznie zweryfikować rachunku i zaimportować wyciągu.",
+        "invalid_statement_json": "Bank lub pośrednik zwrócił odpowiedź, która nie jest prawidłowym JSON.",
+        "FioTokenInvalidOrInactive": "Fio zgłosiło nieprawidłowy lub nieaktywny token.",
+        "FioRateLimited": "Bank lub pośrednik ograniczył częstotliwość żądań.",
+        "FioTransientFailure": "Bank lub pośrednik zwrócił tymczasowy błąd serwera.",
+        "FioApiError": "Bank lub pośrednik odrzucił żądanie HTTP.",
+        "fio_receiving_account_mismatch": "Zwrócony wyciąg dotyczy innego rachunku odbiorcy.",
+        "TimeoutError": "Przekroczono limit czasu żądania.",
+        "AbortError": "Żądanie zostało przerwane.",
+        "TypeError": "Żądanie lub jego przetwarzanie nie powiodło się.",
+        "bank_sync_internal_error": "Przetwarzanie w BankSync nie powiodło się. Do wyjaśnienia użyj identyfikatora diagnostycznego."
+      }
+    },
     "synchronizationPending": "Synchronizacja jest włączona. Pobieranie czeka na limit banku.",
     "automaticSynchronization": "Automatyczna synchronizacja",
     "synchronizationEnabled": "Włączona",

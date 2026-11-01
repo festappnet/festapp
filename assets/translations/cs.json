@@ -2107,6 +2107,41 @@
     "saving": "Ukládání…"
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Poslední zaznamenaná chyba",
+      "invalidResponse": "Bankovní výpis se nepodařilo přečíst. Odpověď má neočekávaný formát.",
+      "timeUnknown": "Čas chyby nebyl zaznamenán.",
+      "recovered": "Po této chybě již proběhlo úspěšné stažení výpisu.",
+      "stage": "Fáze selhání",
+      "code": "Kód chyby",
+      "reference": "Diagnostická reference",
+      "http": "HTTP stav",
+      "operation": "Bankovní požadavek",
+      "transport": "Cesta požadavku",
+      "direct": "Přímo",
+      "proxy": "Přes prostředníka",
+      "shape": "Struktura odpovědi",
+      "stages": {
+        "response_decode": "Čtení odpovědi banky",
+        "bank_http": "HTTP odpověď banky nebo prostředníka",
+        "account_identity": "Ověření přijímacího účtu",
+        "transport": "Přenos požadavku",
+        "bank_sync": "Zpracování v BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "V odpovědi chybí platná hlavička accountStatement.info. BankSync nemůže bezpečně ověřit účet a importovat výpis.",
+        "invalid_statement_json": "Banka nebo prostředník vrátili odpověď, která není platný JSON.",
+        "FioTokenInvalidOrInactive": "Fio oznámilo neplatný nebo neaktivní token.",
+        "FioRateLimited": "Banka nebo prostředník omezili četnost požadavků.",
+        "FioTransientFailure": "Banka nebo prostředník vrátili dočasnou chybu serveru.",
+        "FioApiError": "Banka nebo prostředník odmítli HTTP požadavek.",
+        "fio_receiving_account_mismatch": "Vrácený výpis patří jinému přijímacímu účtu.",
+        "TimeoutError": "Vypršel časový limit požadavku.",
+        "AbortError": "Požadavek byl přerušen.",
+        "TypeError": "Selhal požadavek nebo jeho zpracování.",
+        "bank_sync_internal_error": "Selhalo zpracování v BankSync. Pro dohledání použijte diagnostickou referenci."
+      }
+    },
     "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",
     "generalTab": "Obecné",
