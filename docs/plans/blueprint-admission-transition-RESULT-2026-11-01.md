@@ -62,7 +62,7 @@ browser/daemon hangs were not reproducible in fresh sessions; actual review
 Cancel/Escape passed both focused widget and browser checks.
 
 The migration contains 26 canonical SQL sources. Digest:
-`6cd453799f9c035d36a14ee626a4f218f723656ae9104eabc9d0db5d82b85909`.
+`b9019892b53a721a582b44801afe5fb274b66b6c83ea975f2fa00e80ef714b88`.
 `python3 automation/assemble-seating-transition-migration.py --check` and
 `python3 automation/generate_canonical_source_contract.py --check` verify parity.
 The SQL parity failure on the initially reused database was due to four missing
@@ -131,3 +131,18 @@ formatting tests live with their portable owner.
 No production migration, tenant branch update, production build or deployment was
 performed. These remain operational release steps, outside the requested source
 completion and merge. The main working tree is left clean after publication.
+
+
+## CI follow-up: retained legacy placement
+
+GitHub's existing payment lifecycle gate found that generic inventory cleanup
+preserved canonical seat bindings but could release an older explicit blueprint
+seat without such a binding during a price/payment update. The same missing
+boundary also allowed a free pre-binding legacy seat to be selected as generic
+PIC stock. Both were demonstrated with failing real SQL regressions and fixed by
+preserving/excluding explicit blueprint spots as well as canonical bindings.
+
+The payment lifecycle/transition and seating selections passed7 SQL files, and
+both existing payment races plus seating/clean-upgrade races passed17 tests.
+The source-matched migration was regenerated. Remaining unchanged UI and browser
+evidence is retained; no UI source or production runtime was changed by this fix.
