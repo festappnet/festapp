@@ -1,0 +1,91 @@
+{
+  "status": "deployed-and-verified",
+  "date": "2026-11-01",
+  "scope": "All active application eshop.blueprints across organizations 1, 3, 7 and 11. Former cloud and frozen staging/retention schemas excluded.",
+  "sourceMain": "201c8cba0b1dd343d5f4225e61c1af5b3abb9367",
+  "finalCodeAndFixtureMain": "05b90d8612adf5a6a1b922d71201fc0db45e7491",
+  "migration": "20261101160000_blueprint_canonical_storage_cutover",
+  "dryRunSha256": "76b2459c8018651e3973ae57357466032c3acb71a6281a2923a14db0d34c996a",
+  "applySha256": "cd8ffbb058cc72df420df4dbc0e27f685a487cce466d1b1f593efa4832e472d5",
+  "contract": "Schema-2 layout plus canonical seat/group/area bindings. No runtime legacy conversion; retired geometry columns constrained to SQL NULL.",
+  "deployments": [
+    {
+      "tenant": "festapptickets",
+      "domain": "https://vstupenky.online",
+      "version": "0.20.475+981",
+      "tenantCommit": "aa521bb7f45af5179937510d476c01e83fba870c",
+      "sourceMain": "201c8cba0b1dd343d5f4225e61c1af5b3abb9367",
+      "previousTenantCommit": "af7e9eb0c6f62b72a9eaeaa0f21df2bf64db7fd7",
+      "deploymentUrl": "https://1df8df67.vstupenkyonline.pages.dev",
+      "versionJsonSha256": "c5356a1fb678694b9aeee054bb64568efbac701704cf8b525c1e4bfd0b480c3c",
+      "liveVerification": "Three consecutive coherent version, assets and legal-route probes passed"
+    },
+    {
+      "tenant": "farnostopava",
+      "domain": "https://farnostopava.festapp.net",
+      "version": "0.20.258+742",
+      "tenantCommit": "5b170c22eecd643c8eb0a8a610ecf20521106c91",
+      "sourceMain": "05b90d8612adf5a6a1b922d71201fc0db45e7491",
+      "previousTenantCommit": "4ebf9fc3e96944788afb946c53edd976dea81ccc",
+      "deploymentUrl": "https://2eb61b3f.farnostopava.pages.dev",
+      "versionJsonSha256": "c90bc6aa1c645189259fb8c0e55efd1e21b0523203277207b3fcb2fc80bb5ebc",
+      "liveVerification": "Three consecutive coherent version, assets and legal-route probes passed",
+      "authProfile": "Preserved legacy organization 8 and pinned canonical organization 11; redirect allowlist and CORS checked. Published source-cohort refresh-canary attestation retained; original private raw canary file is not retained."
+    }
+  ],
+  "deploymentMethod": "Local Flutter/web builds and automation/deploy_direct.sh with verified prebuilt bundle and Wrangler OAuth; no GitHub production build.",
+  "validation": {
+    "hostFlutterTests": 46,
+    "targetedSqlFiles": 25,
+    "seatingUpgradeAndConcurrencyTests": 10,
+    "additionalCancellationRaces": 2,
+    "canonicalInventoryAndToolingTests": 13,
+    "sourceContractTests": 9,
+    "actualPreparedPlanRenderings": 28,
+    "nativeHallVisual": "25 named editable tables and 172 chairs verified against source image",
+    "physicalMigrationProof": "432 spot identities, world positions, titles, groups, products and blocked state preserved",
+    "browser": "Repository seat checkout and offline recovery passed",
+    "mainCi": "https://github.com/festappnet/festapp/actions/runs/41282302174",
+    "mainCiResult": "seat-checkout and ticket-preview-and-delivery succeeded"
+  },
+  "retiredRuntimeIdentities": [
+    "public.blueprint_legacy_migration_source_internal(bigint)",
+    "public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)",
+    "public.get_blueprint_editor(text)"
+  ],
+  "offlineBoundary": "Explicit preparation converter retained only under automation/blueprint-cutover; public synthetic demo directly creates canonical plans. Seven obsolete old-format local writer/import scripts removed.",
+  "edgeCodeChanges": false,
+  "productionSyntheticFixturesOrTestCopies": false,
+  "appliedAtUtc": "2026-11-01T06:53:14Z",
+  "productionVerification": {
+    "convertedPlans": 28,
+    "canonicalPlans": 52,
+    "oldFormatsRemaining": 0,
+    "oldGeometryColumnValuesRemaining": 0,
+    "preservedPhysicalSpotBindings": 432,
+    "unboundPhysicalSpots": 0,
+    "canonicalConstraintsValidated": true,
+    "layoutNotNull": true,
+    "nativeHall": {
+      "blueprint": 59,
+      "schemaVersion": 2,
+      "revision": 1,
+      "nativeTables": 25,
+      "boundSeats": 172
+    },
+    "copyRegressionSource": {
+      "blueprint": 92,
+      "schemaVersion": 2,
+      "revision": 1
+    },
+    "physicalAndFinancialFactsUnchanged": true,
+    "commercialFactsSha256": "6198fcc9ded301d077b27757e4c297a93aa07f2ecb34048d301dd8456c4c8fc9",
+    "catalogParityAssertionsPassed": 893,
+    "retainedTouchedFunctionAclOwnerSecurityAndSearchPathPreserved": 17,
+    "retiredFunctionsAbsent": 3,
+    "migrationLedgerRecorded": true,
+    "transaction": "Data, resources, bindings, forward SQL, catalog assertions and migration ledger committed atomically; PostgREST schema reload notified.",
+    "backupAndPitr": "Full backup 20261101-050839F healthy; post-apply archive check passed with later WAL archived.",
+    "evidence": "Full protected source, rollback definitions, before/after ACL, ledger, SQL digests and dry-run/apply/read-only verification logs retained off-repository."
+  }
+}
