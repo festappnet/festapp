@@ -681,9 +681,13 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
         }.contains(a.name.local))
           a.copy(),
     ];
+    // XmlName.parts is absent from XML 6; retain the shared XML 6/7 API.
+    // ignore: deprecated_member_use
     final group = XmlElement(XmlName('g'), attributes, [
+      // ignore: deprecated_member_use
       XmlElement(XmlName('path'), [
         XmlAttribute(
+          // ignore: deprecated_member_use
           XmlName('d'),
           path.map((c) => '${c.first}${c.skip(1).join(' ')}').join(' '),
         ),

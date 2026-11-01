@@ -231,6 +231,10 @@ class LayoutTextPreviewCache {
                   node,
                   resolveNodeAppearance(document, node).label,
                   matrices[id]!.map(quantize).toList(),
+                  textBounds: sceneItemBounds({
+                    ...previous,
+                    'matrix': [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                  }),
                 ),
                 'paintOrder': [ranks[id], (previous['paintOrder'] as List)[1]],
                 'pendingTextPreview': true,
