@@ -578,7 +578,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1abaef6b0f75e581242ae862b69a9680'),'current SQL source parity: public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_news_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e455591f8eed33bfa918d3fed548a4fe'),'current SQL source parity: public.delete_news_client_sync_v1(bigint,bigint,uuid,bigint)');
--- supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql
+-- supabase/migrations/20261101121500_occasion_copy_deletion.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='475bf5eed6eb0c39e39c218df65c033d'),'current SQL source parity: public.delete_occasion(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_client_sync_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='4b1aa42d7f58275a463ae2d4845e4314'),'current SQL source parity: public.delete_occasion_client_sync_v1(bigint,uuid)');
@@ -586,8 +586,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_domain_command_internal_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='4c12b5aed20ae1d87bc9e17b9d44b6c3'),'current SQL source parity: public.delete_occasion_domain_command_internal_v1(bigint,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_email_template(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='8d664c97a3f9b1784080ec23b893586a'),'current SQL source parity: public.delete_occasion_email_template(bigint,text)');
--- supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='712cd7b855257b4fb8c24d8ebb792296'),'current SQL source parity: public.delete_occasion_internal_v1(bigint)');
+-- supabase/migrations/20261101121500_occasion_copy_deletion.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e447aeed10c5eff7300b0de5a6fa39f1'),'current SQL source parity: public.delete_occasion_internal_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_occasion_user(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='117e6b84d0e85b4b22e5006a40618877'),'current SQL source parity: public.delete_occasion_user(uuid,bigint)');
 -- supabase/migrations/20261027150000_people_group_authoring.sql
