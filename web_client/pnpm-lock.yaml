@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@festapp/venue-layout':
-        specifier: file:vendor/festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz
-        version: file:vendor/festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz
+        specifier: file:vendor/festapp-venue-layout-0.3.8-fcab9011e3a1.tgz
+        version: file:vendor/festapp-venue-layout-0.3.8-fcab9011e3a1.tgz
       '@supabase/supabase-js':
         specifier: ^2.118.0
         version: 2.118.0
@@ -273,8 +273,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz':
-    resolution: {integrity: sha512-pKYrsuWIKNaxQwU12+Y3/rdUYl69CG04a5NwD3DG1kCT/x3kPOX1FQxTXvdhT1+M9s/zoUjmuW48O9K5p8YV1w==, tarball: file:vendor/festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.8-fcab9011e3a1.tgz':
+    resolution: {integrity: sha512-meYgPGOjj330qWFKNfTl42mkUD5PQjojhDNy4J2qLcSnNbvt8UfQRlju6K9NwRLI48s2ALIgs+zwaecE8vscnQ==, tarball: file:vendor/festapp-venue-layout-0.3.8-fcab9011e3a1.tgz}
     version: 0.3.8
 
   '@oxc-project/types@0.155.0':
@@ -1038,7 +1038,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.8-9b8313bd5cc4.tgz': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.8-fcab9011e3a1.tgz': {}
 
   '@oxc-project/types@0.155.0': {}
 

@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "3967b08c603d48b17104ed94069e360a395de804",
+  "sourceCommit": "3fc52fb304d05c5d2fbadc0c6c5853cd2bd569f2",
   "passed": true,
   "coreSourceByteEquivalent": true,
   "pubSelectedCoreAndWrapper": true,
@@ -8,7 +8,7 @@
   "archivedExampleBuilt": true,
   "archivedExampleBrowser": true,
   "requiredNpmFiles": {
-    "src/index.js": "491796963bddd6ed948600f3e4ecafaac995313da1048d58fb52b327e10e975f",
+    "src/index.js": "471a6a9992bc1e4f63f3bdae046b867cd04b27703db10bcfb661b00b740dafeb",
     "src/index.d.ts": "183da0fad404867a2e93a44de9e2a32a784b8897f962704def864e7a45814dc6",
     "dist/venue_layout_kernel.js": "a36baa02f2aba529579ddae01c47584b9d386651933d471cb4fb42a0052a17b4",
     "dist/manifest.json": "090ad207498d1dac8a9c16f5a70b8f0e66c7e298769c0923e585f53fe7728927",
