@@ -1,63 +1,17 @@
-# Ochrana osobních údajů - Vstupenky.online
+# Zásady ochrany osobních údajů – Rezervace Farnost Opava
 
-Účinnost: 27. října 2026. Verze: 1.3.
+Účinnost: 25. srpna 2026. Verze: 1.0.
 
-## Kdo odpovídá za vaše údaje
+Tyto zásady popisují zpracování osobních údajů ve webové aplikaci Rezervace Farnost Opava. Správcem údajů souvisejících s technickým účtem a provozem platformy je Michael Bujnovský. Kontakt pro soukromí a technickou podporu je `info@festapp.net`. U údajů zpracovávaných pro konkrétní akci může být samostatným správcem její pořadatel; jeho údaje jsou uvedeny u dané akce nebo objednávky.
 
-Účet a provoz systému zajišťuje Michael Bujnovský, IČO 06455361, Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt: `info@festapp.net`.
+Podle použité služby můžeme zpracovávat jméno, příjmení, e-mail, telefon, fakturační údaje, identifikátor účtu, objednávky, registrace, vstupenky, uložený program, odpovědi ve formulářích, zpětnou vazbu a komunikaci s podporou. Pro zabezpečení a spolehlivý provoz vznikají omezené technické, síťové a chybové záznamy. Tato webová varianta nepoužívá OneSignal ani push oznámení.
 
-Za údaje účastníků konkrétní akce, rozsah přihlášky a její účel odpovídá pořadatel uvedený u nabídky nebo objednávky.
+Údaje zpracováváme pro vedení účtu, poskytnutí objednané služby, registrace a vstupenky, podporu, zabezpečení a plnění právních povinností. Právním základem je podle situace plnění smlouvy nebo předsmluvní kroky, právní povinnost, oprávněný zájem na bezpečném provozu nebo souhlas u nepovinné funkce.
 
-## Jaké údaje používáme
+Pro poskytování služby mohou být využiti zejména pořadatel konkrétní akce, Supabase a poskytovatelé webové a e-mailové infrastruktury. Údaje jsou předávány pouze v nezbytném rozsahu a případné předání mimo Evropský hospodářský prostor musí být založeno na odpovídajícím právním mechanismu.
 
-Pro účet potřebujeme jméno, příjmení a e-mail. Podle přihlášky či objednávky zpracováváme také kontaktní a fakturační údaje, odpovědi ve formuláři, údaje účastníků, vstupenky a údaje o platbě. Pořadatel může vyžadovat například datum narození či údaje dokladu. Povinné údaje jsou označené; bez nich nemusí být možné službu poskytnout.
+Údaje se uchovávají pouze po dobu potřebnou pro daný účel a zákonné povinnosti. Účetní a daňové doklady mohou být uchovány po zákonem stanovenou dobu. Technické záznamy a zálohy mají omezené provozní lhůty.
 
-Údaje získáváme od vás, objednavatele, zákonného zástupce, pořadatele nebo z bankovních podkladů. Pro zabezpečení vznikají technické záznamy, například IP adresa a čas požadavku.
+Smazání účtu lze zahájit v profilu aplikace. Odeslaný jednorázový odkaz sám nic nemaže; odstranění začne až po závěrečném potvrzení. Podrobnosti jsou na <https://rezervace.farnostopava.cz/privacy/choices/>.
 
-## Proč údaje potřebujeme
-
-Údaje používáme pro účet, přihlášky, objednávky, platby, komunikaci a podporu. Právním základem je plnění smlouvy, předsmluvní kroky, zákonná povinnost nebo oprávněný zájem na zabezpečení a ochraně práv. Nepovinné zpracování může vyžadovat samostatný souhlas. Registrace sama není souhlasem s reklamou ani nepovinným sledováním.
-
-## Souhrny serverového provozu na vstupenky.online
-
-Na webu vstupenky.online používáme přehledy serverového provozu Cloudflare. Vznikají z HTTP požadavků, které Cloudflare přijímá při doručování a ochraně webu. Používáme je k přehledu o zatížení, přenesených datech, chybách a zemích původu požadavků, abychom mohli zajistit dostupnost, kapacitu a zabezpečení služby. Právním základem pro související zpracování osobních údajů je náš oprávněný zájem na těchto účelech.
-
-Tyto přehledy nevyžadují analytický skript ani analytické cookies v prohlížeči. Serverové přehledy nepropojujeme s účty nebo objednávkami. Samostatné měření veřejných stránek popisujeme níže.
-
-Při obsluze webu Cloudflare zpracovává také IP adresu, požadovanou cestu a technické údaje požadavku. Serverový provoz proto neoznačujeme za zcela anonymní. Počet požadavků zahrnuje také načítání souborů a automatizovaný provoz; neodpovídá počtu osob. Případná dříve nastavená cookie `festapp_analytics_optout` tyto serverové přehledy nevypíná. Pro jejich použití nyní žádnou takovou předvolbu neukládáme. Proti zpracování na základě oprávněného zájmu můžete vznést námitku na `info@festapp.net`.
-
-## E-maily
-
-Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
-
-Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
-
-## Volitelné propojení s ChatGPT
-
-Pokud svůj účet propojíte s ChatGPT od OpenAI, vyberete akce nebo pořadatele a povolíte rozsah přístupu. Konektor předává do ChatGPT údaje potřebné pro Vámi požadovanou operaci pouze v tomto rozsahu a podle Vašich aktuálních oprávnění. Čtecí připojení umožňuje přehled akcí, prodejní souhrny, hledání a detail objednávek a čtení podkladů vstupenek; nezakládá objednávky, nemění platby ani neodesílá vstupenky.
-
-Veřejný konektor ChatGPT předává názvy a identifikátory akcí, identifikátory a symboly objednávek, počty a stavy objednávek a vstupenek, částky, měny, údaje o úhradách a podklady vzhledu vstupenek. Z objednávek nepředává jména, příjmení, e-maily, poznámky ani odpovědi a definice polí přihlášek. Hledání podporuje přesný symbol objednávky, nikoli kontaktní údaje. Identifikátory a symboly nejsou anonymní údaje. Konektor je určen pořadatelům; neslouží ke zpracování údajů dětí ani údajů z dokladů. Do názvů akcí a podkladů vzhledu vstupenek proto tyto údaje nevkládejte. Obsah se může stát součástí Vaší konverzace. Zahrnujte jen údaje, které smíte k danému účelu zpřístupnit.
-
-OpenAI zpracovává předané údaje podle podmínek a nastavení Vašeho účtu ChatGPT. Samotné omezení konektoru na čtení neznamená, že se žádné osobní údaje nepředávají. Propojení je dobrovolné a bez něj lze systém používat běžným způsobem. Přístup kdykoliv odvoláte ve správě propojení účtu. Odvolání zastaví další přístup konektoru, ale samo neodstraní obsah dřívějších konverzací v ChatGPT; ten spravujete u OpenAI.
-
-## Kde údaje zpracováváme
-
-Hlavní databázi a účty provozujeme na serverech Hetzner, které sami spravujeme. Cloudflare zajišťuje web, ochranu provozu, soubory a šifrované zálohy. Údaje mají v potřebném rozsahu také pořadatel a jeho pověřené osoby.
-
-Při volitelném přihlášení přes Google získáme identifikátor účtu, ověřený e-mail a jméno. Google Fonts dodává písma a ikony; při otevření online mapy se mohou načítat podklady OpenStreetMap. Tyto služby při načítání dostávají IP adresu a údaje požadavku. Poloha v mapě vyžaduje povolení prohlížeče.
-
-Některé služby mají globální infrastrukturu. Předání mimo Evropský hospodářský prostor vyžaduje odpovídající právní záruky, například rozhodnutí Evropské komise nebo standardní smluvní doložky. Podrobnosti si můžete vyžádat na kontaktním e-mailu.
-
-## Ukládání a uchování
-
-V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace. Odstranit je můžete v jeho nastavení; tím se můžete odhlásit.
-
-Údaje účtu uchováváme po dobu používání. Přihlášky a objednávky po dobu potřebnou pro akci, vypořádání a reklamace. Déle pouze kvůli zákonným povinnostem nebo ochraně právních nároků; lhůty údajů konkrétní akce určuje pořadatel.
-
-Údaje o e-mailové komunikaci uchováváme pro doručení zpráv, řešení problémů a doložení poskytnuté služby. Smazané údaje mohou dočasně zůstat ve starších zálohách.
-
-## Vaše práva
-
-Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
-
-Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+Uživatel má právo na přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu a námitku. Žádost lze poslat na `info@festapp.net`; u údajů konkrétní akce lze kontaktovat také jejího pořadatele. Stížnost lze podat u Úřadu pro ochranu osobních údajů: <https://uoou.gov.cz/>.
