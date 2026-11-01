@@ -35,6 +35,7 @@ BEGIN
   -- ***********************************************************
   PERFORM public.lock_blueprint_scope_internal(ARRAY[oc]);
   DELETE FROM public.form_seating_transitions WHERE occasion=oc;
+  DELETE FROM public.scanner_settings WHERE occasion_id=oc;
 
   DELETE FROM public.event_groups
     WHERE event_parent IN (SELECT id FROM public.events WHERE occasion = oc)
@@ -114,6 +115,12 @@ BEGIN
   DELETE FROM public.user_news
     WHERE occasion = oc;
 
+  -- Resources can reference places and own slots referenced by copied spots.
+  -- Remove them before places; slot references detach through their FK rules.
+  DELETE FROM public.resources
+    WHERE occasion = oc OR inventory_pool IN (
+      SELECT id FROM public.inventory_pools WHERE occasion = oc);
+
   DELETE FROM public.places
     WHERE occasion = oc;
 
@@ -157,6 +164,12 @@ BEGIN
 
 
   DELETE FROM eshop.blueprints
+    WHERE occasion = oc;
+
+  -- Blueprint area bindings and product mappings no longer retain contexts.
+  DELETE FROM public.inventory_contexts
+    WHERE inventory_pool IN (SELECT id FROM public.inventory_pools WHERE occasion = oc);
+  DELETE FROM public.inventory_pools
     WHERE occasion = oc;
 
   -- Delete orders (Safe now: we checked for non-storno orders at step 0,
