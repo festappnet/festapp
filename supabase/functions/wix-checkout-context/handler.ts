@@ -98,7 +98,14 @@ export async function wixCheckoutContext(
         p_organization: configuration.organizationId,
         p_app: configuration.appId,
       });
-    } catch {
+    } catch (error) {
+      // Missing, closed and demo forms are expected business rejections.
+      // Preserve real database/configuration failures as server incidents.
+      if (
+        error && typeof error === "object" &&
+        "code" in error && error.code === "22023" &&
+        "message" in error && error.message === "FORM_UNAVAILABLE"
+      ) throw new WixIdentityError("FORM_UNAVAILABLE", 404);
       throw new WixIdentityError("CHECKOUT_CONTEXT_UNAVAILABLE", 503);
     }
     if (

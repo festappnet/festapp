@@ -106,6 +106,46 @@ Deno.test("database failures return a bounded non-sensitive failure and OPTIONS 
   );
 });
 
+Deno.test("unavailable forms return 404 while unexpected RPC failures remain 503", async () => {
+  for (
+    const failure of [
+      {
+        code: "22023",
+        message: "FORM_UNAVAILABLE",
+        status: 404,
+        response: "FORM_UNAVAILABLE",
+      },
+      {
+        code: "22023",
+        message: "INVALID_CHECKOUT_ORIGIN",
+        status: 503,
+        response: "CHECKOUT_CONTEXT_UNAVAILABLE",
+      },
+      {
+        code: "42501",
+        message: "FORM_UNAVAILABLE",
+        status: 503,
+        response: "CHECKOUT_CONTEXT_UNAVAILABLE",
+      },
+    ]
+  ) {
+    const d = deps();
+    d.issue = async () => {
+      throw {
+        code: failure.code,
+        message: failure.message,
+        details: "private database details",
+      };
+    };
+    const response = await wixCheckoutContext(
+      request({ formLink: "wix-qa-20261025" }),
+      d,
+    );
+    assert.equal(response.status, failure.status);
+    assert.deepEqual(await response.json(), { error: failure.response });
+  }
+});
+
 Deno.test("real Wix SDK language header is permitted by the context preflight", async () => {
   const response = await wixCheckoutContext(new Request("https://api.festapp.net/functions/v1/wix-checkout-context", {
     method: "OPTIONS",

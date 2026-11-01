@@ -74,6 +74,10 @@ vstupenky.online service. There is no second checkout or Wix customer-data store
   same context. Customer acquisition and settled fee evidence remain separate
   requirements for revenue reporting.
 
+`wix-checkout-context` returns HTTP 404 / `FORM_UNAVAILABLE` for missing,
+closed, demo or otherwise unavailable forms. Unexpected database, configuration
+and Wix verification failures remain HTTP 503 and are reported as server incidents.
+
 ## Local commands
 
 Use Node >=24.22.1 and pnpm 11.24.0:
