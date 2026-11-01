@@ -16,3 +16,9 @@ Reasons follow plan section 9. Categories are `unassigned`, `assigned`, `standin
 Workspace source actions fail closed on `forms.canStart`. Existing active public plans without transition rows report workspace status `published`; the organizer workspace never offers to retrofit them.
 
 Configuration start/cancel/publication receipts store aggregate context with `items:[]`, even for operators who currently have holder access. A later loss of holder-read authority therefore cannot expose old private worklist rows through an otherwise authorized configuration replay. Assignment receipts retain their exact mappings and require current order read+write for replay.
+
+Before and after atomic units are validated independently. An unchanged member
+may be explicitly reviewed in a batch containing other actual changes; an entirely
+unchanged batch is invalid. Generic authoring cannot attach a managed target from
+another source. Active seating requires an admission entitlement even when ticket
+issuance is hidden for application-only presentation.

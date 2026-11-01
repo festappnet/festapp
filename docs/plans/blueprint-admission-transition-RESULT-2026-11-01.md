@@ -1,7 +1,7 @@
 # Existing-admission seating implementation - local execution evidence
 
 Date: 2026-11-01
-Status: Implementation and targeted local validation complete. Production unchanged.
+Status: Complete and integrated into canonical main. Production unchanged.
 Base: `2a2f66af6ce91616810eed35d19c96f728a550f8` with preserved unrelated working-tree changes.
 
 Organizer-managed seating is a complete operating mode. Existing admissions can
@@ -62,7 +62,7 @@ browser/daemon hangs were not reproducible in fresh sessions; actual review
 Cancel/Escape passed both focused widget and browser checks.
 
 The migration contains 26 canonical SQL sources. Digest:
-`ff8b2405f149d126a82688e321837b2af4b3bc1586cd39c18cf44407d473f609`.
+`6cd453799f9c035d36a14ee626a4f218f723656ae9104eabc9d0db5d82b85909`.
 `python3 automation/assemble-seating-transition-migration.py --check` and
 `python3 automation/generate_canonical_source_contract.py --check` verify parity.
 The SQL parity failure on the initially reused database was due to four missing
@@ -90,3 +90,44 @@ cannot recover formerly visible holders after losing order-read authority.
 The source parity, migration/source assembly and `git diff --check` gates passed.
 Owned Flutter/PostgREST processes and disposable browser/race databases were cleaned
 up after evidence capture. The original marked SQL dependency database is retained.
+
+
+## Final integration on canonical main
+
+Integration merge: `676bce68c`, joining this feature with the previously unmerged
+application-only checkout fix `a8c5a2dd0`. Its base `2a2f66af6` already contains
+the font recovery/custom-chair snap and complete occasion-copy changes, plus the
+previous payment, form recovery/margins/colors and notification fixes. Existing
+squashed changes were not reintroduced from stale feature/release branches.
+
+Three actual regressions were demonstrated through real SQL entrypoints and fixed:
+
+- A different ordinary form could attach a target still managed by another form,
+  activating seat sales before publication. Generic form save now rejects that
+  target with `MODE_CHANGED`.
+- A single item moving between two couch members could masquerade as complete
+  unit coverage. Before and after units are checked independently. Retained
+  unchanged members are permitted inside a genuinely changed exact batch; an
+  entirely unchanged batch is rejected.
+- After combining application-only checkout with seating, hiding ticket issuance
+  and selecting only a fee could create a seatless admission in active seat mode.
+  The active plan now retains its admission requirement. Ordinary application-only
+  fee checkout without active seating continues to pass.
+
+Final integrated checks: 9 SQL files passed; 10 clean-upgrade/concurrency tests
+passed after the merge; 36 Flutter tests passed across seating, font recovery,
+table seating, capability navigation and occasion copy; 3 portable formatting
+tests and 5 actual isolated Chrome preference tests passed. Architecture and test
+registration, client-sync registry, 5 inventory checks, 5 CI contract tests,
+migration/source parity and whitespace checks passed.
+
+The clean-upgrade runner now pins the actual predecessor instead of current HEAD,
+so committing the feature cannot silently invalidate its upgrade proof. Its dump
+path uses PostgreSQL15-compatible flags for CI. Newly added SQL/race and browser
+preference tests are wired into the existing CI contract/local mirror. Missing
+registrations from the recent shared changes are completed; the pure number
+formatting tests live with their portable owner.
+
+No production migration, tenant branch update, production build or deployment was
+performed. These remain operational release steps, outside the requested source
+completion and merge. The main working tree is left clean after publication.
