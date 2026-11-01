@@ -53,7 +53,7 @@ BEGIN
                 'user_name', NULLIF(
                     btrim(CONCAT_WS(' ', ui.name, ui.surname)), ''
                 ),
-                'is_anonymous', f."user" IS NULL
+                'is_anonymous', ui.id IS NULL
             )
             ORDER BY f.updated_at DESC
         ),
@@ -61,7 +61,7 @@ BEGIN
     )
     INTO v_items
     FROM public.event_feedback f
-    LEFT JOIN public.user_info ui ON ui.id = f."user"
+    LEFT JOIN public.user_info ui ON ui.id = f."user" AND public.organization_member_visible_internal(ui.organization,ui.id)
     WHERE f.event = p_event;
 
     RETURN jsonb_build_object(

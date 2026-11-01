@@ -1,6 +1,6 @@
 {
-  "name": "notification-hidden-participants-2026-11-01",
-  "output": "supabase/migrations/20261101170000_hidden_participant_notifications.sql",
+  "name": "hidden-member-personal-surfaces-2026-11-01",
+  "output": "supabase/migrations/20261101180000_hidden_member_personal_surfaces.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -22,11 +22,30 @@
     "20261028130000_notification_personal_read_batches.sql",
     "20261030093000_notification_deleted_entities.sql",
     "20261031110000_notification_current_participants.sql",
-    "20261031120000_notification_center_source_alignment.sql"
+    "20261031120000_notification_center_source_alignment.sql",
+    "20261101170000_hidden_participant_notifications.sql"
   ],
   "sources": [
+    "users/member_visibility.sql",
+    "notification_center/subject_visibility.sql",
     "notification_center/core.sql",
-    "notification_center/center_policy.sql"
+    "notification_center/center_policy.sql",
+    "events/get_event_participants_for_edit.sql",
+    "users/get_all_user_group_info.sql",
+    "groups/group_member_read.sql",
+    "groups/group_editor_read.sql",
+    "groups/group_profile_read.sql",
+    "groups/save_user_group_client_sync_v1.sql",
+    "users/get_user_info_for_users.sql",
+    "users/get_last_sign_in_at_for_users.sql",
+    "users/occasion_directory_reads.sql",
+    "users/get_occasion_users_editor_bundle_v1.sql",
+    "users/get_occasion_membership_for_edit_v1.sql",
+    "users/get_all_user_basics_from_occasion.sql",
+    "users/get_all_user_basics_for_scan.sql",
+    "users/get_all_user_basics_from_occasion_unit.sql",
+    "events/get_event_feedback_for_edit.sql",
+    "events/get_event_feedback_export_for_edit.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -49,6 +68,7 @@
     "20261028130000_notification_personal_read_batches.sql": "9561d5fe6d17689dc295fd26cda0cc0b103d0f6280471be3c4ab5b2ac6ec5cd9",
     "20261030093000_notification_deleted_entities.sql": "08895f68a956a7a1907aaee4daacbab6f06519415a7c5ae245c67dbbfb7c536f",
     "20261031110000_notification_current_participants.sql": "81a682010ec9c6540a09974071854e97c0710d64944ad1a6a7007ad620bd6f08",
-    "20261031120000_notification_center_source_alignment.sql": "eff278098d8d20e156d3791f120eab586c9f14ce5c8f95a5cd69478d83282e7b"
+    "20261031120000_notification_center_source_alignment.sql": "eff278098d8d20e156d3791f120eab586c9f14ce5c8f95a5cd69478d83282e7b",
+    "20261101170000_hidden_participant_notifications.sql": "ac7f4cfc0f7035aac655aa1ac493e55e57ed946e1fa0793501ffee0b950d7422"
   }
 }

@@ -4,7 +4,7 @@
 CREATE OR REPLACE FUNCTION public.notification_center_in_center_internal(
  e public.notification_center_events,p_anchor timestamptz)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT CASE WHEN e.kind IN ('email_problem','bank_problem')
+ SELECT public.notification_center_subject_visible_internal(e.organization,e.kind,e.data) AND CASE WHEN e.kind IN ('email_problem','bank_problem')
   THEN e.status NOT IN ('recovered','resolved')
   ELSE e.occurred_at>=p_anchor-interval '30 days'
    AND (e.kind<>'order_created' OR coalesce(

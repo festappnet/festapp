@@ -62,7 +62,7 @@ BEGIN
                concat_ws(' ', owner_info.name, owner_info.surname) AS owner_name
         FROM public.user_companions uc
         JOIN public.user_info owner_info ON owner_info.id = uc."user"
-        WHERE uc.occasion = p_occasion_id
+        WHERE uc.occasion = p_occasion_id AND public.occasion_member_visible_internal(p_occasion_id,owner_info.id)
     )
     SELECT json_agg(row_to_json(user_row))
     INTO users_data
@@ -395,7 +395,7 @@ BEGIN
         WHERE opt.ticket = t.id
         LIMIT 1
     ) AS order_info ON true
-    WHERE ou.occasion = p_occasion_id;
+    WHERE ou.occasion = p_occasion_id AND public.occasion_member_visible_internal(p_occasion_id,ui.id);
 
     -- 2. Get all forms associated with the occasion, selecting only the specified fields.
     SELECT jsonb_agg(

@@ -91,7 +91,7 @@ BEGIN
           'email_readonly', parent_ui.email_readonly
         )
         FROM public.user_info parent_ui
-        WHERE parent_ui.id = uc."user"
+        WHERE parent_ui.id = uc."user" AND public.organization_member_visible_internal(org_id,parent_ui.id)
       )
     ) ORDER BY
       aur.is_manager DESC,

@@ -43,7 +43,7 @@ map projection used for the signed-in user's profile.
 
 ## Gotchas
 
-- **Hidden Occasions**: If users are "missing" from lists, check `occasions.is_hidden` flag -- it hides the entire occasion, not individual users. There is no per-user `is_hidden` column.
+- **Hidden Occasions**: If users are "missing" from lists, check `occasions.is_hidden` flag -- it hides the entire occasion, not individual users. Individual visibility is stored in `organization_users.is_hidden`. Shared member visibility filters cover participant/group projections and linked companion owners. Hidden members retain their own profile and permissions; group saves preserve memberships omitted from filtered editor lists.
 - **Profile Data from Forms**: Birth date and group features are parsed from dynamic form data -- code matches fields by `type == "birth_date"` (or `"birth_year"`) and by `data["is_group_feature"] == true` in form responses.
 - **Multi-tenancy**: `OccasionUserModel` = user in event context. `UnitUserModel` = user in permanent group context. Different tables, different RPCs.
 

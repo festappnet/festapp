@@ -18,9 +18,7 @@ REVOKE ALL ON FUNCTION public.notification_center_bank_admin(bigint,uuid) FROM P
 CREATE OR REPLACE FUNCTION public.notification_center_allowed(p_event public.notification_center_events,p_user uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT p_user IS NOT NULL
- AND (p_event.kind<>'occasion_joined' OR NOT EXISTS(
-  SELECT 1 FROM public.organization_users hidden
-  WHERE hidden.organization=p_event.organization AND hidden."user"::text=p_event.data->>'userId' AND hidden.is_hidden))
+ AND public.notification_center_subject_visible_internal(p_event.organization,p_event.kind,p_event.data)
  AND (
  CASE WHEN p_event.kind IN ('event_capacity_full','occasion_joined') THEN
  public.notification_center_app_admin_internal(p_event.organization,p_event.occasion,p_user)
@@ -95,11 +93,7 @@ BEGIN
  -- Source initialization and domain commits share one organization boundary.
  SELECT * INTO a FROM public.notification_center_organizations WHERE organization=p_org FOR SHARE;
  IF NOT FOUND OR p_at<coalesce(a.collection_started_at,a.initialized_at) THEN RETURN NULL; END IF;
- -- Hidden membership must never create activity or recipient deliveries.
- IF p_kind='occasion_joined' AND EXISTS(
-  SELECT 1 FROM public.organization_users hidden
-  WHERE hidden.organization=p_org AND hidden."user"::text=p_data->>'userId' AND hidden.is_hidden
- ) THEN RETURN NULL; END IF;
+ IF NOT public.notification_center_subject_visible_internal(p_org,p_kind,p_data) THEN RETURN NULL; END IF;
  IF p_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occ AND organization=p_org) THEN
  RAISE EXCEPTION 'notification_scope_mismatch'; END IF;
  IF EXISTS(SELECT 1 FROM unnest(p_affected) x WHERE NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=x AND organization=p_org)) THEN
@@ -159,6 +153,7 @@ CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text; contact jsonb; actual_context jsonb; actual_count bigint;
 BEGIN
+ IF NOT public.notification_center_allowed(e,auth.uid()) THEN RETURN NULL; END IF;
  IF e.kind='email_problem' AND public.notification_center_allowed(e,auth.uid()) THEN
   SELECT payload||jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,'recipient',m.recipient,'customerName',coalesce(
     nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),
