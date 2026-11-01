@@ -1,12 +1,12 @@
-import 'blueprint_table_seating.dart';
-import 'blueprint_table_titles.dart';
+import 'package:fstapp/components/blueprint/blueprint_table_seating.dart';
+import 'package:fstapp/components/blueprint/blueprint_table_titles.dart';
 import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
-import 'blueprint_layout_contract.dart';
-import 'blueprint_model.dart';
-import 'blueprint_seat_state.dart';
-import '../fonts/ticket_font_catalog.dart';
+import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
+import 'package:fstapp/components/blueprint/blueprint_model.dart';
+import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 
 class BlueprintLegacyConversion {
   BlueprintLegacyConversion(this.snapshot, Map<String, dynamic> receipt)
@@ -189,7 +189,49 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
         wire.remove('zigzagTeeth');
         wire.remove('zigzagAmplitude');
       }
-      nativeNodes.add(LayoutNode.fromJson(wire));
+      // This is an offline schema-1 input, not a canonical runtime node.
+      // The strict canonical decoder must only see the imported document below.
+      final transform = wire['transform'] as Map? ?? const {};
+      final properties = Map<String, dynamic>.from(wire)
+        ..removeWhere(
+          (key, _) => const {
+            'id',
+            'kind',
+            'parentId',
+            'label',
+            'width',
+            'height',
+            'x',
+            'y',
+            'rotation',
+            'transform',
+            'z',
+            'locked',
+            'style',
+            'childStyles',
+            'seating',
+            'surface',
+            'assembly',
+          }.contains(key),
+        );
+      nativeNodes.add(
+        LayoutNode(
+          id: wire['id'] as String,
+          kind: wire['kind'] as String,
+          parentId: wire['parentId'] as String?,
+          label: wire['label'] as String? ?? '',
+          x: ((transform['x'] ?? wire['x']) as num? ?? 0).toDouble(),
+          y: ((transform['y'] ?? wire['y']) as num? ?? 0).toDouble(),
+          rotation: ((transform['rotation'] ?? wire['rotation']) as num? ?? 0)
+              .toDouble(),
+          width: (wire['width'] as num? ?? 1).toDouble(),
+          height: (wire['height'] as num? ?? 1).toDouble(),
+          z: (wire['z'] as num? ?? 0).toInt(),
+          locked: wire['locked'] == true,
+          properties: properties,
+          style: Map<String, dynamic>.from(wire['style'] as Map? ?? const {}),
+        ),
+      );
     }
     final nativeMatrices = _legacyInputMatrices(nativeNodes);
     final tables = <String, LayoutNode>{};

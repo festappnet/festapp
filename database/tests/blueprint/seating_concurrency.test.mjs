@@ -51,13 +51,20 @@ for source in sources:
   if body is not None and signature not in previous:commands.append('DROP FUNCTION IF EXISTS '+signature+' CASCADE;')
  if old.returncode==0:old_sources.append(old.stdout)
 commands.append('DROP TABLE public.form_seating_transitions CASCADE;')
+# The clone contains unrelated retained old fixtures. This upgrade proof uses
+# an empty layout store; production data conversion has its own guarded proof.
+commands.append('TRUNCATE eshop.blueprints CASCADE;')
+commands.append('RESET ROLE; ALTER TABLE eshop.blueprints OWNER TO postgres; SET LOCAL ROLE postgres;')
+commands.append('ALTER TABLE eshop.blueprints DROP CONSTRAINT IF EXISTS blueprints_canonical_layout_check, DROP CONSTRAINT IF EXISTS blueprints_retired_geometry_empty_check;')
 commands+=old_sources
 commands.append(Path('supabase/migrations/20261031223000_blueprint_feature_independent_capacity.sql').read_text())
 commands.append(Path('supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql').read_text())
+commands.append(Path('supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql').read_text())
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
    const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8'});
-   execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q'],{input:upgrade,stdio:['pipe','pipe','pipe']});
+   try { execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q'],{input:upgrade,stdio:['pipe','pipe','pipe']}); }
+   catch(error) { throw new Error(error.stderr?.toString() || error.message); }
    await db.query(await readFile(new URL('../canonical_mutation_source_parity_test.sql',import.meta.url),'utf8'));
   });
   const fixture=async(n=2,w=0)=>rpc(db,'SELECT public.seating_test_fixture_internal($1,$2) result',[n,w]);

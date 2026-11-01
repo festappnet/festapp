@@ -254,7 +254,6 @@
     "events/get_event_editor_v1.sql",
     "users/unit_access_deletion.sql",
     "security/public_map_projection.sql",
-    "blueprint/migrate_reviewed_legacy_layout.sql",
     "events/get_event_attendance_summary.sql",
     "security/data_security_reads.sql",
     "users/occasion_directory_reads.sql",
@@ -369,6 +368,8 @@
     "blueprint/seating_transition_lifecycle.sql",
     "blueprint/seating_assignment.sql",
     "blueprint/seating_publication.sql",
-    "blueprint/seating_transition_sync.sql"
+    "blueprint/seating_transition_sync.sql",
+    "blueprint/canonical_persistence.sql",
+    "eshop/get_tickets_with_details.sql"
   ]
 }
