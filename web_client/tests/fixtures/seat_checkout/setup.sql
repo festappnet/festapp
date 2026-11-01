@@ -10,8 +10,8 @@ BEGIN
  INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
  VALUES('Regression bank','FIO','123/0100',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
- INSERT INTO eshop.blueprints(title,organization,occasion,objects,configuration)
- VALUES('Regression seats',org,oc,'[]','{"dimensions":{"width":5,"height":5}}') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(title,organization,occasion)
+ VALUES('Regression seats',org,oc) RETURNING id INTO bp;
  INSERT INTO public.forms(title,occasion,link,is_open,blueprint,bank_account)
  VALUES('Browser seat regression',oc,'seat-checkout-regression',true,bp,bank) RETURNING id INTO fid;
  -- Direct fixture inserts must participate in the same URL reservation contract.
@@ -33,7 +33,7 @@ BEGIN
  INSERT INTO eshop.spots(title,product,occasion,blueprint)
  VALUES('A1',prod,oc,bp) RETURNING id INTO seat;
  -- Rendering and hold admission share one canonical, bound physical seat.
- UPDATE eshop.blueprints SET objects='[]',layout_revision=1,layout=jsonb_build_object(
+ UPDATE eshop.blueprints SET layout_revision=1,layout=jsonb_build_object(
   'schemaVersion',2,'symbolSetVersion',1,
   'canvas',jsonb_build_object('x',0,'y',0,'width',400,'height',400,'fill','#FFFFFFFF'),
   'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,
