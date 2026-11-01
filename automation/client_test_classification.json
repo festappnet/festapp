@@ -742,6 +742,13 @@
         "test/components/forms/form_validation_test.dart"
       ]
     },
+    "test/components/occasion/occasion_list_refresh_test.dart": {
+      "kind": "environment",
+      "reason": "Actual occasion list and copy adapter with isolated root backend and local command storage; validates refresh recovery, authoritative copied identity, reveal and duplicate-click protection.",
+      "sources": [
+        "test/components/occasion/occasion_list_refresh_test.dart"
+      ]
+    },
     "test/components/occasion/occasion_creation_recovery_test.dart": {
       "kind": "environment",
       "reason": "Actual occasion creation dialog with isolated HTTP backend; validates conflict and corrected retry.",

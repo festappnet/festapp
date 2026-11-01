@@ -20,6 +20,7 @@ class OccasionEditCard extends StatefulWidget {
   final OccasionModel occasion;
   final VoidCallback onTap;
   final VoidCallback? onCreateCopy;
+  final bool isCopying;
   final Color? backgroundColor;
   final String? badge;
   final bool isPresent;
@@ -31,6 +32,7 @@ class OccasionEditCard extends StatefulWidget {
     required this.occasion,
     required this.onTap,
     this.onCreateCopy,
+    this.isCopying = false,
     this.backgroundColor,
     this.badge,
     this.isPresent = false,
@@ -149,10 +151,22 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                 children: [
                   PopupMenuButton<String>(
                     elevation: 0,
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: onSurfaceColor.withOpacity(0.7),
-                    ),
+                    enabled:
+                        !widget.isCopying &&
+                        (widget.onCreateCopy != null ||
+                            widget.onSetAppLanding != null),
+                    icon: widget.isCopying
+                        ? SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              semanticsLabel: UnitStrings.createCopy,
+                            ),
+                          )
+                        : Icon(
+                            Icons.more_vert,
+                            color: onSurfaceColor.withOpacity(0.7),
+                          ),
                     onSelected: (value) {
                       if (value == "app_landing")
                         widget.onSetAppLanding?.call();

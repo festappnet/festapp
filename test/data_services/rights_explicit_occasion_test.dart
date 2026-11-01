@@ -211,6 +211,34 @@ void main() {
     expect(RightsService.currentUnit()?.id, 999);
   });
 
+  test(
+    'unit entry recovers when the departing occasion refresh fails',
+    () async {
+      contextGate = Completer<void>();
+      contextFailures = 1;
+      final refreshing = RightsService.updateAppData(
+        link: 'deleted-occasion',
+        force: true,
+        refreshOffline: false,
+      );
+      final failedRefresh = expectLater(
+        refreshing,
+        throwsA(isA<http.ClientException>()),
+      );
+      await Future<void>.delayed(Duration.zero);
+      final joining = const RightsUnitAdministrationAccess().load(
+        999,
+        force: true,
+      );
+      contextGate!.complete();
+      await failedRefresh;
+      await joining;
+      expect(contexts.map((data) => data['link']), ['deleted-occasion', null]);
+      expect(RightsService.currentUnit()?.id, 999);
+      expect(RightsService.currentOccasionId(), isNull);
+    },
+  );
+
   test('unit entry replaces a different pending unit context', () async {
     contextGate = Completer<void>();
     final refreshing = RightsService.updateAppData(
