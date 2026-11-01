@@ -45,7 +45,7 @@ BEGIN
         WHERE opt."order" = p_order_id
     ),
     current_spots AS (
-        SELECT s.id, s.order_product_ticket, s.inventory_context
+        SELECT s.id, s.order_product_ticket, s.inventory_context, s.blueprint
         FROM eshop.spots s
         WHERE s.order_product_ticket IN (SELECT id FROM eshop.order_product_ticket WHERE "order" = p_order_id)
     )
@@ -57,6 +57,8 @@ BEGIN
     JOIN eshop.products p ON opt.product = p.id
     JOIN eshop.product_types pt ON p.product_type = pt.id
     WHERE rs.order_product_ticket_id IS NULL
+      -- Retained legacy plans also own explicit placements before conversion.
+      AND cs.blueprint IS NULL
       AND NOT EXISTS (SELECT 1 FROM eshop.blueprint_seat_bindings sb WHERE sb.spot=cs.id);
 
     IF v_spots_to_disallocate IS NOT NULL AND array_length(v_spots_to_disallocate, 1) > 0 THEN
@@ -108,6 +110,7 @@ BEGIN
                 FROM eshop.spots s
                 WHERE s.inventory_context = v_item_to_allocate.inventory_context_id
                   AND s.order_product_ticket IS NULL
+                  AND s.blueprint IS NULL
                   AND NOT EXISTS(SELECT 1 FROM eshop.blueprint_seat_bindings sb WHERE sb.spot=s.id)
                   AND (s.secret IS NULL OR s.secret_expiration_time IS NULL OR s.secret_expiration_time<=clock_timestamp())
                 LIMIT 1

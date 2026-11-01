@@ -158,3 +158,20 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  RESET ROLE;
 END $$;
+
+DO $$
+DECLARE f jsonb; pool bigint; ctx bigint; legacy bigint; stock bigint; item bigint; oid bigint;
+BEGIN
+ f:=public.seating_test_fixture_internal(1,0);item:=(f#>>'{mappings,0,admissionItemId}')::bigint;
+ SELECT "order" INTO oid FROM eshop.order_product_ticket WHERE id=item;
+ INSERT INTO public.inventory_pools(occasion,sellable_capacity) VALUES((f->>'occasion')::bigint,1) RETURNING id INTO pool;
+ INSERT INTO public.inventory_contexts(inventory_pool) VALUES(pool) RETURNING id INTO ctx;
+ INSERT INTO eshop.product_inventory_contexts(product,inventory_context,quantity) VALUES((f->>'product')::bigint,ctx,1);
+ -- Both current and retained pre-binding addressed seats are physical seats,
+ -- not arbitrary free stock for an ordinary order reconciliation.
+ INSERT INTO eshop.spots(occasion,blueprint,product,inventory_context,title) VALUES((f->>'occasion')::bigint,(f->>'blueprint')::bigint,(f->>'product')::bigint,ctx,'Retained legacy seat') RETURNING id INTO legacy;
+ INSERT INTO eshop.spots(occasion,inventory_context) VALUES((f->>'occasion')::bigint,ctx) RETURNING id INTO stock;
+ PERFORM public.apply_allocations(oid);
+ PERFORM public.assert_true((SELECT order_product_ticket IS NULL FROM eshop.spots WHERE id=legacy),'ordinary inventory does not claim an unbound legacy seat');
+ PERFORM public.assert_eq((SELECT order_product_ticket FROM eshop.spots WHERE id=stock),item,'ordinary entitlement uses generic inventory stock');
+END $$;
