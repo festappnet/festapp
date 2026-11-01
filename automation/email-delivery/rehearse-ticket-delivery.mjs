@@ -3,17 +3,25 @@ import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { assertLocalDatabaseUrl, assertDisposableDatabase } from '../../web_client/tests/database/disposable_database.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(new URL('../../web_client/package.json', import.meta.url));
 const { Client } = require('pg');
 const url = new URL(process.env.DATABASE_URL ?? 'invalid:');
-if (!['localhost', '127.0.0.1'].includes(url.hostname) || !/^\/festapp_ticket_email_[a-z0-9_]+$/.test(url.pathname)) {
-  throw new Error('Use only a dedicated local festapp_ticket_email_* database');
-}
+assertLocalDatabaseUrl(url.href);
 const db = new Client({ connectionString: url.href });
 const output = process.env.TICKET_EMAIL_PREVIEW_DIR ?? '/tmp/festapp-ticket-email-previews';
 const assert = (value, message) => { if (!value) throw new Error(message); };
 async function scalar(sql, params = []) { return Object.values((await db.query(sql, params)).rows[0])[0]; }
+async function rendererScalar(sql, params = []) {
+  await db.query('SET LOCAL ROLE service_role');
+  try {
+    await db.query("SELECT set_config('request.jwt.claims','{\"role\":\"service_role\"}',true)");
+    return await scalar(sql, params);
+  } finally {
+    await db.query('RESET ROLE');
+  }
+}
 function render(input) {
   // Deliberately no network permission: the only provider is an in-process stub.
   const result = spawnSync('deno', ['run', '--frozen', `--lock=${root}supabase/functions/deno.lock`, '--allow-env', '--allow-read',
@@ -23,6 +31,7 @@ function render(input) {
 }
 await db.connect();
 try {
+  await assertDisposableDatabase(db);
   await db.query('BEGIN');
   await db.query(readFileSync(`${root}database/tests/helpers/assertions.sql`, 'utf8'));
   await db.query("UPDATE public.email_messages SET workflow_state='cancelled'; UPDATE public.email_capacity SET paused=false,shared_account=false,quota_at=now(),max_rate=10,daily_quota=1000,provider_sent_24h=0,worker_url=NULL,next_send_at=now(),circuit_until=NULL,provider_outage_streak=0,probe_until=NULL");
@@ -46,10 +55,10 @@ try {
     const row = await scalar('SELECT public.claim_email()');
     assert(String(row.order_id) === order && row.message_kind === 'order_tickets', 'Paid transition did not produce canonical ticket intent');
     const prepared = render({ action: 'prepare', recipient: row.recipient,
-      details: await scalar('SELECT public.get_order_details_for_email($1)', [order]),
-      tickets: await scalar('SELECT public.get_tickets_with_details($1)', [order]),
-      products: await scalar('SELECT public.get_products_and_types($1)', [occasion]),
-      resolved: await scalar("SELECT public.get_email_template_and_wrapper('TICKET_ORDER_PAYMENT_DONE',$1)", [JSON.stringify({ organization: Number(org), unit: Number(unit), occasion: Number(occasion) })]),
+      details: await rendererScalar('SELECT public.get_order_details_for_email($1)', [order]),
+      tickets: await rendererScalar('SELECT public.get_tickets_with_details($1)', [order]),
+      products: await rendererScalar('SELECT public.get_products_and_types($1)', [occasion]),
+      resolved: await rendererScalar("SELECT public.get_email_template_and_wrapper('TICKET_ORDER_PAYMENT_DONE',$1)", [JSON.stringify({ organization: Number(org), unit: Number(unit), occasion: Number(occasion) })]),
     });
     await db.query('SELECT public.prepare_email($1,$2,$3,$4)', [row.message_id, row.lease_token, prepared.snapshot, prepared.postAction]);
     const begin = await scalar('SELECT public.begin_email_send($1,$2)', [row.attempt_id, row.lease_token]);
