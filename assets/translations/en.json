@@ -430,7 +430,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Form appearance",
-    "formAppearanceHint": "Choose the form’s appearance for visitors. System follows their device settings.",
+    "formAppearanceHint": "Choose the form’s appearance for visitors. System uses their app appearance preference, falling back to their device setting.",
     "appearanceSystem": "System",
     "appearanceLight": "Light",
     "appearanceDark": "Dark",

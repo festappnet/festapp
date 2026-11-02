@@ -399,7 +399,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Formulardarstellung",
-    "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System folgt den Einstellungen ihres Geräts.",
+    "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System übernimmt ihre Darstellungseinstellung in der App, andernfalls die des Geräts.",
     "appearanceSystem": "System",
     "appearanceLight": "Hell",
     "appearanceDark": "Dunkel",

@@ -133,7 +133,11 @@ export class ThemeService {
 
     static apply() {
         if (ThemeService._lastFormModel) {
-            const mode = ThemeService._lastFormModel.themeMode;
+            const formMode = ThemeService._lastFormModel.themeMode;
+            // Automatic forms inherit the shared portal choice; only an
+            // automatic portal choice delegates to the device preference.
+            const mode = ['light', 'dark'].includes(formMode)
+                ? formMode : ThemeService.currentMode;
             ThemeService.isDark = mode === 'dark' ||
                 (mode !== 'light' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches);
         }
