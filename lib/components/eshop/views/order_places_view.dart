@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../order_detail_strings.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -263,23 +261,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
             height: 300,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final canvas = _document!.canvas;
-                final scale = math.min(
-                  (constraints.maxWidth - 32) / (canvas['width'] as num),
-                  (constraints.maxHeight - 32) / (canvas['height'] as num),
-                );
-                final seats = _document!.nodes.where((n) => n.kind == 'seat');
-                final seatPixels = seats.isEmpty
-                    ? 8.0
-                    : seats
-                          .map((n) => nodeBounds(_document!, n))
-                          .map(
-                            (b) => math.min(b['width']!, b['height']!) * scale,
-                          )
-                          .reduce(math.min);
-                final zoom = seatPixels <= 0
-                    ? 1.0
-                    : (10 / seatPixels).clamp(1.0, 1.9);
                 return VenueLayoutViewer(
                   key: ValueKey(_plan),
                   document: _document!,
@@ -289,10 +270,11 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
                   highlightedNodeIds: own,
                   highlightPulse: _highlightPulse,
                   activeNodeIds: active,
-                  // A dense plan gets a modest initial focus, never a close-up.
+                  // The shared camera targets readable seats while retaining their context.
                   // Ticket selection does not reframe the user's camera.
-                  focusNodeIds: !_wholePlan && zoom > 1 ? own : const {},
-                  focusMaxZoomFactor: zoom,
+                  focusNodeIds: !_wholePlan ? own : const {},
+                  focusMaxZoomFactor: 2.6,
+                  focusSeatPixelSize: 12,
                   focusRevision: _focusRevision,
                   onNodeTap: (node) {
                     final found = places

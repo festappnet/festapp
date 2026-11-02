@@ -15,6 +15,7 @@ class VenueLayoutViewer extends StatelessWidget {
     this.focusNodeIds = const {},
     this.focusRevision = 0,
     this.focusMaxZoomFactor = 5,
+    this.focusSeatPixelSize,
     this.onNodeTap,
     this.wheelZoomRequiresModifier = false,
   });
@@ -30,6 +31,9 @@ class VenueLayoutViewer extends StatelessWidget {
 
   /// Maximum focus zoom relative to the whole-plan fit.
   final double focusMaxZoomFactor;
+
+  /// Optional readable seat size in logical screen pixels, bounded by context.
+  final double? focusSeatPixelSize;
 
   /// Embedded viewers can let normal wheel scrolling reach the parent page.
   final bool wheelZoomRequiresModifier;
@@ -51,6 +55,7 @@ class VenueLayoutViewer extends StatelessWidget {
       focusNodeIds: focusNodeIds,
       focusRevision: focusRevision,
       focusMaxZoomFactor: focusMaxZoomFactor,
+      focusSeatPixelSize: focusSeatPixelSize,
       onPointTap: onNodeTap == null
           ? null
           : (point) => onNodeTap!(hitTest(document, point.dx, point.dy)),

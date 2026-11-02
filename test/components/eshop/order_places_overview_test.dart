@@ -167,13 +167,11 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(viewer().highlightPulse!.value, 1);
-        expect(viewer().focusMaxZoomFactor, dense ? 1.9 : 1);
+        expect(viewer().focusMaxZoomFactor, 2.6);
+        expect(viewer().focusSeatPixelSize, 12);
 
-        expect(
-          viewer().focusNodeIds,
-          dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
-        );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
+        expect(viewer().focusNodeIds, places.map((p) => p['nodeId']).toSet());
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 2.6));
         expect(find.textContaining('null'), findsNothing);
         final states = viewer().seatPresentation;
         expect(
@@ -204,11 +202,8 @@ void main() {
         expect(viewer().activeNodeIds, {
           '00000000-0000-4000-8000-000000000002',
         });
-        expect(
-          viewer().focusNodeIds,
-          dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
-        );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
+        expect(viewer().focusNodeIds, places.map((p) => p['nodeId']).toSet());
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 2.6));
         expect(viewer().focusRevision, revision);
         viewer().onNodeTap!('00000000-0000-4000-8000-000000000001');
         await tester.pumpAndSettle();
@@ -217,11 +212,8 @@ void main() {
         expect(viewer().activeNodeIds, {
           '00000000-0000-4000-8000-000000000001',
         });
-        expect(
-          viewer().focusNodeIds,
-          dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
-        );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
+        expect(viewer().focusNodeIds, places.map((p) => p['nodeId']).toSet());
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 2.6));
         expect(viewer().focusRevision, revision);
         await tester.ensureVisible(find.byIcon(Icons.location_searching).last);
         await tester.tap(find.byIcon(Icons.location_searching).last);
