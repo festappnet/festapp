@@ -30,6 +30,17 @@ control database: install the same job there with
 database and selected organization as psql variables. Production activation for this
 release is limited to organization 3 (festapptickets).
 
+UI warnings for recorded bank request errors require failed observations spanning
+at least 10 minutes. One failed request or a four-minute interruption shows no
+warning triangle in orders or account cards. The latest failure observation must
+also be less than 10 minutes old. `record_bank_sync_pull` owns the durable
+`failure_since` / `failure_observed_at` evidence for both status reads and the
+monitor. Changing error codes preserves this clock; a successful pull, including
+a newer upstream success seen alongside a subsequent error, resets it. The
+admin connection tab uses the same server-owned `warning_pending` flag to show
+neutral retry status during grace. Failure diagnostics remain available.
+Explicit suspension and configuration warnings retain their existing behavior.
+
 For enabled connections, a bank error, missing token/email configuration, disabled
 remote ingress/polling, or a fresh remote health observation confirming no
 successful API pull for 30 minutes creates a health incident. The last-pull time
