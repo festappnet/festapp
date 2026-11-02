@@ -11,6 +11,7 @@ fixture = (root/'automation/tests/fixtures/slunovrat_news_emergency.sql').read_t
 fixture = fixture.replace('-- ASSERTION_HELPERS', (root/'database/tests/helpers/assertions.sql').read_text())
 fixture = fixture.replace('-- EMERGENCY_POLICY', (root/'automation/hetzner-supabase/runtime/slunovrat-news-emergency.sql').read_text())
 fixture = fixture.replace('-- REMOVE_EMERGENCY_POLICY', (root/'automation/hetzner-supabase/runtime/slunovrat-news-emergency-remove.sql').read_text())
+fixture = fixture.replace('-- EXTEND_EMERGENCY_POLICY', (root/'automation/hetzner-supabase/runtime/slunovrat-news-emergency-extend.sql').read_text())
 print(fixture)
 PY
-printf '%s\n' 'Slunovrat legacy news: old denial, scoped insert/readback, author/editor boundaries, expiry and no notification access passed.'
+printf '%s\n' 'Slunovrat legacy news/push: publication gate, admission, scoped access, expiry and removal passed; no external delivery.'

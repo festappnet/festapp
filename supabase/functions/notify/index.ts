@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
 
   const payload = buildNotificationPayload({
     appId: onesignalAppId,
+    broadcastAudience: notificationConfig.broadcastAudience,
     defaultUrl,
     occasionLink: record.occasion_link,
     targetPath,

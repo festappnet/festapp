@@ -6,5 +6,10 @@ DO $$ BEGIN
   END IF;
 END $$;
 REVOKE INSERT (occasion,message,created_by) ON public.news FROM authenticated;
+REVOKE INSERT (occasion,organization,"to",heading,content,data) ON public.log_notifications FROM authenticated;
+DROP TRIGGER slunovrat_legacy_news_emergency_20261102 ON public.news;
+DROP TRIGGER slunovrat_legacy_push_emergency_20261102 ON public.log_notifications;
+DROP FUNCTION public.slunovrat_legacy_news_emergency_20261102();
+DROP FUNCTION public.slunovrat_legacy_push_emergency_20261102();
 DROP POLICY slunovrat_news_emergency_20261102 ON public.news;
 NOTIFY pgrst, 'reload schema';
