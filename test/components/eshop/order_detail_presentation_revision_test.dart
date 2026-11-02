@@ -6,6 +6,12 @@ import 'package:fstapp/components/single_data_grid/single_data_grid_header.dart'
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/components/eshop/views/inline_order_field.dart';
+import 'package:fstapp/components/eshop/views/order_payment_summary.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +33,32 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 void main() {
   WidgetEnvironmentFixture.register();
 
+  setUpAll(() async {
+    if (Platform.environment['FESTAPP_ORDER_DETAIL_CAPTURE_DIR'] == null)
+      return;
+    await (FontLoader('Futura')
+          ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'))
+          ..addFont(rootBundle.load('fonts/Futura PT Medium.ttf')))
+        .load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
+  Future<void> capture(WidgetTester tester, String name) async {
+    final directory = Platform.environment['FESTAPP_ORDER_DETAIL_CAPTURE_DIR'];
+    if (directory == null) return;
+    await tester.runAsync(() async {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('order-detail-capture')),
+      );
+      final image = await boundary.toImage(pixelRatio: 1);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      Directory(directory).createSync(recursive: true);
+      File('$directory/$name.png').writeAsBytesSync(data!.buffer.asUint8List());
+      image.dispose();
+    });
+  }
+
   Future<void> open(
     WidgetTester tester, {
     required String language,
@@ -39,6 +71,15 @@ void main() {
     String tab = 'overview',
     bool writable = false,
     bool canCancel = false,
+    bool canNote = false,
+    bool branded = false,
+    double textScale = 1,
+    Map<String, dynamic> contactData = const {},
+    num price = 400,
+    String orderSymbol = 'ORD-42',
+    int formCount = 1,
+    Map<String, dynamic>? paymentOverride,
+    List<Map<String, dynamic>>? productsOverride,
     String? customerNote,
     String ticketState = 'ordered',
     String orderState = 'ordered',
@@ -70,23 +111,27 @@ void main() {
               'id': 42,
               'occasion': 71,
               'form_id': 88,
-              'order_symbol': 'ORD-42',
+              'order_symbol': orderSymbol,
               'state': orderState,
-              'price': 400,
+              'price': price,
               'currency_code': 'CZK',
-              'allowedActions': [if (writable) 'edit', if (canCancel) 'cancel'],
+              'allowedActions': [
+                if (writable) 'edit',
+                if (canCancel) 'cancel',
+                if (canNote) 'note',
+              ],
               'data': {
                 'name': 'Alex',
                 'email': 'alex@example.com',
                 if (customerNote != null) 'note': customerNote,
+                ...contactData,
               },
             },
+            'form': {'id': 88, 'title': 'Přihláška na ples'},
             'capabilities': {'write': writable},
-            'payment': {
-              'status': 'known',
-              'received': 0,
-              'totalOutstanding': 400,
-            },
+            'payment':
+                paymentOverride ??
+                {'status': 'known', 'received': 0, 'totalOutstanding': price},
             'emailSummary': <String, dynamic>{},
             'answers': answers,
             'fields': [
@@ -107,10 +152,20 @@ void main() {
                       : null,
                   'state': ticketState,
                   'snapshot': {
-                    'products': [
-                      {'id': 501, 'title': 'Historical supper', 'price': 125},
-                      {'id': 501, 'title': 'Historical supper', 'price': 275},
-                    ],
+                    'products':
+                        productsOverride ??
+                        [
+                          {
+                            'id': 501,
+                            'title': 'Historical supper',
+                            'price': 125,
+                          },
+                          {
+                            'id': 501,
+                            'title': 'Historical supper',
+                            'price': 275,
+                          },
+                        ],
                   },
                 },
             ],
@@ -138,22 +193,319 @@ void main() {
       tester,
       MaterialApp(
         themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-        darkTheme: ThemeData.dark(),
-        builder: DependencyMaterialBridge.builder,
+        theme: branded ? ThemeConfig.theme(brightness: Brightness.light) : null,
+        darkTheme: branded
+            ? ThemeConfig.theme(brightness: Brightness.dark)
+            : ThemeData.dark(),
+        builder: (context, child) => DependencyMaterialBridge.builder(
+          context,
+          MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
+        ),
         home: Scaffold(
-          body: OrderDetailView(
-            controller: controller,
-            tab: tab,
-            onTab: (_) {},
-            onClose: () async => onClose?.call(),
-            onChanged: () async {},
-            onPrevious: () {},
-            onNext: () {},
+          body: RepaintBoundary(
+            key: const ValueKey('order-detail-capture'),
+            child: OrderDetailView(
+              controller: controller,
+              formCount: formCount,
+              tab: tab,
+              onTab: (_) {},
+              onClose: () async => onClose?.call(),
+              onChanged: () async {},
+              onPrevious: () {},
+              onNext: () {},
+            ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'absent name and additional questions do not create empty overview sections',
+    (tester) async {
+      await open(
+        tester,
+        language: 'cs',
+        contactData: {'name': '', 'surname': ''},
+      );
+      expect(find.text('Údaje z formuláře'), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is SelectableText && (widget.data ?? '').trim().isEmpty,
+        ),
+        findsNothing,
+      );
+      expect(find.text('alex@example.com'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final field in <Map<String, dynamic>?>[
+    null,
+    {'id': 77, 'type': 'phone', 'title': 'Telefon', 'is_ticket_field': true},
+    {'id': 77, 'type': 'phone', 'title': 'Telefon', 'is_hidden': true},
+    {'id': 77, 'type': 'phone', 'title': 'Telefon'},
+  ]) {
+    testWidgets('phone summary follows offered form metadata: $field', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        language: 'cs',
+        contactData: {'phone': '+420 777 000 099'},
+        extraFields: [if (field != null) field],
+      );
+      final offered =
+          field != null &&
+          field['is_ticket_field'] != true &&
+          field['is_hidden'] != true;
+      final summary = find.byKey(const ValueKey('contact-phone-summary'));
+      expect(summary, offered ? findsOneWidget : findsNothing);
+      if (offered)
+        expect(
+          find.descendant(of: summary, matching: find.text('+420 777 000 099')),
+          findsOneWidget,
+        );
+      expect(tester.takeException(), isNull);
+    });
+  }
+  for (final cleared in [null, '']) {
+    testWidgets(
+      'explicit cleared phone stays empty despite legacy canonical value: $cleared',
+      (tester) async {
+        await open(
+          tester,
+          language: 'cs',
+          contactData: {'phone': '+420 777 000 099'},
+          extraFields: [
+            {'id': 77, 'type': 'phone', 'title': 'Telefon'},
+          ],
+          answers: [
+            {'77': cleared},
+          ],
+        );
+        final summary = find.byKey(const ValueKey('contact-phone-summary'));
+        expect(
+          find.descendant(of: summary, matching: find.text('Nevyplněno')),
+          findsOneWidget,
+        );
+        expect(find.text('+420 777 000 099'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+  testWidgets(
+    'all remaining configured answers and source form survive contact promotion',
+    (tester) async {
+      await open(
+        tester,
+        language: 'cs',
+        formCount: 2,
+        contactData: {'phone': '+420 777 000 099'},
+        extraFields: [
+          {'id': 77, 'type': 'phone', 'title': 'Telefon na organizátora'},
+          {'id': 78, 'type': 'email', 'title': 'E-mail pro potvrzení'},
+          {'id': 79, 'type': 'name', 'title': 'Křestní jméno'},
+          {'id': 80, 'type': 'surname', 'title': 'Příjmení účastníka'},
+          {'id': 81, 'type': 'text', 'title': 'Další požadavek'},
+          {
+            'id': 82,
+            'type': 'text',
+            'title': 'Interní odpověď',
+            'is_hidden': true,
+          },
+        ],
+        answers: [
+          {'77': '+420 777 000 099'},
+          {'78': 'alex@example.com'},
+          {'79': 'Alex'},
+          {'80': 'Novotný'},
+          {'81': 'Příchod v 18 hodin'},
+          {'82': 'Domluveno s pořadatelem'},
+        ],
+      );
+      for (final title in [
+        'Telefon na organizátora',
+        'E-mail pro potvrzení',
+        'Křestní jméno',
+        'Příjmení účastníka',
+        'Další požadavek',
+      ]) {
+        expect(find.text(title), findsOneWidget);
+      }
+      expect(find.textContaining('Interní odpověď'), findsOneWidget);
+      expect(find.text('Domluveno s pořadatelem'), findsOneWidget);
+      expect(find.textContaining('Přihláška na ples'), findsOneWidget);
+      final answers = tester.widget<ExpansionTile>(
+        find.byKey(const PageStorageKey(('order-answers', 42))),
+      );
+      expect(answers.initiallyExpanded, isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'offered phone has one canonical draft and global discard owner',
+    (tester) async {
+      await open(
+        tester,
+        language: 'cs',
+        writable: true,
+        contactData: {'phone': '+420 777 000 099'},
+        extraFields: [
+          {'id': 77, 'type': 'phone', 'title': 'Telefon na organizátora'},
+        ],
+      );
+      final controller = tester
+          .widget<OrderDetailView>(find.byType(OrderDetailView))
+          .controller;
+      await tester.tap(
+        find.byTooltip('${CommonStrings.edit}: Telefon na organizátora'),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '+420 777 000 099',
+      );
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).keyboardType,
+        TextInputType.phone,
+      );
+      await tester.enterText(find.byType(TextField), '+420 777 000 100');
+      await tester.pump();
+      expect(controller.dirtyInlineDraftCount, 1);
+      expect(controller.dirtyDraftCount, 1);
+      expect(find.text(CommonStrings.saveChanges), findsOneWidget);
+      controller.discardDraft();
+      await tester.pumpAndSettle();
+      expect(controller.dirty, isFalse);
+      expect(find.text('+420 777 000 099'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'contact email preserves a shared pending draft when opening its canonical pencil',
+    (tester) async {
+      await open(
+        tester,
+        language: 'en',
+        writable: true,
+        extraFields: [
+          {'id': 78, 'type': 'email', 'title': 'Contact email'},
+        ],
+      );
+      final controller = tester
+          .widget<OrderDetailView>(find.byType(OrderDetailView))
+          .controller;
+      controller.email.text = 'pending@example.invalid';
+      await tester.pump();
+      expect(find.text('pending@example.invalid'), findsOneWidget);
+      await tester.tap(find.byTooltip('${CommonStrings.edit}: Contact email'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'pending@example.invalid',
+      );
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).keyboardType,
+        TextInputType.emailAddress,
+      );
+      expect(controller.dirtyInlineDraftCount, 0);
+      expect(controller.dirtyDraftCount, 1);
+      controller.discardDraft();
+      await tester.pumpAndSettle();
+      expect(controller.email.text, 'alex@example.com');
+      expect(controller.dirty, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final mobile in [false, true]) {
+    testWidgets(
+      'concept A composition and customer overview action: mobile=$mobile',
+      (tester) async {
+        await open(
+          tester,
+          language: 'cs',
+          branded: true,
+          dark: true,
+          canCancel: true,
+          writable: true,
+          canNote: true,
+          orderState: 'sent',
+          ticketState: 'paid',
+          size: mobile ? const Size(400, 1050) : const Size(760, 1100),
+          textScale: mobile ? 1.6 : 1,
+          orderSymbol: 'AB12CD34EF',
+          contactData: {
+            'name': 'Tomáš',
+            'surname': 'Novotný',
+            'email': 'tomas@example.invalid',
+            'phone': '+420 777 000 099',
+          },
+          extraFields: [
+            {'id': 101, 'type': 'text', 'title': 'Další požadavek'},
+          ],
+          answers: [
+            {'101': 'Přijdeme po 18. hodině.'},
+          ],
+          price: 450,
+          productsOverride: [
+            {'id': 501, 'title': 'Místo', 'price': 450},
+          ],
+          paymentOverride: {
+            'status': 'fully_paid',
+            'received': 450,
+            'returned': 0,
+            'dueNow': 0,
+            'totalOutstanding': 0,
+          },
+        );
+        expect(find.text('Kontakt zákazníka'), findsNothing);
+        expect(find.text('Podrobnosti platby'), findsNothing);
+        expect(find.text('Zobrazit e-maily'), findsNothing);
+        expect(find.text('Vstupenky a místa'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('contact-phone-summary')),
+          findsNothing,
+        );
+        expect(
+          tester.getTopLeft(find.byType(OrderPaymentSummary)).dy,
+          lessThan(tester.getTopLeft(find.text('Tomáš Novotný')).dy),
+        );
+        final customer = find.byTooltip('Zákaznický přehled');
+        expect(customer, findsOneWidget);
+        expect(tester.getSize(customer).width, greaterThanOrEqualTo(44));
+        expect(tester.getSize(customer).height, greaterThanOrEqualTo(44));
+        if (!mobile) {
+          expect(
+            (tester.getCenter(find.text('Odesláno')).dy -
+                    tester.getCenter(find.text('Stornovat objednávku')).dy)
+                .abs(),
+            lessThan(8),
+          );
+        }
+        final note = find.descendant(
+          of: find.byKey(const ValueKey(('hidden-note', 42))),
+          matching: find.byType(TextField),
+        );
+        expect(note, findsOneWidget);
+        expect(
+          tester.widget<TextField>(note).decoration!.border,
+          isA<UnderlineInputBorder>(),
+        );
+        expect(tester.takeException(), isNull);
+        await capture(
+          tester,
+          mobile ? 'native-a-mobile-large-text' : 'native-a-desktop',
+        );
+      },
+    );
   }
 
   for (final dark in [false, true]) {
@@ -280,7 +632,7 @@ void main() {
       expect((rows[1].trailing as Text).data, contains('275'));
       expect(find.text('Application 100'), findsNothing);
       expect(find.text('Edit products'), findsOneWidget);
-      expect(find.text('Applications and places'), findsNWidgets(2));
+      expect(find.text('Applications and places'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -297,6 +649,10 @@ void main() {
       );
       expect(find.text('Application 100'), findsOneWidget);
       expect(find.text('Application 101'), findsOneWidget);
+      expect(find.text('Historical supper'), findsNWidgets(2));
+      await tester.ensureVisible(find.text('Application 101'));
+      await tester.tap(find.text('Application 101'));
+      await tester.pumpAndSettle();
       expect(find.text('Historical supper'), findsNWidgets(4));
       expect(find.text('2 applications · 0 assigned places'), findsOneWidget);
       expect(find.text('Edit products'), findsNothing);

@@ -19,8 +19,10 @@ class InlineOrderField extends StatefulWidget {
     this.multiline = false,
     this.alwaysEditable = false,
     this.textController,
+    this.keyboardType,
   });
   final String label, value, displayValue;
+  final TextInputType? keyboardType;
   final OrderDetailController? controller;
   final bool Function()? canEdit;
   final Future<void> Function(String value, dynamic expectedFields)? onSave;
@@ -147,7 +149,12 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
 
   Widget _value() {
     if (!_editing || (widget.alwaysEditable && !_allowed)) {
-      return SelectableText(widget.displayValue);
+      final display = widget.textController == null
+          ? widget.displayValue
+          : _text.text.isEmpty
+          ? OrderDetailStrings.text('udaj_nebyl_uveden')
+          : _text.text;
+      return SelectableText(display);
     }
     if (widget.choices case final choices?) {
       return DropdownButtonFormField<String>(
@@ -155,7 +162,8 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
         isExpanded: true,
         decoration: InputDecoration(
           isDense: true,
-          border: const OutlineInputBorder(),
+          border: const UnderlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(vertical: 6),
           semanticCounterText: widget.label,
         ),
         items: [
@@ -171,13 +179,18 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
       label: widget.label,
       child: TextField(
         controller: _text,
+        keyboardType: widget.keyboardType,
         autofocus: !widget.alwaysEditable,
         readOnly: _busy || !_allowed,
         minLines: 1,
         maxLines: widget.multiline ? null : 1,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           isDense: true,
-          border: OutlineInputBorder(),
+          border: const UnderlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(vertical: 6),
+          hintText: widget.alwaysEditable && widget.value.isEmpty
+              ? widget.displayValue
+              : null,
         ),
       ),
     );
@@ -198,7 +211,9 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
                 children: [
                   Text(
                     widget.label,
-                    style: Theme.of(context).textTheme.labelLarge,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   _value(),
