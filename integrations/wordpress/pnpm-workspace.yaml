@@ -2,3 +2,9 @@ packages: []
 allowBuilds:
   fs-ext-extra-prebuilt: true
 minimumReleaseAge: 0
+
+# @wordpress/env 12 still pins old glob/qs ranges through rimraf and express.
+# Both callers use APIs retained by these patched versions; see dependency smoke test.
+overrides:
+  "rimraf@5.0.10>glob": "^14.0.3"
+  "express@4.22.2>qs": "^6.16.1"
