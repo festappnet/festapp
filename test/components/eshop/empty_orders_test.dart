@@ -455,6 +455,11 @@ void main() {
     String path = '/empty',
     RootStackRouter? externalRouter,
   }) async {
+    // Keep MediaQuery and layout constraints on the same desktop viewport.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1500, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.binding.setSurfaceSize(const Size(1500, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final router = externalRouter ?? _Router();
