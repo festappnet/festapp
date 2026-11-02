@@ -954,7 +954,7 @@ class _OrdersContentState extends State<OrdersContent> {
                       tab: tab,
                       replace: true,
                     ),
-                    onOpenPlan: (blueprintId, nodeId) async {
+                    onOpenPlan: (blueprintId, nodeIds) async {
                       if (!await _allowDetailLeave() ||
                           !mounted ||
                           occasionLink == null)
@@ -968,7 +968,12 @@ class _OrdersContentState extends State<OrdersContent> {
                         ],
                         queryParameters: {
                           'blueprintId': '$blueprintId',
-                          'blueprintNodeId': nodeId,
+                          if (nodeIds.length == 1)
+                            'blueprintNodeId': nodeIds.single
+                          else if (nodeIds.isNotEmpty)
+                            'blueprintNodeIds': (nodeIds.toList()..sort()).join(
+                              ',',
+                            ),
                         },
                       );
                       await pushRootPath(context.router.root, uri.toString());

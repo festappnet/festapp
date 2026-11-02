@@ -18,6 +18,8 @@ class OrderAdminDetail {
       'waitlistSummary': json['waitlistSummary'],
   });
   Map<String, dynamic> get payment => detailMap(json['payment']);
+  Map<String, dynamic> get bankPaymentDetails =>
+      detailMap(json['bankPaymentDetails']);
   Map<String, dynamic> get emailSummary => detailMap(json['emailSummary']);
   List<Map<String, dynamic>> get tickets => detailRows(json['tickets']);
   List<Map<String, dynamic>> get places => detailRows(json['places']);

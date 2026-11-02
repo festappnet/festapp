@@ -169,6 +169,7 @@ void main() {
   var bellEntry = false;
   var detailNavigation = false;
   var overduePayment = false;
+  var bankDetails = false;
   Map<String, dynamic>? groupRequest;
   setUp(() {
     final previous = RightsService.occasionLinkModelNotifier.value;
@@ -291,6 +292,13 @@ void main() {
                   'data': {'email': 'customer@example.invalid'},
                 },
                 'capabilities': {'write': false},
+                if (bankDetails)
+                  'bankPaymentDetails': {
+                    'account': '19-2000145399/0800',
+                    'iban': 'CZ6508000000192000145399',
+                    'referenceKind': 'VS',
+                    'reference': '270104',
+                  },
                 'payment': overduePayment
                     ? {
                         'status': 'unpaid',
@@ -559,6 +567,60 @@ void main() {
         tester.getTopLeft(find.text('Po splatnosti')).dy,
         lessThan(tester.getTopLeft(find.byType(OrderPaymentsContent)).dy),
       );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'whole-order plan navigation carries every selected place to the main editor',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+      });
+      final router = _Router();
+      await showOrders(
+        tester,
+        path: '/empty?orderId=4',
+        externalRouter: router,
+      );
+      tester.widget<OrderDetailView>(find.byType(OrderDetailView)).onOpenPlan!(
+        81,
+        {'seat-b', 'seat-a'},
+      );
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(router.urlState.uri.path, '/empty/reservations/blueprint');
+      expect(router.urlState.uri.queryParameters, {
+        'blueprintId': '81',
+        'blueprintNodeIds': 'seat-a,seat-b',
+      });
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'payment destination is separate from transactions and reference appears once',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      bankDetails = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+        bankDetails = false;
+      });
+      await showOrders(tester, path: '/empty?orderId=4&orderTab=payments');
+      await tester.pumpAndSettle();
+      expect(find.text('Platební údaje'), findsOneWidget);
+      expect(find.text('19-2000145399/0800'), findsOneWidget);
+      expect(find.text('270104'), findsOneWidget);
+      expect(find.byType(OrderPaymentsContent), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

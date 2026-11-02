@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../order_detail_strings.dart';
 import '../orders_strings.dart';
 
-import 'package:fstapp/widgets/info_tooltip_button.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_status_help.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:file_saver/file_saver.dart';
@@ -40,6 +40,7 @@ import 'waitlist_order_detail.dart';
 import 'order_places_view.dart';
 import 'inline_order_field.dart';
 import 'order_payment_summary.dart';
+import 'order_customer_payment_details.dart';
 
 import 'package:collection/collection.dart';
 
@@ -98,7 +99,7 @@ class OrderDetailView extends StatefulWidget {
   final int? ticketId;
   final ValueChanged<int?>? onTicket;
   final VoidCallback? onReveal;
-  final void Function(int blueprintId, String nodeId)? onOpenPlan;
+  final void Function(int blueprintId, Set<String> nodeIds)? onOpenPlan;
   @override
   State<OrderDetailView> createState() => _OrderDetailViewState();
 }
@@ -375,8 +376,23 @@ class _OrderDetailViewState extends State<OrderDetailView>
     ),
   );
 
-  String get _contentsCount =>
-      '${OrderDetailStrings.count(_issuesTickets ? 'tickets_count' : 'applications_count', d.tickets.length)} · ${OrderDetailStrings.count('places_count', d.places.where((p) => p['active'] == true && p['standing'] != true).map((p) => '${p['blueprintId']}:${p['spotId']}').toSet().length)}';
+  String get _contentsCount {
+    final entries = OrderDetailStrings.count(
+      _issuesTickets ? 'tickets_count' : 'applications_count',
+      d.tickets.length,
+    );
+    // Capacity admissions do not imply an assigned seat on a floor plan.
+    final hasSeatPlan =
+        d.plans.isNotEmpty ||
+        d.places.any((place) => place['blueprintId'] != null);
+    if (!hasSeatPlan) return entries;
+    final seats = d.places
+        .where((place) => place['active'] == true && place['standing'] != true)
+        .map((place) => '${place['blueprintId']}:${place['spotId']}')
+        .toSet()
+        .length;
+    return '$entries · ${OrderDetailStrings.count('places_count', seats)}';
+  }
 
   Widget _orderedProducts(Map<String, dynamic> ticket) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,6 +929,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       OrderPaymentOverdueNotice(
+        showDetails: d.bankPaymentDetails.isEmpty,
         payment: d.payment,
         currencyCode: d.order['currency_code'] ?? 'CZK',
         isCard: d.order['payment_method'] == 'stripe',
@@ -921,7 +938,13 @@ class _OrderDetailViewState extends State<OrderDetailView>
         CardPaymentStatus(payment: d.payment, onRefresh: () => c.load()),
       if (d.payment['status'] == 'unknown')
         Text(OrderDetailStrings.text('platebni_stav_nelze_spolehlive_urcit')),
+      OrderCustomerPaymentDetails(
+        details: d.bankPaymentDetails,
+        payment: d.payment,
+        currencyCode: d.order['currency_code'] ?? 'CZK',
+      ),
       OrderPaymentsContent(
+        showPaymentReference: d.bankPaymentDetails['reference'] == null,
         key: ValueKey('payments-$_revision'),
         orderId: c.orderId,
         orderSymbol: d.model.orderSymbol,
@@ -950,11 +973,12 @@ class _OrderDetailViewState extends State<OrderDetailView>
       ),
       Row(
         children: [
-          InfoTooltipButton(
-            semanticLabel: OrderDetailStrings.text(
-              'vyznam_stavu_a_diagnostiky',
-            ),
+          EmailDeliveryStatusHelp(
+            label: OrderDetailStrings.text('vyznam_stavu_a_diagnostiky'),
             message: OrderDetailStrings.text('email_status_help'),
+            note: OrderDetailStrings.text(
+              'doruceni_postovnimu_serveru_neoveruje_totoznost_ani_precteni_otevreni_a_kliknuti_mohou_vzniknout_automaticky',
+            ),
           ),
           Flexible(
             child: Text(
@@ -1138,7 +1162,9 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                   context,
                                   futureFunction: () => _more('overview'),
                                 ),
-                          icon: const Icon(Icons.open_in_new, size: 20),
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.center,
+                          icon: const Icon(Icons.open_in_new, size: 16),
                         );
                         final closeAction = IconButton(
                           constraints: const BoxConstraints(

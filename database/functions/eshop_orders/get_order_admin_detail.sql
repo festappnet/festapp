@@ -70,6 +70,16 @@ BEGIN
    'payment_method',(SELECT payment_method FROM eshop.payment_info WHERE id=o.payment_info)),
   'capabilities',jsonb_build_object('write',coalesce(public.can_write_orders(o.occasion),false),'allowedActions',actions),
   'payment',public.customer_order_payment_internal(o.id)-'transactions',
+  -- Authorized admin metadata stays readable after payment. Never issue or
+  -- regenerate instructions as a side effect of viewing an order.
+  'bankPaymentDetails',(SELECT jsonb_build_object(
+    'account',coalesce(b.account_number_human_readable,b.account_number),
+    'iban',b.account_number,'creditorName',b.creditor_name,
+    'referenceKind',CASE WHEN o.currency_code='EUR' THEN 'RF' ELSE 'VS' END,
+    'reference',CASE WHEN o.currency_code='EUR' THEN pi.creditor_reference ELSE pi.variable_symbol::text END)
+    FROM eshop.payment_info pi JOIN eshop.bank_accounts b ON b.id=pi.bank_account
+    WHERE pi.id=o.payment_info AND pi.payment_method='bank'
+      AND pi.currency_code=o.currency_code),
   'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL THEN public.get_waitlist_summary_internal(o.id) END,
   'tickets',tickets,'places',places,'placesComplete',true,'plans',plans,
   'placementFingerprint',md5(jsonb_build_object('order',o.id,'state',o.state,'form',o.form,'transition',tr,'places',places,'tickets',tickets)::text),

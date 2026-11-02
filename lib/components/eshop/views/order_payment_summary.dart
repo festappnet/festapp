@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../services/locale_date_time.dart';
+import '../../../services/payment_deadline.dart';
 import '../../../services/utilities_all.dart';
 import '../../../theme_config.dart';
 import '../../forms/card_payment_strings.dart';
@@ -164,7 +164,7 @@ class OrderPaymentSummary extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
-                    '${entry.value == 'payment_deadline' ? OrderOverviewStrings.text('dueAt') : OrderDetailStrings.text(entry.value)}: ${LocaleDateTime.instant(payment[entry.key], Localizations.localeOf(context).toString())}',
+                    '${entry.value == 'payment_deadline' ? OrderOverviewStrings.text('dueAt') : OrderDetailStrings.text(entry.value)}: ${PaymentDeadline.format(payment[entry.key], Localizations.localeOf(context).toString())}',
                   ),
                 ),
         ],
@@ -215,7 +215,7 @@ class OrderPaymentOverdueNotice extends StatelessWidget {
       if (outstanding != null && outstanding > 0 && outstanding != due)
         '${OrderDetailStrings.text('zbyva_k_uhrade')}: ${money(outstanding)}',
       if (payment['dueAt'] != null)
-        '${OrderOverviewStrings.text('dueAt')}: ${LocaleDateTime.instant(payment['dueAt'], Localizations.localeOf(context).toString())}',
+        '${OrderOverviewStrings.text('dueAt')}: ${PaymentDeadline.format(payment['dueAt'], Localizations.localeOf(context).toString())}',
     ];
     return Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 12),

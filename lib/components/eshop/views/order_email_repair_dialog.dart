@@ -473,7 +473,15 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
                       ),
                     ),
                   )
-                else if (!addressProblem)
+                else if (!addressProblem &&
+                    !complaint &&
+                    recipientIssues.any(
+                      (issue) =>
+                          (issue.isFailure || issue.uncertain) &&
+                          issue.data['obsolete'] != true &&
+                          issue.data['resolution'] != 'cancelled' &&
+                          issue.data['resolution'] != 'waiting_repair',
+                    ))
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(

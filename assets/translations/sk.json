@@ -2772,6 +2772,7 @@
     "UNKNOWN": "Operáciu sa nepodarilo dokončiť. Obnovte aktuálne údaje."
   },
   "OrderDetail": {
+    "open_order_plan": "Otvoriť plán s miestami objednávky",
     "form_field": "Údaj z formulára",
     "selected_entry": "Zobrazená položka",
     "email_status_help": "Stav objednávky, platba a e-mail sú oddelené údaje. Prijaté znamená prevzatie odosielacou službou; doručené znamená prijatie poštovým serverom. Otvorenia a kliknutia nepotvrdzujú prečítanie. Opakovanie znamená ďalší pokus; neznámy stav nepotvrdzuje odoslanie. Podrobnosti správy uvádzajú dôvod a dostupnú opravu.",
