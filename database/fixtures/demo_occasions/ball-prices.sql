@@ -48,14 +48,13 @@ BEGIN
  END IF;
  CREATE TEMP TABLE demo_ball_seat_patch ON COMMIT DROP AS
  SELECT s.id,s.title old_title,r->>'title' title,
-  CASE WHEN (r->>'group')::int BETWEEN 1 AND 5 THEN premium ELSE standard END product,
-  CASE WHEN (r->>'group')::int BETWEEN 1 AND 5 THEN 650 ELSE 450 END price,
-  CASE WHEN (r->>'group')::int BETWEEN 1 AND 5 THEN 'Vstupné - stoly 1-5' ELSE 'Základní vstupné' END product_title
- FROM eshop.blueprints b CROSS JOIN LATERAL jsonb_array_elements(b.objects) ob
- JOIN eshop.spots s ON s.id=(ob->>'id')::bigint AND s.blueprint=b.id
- CROSS JOIN pg_temp.demo_reference_blueprint ref CROSS JOIN LATERAL jsonb_array_elements(ref.content->'objects') r
- WHERE b.id=v_blueprint AND ob->>'type'='spot'
-  AND r->'x'=ob->'x' AND r->'y'=ob->'y' AND r->'group'=ob->'group';
+  CASE WHEN (r->>'referenceGroup')::int BETWEEN 1 AND 5 THEN premium ELSE standard END product,
+  CASE WHEN (r->>'referenceGroup')::int BETWEEN 1 AND 5 THEN 650 ELSE 450 END price,
+  CASE WHEN (r->>'referenceGroup')::int BETWEEN 1 AND 5 THEN 'Vstupné - stoly 1-5' ELSE 'Základní vstupné' END product_title
+ FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
+ CROSS JOIN pg_temp.demo_reference_blueprint ref
+ CROSS JOIN LATERAL jsonb_array_elements(ref.content->'seatBindings') r
+ WHERE sb.blueprint=v_blueprint AND s.blueprint=v_blueprint AND r->>'title'=s.title;
  IF (SELECT count(*) FROM pg_temp.demo_ball_seat_patch)<>249
  OR (SELECT count(DISTINCT id) FROM pg_temp.demo_ball_seat_patch)<>249
  OR (SELECT count(DISTINCT title) FROM pg_temp.demo_ball_seat_patch)<>249
@@ -63,9 +62,15 @@ BEGIN
   RAISE EXCEPTION 'Ball layout differs from the reviewed Scout reference';
  END IF;
  UPDATE eshop.spots s SET title=m.title,product=m.product FROM pg_temp.demo_ball_seat_patch m WHERE s.id=m.id;
- UPDATE eshop.blueprints b SET objects=(SELECT jsonb_agg(ob||jsonb_build_object('title',m.title) ORDER BY n)
-  FROM jsonb_array_elements(b.objects) WITH ORDINALITY a(ob,n) JOIN pg_temp.demo_ball_seat_patch m ON m.id=(ob->>'id')::bigint)
-  WHERE b.id=v_blueprint;
+ UPDATE eshop.blueprints b SET layout=jsonb_set(layout,'{nodes}',
+  (SELECT jsonb_agg(CASE WHEN n->>'kind'='seat' THEN jsonb_set(n,'{label}',to_jsonb(m.title)) ELSE n END ORDER BY ordinal)
+   FROM jsonb_array_elements(b.layout->'nodes') WITH ORDINALITY a(n,ordinal)
+   LEFT JOIN eshop.blueprint_seat_bindings sb ON sb.blueprint=b.id AND sb.node_id::text=n->>'id'
+   LEFT JOIN pg_temp.demo_ball_seat_patch m ON m.id=sb.spot)) WHERE b.id=v_blueprint;
+ UPDATE eshop.blueprint_group_products gp SET product=(SELECT min(s.product)
+   FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
+   WHERE sb.blueprint=gp.blueprint AND sb.group_node=gp.group_node)
+ WHERE gp.blueprint=v_blueprint;
  UPDATE eshop.order_product_ticket x SET product=s.product FROM eshop.spots s WHERE s.blueprint=v_blueprint AND s.order_product_ticket=x.id;
  UPDATE public.forms SET header='<p>Vyberte si místo v plánku sálu. Stoly 1-5: 650 Kč, ostatní stoly: 450 Kč. Všechny uvedené údaje jsou fiktivní.</p>' WHERE occasion=ball;
  UPDATE public.form_fields SET title='Vstupenka' WHERE form IN(SELECT id FROM public.forms WHERE occasion=ball) AND type='ticket';

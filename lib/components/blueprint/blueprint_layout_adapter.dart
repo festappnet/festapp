@@ -1,10 +1,12 @@
 import 'package:venue_seat_picker/venue_seat_picker.dart';
+
 import 'blueprint_seat.dart';
+
 import 'package:festapp_core/eshop.dart';
+
 import 'blueprint_layout_contract.dart';
 import 'blueprint_model.dart';
 import 'blueprint_object_model.dart';
-import 'blueprint_seat_state.dart';
 
 /// Commercial projections are refreshed independently of document/history.
 class BlueprintLayoutAdapter {
@@ -14,27 +16,31 @@ class BlueprintLayoutAdapter {
 
   /// Compatibility slots for the form payload; positions never render V2 geometry.
   BlueprintSeat seatSlot(
-          BlueprintModel source, BlueprintSeatBinding binding, int index) =>
-      BlueprintSeat(
-          position: SeatPosition(0, index),
-          size: 0,
-          seatId: binding.spotId,
-          label: binding.title,
-          seat: BlueprintObjectModel(
-              id: binding.spotId,
-              title: binding.title,
-              spotProduct: binding.productId,
-              product: product(binding),
-              blueprint: source))
-        ..isSelected = true;
+    BlueprintModel source,
+    BlueprintSeatBinding binding,
+    int index,
+  ) => BlueprintSeat(
+    position: SeatPosition(0, index),
+    size: 0,
+    seatId: binding.spotId,
+    label: binding.title,
+    seat: BlueprintObjectModel(
+      id: binding.spotId,
+      title: binding.title,
+      spotProduct: binding.productId,
+      product: product(binding),
+      blueprint: source,
+    ),
+  )..isSelected = true;
 
   List<BlueprintSeat> selectedSeats(BlueprintModel source) {
-    final bindings = source.layoutSnapshot?.seatBindings.values.toList() ??
+    final bindings =
+        source.layoutSnapshot?.seatBindings.values.toList() ??
         const <BlueprintSeatBinding>[];
     return [
       for (var index = 0; index < bindings.length; index++)
         if (state(bindings[index]) == BlueprintSeatState.selectedByMe)
-          seatSlot(source, bindings[index], index)
+          seatSlot(source, bindings[index], index),
     ];
   }
 
@@ -45,11 +51,11 @@ class BlueprintLayoutAdapter {
     areaAvailability = Map.from(source.areaAvailability);
     products = {
       for (final p in source.products ?? <ProductModel>[])
-        if (p.id != null) p.id!: p
+        if (p.id != null) p.id!: p,
     };
     spots = {
       for (final s in source.spots ?? <BlueprintObjectModel>[])
-        if (s.id != null) s.id!: s
+        if (s.id != null) s.id!: s,
     };
     for (final spot in spots.values) {
       spot.blueprint = source;
@@ -57,37 +63,64 @@ class BlueprintLayoutAdapter {
     }
   }
 
-  BlueprintSeatState state(BlueprintSeatBinding binding) {
-    final live = spots[binding.spotId]?.stateEnum;
+  BlueprintSeatState state(BlueprintSeatBinding binding) => _resolveState(
+    spots[binding.spotId]?.stateEnum,
+    blocked: binding.blocked,
+    hasProduct: binding.productId != null && product(binding) != null,
+  );
+
+  /// Shared lifecycle precedence for the main editor and read-only previews.
+  static BlueprintSeatState _resolveState(
+    BlueprintSeatState? live, {
+    required bool blocked,
+    required bool hasProduct,
+  }) {
     if (const {
       BlueprintSeatState.selected,
       BlueprintSeatState.selectedByMe,
       BlueprintSeatState.ordered,
-      BlueprintSeatState.used
+      BlueprintSeatState.used,
     }.contains(live)) {
       return live!;
     }
-    if (binding.blocked || live == BlueprintSeatState.blocked) {
+    if (blocked || live == BlueprintSeatState.blocked) {
       return BlueprintSeatState.blocked;
     }
-    if (binding.productId == null || product(binding) == null) {
-      return BlueprintSeatState.empty;
-    }
+    if (!hasProduct) return BlueprintSeatState.empty;
     return live ?? BlueprintSeatState.available;
   }
 
+  /// Minimal server seat facts contain no customer, order, or hold secrets.
+  static Map<String, dynamic> readonlySeatPresentation(
+    Map<String, dynamic> facts,
+  ) {
+    if (!BlueprintObjectModel.statesMap.values.contains(facts['state'])) {
+      throw const FormatException('Invalid seat lifecycle');
+    }
+    final live = BlueprintObjectModel.fromJson({'state': facts['state']})
+        .stateEnum;
+    return _presentationForState(
+      _resolveState(
+        live,
+        blocked: facts['blocked'] == true,
+        hasProduct: facts['hasProduct'] == true,
+      ),
+      label: facts['title']?.toString() ?? '',
+    );
+  }
+
   bool protected(BlueprintSeatBinding binding) => const {
-        BlueprintSeatState.selected,
-        BlueprintSeatState.selectedByMe,
-        BlueprintSeatState.ordered,
-        BlueprintSeatState.used,
-      }.contains(state(binding));
+    BlueprintSeatState.selected,
+    BlueprintSeatState.selectedByMe,
+    BlueprintSeatState.ordered,
+    BlueprintSeatState.used,
+  }.contains(state(binding));
   ProductModel? product(BlueprintSeatBinding binding) =>
       products[binding.productId];
   Set<String> protectedIds(BlueprintLayoutSnapshot snapshot) => {
-        for (final binding in snapshot.seatBindings.values)
-          if (protected(binding)) binding.nodeId,
-      };
+    for (final binding in snapshot.seatBindings.values)
+      if (protected(binding)) binding.nodeId,
+  };
 
   /// Customers only need to know that a blocked seat is unavailable.
   Map<String, dynamic> customerPresentation(BlueprintSeatBinding binding) {
@@ -104,24 +137,36 @@ class BlueprintLayoutAdapter {
   }
 
   /// Public presentation deliberately excludes all order/customer metadata.
-  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) => {
-        'stateMarker':
-            state(binding) == BlueprintSeatState.used ? 'none' : 'auto',
-        'label': binding.title,
-        'fill': blueprintSeatStateFills[state(binding)]!,
-        'status': switch (state(binding)) {
-          BlueprintSeatState.ordered || BlueprintSeatState.used => 'occupied',
-          BlueprintSeatState.selected => 'reserved',
-          BlueprintSeatState.selectedByMe => 'available',
-          BlueprintSeatState.blocked => 'blocked',
-          BlueprintSeatState.empty => 'unavailable',
-          _ => 'available',
-        },
-        'selectable': state(binding) == BlueprintSeatState.selectedByMe ||
-            (state(binding) == BlueprintSeatState.available &&
-                product(binding)?.isAvailable == true),
-        'selected': state(binding) == BlueprintSeatState.selectedByMe,
-        'state': state(binding).name,
-        'productTitle': product(binding)?.title,
-      };
+  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) =>
+      _presentationForState(
+        state(binding),
+        label: binding.title,
+        productTitle: product(binding)?.title,
+        productAvailable: product(binding)?.isAvailable == true,
+      );
+
+  static Map<String, dynamic> _presentationForState(
+    BlueprintSeatState state, {
+    required String label,
+    String? productTitle,
+    bool productAvailable = false,
+  }) => {
+    'stateMarker': state == BlueprintSeatState.used ? 'none' : 'auto',
+    'label': label,
+    'fill': blueprintSeatStateFills[state]!,
+    'status': switch (state) {
+      BlueprintSeatState.ordered || BlueprintSeatState.used => 'occupied',
+      BlueprintSeatState.selected => 'reserved',
+      BlueprintSeatState.selectedByMe => 'available',
+      BlueprintSeatState.blocked => 'blocked',
+      BlueprintSeatState.empty => 'unavailable',
+      _ => 'available',
+    },
+    'selectable':
+        state == BlueprintSeatState.selectedByMe ||
+        (state == BlueprintSeatState.available && productAvailable),
+    'selected': state == BlueprintSeatState.selectedByMe,
+    'state': state.name,
+    'productTitle': productTitle,
+  };
 }

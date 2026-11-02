@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "source": "Authenticated Wix developer portal pricing API response, HTTP 200, and native UI readback",
+  "supersedes": "pricing-20261028.json",
+  "isExternalBilling": true,
+  "businessModel": "DYNAMIC",
+  "isExternalPricing": true,
+  "externalPricingPageUrl": "https://vstupenky.online/#cena",
+  "plan": {
+    "id": "2925d847-3a4d-44cb-b103-0bb9282ed392",
+    "name": "Ticketing service",
+    "customTitle": "Ticket-sales percentage fee",
+    "vendorId": "ticketing-service",
+    "status": "VISIBLE",
+    "benefits": ["Free widget installation", "Rate agreed with organizer", "No separate app subscription", "Checkout stays in vstupenky.online"]
+  },
+  "nativeChecklist": {"blockers": 0, "recommendations": 4, "partnerAgreementChecked": false, "submitDisabled": true},
+  "distribution": {"releasedVersion": "1.1", "versionStatus": "Up-to-date", "profileStatus": "Up-to-date", "lastReleased": "2026-10-28", "releaseButtonEnabled": false, "updateProfileButtonEnabled": false},
+  "scope": "Read-only authenticated portal inspection; no pricing change, agreement acceptance, billing events, native release, or App Market submission. Zero blockers is Wix's checklist, not proof of local release gates.",
+  "browser": "Panerelay background tab in explicitly authorized Chrome; supersedes portal-login-pending-20261101.json"
+}

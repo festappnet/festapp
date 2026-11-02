@@ -14,7 +14,9 @@ class BankAccountStrings {
       'BankAccount.linkedAccountIdentity'.tr();
   static String get detailsSyncPending => 'BankAccount.detailsSyncPending'.tr();
   static String syncError(String? code) =>
-      (code == 'fio_token_invalid_or_inactive'
+      (code == 'fio_invalid_response'
+              ? 'BankAccount.diagnostic.invalidResponse'
+              : code == 'fio_token_invalid_or_inactive'
               ? 'BankAccount.fioTokenInactive'
               : code == 'fio_receiving_account_mismatch'
               ? 'BankAccount.fioAccountMismatch'
@@ -24,6 +26,11 @@ class BankAccountStrings {
               ? 'FeatureOrders.bankSyncWarningReasons.unavailable'
               : 'BankAccount.syncRetryRequired')
           .tr();
+  static String diagnostic(String key) => 'BankAccount.diagnostic.$key'.tr();
+  static String diagnosticStage(String stage) =>
+      'BankAccount.diagnostic.stages.$stage'.tr();
+  static String diagnosticReason(String code) =>
+      'BankAccount.diagnostic.reasons.$code'.tr();
   static String get tokenSavedNeedsAuthorization =>
       'BankAccount.tokenSavedNeedsAuthorization'.tr();
   static String connectionStatus(String state) =>

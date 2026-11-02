@@ -212,6 +212,101 @@ void main() {
     },
   );
 
+  testWidgets(
+    'deleted occasion leaves the route before the unit dashboard reloads',
+    (tester) async {
+      final pending = Completer<void>();
+      final access = UnitAccess()..beforeLoad = (_) => pending.future;
+      Object? navigationError;
+      final router = RootStackRouter.build(
+        routes: [
+          AutoRoute(
+            page: PageInfo(
+              UnitAdminRoute.name,
+              builder: (data) =>
+                  UnitAdminPage(id: data.params.getInt('id'), access: access),
+            ),
+            path: '/unit/:id/edit',
+            children: [
+              AutoRoute(
+                page: PageInfo(
+                  'UnitContent',
+                  builder: (_) => const Text('FRESH UNIT LIST'),
+                ),
+                path: '',
+                initial: true,
+              ),
+            ],
+          ),
+          AutoRoute(
+            page: PageInfo(
+              'DeletedOccasionRoute',
+              builder: (_) => const AutoRouter(),
+            ),
+            path: '/:link/admin',
+            children: [
+              AutoRoute(
+                page: PageInfo(
+                  'DeletedSettingsRoute',
+                  builder: (_) => Builder(
+                    builder: (context) => Scaffold(
+                      body: TextButton(
+                        onPressed: () {
+                          unawaited(
+                            RouterService.replaceWithUnitAdmin(
+                              context,
+                              8,
+                            ).catchError((Object error) {
+                              navigationError = error;
+                            }),
+                          );
+                        },
+                        child: const Text('DELETE COMMITTED'),
+                      ),
+                    ),
+                  ),
+                ),
+                path: 'settings',
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        router.dispose();
+        access.dispose();
+      });
+      await tester.pumpWidget(
+        MaterialApp.router(
+          builder: DependencyMaterialBridge.builder,
+          routerConfig: router.config(
+            deepLinkBuilder: (_) => DeepLink.path('/deleted/admin/settings'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DELETE COMMITTED'));
+      // The destination intentionally waits for its authoritative dashboard.
+      for (var frame = 0; frame < 10; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(navigationError, isNull);
+      expect(router.urlState.uri.path, '/unit/8/edit');
+      expect(access.requests, [8]);
+      expect(find.byType(AdministrationLoadingShell), findsOneWidget);
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('FRESH UNIT LIST'), findsOneWidget);
+      expect(find.text('DELETE COMMITTED'), findsNothing);
+      expect(
+        router.canPop(),
+        isFalse,
+        reason: 'Back must not reopen the deleted occasion',
+      );
+    },
+  );
+
   testWidgets('failed unit context does not repeatedly reload', (tester) async {
     final access = UnitAccess()..unresolved = true;
     final router = RootStackRouter.build(

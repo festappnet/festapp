@@ -118,6 +118,16 @@
     "preview": "cs/embed/01-generated-code"
   },
   {
+    "id": "wix",
+    "category": "integrations",
+    "slug": "wix",
+    "label": "Wix",
+    "preview": "cs/forms/editor",
+    "title": "Jak vložit prodej vstupenek do Wixu",
+    "seoTitle": "Wix: instalace aplikace pro prodej vstupenek",
+    "description": "Nainstalujte vstupenky.online z Wix App Marketu, nastavte odkaz formuláře a ověřte prodej vstupenek na publikovaném webu."
+  },
+  {
     "slug": "wordpress",
     "title": "Prodej vstupenek ve WordPressu",
     "seoTitle": "WordPress: vložení prodeje vstupenek přes HTML",

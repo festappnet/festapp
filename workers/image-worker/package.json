@@ -7,7 +7,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests/unit/ tests/integration/",
     "test:unit": "vitest run tests/unit/",
-    "test:integration": "vitest run tests/integration/"
+    "test:integration": "vitest run tests/integration/",
+    "test:lifecycle": "IMAGE_LIFECYCLE_DATABASE_URL=${IMAGE_LIFECYCLE_DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable} vitest run tests/integration/occasion-lifecycle-runtime.test.ts"
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",
@@ -17,6 +18,8 @@
     "@cloudflare/workers-types": "^5.20261025.1",
     "@types/node": "^25.9.9",
     "@types/pg": "^8.23.1",
+    "esbuild": "0.28.2",
+    "miniflare": "5.20261019.2-beta",
     "pg": "^8.23.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",

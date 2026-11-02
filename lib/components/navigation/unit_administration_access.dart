@@ -44,7 +44,9 @@ class RightsUnitAdministrationAccess implements UnitAdministrationAccess {
   @override
   Future<void> load(int unitId, {required bool force}) async {
     final pending = RightsService.pendingContextUpdate;
-    final joined = pending != null && await pending;
+    // A departing/deleted occasion may fail its in-flight refresh. The new
+    // unit route still needs its own authoritative, permission-checked load.
+    final joined = pending != null && await pending.catchError((_) => false);
     // Reuse the authoritative refresh already in flight for this unit. A
     // different context still needs its own read before the page can use it.
     if (!joined || currentUnit?.id != unitId || hasOccasion) {

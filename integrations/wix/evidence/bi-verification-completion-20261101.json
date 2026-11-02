@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "status": "wix-confirmed-bi-ingestion-pricing-access-granted",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "instanceId": "5ebf65f5-1d62-43a1-a7f6-f04b06f22354",
+  "gmailThreadId": "1a18198a75444077",
+  "zeroEventApproval": {
+    "messageId": "1a1879b92d02928b",
+    "receivedAtUtc": "2026-10-29T12:21:21Z"
+  },
+  "localAttemptReadback": {
+    "command": "node integrations/wix/scripts/qualify-billing-event.mjs inspect",
+    "state": "confirmed",
+    "attemptId": "7876ef54-74a5-49ac-828a-a8e0c82ea910",
+    "httpStatus": 200,
+    "event": {
+      "createdDate": "2026-10-29T14:25:17.034Z",
+      "billingType": "CHARGE",
+      "grossRevenue": "0",
+      "netRevenue": "0",
+      "wixShare": "0",
+      "currency": "USD"
+    }
+  },
+  "sentNotificationMessageId": "1a1880f12cf394c2",
+  "vendorConfirmation": {
+    "messageId": "1a1962120dade694",
+    "receivedAtUtc": "2026-11-01T08:01:55Z",
+    "biIngestionVerified": true,
+    "pricingPlanAccessGranted": true,
+    "requestedNextStep": "Publish the app and notify Erel so Wix can proceed with the next steps."
+  },
+  "boundaries": {
+    "eventSentAgainThisContinuation": false,
+    "normalBillingActivatedThisContinuation": false,
+    "pricingAccessIsNotMarketplacePublication": true,
+    "nativeExternalBillingAndPayoutReadbackStillRequired": true,
+    "qualificationDoesNotProveFeeFxOrShareArithmetic": true
+  },
+  "supersedesPreparationStateIn": [
+    "integrations/wix/evidence/bi-verification-preparation-20261029.json",
+    "integrations/wix/evidence/submission-next-step-20261028.json",
+    "docs/plans/wix-bi-verification-CRITIC-2026-10-29.md"
+  ]
+}

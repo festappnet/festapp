@@ -1,0 +1,37 @@
+{
+  "status": "preview-deployed-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "wix-auth-diagnostic-20261101",
+  "environment": "Preview",
+  "deploymentId": "0e0a9a68-5fbc-4094-8dc5-502080d81100",
+  "deploymentUrl": "https://0e0a9a68.festapp-wix.pages.dev",
+  "branchAliasUrl": "https://wix-auth-diagnostic-20261101.festapp-wix.pages.dev",
+  "sourceAttribution": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+  "diagnosticArtifact": {
+    "privateSourcePath": "integrations/wix/.private/native-auth-diagnostic/dist/widget.js",
+    "widgetSha256": "91085dd358b4a485311482ed5a56255659e4e7f12c25bd0d06486b6b3735b0c3",
+    "filesDeployed": ["widget.js", "_headers"],
+    "purpose": "Official Wix module-level full createClient plus constructor accessTokenListener auth-only probe; no iframe, order, hold, email or billing flow",
+    "responseLogging": "mode, injectionCount, status and contextPresent boolean only; no token or context values"
+  },
+  "readback": {
+    "uniqueAndBranchAlias": "HTTP 200; exact widget hash matched",
+    "contentType": "application/javascript",
+    "cors": "*",
+    "cacheControl": "no-store",
+    "xContentTypeOptions": "nosniff"
+  },
+  "productionStableGuard": {
+    "stableUrl": "https://festapp-wix.pages.dev/widget.js",
+    "sha256Before": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "sha256After": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+    "unchanged": true
+  },
+  "scope": {
+    "previewOnly": true,
+    "productionStableChanged": false,
+    "existingPagesProjectOnly": true
+  }
+}

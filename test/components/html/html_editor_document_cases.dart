@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:fstapp/components/html/html_document_codec.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
@@ -12,6 +14,74 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  final policyCases = jsonDecode(
+    File('shared/html/app-content-cases.json').readAsStringSync(),
+  ) as List;
+  for (final entry in policyCases) {
+    test('canonical saved app HTML: ${entry['name']}', () async {
+      final coordinator = HtmlSaveCoordinator();
+      addTearDown(coordinator.dispose);
+      final saved = await coordinator.prepare(
+        entry['html'] as String,
+        const HtmlMediaOwner.none(),
+      );
+      final root = parser.parseFragment(saved);
+      expect(
+        root.querySelector(entry['selector'] as String)?.text,
+        entry['text'],
+      );
+      if (entry['absent'] != null) {
+        expect(root.querySelector(entry['absent'] as String), isNull);
+      }
+      if (entry['aligned'] != null) {
+        expect(
+          root.querySelector(entry['aligned'] as String)!.attributes['style'],
+          contains('text-align'),
+        );
+      }
+      if (entry['table'] != null) {
+        expect(root.querySelector(entry['table'] as String)?.text, 'Cell');
+      }
+      expect(
+        saved,
+        isNot(
+          matches(RegExp(r'Arial|color:|face=|bgcolor=', caseSensitive: false)),
+        ),
+      );
+      expect(
+        await coordinator.prepare(saved, const HtmlMediaOwner.none()),
+        saved,
+      );
+    });
+  }
+  test('neutral pasted emphasis is canonical only for app content', () {
+    const source =
+        '<b style="font-weight:normal!important"><p>Plain <strong>bold</strong></p></b>'
+        '<i style="font-style:normal">Plain <em>italic</em></i>';
+    final saved = normalizeHtmlContentStyles(
+      source,
+      HtmlContentProfile.appContent,
+    );
+    final root = parser.parseFragment(saved);
+    expect(root.querySelector('b, i'), isNull);
+    expect(root.querySelector('strong')!.text, 'bold');
+    expect(root.querySelector('em')!.text, 'italic');
+    expect(saved, isNot(contains('font-weight')));
+    expect(saved, isNot(contains('font-style')));
+    for (final profile in [
+      HtmlContentProfile.songContent,
+      HtmlContentProfile.emailContent,
+    ]) {
+      expect(normalizeHtmlContentStyles(source, profile), source);
+    }
+    final nested = parser.parseFragment(normalizeHtmlContentStyles(
+      '<strong>Bold <b style="font-weight:normal">ordinary</b></strong>',
+      HtmlContentProfile.appContent,
+    ));
+    expect(nested.querySelector('b'), isNull);
+    expect(nested.querySelector('strong span')!.attributes['style'],
+        contains('font-weight:normal'));
+  });
   test('CSS font emphasis becomes editable semantics on load and save', () async {
     final controller = RichHtmlEditorController(
       initialHtml: '<p style="font:italic bold 18px Arial;color:red">Text</p>',

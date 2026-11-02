@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Candidate script intercepted at registered URL in owned background Chrome/Panerelay and isolated clean local headless Harmony sessions; proof-only safety fences; no native configuration changes or manual token injection.",
+  "candidateSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+  "hiddenChrome": {"visibility": "hidden", "wallTimeAtLeastSeconds": 75, "validFormCloneMode": "Site", "message": "Prodejní formulář se načítá.", "contextPresent": false, "iframePresent": false, "genericErrorPresent": false, "inertClick": "Not executed: Wix image covered target; normal click was rejected."},
+  "visibleHeadless": {"visibility": "visible", "validFormCloneMode": "Site", "optionsStatus": 200, "postStatus": 200, "contextPresent": true, "iframeContextPresent": true, "directLinkContextPresent": true, "servedSha256Verified": true, "manualInjection": false},
+  "separateMissingQaFormPostStatus": 503,
+  "limits": "Hidden test proves it does not prematurely fail in that window; it does not prove callback delivery or successful checkout when the tab later becomes visible. The visible control used a real authenticated proof endpoint with form and order traffic fenced.",
+  "cleanup": "Closed isolated session; removed participant routes and guarded reload of original Harmony page.",
+  "tokensOrContextsRecorded": false
+}

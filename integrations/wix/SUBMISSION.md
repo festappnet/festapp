@@ -1,33 +1,22 @@
 # Wix submission kit - vstupenky.online
 
 Current authoritative state: [execution result](../../docs/plans/wix-partner-billing-RESULT-2026-10-28.md)
-and [verified foundation deployment](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).
-Backend, order-origin support and the public client are deployed. The service-fee
-source and fenced delivery journal are implemented; live billing is disabled.
-A real native SDK token passed production CORS and context issuance, with the
-signature independently validated by SQL. No production order or billing event
-was emitted. The candidate widget has not replaced the stable hosted assets; a
-[separate preview](evidence/hosting-preview-20261028.json) is deployed and verified.
+and [continuation receipt](evidence/continuation-20261101.json). Native external
+billing and BI ingestion are confirmed; normal financial dispatch remains disabled
+until actual settlement/acquisition evidence exists. The owner-signed addendum
+is complete. App Market submission has not been performed.
 
-Erel's [written clarification](evidence/commercial-clarification-20261028.json)
-resolves the service-fee-only basis, organizer-proceeds exclusion, external
-checkout and zero separate fixed publisher fees. The owner has now personally
-signed the sole-trader details and DocuSign confirms all parties completed it.
-The [completion receipt](evidence/addendum-completion-20261028.json) records the
-signed private PDF and the sent request for Partner Billed activation. Wix has
-not yet confirmed the sole-trader wording or enabled native external billing.
+The visible-time authentication fix passes the real native proof probe in all
+three owned QA environments. The original 12-second wall-clock timeout was not
+proof of a vendor failure: token delivery could occur later during background
+hydration. Keep current proof, historical full-checkout/lifecycle tests and store
+verification distinct; do not invent missing purchases or reviewer credentials.
 
-Last authenticated native evidence records unlisted version 1.1, completed
-profile/contact/privacy sections and a saved DYNAMIC Custom pricing draft.
-External billing activation and marketplace approval/publication remain
-unverified. Those historical native receipts do not qualify the candidate
-bundle's Editor/Studio/Harmony matrix or authorize turning billing on.
-
-Before actual submission, resolve Wix confirmation of the sole-trader details,
-external billing permission and the native payout blocker, verify current store
-assets, provision the protected delivery runtime inputs, qualify the exact candidate bundle in
-all required editors, and pass the existing release gate. Do not substitute
-references to historical receipts for missing current qualification.
+The native profile/configuration is 2.1, with canonical icon saved and CDN bytes
+verified. Organizer help is public at https://wix-guide.festapp-wix.pages.dev/help.
+Candidate source publication, exact stable asset deployment and the remaining
+reviewer/checkout qualification must precede App Market submission. Zero native
+blockers alone does not establish those effects.
 
 ## Draft listing identity
 
@@ -36,8 +25,8 @@ references to historical receipts for missing current qualification.
 - Working summary: `Add your vstupenky.online ticket form to a page and manage
   tickets, seating and orders in the connected service.`
 - Installation model: free widget installation; connected service charges for
-  ticket sales. Final Wix pricing model and billing text require approval.
-- Support contact: `info@festapp.net`.
+  ticket sales at the organizer-agreed rate. Native Custom pricing is approved.
+- Canonical public support copy: `info@vstupenky.online` (native operational contacts may retain the existing owner mailbox).
 - Service: `https://vstupenky.online/`.
 - Wix guide: `https://festapp-wix.pages.dev/help`.
 - General help: `https://vstupenky.online/napoveda/vlozeni-na-web/`.

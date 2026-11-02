@@ -96,8 +96,7 @@ BEGIN
  WHERE "order"=(x->>'order')::bigint AND ticket=(x->>'ticket')::bigint AND product=(x->>'product')::bigint;
  UPDATE public.occasions SET features=features||'[{"code":"blueprint","is_enabled":true}]'::jsonb
  WHERE id=(x->>'occasion')::bigint;
- INSERT INTO eshop.blueprints(occasion,organization,title,objects)
- VALUES((x->>'occasion')::bigint,(x->>'organization')::bigint,'Lifecycle seats','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(occasion,organization,title) VALUES((x->>'occasion')::bigint,(x->>'organization')::bigint,'Lifecycle seats') RETURNING id INTO bp;
  UPDATE public.forms SET blueprint=bp WHERE id=(x->>'form')::bigint;
  INSERT INTO eshop.spots(occasion,blueprint,product,order_product_ticket,title)
  VALUES((x->>'occasion')::bigint,bp,(x->>'product')::bigint,optid,'Lifecycle seat') RETURNING id INTO sid;

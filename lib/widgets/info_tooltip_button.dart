@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 class InfoTooltipButton extends StatefulWidget {
   final String message;
   final String semanticLabel;
+  final InlineSpan? richMessage;
   final FocusNode? focusNode;
   final Color? color;
 
@@ -15,6 +16,7 @@ class InfoTooltipButton extends StatefulWidget {
     super.key,
     required this.message,
     required this.semanticLabel,
+    this.richMessage,
     this.focusNode,
     this.color,
   });
@@ -84,7 +86,9 @@ class InfoTooltipButtonState extends State<InfoTooltipButton> {
           onEnter: (_) => _tooltipActive = true,
           child: Tooltip(
             key: _tooltipKey,
-            message: widget.message,
+            message: widget.richMessage == null ? widget.message : null,
+            richMessage: widget.richMessage,
+            ignorePointer: widget.richMessage == null ? null : false,
             excludeFromSemantics: true,
             triggerMode: TooltipTriggerMode.manual,
             waitDuration: const Duration(milliseconds: 350),
@@ -101,8 +105,10 @@ class InfoTooltipButtonState extends State<InfoTooltipButton> {
               child: IconButton(
                 focusNode: _buttonFocus,
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints.tightFor(width: 40, height: 40),
+                constraints: const BoxConstraints.tightFor(
+                  width: 40,
+                  height: 40,
+                ),
                 iconSize: 18,
                 color: widget.color,
                 onPressed: _show,

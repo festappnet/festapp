@@ -14,6 +14,7 @@ import 'models/ticket_model.dart';
 import '../forms/waitlist_strings.dart';
 import 'views/waitlist_order_detail.dart';
 import 'order_symbol_cell.dart';
+import '../_shared/async_download_button.dart';
 import 'order_grid_filters.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -133,13 +134,15 @@ class EshopColumns {
     return width;
   }
 
-  static TrinaColumn orderSymbolColumn({BuildContext? context}) => TrinaColumn(
+  static TrinaColumn orderSymbolColumn({BuildContext? context, void Function(int)? onOpen, bool showCopy = true}) => TrinaColumn(
         readOnly: true,
         enableEditingMode: true,
         title: OrdersStrings.gridOrderSymbol,
         field: EshopColumnIds.ORDER_SYMBOL,
         renderer: (r) => OrderSymbolCell(
+            showCopy: showCopy,
             symbol: r.cell.value?.toString() ?? '',
+            onOpen: onOpen==null ? null : ()=>onOpen(r.row.cells[EshopColumnIds.ORDER_ID]!.value as int),
             style: r.stateManager.style.cellTextStyle),
         titleRenderer: (r) =>
             _compactOrderHeader(r, OrdersStrings.gridOrderSymbol),
@@ -461,11 +464,12 @@ class EshopColumns {
                       .row
                       .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
                       ?.value as TicketModel?;
-                  return IconButton(
-                    icon: const Icon(Icons.download),
-                    tooltip: OrdersStrings
-                        .downloadTicket, // Localize tooltip if preferred
-                    onPressed: ticket?.ticketSymbol?.trim().isNotEmpty !=
+                  return AsyncDownloadButton(
+                    key: ValueKey(('ticket-pdf', ticket?.id)),
+                    iconOnly: true,
+                    label: OrdersStrings.downloadTicket,
+                    loadingLabel: OrdersStrings.generatingPdf,
+                    onDownload: ticket?.ticketSymbol?.trim().isNotEmpty !=
                                 true ||
                             !canDownloadTicket(rendererContext
                                 .row
@@ -618,7 +622,9 @@ class EshopColumns {
           ),
         ],
         EshopColumnIds.ORDER_SEQUENCE: [orderSequenceColumn()],
-        EshopColumnIds.ORDER_SYMBOL: [orderSymbolColumn(context: context)],
+        EshopColumnIds.ORDER_SYMBOL: (Map<String,dynamic> data) => [orderSymbolColumn(context:context,
+          showCopy: data['showOrderSymbolCopy'] != false,
+          onOpen:data['openOrderDetail']==null?null:(id)=>(data['openOrderDetail'] as void Function(int,String?))(id,null))],
         EshopColumnIds.ORDER_PRICE: [
           TrinaColumn(
             readOnly: true,
@@ -682,6 +688,7 @@ class EshopColumns {
                     OrderModel.singleDataGridStateToColor,
                     onChanged: data[EshopColumnIds.ORDER_STATE],
                     occasionId: data["occasionId"] as int?,
+                    onOpenDetail: data["openOrderDetail"] as void Function(int, String)?,
                     label: rendererContext.cell.value
                                     .toString()
                                     .split(';')
@@ -707,7 +714,7 @@ class EshopColumns {
             width: 150,
           ),
         ],
-        EshopColumnIds.ORDER_EMAIL_DELIVERY: [
+        EshopColumnIds.ORDER_EMAIL_DELIVERY: (Map<String, dynamic> data) => [
           TrinaColumn(
             title: EmailDeliveryStrings.title,
             field: EshopColumnIds.ORDER_EMAIL_DELIVERY,
@@ -718,6 +725,9 @@ class EshopColumns {
             enableEditingMode: false,
             enableAutoEditing: false,
             renderer: (r) => EmailDeliveryIndicator(
+              onOpen: data["openOrderDetail"] == null ? null : () =>
+                  (data["openOrderDetail"] as void Function(int, String))(
+                      r.row.cells[EshopColumnIds.ORDER_ID]!.value as int, 'emails'),
               summary: r.cell.value is Map
                   ? Map<String, dynamic>.from(r.cell.value as Map)
                   : null,
@@ -1463,7 +1473,7 @@ class EshopColumns {
       Color Function(String) getBackground,
       {String? label,
       Future<void> Function()? onChanged,
-      int? occasionId}) {
+      int? occasionId, void Function(int, String)? onOpenDetail}) {
     String value = rendererContext.cell.value;
     String firstPart = value.split(";")[0];
     String textValue =
@@ -1473,6 +1483,7 @@ class EshopColumns {
       label: textValue,
       background: getBackground(firstPart),
       onChanged: onChanged,
+      onOpenEmails: onOpenDetail == null ? null : () => onOpenDetail(OrderGridFilters.order(rendererContext.row)!.id!, 'emails'),
       occasionId: occasionId,
       order: OrderGridFilters.order(rendererContext.row),
       expired: firstPart == OrderModel.expiredState,

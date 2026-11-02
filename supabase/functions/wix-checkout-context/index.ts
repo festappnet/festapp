@@ -22,7 +22,7 @@ Deno.serve((request) =>
         args,
       )
         .abortSignal(AbortSignal.timeout(5000));
-      if (error) throw new Error("CHECKOUT_CONTEXT_UNAVAILABLE");
+      if (error) throw error;
       return data;
     },
   })

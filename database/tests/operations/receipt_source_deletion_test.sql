@@ -28,7 +28,7 @@ BEGIN
  ASSERT public.update_product_client_sync_v1(save_payload,save_cmd)=saved;
  ASSERT public.update_product_inventory_contexts_client_sync_v1(product_id,contexts_payload,contexts_cmd)=contexts_result;
  EXECUTE 'RESET ROLE';
- INSERT INTO eshop.blueprints(occasion,organization,title,objects) VALUES(oc,org,'Blueprint','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(occasion,organization,title) VALUES(oc,org,'Blueprint') RETURNING id INTO bp;
  fixture:=public.blueprint_test_fixture_internal(org);
  -- Use the real canonical document/resource contract while testing receipt replay.
  bp_payload:=jsonb_set(jsonb_set(fixture->'request','{layout,nodes}','[]'),'{seatChanges}','[]')||jsonb_build_object('id',bp,'occasion',oc,'organization',org,'title','Saved blueprint','expected_aggregate_version',0);

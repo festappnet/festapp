@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-11-01",
+  "status": "unsent-status-update-local-timeout-cause-identified",
+  "gmailDraftId": "r2329189293174415204",
+  "gmailDraftMessageId": "1a196e3d5bc16d95",
+  "gmailThreadId": "1a18198a75444077",
+  "recipient": "support4@wix.com",
+  "subject": "Re: DevRel Applications Ref:065800261",
+  "purpose": "Accurate status update replaces the superseded vendor-SDK escalation. Candidate passes native proof on three sites; Marketplace publication is still incomplete.",
+  "explicitSendInstructionReceived": false,
+  "sent": false,
+  "newSupportCaseCreated": false,
+  "containsTokensSecretsOrBuyerData": false,
+  "requiresCurrentDraftReviewBeforeSending": true,
+  "previousEscalationRequestSuperseded": true,
+  "sendInstructionReceived": false
+}

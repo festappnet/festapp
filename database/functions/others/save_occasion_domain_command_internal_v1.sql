@@ -24,6 +24,7 @@ DECLARE
   v_old_unit bigint;
   v_new_unit bigint;
   v_features jsonb;
+  v_seating_provenance jsonb;
   v_fanout_units bigint[] := '{}';
 BEGIN
   SELECT o.unit INTO v_old_unit
@@ -50,6 +51,7 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE = 'invalid occasion aggregate';
   END IF;
 
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[p_occasion]);
   v_hash := encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion', p_occasion,
     'expectedVersion', p_expected_version,
@@ -96,7 +98,7 @@ BEGIN
     AND aggregate_id = p_occasion::text
   FOR UPDATE;
   IF p_expected_version IS DISTINCT FROM v_version THEN
-    SELECT to_jsonb(o) || jsonb_build_object('aggregate_version', v_version)
+    SELECT to_jsonb(o) || jsonb_build_object('aggregate_version', v_version,'seatingPreviousConfiguration',v_seating_provenance)
     INTO v_entity
     FROM public.occasions o
     WHERE o.id = p_occasion;
@@ -107,6 +109,8 @@ BEGIN
       jsonb_build_object('version', v_version, 'occasion', v_entity)
     );
   END IF;
+
+  SELECT jsonb_build_object('features',o.features,'bindings',(SELECT coalesce(jsonb_agg(jsonb_build_object('formId',f.id,'blueprintId',f.blueprint) ORDER BY f.id),'[]') FROM public.forms f WHERE f.occasion=p_occasion AND f.blueprint IS NOT NULL)) INTO v_seating_provenance FROM public.occasions o WHERE o.id=p_occasion;
 
   IF p_config ? 'ticket_layout_change' AND p_config - ARRAY['id','ticket_layout_change']='{}'::jsonb THEN
     IF NOT public.can_edit_ticket_layout(p_occasion) THEN
@@ -129,7 +133,7 @@ BEGIN
     AND scope_id = p_occasion
     AND aggregate_id = p_occasion::text
   RETURNING version INTO v_version;
-  SELECT to_jsonb(o) || jsonb_build_object('aggregate_version', v_version)
+  SELECT to_jsonb(o) || jsonb_build_object('aggregate_version', v_version,'seatingPreviousConfiguration',v_seating_provenance)
   INTO v_entity
   FROM public.occasions o
   WHERE o.id = p_occasion;

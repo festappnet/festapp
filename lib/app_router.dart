@@ -245,10 +245,7 @@ class AppRouter extends RootStackRouter {
                                     ]),
                                 AutoRoute(
                                     page: OrdersHistoryRoute.page,
-                                    path: NavigationPaths.history),
-                                AutoRoute(
-                                    page: OrdersEmailHistoryRoute.page,
-                                    path: NavigationPaths.emailHistory)
+                                    path: NavigationPaths.history)
                               ]),
                           AutoRoute(
                               page: NavigationNotFoundRoute.page, path: '*')
