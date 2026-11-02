@@ -147,6 +147,8 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
     }
   }
 
+  bool get _noteEditor => widget.alwaysEditable && widget.multiline && _allowed;
+
   Widget _value() {
     if (!_editing || (widget.alwaysEditable && !_allowed)) {
       final display = widget.textController == null
@@ -176,18 +178,27 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
       );
     }
     return Semantics(
-      label: widget.label,
+      label: _noteEditor ? null : widget.label,
       child: TextField(
         controller: _text,
         keyboardType: widget.keyboardType,
         autofocus: !widget.alwaysEditable,
         readOnly: _busy || !_allowed,
-        minLines: 1,
+        minLines: _noteEditor ? 2 : 1,
         maxLines: widget.multiline ? null : 1,
         decoration: InputDecoration(
           isDense: true,
-          border: const UnderlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(vertical: 6),
+          border: _noteEditor
+              ? const OutlineInputBorder()
+              : const UnderlineInputBorder(),
+          labelText: _noteEditor ? widget.label : null,
+          floatingLabelBehavior: _noteEditor
+              ? FloatingLabelBehavior.always
+              : null,
+          alignLabelWithHint: _noteEditor,
+          contentPadding: _noteEditor
+              ? const EdgeInsets.all(12)
+              : const EdgeInsets.symmetric(vertical: 6),
           hintText: widget.alwaysEditable && widget.value.isEmpty
               ? widget.displayValue
               : null,
@@ -209,13 +220,14 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  if (!_noteEditor)
+                    Text(
+                      widget.label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
+                  if (!_noteEditor) const SizedBox(height: 4),
                   _value(),
                 ],
               ),
