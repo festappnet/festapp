@@ -15,6 +15,16 @@ For Flutter select the actual application's light theme before starting the
 chapter. External-site modal backdrops and PDF viewer chrome are not application
 themes. Never recolor an existing screenshot or inject a successful RPC result.
 
+All visible example data must match the guide's locale, including event and
+form names, organizers, product names, field labels, venue names and addresses.
+For Czech guides use natural Czech examples such as “Slavnostní ples U Lípy”,
+“Spolek U Lípy” and “Vstupenka s místenkou”; use English equivalents for English
+guides. Technical fixture labels such as “Synthetic seats” or “Synthetic
+Organizer” belong only in internal metadata, never in published captures.
+Localize the disposable fixture before capturing each locale, then recapture the
+real UI and refresh the media hashes. Do not translate screenshots by painting
+over them. Keep fixture IDs and routing keys stable for automated tests.
+
 Use an isolated headless agent-browser session, synthetic data and a disposable
 local backend. Follow `festapp-local-e2e` for a fresh Flutter/local-backend setup;
 reuse an already running owned fixture when available. Never use production
@@ -71,6 +81,19 @@ load `supabase/seed.sql`, `web_client/tests/fixtures/embedded-checkout/tenant.sq
 and the WordPress fixture fixes. Remove the synthetic migration reference
 organization before the embed tenant's fresh-backend check; do not load demo
 occasion data into this dedicated embed fixture. Register its disposable marker.
+After the fixture fixes and before captures, apply the locale overlay to this
+owned local database only:
+
+```sh
+docker exec -i supabase_db_festapp-joomla-help-20261029 \
+  psql -U postgres -d postgres -v help_locale=cs \
+  < automation/help_capture/localize_embed_fixture.sql
+```
+
+Use `help_locale=en` for English captures and select the same UI locale. The
+overlay is repeatable, keeps the original fixture links as aliases and rejects
+unrelated fixture data. Use the localized public link in module screenshots.
+
 The shared embed seed creates V2 geometry and one binding for each of twelve
 places directly. Older branch-specific databases with incompatible ledgers
 must not be reused for this capture. The completion receipt records a real A1

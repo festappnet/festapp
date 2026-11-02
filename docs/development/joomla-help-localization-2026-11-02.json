@@ -1,0 +1,42 @@
+{
+  "capturedAt": "2026-11-02T22:43:48.373449+00:00",
+  "fixture": "festapp-joomla-help-20261029",
+  "joomla": "6.1.4",
+  "module": "1.0.1",
+  "scope": "Localized Czech public form, Joomla chrome and Czech/English module editor examples; real Joomla UI and local backend only.",
+  "browserBoundary": "Isolated headless browser; local CONNECT proxy maps vstupenky.online to local web client and permits only fonts.googleapis.com and fonts.gstatic.com externally. No production operations.",
+  "localeCheck": {
+    "en": [
+      "Tickets with reserved seats",
+      "Linden Hall Association",
+      "linden-hall-ball-seats"
+    ],
+    "cs": [
+      "Vstupenky s místenkou",
+      "Spolek U Lípy",
+      "ples-u-lipy-mistenky"
+    ]
+  },
+  "materialIcons": {
+    "documentFontsReady": true,
+    "materialIconsLoaded": true
+  },
+  "seatSelection": {
+    "seat": "A1",
+    "ariaPressed": true,
+    "unexpiredLeasesDuringSelection": 1,
+    "unexpiredLeasesAfterRelease": 0,
+    "ordersSubmitted": 0
+  },
+  "screenshots": {
+    "cs/joomla/02-module": "cd307efeee4daa7ebdf6d9b3bced4740078f967ef8ee99a862acad649095865f",
+    "en/joomla/02-module": "f9ce453dbe68dc7c0a9a262066e14d0e01501e28f92530e1c8ec6f4bc29a5459",
+    "cs/joomla/04-result": "75084eed79685dfd9bf9c7f58c225d859086c05e9057d5e67baa725babe2be8c",
+    "cs/joomla/05-mobile": "b63f7a1261c71c037c03e78fafc8567009e8ac09b4445cbbd9987d5875f6b89d",
+    "cs/joomla/06-seats": "df4727b25ba9b0d810ad969a1108b92dfc85235344cd1ffc68b2adbe9ba226ea"
+  },
+  "limitations": [
+    "No purchase, payment, email or production write.",
+    "Install from URL was not freshly tested in Joomla."
+  ]
+}
