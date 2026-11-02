@@ -10,7 +10,9 @@ database ACLs.
 
 `automation/hetzner-supabase/runtime/slunovrat-news-emergency.sql` is an
 operational exception, not the permanent application schema. Apply only from
-verified main, atomically, with `expires_at=2026-11-03 21:00:00+00` (22:00 Prague).
+verified main, atomically, with `expires_at=2026-11-16 21:00:00+00` (16 November,
+22:00 Prague). The user explicitly extended the original one-day deadline to
+two weeks on 2 November. This remains a temporary workaround and must be removed.
 It allows only the old client's specific columns and exact event. Both adapters
 check deadline, stored event scope and current editor. The news adapter emits
 canonical revisions and receipts. The push adapter reuses admission and existing
@@ -25,6 +27,11 @@ The two temporary operational triggers must be removed with
 verified after removal or any replacement native release. Their deadline fails
 closed even if cleanup is delayed. Removal revokes the exceptional column grants
 and drops the policy, triggers and functions. It does not change canonical RPCs.
+For the installed bridge, use `slunovrat-news-emergency-extend.sql` atomically
+with the previous and new deadlines, after updating both cleanup jobs 22 and 23
+in the `postgres` cron catalog. Update the restrictive policy and both trigger
+arguments together. Keep the existing function bodies, scope, grants and removal
+script unchanged; no Functions restart is needed for a deadline extension.
 
 The sender previously required CSM's installation tags for every tenant. The
 corrected audience selects Slunovrat's dedicated app subscribers only when both
