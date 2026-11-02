@@ -58,7 +58,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
   VenueLayoutDocument? _document;
   String? _error;
   bool _loading = false;
-  bool _wholePlan = false;
   List<Map<String, dynamic>> get places =>
       widget.controller.detail?.places ?? [];
   @override
@@ -128,7 +127,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
     final request = ++_request;
     setState(() {
       _plan = id;
-      _wholePlan = false;
       _loading = true;
       _error = null;
       _document = null;
@@ -272,7 +270,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
                   activeNodeIds: active,
                   // The shared camera targets readable seats while retaining their context.
                   // Ticket selection does not reframe the user's camera.
-                  focusNodeIds: !_wholePlan ? own : const {},
+                  focusNodeIds: own,
                   focusMaxZoomFactor: 2.6,
                   focusSeatPixelSize: 12,
                   focusRevision: _focusRevision,
@@ -318,17 +316,19 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
               },
             ),
           ),
-          Wrap(
-            spacing: 8,
-            children: [
-              TextButton(
-                onPressed: () => setState(() {
-                  _wholePlan = true;
-                  _focusRevision++;
-                }),
-                child: Text(OrderDetailStrings.text('cely_sal')),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              OrderDetailStrings.text(switch (Theme.of(context).platform) {
+                TargetPlatform.macOS => 'plan_zoom_hint_mac',
+                TargetPlatform.android ||
+                TargetPlatform.iOS => 'plan_zoom_hint_touch',
+                _ => 'plan_zoom_hint_ctrl',
+              }),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ],
+            ),
           ),
           Text(
             OrderDetailStrings.text(

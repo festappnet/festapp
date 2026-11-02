@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -15,11 +19,21 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
-  for (final (dense, reducedMotion) in [
-    (false, false),
-    (false, true),
-    (true, false),
-    (true, true),
+  setUpAll(() async {
+    if (Platform.environment['FESTAPP_PAYMENT_CAPTURE_DIR'] == null) return;
+    await (FontLoader('Futura')
+          ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'))
+          ..addFont(rootBundle.load('fonts/Futura PT Medium.ttf')))
+        .load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
+  for (final (dense, reducedMotion, platform) in [
+    (false, false, TargetPlatform.windows),
+    (false, true, TargetPlatform.macOS),
+    (true, false, TargetPlatform.windows),
+    (true, true, TargetPlatform.macOS),
   ]) {
     testWidgets(
       'plan selection keeps camera and bounded initial focus dense=$dense reducedMotion=$reducedMotion',
@@ -127,20 +141,24 @@ void main() {
         await environment.pumpWidget(
           tester,
           MaterialApp(
+            theme: ThemeData(platform: platform, fontFamily: 'Futura'),
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(disableAnimations: reducedMotion),
               child: child!,
             ),
-            home: Scaffold(
-              body: SingleChildScrollView(
-                child: StatefulBuilder(
-                  builder: (context, refresh) => OrderPlacesView(
-                    controller: controller,
-                    ticketId: selected,
-                    onTicket: (id) => refresh(() => selected = id),
-                    onMapTickets: (ids) => selectedGroup = ids,
-                    onOpenPlan: (plan, node) => openedPlan = (plan, node),
+            home: RepaintBoundary(
+              key: const ValueKey('plan-capture'),
+              child: Scaffold(
+                body: SingleChildScrollView(
+                  child: StatefulBuilder(
+                    builder: (context, refresh) => OrderPlacesView(
+                      controller: controller,
+                      ticketId: selected,
+                      onTicket: (id) => refresh(() => selected = id),
+                      onMapTickets: (ids) => selectedGroup = ids,
+                      onOpenPlan: (plan, node) => openedPlan = (plan, node),
+                    ),
                   ),
                 ),
               ),
@@ -238,11 +256,48 @@ void main() {
         );
         expect(calls, ['get_order_admin_detail', 'get_order_blueprint_view']);
         expect(viewer().document.toJson(), document.toJson());
-        await tester.ensureVisible(find.text('Celý sál'));
-        await tester.tap(find.text('Celý sál'));
+        expect(
+          find.text('Celý sál'),
+          findsNothing,
+          reason: 'Only the canvas fit/focus control remains',
+        );
+        expect(
+          find.text(
+            platform == TargetPlatform.macOS
+                ? 'Přiblížení: ⌘ + kolečko myši.'
+                : 'Přiblížení: Ctrl + kolečko myši.',
+          ),
+          findsOneWidget,
+        );
+        Future<void> capture(String state) async {
+          final directory = Platform.environment['FESTAPP_PAYMENT_CAPTURE_DIR'];
+          if (directory == null || dense || reducedMotion) return;
+          await tester.runAsync(() async {
+            final boundary = tester.renderObject<RenderRepaintBoundary>(
+              find.byKey(const ValueKey('plan-capture')),
+            );
+            final image = await boundary.toImage(pixelRatio: 1);
+            final bytes = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            File('$directory/plan-$state.png')
+                .writeAsBytesSync(bytes!.buffer.asUint8List());
+            image.dispose();
+          });
+        }
+
+        await capture('focused');
+        final control = find.byIcon(Icons.fit_screen);
+        await tester.ensureVisible(control);
+        await tester.tap(control);
         await tester.pumpAndSettle();
-        expect(viewer().focusNodeIds, isEmpty);
-        expect(viewer().focusRevision, greaterThan(revision));
+        expect(viewer().focusNodeIds, places.map((p) => p['nodeId']).toSet());
+        expect(
+          viewer().focusRevision,
+          revision,
+          reason: 'Camera toggling stays in its owner',
+        );
+        await capture('overview');
         expect(tester.takeException(), isNull);
       },
     );

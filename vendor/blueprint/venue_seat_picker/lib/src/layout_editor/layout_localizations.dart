@@ -860,6 +860,7 @@ const _cs = <String, String>{
   'Two carriages, four six-seat compartments each':
       'Dva vozy, každý se čtyřmi šestimístnými kupé',
   'Fit plan': 'Celý plánek',
+  'Focus places': 'Přiblížit místa',
   'Zoom in': 'Přiblížit',
   'Zoom out': 'Oddálit',
   'Properties and layers': 'Vlastnosti a vrstvy',

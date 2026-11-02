@@ -4789,6 +4789,9 @@
     "UNKNOWN": "Operaci se nepodařilo dokončit. Obnovte aktuální údaje."
   },
   "OrderDetail": {
+    "plan_zoom_hint_mac": "Přiblížení: ⌘ + kolečko myši.",
+    "plan_zoom_hint_ctrl": "Přiblížení: Ctrl + kolečko myši.",
+    "plan_zoom_hint_touch": "Plánek přiblížíte roztažením dvou prstů.",
     "changes_partially_saved": "Část změn byla uložena. Neuložené změny zůstávají rozepsané.",
     "cancel_final_warning": "Po stornování už nelze objednávku upravovat. Storno samo o sobě nevrací platbu.",
     "edit_answers": "Upravit odpovědi",
