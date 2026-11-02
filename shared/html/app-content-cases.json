@@ -30,5 +30,12 @@
     "html": "<p style=\"font-family:Arial; font-weight:normal; font-weight:700!important; font-weight:normal; color:/*copied*/red\">Priority</p>",
     "selector": "p strong",
     "text": "Priority"
+  },
+  {
+    "name": "Google Docs normal wrapper becomes neutral before persistence",
+    "html": "<!--StartFragment--><b style=\"font-weight:normal\" id=\"docs-internal-guid-copy\"><h2><strong>Title</strong></h2><p><span style=\"font-family:Arial;font-weight:400;color:red\">Ordinary <strong>bold</strong></span></p></b>",
+    "selector": "p strong",
+    "text": "bold",
+    "absent": "b"
   }
 ]
