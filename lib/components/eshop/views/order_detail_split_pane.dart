@@ -25,6 +25,7 @@ class OrderDetailSplitPane extends StatefulWidget {
 class _OrderDetailSplitPaneState extends State<OrderDetailSplitPane>
     with WidgetsBindingObserver {
   final _dividerFocus = FocusNode();
+  final _detailKey = GlobalKey();
   double _preferredWidth = 720;
   bool _changed = false;
   int? _dragPointer;
@@ -134,6 +135,17 @@ class _OrderDetailSplitPaneState extends State<OrderDetailSplitPane>
       const dividerWidth = 1.0;
       const dividerHitWidth = 40.0;
       final available = constraints.maxWidth;
+      // Use the viewport, not a constrained table container, to decide whether
+      // the detail should cover the application navigation as well.
+      final fullscreen =
+          widget.detail != null &&
+          MediaQuery.sizeOf(context).width <
+              OrderDetailSplitPane.minTableWidth +
+                  OrderDetailSplitPane.minDetailWidth +
+                  dividerWidth;
+      final detail = widget.detail == null
+          ? null
+          : KeyedSubtree(key: _detailKey, child: widget.detail!);
       final side =
           widget.detail != null &&
           available >=
@@ -188,14 +200,15 @@ class _OrderDetailSplitPaneState extends State<OrderDetailSplitPane>
                       )
                     : null,
               ),
-              if (widget.detail != null)
+              if (widget.detail != null && !fullscreen)
                 SizedBox(
                   key: const ValueKey('order-detail-pane'),
                   width: panelWidth,
-                  child: widget.detail,
+                  child: detail,
                 ),
             ],
           ),
+          if (fullscreen) _OrderDetailFullscreen(child: detail!),
           if (side)
             Positioned(
               left: tableWidth + dividerWidth / 2 - dividerHitWidth / 2,
@@ -263,5 +276,45 @@ class _OrderDetailSplitPaneState extends State<OrderDetailSplitPane>
         ],
       );
     },
+  );
+}
+
+/// Root-overlay presentation keeps the same routed detail/controller while
+/// covering all application chrome. Dialog routes still paint above the detail.
+class _OrderDetailFullscreen extends StatefulWidget {
+  const _OrderDetailFullscreen({required this.child});
+  final Widget child;
+
+  @override
+  State<_OrderDetailFullscreen> createState() => _OrderDetailFullscreenState();
+}
+
+class _OrderDetailFullscreenState extends State<_OrderDetailFullscreen> {
+  final _overlay = OverlayPortalController()..show();
+
+  @override
+  Widget build(BuildContext context) => OverlayPortal(
+    controller: _overlay,
+    overlayLocation: OverlayChildLocation.rootOverlay,
+    child: const SizedBox.shrink(),
+    overlayChildBuilder: (context) => Positioned.fill(
+      child: Offstage(
+        offstage: !TickerMode.valuesOf(context).enabled,
+        child: BlockSemantics(
+          child: Material(
+            key: const ValueKey('order-detail-pane'),
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: FocusScope(autofocus: true, child: widget.child),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }

@@ -131,12 +131,15 @@ export class ThemeService {
         if (ThemeService._lastFormModel !== formModel) document.getElementById('shared-font-error')?.remove();
         const root = document.body;
         if (!ThemeService._formStyleSnapshot) {
-            const properties = ['--background-color', '--btn-secondary-text-color', '--btn-text-color', '--card-bg', '--card-bg-derived', '--countdown-bg', '--countdown-border', '--fab-color', '--fab-text-color', '--font-family-base', '--font-scale', '--form-background', '--input-bg', '--input-border', '--input-font-family', '--input-text', '--label-text-color', '--link-color', '--primary-color', '--secondary-color', '--text-color', '--unselected-widget-border', '--unselected-widget-fill', 'background', 'background-color'];
+            const properties = ['display', '--background-color', '--btn-secondary-text-color', '--btn-text-color', '--card-bg', '--card-bg-derived', '--countdown-bg', '--countdown-border', '--fab-color', '--fab-text-color', '--font-family-base', '--font-scale', '--form-background', '--input-bg', '--input-border', '--input-font-family', '--input-text', '--label-text-color', '--link-color', '--primary-color', '--secondary-color', '--text-color', '--unselected-widget-border', '--unselected-widget-fill', 'background', 'background-color'];
             ThemeService._formStyleSnapshot = properties.map(name =>
                 [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]);
             ThemeService._sharedAppearance = root.dataset.sharedAppearance;
         }
         ThemeService._lastFormModel = formModel;
+        // Contain the form's top margin so it cannot expose the startup canvas
+        // above the body. Restored with the other form-only styles on exit.
+        root.style.display = 'flow-root';
         ThemeService.apply();
 
         // Fonts

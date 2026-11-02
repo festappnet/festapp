@@ -12,6 +12,107 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 void main() {
   WidgetEnvironmentFixture.register();
   testWidgets(
+    'mobile detail covers app chrome, retains state and keeps dialogs above it',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await _setViewport(tester, const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final environment = WidgetEnvironmentFixture(
+        locale: const Locale('en'),
+        translations: {},
+      );
+      var opened = true;
+      var globalTaps = 0;
+      late StateSetter updateHost;
+      final editor = TextEditingController();
+      addTearDown(editor.dispose);
+      await environment.pumpWidget(
+        tester,
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              updateHost = setState;
+              return Scaffold(
+                appBar: AppBar(
+                  title: TextButton(
+                    onPressed: () => globalTaps++,
+                    child: const Text('Global navigation'),
+                  ),
+                ),
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: OrderDetailSplitPane(
+                    table: const Text('Orders table'),
+                    detail: !opened
+                        ? null
+                        : Builder(
+                            builder: (detailContext) => Column(
+                              children: [
+                                TextField(controller: editor),
+                                TextButton(
+                                  onPressed: () => showDialog<void>(
+                                    context: detailContext,
+                                    builder: (_) => const AlertDialog(
+                                      title: Text('Nested dialog'),
+                                    ),
+                                  ),
+                                  child: const Text('Open dialog'),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      updateHost(() => opened = false),
+                                  child: const Text('Close detail'),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final pane = find.byKey(const ValueKey('order-detail-pane'));
+      expect(tester.getRect(pane), const Rect.fromLTWH(0, 0, 390, 844));
+      expect(find.text('Global navigation').hitTestable(), findsNothing);
+      await tester.enterText(find.byType(TextField), 'Unsaved note');
+      final originalFieldState = tester.state(find.byType(TextField));
+      await tester.tap(find.text('Open dialog'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nested dialog').hitTestable(), findsOneWidget);
+      Navigator.of(
+        tester.element(find.byType(AlertDialog)),
+        rootNavigator: true,
+      ).pop();
+      await tester.pumpAndSettle();
+      await _setViewport(tester, const Size(1500, 844));
+      await tester.pumpAndSettle();
+      expect(
+        identical(tester.state(find.byType(TextField)), originalFieldState),
+        isTrue,
+      );
+      expect(editor.text, 'Unsaved note');
+      expect(find.text('Global navigation').hitTestable(), findsOneWidget);
+      await _setViewport(tester, const Size(390, 844));
+      await tester.pumpAndSettle();
+      expect(
+        identical(tester.state(find.byType(TextField)), originalFieldState),
+        isTrue,
+      );
+      await tester.tap(find.text('Close detail'));
+      await tester.pumpAndSettle();
+      expect(pane, findsNothing);
+      expect(find.text('Orders table'), findsOneWidget);
+      await tester.tap(find.text('Global navigation'));
+      expect(globalTaps, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'divider persists bounded width and preserves it across mobile layouts',
     (tester) async {
       final semantics = tester.ensureSemantics();
@@ -23,8 +124,10 @@ void main() {
             'OrderDetail': {'resize_panel': 'Resize order detail'},
           },
         );
-        await tester.binding.setSurfaceSize(const Size(1500, 800));
+        await _setViewport(tester, const Size(1500, 800));
         addTearDown(() => tester.binding.setSurfaceSize(null));
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
         Widget host() => MaterialApp(
           home: Scaffold(
             body: OrderDetailSplitPane(
@@ -78,12 +181,12 @@ void main() {
         await environment.pumpWidget(tester, host());
         await tester.pumpAndSettle();
         expect(width(), 700);
-        await tester.binding.setSurfaceSize(const Size(700, 800));
+        await _setViewport(tester, const Size(700, 800));
         await tester.pumpAndSettle();
         expect(width(), 700);
         expect(divider, findsNothing);
         expect(prefs.getDouble(OrderDetailSplitPane.preferenceKey), 700);
-        await tester.binding.setSurfaceSize(const Size(1500, 800));
+        await _setViewport(tester, const Size(1500, 800));
         await tester.pumpAndSettle();
         expect(width(), 700);
         await tester.drag(divider, const Offset(-1000, 0));
@@ -225,4 +328,10 @@ void main() {
       }
     },
   );
+}
+
+Future<void> _setViewport(WidgetTester tester, Size size) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  await tester.binding.setSurfaceSize(size);
 }
