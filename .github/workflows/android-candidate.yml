@@ -179,7 +179,7 @@ jobs:
             --output "$RUNNER_TEMP/raw/app-release.aab.gpg" \
             build/app/outputs/bundle/release/app-release.aab
       - name: Store the encrypted raw build output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: android-raw-${{ matrix.tenant }}-${{ matrix.sourceSha }}-${{ github.run_id }}
           path: ${{ runner.temp }}/raw/app-release.aab.gpg
@@ -224,7 +224,7 @@ jobs:
             --passphrase-fd 0 --symmetric --cipher-algo AES256 \
             --output "$RUNNER_TEMP/candidate/android-candidate.tar.gpg" "$RUNNER_TEMP/candidate.tar"
       - name: Store the candidate as a private GitHub artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
           path: ${{ runner.temp }}/candidate
