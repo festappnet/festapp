@@ -25,8 +25,9 @@ class EmailDeliveryIndicator extends StatelessWidget {
   final int? orderId;
   final int? occasionId;
   final VoidCallback? onHistory;
+  final VoidCallback? onOpen;
   const EmailDeliveryIndicator(
-      {super.key, this.summary, this.orderId, this.occasionId, this.onHistory});
+      {super.key, this.summary, this.orderId, this.occasionId, this.onHistory, this.onOpen});
 
   String _description(BuildContext context, Map<String, dynamic> entry) {
     final kind = entry['kind']?.toString();
@@ -78,7 +79,7 @@ class EmailDeliveryIndicator extends StatelessWidget {
           child: IconButton(
             tooltip: null,
             style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-            onPressed: () => _showExplanation(context),
+            onPressed: onOpen ?? () => _showExplanation(context),
             icon: Semantics(
                 label: description,
                 child: warning

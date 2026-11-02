@@ -13,6 +13,7 @@ class DataGridActionConfirmation {
     String? message,
     String? itemsLabel,
     String? confirmButtonText,
+    String? cancelButtonText,
     ITrinaRowModel? Function(T)? groupBy,
   }) {
     if (items.isEmpty) return Future.value(false);
@@ -20,6 +21,7 @@ class DataGridActionConfirmation {
       context: context,
       title: title,
       confirmButtonText: confirmButtonText,
+      cancelButtonText: cancelButtonText,
       content: DataGridActionSummary<T>(
         items: items,
         message: message,
@@ -49,8 +51,9 @@ class DataGridActionSummary<T extends ITrinaRowModel> extends StatelessWidget {
     final groups = <Object, (ITrinaRowModel?, List<T>)>{};
     for (final item in items) {
       final parent = groupBy?.call(item);
-      final key =
-          parent == null ? null : (parent.runtimeType, parent.id ?? parent);
+      final key = parent == null
+          ? null
+          : (parent.runtimeType, parent.id ?? parent);
       // Ungrouped items share one flat list.
       final group = groups.putIfAbsent(key ?? 'ungrouped', () => (parent, []));
       group.$2.add(item);
@@ -60,10 +63,7 @@ class DataGridActionSummary<T extends ITrinaRowModel> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (message != null) ...[
-            Text(message!),
-            const SizedBox(height: 16),
-          ],
+          if (message != null) ...[Text(message!), const SizedBox(height: 16)],
           Text('${itemsLabel ?? DataGridStrings.items}: ${items.length}'),
           for (final group in groups.values) ...[
             const SizedBox(height: 12),
@@ -73,13 +73,16 @@ class DataGridActionSummary<T extends ITrinaRowModel> extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               Text(
-                  '${itemsLabel ?? DataGridStrings.items}: ${group.$2.length}'),
+                '${itemsLabel ?? DataGridStrings.items}: ${group.$2.length}',
+              ),
               const SizedBox(height: 8),
             ],
             for (final item in group.$2)
               Padding(
-                padding:
-                    EdgeInsets.only(left: group.$1 == null ? 0 : 16, bottom: 8),
+                padding: EdgeInsets.only(
+                  left: group.$1 == null ? 0 : 16,
+                  bottom: 8,
+                ),
                 child: SelectableText(item.toBasicString()),
               ),
           ],

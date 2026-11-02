@@ -327,8 +327,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'bujnmi@c');
     await tester.pump();
     expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
-    expect(tester.widget<ElevatedButton>(find.widgetWithText(
-        ElevatedButton, 'EmailDelivery.recovery.saveSendConfirmation')).onPressed, isNull);
+    expect(tester.widget<OutlinedButton>(find.widgetWithText(
+        OutlinedButton, 'EmailDelivery.recovery.saveSendConfirmation')).onPressed, isNull);
     expect(requests, 0);
     await tester.enterText(find.byType(TextField), 'new@example.invalid');
     await tester.pump();
@@ -337,8 +337,8 @@ void main() {
     expect(requests, 1);
     expect(
         tester
-            .widget<ElevatedButton>(find.widgetWithText(
-                ElevatedButton, 'EmailDelivery.recovery.saveSendConfirmation'))
+            .widget<OutlinedButton>(find.widgetWithText(
+                OutlinedButton, 'EmailDelivery.recovery.saveSendConfirmation'))
             .onPressed,
         isNull);
     pending.complete(commandResponseFixture(sent['p_command_id'],
