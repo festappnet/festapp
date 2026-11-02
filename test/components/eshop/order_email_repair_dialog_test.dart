@@ -1,3 +1,4 @@
+import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -28,6 +29,96 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  for (final state in ['pending', 'preparing', 'sending', 'accepted']) {
+    testWidgets(
+      'queued confirmation is waiting, not an email failure: $state',
+      (tester) async {
+        final summary = <String, dynamic>{
+          'state': state,
+          'current_issues': [
+            issue(
+              state,
+              resolution: state == 'accepted' ? 'waiting_repair' : state,
+            ),
+          ],
+        };
+        final order = OrderModel(id: 4, state: 'ordered')
+          ..emailDelivery = summary;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: Column(
+                children: [
+                  SizedBox(
+                    width: 250,
+                    height: 50,
+                    child: OrderStateCell(
+                      label: 'ORDERED',
+                      background: Colors.white,
+                      occasionId: 7,
+                      order: order,
+                    ),
+                  ),
+                  EmailDeliveryIndicator(summary: summary),
+                ],
+              ),
+            ),
+          ),
+        );
+        expect(
+          find.byIcon(Icons.mark_email_unread_outlined),
+          findsNothing,
+          reason: 'Enqueued/accepted mail must not look like a failed delivery',
+        );
+        expect(find.byIcon(Icons.schedule_send_outlined), findsOneWidget);
+        expect(
+          OrderEmailIssue.fromSummary(summary).single.canResend,
+          isFalse,
+          reason: 'A neutral waiting icon must not allow duplicate resends',
+        );
+      },
+    );
+  }
+  testWidgets(
+    'a queued confirmation cannot hide a separate real delivery failure',
+    (tester) async {
+      final summary = <String, dynamic>{
+        'state': 'pending',
+        'current_issues': [
+          issue('pending', resolution: 'pending', id: 'new'),
+          issue('bounce', id: 'failed'),
+        ],
+      };
+      final order = OrderModel(id: 4, state: 'ordered')
+        ..emailDelivery = summary;
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: Column(
+              children: [
+                SizedBox(
+                  width: 250,
+                  height: 50,
+                  child: OrderStateCell(
+                    label: 'ORDERED',
+                    background: Colors.white,
+                    occasionId: 7,
+                    order: order,
+                  ),
+                ),
+                EmailDeliveryIndicator(summary: summary),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.mark_email_unread_outlined), findsNWidgets(2));
+      expect(find.byIcon(Icons.schedule_send_outlined), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('issue tooltip identifies each failed recipient, including after contact changes',
       (tester) async {
     final order = OrderModel(id: 4, state: 'ordered',

@@ -30,7 +30,28 @@ class OrderPlacesView extends StatefulWidget {
   State<OrderPlacesView> createState() => _OrderPlacesViewState();
 }
 
-class _OrderPlacesViewState extends State<OrderPlacesView> {
+class _OrderPlacesViewState extends State<OrderPlacesView>
+    with SingleTickerProviderStateMixin {
+  late final _highlightPulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+    value: 1,
+  );
+
+  void _locateSeats() {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _highlightPulse.value = 1;
+    } else {
+      _highlightPulse.forward(from: 0);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) _highlightPulse.value = 1;
+  }
+
   final _resolver = BlueprintLayoutAssetResolver();
   int? _plan;
   int _request = 0, _focusRevision = 0;
@@ -81,6 +102,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
   void dispose() {
     _request++;
     _resolver.dispose();
+    _highlightPulse.dispose();
     super.dispose();
   }
 
@@ -92,6 +114,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
     final plan = place['blueprintId'] as int;
     await _load(plan);
     if (!mounted || _plan != plan) return;
+    if (_document != null) _locateSeats();
     // Selection highlights the place; keep the user's overview camera.
   }
 
@@ -132,6 +155,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
         _loading = false;
         _focusRevision++;
       });
+      _locateSeats();
     } catch (_) {
       if (mounted && request == _request) {
         final changed =
@@ -248,7 +272,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                           .reduce(math.min);
                 final zoom = seatPixels <= 0
                     ? 1.0
-                    : (8 / seatPixels).clamp(1.0, 1.6);
+                    : (10 / seatPixels).clamp(1.0, 1.9);
                 return VenueLayoutViewer(
                   key: ValueKey(_plan),
                   document: _document!,
@@ -256,6 +280,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                   resources: _resources ?? {},
                   seatPresentation: _seatPresentation,
                   highlightedNodeIds: own,
+                  highlightPulse: _highlightPulse,
                   activeNodeIds: active,
                   // A dense plan gets a modest initial focus, never a close-up.
                   // Ticket selection does not reframe the user's camera.
@@ -274,12 +299,14 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                     final admissions = {
                       for (final p in found) p['admissionItemId']: p,
                     };
-                    if (admissions.isNotEmpty)
+                    if (admissions.isNotEmpty) {
+                      _locateSeats();
                       widget.onMapTickets?.call(
                         admissions.values
                             .map((p) => p['ticketId'] as int)
                             .toSet(),
                       );
+                    }
                     if (admissions.length == 1)
                       widget.onTicket?.call(
                         admissions.values.single['ticketId'] as int,

@@ -174,6 +174,9 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
       final result = await (commands as RecoverableOrderContactCommands)
           .recoverContact(pending);
       if (!_sameContext) return;
+      final sending = result['data']?['sendingRequested'] == true;
+      final outcome = sending ? await _sendOutcome(result) : null;
+      if (!_sameContext) return;
       var refreshed = true;
       try {
         if (result['code'] == 409) {
@@ -188,15 +191,16 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
       await _findPending();
       if (_sameContext)
         setState(
-          () => _feedback = t(
-            !refreshed
-                ? 'stale'
-                : result['code'] == 409
-                ? 'conflict'
-                : result['data']?['sendingRequested'] == true
-                ? 'queued'
-                : 'saved',
-          ),
+          () => _feedback =
+              sending && result['code'] == 200 && refreshed && !_stale
+              ? _sentFeedback(outcome)
+              : t(
+                  !refreshed
+                      ? 'stale'
+                      : result['code'] == 409
+                      ? 'conflict'
+                      : 'saved',
+                ),
         );
     } catch (_) {
       if (_sameContext) setState(() => _feedback = t('failed'));
@@ -205,6 +209,53 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
       widget.onBusyChanged?.call(false);
     }
   }
+
+  // Reuse the bounded reporting reader: one newest row, exact receipt identity,
+  // at most four reads over five seconds. Never fetch history bodies or resend.
+  Future<String?> _sendOutcome(Map<String, dynamic> result) async {
+    final data = result['data'];
+    final intent = data is Map ? data['intent'] : null;
+    final id = intent is Map ? intent['message_id'] : null;
+    if (id is! String || result['code'] != 200) return null;
+    try {
+      for (final wait in [
+        Duration.zero,
+        const Duration(seconds: 1),
+        const Duration(seconds: 2),
+        const Duration(seconds: 2),
+      ]) {
+        if (!_sameContext) return null;
+        if (wait != Duration.zero) await Future<void>.delayed(wait);
+        if (!_sameContext) return null;
+        final rows = await _read('get_email_delivery_page', {
+          'p_occasion': widget.occasionId,
+          'p_order': widget.orderId,
+          'p_kind': _order!['state'] == 'ordered'
+              ? 'order_confirmation'
+              : 'order_tickets',
+          'p_limit': 1,
+        }).timeout(const Duration(seconds: 2));
+        if (!_sameContext || rows is! List || rows.length != 1) return null;
+        final row = rows.single;
+        if (row is! Map || row['message_id'] != id) return null;
+        final state = row['state'];
+        if (state is! String) return null;
+        if (!const {'pending', 'preparing', 'sending'}.contains(state)) {
+          return state;
+        }
+      }
+    } catch (_) {
+      // A reporting failure cannot undo a confirmed enqueue or trigger a retry.
+    }
+    return null;
+  }
+
+  String? _sentFeedback(String? outcome) =>
+      const {'accepted', 'delivery', 'open', 'click'}.contains(outcome)
+      ? null
+      : outcome == null
+      ? t('queued')
+      : EmailDeliveryStrings.state(outcome);
 
   Future<void> _save(bool resend, OrderEmailIssue? issue) async {
     if (_locked ||
@@ -231,6 +282,8 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
         resend: resend,
       );
       if (!_sameContext) return;
+      final outcome = resend ? await _sendOutcome(result) : null;
+      if (!_sameContext) return;
       // Command result and refresh outcome are separate. Never retry a confirmed command.
       var refreshed = true;
       try {
@@ -245,15 +298,16 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
       await _load();
       if (!_sameContext) return;
       setState(
-        () => _feedback = t(
-          result['code'] == 409
-              ? 'conflict'
-              : !refreshed || _stale
-              ? 'stale'
-              : resend
-              ? 'queued'
-              : 'saved',
-        ),
+        () =>
+            _feedback = resend && result['code'] == 200 && refreshed && !_stale
+            ? _sentFeedback(outcome)
+            : t(
+                result['code'] == 409
+                    ? 'conflict'
+                    : !refreshed || _stale
+                    ? 'stale'
+                    : 'saved',
+              ),
       );
       OrderEmailIssue.changes.value++;
     } catch (error) {
@@ -606,7 +660,24 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
                   sourceBlocked
               ? null
               : () => _save(true, selected),
-          child: Text(sendLabel),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_busy) ...[
+                SizedBox(
+                  key: const ValueKey('order-email-send-progress'),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    semanticsLabel: EmailDeliveryStrings.state('sending'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(child: Text(sendLabel)),
+            ],
+          ),
         ),
       ],
     ];

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import 'dart:convert';
@@ -63,6 +65,8 @@ void main() {
     String state = 'sent',
     String? source,
     String storedEmail = 'customer@example.comcz',
+    Future<dynamic> Function(Map<String, dynamic>)? sendStatus,
+    Future<void> Function()? onChanged,
   }) async {
     await environment.pumpWidget(
       tester,
@@ -90,10 +94,14 @@ void main() {
                       orderId: 4,
                       occasionId: 7,
                       canWrite: true,
+                      onChanged: onChanged,
                       commands: commands,
                       sourceMessageId: source,
                       onShowOrder: () {},
-                      read: (name, args) async => name == 'get_order_history'
+                      read: (name, args) async =>
+                          name == 'get_email_delivery_page'
+                          ? (sendStatus == null ? [] : await sendStatus(args))
+                          : name == 'get_order_history'
                           ? {
                               'code': 200,
                               'data': {
@@ -270,6 +278,152 @@ void main() {
       expect(sent?['p_source_message'], 'current-leaf');
       expect(sent?['p_resend'], true);
       expect(sent?['p_email'], 'customer@example.cz');
+    },
+  );
+
+  for (final outcome in [
+    'accepted',
+    'pending-then-accepted',
+    'pending',
+    'read-failed',
+    'wrong-message',
+  ]) {
+    testWidgets(
+      'successful confirmation suppresses transient queue feedback: $outcome',
+      (tester) async {
+        const messageId = '00000000-0000-4000-8000-000000000099';
+        var sends = 0, reads = 0, refreshes = 0;
+        final commands = SupabaseOrderCommands.withTransport(
+          ClientCommandTransport((name, args) async {
+            sends++;
+            return commandResponseFixture(
+              args['p_command_id'],
+              data: {
+                'sendingRequested': true,
+                'intent': {'message_id': messageId},
+              },
+            );
+          }, maxAttempts: 1),
+        );
+        await open(
+          tester,
+          [],
+          state: 'ordered',
+          commands: commands,
+          onChanged: () async {
+            refreshes++;
+          },
+          sendStatus: (args) async {
+            reads++;
+            expect(args['p_limit'], 1);
+            expect(args['p_order'], 4);
+            expect(args['p_occasion'], 7);
+            expect(args['p_kind'], 'order_confirmation');
+            if (outcome == 'read-failed')
+              throw StateError('reporting temporarily unavailable');
+            return [
+              {
+                'message_id': outcome == 'wrong-message'
+                    ? 'different'
+                    : messageId,
+                'state':
+                    outcome == 'pending' ||
+                        (outcome == 'pending-then-accepted' && reads == 1)
+                    ? 'pending'
+                    : 'accepted',
+              },
+            ];
+          },
+        );
+        await tester.tap(find.text('Odeslat potvrzení'));
+        await tester.pumpAndSettle();
+        expect(
+          sends,
+          1,
+          reason: 'Reporting errors must never retry the send command',
+        );
+        expect(
+          refreshes,
+          1,
+          reason: 'Refresh parent only once, after checking the send',
+        );
+        expect(
+          reads,
+          outcome == 'pending'
+              ? 4
+              : outcome == 'pending-then-accepted'
+              ? 2
+              : 1,
+        );
+        final accepted =
+            outcome == 'accepted' || outcome == 'pending-then-accepted';
+        expect(
+          find.text('Zařazeno k odeslání. Doručení zatím není potvrzeno.'),
+          accepted ? findsNothing : findsOneWidget,
+        );
+        expect(find.textContaining('Požadavek nebyl potvrzen'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('order-email-send-progress')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'send progress prevents duplicates and ignores a receipt arriving after disposal',
+    (tester) async {
+      const messageId = '00000000-0000-4000-8000-000000000099';
+      final reporting = Completer<dynamic>();
+      var sends = 0, reads = 0, refreshes = 0;
+      final commands = SupabaseOrderCommands.withTransport(
+        ClientCommandTransport((name, args) async {
+          sends++;
+          return commandResponseFixture(
+            args['p_command_id'],
+            data: {
+              'sendingRequested': true,
+              'intent': {'message_id': messageId},
+            },
+          );
+        }, maxAttempts: 1),
+      );
+      await open(
+        tester,
+        [],
+        state: 'ordered',
+        commands: commands,
+        onChanged: () async {
+          refreshes++;
+        },
+        sendStatus: (args) {
+          reads++;
+          return reporting.future;
+        },
+      );
+      await tester.tap(find.text('Odeslat potvrzení'));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('order-email-send-progress')),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        isNull,
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(sends, 1);
+      expect(reads, 1);
+      await tester.pumpWidget(const SizedBox());
+      reporting.complete([
+        {'message_id': messageId, 'state': 'accepted'},
+      ]);
+      await tester.pump();
+      expect(sends, 1);
+      expect(reads, 1);
+      expect(refreshes, 0);
+      expect(tester.takeException(), isNull);
     },
   );
 

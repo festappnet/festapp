@@ -10,6 +10,7 @@ class VenueLayoutViewer extends StatelessWidget {
     this.resources = const {},
     this.seatPresentation = const {},
     this.highlightedNodeIds = const {},
+    this.highlightPulse,
     this.activeNodeIds = const {},
     this.focusNodeIds = const {},
     this.focusRevision = 0,
@@ -23,6 +24,9 @@ class VenueLayoutViewer extends StatelessWidget {
 
   /// Increment to request a fit of [focusNodeIds], or the canvas when empty.
   final int focusRevision;
+
+  /// Optional one-shot emphasis; only the canvas painter listens to its ticks.
+  final Animation<double>? highlightPulse;
 
   /// Maximum focus zoom relative to the whole-plan fit.
   final double focusMaxZoomFactor;
@@ -42,6 +46,7 @@ class VenueLayoutViewer extends StatelessWidget {
       presentation: seatPresentation,
       selected: activeNodeIds,
       highlightedIds: highlightedNodeIds,
+      highlightPulse: highlightPulse,
       showSeatSelectionChecks: false,
       focusNodeIds: focusNodeIds,
       focusRevision: focusRevision,

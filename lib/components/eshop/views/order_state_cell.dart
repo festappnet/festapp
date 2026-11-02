@@ -36,6 +36,7 @@ class OrderStateCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scopeOccasion = occasionId ?? order?.occasion;
     final issues = OrderEmailIssue.fromSummary(order?.emailDelivery);
+    final warnings = issues.where((issue) => !issue.awaitingDelivery).toList();
     return Container(
       color: background,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -50,7 +51,9 @@ class OrderStateCell extends StatelessWidget {
               const SizedBox(width: 4),
               OrderBankSyncWarning(order: order),
             ],
-            if (issues.isNotEmpty && order?.id != null && scopeOccasion != null)
+            if (warnings.isNotEmpty &&
+                order?.id != null &&
+                scopeOccasion != null)
               Padding(
                 padding: const EdgeInsets.only(left: 4),
                 child: IconButton(
@@ -65,8 +68,8 @@ class OrderStateCell extends StatelessWidget {
                   ),
                   padding: EdgeInsets.zero,
                   tooltip:
-                      '${issues.map((i) => i.tooltipDescription).join('\n')}\n${EmailDeliveryStrings.recovery('resolveHint')}',
-                  icon: EmailDeliveryIssueIcon(count: issues.length),
+                      '${warnings.map((i) => i.tooltipDescription).join('\n')}\n${EmailDeliveryStrings.recovery('resolveHint')}',
+                  icon: EmailDeliveryIssueIcon(count: warnings.length),
                   onPressed:
                       onOpenEmails ??
                       () => showDialog<void>(

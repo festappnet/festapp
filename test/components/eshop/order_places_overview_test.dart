@@ -15,9 +15,14 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
-  for (final dense in [false, true]) {
+  for (final (dense, reducedMotion) in [
+    (false, false),
+    (false, true),
+    (true, false),
+    (true, true),
+  ]) {
     testWidgets(
-      'plan selection keeps camera and bounded initial focus dense=$dense',
+      'plan selection keeps camera and bounded initial focus dense=$dense reducedMotion=$reducedMotion',
       (tester) async {
         final previous = RightsService.occasionLinkModelNotifier.value;
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
@@ -122,6 +127,11 @@ void main() {
         await environment.pumpWidget(
           tester,
           MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(disableAnimations: reducedMotion),
+              child: child!,
+            ),
             home: Scaffold(
               body: SingleChildScrollView(
                 child: StatefulBuilder(
@@ -147,14 +157,23 @@ void main() {
         await tester.pump();
         expect(calls, ['get_order_admin_detail', 'get_order_blueprint_view']);
         mapReady.complete();
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
         VenueLayoutViewer viewer() =>
             tester.widget(find.byType(VenueLayoutViewer));
+        expect(
+          viewer().highlightPulse!.value,
+          reducedMotion ? 1 : inExclusiveRange(0, 1),
+        );
+        await tester.pumpAndSettle();
+        expect(viewer().highlightPulse!.value, 1);
+        expect(viewer().focusMaxZoomFactor, dense ? 1.9 : 1);
+
         expect(
           viewer().focusNodeIds,
           dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
         );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.6));
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
         expect(find.textContaining('null'), findsNothing);
         final states = viewer().seatPresentation;
         expect(
@@ -189,7 +208,7 @@ void main() {
           viewer().focusNodeIds,
           dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
         );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.6));
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
         expect(viewer().focusRevision, revision);
         viewer().onNodeTap!('00000000-0000-4000-8000-000000000001');
         await tester.pumpAndSettle();
@@ -202,7 +221,7 @@ void main() {
           viewer().focusNodeIds,
           dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
         );
-        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.6));
+        expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.9));
         expect(viewer().focusRevision, revision);
         await tester.ensureVisible(find.byIcon(Icons.location_searching).last);
         await tester.tap(find.byIcon(Icons.location_searching).last);

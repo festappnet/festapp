@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +10,151 @@ import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 void main() {
+  setUpAll(() async {
+    if (Platform.environment['FESTAPP_PLAN_FOCUS_CAPTURE'] == null) return;
+    await (FontLoader(
+      'Futura',
+    )..addFont(rootBundle.load('fonts/Futura PT Book.ttf'))).load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
+  for (final dark in [false, true]) {
+    testWidgets(
+      'one-shot seat cue repaints without rebuilding the viewer dark=$dark',
+      (tester) async {
+        final pulse = AnimationController(
+          vsync: tester,
+          duration: const Duration(milliseconds: 1200),
+        );
+        addTearDown(pulse.dispose);
+        final nodes = [
+          for (var n = 1; n <= 144; n++)
+            LayoutNode.fromJson({
+              'id': '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}',
+              'kind': 'seat',
+              'width': 22,
+              'height': 22,
+              'transform': {
+                'x': (n % 12 < 6 ? 110 : 540) + (n % 6) * 32,
+                'y': 80 + (n ~/ 12) * 110,
+                'rotation': 0,
+              },
+            }),
+        ];
+        final document = VenueLayoutDocument.empty().copyWith(
+          canvas: {
+            'x': 0,
+            'y': 0,
+            'width': 850,
+            'height': 1450,
+            'fill': '#ffffffff',
+          },
+          nodes: nodes,
+        );
+        final own = {nodes[123].id, nodes[124].id};
+        var builds = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(
+              fontFamily: 'Futura',
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xff253858),
+                brightness: dark ? Brightness.dark : Brightness.light,
+              ),
+            ),
+            home: Scaffold(
+              body: RepaintBoundary(
+                key: const ValueKey('seat-cue'),
+                child: Container(
+                  color: dark
+                      ? const Color(0xff101518)
+                      : const Color(0xfffaf9ff),
+                  width: 520,
+                  height: 400,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Aktuální uložený plánek'),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 300,
+                          child: Builder(
+                            builder: (context) {
+                              builds++;
+                              return VenueLayoutViewer(
+                                document: document,
+                                highlightedNodeIds: own,
+                                highlightPulse: pulse,
+                                focusNodeIds: own,
+                                focusRevision: 1,
+                                focusMaxZoomFactor: 1.9,
+                                seatPresentation: {
+                                  for (var n = 0; n < nodes.length; n++)
+                                    nodes[n].id: {
+                                      'fill': n % 7 == 0
+                                          ? '#267329FF'
+                                          : '#412673FF',
+                                      'stateMarker': 'none',
+                                      'selectable': false,
+                                    },
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final initialBuilds = builds;
+        Future<List<int>> pixels(String name) async {
+          final boundary = tester.renderObject<RenderRepaintBoundary>(
+            find.byKey(const ValueKey('seat-cue')),
+          );
+          return (await tester.runAsync(() async {
+            final image = await boundary.toImage(pixelRatio: 1.5);
+            final bytes = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            final data = bytes!.buffer.asUint8List();
+            final dir = Platform.environment['FESTAPP_PLAN_FOCUS_CAPTURE'];
+            if (dir != null) {
+              Directory(dir).createSync(recursive: true);
+              File('$dir/$name-${dark ? 'dark' : 'light'}.png')
+                  .writeAsBytesSync(data);
+            }
+            image.dispose();
+            return data;
+          }))!;
+        }
+
+        final initialPixels = await pixels('still');
+        pulse.forward();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        final cuePixels = await pixels('cue');
+        expect(cuePixels, isNot(orderedEquals(initialPixels)));
+        expect(
+          builds,
+          initialBuilds,
+          reason: 'Animation ticks repaint only; they never rebuild or recompile the viewer',
+        );
+        await tester.pumpAndSettle();
+        expect(pulse.status, AnimationStatus.completed);
+        expect(await pixels('finished'), orderedEquals(initialPixels));
+        await tester.pumpWidget(const SizedBox());
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets(
     'embedded focus zoom is capped and whole-plan reset restores scale',
     (tester) async {
