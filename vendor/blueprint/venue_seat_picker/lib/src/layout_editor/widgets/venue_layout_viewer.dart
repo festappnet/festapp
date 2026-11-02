@@ -56,6 +56,7 @@ class VenueLayoutViewer extends StatelessWidget {
       focusRevision: focusRevision,
       focusMaxZoomFactor: focusMaxZoomFactor,
       focusSeatPixelSize: focusSeatPixelSize,
+      toggleFocusOnFit: focusNodeIds.isNotEmpty,
       onPointTap: onNodeTap == null
           ? null
           : (point) => onNodeTap!(hitTest(document, point.dx, point.dy)),

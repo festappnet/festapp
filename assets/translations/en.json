@@ -4787,6 +4787,9 @@
     "UNKNOWN": "The operation could not be completed. Refresh the current context."
   },
   "OrderDetail": {
+    "plan_zoom_hint_mac": "Zoom: ⌘ + mouse wheel.",
+    "plan_zoom_hint_ctrl": "Zoom: Ctrl + mouse wheel.",
+    "plan_zoom_hint_touch": "Pinch with two fingers to zoom.",
     "changes_partially_saved": "Some changes were saved. Unsaved changes remain in their fields.",
     "cancel_final_warning": "After cancellation, the order can no longer be edited. Cancellation does not refund its payment.",
     "edit_answers": "Edit answers",
