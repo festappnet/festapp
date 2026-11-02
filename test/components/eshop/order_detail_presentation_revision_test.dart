@@ -79,6 +79,8 @@ void main() {
     String orderSymbol = 'ORD-42',
     int formCount = 1,
     Map<String, dynamic>? paymentOverride,
+    List<Map<String, dynamic>> placesOverride = const [],
+    List<Map<String, dynamic>> plansOverride = const [],
     List<Map<String, dynamic>>? productsOverride,
     String? customerNote,
     String ticketState = 'ordered',
@@ -169,8 +171,8 @@ void main() {
                   },
                 },
             ],
-            'places': <dynamic>[],
-            'plans': <dynamic>[],
+            'places': placesOverride,
+            'plans': plansOverride,
             'placementFingerprint': 'presentation-fixture',
           },
         };
@@ -596,6 +598,27 @@ void main() {
     }
   }
 
+  testWidgets('assigned seats are shown only for actual floor-plan geometry', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      language: 'cs',
+      ticketsEnabled: false,
+      plansOverride: [
+        {'id': 9, 'title': 'Sál'},
+      ],
+      placesOverride: [
+        {'blueprintId': 9, 'spotId': 1, 'active': true},
+        {'blueprintId': 9, 'spotId': 1, 'active': true},
+        {'blueprintId': 9, 'spotId': 2, 'active': false},
+        {'blueprintId': 9, 'spotId': 3, 'active': true, 'standing': true},
+      ],
+    );
+    expect(find.text('1 přihláška · 1 přiřazené místo'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('ordinary note precedes hidden note and header omits copy', (
     tester,
   ) async {
@@ -656,7 +679,8 @@ void main() {
             final placesLabel = language == 'cs'
                 ? '0 přiřazených míst'
                 : '0 assigned places';
-            expect(find.text('$countLabel · $placesLabel'), findsOneWidget);
+            expect(find.text(countLabel), findsOneWidget);
+            expect(find.textContaining(placesLabel), findsNothing);
             expect(
               find.text(
                 language == 'cs' ? 'Obsah objednávky' : 'Order contents',
@@ -716,7 +740,8 @@ void main() {
       await tester.tap(find.text('Application 101'));
       await tester.pumpAndSettle();
       expect(find.text('Historical supper'), findsNWidgets(4));
-      expect(find.text('2 applications · 0 assigned places'), findsOneWidget);
+      expect(find.text('2 applications'), findsOneWidget);
+      expect(find.textContaining('assigned places'), findsNothing);
       expect(find.text('Edit products'), findsNothing);
       expect(tester.takeException(), isNull);
     },

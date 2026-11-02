@@ -142,6 +142,25 @@ void main() {
       scale: 2.0,
     ),
   ]) {
+    for (final hasIssue in [false, true]) {
+      testWidgets(
+        'email typo hint requires a current delivery issue: $hasIssue',
+        (tester) async {
+          await open(
+            tester,
+            hasIssue ? [delivery('failed', 'order_confirmation', 'dead')] : [],
+          );
+          expect(
+            find.text(
+              'V e-mailu zákazníka může být překlep. Adresu zde můžete opravit.',
+            ),
+            hasIssue ? findsOneWidget : findsNothing,
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+
     testWidgets(
       '${view.name}: focus on correcting the address, details collapsed',
       (tester) async {

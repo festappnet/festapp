@@ -375,8 +375,23 @@ class _OrderDetailViewState extends State<OrderDetailView>
     ),
   );
 
-  String get _contentsCount =>
-      '${OrderDetailStrings.count(_issuesTickets ? 'tickets_count' : 'applications_count', d.tickets.length)} · ${OrderDetailStrings.count('places_count', d.places.where((p) => p['active'] == true && p['standing'] != true).map((p) => '${p['blueprintId']}:${p['spotId']}').toSet().length)}';
+  String get _contentsCount {
+    final entries = OrderDetailStrings.count(
+      _issuesTickets ? 'tickets_count' : 'applications_count',
+      d.tickets.length,
+    );
+    // Capacity admissions do not imply an assigned seat on a floor plan.
+    final hasSeatPlan =
+        d.plans.isNotEmpty ||
+        d.places.any((place) => place['blueprintId'] != null);
+    if (!hasSeatPlan) return entries;
+    final seats = d.places
+        .where((place) => place['active'] == true && place['standing'] != true)
+        .map((place) => '${place['blueprintId']}:${place['spotId']}')
+        .toSet()
+        .length;
+    return '$entries · ${OrderDetailStrings.count('places_count', seats)}';
+  }
 
   Widget _orderedProducts(Map<String, dynamic> ticket) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
