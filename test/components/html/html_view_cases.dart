@@ -9,7 +9,7 @@ import 'package:fstapp/components/html/html_document_codec.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 void main() {
-  testWidgets('existing app descriptions inherit theme while songs keep styles', (
+  testWidgets('display preserves stored formatting for every content profile', (
     tester,
   ) async {
     const source =
@@ -36,11 +36,11 @@ void main() {
       expect(rendered.html, contains('text-align:center'));
       expect(
         rendered.html.contains('Arial'),
-        profile == HtmlContentProfile.songContent,
+        isTrue,
       );
       expect(
         rendered.html.contains('color:red'),
-        profile == HtmlContentProfile.songContent,
+        isTrue,
       );
     }
   });
