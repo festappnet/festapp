@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
 import {setup as programSetup} from './program-fixtures.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 import {reportingDescriptors,csvPage} from '../src/operations/reporting.mjs';
@@ -9,8 +8,6 @@ import {PreviewArtifacts} from '../src/operations/preview.mjs';
 import {denied} from './form-fixtures.mjs';
 import {invokeOrderOperation} from '../src/operations/orders.mjs';
 async function setup(t){const s=await programSetup(t);await s.db.query('RESET ROLE');
- for(const name of ['synchronization/get_client_activity_v1.sql','eshop_orders/repair_order_email_client_sync_v1.sql','emails/email_reporting.sql'])await s.db.query(await readFile(new URL('../../../database/functions/'+name,import.meta.url),'utf8'));
- await s.db.query(await readFile(new URL('../../../supabase/migrations/20261027180000_reporting_exports.sql',import.meta.url),'utf8'));
  await s.db.query('SET LOCAL ROLE authenticated');
  const artifacts=new PreviewArtifacts();const owner={...s.owner,profile:{...s.owner.profile,binding:'report:'+s.f.actor},allowedOperations:reportingDescriptors.map(d=>d.id),delegatedUnitContext:async(_client,unit)=>{assert.equal(unit,s.f.unit);return{organizationId:s.f.org,unitId:unit};}};
  const ops=new Operations(owner,{artifacts});return{...s,ops,owner,artifacts,call:async(op,args={})=>{const result=await ops.invoke(op,{occasionId:s.f.occasion,...args});assert.equal(result.ok,true,JSON.stringify(result));return result.data;}};

@@ -3,17 +3,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
-import {openDisposableDatabase} from './postgres.mjs';
+import {openDisposableDatabase,assertSchema} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const connection=process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 // New evidence must never silently skip the actual database contract.
 const options={skip:!connection};
 const code='TICKET_ORDER_CONFIRMATION';
-async function install(db){await db.query(await readFile(new URL('../../../supabase/migrations/20261026170000_email_template_commands.sql',import.meta.url),'utf8'));
- // This shared receipt owner gains additional command families in later
- // migrations. Preserve those families when testing current source parity.
- await db.query(await readFile(new URL('../../../database/functions/units/begin_unit_client_mutation_v1.sql',import.meta.url),'utf8'));}
-async function setup(t){const db=await openDisposableDatabase(connection);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);
+
+async function setup(t){const db=await openDisposableDatabase(connection);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,2);
  await db.query("insert into email_templates(code,subject,html,title,organization) values($1,'Org subject','<p>Org body {{name}}</p>','Org template',$2)",[code,f.org]);
  return {db,f};}
 async function read(db,f,type='occasion',entity=f.occasion,selected=code){return (await db.query('select get_email_template_catalog($1,$2,$3,$4,$5) value',[type,entity,f.org,f.unit,selected])).rows[0].value;}
@@ -89,7 +86,7 @@ test('two connections serialize competing override creation and lost-response re
    await admin.query('delete from unit_users where unit=$1',[f.unit]);await admin.query('delete from units where id=$1',[f.unit]);await admin.query('delete from user_info where id=$1',[f.actor]);await admin.query('delete from auth.users where id=$1',[f.actor]);await admin.query('delete from organizations where id=$1',[f.org]);await admin.query('COMMIT');
   }await admin.end();
  });
- await admin.query('BEGIN');await install(admin);f=await fixture(admin,1);await admin.query("insert into email_templates(code,subject,html,organization) values($1,'Ancestor','Ancestor',$2)",[code,f.org]);await admin.query('COMMIT');
+ await admin.query('BEGIN');await assertSchema(admin);f=await fixture(admin,1);await admin.query("insert into email_templates(code,subject,html,organization) values($1,'Ancestor','Ancestor',$2)",[code,f.org]);await admin.query('COMMIT');
  async function begin(db){await db.query('BEGIN');await db.query("set local statement_timeout='5s'");await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');}
  await begin(admin);const revision=(await read(admin,f)).templates[0].revision;const commandId=randomUUID();const first=await change(admin,f,revision,{commandId});assert.equal(first.code,200);
  await begin(other);const competing=change(other,f,revision);await admin.query('COMMIT');assert.equal((await competing).code,409);await other.query('COMMIT');

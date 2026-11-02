@@ -199,54 +199,7 @@ async function runAll() {
 
 
 async function resetSequences(client) {
-  try {
-    // 1. Get List of Sequences
-    const sequencesRes = await client.query(`
-      SELECT 
-        table_schema, 
-        table_name, 
-        column_name,
-        pg_get_serial_sequence('"' || table_schema || '"."' || table_name || '"', column_name) AS seq
-      FROM information_schema.columns
-      WHERE table_schema IN ('public', 'eshop') 
-        AND (column_default LIKE 'nextval%' OR is_identity = 'YES')
-        AND pg_get_serial_sequence('"' || table_schema || '"."' || table_name || '"', column_name) IS NOT NULL;
-    `);
-
-    for (const row of sequencesRes.rows) {
-      if (!row.seq) continue;
-      
-      // 2. Generate Safe Update for each
-      // We read current sequence value directly from the sequence relation
-      // And we prevent rewinding by using GREATEST found ID vs Current Sequence
-      const seq = row.seq;
-      const table = `"${row.table_schema}"."${row.table_name}"`;
-      const col = `"${row.column_name}"`;
-
-      const sql = `
-        DO $$
-        DECLARE
-            v_seq_val bigint;
-            v_max_id bigint;
-        BEGIN
-            -- Get Sequence Value
-            EXECUTE 'SELECT last_value FROM ' || '${seq}' INTO v_seq_val;
-            
-            -- Get Max ID
-            EXECUTE 'SELECT COALESCE(MAX(${col}), 0) FROM ${table}' INTO v_max_id;
-            
-            -- Only advance, never rewind (Safe)
-            IF v_max_id >= v_seq_val THEN
-                PERFORM setval('${seq}', v_max_id + 1, false);
-            END IF;
-        END $$;
-      `;
-      
-      await client.query(sql);
-    }
-  } catch (err) {
-    console.warn(`  [WARN] Failed to reset sequences: ${err.message}`);
-  }
+  await client.query(fs.readFileSync(path.join(TESTS_DIR, 'helpers/reset_owned_sequences.sql'), 'utf8'));
 }
 
 runAll();

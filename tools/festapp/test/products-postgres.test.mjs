@@ -1,22 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
-import { openDisposableDatabase } from './postgres.mjs';
+import { openDisposableDatabase, assertSchema } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { productDescriptors } from '../src/operations/products.mjs';
-async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])
-  await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
-}
+
 
 
 test('shared product UI/MCP SQL boundary preserves atomic stock save, scope, versions, replay and usage guards',
  { skip: !process.env.FESTAPP_MCP_TEST_DATABASE_URL }, async t => {
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL); await db.query('BEGIN');
  t.after(async()=>{await db.query('ROLLBACK');await db.end();});
- await install(db);
+ await assertSchema(db);
  await db.query('RESET ROLE'); const f=await fixture(db,2);
  const other=Number((await db.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
  const otherUnit=Number((await db.query("insert into units(title,organization) values('Other organizer',$1) returning id",[f.org])).rows[0].id);
@@ -98,7 +94,7 @@ test('server keysets bound rows and metadata and preserve the complete editor pr
  { skip: !process.env.FESTAPP_MCP_TEST_DATABASE_URL }, async t => {
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);
  await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});
- await install(db);
+ await assertSchema(db);
  await db.query('RESET ROLE');const f=await fixture(db,2);
  const type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,NULL,'entry') returning id",[f.occasion])).rows[0].id);
  await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Unrelated','entry')",[f.occasion]);
@@ -181,7 +177,7 @@ test('two connections: keysets see committed inserts/deletes and scope moves den
   }
   await admin.end();
  });
- await admin.query('BEGIN');await install(admin);
+ await admin.query('BEGIN');await assertSchema(admin);
  await admin.query('RESET ROLE');f=await fixture(admin,1);
  const type=Number((await admin.query("insert into eshop.product_types(occasion,title,type) values($1,'Concurrent','entry') returning id",[f.occasion])).rows[0].id);
  const ids=(await admin.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select $1,$2,'Product '||n,10,'CZK' from generate_series(1,4) n returning id",[f.occasion,type])).rows.map(r=>Number(r.id));

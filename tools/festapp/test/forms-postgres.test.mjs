@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
-import {connection,options,install,setup,executor,create,formPatch,save,denied} from './form-fixtures.mjs';
+import {connection,options,assertSchema,setup,executor,create,formPatch,save,denied} from './form-fixtures.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 test('forms executor creates a closed draft and returns only the administration snapshot and original versions',options,async t=>{
  const{db,f}=await setup(t);await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const args={occasionId:f.occasion,title:'Atomic form',commandId:randomUUID()};const result=await ex.ops.invoke('forms.create',args);assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.data.authoring.form.is_open,false);assert(!Object.hasOwn(result.data.authoring.form,'link'));assert(!Object.hasOwn(result.data.authoring.form,'key'));
@@ -89,7 +89,7 @@ test('two connections serialize capacity save with the real checkout owner; chec
    await admin.query("delete from abuse_policy_overrides where (target_kind='unit' and target_id=$1) or (target_kind='organization' and target_id=$2)",[f.unit,f.org]);await admin.query('delete from unit_users where unit=$1',[f.unit]);await admin.query('delete from units where id=$1',[f.unit]);await admin.query('delete from user_info where id=$1',[f.actor]);await admin.query('delete from auth.users where id=$1',[f.actor]);await admin.query('delete from organizations where id=$1',[f.org]);await admin.query('COMMIT');
   }
  }finally{await checkout.end();await admin.end();}});
- await admin.query('BEGIN');await install(admin);const {fixture}=await import('../../../automation/authorization/benchmark.mjs');f=await fixture(admin,1);
+ await admin.query('BEGIN');await assertSchema(admin);const {fixture}=await import('../../../automation/authorization/benchmark.mjs');f=await fixture(admin,1);
  await admin.query(`update occasions set features='[{"code":"ticket","is_enabled":true},{"code":"form","is_enabled":true}]' where id=$1`,[f.occasion]);
  const made=await create(admin,f);formId=made.formId;await admin.query('update forms set is_open=true,participant_capacity=2 where id=$1',[formId]);const key=(await admin.query('select key from forms where id=$1',[formId])).rows[0].key;await admin.query('COMMIT');
  await admin.query('BEGIN');await admin.query("set local statement_timeout='5s'");await admin.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[f.actor]);await admin.query('SET LOCAL ROLE authenticated');
@@ -105,7 +105,7 @@ test('two connections serialize capacity save with the real checkout owner; chec
 });
 
 for(const file of ['forms/create_form_test.sql','forms/delete_form_test.sql','eshop_forms/get_form_for_edit_short_title_test.sql','eshop_forms/form_editor_deletion_test.sql','eshop_forms/form_capacity_test.sql','eshop_forms/choice_validation_copy_locale_test.sql']){
- test('existing form regression: '+file,options,async t=>{const{db}=await setup(t);await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/'+file,import.meta.url),'utf8'));});
+ test('existing form regression: '+file,options,async t=>{const{db}=await setup(t);if(file==='eshop_forms/form_capacity_test.sql')await db.query('SET LOCAL ROLE postgres');await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/'+file,import.meta.url),'utf8'));});
 }
 
 test('form save uses the same typed author permission as create and the domain owner, and revocation denies replay',options,async t=>{

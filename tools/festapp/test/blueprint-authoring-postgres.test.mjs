@@ -13,13 +13,6 @@ import {scopesForOperation,MCP_PERMISSIONS} from '../../../packages/festapp_cont
 export async function setup(t,persistent=false){
  assert(process.env.FESTAPP_MCP_TEST_DATABASE_URL,'A marker-verified disposable PostgreSQL is required');
  const state=await seatSetup(t,persistent);const {db,f}=state;await db.query('RESET ROLE');
- await db.query(await readFile(new URL('../../../supabase/migrations/20261023231000_ticket_email_delivery.sql',import.meta.url),'utf8').then(sql=>sql.replace(/^BEGIN;\s*$|^COMMIT;\s*$/gm,'')));
- await db.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));
- await db.query(await readFile(new URL('../../../supabase/migrations/20261027150000_people_group_authoring.sql',import.meta.url),'utf8'));
- const sql=await readFile(new URL('../../../supabase/migrations/20261027160000_blueprint_authoring.sql',import.meta.url),'utf8');await db.query(sql);
- // Production applies with postgres; match declared routine owners in this isolated TX.
- const names=[...sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/g)].map(m=>m[1]);
- for(const row of (await db.query("select format('ALTER FUNCTION %s OWNER TO postgres',oid::regprocedure) command from pg_proc where pronamespace='public'::regnamespace and proname=any($1)",[names])).rows)await db.query(row.command);
  await db.query('SET LOCAL ROLE authenticated');
  const client={rpc:async(name,args)=>{await db.query('SAVEPOINT rpc');try{const keys=Object.keys(args);const data=(await db.query('select '+name+'('+keys.map((k,i)=>k+'=> $'+(i+1)).join(',')+') value',Object.values(args))).rows[0].value;await db.query('RELEASE SAVEPOINT rpc');return{data,error:null};}catch(error){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{data:null,error};}}};
  const owner={...state.ex.owner,allowedOperations:blueprintDescriptors.map(d=>d.id),authorized:action=>action(client,{userId:f.actor})};
@@ -90,9 +83,6 @@ test('full draft save waits for a real checkout hold then rejects protected bind
 });
 test('scanner adapter reuses real eligibility, session and operation owners without leaking credentials or duplicating admission',async t=>{
  const s=await setup(t);await s.db.query('RESET ROLE');
- for(const name of ['20261019030000_web_scanner.sql','20261019040000_scanner_settings_editors.sql','20261019050000_scanner_form_field_catalog.sql','20261024234000_scanner_batch_identity.sql','20261026020000_scanner_auto_offline_summary.sql']){
-  const sql=(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8')).replace(/^BEGIN;\s*$|^COMMIT;\s*$/gm,'');await s.db.query(sql);
- }
  await s.db.query(await readFile(new URL('../../../database/tests/scanning/fixture.sql',import.meta.url),'utf8'));
  const fixture=(await s.db.query('select scanner_test_fixture(1) value')).rows[0].value;const oc=Number(fixture.occasion);const ticketId=Number(fixture.tickets[0]);
  const resource=(await s.db.query('select organization,unit from occasions where id=$1',[oc])).rows[0];

@@ -4,14 +4,10 @@ import {Client,InMemoryTransport} from '@modelcontextprotocol/client';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
 import {setup as formSetup,options,denied} from './form-fixtures.mjs';
 import {configurationDescriptors,invokeConfigurationOperation} from '../src/operations/configuration.mjs';
 import {MCP_PERMISSIONS,scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
-async function setup(t){const {db,f}=await formSetup(t);await db.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));
- // Later authoring migrations refresh the shared probe after settings change
- // its dependencies. Exercise today's contract rather than the old snapshot.
- await db.query(await readFile(new URL('../../../database/functions/others/get_ticket_layout_write_contract_v1.sql',import.meta.url),'utf8'));return {db,f};}
+const setup = formSetup;
 async function read(db,f,kind='occasion'){return(await db.query('select get_configuration_settings($1,$2,$3,$4) value',[kind,kind==='unit'?f.unit:f.occasion,f.org,f.unit])).rows[0].value;}
 async function save(db,f,changes,version=0,command=randomUUID(),kind='occasion'){return(await db.query('select save_configuration_settings($1,$2,$3,$4,$5,$6,$7) value',[kind,kind==='unit'?f.unit:f.occasion,f.org,f.unit,version,command,changes])).rows[0].value;}
 function client(db){return {rpc:async(name,args)=>{const keys=Object.keys(args);try{return{data:(await db.query('select '+name+'('+keys.map((k,i)=>k+'=> $'+(i+1)).join(',')+') value',Object.values(args))).rows[0].value,error:null};}catch(error){return{data:null,error};}}};}
@@ -121,12 +117,12 @@ test('SDK lists all eight configuration tools and executes real versioned save s
 
 test('concurrent move outside organizer consent rejects reads and rolls back a versioned write after its row lock',options,async t=>{
  const {openDisposableDatabase}=await import('./postgres.mjs');
- const {connection,install}=await import('./form-fixtures.mjs');
+ const {connection,assertSchema}=await import('./form-fixtures.mjs');
  const {fixture}=await import('../../../automation/authorization/benchmark.mjs');
  for(const operation of ['read','write']){
   const admin=await openDisposableDatabase(connection),mover=await openDisposableDatabase(connection),worker=await openDisposableDatabase(connection);
   try{
-   await admin.query('BEGIN');await install(admin);await admin.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));
+   await admin.query('BEGIN');await assertSchema(admin);
    const f=await fixture(admin,1);const other=Number((await admin.query("insert into units(title,organization) values('Outside stage5 consent',$1) returning id",[f.org])).rows[0].id);
    await admin.query('insert into unit_users(unit,"user",is_editor,is_manager,is_editor_view) values($1,$2,true,true,true)',[other,f.actor]);await admin.query('COMMIT');
    await mover.query('BEGIN');await mover.query('update occasions set unit=$1 where id=$2',[other,f.occasion]);

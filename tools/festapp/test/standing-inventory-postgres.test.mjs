@@ -3,17 +3,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
-import { openDisposableDatabase } from './postgres.mjs';
+import { openDisposableDatabase, assertSchema } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])
-  await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
- // Ticket-batch guards extend these owners after the original standing cut.
- // Install current owners before asserting their behavior and source parity.
- for(const name of ['save_inventory_pool_internal','save_inventory_resource_internal'])
-  await db.query(await readFile(new URL('../../../database/functions/inventory/'+name+'.sql',import.meta.url),'utf8'));
-}
 async function productFixture(db) {
  const f=await fixture(db,2);
  f.type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Admission','spot') returning id",[f.occasion])).rows[0].id);
@@ -36,7 +28,7 @@ function executor(db,f) {
 }
 
 test('standing preparation is one scoped receipt, replays after loss and returns authoritative IDs/versions without reload',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await productFixture(db);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});const f=await productFixture(db);
  const foreign=Number((await db.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
  const foreignType=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Foreign','spot') returning id",[foreign])).rows[0].id);
  const foreignProduct=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) values($1,$2,'Foreign',10,'CZK') returning id",[foreign,foreignType])).rows[0].id);
@@ -65,7 +57,7 @@ test('standing preparation is one scoped receipt, replays after loss and returns
 });
 
 test('failure between children rolls back all new stock, and insufficient capacity preserves sold items and addressed seats',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await productFixture(db);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});const f=await productFixture(db);
  await db.query('SAVEPOINT original_owner');
  await db.query("CREATE OR REPLACE FUNCTION public.save_inventory_resource_internal(p_occasion bigint,p_expected_version bigint,p_resource jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Injected after pool'; END $$");
  await db.query('SET LOCAL ROLE authenticated');let ex=executor(db,f);assert.equal((await ex.prepare()).ok,false);
@@ -79,7 +71,7 @@ test('failure between children rolls back all new stock, and insufficient capaci
  await db.query('ROLLBACK TO SAVEPOINT original_link_owner');await db.query('RELEASE SAVEPOINT original_link_owner');
 
  await db.query(`update occasions set features='[{"code":"blueprint","is_enabled":true}]' where id=$1`,[f.occasion]);
- const blueprint=Number((await db.query("insert into eshop.blueprints(occasion,organization,title,objects) values($1,$2,'Existing addressed seats','[]') returning id",[f.occasion,f.org])).rows[0].id);
+ const blueprint=Number((await db.query("insert into eshop.blueprints(occasion,organization,title) values($1,$2,'Existing addressed seats') returning id",[f.occasion,f.org])).rows[0].id);
  const order=Number((await db.query("insert into eshop.orders(occasion,order_sequence,order_symbol,state,price,currency_code,data) values($1,next_order_sequence($1),generate_order_symbol(),'paid',100,'CZK','{}') returning id",[f.occasion])).rows[0].id);
  const ticket=Number((await db.query("insert into eshop.tickets(occasion,state) values($1,'paid') returning id",[f.occasion])).rows[0].id);
  const item=Number((await db.query('insert into eshop.order_product_ticket("order",ticket,product) values($1,$2,$3) returning id',[order,ticket,f.product])).rows[0].id);
@@ -120,7 +112,7 @@ test('competing preparations serialize on the product; one winner creates stock 
   }
   await first.end();
  });
- await first.query('BEGIN');await install(first);f=await productFixture(first);f.occasions=(await first.query('select id from occasions where organization=$1',[f.org])).rows.map(r=>r.id);
+ await first.query('BEGIN');await assertSchema(first);f=await productFixture(first);f.occasions=(await first.query('select id from occasions where organization=$1',[f.org])).rows.map(r=>r.id);
  const replayProduct=Number((await first.query("insert into eshop.products(occasion,product_type,title,price,currency_code) values($1,$2,'Concurrent replay',100,'CZK') returning id",[f.occasion,f.type])).rows[0].id);
  await first.query('COMMIT');
  for(const db of [first,second]) {await db.query('BEGIN');await db.query('set local statement_timeout=5000');await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);}
@@ -152,7 +144,7 @@ test('competing preparations serialize on the product; one winner creates stock 
 
 for(const name of ['eshop/standing_existing_product_inventory_test.sql','eshop/inventory_command_boundaries_test.sql','eshop/inventory_resource_safety_test.sql']) {
  test(`inventory regression: ${name}`,options,async t=>{
-  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});
   await db.query('SET LOCAL ROLE postgres');await db.query("select set_config('request.jwt.claim.role','service_role',true)");
   await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
   await db.query(await readFile(new URL('../../../database/tests/'+name,import.meta.url),'utf8'));
@@ -161,7 +153,7 @@ for(const name of ['eshop/standing_existing_product_inventory_test.sql','eshop/i
 
 
 test('runtime source parity and grants for the shared inventory owners',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});
  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
  const owners=['save_inventory_pool_command_internal','save_inventory_pool_internal','update_inventory_pool_bundle_internal_v1','save_inventory_resource_internal','save_resource_client_sync_v1','prepare_standing_inventory'];
  const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');

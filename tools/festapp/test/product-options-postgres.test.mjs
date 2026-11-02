@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
-import {openDisposableDatabase} from './postgres.mjs';
+import {openDisposableDatabase,assertSchema} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db){for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023190000_inventory_summary_reads.sql','20261023210000_product_authoring_options.sql'])await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));}
-async function setup(t){const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);return{db,f};}
+
+async function setup(t){const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,2);return{db,f};}
 function executor(db,f){const calls=[];const owner={root:'/tmp/festapp-product-options',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['products.options'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,args)=>{assert.equal(name,'get_product_catalog_options');const data=(await db.query('select get_product_catalog_options($1,$2,$3,$4,$5,$6) value',[args.p_occasion,args.p_organization,args.p_unit,args.p_kind,args.p_after,args.p_limit])).rows[0].value;calls.push({kind:args.p_kind,rows:data.options.length,jsonBytes:Buffer.byteLength(JSON.stringify(data))});return{data,error:null};}},{userId:f.actor})};const ops=new Operations(owner);return{calls,list:(kind,after)=>ops.invoke('products.options',{occasionId:f.occasion,kind,...(after?{after}:{})})};}
 
 test('unused product authoring choices match UI metadata and are bounded independently of products or spots',options,async t=>{
