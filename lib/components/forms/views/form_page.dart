@@ -745,7 +745,7 @@ class _FormPageState extends State<FormPage> {
     final brightness = switch (form!.definition.themeMode) {
       'light' => Brightness.light,
       'dark' => Brightness.dark,
-      _ => MediaQuery.platformBrightnessOf(context),
+      _ => Theme.of(context).brightness,
     };
     return ThemeConfig.theme(brightness: brightness);
   }

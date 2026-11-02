@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-11-01",
+  "status": "validated-candidate-not-yet-production",
+  "rootCause": "Premature wall-clock expiry while native Wix token delivery is deferred during initialization; not established vendor-wide failure.",
+  "visibleTimeBudgetMs": 60000,
+  "candidateWidgetSha256": "7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df",
+  "command": "python3 automation/ci/run.py step wix-contract",
+  "wixPassed": 46,
+  "wixSkipped": 4,
+  "sharedCheckoutPassed": 54,
+  "failed": 0,
+  "databaseScope": "No SQL/executor source changed; database tests not run in this batch.",
+  "nativeVerification": "integrations/wix/evidence/native-auth-probe-helper-20261101.json",
+  "backgroundVerification": "integrations/wix/evidence/visible-time-candidate-20261101.json",
+  "staticValidation": "Relative guide, icon and settings resources resolve from dist; rebuilt package verified after sanitized technical guide addition.",
+  "artifactZipSha256": "b5cd9eb2edce7a32a02cda48f7812daf0ddab2b174cd0d612448dccc40347e28",
+  "artifactManifestSha256": "f831e0d543e4206cf309e3193231d73a80abcaf336e5666eb993fe5a5e158bf3",
+  "productionWidgetChangedByThisFinalValidation": false,
+  "marketplaceSubmitted": false
+}

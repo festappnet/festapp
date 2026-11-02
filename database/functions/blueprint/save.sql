@@ -148,6 +148,7 @@ BEGIN
  result:=public.blueprint_binding_projection_internal(b.id)||jsonb_build_object('code',200,'blueprint_id',b.id,'layout_revision',b.layout_revision,
   'document_hash',encode(extensions.digest(convert_to(doc::text,'UTF8'),'sha256'),'hex'));
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
+ PERFORM public.assert_form_seating_source_internal(id) FROM public.forms WHERE occasion=b.occasion;
  PERFORM public.notification_center_blueprint_capacity_internal(b.id);
  RETURN result;
 END $$;

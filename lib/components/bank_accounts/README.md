@@ -73,3 +73,36 @@ scopes use the private SQL registry in `eshop_payment_references/` in the existi
 order transaction. Account aliases share canonical receiving identity; committed
 symbols and form watermarks survive order deletion. Enrollment freezes receiving
 identity and starts locked. See the [scope/import/activation runbook](../../../docs/operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
+
+## Last failure diagnostics
+
+Current health (`last_error` / connection state) and the last failure are
+independent. BankSync schema 15 persists one versioned `api_last_failure` per
+account atomically with the failed poll; a subsequent successful pull clears
+current health errors but retains the diagnostic. This is bounded metadata,
+not a log of bank statements. It records a UUID, UTC failure time, safe code,
+stage and, for statement decoding, operation, relay/direct route, HTTP status
+and JSON value types at document / accountStatement / info. It never stores
+response bodies, arbitrary keys, URLs, tokens or account values in this object.
+The route identifies the observed path; it does not prove whether the bank or
+the relay caused a malformed response. The UUID identifies the persisted failure,
+not an end-to-end request trace.
+
+The existing account-admin `bank-sync-manage` status operation allowlists this
+metadata into `last_failure`. The connection tab provides a localized explanation
+and expandable, selectable technical details; recovered failures are labelled
+using the failure and last-success instants. No diagnostic is added to public
+checkout, order warnings or bank-choice RPCs. A status-fetch outage does not
+invent a bank failure or overwrite the stored diagnostic. Before the BankSync
+schema migration, known legacy parsing errors show a cause with time unavailable.
+
+Rollout: release the schema-14/15-compatible BankSync runtime, then apply BankSync
+migration 0015 on its canonical D1 (migration 0014 remains a separate prerequisite),
+then release the selected Festapp consumer Edge Function and Flutter client.
+No Festapp SQL migration is needed. Existing diagnostic-free consumers and older
+BankSync schemas remain supported. This source change does not deploy or migrate
+production, and historical response metadata cannot be reconstructed retroactively.
+
+The same safe UUID and metadata are emitted in the structured
+`bank_api_fetch_failure` log after persistence, so operators can correlate the UI
+reference with runtime logs without logging the bank response.

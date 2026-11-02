@@ -805,15 +805,20 @@ Map<String, dynamic> _compileScene(
       );
       if (prepared != null) {
         final label = resolveNodeAppearance(document, n).label;
+        final textPath = n.kind == 'text'
+            ? prepared['path']
+            : _centerLabelInk(prepared['path'] as List);
+        final textBounds = sceneItemBounds({
+          'matrix': [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+          'path': textPath,
+        });
         items.add({
           'id': '${n.id}:text',
           'nodeId': n.id,
           'kind': 'glyphs',
           'minZoom': 0,
-          'matrix': labelRenderMatrix(n, label, matrix),
-          'path': n.kind == 'text'
-              ? prepared['path']
-              : _centerLabelInk(prepared['path'] as List),
+          'matrix': labelRenderMatrix(n, label, matrix, textBounds: textBounds),
+          'path': textPath,
           'localClip': prepared['clip'],
           'fill': label['color'],
           'stroke': '#00000000',

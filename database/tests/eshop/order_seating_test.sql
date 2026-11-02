@@ -1,5 +1,5 @@
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; view_token text:=encode(extensions.gen_random_bytes(32),'hex');
+DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seating test') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO unit_id;
@@ -10,9 +10,12 @@ BEGIN
  INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data) VALUES(occ,public.next_order_sequence(occ),public.generate_order_symbol(),'paid','{}') RETURNING id INTO other_ord;
  INSERT INTO eshop.tickets(occasion,ticket_symbol,state) VALUES(occ,'SEAT-TEST','paid') RETURNING id INTO ticket;
  INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(ord,prod,ticket) RETURNING id INTO opt;
- INSERT INTO eshop.blueprints(organization,occasion,title,groups,objects) VALUES(org,occ,'Hall','[{"id":12,"title":"7"}]','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(organization,occasion,title) VALUES(org,occ,'Hall') RETURNING id INTO bp;
  INSERT INTO eshop.spots(occasion,title,blueprint,order_product_ticket) VALUES(occ,'3',bp,opt) RETURNING id INTO seat;
- UPDATE eshop.blueprints SET objects=jsonb_build_array(jsonb_build_object('id',seat,'type','spot','group',12)) WHERE id=bp;
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',jsonb_build_array(
+  jsonb_build_object('id',group_node,'kind','group','label','7','width',1,'height',1,'transform',jsonb_build_object('x',0,'y',0,'rotation',0)),
+  jsonb_build_object('id',seat_node,'kind','seat','parentId',group_node,'width',40,'height',40,'transform',jsonb_build_object('x',60,'y',60,'rotation',0)))) WHERE id=bp;
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,group_node) VALUES(bp,seat_node,seat,group_node);
  original:=jsonb_build_array(jsonb_build_object('id',ticket,'products',jsonb_build_array(jsonb_build_object('id',prod,'title','Místo','price',450))));
  result:=public.order_tickets_with_seating_internal(ord,original);
  PERFORM assert_eq(public._swap_spots_generate_product_json(prod,seat)->>'spot_group_title','7','Seat swaps preserve table metadata');
@@ -23,9 +26,9 @@ BEGIN
  PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,'[]'),'[]'::jsonb,'Empty admissions preserved');
  UPDATE eshop.spots SET title='4' WHERE id=seat;
  PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_title}','4','Current assignment takes precedence');
- UPDATE eshop.blueprints SET layout=jsonb_build_object('nodes',jsonb_build_array(jsonb_build_object('id','12345678-1234-1234-1234-123456789012','kind','table','label','B12'))) WHERE id=bp;
- INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,group_node) VALUES(bp,gen_random_uuid(),seat,'12345678-1234-1234-1234-123456789012');
- PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_group_title}','B12','Canonical table label takes precedence over legacy objects');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,0,label}','"B12"'::jsonb) WHERE id=bp;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_group_title}','B12','Saved canonical table label is used');
+ PERFORM assert_eq(public.get_tickets_with_details(ord)#>>'{0,order_product_ticket,0,spot_group_title}','B12','Email ticket delivery resolves saved canonical table names');
  UPDATE eshop.blueprint_seat_bindings SET group_node=NULL WHERE spot=seat;
  PERFORM assert_true(public.order_tickets_with_seating_internal(ord,result)#>>'{0,products,0,spot_group_title}' IS NULL,'Ungrouped assignment clears stale table');
  UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;
@@ -37,7 +40,7 @@ BEGIN
  INSERT INTO public.inventory_contexts(inventory_pool,title) VALUES(pool_id,'Standing') RETURNING id INTO context_id;
  INSERT INTO public.forms(occasion,blueprint,title,link,is_open,type) VALUES(occ,bp,'Standing test','standing-test-'||gen_random_uuid(),true,'ticket') RETURNING id INTO fid;
  UPDATE eshop.orders SET form=fid WHERE id=ord;
- UPDATE eshop.blueprints SET layout=jsonb_build_object('nodes',jsonb_build_array(jsonb_build_object('id',area_id,'kind','capacityArea','label','Parket VIP'))) WHERE id=bp;
+ UPDATE eshop.blueprints SET layout=layout||jsonb_build_object('nodes',jsonb_build_array(jsonb_build_object('id',area_id,'kind','capacityArea','label','Parket VIP'))) WHERE id=bp;
  INSERT INTO eshop.blueprint_area_bindings(blueprint,node_id,inventory_context,product) VALUES(bp,area_id,context_id,prod);
  UPDATE eshop.spots SET blueprint=NULL,title=NULL,inventory_context=context_id,order_product_ticket=opt WHERE id=seat;
  result:=public.order_tickets_with_seating_internal(ord,original);

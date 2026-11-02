@@ -136,7 +136,7 @@ class _HtmlViewState extends State<HtmlView> {
 
     Widget content = HtmlWithAppLinksWidget(
       context,
-      linkifyHtmlText(normalizeHtmlContentStyles(widget.html, widget.profile)),
+      linkifyHtmlText(widget.html),
       renderMode: RenderMode.listView,
       textStyle:
           htmlTextStyle(context, fontSize: widget.fontSize, color: textColor),

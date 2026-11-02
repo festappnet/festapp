@@ -1,0 +1,7 @@
+# Order detail polish browser check - 2026-11-02
+
+Local build `main.dart.js` SHA-256 `4b680f4bbfd385b2980858fc481e426273f2329ecab60f842d404f416b41a71f` on port 58631, isolated headless browsers with disposable local Supabase and production endpoints blocked.
+
+Petr order 5 showed the synthetic customer note above the hidden note, compact payment Kč1450 / Kč1600 and Kč150 outstanding. Header copy was absent while grid copy icons remained (`overview.png`). Payments remained selected with matching URLs when navigating Previous from order 5 to 8 and clicking order 9's grid symbol.
+
+A double-click on Eva's detail Download PDF and, separately, on a synthetic ticket's grid Download Ticket each produced one real local `download-ticket` POST with HTTP 200. The browser did not capture the disabled/spinner state, and a saved PDF file was not independently verified. Browser commands became unresponsive after PDF activity in successive sessions, so dark narrow layout and the remaining missing-answer display were not verified in this browser pass. Targeted widget tests separately cover the loading state, single-flight behavior and recovery for both shared control variants; those are test results rather than visual browser observations. No business-data writes were made. Two owned browser sessions closed normally. The final session close timed out; its dedicated daemon PID 34301 was identified by the `polish-qa-last-20261102.sock` socket and stopped. It had no remaining child browser process. Local HTTP and Supabase remain running.

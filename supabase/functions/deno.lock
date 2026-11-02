@@ -19,7 +19,8 @@
     "npm:undici@6.29.1": "6.29.1",
     "npm:unicode-match-property-value-ecmascript@2.2.1": "2.2.1",
     "npm:unicode-properties@2.0.1": "2.0.1",
-    "npm:unicode-segmenter@0.17.3": "0.17.3"
+    "npm:unicode-segmenter@0.17.3": "0.17.3",
+    "npm:unicode-trie@3.0.0": "3.0.0"
   },
   "jsr": {
     "@std/assert@1.0.19": {

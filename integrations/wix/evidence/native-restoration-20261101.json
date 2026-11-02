@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-01",
+  "nativeRelease": "2.1 minor, restored normal widget configuration; version 2.1 release confirmed by Wix",
+  "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+  "stableWidgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+  "tagName": "vstupenky-online-form",
+  "frontendSdkEnabled": true,
+  "dependency": "@wix/site-site v1",
+  "scope": "Only script URL was edited in component during diagnostic; it was restored and cold-read back before release. No new permissions, fees or App Market submission.",
+  "studio": {"temporaryPageDeleted": true, "deletedPageUrlReturns404": true, "publishedWidgetCount": 2, "originalUrlAndTitleAndStylePreserved": true, "iframesAndDirectLinksPresent": true, "diagnosticMarkerAbsent": true, "manageAppsAfterRestoration": "One installed app, vstupenky.online, with Open in Editor; no Update App action shown after reload.", "installedVersionIndependentlyVerified": false},
+  "harmony": {"publishedWidgetCount": 1, "originalUrlAndTitleAndStylePreserved": true, "iframeAndDirectLinkPresent": true},
+  "limitation": "The historical production QA form URL currently returns Formulář nenalezen; presence of the wrapper does not prove checkout."
+}

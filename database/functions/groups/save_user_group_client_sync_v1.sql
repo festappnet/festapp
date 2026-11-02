@@ -85,7 +85,7 @@ BEGIN
     WHERE g.id=v_id;
     SELECT COALESCE(array_agg(ug."user" ORDER BY ug."user"),'{}'::uuid[]),
       COALESCE(jsonb_agg(jsonb_build_object('userId',ug."user",
-        'isAdmin',ug.is_admin) ORDER BY ug."user"),'[]'::jsonb)
+        'isAdmin',ug.is_admin) ORDER BY ug."user") FILTER(WHERE public.occasion_member_visible_internal(p_occasion,ug."user")),'[]'::jsonb)
       INTO v_old_users,v_current_participants FROM public.user_groups ug
       WHERE ug."group"=v_id;
     INSERT INTO public.client_aggregate_versions
@@ -187,7 +187,12 @@ BEGIN
       AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=v_id::text
       RETURNING version INTO v_version;
   END IF;
-  PERFORM public.write_user_group_members_internal_v1(p_occasion,v_id,p_group->'participants',true);
+  -- Hidden memberships are absent from editor payloads, not removed by saving them.
+  PERFORM public.write_user_group_members_internal_v1(p_occasion,v_id,(p_group->'participants')||coalesce((
+    SELECT jsonb_agg(jsonb_build_object('user_id',ug."user",'is_admin',ug.is_admin))
+    FROM public.user_groups ug WHERE ug."group"=v_id
+      AND NOT public.occasion_member_visible_internal(p_occasion,ug."user")
+      AND NOT ug."user"=ANY(v_new_users)), '[]'::jsonb),true);
   IF v_old_private AND v_old_place IS DISTINCT FROM v_place_id THEN
     IF EXISTS (SELECT 1 FROM public.user_group_info g WHERE g.id<>v_id
       AND g.place=v_old_place) THEN

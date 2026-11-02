@@ -1296,6 +1296,15 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_connections (
   UNIQUE(instance_id,consumer_app_id,remote_bank_account_id),
   UNIQUE(instance_id,provider,physical_account)
 );
+-- Continuous failed observations drive UI warnings independently of email incidents.
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_since timestamptz;
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_observed_at timestamptz;
+
+-- Tokens are issued before remote I/O, then accepted once in start order.
+CREATE SEQUENCE IF NOT EXISTS eshop.bank_sync_observation_ids;
+REVOKE ALL ON SEQUENCE eshop.bank_sync_observation_ids FROM PUBLIC,anon,authenticated,service_role;
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS observation_id bigint NOT NULL DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS eshop.bank_sync_account_aliases (
   bank_account_id bigint PRIMARY KEY REFERENCES eshop.bank_accounts(id),
   connection_id bigint NOT NULL REFERENCES eshop.bank_sync_connections(id)
@@ -1640,3 +1649,24 @@ ALTER TABLE public.notification_center_maintenance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
 -- End organization notification center private projections.
+
+-- Configuration history only. Physical placement remains eshop.spots.
+CREATE TABLE IF NOT EXISTS public.form_seating_transitions (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ occasion bigint NOT NULL REFERENCES public.occasions(id) ON DELETE RESTRICT,
+ form bigint REFERENCES public.forms(id) ON DELETE SET NULL,
+ blueprint bigint REFERENCES eshop.blueprints(id) ON DELETE SET NULL,
+ state text NOT NULL DEFAULT 'organizer_managed' CHECK(state IN ('organizer_managed','published','cancelled')),
+ revision bigint NOT NULL DEFAULT 1 CHECK(revision>0),
+ started_by uuid NOT NULL, started_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ finished_by uuid, finished_at timestamptz,
+ CHECK(state<>'organizer_managed' OR (form IS NOT NULL AND blueprint IS NOT NULL)),
+ CHECK((state='organizer_managed' AND finished_at IS NULL AND finished_by IS NULL) OR
+       (state<>'organizer_managed' AND finished_at IS NOT NULL AND finished_by IS NOT NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS form_seating_transitions_active_form ON public.form_seating_transitions(form) WHERE state='organizer_managed';
+CREATE INDEX IF NOT EXISTS form_seating_transitions_target ON public.form_seating_transitions(blueprint,state);
+ALTER TABLE public.form_seating_transitions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.form_seating_transitions FROM PUBLIC,anon,authenticated,service_role;
+-- The service-role email renderer reads seating through invoker SQL helpers.
+GRANT SELECT ON public.form_seating_transitions TO service_role;

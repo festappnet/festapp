@@ -8,7 +8,7 @@ BEGIN
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Fixture',org,un,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO occ;
- INSERT INTO eshop.blueprints(organization,occasion,title,objects) VALUES(org,occ,'Seats','[]') RETURNING id INTO bp;
+ INSERT INTO eshop.blueprints(organization,occasion,title) VALUES(org,occ,'Seats') RETURNING id INTO bp;
  INSERT INTO public.forms(occasion,blueprint,title,is_open) VALUES(occ,bp,'Seats',true) RETURNING key INTO fk;
  INSERT INTO eshop.spots(occasion,blueprint,title) VALUES(occ,bp,'One') RETURNING id INTO seat;
  INSERT INTO eshop.spots(occasion,blueprint,title) VALUES(occ,bp,'Two') RETURNING id INTO seat2;

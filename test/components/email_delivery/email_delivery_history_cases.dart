@@ -69,7 +69,7 @@ void main() {
       occasionId: 3,
       organizationId: 2,
       embedded: true,
-      ordersOnly: true,
+      orderId: 7,
       read: (name, args) async {
         calls.add({'name': name, ...args});
         if (name == 'get_email_delivery_detail') {
@@ -89,7 +89,7 @@ void main() {
       },
     ))));
     await tester.pumpAndSettle();
-    expect(calls.single['p_orders_only'], true);
+    expect(calls.single['p_order'], 7);
     expect(calls.single['p_occasion'], 3);
     expect(find.byType(SwitchListTile), findsNothing);
     expect(find.byType(DropdownButton<String>), findsNothing);
@@ -129,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, CommonStrings.update));
     await tester.pumpAndSettle();
-    expect(calls.last['p_orders_only'], true);
+    expect(calls.last['p_order'], 7);
     expect(
         calls.where((p) => p['name'] == 'get_email_delivery_page').length, 2);
     expect(
@@ -182,7 +182,7 @@ void main() {
         home: Scaffold(
             body: EmailDeliveryHistory(
                 embedded: true,
-                ordersOnly: true,
+                orderId: 7,
                 occasionId: occasion,
                 read: read)));
     await tester.pumpWidget(page(3));

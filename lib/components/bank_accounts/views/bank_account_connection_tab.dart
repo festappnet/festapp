@@ -1,3 +1,4 @@
+import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -80,11 +81,73 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       : widget.account.tokenMasked;
   DateTime? get _lastBankPull => widget.account.bankSync?.bankPullAt;
 
+  Widget _buildLastFailure(BuildContext context, BankSyncFailure failure) {
+    final sync = widget.account.bankSync!;
+    final at = failure.occurredAt;
+    // BankSync success instants have second precision; diagnostics include milliseconds.
+    final recovered =
+        at != null &&
+        sync.bankPullAt != null &&
+        sync.lastError == null &&
+        sync.bankPullAt!.millisecondsSinceEpoch ~/ 1000 >=
+            at.millisecondsSinceEpoch ~/ 1000;
+    final metadata = <String>[
+      '${BankAccountStrings.diagnostic('stage')}: ${BankAccountStrings.diagnosticStage(failure.stage)}',
+      '${BankAccountStrings.diagnostic('code')}: ${failure.code}',
+      if (failure.httpStatus != null)
+        '${BankAccountStrings.diagnostic('http')}: ${failure.httpStatus}',
+      if (failure.operation != null)
+        '${BankAccountStrings.diagnostic('operation')}: ${failure.operation}',
+      if (failure.transport != null)
+        '${BankAccountStrings.diagnostic('transport')}: ${BankAccountStrings.diagnostic(failure.transport!)}',
+      if (failure.documentShape != null ||
+          failure.statementShape != null ||
+          failure.infoShape != null)
+        '${BankAccountStrings.diagnostic('shape')}: document=${failure.documentShape ?? '?'}; accountStatement=${failure.statementShape ?? '?'}; info=${failure.infoShape ?? '?'}',
+      if (failure.id != null)
+        '${BankAccountStrings.diagnostic('reference')}: ${failure.id}',
+    ];
+    return ExpansionTile(
+      key: ValueKey('bank-last-failure-${failure.id ?? failure.code}'),
+      tilePadding: EdgeInsets.zero,
+      title: Text(BankAccountStrings.diagnostic('title')),
+      subtitle: Text(
+        at == null
+            ? BankAccountStrings.diagnostic('timeUnknown')
+            : LocaleDateTime.instant(
+                at,
+                context.locale.toString(),
+                seconds: true,
+              ),
+      ),
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(BankAccountStrings.diagnosticReason(failure.code)),
+              if (recovered) ...[
+                const SizedBox(height: 8),
+                Text(BankAccountStrings.diagnostic('recovered')),
+              ],
+              const SizedBox(height: 8),
+              SelectableText(metadata.join('\n')),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildConnectionStatus(BuildContext context) {
     final sync = widget.account.bankSync!;
     final colors = Theme.of(context).colorScheme;
-    final connected = !widget.isSaving && sync.state == 'connected';
-    final needsAttention = !widget.isSaving && sync.state == 'degraded';
+    final connected =
+        !widget.isSaving && sync.state == 'connected' && !sync.warningPending;
+    final needsAttention =
+        !widget.isSaving && sync.state == 'degraded' && !sync.warningPending;
     final color = connected
         ? (Theme.of(context).brightness == Brightness.dark
               ? Colors.green.shade300
@@ -158,7 +221,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                         ? BankAccountStrings.synchronizationChanging
                         : widget.isSaving
                         ? BankAccountStrings.tokenVerifying
-                        : BankAccountStrings.connectionStatus(sync.state),
+                        : BankAccountStrings.connectionStatus(
+                            sync.warningPending ? 'retrying' : sync.state,
+                          ),
                     style: TextStyle(color: color, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -225,12 +290,20 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               _buildConnectionStatus(context),
               const SizedBox(height: 12),
               if (!widget.isSaving &&
-                  widget.account.bankSync!.lastError != null)
+                  widget.account.bankSync!.lastError != null &&
+                  !widget.account.bankSync!.warningPending)
                 Text(
                   BankAccountStrings.syncError(
                     widget.account.bankSync!.lastError,
                   ),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              if (!widget.isSaving &&
+                  !widget.isReadOnly &&
+                  widget.account.bankSync!.lastFailure != null)
+                _buildLastFailure(
+                  context,
+                  widget.account.bankSync!.lastFailure!,
                 ),
               if (widget.account.bankSync!.mode == 'email')
                 Text(BankAccountStrings.emailIdentityNotice),

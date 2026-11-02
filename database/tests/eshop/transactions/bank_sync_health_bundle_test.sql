@@ -37,6 +37,28 @@ BEGIN
  SELECT to_jsonb(x) INTO item FROM public.get_bank_accounts_for_unit_management(unit_id) x WHERE id=bank;
  PERFORM assert_eq(item#>>'{bank_sync_warning,code}','suspended','unit account card sees same diagnosis');
  RESET ROLE;
+ -- A short bank failure is suppressed at the shared reader boundary, so
+ -- orders, form choices and unit cards all omit the warning triangle.
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ UPDATE eshop.bank_sync_connections SET state='connected' WHERE id=conn;
+ PERFORM public.record_bank_sync_pull(conn,NULL,'fio_token_invalid_or_inactive',public.begin_bank_sync_observation(conn)::bigint);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_eq(public.get_bank_sync_connection(bank)->>'warning_pending','true','connection settings show neutral retry status');
+ bundle:=public.get_orders('bank-health-bundle',NULL,NULL);
+ PERFORM assert_true(bundle#>'{data,payment_info,0,bank_sync_warning}'='null'::jsonb,'short failure produces no order warning');
+ bundle:=public.get_form_for_edit('bank-health-bundle-form');
+ PERFORM assert_true(bundle#>'{data,available_bank_accounts,0,bank_sync_warning}'='null'::jsonb,'short failure produces no form account warning');
+ SELECT to_jsonb(x) INTO item FROM public.get_bank_accounts_for_unit_management(unit_id) x WHERE id=bank;
+ PERFORM assert_true(item->'bank_sync_warning'='null'::jsonb,'short failure produces no unit account warning');
+ RESET ROLE;
+ UPDATE eshop.bank_sync_connections SET failure_since=now()-interval '10 minutes' WHERE id=conn;
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_eq(public.get_bank_sync_connection(bank)->>'warning_pending','false','persistent failure leaves the neutral grace state');
+ bundle:=public.get_orders('bank-health-bundle',NULL,NULL);
+ PERFORM assert_eq(bundle#>>'{data,payment_info,0,bank_sync_warning,code}','token_invalid','persistent failure reaches the order warning');
+ RESET ROLE;
+ UPDATE eshop.bank_sync_connections SET state='suspended',last_error=NULL WHERE id=conn;
  UPDATE eshop.bank_account_users SET is_admin=false WHERE bank_account=bank AND "user"=actor;
  SET LOCAL ROLE authenticated;
  bundle:=public.get_orders('bank-health-bundle',NULL,NULL);

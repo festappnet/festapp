@@ -30,6 +30,34 @@ control database: install the same job there with
 database and selected organization as psql variables. Production activation for this
 release is limited to organization 3 (festapptickets).
 
+UI warnings for recorded bank request errors require failed observations spanning
+at least 10 minutes. One failed request or a four-minute interruption shows no
+warning triangle in orders or account cards. The latest failure observation must
+also be less than 10 minutes old. `record_bank_sync_pull` owns the durable
+`failure_since` / `failure_observed_at` evidence for both status reads and the
+monitor. Changing error codes preserves this clock; a successful pull, including
+a newer upstream success seen alongside a subsequent error, resets it. The
+admin connection tab uses the same server-owned `warning_pending` flag to show
+neutral retry status during grace. Failure diagnostics remain available.
+Explicit suspension and configuration warnings retain their existing behavior.
+
+Observation order is owned by the database. Every Festapp caller obtains a
+`begin_bank_sync_observation` token before remote I/O, then passes that token to
+`record_bank_sync_pull`, `record_bank_sync_health` and control metadata writes.
+Older or repeated observations cannot overwrite newer bank facts, grace clocks,
+configuration flags or notification incidents. Last successful pull time is
+monotonic. Superseded status replies return the current authorized SQL projection
+without attaching obsolete remote diagnostics or token hints. The sequence is
+server-only and its token is transported as a decimal string, without worker
+clock or JavaScript integer-precision dependencies.
+
+Release order for this contract: apply `20261102120000` (add ordered signatures),
+install/restart the canonical Functions bundle with the email pause/drain/probe
+workflow, then apply `20261102120100` to remove all three old arrival-order writer
+signatures. The canonical sources contain only the ordered contract; overloads
+exist solely during the bounded deployment window. This does not create a new
+bank poller or change BankSync's transport contract.
+
 For enabled connections, a bank error, missing token/email configuration, disabled
 remote ingress/polling, or a fresh remote health observation confirming no
 successful API pull for 30 minutes creates a health incident. The last-pull time

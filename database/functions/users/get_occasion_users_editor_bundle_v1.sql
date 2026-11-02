@@ -13,7 +13,7 @@ BEGIN
       concat_ws(' ',owner_info.name,owner_info.surname) owner_name
     FROM public.user_companions uc
     JOIN public.user_info owner_info ON owner_info.id=uc."user"
-    WHERE uc.occasion=p_occasion
+    WHERE uc.occasion=p_occasion AND public.occasion_member_visible_internal(p_occasion,owner_info.id)
   )
   SELECT COALESCE(jsonb_agg(row.value||jsonb_strip_nulls(jsonb_build_object(
       'aggregate_version',COALESCE(v.version,0),

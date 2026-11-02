@@ -131,6 +131,7 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - **No `dart:io`** in shared UI code (breaks web). Exception: `map/` uses it for platform-specific offline maps
 - **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
+- **App HTML formatting**: `HtmlSaveCoordinator.prepare` canonicalizes app content before persistence through `normalizeHtmlContentStyles`. Resolve pasted CSS/semantic contradictions there (for example Google Docs' `<b style="font-weight:normal">` becomes neutral markup). Readers preserve stored formatting; web DOMPurify remains a security boundary, not a second formatting owner. Existing stored content needs a save or an explicitly scoped data repair to become canonical.
 
 ## Blueprint draft text and persistence
 
