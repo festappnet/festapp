@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../order_detail_strings.dart';
+import '../orders_strings.dart';
 
 import 'package:fstapp/widgets/info_tooltip_button.dart';
 
@@ -15,7 +16,7 @@ import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/forms.dart';
 
-import '../../_shared/copy_button.dart';
+import '../../_shared/async_download_button.dart';
 import '../../_shared/common_strings.dart';
 import '../../single_data_grid/data_grid_strings.dart';
 import '../../email_delivery/email_delivery_history.dart';
@@ -37,6 +38,7 @@ import 'products_dialog.dart';
 import 'waitlist_order_detail.dart';
 import 'order_places_view.dart';
 import 'inline_order_field.dart';
+import 'order_payment_summary.dart';
 
 import 'package:collection/collection.dart';
 
@@ -295,52 +297,11 @@ class _OrderDetailViewState extends State<OrderDetailView>
       ],
     ),
   );
-  Widget _financial() => section(
-    OrderDetailStrings.text('platebni_prehled'),
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (d.payment['status'] == 'unknown')
-          Text(OrderDetailStrings.text('platebni_stav_nelze_spolehlive_urcit')),
-        for (final entry in {
-          OrderDetailStrings.text('celkem'): d.order['price'],
-          OrderDetailStrings.text('prijato'): d.payment['received'],
-          OrderDetailStrings.text('vraceno'): d.payment['returned'],
-          OrderDetailStrings.text('zbyva_k_uhrade'):
-              d.payment['totalOutstanding'],
-          OrderDetailStrings.text('aktualne_k_uhrade'): d.payment['dueNow'],
-          if (d.payment['overpaid'] != null &&
-              num.parse('${d.payment['overpaid']}') > 0)
-            OrderDetailStrings.text('preplatek'): d.payment['overpaid'],
-        }.entries)
-          Padding(
-            padding: EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                Expanded(child: Text(entry.key)),
-                Text(
-                  money(entry.value),
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ],
-            ),
-          ),
-        if (d.payment['depositAmount'] != null &&
-            num.parse('${d.payment['depositAmount']}') > 0) ...[
-          Text(
-            '${OrderDetailStrings.text('deposit')}: ${money(d.payment['depositAmount'])}',
-          ),
-          if (d.payment['depositDeadline'] != null)
-            Text(
-              '${OrderDetailStrings.text('deposit_due')}: ${_date(d.payment['depositDeadline'])}',
-            ),
-          if (d.payment['finalDeadline'] != null)
-            Text(
-              '${OrderDetailStrings.text('balance_due')}: ${_date(d.payment['finalDeadline'])}',
-            ),
-        ],
-      ],
-    ),
+  Widget _financial() => OrderPaymentSummary(
+    payment: d.payment,
+    total: d.order['price'],
+    currencyCode: d.order['currency_code'] ?? 'CZK',
+    isCard: d.order['payment_method'] == 'stripe',
   );
   String _date(dynamic value) =>
       LocaleDateTime.instant(value, Localizations.localeOf(context).toString());
@@ -577,6 +538,11 @@ class _OrderDetailViewState extends State<OrderDetailView>
             ),
           ),
         _contact(),
+        if (d.model.toCustomerNote().trim().isNotEmpty)
+          section(
+            OrderDetailStrings.text('poznamka_zakaznika'),
+            SelectableText(d.model.toCustomerNote()),
+          ),
         InlineOrderField(
           key: ValueKey(('hidden-note', c.orderId)),
           label: 'OrderGridColumns.hiddenNote'.tr(),
@@ -630,11 +596,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
             ),
           ],
         ),
-        if (d.order['data']?['note'] != null)
-          section(
-            OrderDetailStrings.text('poznamka_zakaznika'),
-            SelectableText('${d.order['data']['note']}'),
-          ),
         ExpansionTile(
           key: PageStorageKey(('order-answers', c.orderId)),
           initiallyExpanded: true,
@@ -818,27 +779,23 @@ class _OrderDetailViewState extends State<OrderDetailView>
                               'used',
                             ].contains(ticket['state']) &&
                             ticket['batch'] == null)
-                          TextButton.icon(
-                            icon: Icon(Icons.download_outlined),
-                            label: Text(
-                              OrderDetailStrings.text('stahnout_pdf'),
-                            ),
-                            onPressed: () => ExceptionHandler.guard(
-                              context,
-                              futureFunction: () async {
-                                final bytes = await DbTickets.downloadTicketPdf(
-                                  ticket['id'] as int,
-                                );
-                                if (bytes == null)
-                                  throw StateError('PDF unavailable');
-                                await FileSaver.instance.saveFile(
-                                  name: 'vstupenka-${ticket['ticket_symbol']}',
-                                  bytes: bytes,
-                                  fileExtension: 'pdf',
-                                  mimeType: MimeType.pdf,
-                                );
-                              },
-                            ),
+                          AsyncDownloadButton(
+                            key: ValueKey(('ticket-pdf', ticket['id'])),
+                            label: OrderDetailStrings.text('stahnout_pdf'),
+                            loadingLabel: OrdersStrings.generatingPdf,
+                            onDownload: () async {
+                              final bytes = await DbTickets.downloadTicketPdf(
+                                ticket['id'] as int,
+                              );
+                              if (bytes == null)
+                                throw StateError('PDF unavailable');
+                              await FileSaver.instance.saveFile(
+                                name: 'vstupenka-${ticket['ticket_symbol']}',
+                                bytes: bytes,
+                                fileExtension: 'pdf',
+                                mimeType: MimeType.pdf,
+                              );
+                            },
                           ),
                         if (d.canWrite &&
                             d.model.allows('cancel') &&
@@ -1148,11 +1105,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                             ),
-                                          ),
-                                          CopyButton(
-                                            value:
-                                                d.model.orderSymbol ??
-                                                '${c.orderId}',
                                           ),
                                           IconButton(
                                             tooltip: OrderDetailStrings.text(

@@ -737,7 +737,8 @@
       "email_missing": "Der Empfang von Bank-E-Mails ist nicht eingerichtet."
     },
     "noOrders": "Es gibt noch keine Bestellungen.",
-    "copyLink": "Link kopieren"
+    "copyLink": "Link kopieren",
+    "generatingPdf": "PDF wird erstellt…"
   },
   "FeatureMap": {
     "changeLocation": "Standort ändern",
@@ -2746,6 +2747,8 @@
   "OrderDetail": {
     "form_field": "Formularfeld",
     "selected_entry": "Ausgewählter Eintrag",
-    "email_status_help": "Bestell-, Zahlungs- und E-Mail-Status sind getrennt. Angenommen bedeutet die Übernahme durch den Versanddienst; zugestellt die Annahme durch den Mailserver. Öffnungen und Klicks bestätigen nicht das Lesen. Wiederholung bedeutet einen weiteren Versuch; unbekannt bestätigt keinen Versand. Die Nachricht zeigt den Grund und mögliche Abhilfe."
+    "email_status_help": "Bestell-, Zahlungs- und E-Mail-Status sind getrennt. Angenommen bedeutet die Übernahme durch den Versanddienst; zugestellt die Annahme durch den Mailserver. Öffnungen und Klicks bestätigen nicht das Lesen. Wiederholung bedeutet einen weiteren Versuch; unbekannt bestätigt keinen Versand. Die Nachricht zeigt den Grund und mögliche Abhilfe.",
+    "udaj_nebyl_uveden": "Nicht ausgefüllt",
+    "udaj_byl_vymazan": "Nicht ausgefüllt"
   }
 }

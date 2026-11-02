@@ -114,6 +114,14 @@ class OrderDetailAnswers extends StatelessWidget {
             value: data['${field.id}']?.toString() ?? '',
             displayValue: field.type == FormMetadata.fieldTypeProductType
                 ? _products(field)
+                : field.type == FormMetadata.fieldTypeNote
+                ? _value(
+                    context,
+                    field,
+                    field.isHidden == true
+                        ? detail.model.toCustomerNoteHidden()
+                        : detail.model.toCustomerNote(),
+                  )
                 : !data.containsKey('${field.id}')
                 ? OrderDetailStrings.text('udaj_nebyl_uveden')
                 : _value(context, field, data['${field.id}']),
