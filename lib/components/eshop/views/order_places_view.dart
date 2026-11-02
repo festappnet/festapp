@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import '../order_detail_strings.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -36,7 +34,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
   VenueLayoutDocument? _document;
   String? _error;
   bool _loading = false;
-  bool _wholePlan = false;
   List<Map<String, dynamic>> get places =>
       widget.controller.detail?.places ?? [];
   @override
@@ -98,7 +95,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
     final request = ++_request;
     setState(() {
       _plan = id;
-      _wholePlan = false;
       _loading = true;
       _error = null;
       _document = null;
@@ -192,74 +188,49 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
           ),
           SizedBox(
             height: 300,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final canvas = _document!.canvas;
-                final scale = math.min(
-                  (constraints.maxWidth - 32) / (canvas['width'] as num),
-                  (constraints.maxHeight - 32) / (canvas['height'] as num),
-                );
-                final seats = _document!.nodes.where((n) => n.kind == 'seat');
-                final seatPixels = seats.isEmpty
-                    ? 8.0
-                    : seats
-                          .map((n) => nodeBounds(_document!, n))
-                          .map(
-                            (b) => math.min(b['width']!, b['height']!) * scale,
-                          )
-                          .reduce(math.min);
-                final zoom = seatPixels <= 0
-                    ? 1.0
-                    : (8 / seatPixels).clamp(1.0, 1.6);
-                return VenueLayoutViewer(
-                  key: ValueKey(_plan),
-                  document: _document!,
-                  wheelZoomRequiresModifier: true,
-                  resources: _resources ?? {},
-                  highlightedNodeIds: own,
-                  activeNodeIds: active,
-                  // A dense plan gets a modest initial focus, never a close-up.
-                  // Ticket selection does not reframe the user's camera.
-                  focusNodeIds: !_wholePlan && zoom > 1 ? own : const {},
-                  focusMaxZoomFactor: zoom,
-                  focusRevision: _focusRevision,
-                  onNodeTap: (node) {
-                    final found = places
-                        .where(
-                          (p) =>
-                              p['blueprintId'] == _plan &&
-                              p['active'] == true &&
-                              p['nodeId'] == node,
-                        )
-                        .toList();
-                    final admissions = {
-                      for (final p in found) p['admissionItemId']: p,
-                    };
-                    if (admissions.isNotEmpty)
-                      widget.onMapTickets?.call(
-                        admissions.values
-                            .map((p) => p['ticketId'] as int)
-                            .toSet(),
-                      );
-                    if (admissions.length == 1)
-                      widget.onTicket?.call(
-                        admissions.values.single['ticketId'] as int,
-                      );
-                    else if (admissions.length > 1) {
-                      widget.onTicket?.call(null);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            OrderDetailStrings.count(
-                              'standing_count',
-                              admissions.length,
-                            ),
-                          ),
+            child: VenueLayoutViewer(
+              key: ValueKey(_plan),
+              document: _document!,
+              wheelZoomRequiresModifier: true,
+              resources: _resources ?? {},
+              highlightedNodeIds: own,
+              activeNodeIds: active,
+              // Never auto-zoom to an order or a selected ticket.
+              focusNodeIds: const {},
+              focusRevision: _focusRevision,
+              onNodeTap: (node) {
+                final found = places
+                    .where(
+                      (p) =>
+                          p['blueprintId'] == _plan &&
+                          p['active'] == true &&
+                          p['nodeId'] == node,
+                    )
+                    .toList();
+                final admissions = {
+                  for (final p in found) p['admissionItemId']: p,
+                };
+                if (admissions.isNotEmpty)
+                  widget.onMapTickets?.call(
+                    admissions.values.map((p) => p['ticketId'] as int).toSet(),
+                  );
+                if (admissions.length == 1)
+                  widget.onTicket?.call(
+                    admissions.values.single['ticketId'] as int,
+                  );
+                else if (admissions.length > 1) {
+                  widget.onTicket?.call(null);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        OrderDetailStrings.count(
+                          'standing_count',
+                          admissions.length,
                         ),
-                      );
-                    }
-                  },
-                );
+                      ),
+                    ),
+                  );
+                }
               },
             ),
           ),
@@ -268,7 +239,6 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
             children: [
               TextButton(
                 onPressed: () => setState(() {
-                  _wholePlan = true;
                   _focusRevision++;
                 }),
                 child: Text(OrderDetailStrings.text('cely_sal')),

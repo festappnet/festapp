@@ -1,4 +1,3 @@
-import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,59 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 void main() {
-  testWidgets(
-    'embedded focus zoom is capped and whole-plan reset restores scale',
-    (tester) async {
-      final document = VenueLayoutDocument.empty().copyWith(
-        canvas: {
-          'x': 0,
-          'y': 0,
-          'width': 2000,
-          'height': 2000,
-          'fill': '#ffffffff',
-        },
-        nodes: [
-          LayoutNode.fromJson({
-            'id': '00000000-0000-4000-8000-000000000001',
-            'kind': 'seat',
-            'width': 20,
-            'height': 20,
-            'transform': {'x': 1100, 'y': 1100, 'rotation': 0},
-          }),
-        ],
-      );
-      double scale = 0;
-      Future<void> show(int revision, Set<String> focus) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 600,
-                height: 300,
-                child: LayoutSceneSurface(
-                  document: document,
-                  focusRevision: revision,
-                  focusNodeIds: focus,
-                  focusMaxZoomFactor: 1.6,
-                  onViewportScaleChanged: (value) => scale = value,
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-      }
-
-      await show(1, {});
-      final baseline = scale;
-      await show(2, {document.nodes.single.id});
-      expect(scale, greaterThan(baseline));
-      expect(scale, closeTo(baseline * 1.6, .00001));
-      await show(3, {});
-      expect(scale, closeTo(baseline, .00001));
-    },
-  );
-
   testWidgets(
     'public readonly viewer focuses exact nodes and reports hits without changing geometry',
     (tester) async {

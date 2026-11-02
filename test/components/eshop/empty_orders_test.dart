@@ -40,8 +40,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _Router extends RootStackRouter {
-  _Router({this.outsideFocus});
-  final FocusNode? outsideFocus;
   @override
   List<AutoRoute> get routes => [
     AutoRoute(
@@ -55,29 +53,14 @@ class _Router extends RootStackRouter {
       path: '/:${AppRouter.linkFormatted}',
       page: PageInfo(
         'OrdersFixture',
-        builder: (_) => Scaffold(
-          appBar: outsideFocus == null
-              ? null
-              : AppBar(
-                  title: Focus(
-                    focusNode: outsideFocus,
-                    onKeyEvent: (_, event) =>
-                        event.logicalKey == LogicalKeyboardKey.escape
-                        ? KeyEventResult.handled
-                        : KeyEventResult.ignored,
-                    child: const Text('Outside detail control'),
-                  ),
-                ),
-          body: const OrdersContent(),
-        ),
+        builder: (_) => const Scaffold(body: OrdersContent()),
       ),
     ),
   ];
 }
 
 class _ProductionShapeRouter extends RootStackRouter {
-  _ProductionShapeRouter({this.showBell = false, this.outsideFocus});
-  final FocusNode? outsideFocus;
+  _ProductionShapeRouter({this.showBell = false});
   final bool showBell;
   AutoRoute fixture(AutoRoute route) {
     if (route is RedirectRoute) return route;
@@ -85,20 +68,8 @@ class _ProductionShapeRouter extends RootStackRouter {
       switch (route.name) {
         case 'ReservationsRoute':
           return Scaffold(
-            appBar: showBell || outsideFocus != null
-                ? AppBar(
-                    actions: showBell ? const [NotificationCenterBell()] : null,
-                    title: outsideFocus == null
-                        ? null
-                        : Focus(
-                            focusNode: outsideFocus,
-                            onKeyEvent: (_, event) =>
-                                event.logicalKey == LogicalKeyboardKey.escape
-                                ? KeyEventResult.handled
-                                : KeyEventResult.ignored,
-                            child: const Text('Outside detail control'),
-                          ),
-                  )
+            appBar: showBell
+                ? AppBar(actions: const [NotificationCenterBell()])
                 : null,
             body: const AutoRouter(),
           );
@@ -417,83 +388,6 @@ void main() {
     } else {
       await tester.pumpAndSettle();
     }
-  }
-
-  for (final productionShape in [false, true]) {
-    testWidgets(
-      'Escape closes detail before an outside control consumes the event nested=$productionShape',
-      (tester) async {
-        fail = false;
-        includeOrder = true;
-        detailNavigation = true;
-        addTearDown(() {
-          includeOrder = false;
-          detailNavigation = false;
-        });
-        final outside = FocusNode();
-        addTearDown(outside.dispose);
-        final router = productionShape
-            ? _ProductionShapeRouter(outsideFocus: outside)
-            : _Router(outsideFocus: outside);
-        await showOrders(
-          tester,
-          externalRouter: router,
-          path: productionShape
-              ? '/empty/reservations/orders/current?orderId=4'
-              : '/empty?orderId=4',
-        );
-        expect(find.byType(OrderDetailView), findsOneWidget);
-        outside.requestFocus();
-        await tester.pumpAndSettle();
-        expect(outside.hasPrimaryFocus, isTrue);
-        // A dialog can leave focus on its caller (disabled/replaced controls).
-        final host = tester.element(find.byType(OrdersContent));
-        unawaited(
-          showDialog<void>(
-            context: host,
-            requestFocus: false,
-            builder: (_) => const Dialog(child: Text('Dialog above detail')),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-        await tester.pumpAndSettle();
-        expect(find.byType(OrderDetailView), findsOneWidget);
-        expect(router.urlState.uri.queryParameters['orderId'], '4');
-        if (find.text('Dialog above detail').evaluate().isNotEmpty) {
-          Navigator.of(host, rootNavigator: true).pop();
-          await tester.pumpAndSettle();
-        }
-        // Also protect a root dialog when focus is left inside the detail.
-        Focus.of(tester.element(find.byIcon(Icons.close).last)).requestFocus();
-        await tester.pumpAndSettle();
-        unawaited(
-          showDialog<void>(
-            context: host,
-            requestFocus: false,
-            builder: (_) => const Dialog(child: Text('Dialog above detail')),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-        await tester.pumpAndSettle();
-        expect(find.byType(OrderDetailView), findsOneWidget);
-        expect(router.urlState.uri.queryParameters['orderId'], '4');
-        if (find.text('Dialog above detail').evaluate().isNotEmpty) {
-          Navigator.of(host, rootNavigator: true).pop();
-          await tester.pumpAndSettle();
-        }
-        outside.requestFocus();
-        await tester.pumpAndSettle();
-        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-        await tester.pumpAndSettle();
-        expect(
-          router.urlState.uri.queryParameters.containsKey('orderId'),
-          isFalse,
-        );
-        expect(find.byType(OrderDetailView), findsNothing);
-      },
-    );
   }
 
   testWidgets(

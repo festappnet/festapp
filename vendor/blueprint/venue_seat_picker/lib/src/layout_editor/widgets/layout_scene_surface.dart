@@ -31,7 +31,6 @@ class LayoutSceneSurface extends StatefulWidget {
     this.resources = const {},
     this.focusNodeIds = const {},
     this.focusRevision,
-    this.focusMaxZoomFactor = 5,
     this.wheelZoomRequiresModifier = false,
     this.presentation = const {},
     this.retainPendingTextPreview = false,
@@ -82,7 +81,6 @@ class LayoutSceneSurface extends StatefulWidget {
   final Set<String> focusNodeIds;
   final bool wheelZoomRequiresModifier;
   final int? focusRevision;
-  final double focusMaxZoomFactor;
   final VenueLayoutDocument document;
   final Map<String, dynamic> resources, presentation;
   final Set<String> selected, highlightedIds;
@@ -542,7 +540,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                 (size.width - 64) / math.max(96, target.width * scale),
                 (size.height - 64) / math.max(96, target.height * scale),
               )
-              .clamp(fit, fit * math.max(1, widget.focusMaxZoomFactor));
+              .clamp(fit, fit * 5);
           _camera.value = _boundCamera(
             Matrix4.diagonal3Values(zoom, zoom, 1)..setTranslationRaw(
               size.width / 2 - center.dx * zoom,
