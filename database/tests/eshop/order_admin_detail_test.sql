@@ -4,7 +4,7 @@
 DO $$
 DECLARE f jsonb; r jsonb; core jsonb; map jsonb; oc bigint; oid bigint; tid bigint; iid bigint; sid bigint; other bigint;
  actor uuid; reader uuid:=gen_random_uuid(); config_author uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();
- before_spots jsonb; before_orders jsonb; before_stock jsonb; bp bigint; old_fingerprint text; full_map jsonb; rev bigint; own_node text; other_spots bigint[]; used_node text; hold_node text; blocked_node text;
+ before_spots jsonb; before_orders jsonb; before_stock jsonb; bp bigint; old_fingerprint text; own_node text; other_spots bigint[]; used_node text; hold_node text; blocked_node text;
 BEGIN
  f:=public.blueprint_test_fixture_internal();oc:=(f->>'occasion')::bigint;bp:=(f->>'blueprint')::bigint;actor:=(f->>'actor')::uuid;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
@@ -39,8 +39,6 @@ BEGIN
  SELECT jsonb_agg(to_jsonb(o) ORDER BY id) INTO before_orders FROM eshop.orders o WHERE occasion=oc;
  PERFORM assert_false(has_function_privilege('anon','public.get_order_admin_detail(bigint,bigint)','EXECUTE'),'anon denied');
  PERFORM assert_false(has_function_privilege('authenticated','public.order_admin_places_internal(bigint)','EXECUTE'),'private join inaccessible');
- PERFORM assert_false(has_function_privilege('authenticated','public.order_admin_placement_internal(bigint)','EXECUTE'),'placement snapshot private');
- PERFORM assert_true(to_regprocedure('public.get_order_blueprint_view(bigint,bigint,bigint,text)') IS NULL,'one optional-argument signature replaces the old exact signature');
  PERFORM set_config('request.jwt.claim.sub',reader::text,true);
  SET LOCAL ROLE authenticated;
  core:=public.get_order_admin_detail(oid,oc);
@@ -55,15 +53,6 @@ BEGIN
  old_fingerprint:=core#>>'{data,placementFingerprint}';
  map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint);
  PERFORM assert_eq(map->>'code','200','readonly map');
- full_map:=map;rev:=(map#>>'{data,layout_revision}')::bigint;
- map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev);
- PERFORM assert_eq(map->>'code','200','matching revision remains freshly authorized');
- PERFORM assert_false((map->'data') ? 'layout','cached revision omits unchanged layout');
- PERFORM assert_false((map->'data') ? 'resources','cached revision omits unchanged rendering resources');
- PERFORM assert_eq(map->'data',(full_map->'data')-ARRAY['layout','resources'],'all current placement and seat facts remain in conditional response');
- PERFORM assert_true(octet_length(map::text)<octet_length(full_map::text),'conditional response does not resend drawing bytes');
- PERFORM assert_true((public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev+1)->'data') ? 'layout','a different revision returns fresh drawing data');
-
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(map#>'{data,seatStates}','[]')) s WHERE s->>'nodeId'=own_node AND s->>'state'='ordered'),'preview contains actual occupied seat lifecycle');
  PERFORM assert_eq(jsonb_array_length(coalesce(map#>'{data,seatStates}','[]')),4,'preview contains every plan seat, not just the order');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=used_node AND s->>'state'='used'),'other order used seat visible');
@@ -73,15 +62,14 @@ BEGIN
  PERFORM assert_true(NOT (map::text LIKE '%secret%'),'no hold or checkout secret');
  PERFORM assert_true(NOT ((core#>'{data,payment}') ? 'transactions'),'lazy transactions');
  PERFORM assert_eq(public.get_order_admin_detail(oid,oc+9999)->>'code','404','wrong expected occasion unavailable');
- PERFORM assert_eq(public.get_order_blueprint_view(oid,oc+9999,bp,old_fingerprint,rev)->>'code','404','known revision cannot bypass expected occasion');
  PERFORM assert_eq(public.get_order_admin_detail(-1,oc)->>'code','404','nonexistent order same unavailable');
- PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp+9999,old_fingerprint,rev)->>'code','404','known revision cannot bypass foreign plan checks');
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp+9999,old_fingerprint)->>'code','404','foreign plan unavailable');
  RESET ROLE;
  PERFORM assert_eq((SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM eshop.spots s WHERE occasion=oc),before_spots,'reads preserve holds and stock');
  PERFORM assert_eq((SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM eshop.orders o WHERE occasion=oc),before_orders,'reads preserve orders');
  UPDATE eshop.spots SET secret_expiration_time=now()-interval '1 second' WHERE id=other_spots[2];
  SET LOCAL ROLE authenticated;
- map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev);
+ map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint);
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=hold_node AND s->>'state'='available'),'expired hold becomes available without affecting own placement');
  RESET ROLE;
  -- Reassignment without a geometry revision must invalidate the lazy reader.
@@ -97,7 +85,6 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',outsider::text,true);
  SET LOCAL ROLE authenticated;
  PERFORM assert_eq(public.get_order_admin_detail(oid,oc)->>'code','404','outsider denied');
- PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev)->>'code','404','cached revision cannot bypass reader authorization');
  RESET ROLE;
  PERFORM set_config('request.jwt.claim.sub',config_author::text,true);
  -- A configure role is not used as the read predicate; only can_read_orders decides.

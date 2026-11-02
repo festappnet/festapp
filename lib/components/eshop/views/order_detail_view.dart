@@ -106,7 +106,7 @@ class OrderDetailView extends StatefulWidget {
 
 class _OrderDetailViewState extends State<OrderDetailView>
     with SingleTickerProviderStateMixin {
-  final _visited = <int>{};
+  final _visited = <int>{0};
   late final TabController _tabController;
 
   int get _tabIndex {
@@ -592,6 +592,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _financial(),
+        const Divider(height: 32),
         for (final issue in issues.take(2))
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -599,62 +600,48 @@ class _OrderDetailViewState extends State<OrderDetailView>
             title: Text(issue.description),
             onTap: () => widget.onTab('emails'),
           ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(8),
+        if (widget.formCount > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              '${OrderDetailStrings.text('source_form')}: ${d.json['form']?['title'] ?? OrderDetailStrings.text('form_field')} · #${d.json['form']?['id'] ?? d.order['form_id'] ?? '-'}',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.formCount > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    '${OrderDetailStrings.text('source_form')}: ${d.json['form']?['title'] ?? OrderDetailStrings.text('form_field')} · #${d.json['form']?['id'] ?? d.order['form_id'] ?? '-'}',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
-              _contact(),
-              if (d.model.toCustomerNote().trim().isNotEmpty)
-                section(
-                  OrderDetailStrings.text('poznamka_zakaznika'),
-                  SelectableText(d.model.toCustomerNote()),
-                ),
-              InlineOrderField(
-                key: ValueKey(('hidden-note', c.orderId)),
-                label: 'OrderGridColumns.hiddenNote'.tr(),
-                alwaysEditable: true,
-                value: d.order['note_hidden']?.toString() ?? '',
-                displayValue:
-                    d.order['note_hidden']?.toString().isNotEmpty == true
-                    ? d.order['note_hidden'].toString()
-                    : OrderDetailStrings.text('bez_poznamky'),
-                controller: c,
-                multiline: true,
-                canEdit: () =>
-                    c.detail != null &&
-                    c.validContext &&
-                    !c.stale &&
-                    d.canWrite &&
-                    d.model.allows('note'),
-                onSave: (value, _) async {
-                  if (!c.validContext ||
-                      c.stale ||
-                      !d.canWrite ||
-                      !d.model.allows('note'))
-                    throw StateError(
-                      OrderDetailStrings.text('responses_unavailable'),
-                    );
-                  await DbOrders.updateOrderNoteHidden(c.orderId, value);
-                },
-              ),
-            ],
+        _contact(),
+        if (d.model.toCustomerNote().trim().isNotEmpty)
+          section(
+            OrderDetailStrings.text('poznamka_zakaznika'),
+            SelectableText(d.model.toCustomerNote()),
           ),
+        InlineOrderField(
+          key: ValueKey(('hidden-note', c.orderId)),
+          label: 'OrderGridColumns.hiddenNote'.tr(),
+          alwaysEditable: true,
+          value: d.order['note_hidden']?.toString() ?? '',
+          displayValue: d.order['note_hidden']?.toString().isNotEmpty == true
+              ? d.order['note_hidden'].toString()
+              : OrderDetailStrings.text('bez_poznamky'),
+          controller: c,
+          multiline: true,
+          canEdit: () =>
+              c.detail != null &&
+              c.validContext &&
+              !c.stale &&
+              d.canWrite &&
+              d.model.allows('note'),
+          onSave: (value, _) async {
+            if (!c.validContext ||
+                c.stale ||
+                !d.canWrite ||
+                !d.model.allows('note'))
+              throw StateError(
+                OrderDetailStrings.text('responses_unavailable'),
+              );
+            await DbOrders.updateOrderNoteHidden(c.orderId, value);
+          },
         ),
-        const SizedBox(height: 28),
+        const Divider(height: 32),
         _contents(),
         if (_hasRemainingAnswers)
           ExpansionTile(

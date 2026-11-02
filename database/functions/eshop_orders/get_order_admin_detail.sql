@@ -40,15 +40,15 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
 $$;
 REVOKE ALL ON FUNCTION public.order_admin_places_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
--- One canonical placement snapshot/fingerprint. The plan reader must not rebuild
--- payment, form, or email projections just to validate its read consistency token.
-CREATE OR REPLACE FUNCTION public.order_admin_placement_internal(p_order bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; places jsonb; tickets jsonb; plans jsonb; tr uuid;
+CREATE OR REPLACE FUNCTION public.get_order_admin_detail(p_order bigint,p_occasion bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders; places jsonb; tickets jsonb; plans jsonb; actions jsonb; tr uuid;
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
- IF o.id IS NULL THEN RETURN NULL; END IF;
+ IF o.id IS NULL OR o.occasion IS DISTINCT FROM p_occasion OR public.can_read_orders(o.occasion) IS NOT TRUE THEN
+  RETURN jsonb_build_object('code',404,'message','Order unavailable'); END IF;
  places:=public.order_admin_places_internal(o.id);
+ actions:=public.get_order_allowed_actions_internal_v1(o.id);
  SELECT id INTO tr FROM public.form_seating_transitions WHERE form=o.form AND state='organizer_managed';
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'ticket_symbol',t.ticket_symbol,'state',t.state,
   'note',t.note,'note_hidden',t.note_hidden,'data',t.data,
@@ -62,20 +62,6 @@ BEGIN
  WHERE t.occasion=o.occasion AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=t.id AND x."order"=o.id);
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.id,'title',b.title,'layoutRevision',b.layout_revision) ORDER BY b.id),'[]') INTO plans
  FROM eshop.blueprints b WHERE b.occasion=o.occasion AND EXISTS(SELECT 1 FROM jsonb_array_elements(places) v WHERE v->>'blueprintId'=b.id::text);
- RETURN jsonb_build_object('places',places,'tickets',tickets,'plans',plans,'placementFingerprint',md5(jsonb_build_object('order',o.id,'state',o.state,'form',o.form,'transition',tr,'places',places,'tickets',tickets)::text));
-END $$;
-REVOKE ALL ON FUNCTION public.order_admin_placement_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
-
-CREATE OR REPLACE FUNCTION public.get_order_admin_detail(p_order bigint,p_occasion bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; places jsonb; tickets jsonb; plans jsonb; actions jsonb; placement jsonb;
-BEGIN
- SELECT * INTO o FROM eshop.orders WHERE id=p_order;
- IF o.id IS NULL OR o.occasion IS DISTINCT FROM p_occasion OR public.can_read_orders(o.occasion) IS NOT TRUE THEN
-  RETURN jsonb_build_object('code',404,'message','Order unavailable'); END IF;
- placement:=public.order_admin_placement_internal(o.id);
- places:=placement->'places';tickets:=placement->'tickets';plans:=placement->'plans';
- actions:=public.get_order_allowed_actions_internal_v1(o.id);
  RETURN jsonb_build_object('code',200,'data',jsonb_build_object(
   'order',jsonb_build_object('id',o.id,'occasion',o.occasion,'form_id',o.form,'order_symbol',o.order_symbol,'order_sequence',o.order_sequence,
    'created_at',o.created_at,'updated_at',o.updated_at,'state',o.state,'price',o.price,'currency_code',o.currency_code,
@@ -96,7 +82,7 @@ BEGIN
       AND pi.currency_code=o.currency_code),
   'waitlistSummary',CASE WHEN o.state='waitlisted' OR o.source_waitlist_order_id IS NOT NULL THEN public.get_waitlist_summary_internal(o.id) END,
   'tickets',tickets,'places',places,'placesComplete',true,'plans',plans,
-  'placementFingerprint',placement->>'placementFingerprint',
+  'placementFingerprint',md5(jsonb_build_object('order',o.id,'state',o.state,'form',o.form,'transition',tr,'places',places,'tickets',tickets)::text),
   'form',(SELECT jsonb_build_object('id',f.id,'title',f.title) FROM public.forms f WHERE f.id=o.form AND f.occasion=o.occasion),
   'fields',(SELECT coalesce(jsonb_agg(to_jsonb(ff)||jsonb_build_object('product_type_data',
     CASE WHEN pt.id IS NOT NULL THEN jsonb_build_object('id',pt.id,'title',pt.title,'description',pt.description,'type',pt.type) END)

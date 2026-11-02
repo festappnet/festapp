@@ -199,8 +199,7 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
           contentPadding: _noteEditor
               ? const EdgeInsets.all(12)
               : const EdgeInsets.symmetric(vertical: 6),
-          hintText:
-              !_noteEditor && widget.alwaysEditable && widget.value.isEmpty
+          hintText: widget.alwaysEditable && widget.value.isEmpty
               ? widget.displayValue
               : null,
         ),
