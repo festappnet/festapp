@@ -118,7 +118,9 @@ for (const personal of ['light','dark','auto']) {
     t.after(()=>{Object.assign(globalThis,previous);ThemeService._lastFormModel=null;ThemeService._mediaQueryListener=null;ThemeService._formStyleSnapshot=null;dom.window.close();});
     localStorage.setItem(AppConfig.Keys.theme,personal);
     ThemeService.init();
+    document.body.style.display='block';
     ThemeService.applyThemeFromModel(new FormModel({data:{design:{theme_mode:formMode}}}));
+    assert.equal(document.body.style.display,'flow-root','form margins stay inside its painted background');
     const effective=formMode==='system'?personal:formMode;
     const expected=effective==='auto'?(osDark?'dark':'light'):effective;
     assert.equal(document.body.style.colorScheme,expected);
@@ -127,6 +129,7 @@ for (const personal of ['light','dark','auto']) {
     assert.equal(localStorage.getItem(AppConfig.Keys.theme),personal,'form appearance never replaces personal preference');
     ThemeService.clearFormTheme();
     assert.equal(document.body.style.colorScheme,personal==='auto'?(osDark?'dark':'light'):personal);
+    assert.equal(document.body.style.display,'block','leaving the form restores the previous page layout');
    });
   }
  }
