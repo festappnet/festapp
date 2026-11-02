@@ -901,7 +901,8 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final c = NotificationCenterController();
+      final c = NotificationCenterController()
+        ..snapshotAt = DateTime.utc(2026, 10, 26, 12);
       addTearDown(c.dispose);
       c.items = [
         row(
