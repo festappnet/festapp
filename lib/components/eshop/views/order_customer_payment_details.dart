@@ -58,17 +58,20 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
         final stacked =
             constraints.maxWidth < 340 &&
             MediaQuery.textScalerOf(context).scale(14) > 20;
-        final content = Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Padding(
-                padding: EdgeInsets.only(top: copy ? 5 : 0),
-                child: Text(value, style: bodyStyle),
+        final content = ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 32),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(value, style: bodyStyle),
+                ),
               ),
-            ),
-            if (copy) ...[const SizedBox(width: 4), CopyButton(value: value)],
-          ],
+              if (copy) ...[const SizedBox(width: 4), CopyButton(value: value)],
+            ],
+          ),
         );
         return Padding(
           padding: EdgeInsets.only(bottom: stacked ? 10 : 5),
@@ -86,7 +89,7 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: Padding(
-                        padding: EdgeInsets.only(top: copy ? 5 : 0, right: 8),
+                        padding: const EdgeInsets.only(top: 5, right: 8),
                         child: Text('$label:', style: bodyStyle),
                       ),
                     ),
