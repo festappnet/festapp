@@ -244,6 +244,66 @@ void main() {
   }
 
   testWidgets(
+    'focused readonly viewer toggles one fit control between overview and places',
+    (tester) async {
+      final document = VenueLayoutDocument.empty().copyWith(
+        canvas: {
+          'x': 0,
+          'y': 0,
+          'width': 2000,
+          'height': 2000,
+          'fill': '#ffffffff',
+        },
+        nodes: [
+          LayoutNode.fromJson({
+            'id': '00000000-0000-4000-8000-000000000001',
+            'kind': 'seat',
+            'width': 20,
+            'height': 20,
+            'transform': {'x': 1100, 'y': 1100, 'rotation': 0},
+          }),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 600,
+              height: 300,
+              child: VenueLayoutViewer(
+                document: document,
+                focusNodeIds: const {'00000000-0000-4000-8000-000000000001'},
+                focusSeatPixelSize: 12,
+                focusMaxZoomFactor: 2.6,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      double zoom() => tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .map((w) => w.painter)
+          .whereType<LayoutScenePainter>()
+          .single
+          .camera!
+          .value
+          .entry(0, 0);
+      final focused = zoom();
+      expect(focused, greaterThan(1));
+      await tester.tap(find.byTooltip('Fit plan'));
+      await tester.pumpAndSettle();
+      expect(zoom(), closeTo(1, .00001));
+      expect(find.byTooltip('Focus places'), findsOneWidget);
+      await tester.tap(find.byTooltip('Focus places'));
+      await tester.pumpAndSettle();
+      expect(zoom(), closeTo(focused, .00001));
+      expect(find.byTooltip('Fit plan'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'embedded focus zoom is capped and whole-plan reset restores scale',
     (tester) async {
       final document = VenueLayoutDocument.empty().copyWith(

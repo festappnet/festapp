@@ -37,8 +37,13 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
     final knownAmount =
         due is num &&
         due.isFinite &&
-        due >= 0 &&
-        !const {'unknown', 'cancelled'}.contains(payment['status']);
+        due > 0 &&
+        !const {
+          'unknown',
+          'cancelled',
+          'fully_paid',
+          'paid',
+        }.contains(payment['status']);
     // Match the existing transaction detail rows: compact body text and a
     // consistent label/value split, with natural wrapping at narrow widths.
     final bodyStyle = theme.textTheme.bodyMedium?.copyWith(fontSize: 14);
@@ -59,7 +64,7 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
             Flexible(
               child: Padding(
                 padding: EdgeInsets.only(top: copy ? 5 : 0),
-                child: SelectableText(value, style: bodyStyle),
+                child: Text(value, style: bodyStyle),
               ),
             ),
             if (copy) ...[const SizedBox(width: 4), CopyButton(value: value)],
@@ -91,51 +96,53 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
         );
       },
     );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            FormStrings.paymentDetailsTitle,
-            style: bodyStyle?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          if (creditor != null)
-            fact(BankAccountStrings.creditorNameLabel, creditor),
-          if (account != null)
-            fact(PublicOrderStrings.bankAccount, account, copy: true),
-          if (iban != null && iban != account)
-            fact(PublicOrderStrings.iban, iban, copy: true),
-          if (reference != null)
-            fact(
-              details['referenceKind'] == 'RF'
-                  ? PublicOrderStrings.paymentReference
-                  : PublicOrderStrings.variableSymbol,
-              reference,
-              copy: true,
+    return SelectionArea(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              FormStrings.paymentDetailsTitle,
+              style: bodyStyle?.copyWith(fontWeight: FontWeight.bold),
             ),
-          if (knownAmount)
-            fact(
-              PublicOrderStrings.amountToPay,
-              Utilities.formatPrice(
-                context,
-                due.toDouble(),
-                currencyCode: currencyCode,
-                decimalDigits: 2,
+            const SizedBox(height: 8),
+            if (creditor != null)
+              fact(BankAccountStrings.creditorNameLabel, creditor),
+            if (account != null)
+              fact(PublicOrderStrings.bankAccount, account, copy: true),
+            if (iban != null && iban != account)
+              fact(PublicOrderStrings.iban, iban, copy: true),
+            if (reference != null)
+              fact(
+                details['referenceKind'] == 'RF'
+                    ? PublicOrderStrings.paymentReference
+                    : PublicOrderStrings.variableSymbol,
+                reference,
+                copy: true,
               ),
-            ),
-          if (payment['dueAt'] != null)
-            fact(
-              OrderOverviewStrings.text('dueAt'),
-              PaymentDeadline.format(
-                payment['dueAt'],
-                Localizations.localeOf(context).toString(),
+            if (knownAmount)
+              fact(
+                PublicOrderStrings.amountToPay,
+                Utilities.formatPrice(
+                  context,
+                  due.toDouble(),
+                  currencyCode: currencyCode,
+                  decimalDigits: 2,
+                ),
               ),
-            ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-        ],
+            if (payment['dueAt'] != null)
+              fact(
+                OrderOverviewStrings.text('dueAt'),
+                PaymentDeadline.format(
+                  payment['dueAt'],
+                  Localizations.localeOf(context).toString(),
+                ),
+              ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+          ],
+        ),
       ),
     );
   }

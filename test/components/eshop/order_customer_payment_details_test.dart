@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -151,15 +154,75 @@ void main() {
     });
   }
 
+  testWidgets('paid order retains destination without an amount-to-pay row', (
+    tester,
+  ) async {
+    await open(tester, bank, {'status': 'fully_paid', 'dueNow': 0});
+    await capture(tester, 'payment-paid');
+    expect(find.text('3629'), findsOneWidget);
+    expect(find.textContaining(RegExp(r'^0,00\s*Kč$')), findsNothing);
+    expect(find.text('Částka k úhradě:'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('bank details form one selectable region including labels', (
+    tester,
+  ) async {
+    await open(tester, bank, {'status': 'partially_paid', 'dueNow': 300});
+    final section = find.byType(OrderCustomerPaymentDetails);
+    expect(
+      find.descendant(of: section, matching: find.byType(SelectionArea)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: section, matching: find.byType(SelectableText)),
+      findsNothing,
+    );
+  });
   testWidgets(
-    'paid order retains destination and shows zero due without creating a payment',
+    'all payment labels and values copy through the shared selection',
     (tester) async {
-      await open(tester, bank, {'status': 'fully_paid', 'dueNow': 0});
-      expect(find.text('3629'), findsOneWidget);
-      expect(find.textContaining(RegExp(r'^0,00\s*Kč$')), findsOneWidget);
-      expect(tester.takeException(), isNull);
+      String? copied;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData')
+              copied = (call.arguments as Map)['text'] as String?;
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      await open(
+        tester,
+        bank,
+        {'status': 'partially_paid', 'dueNow': 300},
+        size: const Size(760, 700),
+        textScale: 1,
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer();
+      await mouse.down(
+        tester.getTopLeft(find.text('Platební údaje')) + const Offset(2, 8),
+      );
+      await mouse.moveTo(tester.getBottomRight(find.text('3629')));
+      await mouse.up();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(copied, contains('Platební údaje'));
+      expect(copied, contains('Číslo účtu:'));
+      expect(copied, contains('19-2000145399/0800'));
+      expect(copied, contains('CZ6508000000192000145399'));
+      expect(copied, contains('Variabilní symbol:'));
+      expect(copied, contains('3629'));
+      await mouse.removePointer();
     },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
+
   testWidgets('EUR keeps RF reference, not a variable symbol', (tester) async {
     await open(
       tester,
