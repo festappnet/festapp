@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "scope": "Read-only canonical backend diagnostics for Wix reviewer access and billing readiness",
+  "identity": {
+    "sshHostname": "festapp-supabase-rehearsal-01",
+    "runtimeDatabase": "festapp_rehearsal_20260909220601",
+    "currentDatabase": "festapp_rehearsal_20260909220601",
+    "tenant": "festapptickets",
+    "organization": 3,
+    "organizationTitle": "vstupenky.online",
+    "activationGeneration": 1,
+    "activationReceipt": "integrations/wix/evidence/hosting-20261101.json"
+  },
+  "readOnlyTransaction": true,
+  "existingDemoForms": [
+    {
+      "key": "concert",
+      "link": "demo-form-3-concert-20261014-3",
+      "open": true,
+      "listed": true
+    },
+    {
+      "key": "ball",
+      "link": "demo-form-3-ball-20261014-3",
+      "open": true,
+      "listed": true
+    },
+    {
+      "key": "weekend",
+      "link": "demo-form-3-weekend-20261014-3",
+      "open": true,
+      "listed": true
+    }
+  ],
+  "demoAccess": {
+    "requiresAuthenticatedSameOrganizationUser": true,
+    "source": "database/functions/demo_occasions/access.sql#can_read_demo_occasion",
+    "publicAnonymousDemoClaimed": false,
+    "accessChanged": false
+  },
+  "normalBilling": {
+    "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+    "enabled": false,
+    "deliveryCount": 0,
+    "signedAddendumReferencePresent": false,
+    "activationReferencePresent": false,
+    "settlementSourceReferencePresent": false,
+    "acquisitionSourceReferencePresent": false
+  },
+  "productionWrites": false,
+  "conclusion": "Native Wix external billing approval is granted separately; normal financial dispatch remains disabled until an operational record has actual signed-addendum, activation, settlement and acquisition source evidence. Existing authenticated demos are not anonymous reviewer sandboxes."
+}

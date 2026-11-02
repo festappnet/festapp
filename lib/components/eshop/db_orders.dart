@@ -4,6 +4,8 @@ import 'package:fstapp/data_services/client_sync/client_command_replacements.dar
 
 import 'orders_strings.dart';
 
+import 'package:easy_localization/easy_localization.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -29,8 +31,11 @@ class ReservationsBundle {
   final List<FormBundle> forms;
   final Set<int> notificationOrderIds;
 
-  ReservationsBundle({required this.orders, required this.forms,
-    this.notificationOrderIds = const {}});
+  ReservationsBundle({
+    required this.orders,
+    required this.forms,
+    this.notificationOrderIds = const {},
+  });
 }
 
 class OrderHistoryBundle {
@@ -216,8 +221,11 @@ class DbOrders {
   }) async {
     final response = await _supabase.rpc(
       'get_orders_tab_data',
-      params: {'p_occasion_link': occasionLink,
-        if (notificationGroup != null) 'p_notification_group': notificationGroup},
+      params: {
+        'p_occasion_link': occasionLink,
+        if (notificationGroup != null)
+          'p_notification_group': notificationGroup,
+      },
     );
 
     // Response is the data object directly.
@@ -332,9 +340,15 @@ class DbOrders {
 
     orders.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
-    return ReservationsBundle(orders: orders, forms: forms ?? [],
-      notificationOrderIds: (json['notification_order_ids'] as List? ?? const [])
-          .whereType<num>().map((id) => id.toInt()).toSet());
+    return ReservationsBundle(
+      orders: orders,
+      forms: forms ?? [],
+      notificationOrderIds:
+          (json['notification_order_ids'] as List? ?? const [])
+              .whereType<num>()
+              .map((id) => id.toInt())
+              .toSet(),
+    );
   }
 
   static Future<bool> hasFakturoidForDeletion(int orderId) async {
@@ -384,6 +398,30 @@ class DbOrders {
       model.id!,
       (commandId) => _commands.delete(model.id!, commandId: commandId),
     );
+  }
+
+  static Future<void> updateOrderDetailResponses({
+    required int orderId,
+    required int formId,
+    required dynamic expectedFields,
+    required Map<String, dynamic> responses,
+  }) async {
+    final result = await _supabase.rpc(
+      'update_order_detail_responses',
+      params: {
+        'p_order': orderId,
+        'p_form': formId,
+        'p_expected_fields': expectedFields ?? [],
+        'p_responses': responses,
+      },
+    );
+    if (result is! Map || result['code'] != 200) {
+      throw StateError(
+        result is Map && result['code'] == 409
+            ? 'OrderDetail.responses_changed'.tr()
+            : 'OrderDetail.responses_unavailable'.tr(),
+      );
+    }
   }
 
   static Future<void> updateOrderResponses(FormResponseModel responses) async {

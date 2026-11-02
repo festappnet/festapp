@@ -1,5 +1,6 @@
 import 'package:festapp_core/forms.dart';
 import 'dart:typed_data';
+import 'package:html/parser.dart' as parser;
 import 'package:image/image.dart' as image;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
@@ -13,6 +14,27 @@ import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'form Save writes canonical Google Docs markup before the writer',
+    () async {
+      const source =
+          '<b style="font-weight:normal"><h2><strong>Title</strong></h2>'
+          '<p>Ordinary <strong>highlighted</strong></p></b>';
+      final coordinator = HtmlSaveCoordinator();
+      addTearDown(coordinator.dispose);
+      final form = FormEditorDraft(occasionId: 12, header: source);
+      String? persisted;
+      await coordinator.save(() async {
+        await prepareFormHtml(form, coordinator);
+        persisted = form.definition.header;
+      });
+      final root = parser.parseFragment(persisted!);
+      expect(root.querySelector('b'), isNull);
+      expect(root.querySelector('p')!.text, 'Ordinary highlighted');
+      expect(root.querySelector('p strong')!.text, 'highlighted');
+      expect(persisted, isNot(contains('font-weight')));
+    },
+  );
   test(
       'form writer prepares every nested HTML destination and preserves non HTML metadata',
       () async {

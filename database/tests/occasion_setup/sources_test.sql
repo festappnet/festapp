@@ -10,9 +10,7 @@ BEGIN
   INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Tickets','spot') RETURNING id INTO pt;
   INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)
     VALUES(occ,pt,'Original ticket',690,'CZK') RETURNING id INTO product;
-  INSERT INTO eshop.blueprints(occasion,organization,title,configuration,objects,groups)
-    VALUES(occ,org,'Original hall','{"dimensions":{"width":12,"height":8}}',
-      '[{"x":1,"y":2,"type":"spot","title":"A1","state":"ordered","secret":"do-not-export"}]','[{"id":1,"title":"A"}]') RETURNING id INTO plan;
+  INSERT INTO eshop.blueprints(occasion,organization,title) VALUES(occ,org,'Original hall') RETURNING id INTO plan;
   UPDATE eshop.blueprints SET layout='{"schemaVersion":2,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1000,"height":1000,"fill":"#ffffffff"},"styles":{},"seatingDefaults":{},"textPolicy":{"language":"und","direction":"auto"},"nodes":[],"selectionUnits":[],"attachments":[],"sections":[],"presets":[]}'::jsonb,
     layout_revision=1 WHERE id=plan;
   UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',jsonb_build_array(jsonb_build_object(

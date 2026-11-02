@@ -1,7 +1,7 @@
 # Blueprint distribution snapshot
 
-These are the exact pub-selected 0.4.3 wrapper and 0.2.2 core archives,
-verified with the npm 0.3.7 archive by the package archive gate.
+These are the exact pub-selected 0.4.4 wrapper and 0.2.3 core archives,
+verified with the npm 0.3.8 archive by the package archive gate.
 They are dependency artifacts. Edit the canonical `festappnet/venue_seat_picker`
 package, then rebuild and verify its distributions before updating this snapshot.
 Do not patch these copies or add another rendering implementation here.
@@ -16,7 +16,3 @@ source through `tool/archive_check.sh`; registry publication is a separate step.
 Only the npm archive selected by `web_client/package.json` and its lockfile is
 retained. Older host archives are recoverable from Git revision
 `a4296c57687294b34826e59c7b232eef582c9748`; they are not installation inputs.
-
-A qualified web-only update records `webSourceCommit` and
-`webArchiveGateReceiptSha256` separately, with `web-archive-result.json` as its
-receipt. It preserves the existing Dart snapshot and its provenance.

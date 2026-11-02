@@ -33,10 +33,6 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE = 'source and target unit manager required within one organization';
   END IF;
 
-  IF EXISTS(SELECT 1 FROM eshop.blueprints WHERE occasion=oc AND layout IS NULL) THEN
-    RAISE check_violation USING MESSAGE='BLUEPRINT_LAYOUT_MIGRATION_REQUIRED';
-  END IF;
-
   PERFORM public.notification_center_initialized_internal(v_organization);
   ------------------------------------------------------------------
   -- 1. Duplicate the main occasion record.
@@ -206,7 +202,6 @@ BEGIN
   LOOP
     PERFORM public.copy_blueprint_image_resources_internal(oc,new_occ,rec.layout);
     v_layout_ids:='{}';v_copied_layout:=rec.layout;
-    IF rec.layout IS NOT NULL THEN
       -- Collect every declared record UUID, including nested preset documents.
       WITH RECURSIVE records(value) AS (
         SELECT rec.layout UNION ALL SELECT child.value FROM records CROSS JOIN LATERAL (
@@ -223,10 +218,9 @@ BEGIN
        PERFORM public.copy_blueprint_text_resources_internal(oc,NULL,new_occ,v_copied_layout);
        PERFORM public.check_blueprint_text_resources_internal(v_copied_layout,new_occ);
       PERFORM public.check_blueprint_image_resource_internal(v_copied_layout,new_occ);
-    END IF;
     INSERT INTO eshop.blueprints
       (created_at, data, title, organization, occasion, updated_at,layout,layout_revision,layout_text_resource_ids)
-    VALUES (now(), rec.data, rec.title, v_organization, new_occ, now(),v_copied_layout,0,CASE WHEN v_copied_layout IS NULL THEN '{}'::text[] ELSE public.blueprint_text_resource_ids_internal(v_copied_layout,new_occ) END)
+    VALUES (now(), rec.data, rec.title, v_organization, new_occ, now(),v_copied_layout,0,public.blueprint_text_resource_ids_internal(v_copied_layout,new_occ))
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_blueprints (old_id, new_id)

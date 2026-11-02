@@ -76,8 +76,7 @@ BEGIN
     VALUES ('Spot Mix 2', v_product_nodep_id, v_occasion_id, gen_random_uuid()) RETURNING id INTO v_spot_2_id;
 
     -- Use the same form/blueprint/seat bindings required by canonical checkout.
-    INSERT INTO eshop.blueprints(organization,occasion,title,objects)
-      VALUES(v_org_id,v_occasion_id,'Scheduled price seats','[]') RETURNING id INTO v_blueprint_id;
+    INSERT INTO eshop.blueprints(organization,occasion,title) VALUES(v_org_id,v_occasion_id,'Scheduled price seats') RETURNING id INTO v_blueprint_id;
     UPDATE public.forms SET blueprint=v_blueprint_id WHERE id=v_form_id;
     UPDATE eshop.spots SET blueprint=v_blueprint_id,secret_expiration_time=now()+interval '10 minutes'
       WHERE id IN (v_spot_1_id,v_spot_2_id);

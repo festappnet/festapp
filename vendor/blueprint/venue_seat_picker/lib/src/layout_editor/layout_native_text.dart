@@ -108,14 +108,38 @@ class LayoutNativeTextCache {
         _paragraphs[node.id] = entry;
       }
       active.add(node.id);
-      final matrix = labelRenderMatrix(node, label, matrices[node.id]!);
+      final paragraph = entry!.painter;
+      final offset = Offset(
+        -width / 2,
+        node.kind == 'text' ? -height / 2 : -paragraph.height / 2,
+      );
+      final boxes = paragraph.getBoxesForSelection(
+        TextSelection(baseOffset: 0, extentOffset: text.length),
+      );
+      final ink = boxes.isEmpty
+          ? Rect.zero
+          : boxes
+                .map((b) => b.toRect())
+                .reduce((a, b) => a.expandToInclude(b))
+                .shift(offset);
+      final matrix = labelRenderMatrix(
+        node,
+        label,
+        matrices[node.id]!,
+        textBounds: {
+          'x': ink.left,
+          'y': ink.top,
+          'width': ink.width,
+          'height': ink.height,
+        },
+      );
       items.add({
         'id': '${node.id}:text',
         'nodeId': node.id,
         'kind': 'nativeText',
         'matrix': matrix,
         'paintOrder': [rank, 100000],
-        'nativeParagraph': entry!.painter,
+        'nativeParagraph': paragraph,
         'nativeOffset': Offset(
           -width / 2,
           node.kind == 'text' ? -height / 2 : -entry.painter.height / 2,

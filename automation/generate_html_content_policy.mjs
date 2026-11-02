@@ -14,7 +14,6 @@ const dart = comment + ['removedProperties', 'removedAttributes', 'removedElemen
     policy.emphasis.map(rule => `  (tag: ${quote(rule.tag)}, property: ${quote(rule.property)}, values: ${set(rule.values)}),`).join('\n') + '\n];\n';
 const outputs = new Map([
     ['lib/components/html/app_content_policy.g.dart', dart],
-    ['web_client/src/utils/app_content_policy.g.js', comment + `export const appHtmlPolicy = ${JSON.stringify(policy, null, 4)};\n`],
 ]);
 for (const [path, content] of outputs) {
     const url = new URL(path, root);

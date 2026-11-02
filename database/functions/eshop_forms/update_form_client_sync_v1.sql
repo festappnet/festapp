@@ -15,6 +15,7 @@ BEGIN
   IF v_actor IS NULL OR v_occasion IS NULL OR v_form IS NULL
     OR NOT public.can_author_forms(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion]);
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'form',p_form)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,

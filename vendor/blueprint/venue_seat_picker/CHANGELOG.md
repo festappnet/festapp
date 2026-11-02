@@ -1,3 +1,18 @@
+## 0.4.4
+
+- Keep custom tabletop labels inside the filled shape, including cutouts and holes, across editor previews and exported scenes.
+
+- Remove fixed table chairs from the explicitly requested side while preserving other sides and protected seats.
+- Support Flutter 3.44 / Dart 3.12 using compatible standalone Material UI releases, while retaining the current development toolchain.
+- Remove unused direct Cupertino and Flutter localization declarations; required localization remains available through Material UI.
+- Allow compatible shared-core crypto and XML versions; retain the converter version required by existing SVG import receipts.
+- Enforce minimum SDK and dependency-resolution endpoints in CI without changing color selection, SVG backdrops or public widget APIs.
+
+## JavaScript 0.3.8
+
+- Rebuild the shared kernel from core 0.2.3 with the fixed requested-side chair removal and tested crypto/XML dependency ranges.
+- Retain the public JavaScript API and browser requirements.
+
 ## 0.4.3
 
 - Group total seat-count minus/plus controls inside the field, matching side counts, and visibly dim unavailable actions.

@@ -20,7 +20,7 @@ BEGIN
       FROM auth.users au
       JOIN public.occasion_users ou ON au.id = ou."user"
       WHERE au.id = ANY(user_ids)
-        AND ou.occasion = oc
+        AND ou.occasion = oc AND public.occasion_member_visible_internal(oc,au.id)
     )
   );
 END;

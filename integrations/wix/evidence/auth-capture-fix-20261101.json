@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "status": "local-timing-regression-fixed-live-token-injection-still-failing",
+  "sourceSha": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+  "failureReceipt": "integrations/wix/evidence/published-studio-candidate-failure-20261101.json",
+  "rollbackReceipt": "integrations/wix/evidence/hosting-rollback-20261101.json",
+  "rootCause": "The regression proves lazy site.auth() cannot capture script-scoped authentication when element creation is delayed. The live host still fails to deliver a usable token after this fix, so this is not established as the complete live root cause.",
+  "fix": "Capture site.auth() synchronously during the registered widget script; retain one cached SDK client and reuse the captured strategy.",
+  "regression": {
+    "file": "integrations/wix/tests/sdk.test.js",
+    "name": "bundled entry captures script-scoped Wix authentication before a widget is inserted later",
+    "command": "pnpm --dir integrations/wix exec node --test --test-name-pattern=\"captures script-scoped\" tests/sdk.test.js",
+    "before": {
+      "exitCode": 1,
+      "observedTokenProbes": 0,
+      "expectedTokenProbes": 1
+    },
+    "seam": "Actual bundled Wix SDK executed as a script, then delayed custom-element insertion. No manual token injection.",
+    "after": "Passed in canonical compatibility batch."
+  },
+  "validation": {
+    "command": "python3 automation/ci/run.py step wix-contract",
+    "wixPassed": 42,
+    "wixFailed": 0,
+    "wixSkipped": 4,
+    "databaseSkippedReason": "No WIX_BILLING_TEST_DATABASE_URL, no SQL/executor source changed; historical PostgreSQL qualification retained separately.",
+    "sharedCheckoutPassed": 54,
+    "sharedCheckoutFailed": 0,
+    "build": "passed",
+    "package": "passed"
+  },
+  "artifact": {
+    "zipSha256": "b65f53740afd42e145a45e6173c7b7eb4a5a168e77abe834275acdd6d50cc644",
+    "widgetSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab",
+    "manifestSha256": "24cc646e2398b1d1eb254ea9938cb4a72d254fd3c4def5259fa8ae6431c38faa"
+  },
+  "normalBillingActivated": false,
+  "marketplaceSubmitted": false,
+  "liveVerification": {
+    "result": "failed",
+    "receipt": "integrations/wix/evidence/published-studio-corrected-failure-20261101.json",
+    "rollbackReceipt": "integrations/wix/evidence/hosting-auth-fix-rollback-20261101.json",
+    "siteModeResolved": true,
+    "authenticatedProofRequestObserved": false,
+    "productionRestoredToPreviousAssets": true
+  }
+}

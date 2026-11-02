@@ -1,0 +1,64 @@
+{
+  "sourceMain": "a70110d05d5b96e57d3019ad35641965342f7eab",
+  "migrations": [
+    {
+      "version": "20261029180000",
+      "name": "operator_order_summaries",
+      "sha256": "2b7b4ddbfd1c0979df2bad1688f3300f5686737846ad25b6304bf25c126e8894"
+    },
+    {
+      "version": "20261030194500",
+      "name": "application_only_product_checkout",
+      "sha256": "8212e4aecfba18c7d34884c6a304f3fa57242f32daddd36b0dcb21d81c07eb96"
+    },
+    {
+      "version": "20261031223000",
+      "name": "blueprint_feature_independent_capacity",
+      "sha256": "8af9f111ee2483877d7c7771cb9f47dbd1c73d9a007f22b6b1d1231127c378f9"
+    },
+    {
+      "version": "20261101120000",
+      "name": "blueprint_existing_admission_seating",
+      "sha256": "b9019892b53a721a582b44801afe5fb274b66b6c83ea975f2fa00e80ef714b88"
+    }
+  ],
+  "finalFunctionCount": 56,
+  "bundleSha256": "aff28442c053d782194af0942444ebcb58a9f1a59e71729491195a231265c710",
+  "releasedAtUtc": "2026-11-01T04:10:21.467897+00:00",
+  "tenant": "festapptickets",
+  "organizationId": 3,
+  "domain": "https://vstupenky.online",
+  "tenantCommit": "18f442e6376b553d29e556c32b3cb5bb85695bd0",
+  "previousTenantCommit": "fb147b6813edd1b8e4305e933f9ed9e310b0756e",
+  "version": "0.20.473+979",
+  "deploymentUrl": "https://37ba9ee0.vstupenkyonline.pages.dev",
+  "deploymentMethod": "local Flutter and web build; automation/deploy_direct.sh --skip-build --wrangler-oauth --branch prod/festapptickets",
+  "checks": {
+    "tenantDrift": "passed",
+    "previousTenantAncestor": true,
+    "build": "verify_web_build passed",
+    "javascriptUnitTests": "106/106 passed",
+    "live": "verify_web_deployment passed, 3 consecutive coherent probes including assets/legal",
+    "canonicalFunctionBodies": 56,
+    "rlsAndAcl": "passed"
+  },
+  "backup": {
+    "label": "20261101-040519F",
+    "type": "full",
+    "backupStop": 1793506047,
+    "archiveCheckPassed": true
+  },
+  "backend": {
+    "hostname": "festapp-supabase-rehearsal-01",
+    "database": "festapp_rehearsal_20260909220601",
+    "activation": {
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "transaction": "Four missing migration SQL bodies and ledger rows committed atomically; prototype never exposed independently",
+    "protectedEvidenceDirectory": "/var/lib/festapp-rehearsal-evidence/seating-release-20261101",
+    "edgeReloadRequired": false
+  },
+  "scope": "Only selected tenant web release. No other tenant branch or Android release."
+}

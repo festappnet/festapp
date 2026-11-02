@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -130,7 +131,13 @@ def upgrade_local(database_url, root=ROOT):
                     raise ValueError('Forward SQL overlaps recovered history')
                 shutil.copy2(path, destination)
                 added.add(path.name)
-            subprocess.run(['supabase', 'migration', 'up', '--workdir', str(kit), '--db-url', database_url, '--include-all'], check=True)
+            # The local extension-owning admin also runs trusted maintenance
+            # migrations. Supply its service context only to the guarded local
+            # migration connection, never to later application/test sessions.
+            migration_env = os.environ.copy()
+            migration_env['PGOPTIONS'] = (migration_env.get('PGOPTIONS', '') +
+                ' -c request.jwt.claim.role=service_role').strip()
+            subprocess.run(['supabase', 'migration', 'up', '--workdir', str(kit), '--db-url', database_url, '--include-all'], check=True, env=migration_env)
 
         for stage in sorted(load_manifest(root).get('upgradeStages', []), key=lambda stage: stage['beforeVersion']):
             if stage['beforeVersion'] in recorded:
