@@ -118,6 +118,16 @@
     "preview": "en/embed/01-generated-code"
   },
   {
+    "id": "wix",
+    "category": "integrations",
+    "slug": "wix",
+    "label": "Wix",
+    "preview": "en/forms/editor",
+    "title": "Add ticket sales to Wix",
+    "seoTitle": "Wix: install the ticket sales app",
+    "description": "Install vstupenky.online from the Wix App Market, save your public form link and check ticket sales on your published website."
+  },
+  {
     "id": "wordpress",
     "category": "integrations",
     "slug": "wordpress",

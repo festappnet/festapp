@@ -1,0 +1,63 @@
+{
+  "status": "production-deployed-and-verified",
+  "checkedAtUtc": "2026-11-01",
+  "sourceSha": "f0fed2a0b380d758555e1dc7c9bc8ddef6298665",
+  "orchestrationRepoHead": "17937512caa9dea75257490cc513bec394ce73d0",
+  "project": "festapp-wix",
+  "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+  "branch": "main",
+  "environment": "Production",
+  "deploymentId": "11f27699-042d-44be-8ca4-cb740fb3984b",
+  "deploymentUrl": "https://11f27699.festapp-wix.pages.dev",
+  "rollbackDeploymentId": "83870904-fef5-4f4f-9c29-480cbcdc75fe",
+  "rollbackDeploymentSource": "7db5e25",
+  "artifact": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "381ad37d9591be663e1ef0c1556378563a1fec3549f8c827ca149c935489d5f5",
+    "previewReceiptContainerSha256": "9801fbef4494f97b1eeb616ca4ee275e4c6b61cbed43f6c4145c341e3273b763",
+    "containerHashNote": "ZIP container bytes differ from preview receipt; all seven archive paths were present, the six public assets and manifest matched the fresh dist byte-for-byte, and each of the six served public assets matched the immutable preview deployment byte-for-byte before deployment. _headers is package metadata and is not a public route.",
+    "manifestSha256": "a9263b40b0706a531183d1b1765d4dd846464c3a5d224aa5b751176216603eb0",
+    "widgetSha256": "7ac66608c59a9a187857bee8e4f17fc6b93a8412638935dbdca9d406b0b4ae0c",
+    "publicAssetCount": 6
+  },
+  "liveReadback": {
+    "immutableDeploymentAndStableUrl": "all six public assets returned HTTP 200 and matched the exact staged asset bytes at both URLs",
+    "routes": [
+      "/manifest.json",
+      "/help.html",
+      "/settings.css",
+      "/settings.html",
+      "/settings.js",
+      "/widget.js"
+    ],
+    "widgetCors": "*",
+    "settingsJsCors": "*",
+    "contentTypes": "passed",
+    "cacheAndSecurityHeaders": "public, max-age=300, must-revalidate; nosniff",
+    "uniqueDeploymentAndBranchStableUrl": "passed"
+  },
+  "activation": {
+    "url": "https://vstupenky.online/backend-activation.json",
+    "status": 200,
+    "tenantId": "festapptickets",
+    "generation": 1,
+    "backend": "canonical",
+    "sha256": "c964ba8e23a79e0a082a280d0a44fe3a424b5168eae0853f33d34c630b1cc31c"
+  },
+  "checkoutContextProbe": {
+    "endpoint": "https://api.festapp.net/functions/v1/wix-checkout-context",
+    "verifiedFrom": "real Wix Studio published QA origin using background browser session",
+    "optionsStatus": 200,
+    "getStatus": 405,
+    "invalidEmptyPostStatus": 400,
+    "invalidEmptyPostCode": "INVALID_FORM_LINK",
+    "tokenOrDatabaseAccess": false,
+    "ordersOrHoldsCreated": false,
+    "commandLineProbe": "Cloudflare Error 1010 blocked client signature; not retried per response. Real browser QA probe passed."
+  },
+  "scope": {
+    "existingPagesProjectOnly": true,
+    "otherTenantsFlutterDatabaseDnsNativeWixOrBillingChanged": false,
+    "productionOrdersOrHoldsCreated": false
+  }
+}

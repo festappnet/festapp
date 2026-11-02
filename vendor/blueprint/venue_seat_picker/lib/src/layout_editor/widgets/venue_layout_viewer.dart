@@ -9,7 +9,31 @@ class VenueLayoutViewer extends StatelessWidget {
     required this.document,
     this.resources = const {},
     this.seatPresentation = const {},
+    this.highlightedNodeIds = const {},
+    this.highlightPulse,
+    this.activeNodeIds = const {},
+    this.focusNodeIds = const {},
+    this.focusRevision = 0,
+    this.focusMaxZoomFactor = 5,
+    this.onNodeTap,
+    this.wheelZoomRequiresModifier = false,
   });
+
+  /// Local presentation only. This viewer has no reservation/editor callbacks.
+  final Set<String> highlightedNodeIds, activeNodeIds, focusNodeIds;
+
+  /// Increment to request a fit of [focusNodeIds], or the canvas when empty.
+  final int focusRevision;
+
+  /// Optional one-shot emphasis; only the canvas painter listens to its ticks.
+  final Animation<double>? highlightPulse;
+
+  /// Maximum focus zoom relative to the whole-plan fit.
+  final double focusMaxZoomFactor;
+
+  /// Embedded viewers can let normal wheel scrolling reach the parent page.
+  final bool wheelZoomRequiresModifier;
+  final ValueChanged<String?>? onNodeTap;
   final VenueLayoutDocument document;
   final Map<String, dynamic> resources, seatPresentation;
   @override
@@ -17,8 +41,19 @@ class VenueLayoutViewer extends StatelessWidget {
     label: 'Venue plan. Pinch to zoom and drag to pan.',
     child: LayoutSceneSurface(
       document: document,
+      wheelZoomRequiresModifier: wheelZoomRequiresModifier,
       resources: resources,
       presentation: seatPresentation,
+      selected: activeNodeIds,
+      highlightedIds: highlightedNodeIds,
+      highlightPulse: highlightPulse,
+      showSeatSelectionChecks: false,
+      focusNodeIds: focusNodeIds,
+      focusRevision: focusRevision,
+      focusMaxZoomFactor: focusMaxZoomFactor,
+      onPointTap: onNodeTap == null
+          ? null
+          : (point) => onNodeTap!(hitTest(document, point.dx, point.dy)),
     ),
   );
 }

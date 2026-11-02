@@ -14,7 +14,9 @@ export async function handleOccasionLifecycle(request:Request,env:Env,fetcher:ty
  if(!body||Object.keys(body).some(k=>!['projectId','commandId'].includes(k))||typeof body.commandId!=='string'||!/^([a-f0-9]{8}-)([a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(body.commandId))return errorResponse(400,'INVALID_REQUEST','Invalid lifecycle request');
  let project;try{project=resolveControlProject(env,{projectId:body.projectId});assertControlHost(project,request.url);if(project.authContract!=='festapp')throw Error();}catch{return errorResponse(400,'UNKNOWN_PROJECT','Unknown lifecycle project');}
  const rpc=async(name:string,args:Record<string,unknown>)=>{
-  const response=await fetcher(`${project.supabaseUrl}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:project.anonKey,Authorization:`Bearer ${jwt}`,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(10000),redirect:'error'});
+  // workerd supports manual/follow only. A manual redirect fails the normal
+  // status check below without forwarding the actor's JWT to another origin.
+  const response=await fetcher(`${project.supabaseUrl}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:project.anonKey,Authorization:`Bearer ${jwt}`,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(10000),redirect:'manual'});
   if(!response.ok)throw Object.assign(Error('lifecycle_rpc_rejected'),{status:response.status});
   return response.json();
  };

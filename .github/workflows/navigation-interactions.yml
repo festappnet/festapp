@@ -1,9 +1,17 @@
 name: Navigation interaction regressions
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'lib/components/_shared/app_panel_helper.dart'
       - 'lib/components/navigation/**'
+      - 'lib/components/occasion/db_occasions.dart'
+      - 'lib/components/occasion/occasion_creation_helper.dart'
+      - 'lib/components/occasion/occasion_creation_notice.dart'
+      - 'lib/components/unit/**'
+      - 'lib/router_service.dart'
+      - 'test/components/occasion/occasion_list_refresh_test.dart'
+      - 'test/components/unit/**'
       - 'lib/components/schedule/**'
       - 'lib/components/timeline/**'
       - 'test/components/navigation/**'
@@ -17,6 +25,13 @@ on:
     paths:
       - 'lib/components/_shared/app_panel_helper.dart'
       - 'lib/components/navigation/**'
+      - 'lib/components/occasion/db_occasions.dart'
+      - 'lib/components/occasion/occasion_creation_helper.dart'
+      - 'lib/components/occasion/occasion_creation_notice.dart'
+      - 'lib/components/unit/**'
+      - 'lib/router_service.dart'
+      - 'test/components/occasion/occasion_list_refresh_test.dart'
+      - 'test/components/unit/**'
       - 'lib/components/schedule/**'
       - 'lib/components/timeline/**'
       - 'test/components/navigation/**'

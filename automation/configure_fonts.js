@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const {fontCapHeightRatio} = require('./lib/font_cap_height.cjs');
 
 // Arguments: [node, script, projectRoot, fontFamilyBase, commaSeparatedFontFiles]
 const projectRoot = process.argv[2] && path.resolve(process.argv[2]);
@@ -200,6 +201,11 @@ if (fs.existsSync(dartThemePath)) {
     
     if (dart.match(dartRegex)) {
         dart = dart.replace(dartRegex, `static final fontFamily = "${fontFamilyBase}";`);
+        const bold = fonts.reduce((best, font) =>
+            Math.abs(font.weight - 700) < Math.abs(best.weight - 700) ? font : best);
+        const capRatio = fontCapHeightRatio(fs.readFileSync(bold.srcPath));
+        dart = dart.replace(/static const double\? boldCapHeightRatio = [^;]+;/,
+            `static const double? boldCapHeightRatio = ${capRatio};`);
         fs.writeFileSync(dartThemePath, dart);
         console.log("✔ lib/theme_config.dart updated.");
     } else {

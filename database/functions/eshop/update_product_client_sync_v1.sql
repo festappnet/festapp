@@ -26,6 +26,7 @@ BEGIN
   IF jsonb_typeof(p_product->'inventory_contexts')='array' THEN
     p_product:=jsonb_set(p_product,'{inventory_contexts}',coalesce((SELECT jsonb_agg(c ORDER BY (c->>'inventory_context_id')::bigint)
       FROM jsonb_array_elements(p_product->'inventory_contexts') c),'[]')); END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion]);
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'product',p_product)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,
@@ -56,6 +57,7 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE='new product cannot have expected version';
   END IF;
   v_product:=public.update_product_internal_v1(p_product-'expected_aggregate_version');
+  PERFORM public.assert_form_seating_source_internal(id) FROM public.forms WHERE occasion=v_occasion;
   SELECT version INTO v_version FROM public.client_aggregate_versions WHERE aggregate_type='product'
     AND scope_type='occasion' AND scope_id=v_occasion AND aggregate_id=v_product::text;
   RETURN public.complete_private_inventory_mutation_v1(p_command_id,v_occasion,

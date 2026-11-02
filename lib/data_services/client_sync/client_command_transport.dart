@@ -26,23 +26,21 @@ class ClientCommandTransport {
     this.retrySerialization = false,
     String? principalBinding,
     String? Function()? principalProvider,
-  })  : _principalBinding = principalBinding,
-        _principalProvider = principalProvider;
+  }) : _principalBinding = principalBinding,
+       _principalProvider = principalProvider;
 
   factory ClientCommandTransport.supabase(
     SupabaseClient client, {
     bool durable = false,
     bool retrySerialization = false,
-  }) =>
-      ClientCommandTransport(
-        (functionName, parameters) =>
-            client.rpc(functionName, params: parameters),
-        retrySerialization: retrySerialization,
-        principalProvider: durable
-            ? () =>
-                '${client.rest.url}:${client.auth.currentUser?.id ?? 'anonymous'}'
-            : null,
-      );
+  }) => ClientCommandTransport(
+    (functionName, parameters) => client.rpc(functionName, params: parameters),
+    retrySerialization: retrySerialization,
+    principalProvider: durable
+        ? () =>
+              '${client.rest.url}:${client.auth.currentUser?.id ?? 'anonymous'}'
+        : null,
+  );
 
   final ClientCommandRpc _rpc;
   final int maxAttempts;
@@ -76,14 +74,16 @@ class ClientCommandTransport {
       pending.parameters,
       commandId: pending.id,
     );
-    final validated = flight.then((response) {
-      // A malformed/ambiguous response retains identity for exact replay.
-      _confirmedResponse(response, pending.id);
-      _pending.remove(key);
-      return response;
-    }).whenComplete(() {
-      pending.inFlight = null;
-    });
+    final validated = flight
+        .then((response) {
+          // A malformed/ambiguous response retains identity for exact replay.
+          _confirmedResponse(response, pending.id);
+          _pending.remove(key);
+          return response;
+        })
+        .whenComplete(() {
+          pending.inFlight = null;
+        });
     pending.inFlight = validated;
     return validated;
   }
@@ -93,8 +93,8 @@ class ClientCommandTransport {
     Map<String, dynamic> parameters, {
     String? commandId,
   }) async {
-    final frozen =
-        (jsonDecode(jsonEncode(parameters)) as Map).cast<String, dynamic>();
+    final frozen = (jsonDecode(jsonEncode(parameters)) as Map)
+        .cast<String, dynamic>();
     final binding = principalBinding;
     if (commandId != null &&
         frozen['p_command_id'] != null &&
@@ -104,7 +104,8 @@ class ClientCommandTransport {
     final ownsIntent =
         binding != null && frozen['p_command_id'] == null && commandId == null;
     final payload = _intentPayload(binding, functionName, frozen);
-    final resolvedCommandId = commandId ??
+    final resolvedCommandId =
+        commandId ??
         frozen['p_command_id'] ??
         (ownsIntent
             ? await ClientCommandIdentity.claimIntent(
@@ -199,8 +200,8 @@ class ClientCommandTransport {
     if (principalBinding != intent.principalBinding) {
       throw StateError('Command principal changed');
     }
-    final parameters =
-        (jsonDecode(intent.requestJson) as Map).cast<String, dynamic>();
+    final parameters = (jsonDecode(intent.requestJson) as Map)
+        .cast<String, dynamic>();
     final stored = await pendingIntent(intent.operation, parameters);
     if (stored == null ||
         stored.commandId != intent.commandId ||
@@ -225,8 +226,7 @@ class ClientCommandTransport {
     String? binding,
     String operation,
     Map<String, dynamic> parameters,
-  ) =>
-      {'principal': binding, 'operation': operation, 'parameters': parameters};
+  ) => {'principal': binding, 'operation': operation, 'parameters': parameters};
 
   static ClientCommandResponse _confirmedResponse(
     Object? raw,
@@ -282,6 +282,8 @@ class ClientCommandTransport {
       'p_order',
       'p_product_id',
       'p_ticket',
+      'p_transition',
+      'p_blueprint',
       'p_place',
       'p_group',
       'p_group_id',

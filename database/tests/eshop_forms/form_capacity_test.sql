@@ -61,7 +61,7 @@ CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql
  SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
-DECLARE x jsonb:=pg_temp.fixture(5); f bigint:=(x->>'form')::bigint; regular bigint; source bigint; r jsonb; c jsonb; w jsonb; persons bigint[]; before_symbol text; before_sequence bigint;
+DECLARE x jsonb:=pg_temp.fixture(5); f bigint:=(x->>'form')::bigint; regular bigint; source bigint; r jsonb; c jsonb; w jsonb; persons bigint[]; before_symbol text; before_sequence bigint; unlimited bigint;
 BEGIN
  r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
  PERFORM assert_eq(r->>'code','200'::text,'regular checkout'); regular:=(r#>>'{order,id}')::bigint;
@@ -79,12 +79,26 @@ BEGIN
  PERFORM assert_jsonb_contains(c,'{"occupiedPeople":0,"waitingPeople":2,"offeredPlaces":0,"remainingPublic":3,"offerablePlaces":5,"heldForWaiting":2}','release five waiting two gives P three');
  PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offers WHERE form_id=f),0::bigint,'release does not automatically send');
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below held waiting capacity allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
- BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":null}'); RAISE EXCEPTION 'remove active limit allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
- UPDATE occasions SET features='[{"code":"blueprint","is_enabled":true}]' WHERE id=(x->>'occasion')::bigint;
- BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"blueprint":1}'); RAISE EXCEPTION 'blueprint active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
+ BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":null}'); RAISE EXCEPTION 'remove active limit allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' AND SQLERRM NOT LIKE '%MODE_CHANGED%' THEN RAISE; END IF; END;
+ INSERT INTO unit_users(unit,"user",is_editor) VALUES((x->>'unit')::bigint,(x->>'actor')::uuid,true);
+ PERFORM public.save_occasion_client_sync_v1((x->>'occasion')::bigint,gen_random_uuid(),0,jsonb_build_object('id',x->'occasion','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
+ PERFORM assert_true((SELECT blueprint IS NULL AND participant_capacity=5 AND waitlist_enabled FROM forms WHERE id=f),'enable plan preserves bounded form and waiting registrations');
+ PERFORM assert_jsonb_contains(public.get_form_capacity_snapshot_internal(f),'{"waitingPeople":2,"occupiedPeople":0}','enable plan preserves waiting people');
+ PERFORM pg_temp.adopt_public_link_fixtures();
+ PERFORM assert_eq(public.get_blueprint_for_edit(x->>'link')->>'code','200'::text,'enabled plan can be opened for editing');
+ PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',x->'occasion','title','Updated with plan','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
+ PERFORM assert_eq((SELECT count(*) FROM eshop.blueprints WHERE occasion=(x->>'occasion')::bigint),1::bigint,'repeat save reuses prepared plan');
+ BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"blueprint":1}'); RAISE EXCEPTION 'blueprint active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' AND SQLERRM NOT LIKE '%MODE_CHANGED%' THEN RAISE; END IF; END;
  UPDATE occasions SET features='[]' WHERE id=(x->>'occasion')::bigint;
- BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"waitlist_enabled":false}'); RAISE EXCEPTION 'disable active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
+ BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"waitlist_enabled":false}'); RAISE EXCEPTION 'disable active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' AND SQLERRM NOT LIKE '%MODE_CHANGED%' THEN RAISE; END IF; END;
  w:=pg_temp.offer(x,source,2);
+ -- Editing the occasion must also preserve an offer already holding places.
+ INSERT INTO forms(occasion,link) VALUES((x->>'occasion')::bigint,gen_random_uuid()::text) RETURNING id INTO unlimited;
+ PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',x->'occasion','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
+ PERFORM assert_jsonb_contains(public.get_form_capacity_snapshot_internal(f),'{"offeredPlaces":2,"waitingPeople":0}','enable plan preserves pending offer');
+ PERFORM assert_true((SELECT blueprint IS NULL AND participant_capacity=5 AND waitlist_enabled FROM forms WHERE id=f),'bounded form remains unchanged alongside unlimited form');
+ PERFORM assert_true((SELECT blueprint IS NULL FROM forms WHERE id=unlimited),'unlimited form also awaits explicit publication');
+ PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',x->'occasion','features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below reserved allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
  SELECT array_agg(id ORDER BY id) INTO persons FROM pg_temp.ticket_rows WHERE current_order_id=source;
  UPDATE eshop.products SET maximum=1 WHERE id=(x->>'product')::bigint;

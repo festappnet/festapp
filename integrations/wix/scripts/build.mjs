@@ -6,7 +6,11 @@ if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(regi
 await rm('dist', {recursive:true,force:true});
 await mkdir('dist', {recursive: true});
 await build({entryPoints:['src/widget.js','src/settings.js'], bundle:true, outdir:'dist', format:'iife', target:['es2022'], minify:true, legalComments:'linked', sourcemap:false});
-for (const file of ['settings.html','settings.css','help.html','_headers']) await copyFile(`src/${file}`, `dist/${file}`);
+for (const file of ['settings.html','settings.css','help.html','integration-guide.html','_headers']) await copyFile(`src/${file}`, `dist/${file}`);
+for (const [source,target] of [['header','brand-header.svg'],['icon','brand-icon.svg']]) {
+  await copyFile(`../../assets/brand/vstupenky-online/vstupenky-online-${source}.svg`, `dist/${target}`);
+}
+await copyFile('media/icon-1000.png', 'dist/app-icon.png');
 const files={};
 for (const file of (await readdir('dist')).sort()) {
   if (file==='manifest.json') continue;

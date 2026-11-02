@@ -1,6 +1,7 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:url_launcher/link.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
@@ -31,21 +32,22 @@ class BankSyncWarningButton extends StatelessWidget {
     final guidance = warning.code == 'suspended'
         ? OrdersStrings.bankSyncWarningEnable
         : OrdersStrings.bankSyncWarningManage;
-    Widget settingsLink({VoidCallback? beforeOpen}) => Link(
-          uri: Uri(path: '/bank-accounts/${warning.bankAccountId}/connection'),
-          target: LinkTarget.self,
-          builder: (context, followLink) => TextButton(
-            onPressed: followLink == null
-                ? null
-                : () async {
-                    beforeOpen?.call();
-                    Tooltip.dismissAllToolTips();
-                    await followLink();
-                  },
-            child: Text(OrdersStrings.bankSyncWarningOpenSettings,
-                style: const TextStyle(decoration: TextDecoration.underline)),
+    Widget settingsLink({VoidCallback? beforeOpen}) => TextButton(
+      onPressed: () {
+        final router = context.router.root;
+        beforeOpen?.call();
+        Tooltip.dismissAllToolTips();
+        router.push(
+          BankAccountConnectionSettingsRoute(
+            accountId: warning.bankAccountId.toString(),
           ),
         );
+      },
+      child: Text(
+        OrdersStrings.bankSyncWarningOpenSettings,
+        style: const TextStyle(decoration: TextDecoration.underline),
+      ),
+    );
     final reason = showPaymentHelp && warning.code == 'suspended'
         ? OrdersStrings.bankSyncPaymentPaused
         : OrdersStrings.bankSyncWarningReason(warning.code);

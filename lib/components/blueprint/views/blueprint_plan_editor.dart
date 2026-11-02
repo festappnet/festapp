@@ -62,8 +62,13 @@ class BlueprintPlanEditor extends StatefulWidget {
       this.onEditRequested,
       this.onNodeActivated,
       this.uploadBitmap,
-      this.assetResolver});
+      this.assetResolver,
+      this.focusNodeIds = const {},
+      this.focusRevision = 0});
   final VenueLayoutController controller;
+  /// A visual deep link only; never an operational or geometry selection.
+  final Set<String> focusNodeIds;
+  final int focusRevision;
   final Future<ImageUploadResult> Function(Uint8List)? uploadBitmap;
   final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintTextResources> Function()? loadTextResources;
@@ -577,6 +582,9 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                           absorbing: _pending,
                           child: VenueLayoutEditor(
                               controller: controller,
+                              focusNodeIds: widget.focusNodeIds,
+                              focusRevision: widget.focusRevision,
+                              highlightedNodeIds: widget.focusNodeIds.where((id) => controller.document.nodes.any((node) => node.id == id)).toSet(),
                               toolbarPrefix: widget.toolbarPrefix,
                               toolbarLeading: widget.toolbarLeading,
                               footerTrailing: widget.footerTrailing,

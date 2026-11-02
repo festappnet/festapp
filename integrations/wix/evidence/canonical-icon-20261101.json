@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "scope": "Only vstupenky.online Wix app icon and its app profile metadata; no component version release or App Market submission.",
+  "canonicalSource": "assets/brand/vstupenky-online/README.md",
+  "localPng": "integrations/wix/media/icon-1000.png",
+  "sha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+  "previousWixUrl": "https://static.wixstatic.com/media/397be0_b6dcc358c55d42f5b9f01cf14864e2a0~mv2.png",
+  "previousSha256": "9c280cfb5da476af1d72c0545b04d1de40b209d511672118c23eb0c775e73cd8",
+  "newWixUrl": "https://static.wixstatic.com/media/397be0_e87760243c4e43d7acf325e6d3b8741a~mv2.png",
+  "originalCdnBytesMatchLocal": true,
+  "nativeProcedure": "App Profile > App Info > update icon > Upload Media > Link (URL) > import immutable hosted PNG > Add to Page > Save. Cold-reloaded listing response, checked original Wix CDN bytes, then App Distribution > Update App Profile; Wix confirmed App profile updated.",
+  "galleryUrlsUnchanged": true,
+  "releasedVersion": "2.1",
+  "profileStatus": "Up-to-date",
+  "marketplaceSubmitted": false,
+  "partnerAgreementCheckboxChecked": false,
+  "note": "CDP file-input upload was unavailable; Wix's native URL import was used."
+}

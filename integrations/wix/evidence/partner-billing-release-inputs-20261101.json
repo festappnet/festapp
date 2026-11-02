@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "wixAppId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "widgetExtensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "publisherFees": {
+    "upfrontAmount": 0,
+    "recurringAmount": 0,
+    "currency": "USD",
+    "evidence": "integrations/wix/evidence/commercial-clarification-20261028.json; Gmail 1a1825fe56ce9706"
+  },
+  "hosting": {
+    "widgetScriptUrl": "https://festapp-wix.pages.dev/widget.js",
+    "settingsUrl": "https://festapp-wix.pages.dev/settings"
+  },
+  "billingApproval": {
+    "reference": "Gmail 1a1825fe56ce9706 and 1a1962120dade694; integrations/wix/evidence/portal-pricing-20261101.json",
+    "serviceFeeOnly": true,
+    "grossTicketValueExcluded": true,
+    "externalTicketCheckoutApproved": true,
+    "partnerBillingApproved": true,
+    "refundTreatmentConfirmed": true,
+    "attributionPolicyReference": "Gmail 1a1825fe56ce9706",
+    "refundPolicyReference": "Gmail 1a1825fe56ce9706"
+  },
+  "editorReceipts": {
+    "Harmony": null,
+    "Editor": null,
+    "Studio": null
+  },
+  "publicStoreAssetsVerified": false,
+  "billingImplementationReceipt": "integrations/wix/evidence/compatibility-20261101.json; docs/plans/wix-partner-billing-CRITIC-2026-10-28.md; docs/operations/releases/festapptickets-wix-critic-fix-2026-10-28.json",
+  "qualificationNote": "Native isExternalBilling=true and BI ingestion confirmed. Normal native config2.1 and prior stable widget restored after tests. A fresh actual native2.0 widget running the official full-client diagnostic returned Site/injectionCount0/proof timeout. App Market submission held for Wix SDK token-delivery investigation; current editor checkout/reviewer/store gates remain incomplete. Financial dispatch remains disabled.",
+  "executedAddendumReceipt": "integrations/wix/evidence/addendum-completion-20261028.json",
+  "previewHostingReceipt": "integrations/wix/evidence/hosting-preview-20261028.json",
+  "stableHostingReceipt": "integrations/wix/evidence/hosting-auth-fix-rollback-20261101.json",
+  "biCompletionReceipt": "integrations/wix/evidence/bi-verification-completion-20261101.json",
+  "authInvestigationReceipt": "integrations/wix/evidence/auth-capture-fix-20261101.json",
+  "nativeRestorationReceipt": "integrations/wix/evidence/native-restoration-20261101.json",
+  "nativeDiagnosticReceipt": "integrations/wix/evidence/native-auth-diagnostic-result-20261101.json"
+}
