@@ -1,5 +1,6 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/order_commands.dart';
@@ -320,13 +321,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'bujnmi@co');
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+    expect(find.text(CommonStrings.invalidFormat), findsNothing);
     tester.widget<TextField>(find.byType(TextField)).focusNode!.unfocus();
     await tester.pumpAndSettle();
-    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNotNull);
+    expect(find.text(CommonStrings.invalidFormat), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'bujnmi@c');
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+    expect(find.text(CommonStrings.invalidFormat), findsNothing);
     expect(tester.widget<OutlinedButton>(find.widgetWithText(
         OutlinedButton, 'EmailDelivery.recovery.saveSendConfirmation')).onPressed, isNull);
     expect(requests, 0);

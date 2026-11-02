@@ -24,6 +24,9 @@ class VenueLayoutEditor extends StatefulWidget {
   const VenueLayoutEditor({
     super.key,
     required this.controller,
+    this.focusNodeIds = const {},
+    this.focusRevision,
+    this.highlightedNodeIds = const {},
     this.inspectorBuilder,
     this.toolbarPrefix,
     this.toolbarLeading,
@@ -54,6 +57,9 @@ class VenueLayoutEditor extends StatefulWidget {
     this.globalFontPickerBuilder,
     this.inlineTextStyleBuilder,
   });
+  /// Explicit host navigation only. Selection changes never request a camera fit.
+  final Set<String> focusNodeIds, highlightedNodeIds;
+  final int? focusRevision;
   final VenueLayoutController controller;
 
   /// Optional host font catalog for object typography, built only in edit mode.
@@ -3427,6 +3433,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               widget.nativeTextPreview,
                                           key: ValueKey(_templateViewport),
                                           document: c.document,
+                                          focusNodeIds: widget.focusNodeIds.where((id) => c.document.nodes.any((node) => node.id == id)).toSet(),
+                                          focusRevision: widget.focusNodeIds.isEmpty || widget.focusNodeIds.any((id) => c.document.nodes.any((node) => node.id == id))
+                                              ? widget.focusRevision : null,
                                           backgroundSelected:
                                               _canEdit && _editingBackground,
                                           canvasSelected:
@@ -3480,6 +3489,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               ? null
                                               : widget.viewSelectableIds,
                                           highlightedIds: {
+                                            ...widget.highlightedNodeIds.where((id) => c.document.nodes.any((node) => node.id == id)),
                                             ...c.hoveredIds,
                                             ?_seatTargetId,
                                           },

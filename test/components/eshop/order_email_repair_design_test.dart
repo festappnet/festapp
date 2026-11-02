@@ -179,6 +179,19 @@ void main() {
         expect(find.textContaining('Poskytovatel oznámil'), findsNothing);
         expect(find.text('Vyřešit doručení'), findsNothing);
         expect(find.byType(TextField).hitTestable(), findsOneWidget);
+        final emailField = tester.widget<TextField>(find.byType(TextField));
+        expect(emailField.decoration!.labelText, isNull);
+        expect(emailField.decoration!.helperText, isNull);
+        expect(emailField.decoration!.errorText, isNull);
+        final frame = find.byKey(const ValueKey('order-email-field-frame'));
+        final frameBeforeFocus = tester.getRect(frame);
+        await tester.tap(find.byType(TextField));
+        await tester.pump(const Duration(milliseconds: 80));
+        expect(tester.getSize(frame), frameBeforeFocus.size);
+        emailField.focusNode!.unfocus();
+        await tester.pumpAndSettle();
+        expect(tester.getSize(frame), frameBeforeFocus.size);
+
         expect(find.byType(OutlinedButton), findsOneWidget);
         expect(
           tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,

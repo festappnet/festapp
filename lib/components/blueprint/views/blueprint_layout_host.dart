@@ -65,8 +65,12 @@ class BlueprintLayoutHost extends StatefulWidget {
       required this.reload,
       this.loadTextResources,
       this.assetResolver,
-      this.seatingTransport});
+      this.seatingTransport,
+      this.focusNodeId,
+      this.focusRevision = 0});
   final BlueprintModel source;
+  final String? focusNodeId;
+  final int focusRevision;
   final SeatingTransitionTransport? seatingTransport;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final BlueprintLayoutAssetResolver? assetResolver;
@@ -2068,6 +2072,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                         ) : null, child: BlueprintPlanEditor(
                                         nativeTextPreview: _canEdit,
                                         controller: controller.layout,
+                                        focusNodeId: widget.focusNodeId,
+                                        focusRevision: widget.focusRevision,
                                         footerTrailing: _seatHelp(),
                                         canvasBottomOverlay: _seatingOpen ? null : _operationPanel(),
                                         canvasHeader: _editingPlan

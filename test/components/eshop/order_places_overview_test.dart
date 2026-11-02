@@ -90,6 +90,7 @@ void main() {
       expect(await controller.load(), isTrue);
       int? selected;
       Set<int> selectedGroup = {};
+      (int, String)? openedPlan;
       final environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
         translations: jsonDecode(
@@ -107,6 +108,7 @@ void main() {
                   ticketId: selected,
                   onTicket: (id) => refresh(() => selected = id),
                   onMapTickets: (ids) => selectedGroup = ids,
+                  onOpenPlan: (plan, node) => openedPlan = (plan, node),
                 ),
               ),
             ),
@@ -131,6 +133,16 @@ void main() {
       expect(selectedGroup, {1});
       expect(viewer().activeNodeIds, {'00000000-0000-4000-8000-000000000001'});
       expect(viewer().focusNodeIds, isEmpty);
+      expect(viewer().focusRevision, revision);
+      await tester.ensureVisible(find.byIcon(Icons.location_searching).last);
+      await tester.tap(find.byIcon(Icons.location_searching).last);
+      await tester.pumpAndSettle();
+      expect(openedPlan, (5, '00000000-0000-4000-8000-000000000002'));
+      expect(
+        selected,
+        1,
+        reason: 'Opening the main plan is distinct from selection',
+      );
       expect(viewer().focusRevision, revision);
       expect(calls, ['get_order_admin_detail', 'get_order_blueprint_view']);
       expect(viewer().document.toJson(), document.toJson());

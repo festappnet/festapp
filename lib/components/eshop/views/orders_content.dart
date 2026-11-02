@@ -11,6 +11,8 @@ import '../order_detail_controller.dart';
 import 'order_detail_view.dart';
 
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
+import 'package:fstapp/components/navigation/navigation_paths.dart';
+import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/components/notification_center/notification_detail_target.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 
@@ -924,6 +926,25 @@ class _OrdersContentState extends State<OrdersContent> {
                       tab: tab,
                       replace: true,
                     ),
+                    onOpenPlan: (blueprintId, nodeId) async {
+                      if (!await _allowDetailLeave() ||
+                          !mounted ||
+                          occasionLink == null)
+                        return;
+                      final uri = Uri(
+                        pathSegments: [
+                          '',
+                          occasionLink!,
+                          ReservationsPage.ROUTE,
+                          NavigationPaths.blueprint,
+                        ],
+                        queryParameters: {
+                          'blueprintId': '$blueprintId',
+                          'blueprintNodeId': nodeId,
+                        },
+                      );
+                      await pushRootPath(context.router.root, uri.toString());
+                    },
                     onTicket: (id) => _navigateDetail(
                       active.orderId,
                       tab: 'tickets',
