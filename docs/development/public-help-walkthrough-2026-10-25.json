@@ -1032,7 +1032,7 @@
         "Leave Menu Assignment set to all pages (0). Save and close; module ID in this disposable run is 111.",
         "Create a published Public article through the native editor. Insert {loadmoduleid 111} and feature it for the local homepage. Save and reopen to check persistence; capture editor.",
         "Repeat captures in Czech after installing official cs-CZ pack and switching administrator language. Change sample titles through the native module/article editors.",
-        "For the public result, use the shorter existing /form/embedded-seats fixture; set real LocalizationService locale to cs in the isolated iframe storage. Capture published Joomla article at 1440 px and article main at 390 px.",
+        "For the public result, apply the Czech localization overlay and use /form/ples-u-lipy-mistenky; set real LocalizationService locale to cs. Capture published Joomla article at 1440 px and article main at 390 px.",
         "At 320 px check no horizontal overflow, one iframe and one helper; verify automatic height and native fallback link opens a new tab.",
         "Exercise template-position rendering through Joomla native save forms, then restore the article/module state.",
         "Completed follow-up: provision dedicated canonical Supabase festapp-joomla-help-20261029 at 59931/59932. Use the shared updated V2 embed seed, verify twelve bindings and one module iframe/helper. Open the real picker, activate A1, read aria-pressed and unexpired PostgreSQL lease, capture at 390px, zoom, activate A1 again, verify lease removal, check 320px parent/frame overflow and close with Escape."
@@ -1050,7 +1050,7 @@
       ],
       "boundaries": [
         "Joomla UI and module behavior are real. External service is the existing disposable Supabase fixture, reached by browser-local DNS mapping and HTTPS transport proxy.",
-        "Synthetic authored event/header/field names remain English where present; they are fixture content rather than translated Joomla or client controls.",
+        "The November 2 recapture uses localized synthetic event, organizer, form and field names in the matching guide language; technical fixture aliases remain available.",
         "An initial missing publicform validation rule was caused by a root-owned namespace cache created by the Docker CLI readiness probe. Restore cache ownership to www-data and reinstall the unchanged public ZIP. No module fix or rebuild was needed.",
         "Only Joomla 6 was freshly walked through for this guide; Joomla 5 support refers to existing module acceptance evidence.",
         "English guide remains preview-only under the existing publication gate.",

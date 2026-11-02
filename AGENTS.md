@@ -45,3 +45,11 @@ repository.
 ## JavaScript package manager
 
 Use pnpm 11.24.0 for every JavaScript package in this repository. Install with `pnpm install --frozen-lockfile` in its package directory; use `pnpm run`/`pnpm exec` for scripts and local tools. Keep `pnpm-lock.yaml` and `pnpm-workspace.yaml` authoritative. Dependencies share the same user content store as Mendelio; do not create npm lockfiles or copy `node_modules` between worktrees.
+
+## Help and screenshot language
+
+For every guide, localize both the interface and all visible example data to
+the guide's language. This includes event and form titles, organizers, venues,
+products and field labels. Use natural examples rather than technical fixture
+names such as “Synthetic seats” or “Synthetic Organizer”. Apply the locale to
+the disposable data before taking real screenshots; never paint over captures.
