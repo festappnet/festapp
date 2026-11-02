@@ -1,3 +1,6 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
+import 'package:fstapp/components/_shared/async_download_button.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -33,6 +36,8 @@ void main() {
     String tab = 'overview',
     bool writable = false,
     bool canCancel = false,
+    String? customerNote,
+    String ticketState = 'ordered',
     Size size = const Size(1000, 1400),
     VoidCallback? onClose,
   }) async {
@@ -65,7 +70,11 @@ void main() {
               'price': 400,
               'currency_code': 'CZK',
               'allowedActions': [if (writable) 'edit', if (canCancel) 'cancel'],
-              'data': {'name': 'Alex', 'email': 'alex@example.com'},
+              'data': {
+                'name': 'Alex',
+                'email': 'alex@example.com',
+                if (customerNote != null) 'note': customerNote,
+              },
             },
             'capabilities': {'write': writable},
             'payment': {
@@ -91,7 +100,7 @@ void main() {
                   'ticket_symbol': ticketsEnabled && !issuanceHidden
                       ? 'T-${100 + i}'
                       : null,
-                  'state': 'ordered',
+                  'state': ticketState,
                   'snapshot': {
                     'products': [
                       {'id': 501, 'title': 'Historical supper', 'price': 125},
@@ -139,6 +148,27 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('ordinary note precedes hidden note and header omits copy', (
+    tester,
+  ) async {
+    await open(tester, language: 'cs', customerNote: 'Přijdeme po 18. hodině.');
+    final note = find.text('Přijdeme po 18. hodině.');
+    final hidden = find.text('Skrytá poznámka');
+    expect(note, findsOneWidget);
+    expect(tester.getTopLeft(note).dy, lessThan(tester.getTopLeft(hidden).dy));
+    expect(find.byType(CopyButton), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('paid ticket offers guarded PDF generation', (tester) async {
+    await open(tester, language: 'cs', ticketState: 'paid', tab: 'tickets');
+    await tester.tap(find.byKey(const ValueKey('ticket-selection-100')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AsyncDownloadButton), findsOneWidget);
+    expect(find.text('Stáhnout PDF'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final language in ['cs', 'en']) {
     final expectedTickets = language == 'cs'
