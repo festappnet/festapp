@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_connections (
   UNIQUE(instance_id,consumer_app_id,remote_bank_account_id),
   UNIQUE(instance_id,provider,physical_account)
 );
+-- Continuous failed observations drive UI warnings independently of email incidents.
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_since timestamptz;
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_observed_at timestamptz;
+
 CREATE TABLE IF NOT EXISTS eshop.bank_sync_account_aliases (
   bank_account_id bigint PRIMARY KEY REFERENCES eshop.bank_accounts(id),
   connection_id bigint NOT NULL REFERENCES eshop.bank_sync_connections(id)

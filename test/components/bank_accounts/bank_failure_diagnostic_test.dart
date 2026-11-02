@@ -22,93 +22,115 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
-  for (final readOnly in [false, true]) {
-    testWidgets(
-      'last failure survives recovery and respects read-only UI: $readOnly',
-      (tester) async {
-        final token = TextEditingController();
-        final account = BankAccountModel.fromJson({
-          'id': 1,
-          'is_admin': true,
-          'bank_sync': {
-            'state': 'connected',
-            'mode': 'api',
-            'bank_pull_at': '2026-11-01T22:33:04Z',
-            'last_error': null,
-            'last_failure': {
-              'version': 1,
-              'id': '046aec2a-c9ef-4d94-8b1c-7bcf319d345a',
-              'occurred_at': '2026-11-01T22:33:04.123Z',
-              'code': 'missing_statement_info',
-              'stage': 'response_decode',
-              'transport': 'proxy',
-              'operation': 'transactions',
-              'http_status': 200,
-              'document_shape': 'object',
-              'statement_shape': 'object',
-              'info_shape': 'missing',
+  for (final pending in [false, true]) {
+    for (final readOnly in [false, true]) {
+      testWidgets(
+        'last failure stays available during recovery or grace: $readOnly / $pending',
+        (tester) async {
+          final token = TextEditingController();
+          final account = BankAccountModel.fromJson({
+            'id': 1,
+            'is_admin': true,
+            'bank_sync': {
+              'state': pending ? 'degraded' : 'connected',
+              'warning_pending': pending,
+              'mode': 'api',
+              'bank_pull_at': '2026-11-01T22:33:04Z',
+              'last_error': pending ? 'fio_token_invalid_or_inactive' : null,
+              'last_failure': {
+                'version': 1,
+                'id': '046aec2a-c9ef-4d94-8b1c-7bcf319d345a',
+                'occurred_at': '2026-11-01T22:33:04.123Z',
+                'code': 'missing_statement_info',
+                'stage': 'response_decode',
+                'transport': 'proxy',
+                'operation': 'transactions',
+                'http_status': 200,
+                'document_shape': 'object',
+                'statement_shape': 'object',
+                'info_shape': 'missing',
+              },
             },
-          },
-        });
-        expect(
-          BankAccountModel.fromJson(account.toJson())
-              .bankSync!
-              .lastFailure!
-              .code,
-          'missing_statement_info',
-        );
-        await tester.pumpWidget(
-          EasyLocalization(
-            supportedLocales: const [Locale('en')],
-            startLocale: const Locale('en'),
-            path: 'unused',
-            assetLoader: const _Translations(),
-            child: Builder(
-              builder: (context) => MaterialApp(
-                builder: DependencyMaterialBridge.builder,
-                locale: context.locale,
-                localizationsDelegates: [
-                  ...context.localizationDelegates,
-                  ...GlobalMaterialLocalizations.delegates,
-                ],
-                supportedLocales: context.supportedLocales,
-                home: Scaffold(
-                  body: SingleChildScrollView(
-                    child: BankAccountConnectionTab(
-                      account: account,
-                      isReadOnly: readOnly,
-                      isFio: false,
-                      isSaving: false,
-                      pairingCode: null,
-                      onRegenerateToken: () {},
-                      tokenController: token,
-                      expiryDate: null,
-                      onExpiryDateChanged: (_) {},
-                      onSaveToken: () {},
+          });
+          expect(
+            BankAccountModel.fromJson(account.toJson())
+                .bankSync!
+                .warningPending,
+            pending,
+          );
+          expect(
+            BankAccountModel.fromJson(account.toJson())
+                .bankSync!
+                .lastFailure!
+                .code,
+            'missing_statement_info',
+          );
+          await tester.pumpWidget(
+            EasyLocalization(
+              supportedLocales: const [Locale('en')],
+              startLocale: const Locale('en'),
+              path: 'unused',
+              assetLoader: const _Translations(),
+              child: Builder(
+                builder: (context) => MaterialApp(
+                  builder: DependencyMaterialBridge.builder,
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...context.localizationDelegates,
+                    ...GlobalMaterialLocalizations.delegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                  home: Scaffold(
+                    body: SingleChildScrollView(
+                      child: BankAccountConnectionTab(
+                        account: account,
+                        isReadOnly: readOnly,
+                        isFio: false,
+                        isSaving: false,
+                        pairingCode: null,
+                        onRegenerateToken: () {},
+                        tokenController: token,
+                        expiryDate: null,
+                        onExpiryDateChanged: (_) {},
+                        onSaveToken: () {},
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        if (readOnly) {
-          expect(find.text('Last recorded error'), findsNothing);
-        } else {
-          await tester.tap(find.text('Last recorded error'));
+          );
           await tester.pumpAndSettle();
           expect(
-            find.text('The latest bank pull succeeded after this error.'),
-            findsOneWidget,
+            find.text('Temporary problem, retrying automatically'),
+            pending ? findsOneWidget : findsNothing,
           );
-          expect(find.textContaining('accountStatement.info'), findsOneWidget);
-          expect(find.byType(SelectableText), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        }
-        await tester.pumpWidget(const SizedBox());
-        token.dispose();
-      },
-    );
+          expect(find.text('Needs attention'), findsNothing);
+          if (pending)
+            expect(
+              find.textContaining('Fio is not accepting the token yet.'),
+              findsNothing,
+            );
+          if (readOnly) {
+            expect(find.text('Last recorded error'), findsNothing);
+          } else {
+            await tester.tap(find.text('Last recorded error'));
+            await tester.pumpAndSettle();
+            expect(
+              find.text('The latest bank pull succeeded after this error.'),
+              pending ? findsNothing : findsOneWidget,
+            );
+            expect(
+              find.textContaining('accountStatement.info'),
+              findsOneWidget,
+            );
+            expect(find.byType(SelectableText), findsOneWidget);
+            expect(tester.takeException(), isNull);
+          }
+          await tester.pumpWidget(const SizedBox());
+          token.dispose();
+        },
+      );
+    }
   }
 }

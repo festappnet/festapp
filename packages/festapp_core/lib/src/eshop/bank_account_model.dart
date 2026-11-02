@@ -190,6 +190,7 @@ class BankSyncConnection {
   final DateTime? receiverCommitAt;
   final String? lastError;
   final BankSyncFailure? lastFailure;
+  final bool warningPending;
   final String? tokenMasked;
   BankSyncConnection.fromJson(Map<String, dynamic> json)
     : state = json['state'] as String,
@@ -200,6 +201,7 @@ class BankSyncConnection {
         json['receiver_commit_at']?.toString() ?? '',
       ),
       lastError = json['last_error'] as String?,
+      warningPending = json['warning_pending'] == true,
       lastFailure = json['last_failure'] is Map<String, dynamic>
           ? BankSyncFailure.fromJson(
               json['last_failure'] as Map<String, dynamic>,
@@ -213,6 +215,7 @@ class BankSyncConnection {
     'bank_pull_at': bankPullAt?.toIso8601String(),
     'receiver_commit_at': receiverCommitAt?.toIso8601String(),
     'last_error': lastError,
+    'warning_pending': warningPending,
     'last_failure': lastFailure?.toJson(),
     'token_masked': tokenMasked,
   };
