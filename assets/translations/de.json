@@ -2745,6 +2745,7 @@
     "UNKNOWN": "Die Aktion konnte nicht abgeschlossen werden. Aktualisieren Sie die aktuellen Daten."
   },
   "OrderDetail": {
+    "open_order_plan": "Saalplan mit Plätzen der Bestellung öffnen",
     "form_field": "Formularfeld",
     "selected_entry": "Ausgewählter Eintrag",
     "email_status_help": "Bestell-, Zahlungs- und E-Mail-Status sind getrennt. Angenommen bedeutet die Übernahme durch den Versanddienst; zugestellt die Annahme durch den Mailserver. Öffnungen und Klicks bestätigen nicht das Lesen. Wiederholung bedeutet einen weiteren Versuch; unbekannt bestätigt keinen Versand. Die Nachricht zeigt den Grund und mögliche Abhilfe.",

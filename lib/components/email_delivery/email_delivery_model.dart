@@ -19,9 +19,27 @@ class EmailDeliveryModel implements ITrinaRowModel {
   final DateTime? createdAt;
   final String kind;
   final String state;
+  final String? lastError;
+  final bool hasDeliveryEvidence;
+
+  /// Superseded schedules are audit records, not emails sent to the customer.
+  bool get isSupersededReminderPlan =>
+      kind == 'order_reminder' &&
+      state == 'cancelled' &&
+      lastError == 'reminder_superseded' &&
+      !hasDeliveryEvidence;
 
   EmailDeliveryModel.fromJson(Map<String, dynamic> json)
-    : recipient = json['recipient'] as String?,
+    : lastError = json['last_error'] as String?,
+      hasDeliveryEvidence = const [
+        'accepted_at',
+        'delivered_at',
+        'opened_at',
+        'clicked_at',
+        'bounced_at',
+        'complained_at',
+      ].any((key) => json[key] != null),
+      recipient = json['recipient'] as String?,
       id = (json['id'] as num).toInt(),
       messageId = json['message_id'] as String,
       orderId = (json['order_id'] as num?)?.toInt(),

@@ -91,7 +91,7 @@ void main() {
         expect(await controller.load(), isTrue);
         int? selected;
         Set<int> selectedGroup = {};
-        (int, String)? openedPlan;
+        (int, Set<String>)? openedPlan;
         final environment = WidgetEnvironmentFixture(
           locale: const Locale('cs'),
           translations: jsonDecode(
@@ -154,13 +154,24 @@ void main() {
         await tester.ensureVisible(find.byIcon(Icons.location_searching).last);
         await tester.tap(find.byIcon(Icons.location_searching).last);
         await tester.pumpAndSettle();
-        expect(openedPlan, (5, '00000000-0000-4000-8000-000000000002'));
+        expect(openedPlan!.$1, 5);
+        expect(openedPlan!.$2, {'00000000-0000-4000-8000-000000000002'});
         expect(
           selected,
           1,
           reason: 'Opening the main plan is distinct from selection',
         );
         expect(viewer().focusRevision, revision);
+        await tester.ensureVisible(
+          find.byTooltip('Otevřít plánek s místy objednávky'),
+        );
+        await tester.tap(find.byTooltip('Otevřít plánek s místy objednávky'));
+        await tester.pumpAndSettle();
+        expect(openedPlan!.$1, 5);
+        expect(
+          openedPlan!.$2,
+          places.map((p) => p['nodeId'] as String).toSet(),
+        );
         expect(calls, ['get_order_admin_detail', 'get_order_blueprint_view']);
         expect(viewer().document.toJson(), document.toJson());
         await tester.ensureVisible(find.text('Celý sál'));

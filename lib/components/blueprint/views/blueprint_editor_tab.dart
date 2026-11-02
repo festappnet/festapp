@@ -23,7 +23,7 @@ class BlueprintRouteFocusState {
   bool active = false;
   BlueprintFocusTarget? target;
   bool invalidPlan = false;
-  (String, String?, String?)? _last;
+  (String, String?, String?, String?)? _last;
 
   bool observe(Uri uri, {required String occasionLink, required bool visible}) {
     final path = uri.pathSegments;
@@ -42,7 +42,12 @@ class BlueprintRouteFocusState {
       return changed;
     }
     final query = uri.queryParameters;
-    final key = (occasionLink, query['blueprintId'], query['blueprintNodeId']);
+    final key = (
+      occasionLink,
+      query['blueprintId'],
+      query['blueprintNodeId'],
+      query['blueprintNodeIds'],
+    );
     if (active && key == _last) return false;
     active = true;
     _last = key;
@@ -204,10 +209,12 @@ class _BlueprintTabState extends State<BlueprintTab> {
       return BlueprintLayoutHost(
         key: ValueKey(source.id),
         source: source,
-        focusNodeId: _focusTarget?.nodeFor(
-          source.id,
-          source.layoutSnapshot!.document,
-        ),
+        focusNodeIds:
+            _focusTarget?.nodesFor(
+              source.id,
+              source.layoutSnapshot!.document,
+            ) ??
+            const {},
         focusRevision: _focusRevision,
         reload: () =>
             DbForms.getBlueprintForEdit(_occasionLink!, blueprintId: source.id),

@@ -24,6 +24,7 @@ class OrderPaymentsContent extends StatefulWidget {
   final int orderId;
   final String? orderSymbol;
   final int? unitId;
+  final bool showPaymentReference;
 
   const OrderPaymentsContent({
     super.key,
@@ -31,6 +32,7 @@ class OrderPaymentsContent extends StatefulWidget {
     this.orderSymbol,
     this.unitId,
     this.onChanged,
+    this.showPaymentReference = true,
   });
 
   @override
@@ -208,7 +210,9 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                   ),
                 ],
               ),
-              if (_payment != null && _payment!.variableSymbol != null)
+              if (widget.showPaymentReference &&
+                  _payment != null &&
+                  _payment!.variableSymbol != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10.0),
                   child: SelectionArea(
