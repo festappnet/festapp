@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
@@ -12,7 +11,6 @@ test('Make order-summary reads use real SQL scope and paginate 52 stable synthet
     t.after(async () => { await db.query('ROLLBACK'); await db.end(); });
     assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe, true);
     await db.query('SET LOCAL ROLE postgres');
-    await db.query(await readFile(new URL('../../../supabase/migrations/20261029180000_operator_order_summaries.sql', import.meta.url), 'utf8').then(s=>s.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'')));
     await db.query('RESET ROLE');
     const f = await fixture(db, 1);
     const form = Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Make isolated SQL fixture',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id", [f.occasion])).rows[0].id);

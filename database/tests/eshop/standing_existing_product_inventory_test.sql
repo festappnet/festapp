@@ -5,7 +5,7 @@ DO $$
 DECLARE actor uuid; org bigint; un bigint; oc bigint; pt bigint; product_id bigint;
  pool bigint; context_id bigint; order_id bigint; ticket_id bigint; item_id bigint;
  seat_id bigint; before_order jsonb; before_ticket jsonb; before_item jsonb;
- result jsonb;
+ result jsonb; blueprint_id bigint; seat_node uuid:=gen_random_uuid();
 BEGIN
  PERFORM public.create_user_for_test('standing-existing','standing-existing@example.invalid');
  actor:=public.get_user_id('standing-existing');
@@ -24,8 +24,14 @@ BEGIN
  INSERT INTO eshop.tickets(occasion,state) VALUES(oc,'ordered') RETURNING id INTO ticket_id;
  INSERT INTO eshop.order_product_ticket("order",ticket,product)
  VALUES(order_id,ticket_id,product_id) RETURNING id INTO item_id;
- INSERT INTO eshop.spots(occasion,product,order_product_ticket,title)
- VALUES(oc,product_id,item_id,'Existing addressed seat') RETURNING id INTO seat_id;
+ INSERT INTO eshop.blueprints(occasion,organization,title,layout)
+ VALUES(oc,org,'Addressed seats',jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,'textPolicy',jsonb_build_object('language','und','direction','auto'),'selectionUnits','[]'::jsonb,'attachments','[]'::jsonb,'sections','[]'::jsonb,'presets','[]'::jsonb,
+ 'canvas',jsonb_build_object('x',0,'y',0,'width',2400,'height',1600,'fill','#FFFFFFFF'),
+ 'nodes',jsonb_build_array(jsonb_build_object('id',seat_node,'kind','seat','width',20,'height',20,
+ 'transform',jsonb_build_object('x',40,'y',40,'rotation',0))))) RETURNING id INTO blueprint_id;
+ INSERT INTO eshop.spots(occasion,product,order_product_ticket,title,blueprint)
+ VALUES(oc,product_id,item_id,'Existing addressed seat',blueprint_id) RETURNING id INTO seat_id;
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(blueprint_id,seat_node,seat_id);
  SELECT to_jsonb(o) INTO before_order FROM eshop.orders o WHERE id=order_id;
  SELECT to_jsonb(t) INTO before_ticket FROM eshop.tickets t WHERE id=ticket_id;
  SELECT to_jsonb(i) INTO before_item FROM eshop.order_product_ticket i WHERE id=item_id;

@@ -4,49 +4,10 @@ import {randomUUID} from 'node:crypto';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
-export async function install(db){
+export async function install(db) {
  await db.query('RESET ROLE');
- const declared=new Set();
- // Current main domain guards/producers must exist before the final forward
- // owner is exercised. Schema is additive and remains inside each fixture TX.
- const prerequisites=['notification_center/schema.sql','notification_center/core.sql','notification_center/orders.sql',
-  'notification_center/capacity.sql','notification_center/email.sql','notification_center/maintenance.sql','notification_center/bank.sql',
-  'eshop_ticket_batches/schema.sql','eshop_ticket_batches/guards.sql','eshop_orders/check_order_is_mutable.sql'];
- for(const file of prerequisites){
-  let sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');
-  if(file==='notification_center/schema.sql'&&(await db.query("select to_regclass('public.notification_center_organizations') present")).rows[0].present)continue;
-  if(file==='notification_center/maintenance.sql'&&(await db.query("select to_regclass('public.notification_center_maintenance') present")).rows[0].present)sql=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION'));
-  await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);
- }
- for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261024023000_confirmed_blueprint_seat_orders.sql','20261024024000_confirmed_blueprint_ticket_cancellation.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
- const currentOwners=['blueprint/save.sql','eshop/materialize_ticket_products_internal_v1.sql','eshop/create_ticket_order.sql',
-  'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql','eshop_orders/recalculate_order_payment_status.sql',
-  'inventory/apply_allocations.sql','inventory/adjust_spot_capacity_for_pool.sql',
-  'forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql',
-  'emails/email_queue.sql','eshop_waitlist/fakturoid_recovery.sql'];
- for(const file of currentOwners){const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
- // Every declaration in this cut is installed by postgres on production.
- // The disposable postgres role cannot replace supabase_admin-owned routines;
- // install with the fixture owner, then align only these declared owners.
- const declaredRows=(await db.query("select format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure) statement from pg_proc p where p.pronamespace='public'::regnamespace and p.proname=any($1)",[[...declared]])).rows;
- for(const row of declaredRows)await db.query(row.statement);
- await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));await db.query('RESET ROLE');
- // Exact production metadata verified through protected read-only canonical
- // access: these eight existing functions are postgres-owned. New definer
- // wrappers also use the actual production migration role, not a queue bypass.
- await db.query('ALTER TABLE eshop.replacement_invoice_preparations OWNER TO postgres');
- for(const table of ['ticket_batches','ticket_batch_items','ticket_batch_document_parts']){await db.query(`ALTER TABLE eshop.${table} OWNER TO postgres`);await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON eshop.${table} TO service_role`);}
- for(const row of (await db.query("select format('ALTER TABLE public.%I OWNER TO postgres',tablename) statement from pg_tables where schemaname='public' and tablename like 'notification_center_%'")).rows)await db.query(row.statement);
- const signatures=['confirm_blueprint_order_change_internal_v1(bigint[],jsonb)','storno_tickets_bulk_internal_v1(bigint[],boolean)',
-  'update_order_and_tickets_to_storno(bigint)','create_ticket_order_internal_v1(jsonb)',
-  'enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)','enqueue_paid_order_tickets(bigint)',
-  'cancel_order_email_intents(bigint)','replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)',
-  'preview_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,boolean)',
-  'create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)'];
- const rows=(await db.query("select format('ALTER FUNCTION %s OWNER TO postgres',to_regprocedure('public.'||signature)) statement from unnest($1::text[]) signature where to_regprocedure('public.'||signature) is not null",[signatures])).rows;
- assert.equal(rows.length,signatures.length);for(const row of rows)await db.query(row.statement);
+ await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));
 }
-
 export async function setup(t,persistent=false){let root,f;const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{try{await db.query('ROLLBACK');if(persistent&&f&&(await db.query('select exists(select 1 from occasions where id=$1) present',[f.occasion])).rows[0].present)await cleanup(db,f,root);}finally{await db.end();}});await install(db);root=await fixture(db,1);const fx=(await db.query('select blueprint_test_fixture_internal($1) value',[root.org])).rows[0].value;f={...root,occasion:Number(fx.occasion),blueprint:Number(fx.blueprint),unit:Number((await db.query('select unit from occasions where id=$1',[fx.occasion])).rows[0].unit)};
  await db.query('update occasion_users set "user"=$2 where occasion=$1',[f.occasion,f.actor]);await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');const saved=(await db.query('select update_blueprint_client_sync_v1($1,$2) value',[fx.request,randomUUID()])).rows[0].value;assert.equal(saved.status,'applied',JSON.stringify(saved));
  await db.query('RESET ROLE');const bindings=(await db.query('select blueprint_binding_projection_internal($1) value',[f.blueprint])).rows[0].value.seatBindings;

@@ -21,7 +21,6 @@ async function forbidden(db,sql,args) {
 test('canonical truth table preserves server operation rights across 2048 role combinations',options,async t=>within(t,async(db,f)=>{
     await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,false)',[f.org,f.actor]);
     await db.query("update occasions set features='[{\"code\":\"reception\",\"is_enabled\":true}]' where id=$1",[f.occasion]);
-    await db.query(await readFile(new URL('../../../supabase/migrations/20261026190000_form_authoring.sql',import.meta.url),'utf8'));
     await db.query(await readFile(new URL('../../../database/tests/helpers/authorization_context_reference.sql',import.meta.url),'utf8'));
     for(let bits=0;bits<2048;bits++) {
         const b=Array.from({length:11},(_,i)=>Boolean(bits&(1<<i)));
@@ -612,6 +611,12 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     for(const field of ['schemaGrants','defaultGrants','roles','roleMemberships']) {
         assert.deepEqual(sorted(after[field]),sorted(before[field]),field+' remains unchanged');
     }
+    // The disposable bootstrap aligns historical admin-owned application tables
+    // to postgres. Normalize only the previous owner's ACL, never API principals.
+    const adminOwned=new Set(before.tableGrants.filter(g=>g.grantee==='supabase_admin'&&g.grantor==='supabase_admin'&&g.is_grantable==='YES').map(g=>g.table_schema+'.'+g.table_name));
+    for(const field of ['tableGrants','columnGrants']) before[field]=before[field]
+      .filter(g=>!(adminOwned.has(g.table_schema+'.'+g.table_name)&&g.grantee==='supabase_admin'&&g.grantor==='supabase_admin'))
+      .map(g=>adminOwned.has(g.table_schema+'.'+g.table_name)?{...g,grantor:g.grantor==='supabase_admin'?'postgres':g.grantor,...(g.grantee==='postgres'?{is_grantable:'YES'}:{})}:g);
     const removedDirectDelete=g=>g.table_schema==='public'&&['images','log_notifications'].includes(g.table_name)
         &&['anon','authenticated'].includes(g.grantee)&&g.privilege_type==='DELETE';
     assert.equal(before.tableGrants.filter(removedDirectDelete).length,4);
@@ -626,18 +631,29 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // add the exact notification/batch tables below. Live role grants verified.
     const batchTables=['ticket_batches','ticket_batch_items','ticket_batch_document_parts'];
     const approvedPrivateTables=[...stripeTables,...batchTables,'replacement_invoice_preparations'];
-    const notificationTables=['activation','organizations','events','recipients','user_state','deliveries','preferences','source_state','maintenance','bank_health'].map(name=>'notification_center_'+name);
+    const notificationTables=['organizations','events','recipients','user_state','deliveries','preferences','source_state','maintenance','bank_health'].map(name=>'notification_center_'+name);
     const ownerTables=before.tableGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.grantee==='postgres');
     const ownerColumns=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id'&&g.grantee==='postgres');
     assert.equal(ownerTables.length,7);assert.equal(ownerColumns.length,4);
+    // Forward additions through 20261102180000: these exact relations are
+    // private. Email seating inspection has one reviewed service SELECT.
+    const forwardPrivateTables=[
+      ['eshop','checkout_origin_signing_key'],['eshop','order_checkout_origins'],
+      ...['form_seating_transitions','notification_center_read_batches','occasion_media_jobs',
+      'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',
+      'wix_billing_activation','wix_billing_attempts','wix_billing_deliveries'].map(name=>['public',name])];
     const expectedTables=approvedPrivateTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_name})));
     // The ticketing profile migration grants only SELECT for service-side
     // seat/area projection. Every other table privilege remains exact.
     const serviceBindingTables=['blueprint_seat_bindings','blueprint_area_bindings'];
     expectedTables.push(...serviceBindingTables.flatMap(table_name=>ownerTables.filter(g=>g.privilege_type==='SELECT').map(g=>({...g,table_name,grantee:'service_role',is_grantable:'NO'}))));
     expectedTables.push(...notificationTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_schema:'public',table_name}))));
-    expectedTables.push(...batchTables.flatMap(table_name=>ownerTables.filter(g=>['SELECT','INSERT','UPDATE','DELETE'].includes(g.privilege_type)).map(g=>({...g,table_name,grantee:'service_role',is_grantable:'NO'}))));
-    assert.deepEqual(sorted(after.tableGrants),sorted([...before.tableGrants.filter(g=>!removedDirectDelete(g)),...expectedTables]),
+
+    expectedTables.push(...forwardPrivateTables.flatMap(([table_schema,table_name])=>ownerTables.map(g=>({...g,table_schema,table_name}))));
+    expectedTables.push(...ownerTables.filter(g=>g.privilege_type==='SELECT').map(g=>({...g,table_schema:'public',table_name:'form_seating_transitions',grantee:'service_role',is_grantable:'NO'})));
+    const expectedTableGrants=sorted([...before.tableGrants.filter(g=>!removedDirectDelete(g)),...expectedTables]);
+    const actualTableGrants=sorted(after.tableGrants);
+    assert.deepEqual({extra:actualTableGrants.filter(g=>!expectedTableGrants.includes(g)),missing:expectedTableGrants.filter(g=>!actualTableGrants.includes(g))},{extra:[],missing:[]},
         'Only four legacy DELETE grants are removed; exact approved private tables preserve verified owner/service grants');
     const privateColumns=(await db.query("select table_name,column_name from information_schema.columns where table_schema='eshop' and table_name=any($1)",[approvedPrivateTables])).rows;
     assert.deepEqual([...new Set(privateColumns.map(c=>c.table_name))].sort(),[...approvedPrivateTables].sort());
@@ -647,7 +663,15 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const notificationColumns=(await db.query("select table_name,column_name from information_schema.columns where table_schema='public' and table_name=any($1)",[notificationTables])).rows;
     assert.deepEqual([...new Set(notificationColumns.map(c=>c.table_name))].sort(),[...notificationTables].sort());
     expectedColumns.push(...notificationColumns.flatMap(({table_name,column_name})=>ownerColumns.map(g=>({...g,table_schema:'public',table_name,column_name}))));
-    expectedColumns.push(...privateColumns.filter(c=>batchTables.includes(c.table_name)).flatMap(({table_name,column_name})=>ownerColumns.filter(g=>['SELECT','INSERT','UPDATE'].includes(g.privilege_type)).map(g=>({...g,table_name,column_name,grantee:'service_role',is_grantable:'NO'}))));
+
+    for(const [table_schema,table_name] of forwardPrivateTables){
+      const columns=(await db.query('select column_name from information_schema.columns where table_schema=$1 and table_name=$2',[table_schema,table_name])).rows;
+      assert(columns.length>0,table_schema+'.'+table_name+' exists');
+      expectedColumns.push(...columns.flatMap(({column_name})=>ownerColumns.map(g=>({...g,table_schema,table_name,column_name}))));
+      if(table_name==='form_seating_transitions') expectedColumns.push(...columns.map(({column_name})=>({...ownerColumns.find(g=>g.privilege_type==='SELECT'),table_schema,table_name,column_name,grantee:'service_role',is_grantable:'NO'})));
+    }
+    const bankColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='bank_sync_connections'&&g.column_name==='bank_account_id');
+    for(const column_name of ['failure_observed_at','failure_since','observation_id']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
     // The two additive payment_info columns inherit its unchanged table ACL.
     // API access to any other new column or any approved private-table column still fails.
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
@@ -662,6 +686,9 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     retired.add('duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid)');
     retired.add('duplicate_form_to_occasion_internal_v1(bigint,text)');
     for(const s of ['set_claim(uuid,text,jsonb)','delete_claim(uuid,text)','get_claims(uuid)','get_claim(uuid,text)','get_my_claims()','get_my_claim(text)','is_claims_admin()']) retired.add(s);
+    retired.add('record_bank_sync_health(bigint,bigint,timestamp with time zone,text,boolean,boolean,boolean)');
+    retired.add('record_bank_sync_pull(bigint,timestamp with time zone,text)');
+    retired.add('update_bank_sync_connection_metadata(bigint,text,timestamp with time zone,text,text)');
     const present=new Set(after.functions.map(f=>f.signature));
     for(const f of before.functions) if(!present.has(f.signature)) assert(retired.has(f.signature),'Unreviewed removed function: '+f.signature);
 
@@ -676,7 +703,30 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
         old.set(f.signature,{...original,grants:original.grants.filter(g=>g.grantee!=='supabase_admin').map(g=>({...g,grantor:'postgres'}))});
     }
     const changes=after.functions.filter(f=>old.has(f.signature)&&JSON.stringify(sorted(f.grants))!==JSON.stringify(sorted(old.get(f.signature).grants)));
+    // 240210 replaces ambient PUBLIC execution with exact named role grants.
+    const publicRevocations=[
+      "check_is_admin_of_organization(bigint)",
+      "delete_occasion_email_template(bigint,text)",
+      "get_all_occasions_for_edit(bigint)",
+      "get_all_occasions_for_edit_v182(bigint)",
+      "get_all_occasions_for_edit_v212(bigint)",
+      "get_available_occasions(bigint,bigint)",
+      "get_blueprint(uuid,uuid,bigint)",
+      "get_blueprint_for_edit(text)",
+      "get_is_editor_on_occasion(bigint)",
+      "get_is_editor_on_unit(bigint)",
+      "get_is_editor_order_on_occasion(bigint)",
+      "get_is_editor_order_view_on_occasion(bigint)",
+      "get_is_editor_view_on_occasion(bigint)",
+      "get_is_manager_on_occasion(bigint)",
+      "get_is_manager_on_unit(bigint)",
+      "get_public_occasions(bigint,bigint)",
+      "get_unit_for_edit(bigint)",
+      "scan_ticket_v2(text,text)"
+];
     assert.deepEqual(changes.map(f=>f.signature).sort(),[
+        ...publicRevocations,
+        'begin_client_mutation_v1(uuid,text,bigint,uuid,text)',
         'delete_unit_user_internal_v1(uuid,bigint)',
         'get_form_for_edit(text)',
         'get_occasion_seo_data(text)',
@@ -686,13 +736,15 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
         'update_bank_account_user(bigint,text,boolean,boolean)',
         'update_scan_code(text,text)',
         'update_unit_user(jsonb)',
-    ]);
+    ].sort());
     // Approved scope tightening: unit dashboard 20261021230000 and public SEO
     // 20261022225500 remove ambient grants, without adding any new principal.
     // Later reviewed cuts: explicit application ACLs (240210), ticket
     // cancellation (240240), and participant authoring (271500).
     for(const [signature,removed] of [['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
         assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>!removed.includes(g.grantee))),signature+' has only its reviewed revocations');
+    for(const signature of publicRevocations) assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>g.grantee!=='PUBLIC')),signature+' removes only PUBLIC execution');
+    assert.deepEqual(sorted(changes.find(f=>f.signature==='begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants),sorted(old.get('begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants.filter(g=>g.grantee!=='service_role')));
     const grants=sig=>changes.find(f=>f.signature===sig).grants.map(g=>g.grantee).sort();
     assert.deepEqual(grants('delete_unit_user_internal_v1(uuid,bigint)'),['postgres']);
     assert.deepEqual(grants('update_bank_account(bigint,text,text,text,text[],text,bigint,text)'),['authenticated','postgres','service_role']);

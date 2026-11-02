@@ -14,8 +14,8 @@ const connection=process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 async function setup(t){
  assert(connection,'Set FESTAPP_MCP_TEST_DATABASE_URL to a supported disposable fixture');
  const {db,f}=await formSetup(t);
- await db.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));
- await db.query(await readFile(new URL('../../../supabase/migrations/20261027150000_people_group_authoring.sql',import.meta.url),'utf8'));
+
+
  await db.query('set local role authenticated');
  return {db,f};
 }
@@ -131,12 +131,12 @@ test('existing canonical group/profile SQL regressions execute against final sou
 
 test('scope move and role revocation reject a blocked read or write before returning data or replay',async t=>{
  const {openDisposableDatabase}=await import('./postgres.mjs');
- const {install}=await import('./form-fixtures.mjs');
+ const {assertSchema}=await import('./form-fixtures.mjs');
  const {fixture}=await import('../../../automation/authorization/benchmark.mjs');
  for(const scenario of ['move-read','move-write','revoke-read','revoke-replay']){
   const admin=await openDisposableDatabase(connection),changer=await openDisposableDatabase(connection),worker=await openDisposableDatabase(connection);
   try{
-   await admin.query('BEGIN');await install(admin);await admin.query(await readFile(new URL('../../../supabase/migrations/20261026220000_occasion_unit_configuration.sql',import.meta.url),'utf8'));await admin.query(await readFile(new URL('../../../supabase/migrations/20261027150000_people_group_authoring.sql',import.meta.url),'utf8'));
+   await admin.query('BEGIN');await assertSchema(admin);
    const f=await fixture(admin,1);const command=randomUUID();const saved=await rpc(admin,f,'profiles.save',{userId:f.actor,expectedVersion:0,changes:{note:'Original intent'}},command);assert.equal(saved.code,200,JSON.stringify(saved));
    const other=Number((await admin.query("insert into units(title,organization) values('Outside people consent',$1) returning id",[f.org])).rows[0].id);
    await admin.query('COMMIT');

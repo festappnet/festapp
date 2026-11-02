@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { openDisposableDatabase } from './postgres.mjs';
 import { fixture, reply, profile } from './fixture.mjs';
 import { canonicalPreview } from './render-fixture.mjs';
@@ -19,9 +18,6 @@ test(
             await db.end();
         });
         await db.query('BEGIN');
-        // The guarded cache can predate the latest probe refresh. Keep the
-        // production readiness checks, including all body and privilege checks.
-        await db.query(await readFile(new URL('../../../database/functions/others/get_ticket_layout_write_contract_v1.sql', import.meta.url), 'utf8'));
         await db.query(
             "select public.create_user_for_test('mcp-e1-node','mcp-e1-node@example.invalid')",
         );

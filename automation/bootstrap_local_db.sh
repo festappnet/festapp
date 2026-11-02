@@ -62,6 +62,14 @@ python3 "$PROJECT_ROOT/automation/baseline.py" upgrade-local --database-url "$MI
 # remains responsible for extension setup. Tests deliberately use postgres as
 # the operator, and SET ROLE for actual API permission assertions.
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
+-- Production migrations run as postgres. Local extension setup needs the
+-- separate supabase_admin, so align application table owners as well as routines.
+-- API roles still exercise their real RLS; no role receives BYPASSRLS.
+SELECT format('ALTER TABLE %s OWNER TO postgres',c.oid::regclass)
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname IN ('public','eshop') AND c.relkind IN ('r','p')
+AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_class'::regclass AND d.objid=c.oid AND d.deptype='e')
+\gexec
 GRANT ALL ON ALL TABLES IN SCHEMA public,eshop TO postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop TO postgres;
 SELECT format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure)
@@ -82,6 +90,8 @@ CREATE SCHEMA IF NOT EXISTS festapp_test_support;
 CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY CHECK(singleton),project text NOT NULL);
 INSERT INTO festapp_test_support.disposable_environment(singleton,project) VALUES(true,:'disposable_project') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project;
 SQL
+
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/database/tests/helpers/reset_owned_sequences.sql" >/dev/null
 
 echo "Local Festapp database is ready."
 echo "DATABASE_URL=$DATABASE_URL"

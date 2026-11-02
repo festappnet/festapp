@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
 import { openDisposableDatabase } from './postgres.mjs';
@@ -12,43 +11,17 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');
  assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe,true);
  t.after(async()=>{await db.query('ROLLBACK');await db.end();});
- // Install as the disposable connection owner; fresh fixtures may be owned by supabase_admin.
- await db.query('RESET ROLE');
- assert((await db.query("select to_regprocedure('public.can_read_orders(bigint)') present")).rows[0].present,'use the canonical authorization fixture');
- const stripe=(await db.query("select exists(select 1 from information_schema.columns where table_schema='eshop' and table_name='payment_info' and column_name='payment_method') present")).rows[0].present;
- if(!stripe) for(const migration of ['20261022160000_stripe_foundation.sql','20261022170000_stripe_connections.sql','20261022180000_stripe_checkout_ingest.sql']) {
-  await db.query(await readFile(new URL('../../../supabase/migrations/'+migration,import.meta.url),'utf8'));
- }
- const orderMigration=await readFile(new URL('../../../supabase/migrations/20261022233000_operator_order_management.sql',import.meta.url),'utf8');
- // Production installs these owners as postgres. The disposable bootstrap uses
- // supabase_admin for new functions; match production inside this rolled-back
- // fixture so invoker-only queue guards see the actual definer role.
- const signatures=['get_order_allowed_actions_internal_v1(bigint,jsonb)','get_orders(text,text,jsonb)',
-  'check_operator_order_scope_internal_v1(bigint,bigint,bigint,boolean)','operator_order_revision_internal_v1(bigint)',
-  'operator_order_snapshot_internal_v1(bigint,boolean)','get_operator_order_report_v1(bigint,bigint,bigint)',
-  'get_operator_orders_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)',
-  'manage_operator_order_v1(bigint,bigint,bigint,bigint,uuid,text,text,jsonb)'];
- const ownership=(await db.query("select format('ALTER FUNCTION %s OWNER TO postgres',to_regprocedure('public.'||signature)) statement from unnest($1::text[]) signature where to_regprocedure('public.'||signature) is not null",[signatures])).rows;
- assert.equal(ownership.length,signatures.length,'every canonical migration signature must be installed');
- for(const row of ownership)await db.query(row.statement);
- await db.query('SET LOCAL ROLE postgres');await db.query(orderMigration);
- // The current queue normalizes recipients through this canonical contact owner.
- // Install the prerequisite in the same rolled-back fixture as the order owner.
- for(const file of ['forms/email_address_is_valid.sql','eshop_orders/repair_order_email_client_sync_v1.sql'])
-  await db.query(await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8'));
- await db.query('RESET ROLE');
- await db.query('SET LOCAL ROLE postgres');
- await db.query(await readFile(new URL('../../../supabase/migrations/20261029180000_operator_order_summaries.sql',import.meta.url),'utf8').then(s=>s.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'')));
- await db.query('RESET ROLE');
  const f=await fixture(db,1);
  const form=Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Order MCP form',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id",[f.occasion])).rows[0].id);
  const field=Number((await db.query("insert into form_fields(form,title,type) values($1,'Email','email') returning id",[form])).rows[0].id);
+ const bank=Number((await db.query("insert into eshop.bank_accounts(title,type,supported_currencies) values('Order fixture bank','FIO',ARRAY['CZK']) returning id")).rows[0].id);
+ await db.query('insert into eshop.unit_bank_accounts(unit,bank_account) values($1,$2)',[f.unit,bank]);
  const productType=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Admission','entry') returning id",[f.occasion])).rows[0].id);
  const product=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code,maximum) values($1,$2,'Admission',100,'CZK',100) returning id",[f.occasion,productType])).rows[0].id);
  const product2=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code,maximum) values($1,$2,'Dinner',50,'CZK',100) returning id",[f.occasion,productType])).rows[0].id);
  async function createOrder(state='ordered'){
   await db.query('RESET ROLE');
-  const pi=Number((await db.query("insert into eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method) values(200,0,0,'CZK',12345,'bank') returning id")).rows[0].id);
+  const pi=Number((await db.query("insert into eshop.payment_info(amount,paid,returned,currency_code,variable_symbol,payment_method,bank_account) values(200,0,0,'CZK',12345,'bank',$1) returning id",[bank])).rows[0].id);
   const id=Number((await db.query("insert into eshop.orders(occasion,form,payment_info,state,price,currency_code,order_sequence,order_symbol,data) values($1,$2,$3,$4,200,'CZK',next_order_sequence($1),generate_order_symbol(),$5) returning id",[f.occasion,form,pi,state,{email:'buyer@example.invalid',name:'Test buyer',fields:[{[field]:'buyer@example.invalid'}],tickets:[]}])).rows[0].id);
   const tickets=[];
   for(let i=0;i<2;i++){

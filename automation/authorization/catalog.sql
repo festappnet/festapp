@@ -1,6 +1,7 @@
 -- Only this task-owned, email-fenced local catalog may be recorded here.
 DO $$ BEGIN
- IF (SELECT project FROM festapp_test_support.disposable_environment) IS DISTINCT FROM 'festapp-authz-20261020'
+ IF NOT EXISTS(SELECT 1 FROM festapp_test_support.disposable_environment WHERE singleton
+     AND project IN ('festapp-authz-20261020','festapp-mcp-hardening-20261029'))
    OR current_setting('cron.launch_active_jobs')<>'off'
    OR EXISTS(SELECT 1 FROM public.email_capacity WHERE NOT paused OR worker_url IS NOT NULL) THEN
    RAISE EXCEPTION 'task-owned email-fenced authorization database required';
