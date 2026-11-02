@@ -642,6 +642,13 @@ void main() {
       expect(find.byType(OrderPaymentsContent), findsOneWidget);
       expect(find.byType(OrderPaymentSummary), findsNothing);
       expect(find.textContaining('Variabilní symbol'), findsOneWidget);
+      final addPayment = find.widgetWithText(ElevatedButton, 'Přidat platbu');
+      expect(addPayment, findsOneWidget);
+      expect(
+        tester.getTopLeft(find.textContaining('Variabilní symbol')).dy -
+            tester.getBottomLeft(addPayment).dy,
+        greaterThanOrEqualTo(12),
+      );
       expect(find.textContaining('Reference platby'), findsNothing);
       for (final label in ['Částka', 'Zaplaceno', 'Vráceno']) {
         expect(find.text(label), findsOneWidget);

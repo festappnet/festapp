@@ -37,13 +37,15 @@ void main() {
     Map<String, dynamic> payment, {
     bool dark = false,
     String currency = 'CZK',
+    Size size = const Size(400, 700),
+    double textScale = 1.4,
   }) async {
     final previous = TimeHelper.currentTime;
     TimeHelper.currentTime = DateTime.utc(2026, 11, 2, 10);
     addTearDown(() {
       TimeHelper.currentTime = previous;
     });
-    await tester.binding.setSurfaceSize(const Size(400, 700));
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
@@ -65,13 +67,15 @@ void main() {
           ),
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
-            backgroundColor: ThemeConfig.theme(brightness: dark ? Brightness.dark : Brightness.light).colorScheme.surface,
+            backgroundColor: ThemeConfig.theme(
+              brightness: dark ? Brightness.dark : Brightness.light,
+            ).colorScheme.surface,
             body: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: MediaQuery(
-                  data: const MediaQueryData(
-                    textScaler: TextScaler.linear(1.4),
+                  data: MediaQueryData(
+                    textScaler: TextScaler.linear(textScale),
                   ),
                   child: OrderCustomerPaymentDetails(
                     details: details,
@@ -88,6 +92,22 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> capture(WidgetTester tester, String name) async {
+    final directory = Platform.environment['FESTAPP_PAYMENT_CAPTURE_DIR'];
+    if (directory != null)
+      await tester.runAsync(() async {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const ValueKey('payment-capture')),
+        );
+        final picture = await boundary.toImage(pixelRatio: 1);
+        final bytes = await picture.toByteData(format: ui.ImageByteFormat.png);
+        Directory(directory).createSync(recursive: true);
+        File('$directory/$name.png')
+            .writeAsBytesSync(bytes!.buffer.asUint8List());
+        picture.dispose();
+      });
+  }
+
   for (final dark in [false, true]) {
     testWidgets('customer bank instructions fit narrow large text dark=$dark', (
       tester,
@@ -101,23 +121,36 @@ void main() {
       expect(find.text('3629'), findsOneWidget);
       expect(find.textContaining('za 3 dny'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      final directory = Platform.environment['FESTAPP_PAYMENT_CAPTURE_DIR'];
-      if (directory != null)
-        await tester.runAsync(() async {
-          final boundary = tester.renderObject<RenderRepaintBoundary>(
-            find.byKey(const ValueKey('payment-capture')),
-          );
-          final picture = await boundary.toImage(pixelRatio: 1);
-          final bytes = await picture.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
-          Directory(directory).createSync(recursive: true);
-          File('$directory/payment-${dark ? 'dark' : 'light'}.png')
-              .writeAsBytesSync(bytes!.buffer.asUint8List());
-          picture.dispose();
-        });
+      await capture(tester, 'payment-${dark ? 'dark' : 'light'}');
     });
   }
+  for (final narrow in [false, true]) {
+    testWidgets('compact payment rows wrap long bank details narrow=$narrow', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        {
+          ...bank,
+          'creditorName': 'Spolek přátel kulturních a společenských akcí',
+          'iban': 'DE89370400440532013000',
+          'referenceKind': 'RF',
+          'reference': 'RF18539007547034',
+        },
+        {'status': 'unpaid', 'dueNow': 300, 'dueAt': '2026-11-05T10:00:00Z'},
+        size: narrow ? const Size(320, 900) : const Size(760, 700),
+        textScale: narrow ? 1.6 : 1,
+      );
+      expect(find.text('DE89370400440532013000'), findsOneWidget);
+      expect(find.text('RF18539007547034'), findsOneWidget);
+      expect(find.textContaining('za 3 dny'), findsOneWidget);
+      final reference = tester.getRect(find.text('RF18539007547034'));
+      expect(reference.right, lessThanOrEqualTo(narrow ? 300 : 740));
+      expect(tester.takeException(), isNull);
+      await capture(tester, narrow ? 'payment-long-narrow' : 'payment-wide');
+    });
+  }
+
   testWidgets(
     'paid order retains destination and shows zero due without creating a payment',
     (tester) async {

@@ -183,32 +183,38 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
         : Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(height: 8),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  ElevatedButton(
-                    onPressed:
-                        _canEdit &&
-                            RightsService.hasCapability(
-                              AuthorizationCapabilities.bankAccountsUnitManage,
-                            )
-                        ? _addCashPayment
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      ElevatedButton(
+                        onPressed:
+                            _canEdit &&
+                                RightsService.hasCapability(
+                                  AuthorizationCapabilities
+                                      .bankAccountsUnitManage,
+                                )
+                            ? _addCashPayment
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(OrdersStrings.addPayment),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(OrdersStrings.addPayment),
+                    ],
                   ),
-                ],
+                ),
               ),
               if (widget.showPaymentReference &&
                   _payment != null &&
