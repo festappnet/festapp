@@ -14,7 +14,8 @@
     "backend:serve": "supabase functions serve --workdir .private/backend --env-file .private/edge.env --no-verify-jwt",
     "backend:stop": "supabase stop --workdir .private/backend --no-backup",
     "web:start": "node scripts/web-server.mjs",
-    "build:plugins": "python3 scripts/build-plugins.py"
+    "build:plugins": "python3 scripts/build-plugins.py",
+    "test:dependencies": "node --test test/dependency-compatibility.test.mjs"
   },
   "devDependencies": {
     "@wordpress/env": "12.0.0"
