@@ -453,14 +453,15 @@ void main() {
   Future<void> showOrders(
     WidgetTester tester, {
     String path = '/empty',
+    Size viewport = const Size(1500, 1000),
     RootStackRouter? externalRouter,
   }) async {
     // Keep MediaQuery and layout constraints on the same desktop viewport.
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1500, 1000);
+    tester.view.physicalSize = viewport;
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    await tester.binding.setSurfaceSize(const Size(1500, 1000));
+    await tester.binding.setSurfaceSize(viewport);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final router = externalRouter ?? _Router();
     addTearDown(router.dispose);
@@ -928,6 +929,36 @@ void main() {
       'blueprintId': '81',
       'blueprintNodeId': 'saved-seat',
     });
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('closing mobile detail restores the order row highlight', (
+    tester,
+  ) async {
+    fail = false;
+    includeOrder = true;
+    detailNavigation = true;
+    addTearDown(() {
+      includeOrder = false;
+      detailNavigation = false;
+    });
+    await showOrders(
+      tester,
+      path: '/empty?orderId=4',
+      viewport: const Size(390, 844),
+    );
+    expect(find.byType(OrderDetailView), findsOneWidget);
+    final grid = tester
+        .widget<SingleTableDataGrid<OrderModel>>(
+          find.byType(SingleTableDataGrid<OrderModel>, skipOffstage: false),
+        )
+        .controller;
+    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.pumpAndSettle();
+    expect(find.byType(OrderDetailView), findsNothing);
+    expect(grid.stateManager.currentCell?.value, 'ORDER4');
+    expect(grid.stateManager.hasFocus, isTrue);
+    expect(grid.stateManager.checkedRows, isEmpty);
     expect(tester.takeException(), isNull);
   });
 

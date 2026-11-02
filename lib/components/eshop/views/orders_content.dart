@@ -418,6 +418,7 @@ class _OrdersContentState extends State<OrdersContent> {
       return;
     }
     final previous = _detail;
+    final returnToOrder = id == null ? _openedOrder : null;
     _detail = id == null
         ? null
         : OrderDetailController(
@@ -432,6 +433,13 @@ class _OrdersContentState extends State<OrdersContent> {
     previous?.dispose();
     _syncingDetail = false;
     if (mounted) setState(() {});
+    if (returnToOrder != null) {
+      // The mobile table becomes focusable again after its detail overlay closes.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _openedOrder == null)
+          _focusInitialDetailRow(returnToOrder);
+      });
+    }
     await _detail?.load();
   }
 
