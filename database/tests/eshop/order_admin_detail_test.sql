@@ -1,4 +1,6 @@
 -- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/functions/eshop_orders/get_order_admin_detail.sql
+-- test-setup: database/functions/eshop_orders/get_order_blueprint_view.sql
 DO $$
 DECLARE f jsonb; r jsonb; core jsonb; map jsonb; oc bigint; oid bigint; tid bigint; iid bigint; sid bigint; other bigint;
  actor uuid; reader uuid:=gen_random_uuid(); config_author uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();

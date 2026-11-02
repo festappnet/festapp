@@ -487,6 +487,18 @@ void main() {
         expect(customer, findsOneWidget);
         expect(tester.getSize(customer).width, greaterThanOrEqualTo(44));
         expect(tester.getSize(customer).height, greaterThanOrEqualTo(44));
+        final glyph = find.descendant(
+          of: customer,
+          matching: find.byIcon(Icons.open_in_new),
+        );
+        expect(tester.widget<Icon>(glyph).size, 16);
+        final title = find.text(
+          mobile ? 'AB12CD34EF' : 'Objednávka AB12CD34EF',
+        );
+        expect(
+          (tester.getCenter(glyph).dy - tester.getCenter(title).dy).abs(),
+          lessThan(1),
+        );
         if (!mobile) {
           expect(
             (tester.getCenter(find.text('Odesláno')).dy -

@@ -40,6 +40,7 @@ import 'waitlist_order_detail.dart';
 import 'order_places_view.dart';
 import 'inline_order_field.dart';
 import 'order_payment_summary.dart';
+import 'order_customer_payment_details.dart';
 
 import 'package:collection/collection.dart';
 
@@ -98,7 +99,7 @@ class OrderDetailView extends StatefulWidget {
   final int? ticketId;
   final ValueChanged<int?>? onTicket;
   final VoidCallback? onReveal;
-  final void Function(int blueprintId, String nodeId)? onOpenPlan;
+  final void Function(int blueprintId, Set<String> nodeIds)? onOpenPlan;
   @override
   State<OrderDetailView> createState() => _OrderDetailViewState();
 }
@@ -928,6 +929,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       OrderPaymentOverdueNotice(
+        showDetails: d.bankPaymentDetails.isEmpty,
         payment: d.payment,
         currencyCode: d.order['currency_code'] ?? 'CZK',
         isCard: d.order['payment_method'] == 'stripe',
@@ -936,7 +938,13 @@ class _OrderDetailViewState extends State<OrderDetailView>
         CardPaymentStatus(payment: d.payment, onRefresh: () => c.load()),
       if (d.payment['status'] == 'unknown')
         Text(OrderDetailStrings.text('platebni_stav_nelze_spolehlive_urcit')),
+      OrderCustomerPaymentDetails(
+        details: d.bankPaymentDetails,
+        payment: d.payment,
+        currencyCode: d.order['currency_code'] ?? 'CZK',
+      ),
       OrderPaymentsContent(
+        showPaymentReference: d.bankPaymentDetails['reference'] == null,
         key: ValueKey('payments-$_revision'),
         orderId: c.orderId,
         orderSymbol: d.model.orderSymbol,
@@ -1154,7 +1162,9 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                   context,
                                   futureFunction: () => _more('overview'),
                                 ),
-                          icon: const Icon(Icons.open_in_new, size: 20),
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.center,
+                          icon: const Icon(Icons.open_in_new, size: 16),
                         );
                         final closeAction = IconButton(
                           constraints: const BoxConstraints(

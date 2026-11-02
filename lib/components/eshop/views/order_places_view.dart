@@ -23,7 +23,7 @@ class OrderPlacesView extends StatefulWidget {
   final int? ticketId;
   final ValueChanged<int?>? onTicket;
   final ValueChanged<Set<int>>? onMapTickets;
-  final void Function(int blueprintId, String nodeId)? onOpenPlan;
+  final void Function(int blueprintId, Set<String> nodeIds)? onOpenPlan;
   @override
   State<OrderPlacesView> createState() => _OrderPlacesViewState();
 }
@@ -185,9 +185,22 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
         if (_document != null) ...[
           Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              '${_map!['title']} · ${OrderDetailStrings.text('current_plan')}',
-              style: Theme.of(context).textTheme.titleSmall,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${_map!['title']} · ${OrderDetailStrings.text('current_plan')}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: OrderDetailStrings.text('open_order_plan'),
+                  onPressed: widget.onOpenPlan == null || own.isEmpty
+                      ? null
+                      : () => widget.onOpenPlan!(_plan!, own),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                ),
+              ],
             ),
           ),
           SizedBox(
@@ -311,7 +324,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                             widget.onOpenPlan != null
                         ? () => widget.onOpenPlan!(
                             place['blueprintId'] as int,
-                            place['nodeId'] as String,
+                            {place['nodeId'] as String},
                           )
                         : null,
                     icon: Icon(Icons.location_searching),

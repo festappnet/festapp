@@ -56,7 +56,7 @@ void main() {
 
     expect(observe(focused), isTrue);
     expect(state.target?.blueprintId, 81);
-    expect(state.target?.nodeId, 'seat-a');
+    expect(state.target?.nodeIds, {'seat-a'});
     expect(observe(focused), isFalse);
     expect(
       observe(
@@ -79,7 +79,7 @@ void main() {
     expect(state.active, isFalse);
     expect(state.target, isNull);
     expect(observe(focused), isTrue);
-    expect(state.target?.nodeId, 'seat-a');
+    expect(state.target?.nodeIds, {'seat-a'});
 
     // Another occasion cannot load or focus this retained instance.
     expect(
@@ -103,7 +103,7 @@ void main() {
       ),
       isTrue,
     );
-    expect(state.target?.nodeId, 'seat-b');
+    expect(state.target?.nodeIds, {'seat-b'});
   });
 
   test('invalid explicit plan stays distinguishable from ordinary overview navigation', () {
@@ -126,15 +126,26 @@ void main() {
     expect(observe('/occasion-a/reservations/blueprint'), isFalse);
   });
 
+  test('whole-order focus filters requested nodes by the loaded plan', () {
+    final doc = document();
+    final ids = doc.nodes.map((node) => node.id).toSet();
+    final target = BlueprintFocusTarget.fromQuery({
+      'blueprintId': '81',
+      'blueprintNodeIds': [...ids, 'deleted-or-foreign'].join(','),
+    })!;
+    expect(target.nodesFor(81, doc), ids);
+    expect(target.nodesFor(82, doc), isEmpty);
+  });
+
   test('navigation binds a saved node to its explicit plan only', () {
     final doc = document();
     final target = BlueprintFocusTarget.fromQuery({
       'blueprintId': '81',
       'blueprintNodeId': doc.nodes.first.id,
     })!;
-    expect(target.nodeFor(81, doc), doc.nodes.first.id);
-    expect(target.nodeFor(82, doc), isNull);
-    expect(target.nodeFor(81, doc.copyWith(nodes: [])), isNull);
+    expect(target.nodesFor(81, doc), {doc.nodes.first.id});
+    expect(target.nodesFor(82, doc), isEmpty);
+    expect(target.nodesFor(81, doc.copyWith(nodes: [])), isEmpty);
     expect(
       BlueprintFocusTarget.fromQuery({
         'blueprintId': '-1',
@@ -147,8 +158,8 @@ void main() {
       isNull,
     );
     expect(
-      BlueprintFocusTarget.fromQuery({'blueprintId': '81'})!.nodeFor(81, doc),
-      isNull,
+      BlueprintFocusTarget.fromQuery({'blueprintId': '81'})!.nodesFor(81, doc),
+      isEmpty,
     );
   });
 
@@ -165,7 +176,7 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
         controller.dispose();
       });
-      String? target;
+      Set<String> target = {};
       var revision = 0;
       late StateSetter update;
       await environment.pumpWidget(
@@ -186,7 +197,7 @@ void main() {
                   interactionEnabled: false,
                   showGallery: false,
                   openGalleryOnStart: false,
-                  focusNodeId: target,
+                  focusNodeIds: target,
                   focusRevision: revision,
                 );
               },
@@ -199,7 +210,7 @@ void main() {
         layoutPainter(tester).camera.value.storage,
       );
       update(() {
-        target = doc.nodes.first.id;
+        target = {doc.nodes.first.id};
         revision++;
       });
       await tester.pumpAndSettle();
@@ -241,7 +252,7 @@ void main() {
       );
 
       update(() {
-        target = doc.nodes.last.id;
+        target = {doc.nodes.last.id};
         revision++;
       });
       await tester.pumpAndSettle();
@@ -255,7 +266,7 @@ void main() {
         layoutPainter(tester).camera.value.storage,
       );
       update(() {
-        target = 'missing-node';
+        target = {'missing-node'};
         revision++;
       });
       await tester.pumpAndSettle();
@@ -269,6 +280,20 @@ void main() {
         List<double>.from(layoutPainter(tester).camera.value.storage),
         second,
       );
+      update(() {
+        target = doc.nodes.map((node) => node.id).toSet();
+        revision++;
+      });
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .highlightedNodeIds,
+        doc.nodes.map((node) => node.id).toSet(),
+      );
+      expect(controller.selection, {
+        doc.nodes.last.id,
+      }, reason: 'visual order focus does not mutate operational selection');
       expect(controller.document.toJson(), before);
       expect(tester.takeException(), isNull);
     },
