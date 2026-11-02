@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
 import 'models/order_admin_detail.dart';
+import 'order_blueprint_cache.dart';
 import 'order_commands.dart';
 import 'order_detail_strings.dart';
 
@@ -15,7 +16,9 @@ class OrderDetailController extends ChangeNotifier {
     required this.occasionId,
     Future<dynamic> Function(String, Map<String, dynamic>)? read,
     OrderCommands? commands,
-  }) : _commands = commands,
+    OrderBlueprintCache? blueprints,
+  }) : _blueprints = blueprints ?? OrderBlueprintCache(),
+       _commands = commands,
        _read =
            read ??
            ((name, args) => Supabase.instance.client.rpc(name, params: args)) {
@@ -25,6 +28,7 @@ class OrderDetailController extends ChangeNotifier {
   }
   final int orderId, occasionId;
   final OrderCommands? _commands;
+  final OrderBlueprintCache _blueprints;
   final Future<dynamic> Function(String, Map<String, dynamic>) _read;
   final email = TextEditingController(), note = TextEditingController();
   OrderAdminDetail? detail;
@@ -32,7 +36,7 @@ class OrderDetailController extends ChangeNotifier {
   bool _disposed = false;
   int _generation = 0;
   String? error;
-  final maps = <int, Map<String, dynamic>>{};
+  final _previews = <int, OrderBlueprintView>{};
   final _inlineDrafts =
       <
         Object,
@@ -143,7 +147,8 @@ class OrderDetailController extends ChangeNotifier {
     if (validContext) return;
     _generation++;
     detail = null;
-    maps.clear();
+    _previews.clear();
+    _blueprints.clear();
     error = 'Objednávka není dostupná.';
     notifyListeners();
   }
@@ -169,7 +174,7 @@ class OrderDetailController extends ChangeNotifier {
       if (_disposed || generation != _generation || !validContext) return false;
       if (result['code'] != 200) throw StateError('Order unavailable');
       detail = OrderAdminDetail(detailMap(result['data']));
-      maps.clear();
+      _previews.clear();
       if (!keepEmail) {
         email.text = detail!.order['data']?['email']?.toString() ?? '';
       }
@@ -188,15 +193,17 @@ class OrderDetailController extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> blueprint(int id) async {
-    if (maps.containsKey(id)) return maps[id]!;
+  Future<OrderBlueprintView> blueprint(int id) async {
+    if (_previews.containsKey(id)) return _previews[id]!;
     for (var attempt = 0; attempt < 2; attempt++) {
       final generation = _generation;
+      final known = _blueprints.lookup(occasionId, id);
       final result = detailMap(
         await _read('get_order_blueprint_view', {
           'p_order': orderId,
           'p_occasion': occasionId,
           'p_blueprint': id,
+          if (known != null) 'p_known_layout_revision': known.revision,
           'p_expected_placement_fingerprint': detail!.placementFingerprint,
         }),
       );
@@ -210,7 +217,23 @@ class OrderDetailController extends ChangeNotifier {
       }
       if (result['code'] != 200)
         throw StateError('Plan unavailable or changed');
-      return maps[id] = detailMap(result['data']);
+      final view = _blueprints.decode(
+        detailMap(result['data']),
+        occasionId: occasionId,
+        blueprintId: id,
+        known: known,
+      );
+      final expectedRevision = detail!.plans
+          .where((plan) => plan['id'] == id)
+          .firstOrNull?['layoutRevision'];
+      if (expectedRevision != view.plan.revision) {
+        // Geometry may be saved between the detail and preview reads without
+        // changing the order's placement fingerprint. Refresh once; retain the
+        // already authorized immutable drawing for the subsequent thin read.
+        if (attempt == 0 && !busy && await load()) continue;
+        throw StateError('Plan revision changed');
+      }
+      return _previews[id] = view;
     }
     throw StateError('Placement changed');
   }

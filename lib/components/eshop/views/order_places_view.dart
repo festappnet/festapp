@@ -30,7 +30,28 @@ class OrderPlacesView extends StatefulWidget {
   State<OrderPlacesView> createState() => _OrderPlacesViewState();
 }
 
-class _OrderPlacesViewState extends State<OrderPlacesView> {
+class _OrderPlacesViewState extends State<OrderPlacesView>
+    with SingleTickerProviderStateMixin {
+  late final _highlightPulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+    value: 1,
+  );
+
+  void _locateSeats() {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _highlightPulse.value = 1;
+    } else {
+      _highlightPulse.forward(from: 0);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) _highlightPulse.value = 1;
+  }
+
   final _resolver = BlueprintLayoutAssetResolver();
   int? _plan;
   int _request = 0, _focusRevision = 0;
@@ -62,17 +83,19 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
     _scheduleSinglePlan();
     final current = widget.controller.detail;
     final plan = current?.plans.where((p) => p['id'] == _plan).firstOrNull;
-    if (_map != null &&
-        (current == null ||
-            _map!['placementFingerprint'] != current.placementFingerprint ||
-            plan == null ||
-            _map!['layout_revision'] != plan['layoutRevision'])) {
+    if (!identical(oldWidget.controller, widget.controller) ||
+        (_map != null &&
+            (current == null ||
+                _map!['placementFingerprint'] != current.placementFingerprint ||
+                plan == null ||
+                _map!['layout_revision'] != plan['layoutRevision']))) {
       _request++;
       _document = null;
       _resources = null;
       _map = null;
       _plan = null;
       _error = null;
+      _loading = false;
       _scheduleSinglePlan();
     }
   }
@@ -81,6 +104,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
   void dispose() {
     _request++;
     _resolver.dispose();
+    _highlightPulse.dispose();
     super.dispose();
   }
 
@@ -92,6 +116,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
     final plan = place['blueprintId'] as int;
     await _load(plan);
     if (!mounted || _plan != plan) return;
+    if (_document != null) _locateSeats();
     // Selection highlights the place; keep the user's overview camera.
   }
 
@@ -100,7 +125,8 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
         (_plan == id && (_document != null || _loading))) {
       return;
     }
-    final expectedFingerprint = widget.controller.detail?.placementFingerprint;
+    final owner = widget.controller;
+    final expectedFingerprint = owner.detail?.placementFingerprint;
     final request = ++_request;
     setState(() {
       _plan = id;
@@ -111,8 +137,9 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
       _map = null;
     });
     try {
-      final map = await widget.controller.blueprint(id);
-      final document = VenueLayoutDocument.fromJson(detailMap(map['layout']));
+      final view = await owner.blueprint(id);
+      final map = view.data;
+      final document = view.plan.document;
       if (map['seatStates'] is! List) {
         throw const FormatException('Plan occupancy unavailable');
       }
@@ -121,8 +148,11 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
           facts['nodeId'] as String:
               BlueprintLayoutAdapter.readonlySeatPresentation(facts),
       };
-      final resources = await _resolver.resolve(detailMap(map['resources']));
-      if (!mounted || request != _request || !widget.controller.validContext)
+      final resources = await _resolver.resolve(view.plan.resources);
+      if (!mounted ||
+          request != _request ||
+          !identical(owner, widget.controller) ||
+          !owner.validContext)
         return;
       setState(() {
         _map = map;
@@ -132,6 +162,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
         _loading = false;
         _focusRevision++;
       });
+      _locateSeats();
     } catch (_) {
       if (mounted && request == _request) {
         final changed =
@@ -248,7 +279,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                           .reduce(math.min);
                 final zoom = seatPixels <= 0
                     ? 1.0
-                    : (8 / seatPixels).clamp(1.0, 1.6);
+                    : (10 / seatPixels).clamp(1.0, 1.9);
                 return VenueLayoutViewer(
                   key: ValueKey(_plan),
                   document: _document!,
@@ -256,6 +287,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                   resources: _resources ?? {},
                   seatPresentation: _seatPresentation,
                   highlightedNodeIds: own,
+                  highlightPulse: _highlightPulse,
                   activeNodeIds: active,
                   // A dense plan gets a modest initial focus, never a close-up.
                   // Ticket selection does not reframe the user's camera.
@@ -274,12 +306,14 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                     final admissions = {
                       for (final p in found) p['admissionItemId']: p,
                     };
-                    if (admissions.isNotEmpty)
+                    if (admissions.isNotEmpty) {
+                      _locateSeats();
                       widget.onMapTickets?.call(
                         admissions.values
                             .map((p) => p['ticketId'] as int)
                             .toSet(),
                       );
+                    }
                     if (admissions.length == 1)
                       widget.onTicket?.call(
                         admissions.values.single['ticketId'] as int,

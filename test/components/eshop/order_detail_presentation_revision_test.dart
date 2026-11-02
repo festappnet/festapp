@@ -558,6 +558,11 @@ void main() {
           matching: find.byType(TextField),
         );
         expect(field, writable ? findsOneWidget : findsNothing);
+        if (writable) {
+          expect(tester.widget<TextField>(field).decoration!.hintText, isNull);
+          expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+          expect(find.text('Bez poznámky'), findsNothing);
+        }
         await capture(
           tester,
           'native-overdue-${dark ? 'dark' : 'light'}-${writable ? 'editable-narrow' : 'readonly-wide'}',

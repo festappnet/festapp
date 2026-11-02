@@ -41,13 +41,14 @@ class EmailDeliveryIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = summary?['state']?.toString() ?? 'unavailable';
     final issues = OrderEmailIssue.fromSummary(summary);
-    final warning = issues.isNotEmpty ||
+    final warning = issues.any((issue) => !issue.awaitingDelivery) ||
         (summary?['current_issues'] == null &&
             OrderEmailIssue.needsAttention(state));
     final waiting =
+        issues.any((issue) => issue.awaitingDelivery) ||
         ['pending', 'preparing', 'sending', 'blocked'].contains(state);
-    final delivered = state == 'delivery';
-    final opened = ['open', 'click'].contains(state);
+    final delivered = !waiting && state == 'delivery';
+    final opened = !waiting && ['open', 'click'].contains(state);
     final icon = warning
         ? Icons.mark_email_unread_outlined
         : waiting
@@ -69,7 +70,7 @@ class EmailDeliveryIndicator extends StatelessWidget {
             ? ''
             : '\n${EmailDeliveryStrings.refreshed(DateFormat.yMd(Localizations.localeOf(context).toString()).add_jms().format(loadedAt.toLocal()))}');
     final attention = summary?['current_issues'] != null
-        ? issues.length
+        ? issues.where((issue) => !issue.awaitingDelivery).length
         : (summary?['attention_count'] as num?)?.toInt() ?? 0;
     return Tooltip(
       message: description,
