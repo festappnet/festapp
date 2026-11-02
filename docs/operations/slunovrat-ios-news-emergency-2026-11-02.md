@@ -14,7 +14,10 @@ verified main, atomically, with `expires_at=2026-11-03 21:00:00+00` (22:00 Pragu
 It allows only the old client's specific columns and exact event. Both adapters
 check deadline, stored event scope and current editor. The news adapter emits
 canonical revisions and receipts. The push adapter reuses admission and existing
-publication-gated delivery. Canonical RPC inserts skip the temporary adapters.
+delivery. Sync-enabled occasions retain the publication gate; this Slunovrat
+occasion has `client_sync_v1=false`, so its direct readers can receive a push
+after the preceding news insert commits without waiting for an unused R2
+catalog. Canonical RPC inserts skip the temporary adapters.
 No historical failed request is replayed.
 
 The two temporary operational triggers must be removed with
