@@ -38,6 +38,20 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_problem(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
+-- A lone failed request must not turn into a warning merely as time passes.
+-- Require another failed observation at least ten minutes after the first,
+-- and a recent observation. Recovery and intervening bank success reset this
+-- clock in record_bank_sync_pull, including ordinary account status reads.
+CREATE OR REPLACE FUNCTION public.bank_sync_warning_pending(p_connection_id bigint)
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+  SELECT COALESCE(c.state IN ('connected','degraded') AND (c.last_error IS NOT NULL OR c.state='degraded') AND (
+    c.failure_since IS NULL OR c.failure_observed_at IS NULL
+    OR c.failure_observed_at<c.failure_since+interval '10 minutes'
+    OR c.failure_observed_at<=now()-interval '10 minutes'),false)
+  FROM eshop.bank_sync_connections c WHERE c.id=p_connection_id;
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_warning_pending(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.bank_sync_warning(p_bank_account_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE v_title text; v_type text; v_connection bigint; v_code text; v_contacts jsonb;
@@ -48,6 +62,8 @@ BEGIN
     OR c.id IN (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id);
   v_code:=CASE WHEN v_connection IS NULL THEN 'not_configured' ELSE public.bank_sync_problem(v_connection) END;
   IF v_code IS NULL THEN RETURN NULL; END IF;
+  IF v_code IN ('token_invalid','account_mismatch','temporary_failure','unavailable','bank_error')
+    AND public.bank_sync_warning_pending(v_connection) THEN RETURN NULL; END IF;
   SELECT COALESCE(jsonb_agg(jsonb_build_object('name',NULLIF(btrim(concat_ws(' ',ui.name,ui.surname)),''),
     'email',public.get_user_delivery_email(ui.id)) ORDER BY ui.name,ui.surname,ui.id),'[]'::jsonb)
     INTO v_contacts FROM eshop.bank_account_users bau JOIN public.user_info ui ON ui.id=bau."user"

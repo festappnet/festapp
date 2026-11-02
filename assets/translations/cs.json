@@ -2256,6 +2256,7 @@
     "syncRetryRequired": "Spojení s bankou se nepodařilo ověřit. Zkuste to prosím později.",
     "tokenSavedNeedsAuthorization": "Token je uložený v BankSync. Připojení ale zatím není ověřené.",
     "syncState": {
+      "retrying": "Dočasný problém, automaticky opakujeme",
       "connected": "Připojeno",
       "degraded": "Vyžaduje pozornost",
       "provisioning": "Připojování",

@@ -6,7 +6,7 @@ BEGIN
   SELECT jsonb_build_object('id',c.id,'remote_bank_account_id',c.remote_bank_account_id,'state',c.state,'mode',c.mode,
     'receiving_address',CASE WHEN c.pairing_code IS NOT NULL THEN c.pairing_code||'@banksync.festapp.net' END,
     'bank_pull_at',c.bank_pull_at,'receiver_commit_at',c.receiver_commit_at,'last_error',c.last_error,
-    'token_expiry_at',c.token_expiry_at) INTO v_result FROM eshop.bank_sync_connections c
+    'warning_pending',public.bank_sync_warning_pending(c.id),'token_expiry_at',c.token_expiry_at) INTO v_result FROM eshop.bank_sync_connections c
     WHERE c.bank_account_id=p_bank_account_id OR c.id IN
       (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id);
   RETURN v_result;
@@ -116,6 +116,10 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions
 BEGIN
   PERFORM public.require_service_role();
   UPDATE eshop.bank_sync_connections SET bank_pull_at=COALESCE(p_success_at,bank_pull_at),last_error=left(p_error,256),
+    failure_since=CASE WHEN p_error IS NULL THEN NULL
+      WHEN last_error IS NULL OR (p_success_at IS NOT NULL AND (bank_pull_at IS NULL OR p_success_at>bank_pull_at)) THEN now()
+      ELSE COALESCE(failure_since,now()) END,
+    failure_observed_at=CASE WHEN p_error IS NOT NULL THEN now() END,
     state=CASE WHEN state IN ('connected','degraded') THEN
       CASE WHEN p_error IS NOT NULL THEN 'degraded' WHEN p_success_at IS NOT NULL THEN 'connected' ELSE state END
       ELSE state END WHERE id=p_id;

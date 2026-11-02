@@ -31,6 +31,8 @@ BEGIN
  PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'healthy bank has no warning');
  PERFORM assert_true(public.bank_sync_warning(v_cash) IS NULL,'cash has no bank warning');
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'fio_token_invalid_or_inactive',true,true,true);
+ PERFORM assert_true(public.bank_sync_warning(v_bank) IS NULL,'single token failure stays quiet during warning grace');
+ UPDATE eshop.bank_sync_connections SET failure_since=now()-interval '10 minutes' WHERE id=v_conn;
  v_result:=public.bank_sync_warning(v_bank);
  PERFORM assert_eq(v_result->>'code','token_invalid','invalid token explains required action to affected order readers');
  PERFORM assert_eq(v_result#>>'{contacts,0,email}','bank-health-admin@example.invalid','tooltip identifies account administrator');
@@ -55,6 +57,7 @@ BEGIN
  UPDATE eshop.bank_sync_health SET warning_since=now()-interval '61 minutes' WHERE connection_id=v_conn;
  PERFORM assert_eq(public.enqueue_bank_sync_health_alerts(v_org),1,'persistent retry incident emails once per mailbox after an hour');
  SELECT incident_id INTO v_incident FROM eshop.bank_sync_health WHERE connection_id=v_conn;
+ UPDATE eshop.bank_sync_connections SET failure_since=now()-interval '61 minutes' WHERE id=v_conn;
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'fio_temporarily_unavailable',true,true,true);
  PERFORM assert_eq(public.bank_sync_warning(v_bank)->>'code','temporary_failure','Fio transient failures retain their own diagnosis');
  PERFORM public.record_bank_sync_health(v_org,v_conn,NULL,'bank_sync_unavailable',NULL,NULL,NULL);

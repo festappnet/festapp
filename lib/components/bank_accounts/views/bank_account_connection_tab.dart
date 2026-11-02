@@ -144,8 +144,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   Widget _buildConnectionStatus(BuildContext context) {
     final sync = widget.account.bankSync!;
     final colors = Theme.of(context).colorScheme;
-    final connected = !widget.isSaving && sync.state == 'connected';
-    final needsAttention = !widget.isSaving && sync.state == 'degraded';
+    final connected =
+        !widget.isSaving && sync.state == 'connected' && !sync.warningPending;
+    final needsAttention =
+        !widget.isSaving && sync.state == 'degraded' && !sync.warningPending;
     final color = connected
         ? (Theme.of(context).brightness == Brightness.dark
               ? Colors.green.shade300
@@ -219,7 +221,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                         ? BankAccountStrings.synchronizationChanging
                         : widget.isSaving
                         ? BankAccountStrings.tokenVerifying
-                        : BankAccountStrings.connectionStatus(sync.state),
+                        : BankAccountStrings.connectionStatus(
+                            sync.warningPending ? 'retrying' : sync.state,
+                          ),
                     style: TextStyle(color: color, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -286,7 +290,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               _buildConnectionStatus(context),
               const SizedBox(height: 12),
               if (!widget.isSaving &&
-                  widget.account.bankSync!.lastError != null)
+                  widget.account.bankSync!.lastError != null &&
+                  !widget.account.bankSync!.warningPending)
                 Text(
                   BankAccountStrings.syncError(
                     widget.account.bankSync!.lastError,

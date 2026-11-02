@@ -2255,6 +2255,7 @@
     "syncRetryRequired": "The bank connection could not be verified. Please try again later.",
     "tokenSavedNeedsAuthorization": "The token is saved in BankSync, but the connection is not yet verified.",
     "syncState": {
+      "retrying": "Temporary problem, retrying automatically",
       "connected": "Connected",
       "degraded": "Needs attention",
       "provisioning": "Connecting",
