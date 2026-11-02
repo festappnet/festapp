@@ -160,6 +160,20 @@ canonical public resources; it never reserves inventory or prepares authoring
 resources. `OrderPlacesView` resolves verified assets with the shared resolver
 and uses only the viewer's public generic focus/highlight/hit interface.
 
+`order_admin_placement_internal` owns the existing placement/ticket projection
+and its unchanged fingerprint; the map reader does not rebuild unrelated form,
+payment or email detail. `get_order_blueprint_view` accepts an optional
+`p_known_layout_revision`. A matching revision omits only `layout` and
+`resources`; occupancy and placement are always fresh and authorized. Existing
+four-argument callers still receive complete drawing data.
+
+One `OrderBlueprintCache` belongs to the Orders screen and retains at most three
+immutable drawings and parsed documents, keyed by occasion and plan. It is
+cleared on context changes/disposal. Controllers cache no other order's dynamic
+seat facts. Every cross-order reuse requires a new authorized map response
+confirming the exact revision. Revision/scope mismatches fail closed; changed
+revisions replace the drawing, and late disposed-order reads cannot seed it.
+
 `OrderDetailController` owns one contact draft across the responsive host and
 all five tabs. Contact edits use `OrderCommands.repairEmail`; save-only never
 enqueues a message. A retained uncertain command can be verified explicitly

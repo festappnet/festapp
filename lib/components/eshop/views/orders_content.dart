@@ -1,3 +1,5 @@
+import '../order_blueprint_cache.dart';
+
 import 'package:flutter/services.dart';
 
 import 'order_detail_split_pane.dart';
@@ -243,6 +245,7 @@ class _OrdersContentState extends State<OrdersContent> {
   int? _openedOrder;
   int? _occasionId;
   OrderDetailController? _detail;
+  final _blueprints = OrderBlueprintCache();
   bool _syncingDetail = false;
   int? _focusedDetailOrder;
   String _lastTab = 'overview';
@@ -417,7 +420,11 @@ class _OrdersContentState extends State<OrdersContent> {
     final previous = _detail;
     _detail = id == null
         ? null
-        : OrderDetailController(orderId: id, occasionId: _occasionId!);
+        : OrderDetailController(
+            orderId: id,
+            occasionId: _occasionId!,
+            blueprints: _blueprints,
+          );
     _openedOrder = id;
     _focusedDetailOrder = null;
     controller?.activeDetailRowId.value = id;
@@ -479,6 +486,7 @@ class _OrdersContentState extends State<OrdersContent> {
       _bankConnectionChanged,
     );
     _detail?.dispose();
+    _blueprints.clear();
     super.dispose();
   }
 
@@ -541,6 +549,7 @@ class _OrdersContentState extends State<OrdersContent> {
       notificationGroup: group,
     );
     unitId = RightsService.currentUnit()?.id ?? occasion.unit;
+    if (_occasionId != occasion.id) _blueprints.clear();
     _occasionId = occasion.id;
 
     if (!mounted || generation != _loadGeneration) return;

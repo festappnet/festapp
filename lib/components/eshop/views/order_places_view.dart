@@ -83,17 +83,19 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
     _scheduleSinglePlan();
     final current = widget.controller.detail;
     final plan = current?.plans.where((p) => p['id'] == _plan).firstOrNull;
-    if (_map != null &&
-        (current == null ||
-            _map!['placementFingerprint'] != current.placementFingerprint ||
-            plan == null ||
-            _map!['layout_revision'] != plan['layoutRevision'])) {
+    if (!identical(oldWidget.controller, widget.controller) ||
+        (_map != null &&
+            (current == null ||
+                _map!['placementFingerprint'] != current.placementFingerprint ||
+                plan == null ||
+                _map!['layout_revision'] != plan['layoutRevision']))) {
       _request++;
       _document = null;
       _resources = null;
       _map = null;
       _plan = null;
       _error = null;
+      _loading = false;
       _scheduleSinglePlan();
     }
   }
@@ -123,7 +125,8 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
         (_plan == id && (_document != null || _loading))) {
       return;
     }
-    final expectedFingerprint = widget.controller.detail?.placementFingerprint;
+    final owner = widget.controller;
+    final expectedFingerprint = owner.detail?.placementFingerprint;
     final request = ++_request;
     setState(() {
       _plan = id;
@@ -134,8 +137,9 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
       _map = null;
     });
     try {
-      final map = await widget.controller.blueprint(id);
-      final document = VenueLayoutDocument.fromJson(detailMap(map['layout']));
+      final view = await owner.blueprint(id);
+      final map = view.data;
+      final document = view.plan.document;
       if (map['seatStates'] is! List) {
         throw const FormatException('Plan occupancy unavailable');
       }
@@ -144,8 +148,11 @@ class _OrderPlacesViewState extends State<OrderPlacesView>
           facts['nodeId'] as String:
               BlueprintLayoutAdapter.readonlySeatPresentation(facts),
       };
-      final resources = await _resolver.resolve(detailMap(map['resources']));
-      if (!mounted || request != _request || !widget.controller.validContext)
+      final resources = await _resolver.resolve(view.plan.resources);
+      if (!mounted ||
+          request != _request ||
+          !identical(owner, widget.controller) ||
+          !owner.validContext)
         return;
       setState(() {
         _map = map;
