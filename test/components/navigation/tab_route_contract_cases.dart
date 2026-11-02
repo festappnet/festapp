@@ -28,7 +28,6 @@ void main() {
     'admin/game/settings': 'GameSettingsRoute',
     'reservations/orders/current': 'OrdersCurrentRoute',
     'reservations/orders/history': 'OrdersHistoryRoute',
-    'reservations/orders/email-history': 'OrdersEmailHistoryRoute',
     'reservations/forms': 'FormsListRoute',
     'reservations/forms/second-form/editor': 'FormEditorRoute',
     'reservations/forms/second-form/settings': 'FormSettingsRoute',
@@ -67,7 +66,8 @@ void main() {
   };
   for (final removed in [
     'admin/email-delivery',
-    'reservations/email-delivery'
+    'reservations/email-delivery',
+    'reservations/orders/email-history'
   ]) {
     test('standalone email tab is removed from $removed', () {
       final router = AppRouter();

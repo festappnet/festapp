@@ -233,23 +233,14 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       return;
     }
     if (data['messageId'] != null) {
-      if (link != null) {
-        await pushRootPath(
-          context.router.root,
-          Uri(
-            pathSegments: ['', link, 'reservations', 'orders', 'email-history'],
-            queryParameters: {'messageId': data['messageId'].toString()},
-          ).toString(),
-        );
-      } else {
-        await showDialog<void>(
-          context: context,
-          builder: (_) => EmailDeliveryHistory(
-            organizationId: controller.organization,
-            messageId: data['messageId'].toString(),
-          ),
-        );
-      }
+      await showDialog<void>(
+        context: context,
+        builder: (_) => EmailDeliveryHistory(
+          occasionId: item.occasionId,
+          organizationId: controller.organization,
+          messageId: data['messageId'].toString(),
+        ),
+      );
       return;
     }
     if (link != null && data['relatedOrders'] == true) {

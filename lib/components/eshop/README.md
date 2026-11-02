@@ -19,6 +19,14 @@ The HTTP response confirms the committed order and reports `delivery: queued`
 with an optional confirmation receipt. Email acceptance and later provider
 feedback are separate facts.
 
+## Email delivery navigation
+
+Orders exposes current orders, optional pregenerated batches and order history.
+Email delivery history belongs to the order detail or scoped user/message
+dialogs; there is no standalone Orders email-history tab or route. Notifications
+with an order target open that order; message-only targets open the existing
+scoped email delivery dialog. Delivery RPCs and the outbound queue remain shared.
+
 ## Payment reconciliation and history
 
 `reconcile_order_payment_internal_v1` in
