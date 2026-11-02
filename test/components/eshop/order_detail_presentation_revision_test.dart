@@ -192,6 +192,9 @@ void main() {
     await environment.pumpWidget(
       tester,
       MaterialApp(
+        locale: Locale(language),
+        supportedLocales: [Locale(language)],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         themeMode: dark ? ThemeMode.dark : ThemeMode.light,
         theme: branded ? ThemeConfig.theme(brightness: Brightness.light) : null,
         darkTheme: branded
@@ -497,7 +500,7 @@ void main() {
         expect(note, findsOneWidget);
         expect(
           tester.widget<TextField>(note).decoration!.border,
-          isA<UnderlineInputBorder>(),
+          isA<OutlineInputBorder>(),
         );
         expect(tester.takeException(), isNull);
         await capture(
@@ -506,6 +509,65 @@ void main() {
         );
       },
     );
+  }
+
+  for (final dark in [false, true]) {
+    for (final writable in [false, true]) {
+      testWidgets('overdue note presentation dark=$dark writable=$writable', (
+        tester,
+      ) async {
+        await open(
+          tester,
+          language: 'cs',
+          branded: true,
+          dark: dark,
+          writable: writable,
+          canNote: writable,
+          size: writable ? const Size(400, 1100) : const Size(760, 1100),
+          textScale: writable ? 1.4 : 1,
+          paymentOverride: {
+            'status': 'partially_paid',
+            'received': 100,
+            'returned': 0,
+            'totalOutstanding': 300,
+            'dueNow': 300,
+            'dueAt': '2026-10-01T12:00:00Z',
+            'finalDeadline': '2026-10-01T12:00:00Z',
+            'overdue': true,
+          },
+        );
+        expect(find.text('Po splatnosti'), findsOneWidget);
+        expect(find.text('Skrytá poznámka'), findsOneWidget);
+        expect(find.textContaining('1. 10. 2026'), findsOneWidget);
+        final field = find.descendant(
+          of: find.byKey(const ValueKey(('hidden-note', 42))),
+          matching: find.byType(TextField),
+        );
+        expect(field, writable ? findsOneWidget : findsNothing);
+        await capture(
+          tester,
+          'native-overdue-${dark ? 'dark' : 'light'}-${writable ? 'editable-narrow' : 'readonly-wide'}',
+        );
+        if (writable) {
+          final controller = tester
+              .widget<OrderDetailView>(find.byType(OrderDetailView))
+              .controller;
+          await tester.enterText(
+            field,
+            'Domluveno s pořadatelem.\nDoplatek při příchodu.',
+          );
+          await tester.pump();
+          expect(controller.dirtyInlineDraftCount, 1);
+          expect(find.text(CommonStrings.saveChanges), findsOneWidget);
+          await capture(tester, 'native-note-draft-${dark ? 'dark' : 'light'}');
+          controller.discardDraft();
+          await tester.pumpAndSettle();
+          expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+          expect(controller.dirty, isFalse);
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 
   for (final dark in [false, true]) {

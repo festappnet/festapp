@@ -327,6 +327,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
     total: d.order['price'],
     currencyCode: d.order['currency_code'] ?? 'CZK',
     isCard: d.order['payment_method'] == 'stripe',
+    onOverdueTap: () => widget.onTab('payments'),
   );
   bool get _issuesTickets =>
       FeatureService.isFeatureEnabled(FeatureConstants.ticket) &&
@@ -582,11 +583,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
             leading: Icon(Icons.mark_email_unread_outlined),
             title: Text(issue.description),
             onTap: () => widget.onTab('emails'),
-          ),
-        if (d.payment['overdue'] == true)
-          TextButton(
-            onPressed: () => widget.onTab('payments'),
-            child: Text(OrderDetailStrings.text('payment_overdue')),
           ),
         if (widget.formCount > 1)
           Padding(
@@ -916,6 +912,11 @@ class _OrderDetailViewState extends State<OrderDetailView>
   Widget _payments() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      OrderPaymentOverdueNotice(
+        payment: d.payment,
+        currencyCode: d.order['currency_code'] ?? 'CZK',
+        isCard: d.order['payment_method'] == 'stripe',
+      ),
       if (d.order['payment_method'] == 'stripe')
         CardPaymentStatus(payment: d.payment, onRefresh: () => c.load()),
       if (d.payment['status'] == 'unknown')

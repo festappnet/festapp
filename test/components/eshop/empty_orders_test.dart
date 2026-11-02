@@ -168,6 +168,7 @@ void main() {
   var groupSelection = false;
   var bellEntry = false;
   var detailNavigation = false;
+  var overduePayment = false;
   Map<String, dynamic>? groupRequest;
   setUp(() {
     final previous = RightsService.occasionLinkModelNotifier.value;
@@ -290,7 +291,17 @@ void main() {
                   'data': {'email': 'customer@example.invalid'},
                 },
                 'capabilities': {'write': false},
-                'payment': {'status': 'free', 'received': 0, 'returned': 0},
+                'payment': overduePayment
+                    ? {
+                        'status': 'unpaid',
+                        'received': 0,
+                        'returned': 0,
+                        'overdue': true,
+                        'dueNow': 1350,
+                        'totalOutstanding': 1350,
+                        'dueAt': '2026-10-01T12:00:00Z',
+                      }
+                    : {'status': 'free', 'received': 0, 'returned': 0},
                 'tickets': [],
                 'answers': [],
                 'fields': [],
@@ -527,6 +538,31 @@ void main() {
     expect(find.text('Zatím nejsou žádné objednávky.'), findsOneWidget);
     expect(find.text('Došlo k neočekávané chybě.'), findsNothing);
   });
+  testWidgets(
+    'payments show server overdue notice above canonical transactions',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      overduePayment = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+        overduePayment = false;
+      });
+      await showOrders(tester, path: '/empty?orderId=4&orderTab=payments');
+      await tester.pumpAndSettle();
+      expect(find.text('Po splatnosti'), findsOneWidget);
+      expect(find.byType(OrderPaymentsContent), findsOneWidget);
+      expect(find.textContaining('2026'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Po splatnosti')).dy,
+        lessThan(tester.getTopLeft(find.byType(OrderPaymentsContent)).dy),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'payments use canonical transactions body without duplicate bank reference or summary',
     (tester) async {

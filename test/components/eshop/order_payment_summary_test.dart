@@ -15,6 +15,7 @@ void main() {
     WidgetTester tester,
     Map<String, dynamic> payment, {
     bool card = false,
+    bool noticeOnly = false,
   }) async {
     final env = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
@@ -25,22 +26,88 @@ void main() {
     await env.pumpWidget(
       tester,
       MaterialApp(
+        locale: const Locale('cs'),
+        supportedLocales: const [Locale('cs')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: SizedBox(
             width: 340,
-            child: OrderPaymentSummary(
-              payment: payment,
-              total: 2800,
-              currencyCode: 'CZK',
-              isCard: card,
-            ),
+            child: noticeOnly
+                ? OrderPaymentOverdueNotice(
+                    payment: payment,
+                    currencyCode: 'CZK',
+                    isCard: card,
+                  )
+                : OrderPaymentSummary(
+                    payment: payment,
+                    total: 2800,
+                    currencyCode: 'CZK',
+                    isCard: card,
+                  ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'overdue notice uses server due date and preserves partial balance',
+    (tester) async {
+      await open(tester, {
+        'status': 'partially_paid',
+        'overdue': true,
+        'dueNow': 100,
+        'totalOutstanding': 1900,
+        'dueAt': '2027-01-01T12:00:00Z',
+        'finalDeadline': '2027-02-01T12:00:00Z',
+      }, noticeOnly: true);
+      expect(find.text('Po splatnosti'), findsOneWidget);
+      expect(find.textContaining('Aktuálně k úhradě: 100'), findsOneWidget);
+      expect(find.textContaining('Zbývá k úhradě: 1900'), findsOneWidget);
+      expect(find.textContaining('2027'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final payment in [
+    {
+      'status': 'unpaid',
+      'overdue': false,
+      'dueNow': 100,
+      'dueAt': '2000-01-01T12:00:00Z',
+    },
+    {'status': 'cancelled', 'overdue': true, 'dueNow': 100},
+    {'status': 'unknown', 'dueNow': null},
+  ]) {
+    testWidgets(
+      'overdue notice never infers debt or overrides cancellation: $payment',
+      (tester) async {
+        await open(tester, payment, noticeOnly: true);
+        expect(find.text('Po splatnosti'), findsNothing);
+        expect(find.byIcon(Icons.schedule_outlined), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'ordinary unpaid summary keeps its final deadline without a deposit',
+    (tester) async {
+      await open(tester, {
+        'status': 'unpaid',
+        'received': 0,
+        'returned': 0,
+        'totalOutstanding': 2800,
+        'dueNow': 2800,
+        'finalDeadline': '2027-02-01T12:00:00Z',
+      });
+      expect(find.textContaining('2027'), findsOneWidget);
+      expect(find.text('Po splatnosti'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('paid summary is one amount row without repeated zero balances', (
     tester,
