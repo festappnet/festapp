@@ -27,6 +27,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
 import 'package:fstapp/components/eshop/views/order_detail_view.dart';
+import 'package:fstapp/components/eshop/views/order_payment_summary.dart';
+import 'package:fstapp/components/eshop/views/transactions_dialog.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
@@ -40,6 +42,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class _Router extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
+    AutoRoute(
+      path: '/:${AppRouter.linkFormatted}/reservations/blueprint',
+      page: PageInfo(
+        'BlueprintFixture',
+        builder: (_) => const Text('Blueprint fixture'),
+      ),
+    ),
     AutoRoute(
       path: '/:${AppRouter.linkFormatted}',
       page: PageInfo(
@@ -216,6 +225,25 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
+        if (request.url.path.endsWith('/get_transactions_for_order')) {
+          return http.Response(
+            jsonEncode({
+              'order_state': 'ordered',
+              'payment_info': {
+                'id': 7,
+                'variable_symbol': 270104,
+                'amount': 1350,
+                'paid': 0,
+                'returned': 0,
+                'currency_code': 'CZK',
+              },
+              'transactions': [],
+            }),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if (detailNavigation &&
             request.url.path.endsWith('/get_order_admin_detail')) {
           final id = jsonDecode(request.body)['p_order'];
@@ -237,7 +265,16 @@ void main() {
                 'tickets': [],
                 'answers': [],
                 'fields': [],
-                'places': [],
+                'places': [
+                  if (id == 5)
+                    {
+                      'blueprintId': 81,
+                      'nodeId': 'saved-seat',
+                      'ticketId': 55,
+                      'active': true,
+                      'title': 'Seat A',
+                    },
+                ],
                 'plans': [],
                 'placementFingerprint': 'fixture',
               },
@@ -384,6 +421,31 @@ void main() {
     expect(find.text('Zatím nejsou žádné objednávky.'), findsOneWidget);
     expect(find.text('Došlo k neočekávané chybě.'), findsNothing);
   });
+  testWidgets(
+    'payments use canonical transactions body without duplicate bank reference or summary',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+      });
+      await showOrders(tester, path: '/empty?orderId=4&orderTab=payments');
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(find.byType(OrderPaymentsContent), findsOneWidget);
+      expect(find.byType(OrderPaymentSummary), findsNothing);
+      expect(find.textContaining('Variabilní symbol'), findsOneWidget);
+      expect(find.textContaining('Reference platby'), findsNothing);
+      for (final label in ['Částka', 'Zaplaceno', 'Vráceno']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('symbol navigation retains selected tab and clears old targets', (
     tester,
   ) async {
@@ -415,6 +477,16 @@ void main() {
       tester.widget<OrderDetailView>(find.byType(OrderDetailView)).tab,
       'tickets',
     );
+    await tester.ensureVisible(find.byIcon(Icons.location_searching));
+    await tester.tap(find.byIcon(Icons.location_searching));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(router.urlState.uri.path, '/empty/reservations/blueprint');
+    expect(router.urlState.uri.queryParameters, {
+      'blueprintId': '81',
+      'blueprintNodeId': 'saved-seat',
+    });
     expect(tester.takeException(), isNull);
   });
 

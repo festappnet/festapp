@@ -420,20 +420,68 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
             const SizedBox(height: 20),
           ],
           if (writable)
-            TextField(
-              controller: _email,
-              focusNode: _emailFocus,
-              onChanged: (_) => setState(() {}),
-              enabled: !_locked,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: t('email'),
-                helperText: addressProblem ? null : t('emailHint'),
-                errorText: _emailTouched && !_emailFocus.hasFocus && !valid
-                    ? CommonStrings.invalidFormat
-                    : null,
-                helperMaxLines: 4,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t('email'), style: theme.textTheme.labelMedium),
+                const SizedBox(height: 6),
+                DecoratedBox(
+                  key: const ValueKey('order-email-field-frame'),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _emailFocus.hasFocus
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline,
+                    ),
+                  ),
+                  child: Semantics(
+                    label: t('email'),
+                    child: TextField(
+                      controller: _email,
+                      focusNode: _emailFocus,
+                      onChanged: (_) => setState(() {}),
+                      enabled: !_locked,
+                      cursorOpacityAnimates: false,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        hoverColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                      ),
+                    ),
+                  ),
+                ),
+                if (_emailTouched && !_emailFocus.hasFocus && !valid)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        CommonStrings.invalidFormat,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (!addressProblem)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      t('emailHint'),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+              ],
             )
           else
             SelectableText(

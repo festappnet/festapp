@@ -22,7 +22,6 @@ import '../models/order_model.dart';
 class OrderPaymentsContent extends StatefulWidget {
   final Future<void> Function()? onChanged;
   final int orderId;
-  final Widget? summary;
   final String? orderSymbol;
   final int? unitId;
 
@@ -32,7 +31,6 @@ class OrderPaymentsContent extends StatefulWidget {
     this.orderSymbol,
     this.unitId,
     this.onChanged,
-    this.summary,
   });
 
   @override
@@ -210,7 +208,6 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                   ),
                 ],
               ),
-              if (widget.summary != null) widget.summary!,
               if (_payment != null && _payment!.variableSymbol != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10.0),

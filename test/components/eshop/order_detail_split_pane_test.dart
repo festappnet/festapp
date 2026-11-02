@@ -38,6 +38,9 @@ void main() {
         final panel = find.byKey(const ValueKey('order-detail-pane'));
         final divider = find.byKey(const ValueKey('order-detail-resize'));
         double width() => tester.getSize(panel).width;
+        expect(width(), 720);
+        await tester.drag(divider, const Offset(120, 0));
+        await tester.pumpAndSettle();
         expect(width(), 600);
         final accessibleDivider = tester.getSemantics(
           find.bySemanticsLabel('Resize order detail'),

@@ -11,7 +11,6 @@ import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/launch_url_service.dart';
-import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/forms.dart';
@@ -19,6 +18,7 @@ import 'package:festapp_core/forms.dart';
 import '../../_shared/async_download_button.dart';
 import '../../_shared/common_strings.dart';
 import '../../single_data_grid/data_grid_strings.dart';
+import '../../single_data_grid/single_data_grid_header.dart';
 import '../../email_delivery/email_delivery_history.dart';
 import '../../email_delivery/order_email_issue.dart';
 import '../../forms/waitlist_commands.dart';
@@ -83,6 +83,7 @@ class OrderDetailView extends StatefulWidget {
     this.ticketId,
     this.onTicket,
     this.onReveal,
+    this.onOpenPlan,
   });
   final OrderDetailController controller;
   final String tab;
@@ -96,6 +97,7 @@ class OrderDetailView extends StatefulWidget {
   final int? ticketId;
   final ValueChanged<int?>? onTicket;
   final VoidCallback? onReveal;
+  final void Function(int blueprintId, String nodeId)? onOpenPlan;
   @override
   State<OrderDetailView> createState() => _OrderDetailViewState();
 }
@@ -135,7 +137,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
   final _ticketKeys = <int, GlobalKey>{};
   Set<int> _areaTickets = {};
   Set<int> _selectedTickets = {};
-  int _selectionRevision = 0;
   @override
   void dispose() {
     _tabController.dispose();
@@ -143,32 +144,13 @@ class _OrderDetailViewState extends State<OrderDetailView>
     super.dispose();
   }
 
-  void _revealMapTickets(Set<int> ids) {
+  void _selectMapTickets(Set<int> ids) {
     if (ids.isEmpty) return;
-    final revision = ++_selectionRevision;
     setState(() {
       _selectedTickets = Set.of(ids);
       _areaTickets = ids.length > 1 ? Set.of(ids) : {};
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || revision != _selectionRevision) return;
-      for (final id in ids) _ticketControllers[id]?.expand();
-      // Wait for expanded content to lay out before calculating its scroll offset.
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      if (!mounted || revision != _selectionRevision || c.detail == null)
-        return;
-      final first = d.tickets
-          .where((ticket) => ids.contains(ticket['id']))
-          .firstOrNull;
-      final target = _ticketKeys[first?['id']]?.currentContext;
-      if (target != null) {
-        await Scrollable.ensureVisible(
-          target,
-          duration: const Duration(milliseconds: 180),
-          alignment: .15,
-        );
-      }
-    });
+    // Selection must not move the surrounding scroll view or its parent tabs.
   }
 
   bool _ticketSelected(int id) =>
@@ -303,8 +285,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
     currencyCode: d.order['currency_code'] ?? 'CZK',
     isCard: d.order['payment_method'] == 'stripe',
   );
-  String _date(dynamic value) =>
-      LocaleDateTime.instant(value, Localizations.localeOf(context).toString());
   bool get _issuesTickets =>
       FeatureService.isFeatureEnabled(FeatureConstants.ticket) &&
       d.fields
@@ -622,7 +602,8 @@ class _OrderDetailViewState extends State<OrderDetailView>
             ? _selectedTickets.single
             : widget.ticketId,
         onTicket: widget.onTicket,
-        onMapTickets: _revealMapTickets,
+        onMapTickets: _selectMapTickets,
+        onOpenPlan: widget.onOpenPlan,
       );
       return Flex(
         direction: sideBySide ? Axis.horizontal : Axis.vertical,
@@ -661,7 +642,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
         TextButton(
           onPressed: () {
             setState(() {
-              _selectionRevision++;
               _areaTickets = {};
               _selectedTickets = {};
             });
@@ -880,21 +860,10 @@ class _OrderDetailViewState extends State<OrderDetailView>
     children: [
       if (d.order['payment_method'] == 'stripe')
         CardPaymentStatus(payment: d.payment, onRefresh: () => c.load()),
-      if (d.payment['status'] == 'unknown') _financial(),
-      if (d.payment['publicAccount'] != null)
-        SelectableText(
-          '${OrderDetailStrings.text('account')}: ${d.payment['publicAccount']}',
-        ),
-      if (d.payment['reference'] != null)
-        SelectableText(
-          '${OrderDetailStrings.text('payment_reference')}: ${d.payment['reference']}',
-        ),
-      if (d.payment['dueAt'] != null)
-        Text('${OrderDetailStrings.text('due')}: ${_date(d.payment['dueAt'])}'),
-      SizedBox(height: 16),
+      if (d.payment['status'] == 'unknown')
+        Text(OrderDetailStrings.text('platebni_stav_nelze_spolehlive_urcit')),
       OrderPaymentsContent(
         key: ValueKey('payments-$_revision'),
-        summary: d.payment['status'] == 'unknown' ? null : _financial(),
         orderId: c.orderId,
         orderSymbol: d.model.orderSymbol,
         unitId: RightsService.currentUnit()?.id,
@@ -1035,9 +1004,15 @@ class _OrderDetailViewState extends State<OrderDetailView>
                     padding: EdgeInsets.fromLTRB(16, 12, 8, 8),
                     child: LayoutBuilder(
                       builder: (context, headerConstraints) {
-                        final color = OrderModel.singleDataGridStateToColor(
-                          d.model.state ?? '',
-                        ).withValues(alpha: 1);
+                        final color = Color.alphaBlend(
+                          OrderModel.singleDataGridStateToColor(
+                            d.model.state ?? '',
+                          ),
+                          SingleDataGridHeader.defaultTrinaGridConfiguration(
+                            context,
+                            Localizations.localeOf(context).languageCode,
+                          ).style.gridBackgroundColor,
+                        );
                         final navigation = Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1269,10 +1244,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
                         ),
                     ],
                   ),
-                  if (c.dirtyDraftCount > 0 ||
-                      _savingDrafts ||
-                      _draftSaveError != null)
-                    _draftActions(),
                   Expanded(
                     child: IndexedStack(
                       index: index,
@@ -1298,6 +1269,10 @@ class _OrderDetailViewState extends State<OrderDetailView>
                       ],
                     ),
                   ),
+                  if (c.dirtyDraftCount > 0 ||
+                      _savingDrafts ||
+                      _draftSaveError != null)
+                    _draftActions(),
                 ],
               ),
             ),

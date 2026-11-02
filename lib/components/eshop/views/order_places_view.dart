@@ -15,11 +15,13 @@ class OrderPlacesView extends StatefulWidget {
     this.ticketId,
     this.onTicket,
     this.onMapTickets,
+    this.onOpenPlan,
   });
   final OrderDetailController controller;
   final int? ticketId;
   final ValueChanged<int?>? onTicket;
   final ValueChanged<Set<int>>? onMapTickets;
+  final void Function(int blueprintId, String nodeId)? onOpenPlan;
   @override
   State<OrderPlacesView> createState() => _OrderPlacesViewState();
 }
@@ -273,7 +275,15 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
             trailing: place['active'] == true
                 ? IconButton(
                     tooltip: OrderDetailStrings.text('ukazat_misto'),
-                    onPressed: () => showPlace(place),
+                    onPressed:
+                        place['nodeId'] is String &&
+                            place['blueprintId'] is int &&
+                            widget.onOpenPlan != null
+                        ? () => widget.onOpenPlan!(
+                            place['blueprintId'] as int,
+                            place['nodeId'] as String,
+                          )
+                        : null,
                     icon: Icon(Icons.location_searching),
                   )
                 : null,
