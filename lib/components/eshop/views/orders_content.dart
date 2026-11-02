@@ -255,15 +255,41 @@ class _OrdersContentState extends State<OrdersContent> {
         _escapeClosing ||
         !isVisibleRouteInstance(context))
       return KeyEventResult.ignored;
-    final focusedContext = FocusManager.instance.primaryFocus?.context;
-    if (focusedContext != null) {
-      final focusedRoute = ModalRoute.of(focusedContext);
-      if (focusedRoute != null && focusedRoute != ModalRoute.of(context))
-        return KeyEventResult.ignored;
-    }
+    if (!_detailRouteUncovered()) return KeyEventResult.ignored;
     _escapeClosing = true;
     _closeDetailFromEscape();
     return KeyEventResult.handled;
+  }
+
+  bool _detailRouteUncovered() {
+    // Check every enclosing Navigator, not only the tab's nested route.
+    // A root dialog can cover the page while its inner route stays current.
+    var uncovered = ModalRoute.of(context)?.isCurrent != false;
+    context.visitAncestorElements((element) {
+      if (ModalRoute.of(element)?.isCurrent == false) uncovered = false;
+      return uncovered;
+    });
+    return uncovered;
+  }
+
+  KeyEventResult _escapeOutsideDetail(KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.escape) {
+      return KeyEventResult.ignored;
+    }
+    // Like EditorDialogDismissal: outside controls must not swallow Escape
+    // before the active panel sees it. Children retain their local shortcuts.
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused?.findAncestorWidgetOfExactType<OrderDetailView>() != null) {
+      return KeyEventResult.ignored;
+    }
+    final grid = controller;
+    if (grid?.isGridLoaded == true &&
+        grid!.stateManager.gridFocusNode.hasFocus &&
+        grid.stateManager.isEditing) {
+      return KeyEventResult.ignored;
+    }
+    return _handleDetailEscape(event);
   }
 
   Future<void> _closeDetailFromEscape() async {
@@ -418,6 +444,7 @@ class _OrdersContentState extends State<OrdersContent> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.addEarlyKeyEventHandler(_escapeOutsideDetail);
     FocusManager.instance.addLateKeyEventHandler(_handleDetailEscape);
     DbBankAccounts.current.connectionChanges.addListener(
       _bankConnectionChanged,
@@ -445,6 +472,7 @@ class _OrdersContentState extends State<OrdersContent> {
 
   @override
   void dispose() {
+    FocusManager.instance.removeEarlyKeyEventHandler(_escapeOutsideDetail);
     FocusManager.instance.removeLateKeyEventHandler(_handleDetailEscape);
     _detailRouter?.removeListener(_detailRouteChanged);
     DbBankAccounts.current.connectionChanges.removeListener(
@@ -965,7 +993,11 @@ class _OrdersContentState extends State<OrdersContent> {
                             replace: true,
                           )
                         : null,
-                    onClose: () => _navigateDetail(null, replace: true),
+                    onClose: () async {
+                      if (_detailRouteUncovered()) {
+                        await _navigateDetail(null, replace: true);
+                      }
+                    },
                     onChanged: () async {
                       await controller?.reloadIfClean();
                       if (mounted) setState(() {});
