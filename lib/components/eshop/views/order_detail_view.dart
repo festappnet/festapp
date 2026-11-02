@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../order_detail_strings.dart';
 import '../orders_strings.dart';
 
-import 'package:fstapp/widgets/info_tooltip_button.dart';
+import 'package:fstapp/components/email_delivery/email_delivery_status_help.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:file_saver/file_saver.dart';
@@ -950,11 +950,12 @@ class _OrderDetailViewState extends State<OrderDetailView>
       ),
       Row(
         children: [
-          InfoTooltipButton(
-            semanticLabel: OrderDetailStrings.text(
-              'vyznam_stavu_a_diagnostiky',
-            ),
+          EmailDeliveryStatusHelp(
+            label: OrderDetailStrings.text('vyznam_stavu_a_diagnostiky'),
             message: OrderDetailStrings.text('email_status_help'),
+            note: OrderDetailStrings.text(
+              'doruceni_postovnimu_serveru_neoveruje_totoznost_ani_precteni_otevreni_a_kliknuti_mohou_vzniknout_automaticky',
+            ),
           ),
           Flexible(
             child: Text(

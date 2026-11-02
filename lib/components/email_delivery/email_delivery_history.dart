@@ -372,12 +372,19 @@ class _EmailDeliveryTimelineState extends State<EmailDeliveryTimeline> {
       if (widget.messageId != null &&
           !snapshot.data!.any((m) => m.messageId == widget.messageId))
         return Text(EmailDeliveryStrings.unavailable);
-      if (snapshot.data!.isEmpty)
+      final visible = snapshot.data!
+          .where(
+            (message) =>
+                !message.isSupersededReminderPlan ||
+                message.messageId == widget.messageId,
+          )
+          .toList();
+      if (visible.isEmpty)
         return Text(EmailDeliveryStrings.recovery('noMessages'));
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final message in snapshot.data!)
+          for (final message in visible)
             ExpansionTile(
               key: PageStorageKey((
                 'order-email-message',
