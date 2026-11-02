@@ -23,7 +23,6 @@ class EmailDeliveryHistory extends StatefulWidget {
   final String? userId;
   final bool embedded;
   final bool compact;
-  final bool ordersOnly;
   final int? orderId;
   final String? messageId;
   final Future<dynamic> Function(String, Map<String, dynamic>)? read;
@@ -36,7 +35,6 @@ class EmailDeliveryHistory extends StatefulWidget {
     this.userId,
     this.embedded = false,
     this.compact = false,
-    this.ordersOnly = false,
     this.read,
   });
   @override
@@ -69,7 +67,6 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
           'p_organization': widget.organizationId,
           'p_order': widget.orderId,
           'p_user': widget.userId,
-          if (widget.ordersOnly) 'p_orders_only': true,
         },
       );
       if (!mounted || generation != _generation || target != widget.messageId)
@@ -113,7 +110,6 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
         oldWidget.organizationId != widget.organizationId ||
         oldWidget.orderId != widget.orderId ||
         oldWidget.userId != widget.userId ||
-        oldWidget.ordersOnly != widget.ordersOnly ||
         oldWidget.read != widget.read) {
       _organizationScope = false;
       _controller = _createController();
@@ -127,7 +123,6 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
       'p_organization': widget.organizationId,
       'p_order': widget.orderId,
       'p_user': widget.userId,
-      if (widget.ordersOnly) 'p_orders_only': true,
     };
     final read =
         widget.read ??
@@ -292,8 +287,7 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
                 ),
               ),
             ),
-          if (!widget.ordersOnly &&
-              widget.organizationId != null &&
+          if (widget.organizationId != null &&
               widget.occasionId != null &&
               widget.orderId == null &&
               widget.userId == null)
