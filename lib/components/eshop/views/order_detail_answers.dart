@@ -18,6 +18,7 @@ class OrderDetailAnswers extends StatelessWidget {
     this.controller,
     this.canEdit,
     this.onSave,
+    this.includeField,
   });
   final OrderDetailController? controller;
   final bool Function()? canEdit;
@@ -28,6 +29,7 @@ class OrderDetailAnswers extends StatelessWidget {
   )?
   onSave;
   final OrderAdminDetail detail;
+  final bool Function(FormFieldDefinition)? includeField;
 
   String _label(FormFieldDefinition field) {
     final title = field.title?.trim();
@@ -88,10 +90,22 @@ class OrderDetailAnswers extends StatelessWidget {
   Widget build(BuildContext context) {
     final values = detail.json['answers'];
     final data = {for (final row in detailRows(values)) ...row};
+    // Older responses stored the canonical phone only in order data. An
+    // explicit empty/null response is a cleared value and must stay cleared.
+    for (final field in detail.fields) {
+      if (field.type == FormMetadata.fieldTypePhone &&
+          field.isTicketField != true &&
+          field.isHidden != true &&
+          !data.containsKey('${field.id}')) {
+        final phone = detail.order['data']?['phone'];
+        if (phone != null) data['${field.id}'] = phone;
+      }
+    }
     final fields =
         detail.fields
             .where(
               (f) =>
+                  (includeField?.call(f) ?? true) &&
                   f.isTicketField != true &&
                   f.type != FormMetadata.fieldTypeTicket &&
                   f.type != FormMetadata.fieldTypeSpot,
@@ -126,6 +140,11 @@ class OrderDetailAnswers extends StatelessWidget {
                 ? OrderDetailStrings.text('udaj_nebyl_uveden')
                 : _value(context, field, data['${field.id}']),
             controller: controller,
+            keyboardType: field.type == FormMetadata.fieldTypeEmail
+                ? TextInputType.emailAddress
+                : field.type == FormMetadata.fieldTypePhone
+                ? TextInputType.phone
+                : null,
             textController: field.type == FormMetadata.fieldTypeEmail
                 ? controller?.email
                 : null,

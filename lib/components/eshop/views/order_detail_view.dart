@@ -22,6 +22,7 @@ import '../../single_data_grid/single_data_grid_header.dart';
 import '../../email_delivery/email_delivery_history.dart';
 import '../../email_delivery/order_email_issue.dart';
 import '../../forms/waitlist_commands.dart';
+import '../../forms/widgets_view/form_helper.dart';
 import '../../forms/widgets_view/card_payment_status.dart';
 import '../../features/feature_service.dart';
 import '../../features/feature_constants.dart';
@@ -128,7 +129,6 @@ class _OrderDetailViewState extends State<OrderDetailView>
     if (_tabController.index != _tabIndex) _tabController.index = _tabIndex;
   }
 
-  bool _editingContact = false;
   bool _savingDrafts = false;
   String? _draftSaveError;
   int _revision = 0;
@@ -178,12 +178,15 @@ class _OrderDetailViewState extends State<OrderDetailView>
               ),
             ),
           ),
-          child: Theme(
-            data: theme.copyWith(
-              hoverColor: theme.colorScheme.primary.withValues(alpha: .035),
-              focusColor: theme.colorScheme.primary.withValues(alpha: .08),
+          child: Material(
+            color: Colors.transparent,
+            child: Theme(
+              data: theme.copyWith(
+                hoverColor: theme.colorScheme.primary.withValues(alpha: .035),
+                focusColor: theme.colorScheme.primary.withValues(alpha: .08),
+              ),
+              child: child,
             ),
-            child: child,
           ),
         ),
       ),
@@ -222,43 +225,83 @@ class _OrderDetailViewState extends State<OrderDetailView>
       ],
     ),
   );
-  Widget _contact() => section(
-    OrderDetailStrings.text('kontakt_zakaznika'),
-    Column(
+  bool _visibleOrderPhone(FormFieldDefinition field) =>
+      field.type == FormMetadata.fieldTypePhone &&
+      field.isTicketField != true &&
+      field.isHidden != true;
+
+  String get _contactEmailLabel {
+    final field = d.fields
+        .where(
+          (f) =>
+              f.type == FormMetadata.fieldTypeEmail &&
+              f.isTicketField != true &&
+              f.isHidden != true,
+        )
+        .firstOrNull;
+    final title = field?.title?.trim();
+    return title != null && title.isNotEmpty && title.toLowerCase() != 'null'
+        ? title
+        : FormHelper.fieldTypeToLocale(FormMetadata.fieldTypeEmail);
+  }
+
+  String get _customerName =>
+      [d.order['data']?['name'], d.order['data']?['surname']]
+          .whereType<String>()
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .join(' ');
+
+  bool _remainingAnswer(FormFieldDefinition field) =>
+      !_visibleOrderPhone(field) &&
+      !(field.type == FormMetadata.fieldTypeEmail && field.isHidden != true);
+
+  bool get _hasRemainingAnswers => d.fields.any(
+    (field) =>
+        field.isTicketField != true &&
+        field.type != FormMetadata.fieldTypeTicket &&
+        field.type != FormMetadata.fieldTypeSpot &&
+        _remainingAnswer(field),
+  );
+
+  Widget _contact({bool recovery = false}) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SelectableText(
-          [
-            d.order['data']?['name'],
-            d.order['data']?['surname'],
-          ].whereType<String>().join(' '),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: SelectableText(
-                d.order['data']?['email'] ??
-                    OrderDetailStrings.text('email_missing'),
-              ),
-            ),
-            if (!_editingContact &&
-                widget.tab != 'emails' &&
+        if (_customerName.isNotEmpty) ...[
+          SelectableText(
+            _customerName,
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (!recovery)
+          InlineOrderField(
+            key: ValueKey(('contact-email', c.orderId)),
+            label: _contactEmailLabel,
+            value: d.order['data']?['email']?.toString() ?? '',
+            displayValue:
+                d.order['data']?['email']?.toString().isNotEmpty == true
+                ? d.order['data']['email'].toString()
+                : OrderDetailStrings.text('udaj_nebyl_uveden'),
+            controller: c,
+            textController: c.email,
+            keyboardType: TextInputType.emailAddress,
+            canEdit: () =>
+                c.detail != null &&
+                c.validContext &&
+                !c.stale &&
                 d.canWrite &&
-                d.model.allows('edit'))
-              IconButton(
-                tooltip: OrderDetailStrings.text('edit_email'),
-                onPressed: c.busy || c.stale
-                    ? null
-                    : () => setState(() => _editingContact = true),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-              ),
-          ],
-        ),
-        if (d.order['data']?['phone'] != null)
-          SelectableText('${d.order['data']['phone']}'),
-        if (_editingContact || widget.tab == 'emails')
+                d.model.allows('edit'),
+          ),
+        if (!recovery && d.fields.any(_visibleOrderPhone))
+          KeyedSubtree(
+            key: const ValueKey('contact-phone-summary'),
+            child: _answersView(includeField: _visibleOrderPhone),
+          ),
+        if (recovery)
           OrderEmailContactEditor(
             orderId: c.orderId,
             occasionId: c.occasionId,
@@ -331,41 +374,74 @@ class _OrderDetailViewState extends State<OrderDetailView>
     ),
   );
 
-  Widget _contents() => section(
-    OrderDetailStrings.text('contents'),
-    Column(
+  String get _contentsCount =>
+      '${OrderDetailStrings.count(_issuesTickets ? 'tickets_count' : 'applications_count', d.tickets.length)} · ${OrderDetailStrings.count('places_count', d.places.where((p) => p['active'] == true && p['standing'] != true).map((p) => '${p['blueprintId']}:${p['spotId']}').toSet().length)}';
+
+  Widget _orderedProducts(Map<String, dynamic> ticket) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (detailRows(ticket['snapshot']?['products']).isEmpty)
+        Text(OrderDetailStrings.text('products_missing')),
+      for (final product in detailRows(ticket['snapshot']?['products']))
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(product['title'] ?? ''),
+          trailing: Text(money(product['price'])),
+        ),
+      if (_canEditProducts(ticket)) _editProductsButton(ticket),
+    ],
+  );
+
+  Widget _contents() => Padding(
+    padding: const EdgeInsets.only(bottom: 24),
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              OrderDetailStrings.text('contents'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(_contentsCount, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        const SizedBox(height: 10),
         if (d.tickets.isEmpty) Text(OrderDetailStrings.text('contents_empty')),
         for (final ticket in d.tickets)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!_singleApplication)
-                  Text(
-                    [
-                      ticket['ticket_symbol'] ??
-                          '${OrderDetailStrings.text(_issuesTickets ? 'ticket' : 'application')} ${ticket['id']}',
-                    ].where((v) => v.isNotEmpty).join(' · '),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                if (detailRows(ticket['snapshot']?['products']).isEmpty)
-                  Text(OrderDetailStrings.text('products_missing')),
-                for (final product in detailRows(
-                  ticket['snapshot']?['products'],
-                ))
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(product['title'] ?? ''),
-                    trailing: Text(money(product['price'])),
-                  ),
-                if (_canEditProducts(ticket)) _editProductsButton(ticket),
-              ],
+          if (_singleApplication)
+            _orderedProducts(ticket)
+          else
+            _ticketPresentation(
+              ticket,
+              ExpansionTile(
+                key: PageStorageKey((
+                  'overview-ticket',
+                  c.orderId,
+                  ticket['id'],
+                )),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                initiallyExpanded: ticket['id'] == d.tickets.first['id'],
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(left: 16, bottom: 8),
+                leading: Icon(
+                  _issuesTickets
+                      ? Icons.confirmation_number_outlined
+                      : Icons.assignment_outlined,
+                ),
+                title: Text(
+                  ticket['ticket_symbol']?.toString() ??
+                      '${OrderDetailStrings.text(_issuesTickets ? 'ticket' : 'application')} ${ticket['id']}',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                children: [_orderedProducts(ticket)],
+              ),
             ),
-          ),
       ],
     ),
   );
@@ -377,10 +453,11 @@ class _OrderDetailViewState extends State<OrderDetailView>
       d.model.allows('edit') &&
       (d.json['form']?['id'] ?? d.order['form_id']) is int;
 
-  Widget _answersView() {
+  Widget _answersView({bool Function(FormFieldDefinition)? includeField}) {
     final orderId = c.orderId;
     return OrderDetailAnswers(
       detail: d,
+      includeField: includeField ?? _remainingAnswer,
       controller: c,
       canEdit: () =>
           c.detail != null && c.orderId == orderId && _canEditAnswers(),
@@ -497,6 +574,8 @@ class _OrderDetailViewState extends State<OrderDetailView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _financial(),
+        const Divider(height: 32),
         for (final issue in issues.take(2))
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -550,44 +629,23 @@ class _OrderDetailViewState extends State<OrderDetailView>
             await DbOrders.updateOrderNoteHidden(c.orderId, value);
           },
         ),
-        _financial(),
+        const Divider(height: 32),
         _contents(),
-        Text(
-          '${OrderDetailStrings.count(_issuesTickets ? 'tickets_count' : 'applications_count', d.tickets.length)} · ${OrderDetailStrings.count('places_count', d.places.where((p) => p['active'] == true && p['standing'] != true).map((p) => '${p['blueprintId']}:${p['spotId']}').toSet().length)}',
-        ),
-        Wrap(
-          spacing: 8,
-          children: [
-            TextButton(
-              onPressed: () => widget.onTab('tickets'),
-              child: Text(
-                OrderDetailStrings.text(
-                  _issuesTickets ? 'vstupenky_a_mista' : 'applications_places',
-                ),
+        if (_hasRemainingAnswers)
+          ExpansionTile(
+            key: PageStorageKey(('order-answers', c.orderId)),
+            shape: const Border(),
+            collapsedShape: const Border(),
+            initiallyExpanded: true,
+            tilePadding: EdgeInsets.zero,
+            title: Text(OrderDetailStrings.text('udaje_z_formulare')),
+            children: [
+              KeyedSubtree(
+                key: const PageStorageKey('answers-content'),
+                child: _answersView(),
               ),
-            ),
-            TextButton(
-              onPressed: () => widget.onTab('payments'),
-              child: Text(OrderDetailStrings.text('payment_details')),
-            ),
-            TextButton(
-              onPressed: () => widget.onTab('emails'),
-              child: Text(OrderDetailStrings.text('view_emails')),
-            ),
-          ],
-        ),
-        ExpansionTile(
-          key: PageStorageKey(('order-answers', c.orderId)),
-          initiallyExpanded: true,
-          tilePadding: EdgeInsets.zero,
-          title: Text(OrderDetailStrings.text('udaje_z_formulare')),
-          children: [
-            KeyedSubtree(
-              key: const PageStorageKey('answers-content'),
-              child: _answersView(),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -874,7 +932,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
   Widget _emails() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _contact(),
+      _contact(recovery: true),
       EmailDeliveryHistory(
         key: ValueKey('email-$_revision'),
         occasionId: c.occasionId,
@@ -1017,6 +1075,10 @@ class _OrderDetailViewState extends State<OrderDetailView>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 44,
+                                minHeight: 44,
+                              ),
                               tooltip: OrderDetailStrings.text(
                                 'predchozi_objednavka',
                               ),
@@ -1024,6 +1086,10 @@ class _OrderDetailViewState extends State<OrderDetailView>
                               icon: const Icon(Icons.chevron_left),
                             ),
                             IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 44,
+                                minHeight: 44,
+                              ),
                               tooltip: OrderDetailStrings.text(
                                 'dalsi_objednavka',
                               ),
@@ -1057,139 +1123,167 @@ class _OrderDetailViewState extends State<OrderDetailView>
                               ),
                           ],
                         );
+                        final customerOverview = IconButton(
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
+                          tooltip: OrderDetailStrings.text(
+                            'zakaznicky_prehled',
+                          ),
+                          onPressed: c.busy
+                              ? null
+                              : () => ExceptionHandler.guard(
+                                  context,
+                                  futureFunction: () => _more('overview'),
+                                ),
+                          icon: const Icon(Icons.open_in_new, size: 20),
+                        );
+                        final closeAction = IconButton(
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
+                          tooltip: OrderDetailStrings.text(
+                            'zpet_na_objednavky',
+                          ),
+                          onPressed: c.busy ? null : widget.onClose,
+                          icon: const Icon(Icons.close),
+                        );
+                        final titleStyle = Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold);
+                        final compact = headerConstraints.maxWidth < 520;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              '${OrderDetailStrings.text('order')} ${d.model.orderSymbol ?? c.orderId}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                            ),
+                            if (compact) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      OrderDetailStrings.text('order'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ),
+                                  navigation,
+                                  closeAction,
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: SelectableText(
+                                      d.model.orderSymbol ?? '${c.orderId}',
+                                      style: titleStyle,
+                                    ),
+                                  ),
+                                  customerOverview,
+                                ],
+                              ),
+                            ] else
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Flexible(
+                                          child: SelectableText(
+                                            '${OrderDetailStrings.text('order')} ${d.model.orderSymbol ?? c.orderId}',
+                                            style: titleStyle,
                                           ),
-                                          IconButton(
-                                            tooltip: OrderDetailStrings.text(
-                                              'zakaznicky_prehled',
+                                        ),
+                                        customerOverview,
+                                      ],
+                                    ),
+                                  ),
+                                  navigation,
+                                  closeAction,
+                                ],
+                              ),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 12,
+                                runSpacing: 4,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      d.model.stateLabel,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color:
+                                                color.computeLuminance() > .35
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                    ),
+                                  ),
+                                  if ((d.canWrite &&
+                                          d.model.allows('cancel')) ||
+                                      d.model.isWaitlisted ||
+                                      FeatureService.isFeatureEnabled(
+                                        FeatureConstants.contract,
+                                      ))
+                                    Wrap(
+                                      alignment: WrapAlignment.end,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children: [
+                                        if (d.canWrite &&
+                                            d.model.allows('cancel'))
+                                          TextButton.icon(
+                                            icon: const Icon(
+                                              Icons.cancel_outlined,
+                                              size: 18,
                                             ),
-                                            onPressed: c.busy
+                                            label: Text(
+                                              OrderDetailStrings.text(
+                                                'zrusit_objednavku',
+                                              ),
+                                            ),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Theme.of(context)
+                                                  .colorScheme
+                                                  .error,
+                                            ),
+                                            onPressed: c.busy || c.stale
                                                 ? null
                                                 : () => ExceptionHandler.guard(
                                                     context,
                                                     futureFunction: () =>
-                                                        _more('overview'),
+                                                        _more('cancel'),
                                                   ),
-                                            icon: const Icon(
-                                              Icons.open_in_new,
-                                              size: 18,
-                                            ),
                                           ),
-                                        ],
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: color,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          d.model.stateLabel,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelLarge
-                                              ?.copyWith(
-                                                color:
-                                                    color.computeLuminance() >
-                                                        .35
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                navigation,
-                                IconButton(
-                                  tooltip: OrderDetailStrings.text(
-                                    'zpet_na_objednavky',
-                                  ),
-                                  onPressed: c.busy ? null : widget.onClose,
-                                  icon: const Icon(Icons.close),
-                                ),
-                              ],
-                            ),
-                            if (d.model.isWaitlisted ||
-                                FeatureService.isFeatureEnabled(
-                                  FeatureConstants.contract,
-                                ) ||
-                                (d.canWrite && d.model.allows('cancel')))
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Wrap(
-                                    spacing: 16,
-                                    runSpacing: 4,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: [
-                                      if (d.canWrite &&
-                                          d.model.allows('cancel'))
-                                        TextButton.icon(
-                                          icon: const Icon(
-                                            Icons.cancel_outlined,
-                                            size: 18,
-                                          ),
-                                          label: Text(
-                                            OrderDetailStrings.text(
-                                              'zrusit_objednavku',
-                                            ),
-                                          ),
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .error,
-                                          ),
-                                          onPressed: c.busy || c.stale
-                                              ? null
-                                              : () => ExceptionHandler.guard(
-                                                  context,
-                                                  futureFunction: () =>
-                                                      _more('cancel'),
-                                                ),
-                                        ),
-                                      if (d.model.isWaitlisted ||
-                                          FeatureService.isFeatureEnabled(
-                                            FeatureConstants.contract,
-                                          ))
                                         if (d.model.isWaitlisted ||
                                             FeatureService.isFeatureEnabled(
                                               FeatureConstants.contract,
                                             ))
                                           moreActions,
-                                    ],
-                                  ),
-                                ),
+                                      ],
+                                    ),
+                                ],
                               ),
+                            ),
                           ],
                         );
                       },
