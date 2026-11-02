@@ -1,3 +1,4 @@
+import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/eshop/order_symbol_cell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -171,6 +172,21 @@ void main() {
   var detailNavigation = false;
   var overduePayment = false;
   var bankDetails = false;
+  var planPreview = false;
+  var planRevision = 3;
+  Completer<void>? firstPlanGate;
+  final planRequests = <Map<String, dynamic>>[];
+  var fullPlanDownloads = 0;
+  final planDocument = VenueLayoutDocument.empty().copyWith(
+    nodes: [
+      LayoutNode(
+        id: '00000000-0000-4000-8000-000000000001',
+        kind: 'seat',
+        width: 20,
+        height: 20,
+      ),
+    ],
+  );
   Map<String, dynamic>? groupRequest;
   setUp(() {
     final previous = RightsService.occasionLinkModelNotifier.value;
@@ -276,6 +292,41 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
+        if (planPreview &&
+            request.url.path.endsWith('/get_order_blueprint_view')) {
+          final args = Map<String, dynamic>.from(jsonDecode(request.body));
+          planRequests.add(args);
+          if (args['p_order'] == 4 && firstPlanGate != null)
+            await firstPlanGate!.future;
+          final full = args['p_known_layout_revision'] != planRevision;
+          if (full) fullPlanDownloads++;
+          return http.Response(
+            jsonEncode({
+              'code': 200,
+              'data': {
+                'id': 81,
+                'occasion': 1,
+                'title': 'Hall',
+                'layout_revision': planRevision,
+                'placementFingerprint': 'fixture-${args['p_order']}',
+                'seatStates': [
+                  {
+                    'nodeId': planDocument.nodes.single.id,
+                    'title': 'Seat',
+                    'state': args['p_order'] == 5 ? 'used' : 'ordered',
+                    'blocked': false,
+                    'hasProduct': true,
+                  },
+                ],
+                if (full) 'layout': planDocument.toJson(),
+                if (full) 'resources': {},
+              },
+            }),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if (detailNavigation &&
             request.url.path.endsWith('/get_order_admin_detail')) {
           final id = jsonDecode(request.body)['p_order'];
@@ -324,8 +375,11 @@ void main() {
                       'title': 'Seat A',
                     },
                 ],
-                'plans': [],
-                'placementFingerprint': 'fixture',
+                'plans': [
+                  if (planPreview)
+                    {'id': 81, 'title': 'Hall', 'layoutRevision': planRevision},
+                ],
+                'placementFingerprint': planPreview ? 'fixture-$id' : 'fixture',
               },
             }),
             200,
@@ -676,6 +730,147 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+    'switching orders reuses the plan revision while fetching fresh occupancy',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      groupSelection = true;
+      detailNavigation = true;
+      planPreview = true;
+      planRevision = 3;
+      planRequests.clear();
+      fullPlanDownloads = 0;
+      addTearDown(() {
+        includeOrder = false;
+        groupSelection = false;
+        detailNavigation = false;
+        planPreview = false;
+      });
+      final router = _Router();
+      await showOrders(
+        tester,
+        externalRouter: router,
+        path: '/empty?orderId=4&orderTab=tickets',
+      );
+      await tester.pumpAndSettle();
+      VenueLayoutViewer viewer() =>
+          tester.widget(find.byType(VenueLayoutViewer));
+      final firstDocument = viewer().document;
+      expect(
+        find.byKey(const ValueKey(('contact-email', 4)), skipOffstage: false),
+        findsNothing,
+        reason: 'An order opened on Tickets must not construct the hidden Overview form',
+      );
+      expect(fullPlanDownloads, 1);
+      await tester.tap(find.text('ORDER5').first);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await tester.pumpAndSettle();
+      expect(planRequests, hasLength(2));
+      expect(
+        planRequests.last['p_known_layout_revision'],
+        3,
+        reason: 'Switching on one plan must not download unchanged geometry and rendering resources again',
+      );
+      expect(fullPlanDownloads, 1);
+      expect(viewer().document, same(firstDocument));
+      expect(
+        (viewer().seatPresentation[planDocument.nodes.single.id]
+            as Map)['state'],
+        'used',
+        reason: 'Occupancy must remain freshly authorized for the new order',
+      );
+      planRevision = 4;
+      await tester.tap(find.text('ORDER4').first);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await tester.pumpAndSettle();
+      expect(planRequests, hasLength(3));
+      expect(
+        fullPlanDownloads,
+        2,
+        reason: 'A changed saved revision must invalidate cached geometry',
+      );
+      expect(viewer().document, isNot(same(firstDocument)));
+      tester
+          .widget<OrderDetailView>(find.byType(OrderDetailView))
+          .onTab('overview');
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey(('contact-email', 4))),
+        findsOneWidget,
+        reason: 'Opening Overview later must still create its editing fields',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'a slow previous order cannot hold or replace the next plan preview',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      groupSelection = true;
+      detailNavigation = true;
+      planPreview = true;
+      planRevision = 3;
+      planRequests.clear();
+      fullPlanDownloads = 0;
+      final pending = Completer<void>();
+      firstPlanGate = pending;
+      addTearDown(() {
+        if (!pending.isCompleted) pending.complete();
+        firstPlanGate = null;
+        includeOrder = false;
+        groupSelection = false;
+        detailNavigation = false;
+        planPreview = false;
+      });
+      final router = _Router();
+      await showOrders(
+        tester,
+        externalRouter: router,
+        path: '/empty?orderId=4&orderTab=tickets',
+      );
+      expect(planRequests, hasLength(1));
+      await tester.tap(find.text('ORDER5').first);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await tester.pumpAndSettle();
+      expect(planRequests, hasLength(2));
+      final viewer = tester.widget<VenueLayoutViewer>(
+        find.byType(VenueLayoutViewer),
+      );
+      expect(
+        (viewer.seatPresentation[planDocument.nodes.single.id] as Map)['state'],
+        'used',
+      );
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<VenueLayoutViewer>(find.byType(VenueLayoutViewer))
+            .document,
+        same(viewer.document),
+      );
+      expect(
+        (tester
+                .widget<VenueLayoutViewer>(find.byType(VenueLayoutViewer))
+                .seatPresentation[planDocument.nodes.single.id]
+            as Map)['state'],
+        'used',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('symbol navigation retains selected tab and clears old targets', (
     tester,

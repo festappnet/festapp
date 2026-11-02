@@ -106,7 +106,7 @@ class OrderDetailView extends StatefulWidget {
 
 class _OrderDetailViewState extends State<OrderDetailView>
     with SingleTickerProviderStateMixin {
-  final _visited = <int>{0};
+  final _visited = <int>{};
   late final TabController _tabController;
 
   int get _tabIndex {
