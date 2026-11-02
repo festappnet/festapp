@@ -10,9 +10,13 @@ database ACLs.
 
 `automation/hetzner-supabase/runtime/slunovrat-news-emergency.sql` is an
 operational exception, not the permanent application schema. Apply only from
-verified main, atomically, with `expires_at=2026-11-16 21:00:00+00` (16 November,
-22:00 Prague). The user explicitly extended the original one-day deadline to
-two weeks on 2 November. This remains a temporary workaround and must be removed.
+verified main, atomically, with `expires_at=2026-11-19 22:59:00+00` (19 November,
+23:59 Prague). On 2 November the user replaced the earlier one-day and two-week
+deadlines with a deadline after the event. The canonical occasion, titled
+`Slunovrat WE 2026`, ends at `2026-11-18 21:55:00+00` (18 November, 22:55 Prague).
+The exception therefore covers the whole following local day. The installation
+and extension guards cap the deadline at two days after the stored event end.
+This remains a temporary workaround and must be removed.
 It allows only the old client's specific columns and exact event. Both adapters
 check deadline, stored event scope and current editor. The news adapter emits
 canonical revisions and receipts. The push adapter reuses admission and existing
