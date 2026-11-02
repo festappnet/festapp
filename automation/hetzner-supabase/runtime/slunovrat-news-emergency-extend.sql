@@ -3,7 +3,8 @@
 -- Required psql variables: previous_expires_at, expires_at.
 \set ON_ERROR_STOP on
 SELECT :'expires_at'::timestamptz > greatest(statement_timestamp(), :'previous_expires_at'::timestamptz)
-   AND :'expires_at'::timestamptz <= statement_timestamp() + interval '14 days'
+   AND EXISTS (SELECT 1 FROM public.occasions WHERE id=1072594 AND organization=19
+     AND :'expires_at'::timestamptz <= end_time + interval '2 days')
    AND EXISTS (SELECT 1 FROM public.occasions WHERE id=1072594 AND organization=19
      AND unit=999 AND link='2025we-copy-5e6268f4')
    AND EXISTS (SELECT 1 FROM pg_policy WHERE polrelid='public.news'::regclass
