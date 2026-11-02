@@ -17,16 +17,23 @@ class TicketPreviewAssets {
 
   Future<Map<String, dynamic>> get manifest => _manifest ??= _read();
   Future<Map<String, dynamic>> _read() async {
-    final raw =
-        (await bundle.loadString('${root}preview-manifest.json')).trim();
-    final value = jsonDecode(raw) as Map<String, dynamic>;
-    final payload = '${raw.substring(0, raw.lastIndexOf(',"sha256":'))}}';
-    if (value['schema'] != 1 ||
-        value['generator'] != 1 ||
-        sha256.convert(utf8.encode(payload)).toString() != value['sha256']) {
-      throw const FormatException('Preview manifest integrity');
+    try {
+      final raw =
+          (await bundle.loadString('${root}preview-manifest.json')).trim();
+      final value = jsonDecode(raw) as Map<String, dynamic>;
+      final payload = '${raw.substring(0, raw.lastIndexOf(',"sha256":'))}}';
+      if (value['schema'] != 1 ||
+          value['generator'] != 1 ||
+          sha256.convert(utf8.encode(payload)).toString() != value['sha256']) {
+        throw const FormatException('Preview manifest integrity');
+      }
+      return value;
+    } catch (_) {
+      _manifest = null;
+      // A failed string read is also cached by CachingAssetBundle.
+      bundle.evict('${root}preview-manifest.json');
+      rethrow;
     }
-    return value;
   }
 
   Future<Uint8List> bytes(Map entry) async {

@@ -1,10 +1,5 @@
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/components/eshop/models/order_model.dart';
-
-import '../models/form_bundle.dart';
-import '../waitlist_strings.dart';
-import 'waitlist_offers_dialog.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
@@ -41,8 +36,6 @@ class FormResponsesContent extends StatefulWidget {
 
 class _FormResponsesContentState extends State<FormResponsesContent> {
   List<FormFieldDefinition>? formFieldModels;
-  FormBundle? _capacityForm;
-  List<OrderModel> _orders = [];
   String? _formLink; // Renamed to avoid confusion
   SingleDataGridController<FormResponseModel>? controller;
 
@@ -72,14 +65,6 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
                   formLink: link,
                   includeOrderDetails: true,
                 );
-            if (mounted && link == _formLink) {
-              setState(() {
-                _capacityForm = bundle.forms
-                    .where((form) => form.definition.link == link)
-                    .firstOrNull;
-                _orders = bundle.orders;
-              });
-            }
             return bundle.orders
                 .where((order) => order.form?.definition.link == link)
                 .map((order) => FormResponseModel.fromOrder(order, ff))
@@ -121,37 +106,7 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     if (controller == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return Column(
-      children: [
-        if (_capacityForm?.definition.capacity case final capacity?)
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (capacity.enabled)
-                  WaitlistCapacitySummary(capacity: capacity),
-                if (_capacityForm!.definition.waitlistEnabled &&
-                    RightsService.canUpdateOrders())
-                  TextButton(
-                    onPressed: () async {
-                      await showDialog(
-                        context: context,
-                        builder: (_) => WaitlistOffersDialog(
-                          form: _capacityForm!,
-                          orders: _orders,
-                        ),
-                      );
-                      await refreshData();
-                    },
-                    child: Text(WaitlistStrings.send),
-                  ),
-              ],
-            ),
-          ),
-        Expanded(child: SingleTableDataGrid<FormResponseModel>(controller!)),
-      ],
-    );
+    return SingleTableDataGrid<FormResponseModel>(controller!);
   }
 
   static List<String> columnIdentifiers = [

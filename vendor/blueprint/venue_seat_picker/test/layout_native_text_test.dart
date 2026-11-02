@@ -1,9 +1,62 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
+import 'package:venue_seat_picker/src/layout_editor/layout_native_text.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {
+  testWidgets('native custom table label stays entirely on the tabletop', (
+    tester,
+  ) async {
+    final table = LayoutNode(
+      id: newLayoutId(),
+      kind: 'table',
+      width: 160,
+      height: 100,
+      label: 'Table 1',
+      surface: const {
+        'type': 'grid',
+        'moduleSize': 1,
+        'outer': [
+          [0, 0],
+          [160, 0],
+          [160, 100],
+          [108, 100],
+          [108, 50],
+          [54, 50],
+          [54, 100],
+          [0, 100],
+        ],
+        'holes': [],
+      },
+    );
+    final document = VenueLayoutDocument(nodes: [table]);
+    final cache = LayoutNativeTextCache();
+    addTearDown(cache.dispose);
+    final scene = cache.update(compileScene(document), document, {
+      'font': const TextStyle(fontFamily: 'Ahem'),
+    }, (_) => 'font');
+    final item = (scene['items'] as List).singleWhere(
+      (i) => i['kind'] == 'nativeText',
+    );
+    final painter = item['nativeParagraph'] as TextPainter;
+    final offset = item['nativeOffset'] as Offset;
+    final matrix = List<double>.from(item['matrix']);
+    final ring = nodeOutlineContours(table).first;
+    for (final box in painter.getBoxesForSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 7),
+    )) {
+      final rect = box.toRect().shift(offset);
+      for (final x in [rect.left, rect.center.dx, rect.right]) {
+        for (final y in [rect.top, rect.center.dy, rect.bottom]) {
+          final p = transformPoint(matrix, x, y);
+          expect(pointInPolygon(ring, p[0], p[1]), isTrue);
+        }
+      }
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'editing uses cached actual fonts while resizing without prepared text; viewing keeps vectors',
     (tester) async {

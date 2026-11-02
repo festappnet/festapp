@@ -17,13 +17,19 @@ on:
       - 'automation/assemble-notification-center-migration.py'
       - 'database/tests/eshop_orders/required*test.sql'
       - 'database/tests/eshop_orders/manual_paid_state_only_test.sql'
-      - 'database/tests/emails/paid_then_manual_ticket_delivery_test.sql'
+      - 'database/functions/emails/**'
+      - 'database/tests/emails/**'
+      - 'automation/email-delivery/**'
       - 'supabase/functions/send-tickets/**'
       - 'supabase/functions/preview-ticket-layout/**'
       - 'supabase/functions/_shared/**'
       - 'lib/components/eshop/db_tickets.dart'
       - 'lib/components/eshop/views/orders_content.dart'
       - 'test/components/eshop/ticket_delivery_request_test.dart'
+      - 'workers/image-worker/**'
+      - 'database/functions/others/**'
+      - 'database/functions/authoring/lifecycle.sql'
+      - 'database/tests/occasion_copy_lifecycle_test.sql'
       - 'supabase/migrations/**'
       - 'supabase/baseline/**'
       - 'automation/baseline.py'
@@ -72,6 +78,8 @@ jobs:
       - name: Install isolated Chromium test runner
         run: bash automation/ci/browser.sh
       - run: python3 automation/ci/run.py step seat-database
+      - name: Copy event media in workerd and delete its inventory through real SQL
+        run: python3 automation/ci/run.py step occasion-lifecycle
       - name: Authorization read-phase upgrade contracts
         env:
           FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}

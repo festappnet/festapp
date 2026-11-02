@@ -140,7 +140,9 @@ test('startup has an accessible spinner without visible loading text', t => {
 
 test('Flutter startup browser chrome matches the visible loading background', async (t) => {
     const flutterHtml = await readFile(new URL('../../../web/index.html', import.meta.url), 'utf8');
-    const dom = new JSDOM(flutterHtml);
+    const dom = new JSDOM(flutterHtml, { url: 'https://app.test/', runScripts: 'outside-only' });
+    dom.window.localStorage.setItem('theme', 'dark');
+    dom.window.eval(dom.window.document.getElementById('festapp-startup-theme').textContent);
     t.after(() => dom.window.close());
     const { document } = dom.window;
     const loaderBackground = dom.window.getComputedStyle(document.getElementById('loader-content')).backgroundColor;
@@ -150,4 +152,55 @@ test('Flutter startup browser chrome matches the visible loading background', as
     assert.equal(dom.window.getComputedStyle(themeProbe).backgroundColor, loaderBackground);
     assert.equal(dom.window.getComputedStyle(document.body).backgroundColor, loaderBackground);
     assert.equal(document.querySelector('meta[name="color-scheme"]').content, 'dark');
+});
+
+// Exercise the production bootstrap without starting Flutter or third-party SDKs.
+for (const [mode, systemDark, expected] of [
+    ['light', true, 'light'], ['dark', false, 'dark'],
+    ['auto', true, 'dark'], ['auto', false, 'light'],
+    [null, true, 'dark'], ['invalid', false, 'light'],
+]) {
+    test(`Flutter loader: saved ${mode}, system dark=${systemDark}`, async t => {
+        const source = await readFile(new URL('../../../web/index.html', import.meta.url), 'utf8');
+        const dom = new JSDOM(source, { url: 'https://app.test/', runScripts: 'outside-only' });
+        t.after(() => dom.window.close());
+        const { window } = dom;
+        if (mode) window.localStorage.setItem('theme', mode);
+        let onSystemChange;
+        const media = { matches: systemDark, addEventListener: (_, listener) => { onSystemChange = listener; } };
+        window.matchMedia = () => media;
+        window.eval(window.document.getElementById('festapp-startup-theme').textContent);
+        const root = window.document.documentElement;
+        const loader = window.document.getElementById('loader-content');
+        assert.equal(root.dataset.startupTheme, expected);
+        assert.equal(root.style.colorScheme, expected);
+        assert.equal(window.document.querySelector('meta[name="color-scheme"]').content, expected);
+        assert.equal(window.getComputedStyle(loader).backgroundColor, expected === 'light' ? 'rgb(255, 255, 255)' : 'rgb(25, 36, 59)');
+        assert.equal(loader.querySelector('img').getAttribute('src'), expected === 'light' ? 'loading-animation-light.svg' : 'loading-animation.svg');
+        media.matches = !systemDark;
+        onSystemChange();
+        assert.equal(root.dataset.startupTheme, ['light', 'dark'].includes(mode) ? mode : (media.matches ? 'dark' : 'light'));
+        window.localStorage.setItem('theme', 'light');
+        window.dispatchEvent(new window.StorageEvent('storage', { key: 'theme' }));
+        assert.equal(root.dataset.startupTheme, 'light');
+        window.__FESTAPP_APP_READY__ = true;
+        window.localStorage.setItem('theme', 'dark');
+        window.applyFestappStartupTheme();
+        assert.equal(root.dataset.startupTheme, 'light', 'Flutter owns theme after startup');
+    });
+}
+
+test('Flutter loader migrates legacy theme and tolerates blocked storage', async t => {
+    const source = await readFile(new URL('../../../web/index.html', import.meta.url), 'utf8');
+    const dom = new JSDOM(source, { url: 'https://app.test/', runScripts: 'outside-only' });
+    t.after(() => dom.window.close());
+    const { window } = dom;
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    window.localStorage.setItem('flutter.adaptive_theme_preferences', JSON.stringify(JSON.stringify({theme_mode: 0})));
+    window.eval(window.document.getElementById('festapp-startup-theme').textContent);
+    assert.equal(window.document.documentElement.dataset.startupTheme, 'light');
+    assert.equal(window.localStorage.getItem('theme'), 'light');
+    Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } });
+    window.applyFestappStartupTheme();
+    assert.equal(window.document.documentElement.dataset.startupTheme, 'dark');
 });

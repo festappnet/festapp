@@ -38,7 +38,7 @@ AS $function$
         FROM public.user_groups ug JOIN public.user_group_info ugi ON ugi.id=ug."group"
         WHERE ug."user"=uc.companion AND ugi.occasion=p_occasion
           AND ugi.type IS NULL) groups ON true
-      WHERE uc.occasion=p_occasion AND uc."user"=p_user),'[]'::jsonb),
+      WHERE uc.occasion=p_occasion AND uc."user"=p_user AND public.occasion_member_visible_internal(p_occasion,ui.id)),'[]'::jsonb),
     'groups',COALESCE((SELECT jsonb_agg(jsonb_build_object(
       'id',g.id,'title',g.title,'description',g.description,'type',g.type,
       'data',g.data,'place',g.place,'isAdmin',mine.is_admin,
@@ -46,7 +46,7 @@ AS $function$
         'userId',members."user",'isAdmin',members.is_admin,
         'name',ui.name,'surname',ui.surname) ORDER BY members."user")
         FROM public.user_groups members JOIN public.user_info ui
-          ON ui.id=members."user" WHERE members."group"=g.id),'[]'::jsonb),
+          ON ui.id=members."user" WHERE members."group"=g.id AND public.occasion_member_visible_internal(g.occasion,ui.id)),'[]'::jsonb),
       'placeData',(SELECT to_jsonb(p)||jsonb_build_object('aggregate_version',COALESCE((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='place' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p.id::text),0)) FROM public.places p WHERE p.id=g.place))
       ORDER BY g.id) FROM public.user_groups mine JOIN public.user_group_info g
         ON g.id=mine."group" WHERE mine."user"=p_user

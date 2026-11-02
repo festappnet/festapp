@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-01",
+  "site": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "candidateWidgetSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab",
+  "scriptReadback": "No-store target fetch matched candidate hash; following target-only cache refresh the actual Script response was HTTP 200 and 39532 characters.",
+  "reproduction": "Reload published QA site. Remove first element, set form-url in DOM to known existing public country_bal_vetrkovice, and reinsert at original position to reset mode; leave second at saved missing QA slug. Wait for settlement.",
+  "result": {"validFormMode": "Unavailable", "secondMode": "Unavailable", "checkoutContextPresent": false, "iframes": 0, "directCheckoutLinks": 0, "checkoutContextRequestsObservedAfterReload": 0, "consoleCorsOrAuthErrorsObserved": false},
+  "limits": "Failure source not yet determined; network capture absence is bounded by browser observation. The second form URL is known missing, so its failure is expected. This valid first-form result is not explained by the missing QA slug.",
+  "nativeSettingsSaved": false,
+  "ordersHoldsOrChargesCreated": false,
+  "marketplaceSubmitted": false,
+  "gate": "FAIL - do not submit pending investigation."
+}

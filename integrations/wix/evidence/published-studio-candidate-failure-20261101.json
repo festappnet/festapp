@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-01",
+  "site": "https://dev-sitex1642529107.wix-development-sites.org/",
+  "candidateWidgetSha256": "7ac66608c59a9a187857bee8e4f17fc6b93a8412638935dbdca9d406b0b4ae0c",
+  "scriptReadback": "Stable no-store fetch SHA-256 matched candidate; after target-only cache reload, the actual Script response contained wix-checkout-context and was 39526 characters.",
+  "reproduction": "Reload published Studio QA site with candidate. Temporarily change only the first vstupenky-online-form element form-url in the page DOM to https://vstupenky.online/form/country_bal_vetrkovice; leave the second at its saved QA URL. Observe after asynchronous settlement, then reload to restore original DOM.",
+  "result": {
+    "firstValidFormMode": "Unavailable",
+    "secondSavedFormMode": "Unavailable",
+    "checkoutContextPresent": false,
+    "iframeCount": 0,
+    "directCheckoutLinkCount": 0,
+    "visibleMessage": "Formulář se nepodařilo načíst. Obnovte stránku nebo jej otevřete samostatně z veřejného odkazu.",
+    "checkoutContextRequestsObservedAfterReload": 0,
+    "attributionInjectorSynchronousFailure": false,
+    "consoleCorsOrAuthErrorsObserved": false
+  },
+  "limits": "Failure source not determined; absence of captured requests is bounded by browser network observation. In this first attempt the form-url was changed after loading, without reconnecting the element; an already Unavailable mode could have prevented a fresh attempt for the valid URL. The original saved QA slug is absent in production. Prior unauthenticated CORS probe is separate evidence. See corrected-candidate receipt for the reconnect test.",
+  "nativeSettingsSaved": false,
+  "ordersHoldsOrChargesCreated": false,
+  "marketplaceSubmitted": false,
+  "gate": "FAIL - candidate must not be submitted pending diagnosis and correction."
+}

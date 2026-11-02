@@ -9,6 +9,20 @@ if (!connectionString || new URL(connectionString).hostname!=='127.0.0.1' || new
   throw new Error('Use only the disposable Festapp test DB on 127.0.0.1:55432');
 async function connect(){const c=new Client({connectionString});await c.connect();await c.query("SET statement_timeout='15s'");return c;}
 
+// A reservation test needs a saved canonical seat, including its physical binding.
+async function removableSeat(setup,f,blueprint,spot) {
+ const node=randomUUID();
+ const layout={schemaVersion:2,symbolSetVersion:1,
+  canvas:{x:0,y:0,width:400,height:400,fill:'#FFFFFFFF'},styles:{},seatingDefaults:{},
+  textPolicy:{language:'und',direction:'auto'},nodes:[],selectionUnits:[],attachments:[],sections:[],presets:[]};
+ await setup.query('UPDATE eshop.blueprints SET layout=$1 WHERE id=$2',[{...layout,nodes:[
+  {id:node,kind:'seat',width:48,height:48,transform:{x:200,y:200,rotation:0}}]},blueprint]);
+ await setup.query('INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES($1,$2,$3)',[blueprint,node,spot]);
+ return {id:Number(blueprint),occasion:Number(f.id),organization:Number(f.organization),
+  expected_layout_revision:0,expected_aggregate_version:0,layout,
+  seatChanges:[{operation:'delete',nodeId:node,spotId:Number(spot)}],groupProductChanges:[],areaBindingChanges:[]};
+}
+
 test('whole-order and final-ticket cancellation commit one history and automatic notice',async()=>{
  const setup=await connect();const clients=await Promise.all([connect(),connect()]);
  const actor=randomUUID(); const commands=[randomUUID(),randomUUID()];let fixture;
@@ -119,8 +133,9 @@ test('blueprint removal waits for a real hold and rechecks its committed allocat
  const setup=await connect(),holder=await connect(),editor=await connect();
  try {
   const f=await authoringFixture(setup);
-  const {rows:[bp]}=await setup.query('INSERT INTO eshop.blueprints(occasion,organization,objects) VALUES($1,$2,\'[]\') RETURNING id',[f.id,f.organization]);
+  const {rows:[bp]}=await setup.query('INSERT INTO eshop.blueprints(occasion,organization) VALUES($1,$2) RETURNING id',[f.id,f.organization]);
   const {rows:[seat]}=await setup.query("INSERT INTO eshop.spots(occasion,blueprint,product,title) VALUES($1,$2,$3,'Held seat') RETURNING id",[f.id,bp.id,f.product]);
+  const removeRequest=await removableSeat(setup,f,bp.id,seat.id);
   const {rows:[form]}=await setup.query("INSERT INTO public.forms(occasion,blueprint,is_open) VALUES($1,$2,true) RETURNING key",[f.id,bp.id]);
   await holder.query('BEGIN');await holder.query('SET LOCAL ROLE anon');
   const {rows:[held]}=await holder.query('SELECT public.select_spot($1,$2,$3,true) AS result',[form.key,randomUUID(),seat.id]);
@@ -128,7 +143,7 @@ test('blueprint removal waits for a real hold and rechecks its committed allocat
   await asActor(editor,f.actor);
   const pid=(await editor.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
   const pending=editor.query('SELECT public.update_blueprint_client_sync_v1($1,$2) AS result',[
-    {id:Number(bp.id),occasion:Number(f.id),organization:Number(f.organization),objects:[],expected_aggregate_version:0},randomUUID()]);
+    removeRequest,randomUUID()]);
   let waiting=false;
   for(let i=0;i<100;i++) {
    waiting=(await setup.query("SELECT wait_event_type='Lock' AS waiting FROM pg_stat_activity WHERE pid=$1",[pid])).rows[0]?.waiting;
@@ -514,13 +529,14 @@ test('blueprint editing rechecks a hold created by the anonymous reservation RPC
  const setup=await connect(),buyer=await connect(),editor=await connect();
  try {
   const f=await authoringFixture(setup),secret=randomUUID();
-  const {rows:[bp]}=await setup.query("INSERT INTO eshop.blueprints(occasion,organization,title,objects) VALUES($1,$2,'Seats','[]') RETURNING id",[f.id,f.organization]);
+  const {rows:[bp]}=await setup.query("INSERT INTO eshop.blueprints(occasion,organization,title) VALUES($1,$2,'Seats') RETURNING id",[f.id,f.organization]);
   const {rows:[form]}=await setup.query("INSERT INTO public.forms(occasion,blueprint,title,is_open) VALUES($1,$2,'Open seats',true) RETURNING key",[f.id,bp.id]);
   const {rows:[seat]}=await setup.query("INSERT INTO eshop.spots(occasion,blueprint,product,title) VALUES($1,$2,$3,'Seat') RETURNING id",[f.id,bp.id,f.product]);
+  const removeRequest=await removableSeat(setup,f,bp.id,seat.id);
   await buyer.query('BEGIN');await buyer.query("SELECT set_config('request.jwt.claim.sub','',true),set_config('request.jwt.claim.role','anon',true)");await buyer.query('SET LOCAL ROLE anon');
   assert.equal((await buyer.query('SELECT public.select_spot($1,$2,$3,true) AS r',[form.key,secret,seat.id])).rows[0].r.code,200);
   await asActor(editor,f.actor);const pid=(await editor.query('SELECT pg_backend_pid() AS id')).rows[0].id;
-  const pending=editor.query('SELECT public.update_blueprint_client_sync_v1($1,$2) AS r',[{id:Number(bp.id),occasion:Number(f.id),organization:Number(f.organization),objects:[],expected_aggregate_version:0},randomUUID()]);
+  const pending=editor.query('SELECT public.update_blueprint_client_sync_v1($1,$2) AS r',[removeRequest,randomUUID()]);
   await expectDatabaseLock(setup,pid);await buyer.query('COMMIT');const result=(await pending).rows[0].r;assert.equal(result.status,'rejected');assert.ok(!JSON.stringify(result).includes(secret));await editor.query('COMMIT');
   assert.equal((await setup.query('SELECT secret FROM eshop.spots WHERE id=$1',[seat.id])).rows[0].secret,secret);
  } finally {await buyer.query('ROLLBACK');await editor.query('ROLLBACK');await Promise.all([setup.end(),buyer.end(),editor.end()]);}

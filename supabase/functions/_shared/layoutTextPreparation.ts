@@ -2,7 +2,7 @@ import policy from './layout-text-policy.json' with {type:'json'};
 import bidiFactory from 'npm:bidi-js@1.1.0/dist/bidi.mjs';
 import LineBreaker from 'npm:linebreak@1.1.0';
 import {graphemeSegments} from 'npm:unicode-segmenter@0.17.3/grapheme';
-import * as unicode from 'npm:unicode-properties@2.0.1';
+import * as unicode from './vendor/unicode-properties/index.js';
 import aliases from 'npm:unicode-match-property-value-ecmascript@2.2.1/data/mappings.js';
 import {LayoutTextFace,layoutTextEngine,layoutTextOffsets,type LayoutGlyphPath} from './layoutTextShaper.ts';
 import {digest,TicketFontError} from './ticketFonts.ts';

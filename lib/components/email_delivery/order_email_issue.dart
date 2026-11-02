@@ -32,6 +32,12 @@ class OrderEmailIssue {
     final current = data['recipient']?.toString().trim() ?? '';
     return current.isNotEmpty ? current : originalRecipient.trim();
   }
+  /// Queue and provider acceptance are progress, not delivery failures.
+  /// Keep the server's entries intact for resend/repair guards.
+  bool get awaitingDelivery =>
+      const {'pending', 'preparing', 'sending', 'accepted'}.contains(state) &&
+      data['reason'] == null &&
+      data['suppression_reason'] == null;
   bool get uncertain => state == 'unknown' || state == 'sending';
   bool get isFailure =>
       const {

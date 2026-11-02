@@ -1,6 +1,6 @@
 BEGIN;
 DO $$
-DECLARE fx jsonb; oc bigint; fm bigint; org bigint; a bigint; b bigint; oid bigint; other_order bigint; opt bigint; bp bigint; pt bigint; dinner bigint; dto jsonb; other jsonb; cfg jsonb; ff bigint; session jsonb; manifest jsonb; response jsonb; offline_dto jsonb;
+DECLARE fx jsonb; oc bigint; fm bigint; org bigint; a bigint; b bigint; oid bigint; other_order bigint; opt bigint; bp bigint; pt bigint; dinner bigint; dto jsonb; other jsonb; cfg jsonb; ff bigint; session jsonb; manifest jsonb; response jsonb; offline_dto jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_spot bigint;
 BEGIN
  fx:=public.scanner_test_fixture();oc:=(fx->>'occasion')::bigint;fm:=(fx->>'form')::bigint;a:=(fx#>>'{tickets,0}')::bigint;b:=(fx#>>'{tickets,1}')::bigint;
  SELECT organization INTO org FROM public.occasions WHERE id=oc;
@@ -13,9 +13,12 @@ BEGIN
  INSERT INTO eshop.products(occasion,title,product_type,price) VALUES(oc,'Menu 1: Hovězí guláš, houskový knedlík',pt,160) RETURNING id INTO dinner;
  INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(oid,dinner,a);
  SELECT id INTO opt FROM eshop.order_product_ticket WHERE ticket=a ORDER BY id LIMIT 1;
- INSERT INTO eshop.blueprints(occasion,organization,title,objects,groups) VALUES(oc,org,'Test sál','[]','[{"id":28,"title":"28"}]') RETURNING id INTO bp;
- INSERT INTO eshop.spots(occasion,blueprint,title,order_product_ticket) VALUES(oc,bp,'28A',opt);
- UPDATE eshop.blueprints SET objects=(SELECT jsonb_agg(jsonb_build_object('id',id,'type','spot','group',28)) FROM eshop.spots WHERE blueprint=bp) WHERE id=bp;
+ INSERT INTO eshop.blueprints(occasion,organization,title) VALUES(oc,org,'Test sál') RETURNING id INTO bp;
+ INSERT INTO eshop.spots(occasion,blueprint,title,order_product_ticket) VALUES(oc,bp,'28A',opt) RETURNING id INTO physical_spot;
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',jsonb_build_array(
+  jsonb_build_object('id',group_node,'kind','group','label','28','width',1,'height',1,'transform',jsonb_build_object('x',0,'y',0,'rotation',0)),
+  jsonb_build_object('id',seat_node,'kind','seat','parentId',group_node,'width',40,'height',40,'transform',jsonb_build_object('x',60,'y',60,'rotation',0)))) WHERE id=bp;
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,group_node) VALUES(bp,seat_node,physical_spot,group_node);
  UPDATE eshop.orders SET data=data||'{"note":"Příchod po 19:00"}',note_hidden='INTERNAL ORDER' WHERE id=oid;
  UPDATE eshop.tickets SET note='Bez bariér',note_hidden='INTERNAL TICKET' WHERE id=a;
  UPDATE eshop.products SET data='{"short_title":"Guláš"}' WHERE id=dinner;

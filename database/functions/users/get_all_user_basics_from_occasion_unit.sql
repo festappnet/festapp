@@ -1,5 +1,3 @@
-DROP FUNCTION IF EXISTS get_all_user_basics_from_occasion_unit;
-
 CREATE OR REPLACE FUNCTION public.get_all_user_basics_from_occasion_unit(p_unit_id bigint)
 RETURNS jsonb
 SECURITY DEFINER
@@ -91,7 +89,7 @@ BEGIN
           'email_readonly', parent_ui.email_readonly
         )
         FROM public.user_info parent_ui
-        WHERE parent_ui.id = uc."user"
+        WHERE parent_ui.id = uc."user" AND public.organization_member_visible_internal(org_id,parent_ui.id)
       )
     ) ORDER BY
       aur.is_manager DESC,

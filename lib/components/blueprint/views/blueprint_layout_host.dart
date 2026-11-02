@@ -1,3 +1,10 @@
+import '../seating_transition_controller.dart';
+import '../seating_transition_transport.dart';
+import '../seating_transition_panel.dart';
+import '../seating_transition_models.dart';
+import '../seating_transition_strings.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../blueprint_command_rejection.dart';
@@ -17,6 +24,7 @@ import '../blueprint_text_preparation.dart';
 import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
 import 'package:fstapp/components/eshop/ticket_batch_strings.dart';
 import 'dart:async';
+import '../../fonts/font_resource_loading.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'blueprint_plan_editor.dart';
@@ -56,8 +64,14 @@ class BlueprintLayoutHost extends StatefulWidget {
       required this.source,
       required this.reload,
       this.loadTextResources,
-      this.assetResolver});
+      this.assetResolver,
+      this.seatingTransport,
+      this.focusNodeIds = const {},
+      this.focusRevision = 0});
   final BlueprintModel source;
+  final Set<String> focusNodeIds;
+  final int focusRevision;
+  final SeatingTransitionTransport? seatingTransport;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintModel?> Function() reload;
@@ -70,6 +84,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
   Set<String> _commercialSelection = {};
+  SeatingTransitionController? _seating;
+  bool _seatingOpen = false;
   final Map<String, GlobalKey> _commercialRowKeys = {};
   bool _showIndividualCommercialSeats = false;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
@@ -83,9 +99,18 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   int _assetGeneration = 0;
   Future<BlueprintTextResources>? _fontCatalog;
   // Public viewers use saved outlines; this editor loads native faces on demand.
-  Future<BlueprintTextResources> get _fonts =>
-      _fontCatalog ??= widget.loadTextResources?.call() ??
-          BlueprintTextResources.load(controller.snapshot.occasionId);
+  Future<BlueprintTextResources> get _fonts => _fontCatalog ??= _loadFonts();
+
+  Future<BlueprintTextResources> _loadFonts() async {
+    try {
+      return await readFontResource(() => Future<BlueprintTextResources>.sync(() =>
+          widget.loadTextResources?.call() ??
+          BlueprintTextResources.load(controller.snapshot.occasionId)));
+    } catch (_) {
+      _fontCatalog = null;
+      rethrow;
+    }
+  }
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _canOrder => RightsService.canUpdateOrders();
   bool get _busy =>
@@ -106,10 +131,51 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         ? _BlueprintScreenMode.edit
         : _BlueprintScreenMode.reservations;
     _loadAssets();
+    final blueprintId = controller.snapshot.blueprintId;
+    if (blueprintId != null) {
+      _seating = SeatingTransitionController(
+        transport: widget.seatingTransport ?? SeatingTransitionTransport(Supabase.instance.client),
+        occasionId: controller.snapshot.occasionId, blueprintId: blueprintId,
+      )..addListener(_seatingChanged);
+      _seating!.load(discover: true);
+    }
   }
+
+  void _seatingChanged() { if (mounted) setState(() {}); }
+
+  Future<void> _openSeating() async {
+    if (_busy || _seating == null) return;
+    await finishBlueprintTextEditing();
+    if (!mounted) return;
+    final ready = await confirmSeatingSavedPlan(context,
+      isDirty: () => controller.isDirty,
+      save: () => _run(_save), discard: controller.cancel);
+    if (!mounted || !ready) return;
+    controller.setMode(BlueprintLayoutMode.manage);
+    setState(() { _screenMode = _BlueprintScreenMode.reservations; _seatingOpen = true; });
+    await _seating!.load(discover: true);
+  }
+
+  Future<void> _openSeatingWaitlist() async {
+    final forms = seatingRows(_seating?.workspace?['forms']).where((f) => f['link'] is String).toList();
+    if (forms.isEmpty) return;
+    Map<String, dynamic>? form;
+    if (forms.length == 1) { form = forms.single; }
+    else {
+      form = await showDialog<Map<String, dynamic>>(context: context, builder: (dialogContext) => AppSimpleDialog(
+        onClose: () => Navigator.pop(dialogContext), title: Text(SeatingTransitionStrings.text('waiting')),
+        children: [for (final f in forms) SimpleDialogOption(onPressed: () => Navigator.pop(dialogContext, f), child: Text(f['title']?.toString() ?? '#${f['id']}'))],
+      ));
+    }
+    if (form == null || !mounted) return;
+    await context.router.navigate(FormsNavigationRoute(children: [FormDetailRoute(formLink: form['link'] as String, children: const [FormTabsRoute(children: [FormResponsesRoute()])])]));
+  }
+
 
   void _rightsChanged() {
     if (!mounted) return;
+    _seating?.invalidateIdentity();
+    _seating?.load(discover: true);
     setState(() {
       controller.layout.readOnly = !_canEdit;
       if (controller.mode == BlueprintLayoutMode.block
@@ -123,6 +189,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   @override
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
+    _seating?.removeListener(_seatingChanged);
+    _seating?.dispose();
     _assets.dispose();
     _saveNoticeTimer?.cancel();
     _hostFocus.dispose();
@@ -131,6 +199,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   Future<void> _setScreenMode(_BlueprintScreenMode mode) {
+    if (_seating?.committing == true) return Future.value();
+    if (_seatingOpen) setState(() => _seatingOpen = false);
     if (_modeFlight != null) return _modeFlight!;
     if (_busy ||
         mode == _screenMode ||
@@ -340,7 +410,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveFlight = null;
       if (mounted) setState(() {});
     });
-    setState(() => _saveFlight = future);
+    setState(() {
+      _saveFlight = future;
+    });
     return future;
   }
 
@@ -387,6 +459,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveNoticeTimer = Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _savedNotice = false);
       });
+      await _seating?.load();
       return;
     }
     setState(() => _message = [
@@ -1562,7 +1635,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 in controller.adapter.publicPresentation(binding).entries)
               if (!_editingPlan || entry.key != 'fill') entry.key: entry.value,
             'selected': controller.operationSelection.contains(binding.nodeId),
-            'highlighted': _legendHover != null &&
+            'highlighted': (_seatingOpen && _seating!.compatible.any((s) => s.id == binding.spotId)) || _legendHover != null &&
                 (_legendHover == BlueprintSeatState.selectedByMe
                     ? controller.operationSelection.contains(binding.nodeId)
                     : controller.adapter.state(binding) == _legendHover),
@@ -1981,6 +2054,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                           saving: _saveFlight != null,
                           onDismiss: () => setState(() => _message = null),
                           child: Column(children: [
+                            if (_seating != null && !_seatingOpen)
+                              SeatingTransitionSummary(controller: _seating!, open: _openSeating,
+                                onWaitlist: seatingRows(_seating?.workspace?['forms']).any((f) => f['link'] is String) ? _openSeatingWaitlist : null),
                             if (_assetsFailed)
                               TextButton(
                                   onPressed:
@@ -1989,11 +2065,17 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                             Expanded(
                                 child: AbsorbPointer(
                                     absorbing: _busy || _assetsFailed,
-                                    child: BlueprintPlanEditor(
+                                    child: SeatingWorkspaceFrame(active: _seatingOpen, panel: _seatingOpen ? SeatingTransitionPanel(
+                                          controller: _seating!, onClose: () => setState(() => _seatingOpen = false),
+                                          onWaitlist: seatingRows(_seating?.workspace?['forms']).any((f) => f['link'] is String) ? _openSeatingWaitlist : null,
+                                          onCommitted: _refresh,
+                                        ) : null, child: BlueprintPlanEditor(
                                         nativeTextPreview: _canEdit,
                                         controller: controller.layout,
+                                        focusNodeIds: widget.focusNodeIds,
+                                        focusRevision: widget.focusRevision,
                                         footerTrailing: _seatHelp(),
-                                        canvasBottomOverlay: _operationPanel(),
+                                        canvasBottomOverlay: _seatingOpen ? null : _operationPanel(),
                                         canvasHeader: _editingPlan
                                             ? null
                                             : BlueprintLayoutLegend(
@@ -2006,7 +2088,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                                         .adapter.state),
                                               ),
                                         toolbarPrefix: _modeSelector(),
-                                        toolbarLeading: _toolbarActions(),
+                                        toolbarLeading: _seatingOpen ? null : _toolbarActions(),
                                         onRenameNode: _renameFromInspector,
                                         loadTextResources: () => _fonts,
                                         occasionId:
@@ -2045,24 +2127,32 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                                 ),
                                               )
                                             : null,
-                                        libraryOverride: _editingPlan
-                                            ? null
-                                            : _reservationsPanel(tables),
-                                        inspectorOverride: _editingPlan
+                                        libraryOverride: _seatingOpen || _editingPlan ? null : _reservationsPanel(tables),
+                                        inspectorOverride: _seatingOpen ? const SizedBox.shrink() : _editingPlan
                                             ? null
                                             : _reservationDetails(tables),
-                                        viewSelection: _editingPlan
+                                        viewSelection: _seatingOpen ? {
+                                          for (final seat in controller.snapshot.seatBindings.values)
+                                            if (_seating!.pairs.values.any((p) => p.targetSpotId == seat.spotId)) seat.nodeId,
+                                        } : _editingPlan
                                             ? null
                                             : controller.mode ==
                                                     BlueprintLayoutMode.manage
                                                 ? _commercialSelection
                                                 : controller.operationSelection,
-                                        onViewSelectionChanged: _editingPlan
+                                        onViewSelectionChanged: _seatingOpen ? (selection) {
+                                          if (selection.isEmpty) return;
+                                          final spotId = controller.snapshot.seatBindings[selection.last]?.spotId;
+                                          if (spotId != null) _seating!.pair(spotId);
+                                        } : _editingPlan
                                             ? null
                                             : _selectCommercialFromCanvas,
                                         viewSelectionTarget:
-                                            _viewSelectionTarget,
-                                        viewSelectableIds: _editingPlan
+                                            _seatingOpen ? (id) => id : _viewSelectionTarget,
+                                        viewSelectableIds: _seatingOpen ? {
+                                          for (final seat in controller.snapshot.seatBindings.values)
+                                            if (_seating!.selectableSpotIds.contains(seat.spotId)) seat.nodeId,
+                                        } : _editingPlan
                                             ? null
                                             : {
                                                 for (final node in controller
@@ -2093,14 +2183,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                         seatPresentation: _presentations,
                                         interactionEnabled: _editingPlan,
                                         showGallery: _editingPlan && _canEdit,
-                                        onEditRequested: !_editingPlan &&
+                                        onEditRequested: !_seatingOpen && !_editingPlan &&
                                                 _canEdit &&
                                                 controller.mode ==
                                                     BlueprintLayoutMode.manage
                                             ? _editFromCanvas
                                             : null,
                                         onNodeActivated:
-                                            controller.activateNode))),
+                                            controller.activateNode)))),
                           ]))),
                 )));
       });

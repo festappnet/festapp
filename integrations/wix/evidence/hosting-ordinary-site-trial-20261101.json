@@ -1,0 +1,50 @@
+{
+  "status": "ordinary-published-site-trial-failed-and-rolled-back",
+  "checkedAtUtc": "2026-11-01",
+  "hypothesis": "Prior Wix runtime failures occurred on Studio development sites without confirmed installed-app context, while an earlier successful native proof used an ordinary published Harmony site with an installed app. This trial changes the host context while keeping the candidate artifact identical.",
+  "candidateSourceSha": "2954fabcfee9c7106e11d7442a15630c628b89c6",
+  "artifact": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "sha256": "b65f53740afd42e145a45e6173c7b7eb4a5a168e77abe834275acdd6d50cc644",
+    "manifestSha256": "24cc646e2398b1d1eb254ea9938cb4a72d254fd3c4def5259fa8ae6431c38faa",
+    "widgetSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab"
+  },
+  "scope": {
+    "project": "festapp-wix",
+    "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+    "branch": "main",
+    "environment": "Production",
+    "deploymentId": "3b62b9bd-fc4e-4f1c-a22d-2d0e3240d358",
+    "deploymentUrl": "https://3b62b9bd.festapp-wix.pages.dev",
+    "stableUrl": "https://festapp-wix.pages.dev",
+    "stableWasOldRollbackBeforeTrial": "widget hash e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
+  },
+  "preflight": {
+    "activation": {
+      "status": 200,
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "sealedArchiveMembersMatchManifest": true,
+    "liveAssets": "All six public assets returned HTTP 200 at unique and stable URLs and matched sealed bytes; correct content types and wildcard CORS."
+  },
+  "nativeTrial": {
+    "hostContext": "ordinary published Harmony site with confirmed installed app, as coordinated by primary/Terra",
+    "sameCandidateAsPriorTests": true,
+    "nativeResult": "Both valid reconnect and fresh clone failed with modeSite=Unavailable; no proof request or context was observed.",
+    "hostContextHypothesis": "falsified for this exact candidate and ordinary published Harmony site context",
+    "resolutionClaimed": false,
+    "realOrdersOrHolds": false
+  },
+  "rollbackReserves": [
+    "88353d4d-afd9-4ca4-9b70-3823e0558bf3",
+    "61e14f32-bf4b-41b5-bfa1-208ff0665990",
+    "83870904-fef5-4f4f-9c29-480cbcdc75fe"
+  ],
+  "restoredAfterTrial": {
+    "deploymentId": "d24c1383-b704-475e-829e-311608e89f34",
+    "deploymentUrl": "https://d24c1383.festapp-wix.pages.dev",
+    "stableWidgetSha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025"
+  }
+}

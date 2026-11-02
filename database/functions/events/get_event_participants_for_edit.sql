@@ -31,6 +31,7 @@ BEGIN
         'name', ui.name,
         'surname', ui.surname,
         'companion_parent', (SELECT uc."user" FROM public.user_companions uc WHERE uc.occasion=v_occasion AND uc.companion=ui.id
+          AND public.occasion_member_visible_internal(v_occasion,uc."user")
           AND EXISTS(SELECT 1 FROM public.event_users parent WHERE parent.event=p_event AND parent."user"=uc."user") LIMIT 1)
       )
       ORDER BY ui.surname, ui.name, ui.id
@@ -40,7 +41,7 @@ BEGIN
   INTO v_participants
   FROM public.event_users eu
   JOIN public.user_info ui ON ui.id = eu."user"
-  WHERE eu.event = p_event;
+  WHERE eu.event = p_event AND public.occasion_member_visible_internal(v_occasion,ui.id);
 
   RETURN jsonb_build_object('code', 200, 'data', v_participants);
 END;

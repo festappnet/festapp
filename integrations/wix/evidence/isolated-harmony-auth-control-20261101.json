@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-01",
+  "site": "https://info9468674.wixsite.com/my-site-3",
+  "scope": "Clean local headless browser, empty config, distinct namespace/session, no user profile, public Harmony site. Registered script URL intercepted with the corrected 19ba candidate; no native settings changed or manual token injection.",
+  "script": {"sourceSha256": "19ba9114fc99b3d1992d2db41809f691c9b8becbfe86deee72c0058bc51a90ab", "servedSha256": "f6dad24dd91b20db79eff4b224ba43b49a161ad91b6a42a8b8c37a9dc1a26b52", "difference": "Shell substitution removed a single trailing newline", "responseStatus": 200, "mime": "text/plain", "executed": true},
+  "safetyFences": "vstupenky.online requests blocked; canonical REST/auth and hold/order endpoints blocked; proof endpoint allowed. No order or hold created.",
+  "validFormControl": {"formLink": "country_bal_vetrkovice", "method": "fresh clone of installed custom element", "mode": "Site", "listenerType": "function", "optionsStatus": 200, "postStatus": 200, "contextPresent": true, "iframeContextPresent": true, "directLinkContextPresent": true},
+  "separateMissingQaForm": {"formLink": "wix-qa-20261025", "postStatus": 503},
+  "interpretation": "Native automatic auth worked in this clean browser on ordinary Harmony; the prior Panerelay browser failed with the same candidate. Cause of browser-context difference is not yet established. A first attempt blocked Wix resources due to an overbroad hold glob; the hold pattern was narrowed before this result.",
+  "tokensOrContextsRecorded": false
+}

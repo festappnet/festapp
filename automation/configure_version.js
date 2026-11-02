@@ -108,3 +108,6 @@ for (const entryPoint of ['web/index.html', 'web_client/index.html']) {
         console.log(`Updated ${entryPoint} __FESTAPP_BUILD_VERSION__ to ${version}`);
     }
 }
+
+// Both applications share the same pre-paint preference policy.
+require('./lib/startup_theme.cjs').configureStartupThemes(projectRoot);
