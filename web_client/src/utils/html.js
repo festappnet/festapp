@@ -1,7 +1,5 @@
 import createDOMPurify from 'dompurify';
 import * as cssTree from 'css-tree';
-import { normalizeAppElementStyles } from './app_html_content.js';
-import { appHtmlPolicy } from './app_content_policy.g.js';
 
 /**
  * Lightweight HTML Tagged Template Literal Helper
@@ -48,11 +46,10 @@ export function unsafe(str) {
     return new SafeHtml(str);
 }
 
-// App descriptions inherit the configured font and theme. Preserve semantic
-// formatting, images, links and layout. URL validation is owned by DOMPurify.
+// Stored descriptions are canonicalized by the writer. This boundary only
+// sanitizes untrusted markup; it must not rewrite authored formatting.
 const RICH_HTML_CONFIG = {
-    FORBID_TAGS: appHtmlPolicy.removedElements,
-    FORBID_ATTR: appHtmlPolicy.removedAttributes,
+    FORBID_TAGS: ['style'],
     ALLOWED_TAGS: [
         'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'img', 'div', 'span',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li',
@@ -81,7 +78,6 @@ export function sanitizeHtml(str) {
         if (!purifier.isSupported) {
             throw new Error('HTML sanitization requires a supported browser DOM');
         }
-        purifier.addHook('afterSanitizeAttributes', normalizeAppElementStyles);
         purifiers.set(renderingWindow, purifier);
     }
     return new SafeHtml(purifier.sanitize(String(str), RICH_HTML_CONFIG));

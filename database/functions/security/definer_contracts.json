@@ -665,14 +665,6 @@
       "signature": "public.register_blueprint_image_asset(bigint,text,jsonb,bigint,text,bigint)",
       "source": "database/functions/blueprint/image_assets.sql"
     },
-    "758aa203ec56505442034a4ca2f54fb5672bfd490f3b3bae141145b7c07ab3e0": {
-      "signature": "public.blueprint_legacy_migration_source_internal(bigint)",
-      "source": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql"
-    },
-    "a81d29399d20c9e016c9e0b155bef2143f98745d6d5bcd7c007ca86b58173679": {
-      "signature": "public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)",
-      "source": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql"
-    },
     "7ed9924016c59efd083d72af3b27df18ff5d5c1ab3d06ad1c9ace59470a2950a": {
       "signature": "public.preview_blueprint_swap(bigint,bigint)",
       "source": "database/functions/blueprint/preview_blueprint_swap.sql"

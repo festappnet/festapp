@@ -168,6 +168,41 @@
     "placeNameHelp": "Optional. Name des Veranstaltungsorts oder Adresse. Wird nach dem Hinzufügen zur Vorlage auf dem Ticket angezeigt."
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Letzter erfasster Fehler",
+      "invalidResponse": "Der Kontoauszug konnte nicht gelesen werden. Die Antwort hat ein unerwartetes Format.",
+      "timeUnknown": "Der Fehlerzeitpunkt wurde nicht erfasst.",
+      "recovered": "Nach diesem Fehler wurde bereits ein Kontoauszug erfolgreich abgerufen.",
+      "stage": "Fehlerphase",
+      "code": "Fehlercode",
+      "reference": "Diagnosereferenz",
+      "http": "HTTP-Status",
+      "operation": "Bankanfrage",
+      "transport": "Anfrageweg",
+      "direct": "Direkt",
+      "proxy": "Über Vermittler",
+      "shape": "Antwortstruktur",
+      "stages": {
+        "response_decode": "Lesen der Bankantwort",
+        "bank_http": "HTTP-Antwort der Bank oder des Vermittlers",
+        "account_identity": "Prüfung des Empfängerkontos",
+        "transport": "Übertragung der Anfrage",
+        "bank_sync": "Verarbeitung in BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "In der Antwort fehlt ein gültiger Header accountStatement.info. BankSync kann das Konto nicht sicher prüfen und den Auszug nicht importieren.",
+        "invalid_statement_json": "Die Bank oder der Vermittler hat eine Antwort geliefert, die kein gültiges JSON ist.",
+        "FioTokenInvalidOrInactive": "Fio hat einen ungültigen oder inaktiven Token gemeldet.",
+        "FioRateLimited": "Die Bank oder der Vermittler hat die Anfragerate begrenzt.",
+        "FioTransientFailure": "Die Bank oder der Vermittler hat einen vorübergehenden Serverfehler zurückgegeben.",
+        "FioApiError": "Die Bank oder der Vermittler hat die HTTP-Anfrage abgelehnt.",
+        "fio_receiving_account_mismatch": "Der zurückgegebene Auszug gehört zu einem anderen Empfängerkonto.",
+        "TimeoutError": "Das Zeitlimit der Anfrage wurde überschritten.",
+        "AbortError": "Die Anfrage wurde unterbrochen.",
+        "TypeError": "Die Anfrage oder ihre Verarbeitung ist fehlgeschlagen.",
+        "bank_sync_internal_error": "Die Verarbeitung in BankSync ist fehlgeschlagen. Verwenden Sie die Diagnosereferenz zur Untersuchung."
+      }
+    },
     "synchronizationPending": "Synchronisierung aktiviert. Der nächste Abruf wartet auf die Bankfrist.",
     "automaticSynchronization": "Automatische Synchronisierung",
     "synchronizationEnabled": "Ein",
@@ -364,7 +399,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Formulardarstellung",
-    "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System folgt den Einstellungen ihres Geräts.",
+    "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System übernimmt ihre Darstellungseinstellung in der App, andernfalls die des Geräts.",
     "appearanceSystem": "System",
     "appearanceLight": "Hell",
     "appearanceDark": "Dunkel",
@@ -702,7 +737,8 @@
       "email_missing": "Der Empfang von Bank-E-Mails ist nicht eingerichtet."
     },
     "noOrders": "Es gibt noch keine Bestellungen.",
-    "copyLink": "Link kopieren"
+    "copyLink": "Link kopieren",
+    "generatingPdf": "PDF wird erstellt…"
   },
   "FeatureMap": {
     "changeLocation": "Standort ändern",
@@ -2659,6 +2695,8 @@
     "removePair": "Entworfene Zuweisung entfernen",
     "unit": "Weisen Sie jeden Platz dieser Einheit ausdrücklich zu",
     "compatibility": "Produkt- und Kapazitätsprüfung",
+    "productCoverageMissing": "Weisen Sie unter Reservierungen und Bestellungen das gekaufte Produkt den entsprechenden Plätzen oder dem Bereich zu und speichern Sie den Plan.",
+    "editSeatProducts": "Platzprodukte bearbeiten",
     "admissions": "Zugelassene Tickets",
     "seats": "Sitzplätze",
     "readRequired": "Zum Anzeigen der Ticketinhaber benötigen Sie Leserechte für Bestellungen.",
@@ -2705,5 +2743,13 @@
     "MODE_CHANGED": "Der Verkaufsmodus hat sich geändert. Aktualisieren Sie vor dem Fortfahren.",
     "FORBIDDEN": "Sie sind nicht mehr zu dieser Aktion berechtigt.",
     "UNKNOWN": "Die Aktion konnte nicht abgeschlossen werden. Aktualisieren Sie die aktuellen Daten."
+  },
+  "OrderDetail": {
+    "open_order_plan": "Saalplan mit Plätzen der Bestellung öffnen",
+    "form_field": "Formularfeld",
+    "selected_entry": "Ausgewählter Eintrag",
+    "email_status_help": "Bestell-, Zahlungs- und E-Mail-Status sind getrennt. Angenommen bedeutet die Übernahme durch den Versanddienst; zugestellt die Annahme durch den Mailserver. Öffnungen und Klicks bestätigen nicht das Lesen. Wiederholung bedeutet einen weiteren Versuch; unbekannt bestätigt keinen Versand. Die Nachricht zeigt den Grund und mögliche Abhilfe.",
+    "udaj_nebyl_uveden": "Nicht ausgefüllt",
+    "udaj_byl_vymazan": "Nicht ausgefüllt"
   }
 }

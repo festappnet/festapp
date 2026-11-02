@@ -10,7 +10,6 @@ abstract final class NavigationPaths {
   static const current = 'current';
   static const design = 'design';
   static const editor = 'editor';
-  static const emailHistory = 'email-history';
   static const emailTemplates = 'email-templates';
   static const events = 'events';
   static const exclusivity = 'exclusivity';

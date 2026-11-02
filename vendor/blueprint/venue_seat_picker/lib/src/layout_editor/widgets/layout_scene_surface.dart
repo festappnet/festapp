@@ -29,11 +29,16 @@ class LayoutSceneSurface extends StatefulWidget {
     super.key,
     required this.document,
     this.resources = const {},
+    this.focusNodeIds = const {},
+    this.focusRevision,
+    this.focusMaxZoomFactor = 5,
+    this.wheelZoomRequiresModifier = false,
     this.presentation = const {},
     this.retainPendingTextPreview = false,
     this.selected = const {},
     this.showSeatSelectionChecks = true,
     this.highlightedIds = const {},
+    this.highlightPulse,
     this.selectableIds,
     this.canvasSelected = false,
     this.backgroundSelected = false,
@@ -75,9 +80,14 @@ class LayoutSceneSurface extends StatefulWidget {
     this.onDoubleTapAt,
     this.onContextMenu,
   });
+  final Set<String> focusNodeIds;
+  final bool wheelZoomRequiresModifier;
+  final int? focusRevision;
+  final double focusMaxZoomFactor;
   final VenueLayoutDocument document;
   final Map<String, dynamic> resources, presentation;
   final Set<String> selected, highlightedIds;
+  final Animation<double>? highlightPulse;
 
   /// Commercial selections use checked seats; geometry selections use bounds.
   final bool showSeatSelectionChecks;
@@ -149,6 +159,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
       node.kind == 'table' && node.surface?['type'] == 'grid';
 
   final _camera = TransformationController();
+  int? _appliedFocusRevision;
   String? _hoverMessage, _hoverNodeId;
   Offset _hoverPosition = Offset.zero;
   GlobalKey<TooltipState> _hoverTooltipKey = GlobalKey<TooltipState>();
@@ -322,6 +333,11 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
 
   void _pointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent && event is! PointerScaleEvent) return;
+    if (event is PointerScrollEvent &&
+        widget.wheelZoomRequiresModifier &&
+        !HardwareKeyboard.instance.isControlPressed &&
+        !HardwareKeyboard.instance.isMetaPressed)
+      return;
     GestureBinding.instance.pointerSignalResolver.register(event, (signal) {
       if (signal is PointerScaleEvent) {
         _moveCamera(signal.localPosition, Offset.zero, signal.scale);
@@ -506,6 +522,42 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
         (canvas['width'] as num).toDouble() * scale,
         (canvas['height'] as num).toDouble() * scale,
       );
+      if (widget.focusRevision != null &&
+          _appliedFocusRevision != widget.focusRevision) {
+        _appliedFocusRevision = widget.focusRevision;
+        Rect? target;
+        for (final node in widget.document.nodes) {
+          if (!widget.focusNodeIds.contains(node.id)) continue;
+          final b = nodeBounds(widget.document, node);
+          final rect = Rect.fromLTWH(
+            b['x']!,
+            b['y']!,
+            b['width']!,
+            b['height']!,
+          );
+          target = target == null ? rect : target.expandToInclude(rect);
+        }
+        if (target == null) {
+          _camera.value = Matrix4.identity();
+        } else {
+          final center = (target.center - Offset(x, y)) * scale + offset;
+          final fit = _fitCameraZoom;
+          final zoom = math
+              .min(
+                (size.width - 64) / math.max(96, target.width * scale),
+                (size.height - 64) / math.max(96, target.height * scale),
+              )
+              .clamp(fit, fit * math.max(1, widget.focusMaxZoomFactor));
+          _camera.value = _boundCamera(
+            Matrix4.diagonal3Values(zoom, zoom, 1)..setTranslationRaw(
+              size.width / 2 - center.dx * zoom,
+              size.height / 2 - center.dy * zoom,
+              0,
+            ),
+          );
+        }
+        previousCenter = null;
+      }
       if (previousCenter != null) {
         final fit = _fitCameraZoom;
         final zoom = (previousWorldZoom! / scale).clamp(
@@ -1248,6 +1300,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               // Strong selection bounds are independent of the
                               // commercial check marker presentation.
                               emphasizeSelection: true,
+                              highlightPulse: widget.highlightPulse,
                               selectionHulls: [
                                 if (widget.backgroundSelected)
                                   backgroundHull(widget.document),
@@ -1779,11 +1832,12 @@ class LayoutScenePainter extends CustomPainter {
     this.seatLinks = const [],
     this.selectionHulls = const [],
     this.emphasizeSelection = false,
+    this.highlightPulse,
     this.warningHulls = const [],
     this.blockedPlacementHulls = const [],
     this.snapGuides = const [],
     this.transientForegroundIds = const {},
-  }) : super(repaint: Listenable.merge([camera, motion]));
+  }) : super(repaint: Listenable.merge([camera, motion, highlightPulse]));
   final Map<String, dynamic> scene, resources;
   final Set<String> selected;
   final List<TableSeatLink> seatLinks;
@@ -1795,6 +1849,7 @@ class LayoutScenePainter extends CustomPainter {
   final double scale;
   final bool showGrid;
   final bool emphasizeSelection;
+  final Animation<double>? highlightPulse;
   final double gridStep;
   final Offset gridOrigin;
   final Offset offset;
@@ -2241,6 +2296,29 @@ class LayoutScenePainter extends CustomPainter {
         outline.strokeWidth = 1.5 / zoom;
       }
       canvas.drawPath(path, outline);
+      final progress = highlightPulse?.value ?? 1;
+      if (progress > 0 && progress < 1 && !warningHulls.contains(hull)) {
+        // Screen-sized ring locates even tiny seats without hiding occupancy.
+        final strength = math.sin(math.pi * progress);
+        final ring = RRect.fromRectAndRadius(
+          path.getBounds().inflate((3 + 8 * progress) / zoom),
+          Radius.circular(3 / zoom),
+        );
+        canvas.drawRRect(
+          ring,
+          Paint()
+            ..color = Colors.white.withValues(alpha: strength * .9)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 5 / zoom,
+        );
+        canvas.drawRRect(
+          ring,
+          Paint()
+            ..color = selectionColor.withValues(alpha: strength)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.5 / zoom,
+        );
+      }
     }
   }
 
@@ -2258,6 +2336,7 @@ class LayoutScenePainter extends CustomPainter {
       !identical(resources, oldDelegate.resources) ||
       camera != oldDelegate.camera ||
       motion != oldDelegate.motion ||
+      highlightPulse != oldDelegate.highlightPulse ||
       fromScene != oldDelegate.fromScene ||
       scale != oldDelegate.scale ||
       offset != oldDelegate.offset ||

@@ -65,8 +65,12 @@ class BlueprintLayoutHost extends StatefulWidget {
       required this.reload,
       this.loadTextResources,
       this.assetResolver,
-      this.seatingTransport});
+      this.seatingTransport,
+      this.focusNodeIds = const {},
+      this.focusRevision = 0});
   final BlueprintModel source;
+  final Set<String> focusNodeIds;
+  final int focusRevision;
   final SeatingTransitionTransport? seatingTransport;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final BlueprintLayoutAssetResolver? assetResolver;
@@ -406,7 +410,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveFlight = null;
       if (mounted) setState(() {});
     });
-    setState(() => _saveFlight = future);
+    setState(() {
+      _saveFlight = future;
+    });
     return future;
   }
 
@@ -453,6 +459,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _saveNoticeTimer = Timer(const Duration(seconds: 4), () {
         if (mounted) setState(() => _savedNotice = false);
       });
+      await _seating?.load();
       return;
     }
     setState(() => _message = [
@@ -2065,6 +2072,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                         ) : null, child: BlueprintPlanEditor(
                                         nativeTextPreview: _canEdit,
                                         controller: controller.layout,
+                                        focusNodeIds: widget.focusNodeIds,
+                                        focusRevision: widget.focusRevision,
                                         footerTrailing: _seatHelp(),
                                         canvasBottomOverlay: _seatingOpen ? null : _operationPanel(),
                                         canvasHeader: _editingPlan

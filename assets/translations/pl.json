@@ -170,6 +170,41 @@
     "placeNameHelp": "Opcjonalne. Nazwa obiektu lub adres. Pojawi się na bilecie po dodaniu do szablonu."
   },
   "BankAccount": {
+    "diagnostic": {
+      "title": "Ostatni zarejestrowany błąd",
+      "invalidResponse": "Nie udało się odczytać wyciągu bankowego. Odpowiedź ma nieoczekiwany format.",
+      "timeUnknown": "Czas błędu nie został zarejestrowany.",
+      "recovered": "Po tym błędzie wyciąg został już pomyślnie pobrany.",
+      "stage": "Etap awarii",
+      "code": "Kod błędu",
+      "reference": "Identyfikator diagnostyczny",
+      "http": "Status HTTP",
+      "operation": "Żądanie bankowe",
+      "transport": "Droga żądania",
+      "direct": "Bezpośrednio",
+      "proxy": "Przez pośrednika",
+      "shape": "Struktura odpowiedzi",
+      "stages": {
+        "response_decode": "Odczyt odpowiedzi banku",
+        "bank_http": "Odpowiedź HTTP banku lub pośrednika",
+        "account_identity": "Weryfikacja rachunku odbiorcy",
+        "transport": "Przesyłanie żądania",
+        "bank_sync": "Przetwarzanie w BankSync"
+      },
+      "reasons": {
+        "missing_statement_info": "W odpowiedzi brakuje prawidłowego nagłówka accountStatement.info. BankSync nie może bezpiecznie zweryfikować rachunku i zaimportować wyciągu.",
+        "invalid_statement_json": "Bank lub pośrednik zwrócił odpowiedź, która nie jest prawidłowym JSON.",
+        "FioTokenInvalidOrInactive": "Fio zgłosiło nieprawidłowy lub nieaktywny token.",
+        "FioRateLimited": "Bank lub pośrednik ograniczył częstotliwość żądań.",
+        "FioTransientFailure": "Bank lub pośrednik zwrócił tymczasowy błąd serwera.",
+        "FioApiError": "Bank lub pośrednik odrzucił żądanie HTTP.",
+        "fio_receiving_account_mismatch": "Zwrócony wyciąg dotyczy innego rachunku odbiorcy.",
+        "TimeoutError": "Przekroczono limit czasu żądania.",
+        "AbortError": "Żądanie zostało przerwane.",
+        "TypeError": "Żądanie lub jego przetwarzanie nie powiodło się.",
+        "bank_sync_internal_error": "Przetwarzanie w BankSync nie powiodło się. Do wyjaśnienia użyj identyfikatora diagnostycznego."
+      }
+    },
     "synchronizationPending": "Synchronizacja jest włączona. Pobieranie czeka na limit banku.",
     "automaticSynchronization": "Automatyczna synchronizacja",
     "synchronizationEnabled": "Włączona",
@@ -366,7 +401,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Wygląd formularza",
-    "formAppearanceHint": "Wybierz wygląd formularza dla odwiedzających. Opcja System używa ustawień ich urządzenia.",
+    "formAppearanceHint": "Wybierz wygląd formularza dla odwiedzających. Opcja System używa ich ustawienia wyglądu aplikacji, a następnie ustawienia urządzenia.",
     "appearanceSystem": "System",
     "appearanceLight": "Jasny",
     "appearanceDark": "Ciemny",
@@ -704,7 +739,8 @@
       "email_missing": "Odbiór wiadomości e-mail z banku nie jest skonfigurowany."
     },
     "noOrders": "Nie ma jeszcze żadnych zamówień.",
-    "copyLink": "Kopiuj link"
+    "copyLink": "Kopiuj link",
+    "generatingPdf": "Generowanie PDF…"
   },
   "FeatureMap": {
     "changeLocation": "Zmień lokalizację",
@@ -2661,6 +2697,8 @@
     "removePair": "Usuń robocze przypisanie",
     "unit": "Proszę jawnie przypisać każde miejsce w tej grupie",
     "compatibility": "Zgodność produktów i pojemności",
+    "productCoverageMissing": "W sekcji Rezerwacje i zamówienia przypisz zakupiony produkt do odpowiednich miejsc lub strefy, a następnie zapisz plan.",
+    "editSeatProducts": "Edytuj produkty miejsc",
     "admissions": "Przyjęte bilety",
     "seats": "Miejsca",
     "readRequired": "Do wyświetlenia posiadaczy biletów potrzebne jest uprawnienie odczytu zamówień.",
@@ -2707,5 +2745,13 @@
     "MODE_CHANGED": "Tryb sprzedaży uległ zmianie. Proszę odświeżyć dane przed kontynuowaniem.",
     "FORBIDDEN": "Nie mają już Państwo uprawnień do tej operacji.",
     "UNKNOWN": "Nie udało się zakończyć operacji. Proszę odświeżyć aktualne dane."
+  },
+  "OrderDetail": {
+    "open_order_plan": "Otwórz plan z miejscami zamówienia",
+    "form_field": "Pole formularza",
+    "selected_entry": "Wybrana pozycja",
+    "email_status_help": "Status zamówienia, płatności i e-maila to oddzielne informacje. Przyjęto oznacza przyjęcie przez usługę wysyłki; dostarczono oznacza przyjęcie przez serwer pocztowy. Otwarcia i kliknięcia nie potwierdzają przeczytania. Ponowienie oznacza kolejną próbę; status nieznany nie potwierdza wysyłki. Wiadomość zawiera przyczynę i dostępną naprawę.",
+    "udaj_nebyl_uveden": "Nie wypełniono",
+    "udaj_byl_vymazan": "Nie wypełniono"
   }
 }

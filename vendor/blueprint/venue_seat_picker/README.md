@@ -102,8 +102,10 @@ Add the package to your Flutter application's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  venue_seat_picker: ^0.4.3
+  venue_seat_picker: ^0.4.4
 ```
+
+Version 0.4.4 supports Dart 3.12+ and Flutter 3.44+. See [SDK and dependency compatibility](doc/compatibility.md) for the source compatibility contract, host theming and localization.
 
 The object API uses `VenueLayoutController`, `VenueLayoutEditor`,
 `VenueLayoutViewer` and `VenueLayoutPicker`. Flutter and the JavaScript SVG
@@ -189,7 +191,7 @@ Licensed under the MIT License.
 
 ### Flutter UI types in 0.4
 
-The Flutter wrapper uses `material_ui` and `cupertino_ui` with Flutter 3.47.7.
+The Flutter wrapper uses standalone `material_ui`, which supplies its Cupertino dependencies. The source supports Flutter 3.44+; development builds use Flutter 3.47.7.
 Use their widgets/themes in the host and include
 `VenueLayoutLocalizations.localizationsDelegates`. The public geometry, resource,
 reservation and serialization contracts remain unchanged. The external

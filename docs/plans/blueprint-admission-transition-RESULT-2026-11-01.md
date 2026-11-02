@@ -1,7 +1,7 @@
 # Existing-admission seating implementation - local execution evidence
 
 Date: 2026-11-01
-Status: Complete and integrated into canonical main. Production unchanged.
+Status: Complete, integrated into canonical main and deployed to vstupenky.online as `0.20.473+979`.
 Base: `2a2f66af6ce91616810eed35d19c96f728a550f8` with preserved unrelated working-tree changes.
 
 Organizer-managed seating is a complete operating mode. Existing admissions can
@@ -146,3 +146,17 @@ The payment lifecycle/transition and seating selections passed7 SQL files, and
 both existing payment races plus seating/clean-upgrade races passed17 tests.
 The source-matched migration was regenerated. Remaining unchanged UI and browser
 evidence is retained; no UI source or production runtime was changed by this fix.
+
+
+## Authorized production release
+
+On 2026-11-01 the user authorized production deployment. Source `a70110d05`
+was released through tenant commit `18f442e63` as `0.20.473+979`. All four
+missing SQL migrations and their ledger rows committed atomically after a fresh
+encrypted backup; all 56 final function bodies and RLS/ACL checks passed.
+The prototype was never exposed separately. The local Flutter/web build passed,
+and the direct Cloudflare deployment passed three consecutive coherent public
+version/assets/legal probes. Other tenants were outside this rollout.
+
+The earlier statements above describe the implementation-only phase. See the
+[production receipt](../operations/releases/festapptickets-seating-2026-11-01.json).

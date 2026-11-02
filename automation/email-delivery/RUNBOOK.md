@@ -109,15 +109,22 @@ Provider contracts: [SES SendEmail](https://docs.aws.amazon.com/ses/latest/APIRe
 
 ### Disposable ticket-mode rehearsal
 
-After preparing a dedicated local database named `festapp_ticket_email_*` with
-current canonical SQL and isolated fixtures, run from `web_client`:
+After preparing the local disposable database with
+`automation/bootstrap_local_db.sh`, run from `web_client`:
 
 ```sh
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:57322/festapp_ticket_email_20261023 \
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres \
   pnpm exec node ../automation/email-delivery/rehearse-ticket-delivery.mjs
 ```
 
-The runner rejects nonlocal or differently named databases. A rollback-only
+The runner rejects nonlocal databases and requires the bootstrap disposable
+identity. Renderer RPCs execute with `SET LOCAL ROLE service_role`, including
+order details, ticket details, products and template resolution. The CI
+`seat-contract` step runs this rehearsal and the six-kind order email SQL test;
+that test also calls the actual renderer RPCs under the runtime role, rather
+than stopping after enqueue. A missing seating table read grant fails the test.
+
+A rollback-only
 transaction exercises paid transitions, the canonical queue, encrypted prepared
 snapshots, send fencing, SES stubs, post-actions and repeated admission for all
 three modes. The Deno adapter has no network permission. No provider credentials,

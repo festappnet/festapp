@@ -132,6 +132,13 @@
       "instalace rozšíření",
       "loadmoduleid",
       "vstupenky do článku"
+    ],
+    "wix": [
+      "Wix",
+      "Wix App Market",
+      "widget",
+      "doplněk Wix",
+      "instalace Wix"
     ]
   },
   "en": {
@@ -250,6 +257,12 @@
       "install extension",
       "loadmoduleid",
       "ticket form in article"
+    ],
+    "wix": [
+      "Wix",
+      "Wix App Market",
+      "widget",
+      "install Wix app"
     ]
   }
 }

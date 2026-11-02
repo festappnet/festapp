@@ -1,4 +1,12 @@
-## Unreleased
+## 0.2.3
+
+- Remove surplus fixed chairs on the explicitly requested side, preserving other sides and protected identities.
+- Allow compatible crypto updates and XML 6.6.1-7.x within the selected compiler's supported range.
+- Retain the SVG compiler pin because public import receipts identify that implementation exactly.
+- Update the test-only lower bound so downgraded test tools remain compatible with supported Dart SDKs.
+- Retain Dart 3.10 support and verify minimum dependency resolution in CI.
+
+## 0.2.2
 
 - Add `LayoutSpatialIndex.resolveTap` and `LayoutTapDisposition`: exact targets
   before nearest outlines, an 8 logical pixel tap radius in Flutter consumers,

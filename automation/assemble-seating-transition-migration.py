@@ -45,8 +45,10 @@ if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument('--check',action='store_true')
  args=parser.parse_args()
- expected=render()
  if args.check:
-  if not TARGET.exists() or TARGET.read_text()!=expected:raise SystemExit('Seating transition migration/source mismatch')
-  print(f'Seating migration matches {len(SOURCES)} canonical SQL sources')
- else:TARGET.write_text(expected)
+  if hashlib.sha256(TARGET.read_bytes()).hexdigest()!='b9019892b53a721a582b44801afe5fb274b66b6c83ea975f2fa00e80ef714b88':
+   raise SystemExit('Applied seating migration changed')
+  from generate_canonical_source_contract import render as current_contract, TARGET as contract_target
+  if contract_target.read_text()!=current_contract():raise SystemExit('Current canonical source parity is stale')
+  print('Immutable seating migration and current canonical parity verified')
+ else:raise SystemExit('Applied seating migration is immutable; author a forward migration')

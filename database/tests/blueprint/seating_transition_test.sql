@@ -8,6 +8,9 @@ BEGIN
  c:=public.get_seating_transition_context(tid)->'data';
  PERFORM public.assert_eq((c#>>'{counts,unassigned}')::int,9,'all nine ordinary unpaid admissions included');
  PERFORM public.assert_eq((c#>>'{counts,waiting}')::int,1,'waiting separate');
+ PERFORM public.assert_eq(jsonb_array_length(c->'compatibility'),1,'waiting-only null product is not an admission compatibility group');
+ PERFORM public.assert_eq((c#>>'{compatibility,0,productId}')::bigint,(f->>'product')::bigint,'compatibility references the purchased admission product');
+ PERFORM public.assert_eq((c#>>'{compatibility,0,admissions}')::int,9,'waiting does not inflate purchased admission demand');
  r:=public.start_seating_configuration(frm,bp,gen_random_uuid());
  PERFORM public.assert_eq(r#>>'{data,transitionId}',tid::text,'resume stable identity');
  BEGIN INSERT INTO public.form_seating_transitions(occasion,form,blueprint,started_by) VALUES(occ,frm,bp,actor); RAISE EXCEPTION 'direct row write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
@@ -36,11 +39,11 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  INSERT INTO public.unit_users(unit,"user",is_editor) SELECT unit,actor,true FROM public.occasions WHERE id=occ;
  UPDATE public.forms SET participant_capacity=10,waitlist_enabled=true,waitlist_offer_duration_seconds=3600 WHERE id=frm;
- -- Retained legacy plan: enabling succeeds, detaches inactive binding, no dummy transition.
+ -- A newly created blank canonical plan is a usable organizer workspace.
  PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',occ,'features','[{"code":"blueprint","is_enabled":true}]'::jsonb));
- PERFORM public.assert_true((SELECT blueprint IS NULL FROM public.forms WHERE id=frm),'inactive legacy binding detached');
- PERFORM public.assert_eq((SELECT count(*)::int FROM public.form_seating_transitions WHERE occasion=occ),0,'legacy no placeholder');
- PERFORM public.assert_eq(public.get_seating_workspace(occ)#>>'{data,status}','repair_plan','legacy repair visible');
+ PERFORM public.assert_true((SELECT blueprint IS NULL FROM public.forms WHERE id=frm),'inactive source binding detached');
+ PERFORM public.assert_eq((SELECT count(*)::int FROM public.form_seating_transitions WHERE occasion=occ),1,'canonical blank plan starts one configuration');
+ PERFORM public.assert_eq(public.get_seating_workspace(occ)#>>'{data,status}','organizer_managed','canonical workspace available');
 END $$;
 DO $$
 DECLARE f jsonb; tr uuid; p jsonb; r jsonb; first_item bigint; first_ticket bigint; second_ticket bigint; second_item bigint; batch uuid; stock bigint; unsold bigint; occ bigint;
