@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_connections (
 ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_since timestamptz;
 ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_observed_at timestamptz;
 
+-- Tokens are issued before remote I/O, then accepted once in start order.
+CREATE SEQUENCE IF NOT EXISTS eshop.bank_sync_observation_ids;
+REVOKE ALL ON SEQUENCE eshop.bank_sync_observation_ids FROM PUBLIC,anon,authenticated,service_role;
+ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS observation_id bigint NOT NULL DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS eshop.bank_sync_account_aliases (
   bank_account_id bigint PRIMARY KEY REFERENCES eshop.bank_accounts(id),
   connection_id bigint NOT NULL REFERENCES eshop.bank_sync_connections(id)

@@ -115,8 +115,9 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_alert_ready(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
+DROP FUNCTION IF EXISTS public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean);
 CREATE OR REPLACE FUNCTION public.record_bank_sync_health(p_organization_id bigint,p_connection_id bigint,
- p_success_at timestamptz,p_error text,p_ingest_enabled boolean,p_polling_enabled boolean,p_token_present boolean)
+ p_success_at timestamptz,p_error text,p_ingest_enabled boolean,p_polling_enabled boolean,p_token_present boolean,p_observation_id bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_connection eshop.bank_sync_connections; v_code text; v_new_incident boolean;
 BEGIN
@@ -129,7 +130,7 @@ BEGIN
     'fio_temporarily_unavailable','bank_sync_unavailable') THEN
     RAISE EXCEPTION 'BANK_SYNC_HEALTH_ERROR_INVALID';
   END IF;
-  PERFORM public.record_bank_sync_pull(p_connection_id,p_success_at,p_error);
+  IF NOT public.record_bank_sync_pull(p_connection_id,p_success_at,p_error,p_observation_id) THEN RETURN; END IF;
   INSERT INTO eshop.bank_sync_health(connection_id,checked_at,ingest_enabled,polling_enabled,token_present)
     VALUES(p_connection_id,now(),p_ingest_enabled,p_polling_enabled,p_token_present)
     ON CONFLICT(connection_id) DO UPDATE SET checked_at=now(),
@@ -151,8 +152,8 @@ BEGIN
     notified_at=CASE WHEN v_code IS NULL OR v_new_incident THEN NULL ELSE notified_at END WHERE connection_id=p_connection_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean,bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean,bigint) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.enqueue_bank_sync_health_alerts(p_organization_id bigint)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
