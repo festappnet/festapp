@@ -2742,5 +2742,10 @@
     "MODE_CHANGED": "Der Verkaufsmodus hat sich geändert. Aktualisieren Sie vor dem Fortfahren.",
     "FORBIDDEN": "Sie sind nicht mehr zu dieser Aktion berechtigt.",
     "UNKNOWN": "Die Aktion konnte nicht abgeschlossen werden. Aktualisieren Sie die aktuellen Daten."
+  },
+  "OrderDetail": {
+    "form_field": "Formularfeld",
+    "selected_entry": "Ausgewählter Eintrag",
+    "email_status_help": "Bestell-, Zahlungs- und E-Mail-Status sind getrennt. Angenommen bedeutet die Übernahme durch den Versanddienst; zugestellt die Annahme durch den Mailserver. Öffnungen und Klicks bestätigen nicht das Lesen. Wiederholung bedeutet einen weiteren Versuch; unbekannt bestätigt keinen Versand. Die Nachricht zeigt den Grund und mögliche Abhilfe."
   }
 }

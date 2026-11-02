@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
+
 import 'orders_strings.dart';
 
 /// Labels selected from the current occasion's ticket feature.
 abstract final class OrderItemStrings {
+  static String get cancelAction => 'FeatureOrders.cancel'.tr();
+
   static String get itemsPlural {
     if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
       return OrdersStrings.tickets;
@@ -28,11 +31,9 @@ abstract final class OrderItemStrings {
 
   static String get cancelOrdersConfirmationText {
     if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      return 'FeatureOrders.cancelOrdersAndTicketsConfirmation'
-          .tr(); // "Do you want to cancel orders and all included tickets? The customer will receive an email about this cancellation."
+      return 'FeatureOrders.cancelOrdersAndTicketsConfirmation'.tr(); // "Do you want to cancel orders and all included tickets? The customer will receive an email about this cancellation."
     }
-    return 'FeatureOrders.cancelOrdersConfirmation'
-        .tr(); // "Do you want to cancel orders? The customer will receive an email about this cancellation."
+    return 'FeatureOrders.cancelOrdersConfirmation'.tr(); // "Do you want to cancel orders? The customer will receive an email about this cancellation."
   }
 
   static String get itemSymbol {
@@ -69,6 +70,6 @@ abstract final class OrderItemStrings {
 
   static String get validTickets =>
       FeatureService.isFeatureEnabled(FeatureConstants.ticket)
-          ? "OrderGridColumns.validTickets".tr()
-          : "OrderGridColumns.validApplications".tr();
+      ? "OrderGridColumns.validTickets".tr()
+      : "OrderGridColumns.validApplications".tr();
 }

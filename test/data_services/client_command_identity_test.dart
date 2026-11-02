@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/order_commands.dart';
+
 import '../support/fixtures/client_command_response_fixture.dart';
 
 import 'dart:convert';
@@ -18,6 +20,69 @@ import 'package:sembast/sembast.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('contact recovery after reload reuses the committed request and clears its durable intent', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'festapp-contact-recovery-',
+    );
+    final provider = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _Documents(directory.path);
+    addTearDown(() async {
+      await StorageHelper.closeDatabase('default.db');
+      PathProviderPlatform.instance = provider;
+      await directory.delete(recursive: true);
+    });
+    String? committedId;
+    Map<String, dynamic>? original;
+    var attempts = 0;
+    Future<Object?> rpc(String name, Map<String, dynamic> args) async {
+      expect(name, 'repair_order_email_client_sync_v1');
+      attempts++;
+      committedId ??= args['p_command_id'] as String;
+      original ??= Map.from(args);
+      expect(args, original);
+      if (attempts == 1)
+        throw TimeoutException('Response lost after the commit');
+      return {
+        ...commandResponseFixture(committedId!),
+        'data': {'sendingRequested': false},
+      };
+    }
+
+    final commands = SupabaseOrderCommands.withTransport(
+      ClientCommandTransport(
+        rpc,
+        maxAttempts: 1,
+        principalBinding: 'http://local:actor',
+      ),
+    );
+    await expectLater(
+      commands.repairEmail(
+        orderId: 5,
+        expectedEmail: 'old@example.invalid',
+        expectedState: 'paid',
+        expectedPaymentVersion: 1,
+        expectedPaymentFingerprint: 'original-payment-facts',
+        email: 'new@example.invalid',
+        resend: false,
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+    await StorageHelper.closeDatabase('default.db');
+    final reopened = SupabaseOrderCommands.withTransport(
+      ClientCommandTransport(
+        rpc,
+        maxAttempts: 1,
+        principalBinding: 'http://local:actor',
+      ),
+    );
+    final pending = await reopened.pendingContact(5);
+    expect(pending, isNotNull);
+    expect(pending!.commandId, committedId);
+    final recovered = await reopened.recoverContact(pending);
+    expect(recovered['code'], 200);
+    expect(await reopened.pendingContact(5), isNull);
+    expect(attempts, 2);
+  });
   test(
     'durable concurrent claims bind one actor and survive reopening',
     () async {

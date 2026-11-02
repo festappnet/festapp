@@ -1,14 +1,19 @@
 import 'package:fstapp/data_services/rights_service.dart';
+
 import 'dart:async';
+
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:trina_grid/trina_grid.dart';
+
 import 'pluto_abstract.dart';
 import 'data_grid_action.dart';
+
 import 'package:file_saver/file_saver.dart';
 
 enum DataGridFirstColumn {
@@ -16,7 +21,7 @@ enum DataGridFirstColumn {
   delete,
   deleteAndDuplicate,
   deleteAndCheck,
-  check
+  check,
 }
 
 /// Options for CSV export.
@@ -35,10 +40,12 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     _htmlSave = null;
   }
 
-  Future<void> prepareHtmlRows() => htmlSave.prepareWhere((identity) => {
-        ...updatedRows,
-        ...newRows
-      }.any((row) => row.key == identity.entity && !deletedRows.contains(row)));
+  Future<void> prepareHtmlRows() => htmlSave.prepareWhere(
+    (identity) => {
+      ...updatedRows,
+      ...newRows,
+    }.any((row) => row.key == identity.entity && !deletedRows.contains(row)),
+  );
   final ValueNotifier<int> reloadGeneration = ValueNotifier(0);
   ValueNotifier<Key> refreshKeyNotifier = ValueNotifier(UniqueKey());
 
@@ -50,9 +57,11 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     _pendingReady?.complete(value);
     _pendingReady = null;
   }
+
   /// Native grid readiness, including disposal; independent of render speed.
   Future<bool> get whenLoaded => _isGridLoaded
-      ? Future.value(true) : (_pendingReady ??= Completer<bool>()).future;
+      ? Future.value(true)
+      : (_pendingReady ??= Completer<bool>()).future;
   bool _autoRefreshing = false;
   final bool refreshOnTabActivation;
   late TrinaGridStateManager stateManager;
@@ -76,12 +85,17 @@ class SingleDataGridController<T extends ITrinaRowModel> {
       }
       final horizontal = stateManager.scroll.horizontalOffset;
       final vertical = stateManager.scroll.verticalOffset;
-      final sorted =
-          stateManager.columns.where((c) => !c.sort.isNone).firstOrNull;
+      final sorted = stateManager.columns
+          .where((c) => !c.sort.isNone)
+          .firstOrNull;
       final checkedIds = visibleCheckedRows
-          .map((row) => fromPlutoJson(row.toJson()).id).whereType<Object>().toSet();
+          .map((row) => fromPlutoJson(row.toJson()).id)
+          .whereType<Object>()
+          .toSet();
       final selectedIds = stateManager.currentSelectingRows
-          .map((row) => fromPlutoJson(row.toJson()).id).whereType<Object>().toSet();
+          .map((row) => fromPlutoJson(row.toJson()).id)
+          .whereType<Object>()
+          .toSet();
       rows = data.map((item) {
         final row = item.toTrinaRow(context);
         row.cells[firstColumnTypeId] = TrinaCell(value: 'delete');
@@ -109,9 +123,11 @@ class SingleDataGridController<T extends ITrinaRowModel> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted || !isGridLoaded) return;
         stateManager.scroll.horizontal?.jumpTo(
-            horizontal.clamp(0, stateManager.scroll.maxScrollHorizontal));
-        stateManager.scroll.vertical
-            ?.jumpTo(vertical.clamp(0, stateManager.scroll.maxScrollVertical));
+          horizontal.clamp(0, stateManager.scroll.maxScrollHorizontal),
+        );
+        stateManager.scroll.vertical?.jumpTo(
+          vertical.clamp(0, stateManager.scroll.maxScrollVertical),
+        );
       });
       return true;
     } finally {
@@ -130,6 +146,38 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   List<TrinaRow> rows = [];
   List<TrinaColumn> columns = [];
   final Future<List<T>> Function() loadData;
+
+  /// Opt-in activation from a double click on a non-editable data cell.
+  final void Function(T)? onRowActivate;
+  final ValueNotifier<Object?> activeDetailRowId = ValueNotifier<Object?>(null);
+  bool isDetailRow(TrinaRow row) =>
+      activeDetailRowId.value != null &&
+      // Grid projections may name their ID differently from the SQL column.
+      fromPlutoJson(row.toJson()).id == activeDetailRowId.value;
+  StreamSubscription<TrinaGridEvent>? _activationSubscription;
+  void attachRowActivation() {
+    _activationSubscription?.cancel();
+    if (onRowActivate == null) return;
+    _activationSubscription = stateManager.eventManager?.listener((event) {
+      if (event is! TrinaGridCellGestureEvent ||
+          event.gestureType != TrinaGridGestureType.onDoubleTap ||
+          event.column.field == firstColumnTypeId ||
+          !event.column.readOnly ||
+          stateManager.keyPressed.ctrl ||
+          stateManager.keyPressed.shift ||
+          stateManager.isSelecting)
+        return;
+      final rows = stateManager.refRows.filterOrOriginalList;
+      if (event.rowIdx >= 0 && event.rowIdx < rows.length)
+        onRowActivate!(fromPlutoJson(rows[event.rowIdx].toJson()));
+    });
+  }
+
+  void detachRowActivation() {
+    _activationSubscription?.cancel();
+    _activationSubscription = null;
+  }
+
   final DataGridFirstColumn firstColumnType;
   final String idColumn;
   final T Function(Map<String, dynamic>) fromPlutoJson;
@@ -139,21 +187,22 @@ class SingleDataGridController<T extends ITrinaRowModel> {
 
   /// Confirms a deletion batch and returns its executor; null cancels the save.
   final Future<Future<void> Function(T)?> Function(BuildContext, List<T>)?
-      prepareDeletion;
+  prepareDeletion;
   final DataGridActionsController? actionsExtended;
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
   final bool Function(TrinaRow)? additionalRowPredicate;
   final Widget Function(BuildContext, SingleDataGridController<T>)?
-      headerFilterBuilder;
+  headerFilterBuilder;
   bool additionalFilterEnabled;
   int additionalFilterCount = 0;
   StreamSubscription<TrinaGridEvent>? _filterSubscription;
   bool _applyingFilter = false;
 
-  Iterable<TrinaRow> get visibleCheckedRows =>
-      stateManager.refRows.filterOrOriginalList
-          .where((row) => row.checked == true);
+  Iterable<TrinaRow> get visibleCheckedRows => stateManager
+      .refRows
+      .filterOrOriginalList
+      .where((row) => row.checked == true);
 
   void attachRowFilter() {
     detachRowFilter();
@@ -223,6 +272,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     required this.idColumn,
     required this.columns,
     this.refreshOnTabActivation = true,
+    this.onRowActivate,
     this.headerChildren,
     this.actionsExtended,
     this.prepareDeletion,
@@ -321,9 +371,10 @@ class SingleDataGridController<T extends ITrinaRowModel> {
         enableContextMenu: false,
         enableRowChecked:
             firstColumnType == DataGridFirstColumn.deleteAndCheck ||
-                firstColumnType == DataGridFirstColumn.check,
+            firstColumnType == DataGridFirstColumn.check,
         cellPadding: EdgeInsets.zero,
-        width: (firstColumnType == DataGridFirstColumn.delete ||
+        width:
+            (firstColumnType == DataGridFirstColumn.delete ||
                 firstColumnType == DataGridFirstColumn.check)
             ? 50
             : 100,
@@ -335,22 +386,22 @@ class SingleDataGridController<T extends ITrinaRowModel> {
               IconButton(
                 onPressed:
                     (actionsExtended?.canDeleteRow?.call(rendererContext.row) ??
-                            true)
-                        ? () async {
-                            var row = rendererContext.row;
-                            if (deletedRows.contains(row)) {
-                              deletedRows.remove(row);
-                            } else if (newRows.contains(row)) {
-                              newRows.remove(row);
-                              rendererContext.stateManager.removeRows([row]);
-                            } else {
-                              deletedRows.add(row);
-                            }
-                            row.setState(TrinaRowState.updated);
-                            applyRowFilter();
-                            rendererContext.stateManager.notifyListeners();
-                          }
-                        : null,
+                        true)
+                    ? () async {
+                        var row = rendererContext.row;
+                        if (deletedRows.contains(row)) {
+                          deletedRows.remove(row);
+                        } else if (newRows.contains(row)) {
+                          newRows.remove(row);
+                          rendererContext.stateManager.removeRows([row]);
+                        } else {
+                          deletedRows.add(row);
+                        }
+                        row.setState(TrinaRowState.updated);
+                        applyRowFilter();
+                        rendererContext.stateManager.notifyListeners();
+                      }
+                    : null,
                 icon: const Icon(Icons.delete_forever),
               ),
             );
@@ -365,7 +416,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
                     newRow = copyObject!(fromPlutoJson(originRow.toJson()))
                         .toTrinaRow(context);
                     var defaultRow = {
-                      firstColumnTypeId: TrinaCell(value: "delete")
+                      firstColumnTypeId: TrinaCell(value: "delete"),
                     };
                     newRow.cells.addAll(defaultRow);
                   } else {
@@ -380,10 +431,12 @@ class SingleDataGridController<T extends ITrinaRowModel> {
                     }
                   }
 
-                  var currentIndex =
-                      rendererContext.stateManager.rows.indexOf(originRow);
-                  rendererContext.stateManager
-                      .insertRows(currentIndex + 1, [newRow]);
+                  var currentIndex = rendererContext.stateManager.rows.indexOf(
+                    originRow,
+                  );
+                  rendererContext.stateManager.insertRows(currentIndex + 1, [
+                    newRow,
+                  ]);
                   newRows.add(newRow);
                   applyRowFilter();
                   rendererContext.stateManager.notifyListeners();

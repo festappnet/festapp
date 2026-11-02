@@ -22,8 +22,10 @@ node web_client/scripts/run_db_tests.js database/tests/my_test.sql # Specific DB
 
 ## Czech action wording
 
-Use “Zrušit” for cancel/dismiss actions in Czech UI, never “Stornovat” or “Storno”.
-This is UI wording; existing backend command names and accounting states stay unchanged.
+Use “Stornovat” for Czech business cancellation of orders, tickets and
+applications, and “storno” for their cancellation state. Use “Zrušit” for
+dismissing dialogs, abandoning edits or cancelling scheduled changes.
+Existing backend command names and accounting states stay unchanged.
 
 Address users formally in Czech UI copy (for example, “Vyberte”, “Klikněte”,
 “Zadejte”). Apply the same wording to editor hints and validation messages.
