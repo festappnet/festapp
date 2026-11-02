@@ -41,7 +41,7 @@ BEGIN
  -- orders, form choices and unit cards all omit the warning triangle.
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  UPDATE eshop.bank_sync_connections SET state='connected' WHERE id=conn;
- PERFORM public.record_bank_sync_pull(conn,NULL,'fio_token_invalid_or_inactive');
+ PERFORM public.record_bank_sync_pull(conn,NULL,'fio_token_invalid_or_inactive',public.begin_bank_sync_observation(conn)::bigint);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  SET LOCAL ROLE authenticated;
  PERFORM assert_eq(public.get_bank_sync_connection(bank)->>'warning_pending','true','connection settings show neutral retry status');
