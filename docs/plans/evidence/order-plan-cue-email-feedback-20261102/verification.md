@@ -1,0 +1,15 @@
+# Order preview focus and quiet email sending - 2026-11-02
+
+Dense read-only order plans target 10 screen pixels per seat instead of 8, with initial focus capped at 1.9x the whole-plan fit (previously 1.6x). Existing broad-context/whole-plan reset, camera continuity, occupancy presentation and cached map request remain intact.
+
+A 1.2-second one-shot outline identifies order places after loading or explicit seat selection. It finishes at the existing persistent outline. Reduced-motion preferences skip the effect. The optional painter animation is passed directly to repaint: it does not rebuild the viewer, recompile the scene, or fetch data on animation ticks. Native light/dark captures use 144 synthetic seats and local fonts. Pixel tests prove a visible intermediate frame, unchanged ancestor build count and byte-identical initial/final PNGs.
+
+The email screenshot exposed a semantic UI bug: the server includes pending confirmations in its current entries to enforce resend guards; the table treated every entry as a failed delivery. A read-only check of the reported order found successful delivery/engagement and no message error. No customer email was sent or modified during investigation.
+
+The table now omits ordinary pending/acceptance entries from warning icons. These entries remain in the shared model for duplicate-send guards, and genuine failures, suppression, queue problems and uncertain outcomes remain visible. A separate real failure is never hidden by a newer pending message. The dedicated delivery indicator retains its canonical progress state.
+
+After a confirmed enqueue, the sending button remains busy during a bounded status check using the existing get_email_delivery_page RPC, scoped to the order, occasion and kind with p_limit=1. The row must match the exact message_id from the enqueue receipt. At most four reads use 0/1/2/2-second waits and a two-second timeout per read. This reads one metadata row, not bodies, event lists, all history, or the grid. Provider acceptance/delivery removes transient queue feedback. A delayed/unknown read retains queued feedback; real terminal failure shows its actual state. A read failure never retries the confirmed send command. Parent refresh runs once after the check. Disposed or changed contexts stop further work.
+
+Validation: 54 focused email/contact/indicator/command tests passed, including immediate acceptance, pending-to-accepted, persistent pending (four reads), read failure, wrong message identity, busy duplicate prevention/disposal, real-failure preservation, mobile large text and receipt retries. Final preview/viewer batch passed 9 tests; additional main Blueprint focus-navigation cases passed in the earlier 12-test batch. Analyses of changed UI/painter files have no errors/warnings; existing informational style diagnostics remain. git diff --check is clean.
+
+Logs: /tmp/order-email-final-tests.log, /tmp/order-focus-final-tests.log, /tmp/order-focus-tests.log, /tmp/order-focus-analyze.log, /tmp/order-email-final-analyze.log. No backend migration or producer change is needed. Existing local review servers remain stopped.

@@ -11,6 +11,8 @@ DECLARE
     v_product_id bigint;
     v_spot_id bigint;
     v_blueprint_id bigint;
+    v_group_node uuid:=gen_random_uuid();
+    v_seat_node uuid:=gen_random_uuid();
     v_acc_id bigint;
     v_secret_id bigint;
     v_input_data jsonb;
@@ -65,14 +67,15 @@ BEGIN
     VALUES ('Test Spot', v_product_id, v_occasion_id, gen_random_uuid())
     RETURNING id INTO v_spot_id;
 
-    INSERT INTO eshop.blueprints(organization, occasion, title, groups, objects)
-    VALUES ((SELECT organization FROM public.units WHERE id=v_unit_id), v_occasion_id, 'Seating',
-      '[{"id":7,"title":"7"}]', jsonb_build_array(jsonb_build_object('id',v_spot_id,'type','spot','group',7)))
+    INSERT INTO eshop.blueprints(organization,occasion,title) VALUES ((SELECT organization FROM public.units WHERE id=v_unit_id),v_occasion_id,'Seating')
     RETURNING id INTO v_blueprint_id;
     UPDATE public.forms SET blueprint=v_blueprint_id WHERE id=v_form_id;
     UPDATE eshop.spots SET blueprint=v_blueprint_id, secret_expiration_time=now()+interval '10 minutes' WHERE id=v_spot_id;
-    INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot)
-    VALUES(v_blueprint_id,gen_random_uuid(),v_spot_id);
+    UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',jsonb_build_array(
+     jsonb_build_object('id',v_group_node,'kind','group','label','7','width',1,'height',1,'transform',jsonb_build_object('x',0,'y',0,'rotation',0)),
+     jsonb_build_object('id',v_seat_node,'kind','seat','parentId',v_group_node,'width',40,'height',40,'transform',jsonb_build_object('x',60,'y',60,'rotation',0)))) WHERE id=v_blueprint_id;
+    INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,group_node)
+    VALUES(v_blueprint_id,v_seat_node,v_spot_id,v_group_node);
 
     -- 2. Construct Order Input
     -- { form: key, email: ..., ticket: [ { spot: spot_id } ] }

@@ -1,0 +1,74 @@
+{
+  "status": "blocked-before-deployment",
+  "checkedAtUtc": "2026-11-01",
+  "candidateSourceSha": "f0fed2a0b380d758555e1dc7c9bc8ddef6298665",
+  "orchestrationRepoHead": "17937512caa9dea75257490cc513bec394ce73d0",
+  "scope": {
+    "project": "festapp-wix",
+    "accountId": "84b32318ac235bf6738bdf1c8caa0795",
+    "environment": "Production",
+    "branch": "main",
+    "deploymentPerformed": false
+  },
+  "authentication": {
+    "wranglerWhoami": "authenticated",
+    "accountIdMatches": true,
+    "credentials": "existing protected Wrangler CLI session; no credential values recorded"
+  },
+  "candidate": {
+    "sourceChangedSinceCandidate": false,
+    "currentPackageBuildMatchesAvailableArchiveMembers": true,
+    "sealedArchive": "integrations/wix/artifacts/vstupenky-online-wix-0.1.0.zip",
+    "availableArchiveSha256": "381ad37d9591be663e1ef0c1556378563a1fec3549f8c827ca149c935489d5f5",
+    "previewReceiptExpectedArchiveSha256": "9801fbef4494f97b1eeb616ca4ee275e4c6b61cbed43f6c4145c341e3273b763",
+    "archivePresentInCandidateCommit": false,
+    "archiveMismatch": true,
+    "manifestSha256": "a9263b40b0706a531183d1b1765d4dd846464c3a5d224aa5b751176216603eb0",
+    "widgetSha256": "7ac66608c59a9a187857bee8e4f17fc6b93a8412638935dbdca9d406b0b4ae0c"
+  },
+  "cloudflareInventory": {
+    "previewDeploymentId": "600abe03-63d8-47a7-83c0-f15693a766af",
+    "previewSource": "f0fed2a",
+    "rollbackProductionDeploymentId": "83870904-fef5-4f4f-9c29-480cbcdc75fe",
+    "rollbackProductionSource": "7db5e25"
+  },
+  "readbacks": {
+    "activation": {
+      "url": "https://vstupenky.online/backend-activation.json",
+      "status": 200,
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical",
+      "sha256": "c964ba8e23a79e0a082a280d0a44fe3a424b5168eae0853f33d34c630b1cc31c"
+    },
+    "stableWidget": {
+      "url": "https://festapp-wix.pages.dev/widget.js",
+      "status": 200,
+      "sha256": "e83f4fcaee1e78241300175d4a06fc20b1805a952469f278bbd85f3c391a7025",
+      "matchesPreviousExpected": true
+    },
+    "previewWidget": {
+      "url": "https://600abe03.festapp-wix.pages.dev/widget.js",
+      "status": 200,
+      "sha256": "7ac66608c59a9a187857bee8e4f17fc6b93a8412638935dbdca9d406b0b4ae0c",
+      "matchesPreviewReceipt": true
+    },
+    "previewManifest": {
+      "url": "https://600abe03.festapp-wix.pages.dev/manifest.json",
+      "status": 200,
+      "sha256": "a9263b40b0706a531183d1b1765d4dd846464c3a5d224aa5b751176216603eb0",
+      "matchesPreviewReceipt": true
+    },
+    "proofRouteProbe": {
+      "url": "https://api.festapp.net/functions/v1/wix-proof",
+      "method": "GET",
+      "status": 500,
+      "meaning": "candidate path probe only; canonical proof endpoint route not established from repository references"
+    }
+  },
+  "validation": "Primary Wix contract step passed: 41 passed, 4 database tests skipped; build passed; shared checkout 54/54 passed. No Flutter or additional tests run by hosting preflight.",
+  "blockers": [
+    "Exact archive digest from the preview receipt was not found locally. The available ZIP is outside the candidate source commit, although its files match its manifest and the rebuilt dist. Do not substitute or silently rebuild the reviewed archive.",
+    "Proof endpoint availability is not established: the candidate GET route returned HTTP 500, and repository references did not identify a canonical proof route. Confirm the intended non-order read endpoint and availability before deployment."
+  ]
+}

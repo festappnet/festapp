@@ -125,6 +125,57 @@ void main() {
     pickerResponse = null;
   });
   testWidgetsWithEnvironment(() => environment,
+      'font loading recovers automatically without interrupting the blueprint',
+      (tester) async {
+    final oldRights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.occasionsWrite: true});
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = oldRights);
+    final registry = blueprintFontRegistryFixture();
+    final futura = registry.entries
+        .firstWhere((e) => e.value['family'] == 'Futura PT');
+    final provider = (await tester.runAsync(() => BlueprintTextResources.load(1)))!;
+    await tester.runAsync(() => provider.loadFace(
+        (futura.value['faces'] as Map)['400:normal'] as String));
+    final table = LayoutNode(
+        id: newLayoutId(), kind: 'table', x: 300, y: 300,
+        width: 200, height: 100, label: '35', surface: {'type': 'rect'});
+    final document = VenueLayoutDocument(nodes: [table], styles: {
+      'label': {'fontFamilyId': futura.key}
+    });
+    final source = BlueprintModel(
+        layoutResources: {'protocol': 2, 'fontFamilies': registry, 'textLayouts': {}},
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1, occasionId: 1, title: 'Font recovery',
+            revision: 1, document: document));
+    var attempts = 0;
+    await environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: BlueprintLayoutHost(
+            source: source, reload: () async => source,
+            loadTextResources: () async {
+              if (++attempts <= 2) throw TimeoutException('temporary_asset_failure');
+              return provider;
+            })));
+    await tester.pump();
+    final context = tester.element(find.byType(BlueprintPlanEditor));
+    final failure = VenueLayoutStrings.text(context,
+        'The selected font could not be loaded.');
+    expect(find.text(failure), findsNothing);
+    expect(find.text(VenueLayoutStrings.text(context, 'Retry font')), findsNothing);
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.text(failure), findsNothing);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(find.text(failure), findsNothing);
+    expect(attempts, 3);
+    final editor = tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
+    expect(editor.loadTextResources!(), same(editor.loadTextResources!()));
+    expect(editor.controller.document.toJson(), document.toJson());
+    expect(editor.controller.canUndo, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgetsWithEnvironment(() => environment,
       'commercial name edits inline, trims once and cancels with Escape',
       (tester) async {
     final changes = <String>[];

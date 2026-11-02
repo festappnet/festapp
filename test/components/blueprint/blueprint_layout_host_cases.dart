@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
-import 'package:fstapp/components/blueprint/blueprint_legacy_converter.dart';
+import '../../../automation/blueprint-cutover/legacy_converter.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_controller.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_saver.dart';

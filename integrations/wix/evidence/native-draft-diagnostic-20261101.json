@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-11-01",
+  "scope": "Controlled test on owned Wix Studio development site; no App Market submission, app version release, orders, holds or charges.",
+  "baseline": {"releasedVersion": "1.1", "scriptUrl": "https://festapp-wix.pages.dev/widget.js", "frontendSdkEnabled": true, "publishedWidgetCount": 2, "savedFormUrl": "https://vstupenky.online/form/wix-qa-20261025"},
+  "diagnostic": {"draftScriptUrl": "https://0e0a9a68.festapp-wix.pages.dev/widget.js", "sha256": "91085dd358b4a485311482ed5a56255659e4e7f12c25bd0d06486b6b3735b0c3", "draftSaveHttpStatus": 200, "coldReadback": true},
+  "testApp": "Selected existing Studio QA, native Manage Apps showed Update available; Update App succeeded. Native Studio publish confirmed site live.",
+  "observedPublishedSite": "After reload, both existing widgets still used stable widget.js and retained their saved form URL, iframe and direct link. Diagnostic script was not observed loading; no token-injection or authenticated proof result can be inferred.",
+  "restoration": {"draftScriptUrl": "https://festapp-wix.pages.dev/widget.js", "patchHttpStatus": 200, "coldReadback": true, "frontendSdkEnabled": true, "widgetSettingsChanged": false},
+  "nativeChecklist": "One blocker: Release a version and update all market listing changes before submitting. Draft editing created an unreleased revision despite restoration; no version was released.",
+  "releaseDialog": {"minor": "v1.2 immediately pushed to installed sites", "major": "v2.0 changes do not go live until users manually update", "genericWarning": "Changes will be immediately available to app users. This can't be undone.", "feesOrNewTermsShown": false, "confirmed": false},
+  "appInstallationsView": "Two records: owned published Harmony QA version 1 installed; one unpublished site version 1 uninstalled. Wix development sites did not appear, so this is not a complete development-site inventory.",
+  "freshWidgetTest": "Reapplied diagnostic draft, created one temporary SDK auth QA page with one newly inserted widget, published Studio QA, and opened its /blank URL. Fresh widget still loaded stable widget.js and standard missing-form placeholder; diagnostic did not run.",
+  "freshWidgetCleanup": "Deleted only SDK auth QA after native named confirmation, republished site, restored stable draft script URL and cold readback. Published homepage again had exactly two original widgets with original URL, title, style, iframe and direct links.",
+  "result": "INCONCLUSIVE - Test App/update did not expose diagnostic draft in existing or newly inserted published widgets."
+}

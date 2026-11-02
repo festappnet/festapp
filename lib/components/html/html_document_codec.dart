@@ -105,11 +105,11 @@ String normalizeHtmlContentStyles(String html, HtmlContentProfile profile) {
           child.remove();
           continue;
         }
-        _normalizeAppElementStyles(child);
+        final element = _normalizeAppElementStyles(child);
         for (final attribute in appHtmlRemovedAttributes) {
-          child.attributes.remove(attribute);
+          element.attributes.remove(attribute);
         }
-        visit(child);
+        visit(element);
       }
     }
   }
@@ -121,14 +121,14 @@ String normalizeHtmlContentStyles(String html, HtmlContentProfile profile) {
 
 // Parse declarations so semicolons in strings and CSS comments cannot bypass
 // the app policy. Unrelated safe layout declarations retain their source text.
-void _normalizeAppElementStyles(dom.Element element) {
+dom.Element _normalizeAppElementStyles(dom.Element element) {
   final source = element.attributes['style'];
-  if (source == null) return;
+  if (source == null) return element;
   final errors = <css.Message>[];
   final sheet = css.parse('x {$source}', errors: errors);
   if (errors.isNotEmpty) {
     element.attributes.remove('style');
-    return;
+    return element;
   }
   final declarations = sheet.topLevels
       .whereType<css_ast.RuleSet>()
@@ -186,6 +186,50 @@ void _normalizeAppElementStyles(dom.Element element) {
   }
   final tags = <String>[];
   final converted = <String>{};
+  // Google Docs wraps pasted blocks in <b style="font-weight:normal">.
+  // Resolve the contradiction before persistence, rather than requiring every
+  // reader to preserve CSS that cancels the wrapper's semantic formatting.
+  final resetsOwnEmphasis =
+      ({'b', 'strong'}.contains(element.localName) &&
+          {
+            'normal',
+            '400',
+            '500',
+            '300',
+            '200',
+            '100',
+          }.contains(values['font-weight']?.value)) ||
+      ({'i', 'em'}.contains(element.localName) &&
+          values['font-style']?.value == 'normal');
+  if (resetsOwnEmphasis) {
+    final weightReset = {'b', 'strong'}.contains(element.localName);
+    final property = weightReset ? 'font-weight' : 'font-style';
+    // A reset inside another emphasis or heading still carries meaning. Only
+    // discard it when it solely cancels this element's own semantic tag.
+    final inheritedTags = weightReset
+        ? {'b', 'strong', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'th'}
+        : {'i', 'em'};
+    var inheritedEmphasis = false;
+    for (var parent = element.parent; parent != null; parent = parent.parent) {
+      if (inheritedTags.contains(parent.localName) ||
+          RegExp(
+            r'\bfont(?:-weight|-style)?\s*:',
+            caseSensitive: false,
+          ).hasMatch(parent.attributes['style'] ?? '')) {
+        inheritedEmphasis = true;
+        break;
+      }
+    }
+    if (!inheritedEmphasis) converted.add(property);
+    final neutral = dom.Element.tag('span')
+      ..attributes.addAll(element.attributes);
+    for (final child in List<dom.Node>.of(element.nodes)) {
+      child.remove();
+      neutral.nodes.add(child);
+    }
+    element.replaceWith(neutral);
+    element = neutral;
+  }
   for (final rule in appHtmlEmphasis) {
     final tokens = (values[rule.property]?.value ?? '').split(RegExp(r'\s+'));
     if (tokens.any(rule.values.contains)) {
@@ -210,6 +254,7 @@ void _normalizeAppElementStyles(dom.Element element) {
     element.attributes['style'] = retained;
   }
   _wrapAppEmphasis(element, tags);
+  return element;
 }
 
 // Wrap inline runs, keeping lists, tables and other block structure valid.

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'canonical_contract.dart';
 import 'model.dart';
+import 'label_placement.dart';
 
 class LayoutTextDependencyFailure implements Exception {
   const LayoutTextDependencyFailure(
@@ -258,8 +259,8 @@ List<LayoutIssue> validateCanonicalTextResources(
       'images',
     }.contains(key)) {
       issue('unknown_resource_field', 'resources.$key');
-  }
     }
+  }
   final families = resources['fontFamilies'];
   if (families is! Map) {
     issue('invalid_font_families', 'resources.fontFamilies');
@@ -291,8 +292,8 @@ List<LayoutIssue> validateCanonicalTextResources(
         if (!RegExp(r'^(400|700):(normal|italic)$').hasMatch('${face.key}') ||
             face.value is! String) {
           issue('invalid_font_face', path);
-      }
         }
+      }
     }
   }
   final texts = resources['textLayouts'];
@@ -425,10 +426,35 @@ List<LayoutIssue> validateCanonicalTextResources(
 List<double> labelRenderMatrix(
   LayoutNode node,
   Map<String, dynamic> label,
-  List<double> matrix,
-) => node.kind == 'text' || label['orientation'] == 'object'
-    ? matrix
-    : <double>[1, 0, 0, 1, matrix[4], matrix[5]];
+  List<double> matrix, {
+  Map<String, double>? textBounds,
+}) {
+  final object = node.kind == 'text' || label['orientation'] == 'object';
+  final placement = tableLabelPlacement(
+    node,
+    object ? const [1, 0, 0, 1] : matrix.sublist(0, 4),
+    textBounds,
+  );
+  final scale = placement[2];
+  final irregular =
+      node.kind == 'table' &&
+      surfaceGeometryProperties(node)['shape'] == 'polygon';
+  final centerX = textBounds == null || !irregular
+      ? 0.0
+      : textBounds['x']! + textBounds['width']! / 2;
+  final centerY = textBounds == null || !irregular
+      ? 0.0
+      : textBounds['y']! + textBounds['height']! / 2;
+  final x = placement[0] - scale * centerX;
+  final y = placement[1] - scale * centerY;
+  return object
+      ? <double>[
+          for (final v in matrix.take(4)) v * scale,
+          matrix[4] + matrix[0] * x + matrix[2] * y,
+          matrix[5] + matrix[1] * x + matrix[3] * y,
+        ]
+      : <double>[scale, 0, 0, scale, matrix[4] + x, matrix[5] + y];
+}
 
 Map<String, dynamic>? preparedNodeText(
   VenueLayoutDocument document,

@@ -1,0 +1,121 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/functions/eshop_orders/get_order_admin_detail.sql
+-- test-setup: database/functions/eshop_orders/get_order_blueprint_view.sql
+DO $$
+DECLARE f jsonb; r jsonb; core jsonb; map jsonb; oc bigint; oid bigint; tid bigint; iid bigint; sid bigint; other bigint;
+ actor uuid; reader uuid:=gen_random_uuid(); config_author uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid();
+ before_spots jsonb; before_orders jsonb; before_stock jsonb; bp bigint; old_fingerprint text; full_map jsonb; rev bigint; own_node text; other_spots bigint[]; used_node text; hold_node text; blocked_node text;
+BEGIN
+ f:=public.blueprint_test_fixture_internal();oc:=(f->>'occasion')::bigint;bp:=(f->>'blueprint')::bigint;actor:=(f->>'actor')::uuid;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ r:=public.update_blueprint_client_sync_v1(f->'request',gen_random_uuid());
+ PERFORM assert_eq(r->>'status','applied','real canonical layout saved');
+ oid:=public.allocate_ticket_order_identity_internal((f->>'form')::bigint);
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'paid','DETAIL-OWN') RETURNING id INTO tid;
+ INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(oid,tid,(f->>'product')::bigint) RETURNING id INTO iid;
+ UPDATE eshop.orders SET state='paid',price=100,currency_code='CZK',data=jsonb_build_object('email','detail@example.invalid','tickets',jsonb_build_array(jsonb_build_object('id',tid,'products',jsonb_build_array(jsonb_build_object('id',f->'product','price',100,'title','Purchased snapshot'))))) WHERE id=oid;
+ SELECT spot INTO sid FROM eshop.blueprint_seat_bindings WHERE blueprint=bp ORDER BY spot LIMIT 1;
+ UPDATE eshop.spots SET order_product_ticket=iid WHERE id=sid;
+ SELECT node_id::text INTO own_node FROM eshop.blueprint_seat_bindings WHERE spot=sid;
+ -- Other customers' occupancy and temporary holds must appear too, without their data.
+ SELECT array_agg(spot ORDER BY spot) INTO other_spots FROM eshop.blueprint_seat_bindings WHERE blueprint=bp AND spot<>sid;
+ other:=public.allocate_ticket_order_identity_internal((f->>'form')::bigint);
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'used','DETAIL-OTHER') RETURNING id INTO tid;
+ INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(other,tid,(f->>'product')::bigint) RETURNING id INTO other;
+ UPDATE eshop.spots SET order_product_ticket=other WHERE id=other_spots[1];
+ UPDATE eshop.spots SET secret=gen_random_uuid(),secret_expiration_time=now()+interval '1 hour' WHERE id=other_spots[2];
+ UPDATE eshop.blueprint_seat_bindings SET blocked=true WHERE spot=other_spots[3];
+ SELECT node_id::text INTO used_node FROM eshop.blueprint_seat_bindings WHERE spot=other_spots[1];
+ SELECT node_id::text INTO hold_node FROM eshop.blueprint_seat_bindings WHERE spot=other_spots[2];
+ SELECT node_id::text INTO blocked_node FROM eshop.blueprint_seat_bindings WHERE spot=other_spots[3];
+ -- Preserve the original ticket identity for the later own-order lifecycle checks.
+ SELECT ticket INTO tid FROM eshop.order_product_ticket WHERE id=iid;
+ INSERT INTO auth.users(id) VALUES(reader),(config_author),(outsider);
+ INSERT INTO public.user_info(id,organization) SELECT reader,organization FROM public.occasions WHERE id=oc;
+ INSERT INTO public.user_info(id,organization) SELECT config_author,organization FROM public.occasions WHERE id=oc;
+ INSERT INTO public.user_info(id,organization) SELECT outsider,organization FROM public.occasions WHERE id=oc;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view,is_editor_order,is_editor) VALUES(oc,reader,true,false,false),(oc,config_author,false,false,true);
+ SELECT jsonb_agg(to_jsonb(s) ORDER BY id) INTO before_spots FROM eshop.spots s WHERE occasion=oc;
+ SELECT jsonb_agg(to_jsonb(o) ORDER BY id) INTO before_orders FROM eshop.orders o WHERE occasion=oc;
+ PERFORM assert_false(has_function_privilege('anon','public.get_order_admin_detail(bigint,bigint)','EXECUTE'),'anon denied');
+ PERFORM assert_false(has_function_privilege('authenticated','public.order_admin_places_internal(bigint)','EXECUTE'),'private join inaccessible');
+ PERFORM assert_false(has_function_privilege('authenticated','public.order_admin_placement_internal(bigint)','EXECUTE'),'placement snapshot private');
+ PERFORM assert_true(to_regprocedure('public.get_order_blueprint_view(bigint,bigint,bigint,text)') IS NULL,'one optional-argument signature replaces the old exact signature');
+ PERFORM set_config('request.jwt.claim.sub',reader::text,true);
+ SET LOCAL ROLE authenticated;
+ core:=public.get_order_admin_detail(oid,oc);
+ PERFORM assert_eq(core->>'code','200','order reader may read');
+ PERFORM assert_eq(core#>>'{data,capabilities,write}','false','readonly not a writer');
+ PERFORM assert_true((core#>'{data,productCategories}') ? (f->>'product'),'purchased product category identity projected');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(core#>'{data,fields}') ff WHERE ff->>'type'='product_type' AND ff#>>'{product_type_data,id}' IS NOT NULL),'canonical product field metadata projected');
+ PERFORM assert_eq(jsonb_array_length(core#>'{data,tickets}'),1,'one ticket, no product duplicates');
+ PERFORM assert_eq(core#>>'{data,places,0,admissionItemId}',iid::text,'exact item id');
+ PERFORM assert_eq(core#>>'{data,places,0,spotId}',sid::text,'exact stored spot');
+ PERFORM assert_eq(core#>>'{data,places,0,active}','true','seat without authored label remains addressable');
+ old_fingerprint:=core#>>'{data,placementFingerprint}';
+ map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint);
+ PERFORM assert_eq(map->>'code','200','readonly map');
+ full_map:=map;rev:=(map#>>'{data,layout_revision}')::bigint;
+ map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev);
+ PERFORM assert_eq(map->>'code','200','matching revision remains freshly authorized');
+ PERFORM assert_false((map->'data') ? 'layout','cached revision omits unchanged layout');
+ PERFORM assert_false((map->'data') ? 'resources','cached revision omits unchanged rendering resources');
+ PERFORM assert_eq(map->'data',(full_map->'data')-ARRAY['layout','resources'],'all current placement and seat facts remain in conditional response');
+ PERFORM assert_true(octet_length(map::text)<octet_length(full_map::text),'conditional response does not resend drawing bytes');
+ PERFORM assert_true((public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev+1)->'data') ? 'layout','a different revision returns fresh drawing data');
+
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(map#>'{data,seatStates}','[]')) s WHERE s->>'nodeId'=own_node AND s->>'state'='ordered'),'preview contains actual occupied seat lifecycle');
+ PERFORM assert_eq(jsonb_array_length(coalesce(map#>'{data,seatStates}','[]')),4,'preview contains every plan seat, not just the order');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=used_node AND s->>'state'='used'),'other order used seat visible');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=hold_node AND s->>'state'='selected'),'active hold visible');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=blocked_node AND s->>'blocked'='true'),'blocked seat setting visible');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s-ARRAY['nodeId','title','state','blocked','hasProduct']<>'{}'::jsonb),'only minimal renderer facts leave reader');
+ PERFORM assert_true(NOT (map::text LIKE '%secret%'),'no hold or checkout secret');
+ PERFORM assert_true(NOT ((core#>'{data,payment}') ? 'transactions'),'lazy transactions');
+ PERFORM assert_eq(public.get_order_admin_detail(oid,oc+9999)->>'code','404','wrong expected occasion unavailable');
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc+9999,bp,old_fingerprint,rev)->>'code','404','known revision cannot bypass expected occasion');
+ PERFORM assert_eq(public.get_order_admin_detail(-1,oc)->>'code','404','nonexistent order same unavailable');
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp+9999,old_fingerprint,rev)->>'code','404','known revision cannot bypass foreign plan checks');
+ RESET ROLE;
+ PERFORM assert_eq((SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM eshop.spots s WHERE occasion=oc),before_spots,'reads preserve holds and stock');
+ PERFORM assert_eq((SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM eshop.orders o WHERE occasion=oc),before_orders,'reads preserve orders');
+ UPDATE eshop.spots SET secret_expiration_time=now()-interval '1 second' WHERE id=other_spots[2];
+ SET LOCAL ROLE authenticated;
+ map:=public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev);
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(map#>'{data,seatStates}') s WHERE s->>'nodeId'=hold_node AND s->>'state'='available'),'expired hold becomes available without affecting own placement');
+ RESET ROLE;
+ -- Reassignment without a geometry revision must invalidate the lazy reader.
+ UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=sid;
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp,old_fingerprint)->>'code','409','removed plan binding conflicts with old core');
+ RESET ROLE;
+ UPDATE eshop.spots SET order_product_ticket=iid WHERE id=sid;
+ UPDATE eshop.tickets SET state='used' WHERE id=tid;
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp,old_fingerprint)->>'code','409','usage changes fingerprint without layout revision');
+ RESET ROLE;
+ PERFORM set_config('request.jwt.claim.sub',outsider::text,true);
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_eq(public.get_order_admin_detail(oid,oc)->>'code','404','outsider denied');
+ PERFORM assert_eq(public.get_order_blueprint_view(oid,oc,bp,old_fingerprint,rev)->>'code','404','cached revision cannot bypass reader authorization');
+ RESET ROLE;
+ PERFORM set_config('request.jwt.claim.sub',config_author::text,true);
+ -- A configure role is not used as the read predicate; only can_read_orders decides.
+ SET LOCAL ROLE authenticated;
+ IF public.can_read_orders(oc) IS NOT TRUE THEN
+  PERFORM assert_eq(public.get_order_admin_detail(oid,oc)->>'code','404','configure-only no customer data');
+ END IF;
+ RESET ROLE;
+ RESET ROLE;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ INSERT INTO eshop.orders_history("order",state,price,currency_code,data) SELECT id,state,price,currency_code,data FROM eshop.orders WHERE id=oid;
+ UPDATE eshop.orders SET data=jsonb_set(data,'{tickets}','[]') WHERE id=oid;
+ UPDATE eshop.tickets SET state='storno' WHERE id=tid;
+ UPDATE eshop.order_product_ticket SET product=NULL WHERE id=iid;
+ UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=sid;
+ SET LOCAL ROLE authenticated;
+ core:=public.get_order_admin_detail(oid,oc);
+ PERFORM assert_eq(core#>>'{data,tickets,0,snapshot,products,0,title}','Purchased snapshot','cancelled ticket retains historical ordered products');
+ PERFORM assert_eq(jsonb_array_length(core#>'{data,places}'),0,'released historical chair never highlighted');
+ RESET ROLE;
+END $$;

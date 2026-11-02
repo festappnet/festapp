@@ -219,18 +219,17 @@ class DbOccasions {
     completeMedia: (commandId) => completeOccasionMedia(_supabase, commandId),
   );
 
-  /// Returns false only when the event exists but its media could not be copied.
-  static Future<bool> duplicateOccasion(
+  /// Preserves the committed identity even when its media could not be copied.
+  static Future<({int occasionId, bool mediaCopied})> duplicateOccasion(
     int oc, {
     int? targetUnitId,
     String locale = 'en',
   }) async {
-    final result = await _duplicator.duplicate(
+    return _duplicator.duplicate(
       oc,
       targetUnitId: targetUnitId,
       locale: locale,
     );
-    return result.mediaCopied;
   }
 
   /// Keeps the committed result visible even if the following media work fails.

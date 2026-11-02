@@ -29,18 +29,7 @@ BEGIN
                                 s.title AS spot_title,
                                 p.data->>'short_title' AS short_title,
                                 p.title AS product_title,
-                                (
-                                    SELECT g.value->>'title'
-                                    FROM jsonb_array_elements(bp.groups) AS g(value)
-                                    WHERE (g.value->>'id')::bigint = (
-                                        SELECT (o2.value->>'group')::bigint
-                                        FROM jsonb_array_elements(bp.objects) AS o2(value)
-                                        WHERE (o2.value->>'id')::bigint = s.id
-                                          AND o2.value->>'type' = 'spot'
-                                        LIMIT 1
-                                    )
-                                    LIMIT 1
-                                ) AS spot_group_title
+                                public.order_spot_metadata_internal(s.id)->>'spot_group_title' AS spot_group_title
                             FROM eshop.order_product_ticket opt2
                             LEFT JOIN eshop.spots s
                                 ON s.order_product_ticket = opt2.id
