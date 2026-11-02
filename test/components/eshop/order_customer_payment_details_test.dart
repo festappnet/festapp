@@ -111,6 +111,36 @@ void main() {
       });
   }
 
+  testWidgets('single-line payment rows have consistent vertical spacing', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      bank,
+      {
+        'status': 'partially_paid',
+        'dueNow': 300,
+        'dueAt': '2026-11-05T10:00:00Z',
+      },
+      size: const Size(840, 600),
+      textScale: 1,
+    );
+    final labels = [
+      'Číslo účtu:',
+      'IBAN:',
+      'Variabilní symbol:',
+      'Částka k úhradě:',
+      'Termín:',
+    ];
+    final tops = labels
+        .map((label) => tester.getTopLeft(find.text(label)).dy)
+        .toList();
+    for (var i = 2; i < tops.length; i++) {
+      expect(tops[i] - tops[i - 1], closeTo(tops[1] - tops[0], .01));
+    }
+    await capture(tester, 'payment-consistent-spacing');
+    expect(tester.takeException(), isNull);
+  });
   for (final dark in [false, true]) {
     testWidgets('customer bank instructions fit narrow large text dark=$dark', (
       tester,
