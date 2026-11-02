@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
-import { openDisposableDatabase } from './postgres.mjs';
+import { openDisposableDatabase, assertSchema } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { productScheduleDescriptors } from '../src/operations/product-schedules.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 const migration=new URL('../../../supabase/migrations/20261023170000_product_schedule_commands.sql',import.meta.url);
 const future=days=>new Date(Date.now()+days*86400000).toISOString();
-async function install(db) {await db.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));await db.query(await readFile(migration,'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023190000_inventory_summary_reads.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023210000_product_authoring_options.sql',import.meta.url),'utf8'));}
+
 function executor(db,f) {
  const stats={requests:0,bytes:0,lose:false,replies:[]};
  const owner={root:'/tmp/festapp-wave-fixture',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:productScheduleDescriptors.map(d=>d.id),delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),
@@ -29,7 +29,7 @@ function executor(db,f) {
 
 test('MCP scheduling uses UI domain owners with atomic first target, normalized receipts, conflicts and scoped replay',options,async t=>{
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');
- t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);
+ t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,2);
  const other=Number((await db.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
  const type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Products','entry') returning id",[f.occasion])).rows[0].id);
  const product=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) values($1,$2,'Admission',100,'CZK') returning id",[f.occasion,type])).rows[0].id);
@@ -89,7 +89,7 @@ test('MCP scheduling uses UI domain owners with atomic first target, normalized 
 });
 
 test('wave read is bounded and identical to the administration term projection',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,1);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,1);
  await db.query("insert into eshop.product_price_waves(occasion,change_time) select $1,now()+n*interval '1 day' from generate_series(1,125) n",[f.occasion]);
  await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);let after;const waves=[];
  do {const r=await ex.list({limit:50,...(after?{after}:{})});assert.equal(r.ok,true,JSON.stringify(r));assert(r.data.waves.length<=50);waves.push(...r.data.waves);after=r.data.nextCursor;}while(after);
@@ -114,7 +114,7 @@ test('scheduler and wave move use sorted product locks with two real connections
   }
   await admin.end();
  });
- await admin.query('BEGIN');await install(admin);f=await fixture(admin,1);
+ await admin.query('BEGIN');await assertSchema(admin);f=await fixture(admin,1);
  const type=Number((await admin.query("insert into eshop.product_types(occasion,title,type) values($1,'Concurrent','entry') returning id",[f.occasion])).rows[0].id);
  const ids=(await admin.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select $1,$2,'Product '||n,10,'CZK' from generate_series(1,2) n returning id",[f.occasion,type])).rows.map(r=>Number(r.id));
  const wave=Number((await admin.query('insert into eshop.product_price_waves(occasion,change_time) values($1,$2) returning id',[f.occasion,future(15)])).rows[0].id);
@@ -150,7 +150,7 @@ for(const name of ['eshop/product_price_scheduling_test.sql','eshop/product_pric
  ]) {
  test(`canonical SQL regression: ${name}`,options,async t=>{
   const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');
-  t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+  t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);
   await db.query('SET LOCAL ROLE postgres');
   await db.query("select set_config('request.jwt.claim.role','service_role',true)");
   await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
@@ -163,7 +163,7 @@ for(const name of ['eshop/product_price_scheduling_test.sql','eshop/product_pric
 
 test('runtime source parity for changed schedule and catalog owners',options,async t=>{
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');
- t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+ t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);
  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
  const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');
  const owners=['get_product_catalog_data_internal','get_products_and_types_for_edit','save_product_wave_target_client_sync_v1',

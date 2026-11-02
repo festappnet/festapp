@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
-import {openDisposableDatabase} from './postgres.mjs';
+import {openDisposableDatabase,assertSchema} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db){for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));}
+
 function executor(db,f){
  const stats={calls:[],lose:false};
  const owner={root:'/tmp/festapp-stock-authoring',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['inventory.change','inventory.pools.inspect','inventory.resources.list'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,args)=>{
@@ -23,7 +23,7 @@ function executor(db,f){
  return {stats,owner,change:(command,commandId=randomUUID())=>ops.invoke('inventory.change',{occasionId:f.occasion,commandId,command}),inspect:poolId=>ops.invoke('inventory.pools.inspect',{occasionId:f.occasion,poolId}),resources:(poolId,after,limit=50)=>ops.invoke('inventory.resources.list',{occasionId:f.occasion,poolId,...(after?{after}:{}),limit})};
 }
 const pool=(f,title=null)=>({occasion:f.occasion,title,description:null,type:null,sellable_capacity:null,data:{is_auto_resource_assignment:true}});
-async function transaction(t){const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);await db.query('SET LOCAL ROLE authenticated');return {db,f,ex:executor(db,f)};}
+async function transaction(t){const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,2);await db.query('SET LOCAL ROLE authenticated');return {db,f,ex:executor(db,f)};}
 function success(result){assert.equal(result.ok,true,JSON.stringify(result));return result.data;}
 
 test('stock authoring shares one pool receipt across retries and UI rules, without full-editor MCP snapshots',options,async t=>{
@@ -89,7 +89,7 @@ test('two connections: a scope move during a pool save rolls back its state, ver
   for(const table of ['places','occasion_users','occasion_link_reservations'])await admin.query(`delete from ${table} where occasion=$1`,[f.occasion]);
   await admin.query('delete from occasions where id=$1',[f.occasion]);await admin.query("delete from abuse_policy_overrides where (target_kind='unit' and target_id=$1) or (target_kind='organization' and target_id=$2)",[f.unit,f.org]);
   await admin.query('delete from unit_users where unit=$1',[f.unit]);await admin.query('delete from units where organization=$1',[f.org]);await admin.query('delete from user_info where id=$1',[f.actor]);await admin.query('delete from auth.users where id=$1',[f.actor]);await admin.query('delete from organizations where id=$1',[f.org]);await admin.query('COMMIT');}await admin.end();});
- await admin.query('BEGIN');await install(admin);f=await fixture(admin,1);
+ await admin.query('BEGIN');await assertSchema(admin);f=await fixture(admin,1);
  const id=Number((await admin.query("insert into inventory_pools(occasion,title) values($1,'Original') returning id",[f.occasion])).rows[0].id);
  const otherUnit=Number((await admin.query("insert into units(organization,title) values($1,'Outside delegation') returning id",[f.org])).rows[0].id);await admin.query('COMMIT');
  await admin.query('BEGIN');await admin.query('update inventory_pools set title=title where id=$1',[id]);await admin.query('update occasions set unit=$2 where id=$1',[f.occasion,otherUnit]);
@@ -104,7 +104,7 @@ test('two connections: a scope move during a pool save rolls back its state, ver
 });
 
 test('authoring receipt owner, scope boundaries and compact read owners match canonical source',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);
  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
  const owners=['get_inventory_pool_for_edit','get_inventory_pool_settings_data_internal','get_inventory_resource_rows_internal','get_inventory_pool_bundle','get_inventory_pool_settings_internal','inventory_pool_command_snapshot_internal','get_inventory_pool_settings','get_inventory_resources','save_inventory_pool_command_internal','save_inventory_pool_client_sync_v1','delete_inventory_pool_client_sync_v1','check_inventory_entity_scope_internal','manage_inventory'];
  const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');const assertions=contract.split('\n').filter(line=>owners.some(name=>line.includes("to_regprocedure('public."+name+'(')));assert.equal(assertions.length,owners.length);await db.query('DO $$ BEGIN\n'+assertions.join('\n')+'\nEND $$;');

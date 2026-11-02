@@ -177,8 +177,9 @@ E1. If deployment is absent or rolled back, the runtime contract fails closed.
 ## Verification and next wave
 
 ```sh
+FESTAPP_MCP_TEST_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB \
+FESTAPP_AUTHORIZATION_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB \
 pnpm --dir tools/festapp test
-FESTAPP_MCP_TEST_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB pnpm --dir tools/festapp test
 DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB node web_client/scripts/run_db_tests.js database/tests/ticket_layout_mcp_read_test.sql
 ```
 
@@ -198,12 +199,13 @@ to PNG. Node boundary tests mock Auth/HTTP and secure storage; they do not prove
 a successful real-account Keychain login or live tenant operation. The SQL test
 uses a real disposable backend and rolls back its two synthetic identities.
 
-The optional real PostgreSQL test requires the marked `festapp-db-tests-pg15`
-fixture on loopback port 55432 plus the existing web-client test dependencies.
-It exercises MCP preview/save/lost-response replay/conflict through the actual
-SQL owner under `authenticated`, inside an outer rollback fixture transaction.
-Without that explicit variable, the database integration case is skipped; the
-ordinary Node suite still runs.
+The complete Node suite requires an explicitly selected, fully migrated marked
+disposable database. Both database variables must identify the same guarded
+fixture. Production definitions are installed only by the real migration chain;
+test fixtures create synthetic data and test-only helpers, and do not replay
+historical application migrations. The source-parity gate runs against that
+installed schema. Missing database configuration is a setup error, not a passing
+or partially skipped integration suite.
 
 E1 code, the legacy artwork fence and authenticated runtime registration are
 implemented. Live exposure depends on the selected backend migration and a

@@ -2,13 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
-import {openDisposableDatabase} from './postgres.mjs';
+import {openDisposableDatabase,assertSchema} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])
-  await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
-}
+
 function executor(db,f) {
  const stats=[];
  const owner={root:'/tmp/festapp-inventory-read',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['inventory.pools.list','inventory.contexts.list'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,args)=>{
@@ -24,7 +21,7 @@ function executor(db,f) {
 }
 
 test('inventory UI and MCP share actual context counts without child-join multiplication or hold secrets',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,2);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,2);
  const pool=Number((await db.query("insert into inventory_pools(occasion,title,sellable_capacity) values($1,'Supply',80) returning id",[f.occasion])).rows[0].id);
  const contexts=(await db.query("insert into inventory_contexts(inventory_pool,title,\"order\") values($1,'First',2),($1,NULL,1),($1,'Empty',3) returning id",[pool])).rows.map(r=>Number(r.id));
  await db.query("insert into resources(inventory_pool,occasion,title,capacity) values($1,$2,'A',40),($1,$2,'B',60)",[pool,f.occasion]);
@@ -70,7 +67,7 @@ test('inventory UI and MCP share actual context counts without child-join multip
 });
 
 test('inventory pool and context keysets bound each collection and accept empty metadata',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);const f=await fixture(db,1);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);const f=await fixture(db,1);
  const pools=(await db.query("insert into inventory_pools(occasion,title) select $1,'Pool '||n from generate_series(1,125) n returning id",[f.occasion])).rows.map(r=>Number(r.id));
  const contexts=(await db.query('insert into inventory_contexts(inventory_pool) select $1 from generate_series(1,125) returning id',[pools[0]])).rows.map(r=>Number(r.id));
  await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);let after;const seen=[];
@@ -111,7 +108,7 @@ test('two connections: inventory and product reads recheck revoked rights; a mov
    await admin.query('delete from user_info where id=$1',[f.actor]);await admin.query('delete from auth.users where id=$1',[f.actor]);await admin.query('delete from organizations where id=$1',[f.org]);await admin.query('COMMIT');
   }await admin.end();
  });
- await admin.query('BEGIN');await install(admin);f=await fixture(admin,2);
+ await admin.query('BEGIN');await assertSchema(admin);f=await fixture(admin,2);
  const other=Number((await admin.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
  const pool=Number((await admin.query("insert into inventory_pools(occasion,title) values($1,'Movable') returning id",[f.occasion])).rows[0].id);
  await admin.query("insert into inventory_contexts(inventory_pool,title) values($1,'Private context')",[pool]);await admin.query('COMMIT');
@@ -140,7 +137,7 @@ test('two connections: inventory and product reads recheck revoked rights; a mov
 
 
 test('inventory summary owners match authored SQL and expose no private helper grants',options,async t=>{
- const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
+ const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await assertSchema(db);
  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
  const owners=['get_inventory_context_facts_internal','get_inventory_pool_rows_internal','get_inventory_context_rows_internal','get_inventory_catalog_data_internal','get_inventory_catalog','get_inventory_context_catalog','get_inventory_pools_by_occasion_link','get_product_catalog','get_product_catalog_page','get_product_schedule'];
  const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');

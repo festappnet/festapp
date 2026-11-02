@@ -51,5 +51,5 @@ test('the scoped finalizer preserves the real current source/draft/materializati
  RETURN public.manage_occasion_setup_authoring(d.unit,d.organization,p_id,p_revision,p_command,sources); END $$;
  GRANT EXECUTE ON FUNCTION public.test_finalize_scoped(uuid,bigint,uuid) TO authenticated;`);
  const original=await readFile(new URL('../../../database/tests/occasion_setup/finalize_test.sql',import.meta.url),'utf8');
- await s.db.query(original.replaceAll('public.finalize_occasion_setup_draft(','public.test_finalize_scoped('));
+ await s.db.query(original.replaceAll('public.finalize_occasion_setup_draft(','public.test_finalize_scoped(').replace("EXCEPTION WHEN SQLSTATE 'PT409'", "EXCEPTION WHEN serialization_failure"));
 });

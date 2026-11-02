@@ -9,11 +9,15 @@ const { Client } = createRequire(new URL('../../web_client/package.json', import
 export const databaseUrl = process.env.FESTAPP_AUTHORIZATION_DATABASE_URL;
 export async function connect() {
     const u = new URL(databaseUrl);
-    assert.equal(u.hostname, '127.0.0.1'); assert.equal(u.port, '61022');
+    assert.equal(u.hostname, '127.0.0.1');
+    const projects = {'61022': 'festapp-authz-20261020', '61032': 'festapp-mcp-hardening-20261029'};
+    assert(projects[u.port], 'Explicitly supported authorization fixture port required');
     const db = new Client({ connectionString: databaseUrl }); await db.connect();
-    assert.equal((await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project, 'festapp-authz-20261020');
-    assert.equal((await db.query('show cron.launch_active_jobs')).rows[0]['cron.launch_active_jobs'], 'off');
-    assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe, true);
+    try {
+        assert.equal((await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project, projects[u.port]);
+        assert.equal((await db.query('show cron.launch_active_jobs')).rows[0]['cron.launch_active_jobs'], 'off');
+        assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe, true);
+    } catch (error) { await db.end(); throw error; }
     return db;
 }
 export async function executionContract(db) {
