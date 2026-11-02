@@ -1,3 +1,6 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:festapp_core/time.dart' as timezone_data;
 
@@ -24,6 +27,30 @@ import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:fstapp/components/eshop/views/order_bank_sync_warning.dart';
+
+class _WarningRouter extends RootStackRouter {
+  final Widget home;
+  _WarningRouter(this.home);
+
+  @override
+  List<AutoRoute> get routes => [
+    AutoRoute(
+      page: PageInfo('WarningHost', builder: (_) => home),
+      path: '/',
+    ),
+    AutoRoute(
+      page: PageInfo(
+        BankAccountConnectionSettingsRoute.name,
+        builder: (data) => Scaffold(
+          body: Text(
+            'Connection ${data.inheritedPathParams.getString('accountId')}',
+          ),
+        ),
+      ),
+      path: '/bank-accounts/:accountId/connection',
+    ),
+  ];
+}
 
 class _Translations extends AssetLoader {
   const _Translations();
@@ -87,6 +114,7 @@ void main() {
     'email_missing',
     'healthy-form-projection',
     'missing-status',
+    'pending-retry',
     'future-state',
     'CASH',
   ]) {
@@ -115,9 +143,14 @@ void main() {
           'suspended',
           'degraded',
           'future-state',
+          'pending-retry',
           'CASH',
         ].contains(status))
-          'bank_sync': {'state': status, 'mode': 'api'},
+          'bank_sync': {
+            'state': status == 'pending-retry' ? 'degraded' : status,
+            'mode': 'api',
+            if (status == 'pending-retry') 'warning_pending': true,
+          },
         // Form payment options deliberately expose only the safe warning,
         // without bank_sync connection details. Null means no known problem.
         if (status == 'healthy-form-projection') 'bank_sync_warning': null,
@@ -231,12 +264,13 @@ void main() {
     'healthy',
     'missing-account',
     'preparing_payment',
+    'grace-period',
   ]) {
     testWidgets('bank warning visibility: $scenario', (tester) async {
       await EasyLocalization.ensureInitialized();
       final info = payment(
         paid: scenario.endsWith('full') ? 100 : 25,
-        warning: scenario != 'cash' && scenario != 'healthy',
+        warning: scenario != 'cash' && scenario != 'healthy' && scenario != 'grace-period',
       );
       if (scenario == 'fallback') {
         info.bankSyncWarning = const BankSyncWarning(
@@ -251,7 +285,7 @@ void main() {
                 scenario == 'cash' ||
                 scenario == 'healthy' ||
                 scenario == 'missing-account' ||
-                scenario == 'fallback'
+                scenario == 'fallback' || scenario == 'grace-period'
             ? 'ordered'
             : scenario.split('-').first,
         paymentInfoModel: info,
@@ -326,71 +360,81 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
-  testWidgets(
-    'account admin has an interactive settings hyperlink in the tooltip',
-    (tester) async {
-      final rights = RightsContextFixture.bankAccounts(
-        manageableAccounts: {42},
-      );
-      addTearDown(rights.dispose);
-      await tester.pumpWidget(
-        EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'unused',
-          startLocale: const Locale('en'),
-          assetLoader: const _Translations(),
-          child: Builder(
-            builder: (context) => MaterialApp(
-              builder: DependencyMaterialBridge.builder,
-              locale: context.locale,
-              localizationsDelegates: [
-                ...context.localizationDelegates,
-                ...GlobalMaterialLocalizations.delegates,
-              ],
-              supportedLocales: context.supportedLocales,
-              home: const Scaffold(
-                body: BankSyncWarningButton(
-                  warning: BankSyncWarning(
-                    code: 'suspended',
-                    bankAccountTitle: 'My bank',
-                    bankAccountId: 42,
-                    isAdmin: true,
-                    contacts: [BankSyncContact(name: 'Jane Admin')],
-                  ),
-                ),
-              ),
-            ),
+  testWidgets('account admin opens account settings from tooltip and dialog', (
+    tester,
+  ) async {
+    final rights = RightsContextFixture.bankAccounts(manageableAccounts: {42});
+    addTearDown(rights.dispose);
+    final router = _WarningRouter(
+      const Scaffold(
+        body: BankSyncWarningButton(
+          warning: BankSyncWarning(
+            code: 'suspended',
+            bankAccountTitle: 'My bank',
+            bankAccountId: 42,
+            isAdmin: true,
+            contacts: [BankSyncContact(name: 'Jane Admin')],
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      addTearDown(mouse.removePointer);
-      await mouse.addPointer(location: Offset.zero);
-      await mouse.moveTo(
-        tester.getCenter(find.byIcon(Icons.warning_amber_rounded)),
-      );
-      await tester.pump(const Duration(milliseconds: 600));
-      await tester.pumpAndSettle();
-      final link = tester.widget<Link>(find.byType(Link));
-      expect(link.uri.toString(), '/bank-accounts/42/connection');
-      expect(link.target, LinkTarget.self);
-      expect(find.text('Bank account settings'), findsOneWidget);
-      expect(find.textContaining('Enable synchronization'), findsOneWidget);
-      expect(find.textContaining('Jane Admin'), findsNothing);
-      await mouse.moveTo(tester.getCenter(find.byType(Link)));
-      await tester.pump(const Duration(milliseconds: 800));
-      expect(find.byType(Link), findsOneWidget);
-      expect(
-        tester.widget<TextButton>(find.byType(TextButton)).onPressed,
-        isNotNull,
-      );
-      await mouse.moveTo(const Offset(700, 500));
-      await tester.pump(const Duration(milliseconds: 600));
-      await tester.pumpAndSettle();
-      expect(find.byType(Link), findsNothing);
-    },
-  );
+      ),
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'unused',
+        startLocale: const Locale('en'),
+        assetLoader: const _Translations(),
+        child: Builder(
+          builder: (context) => MaterialApp.router(
+            routerConfig: router.config(),
+            builder: DependencyMaterialBridge.builder,
+            locale: context.locale,
+            localizationsDelegates: [
+              ...context.localizationDelegates,
+              ...GlobalMaterialLocalizations.delegates,
+            ],
+            supportedLocales: context.supportedLocales,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(
+      tester.getCenter(find.byIcon(Icons.warning_amber_rounded)),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(find.text('Bank account settings'), findsOneWidget);
+    expect(find.textContaining('Enable synchronization'), findsOneWidget);
+    expect(find.textContaining('Jane Admin'), findsNothing);
+    await mouse.moveTo(tester.getCenter(find.text('Bank account settings')));
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.text('Bank account settings'), findsOneWidget);
+    expect(
+      tester.widget<TextButton>(find.byType(TextButton)).onPressed,
+      isNotNull,
+    );
+    await tester.tap(find.text('Bank account settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Connection 42'), findsOneWidget);
+    expect(router.current.name, BankAccountConnectionSettingsRoute.name);
+    router.pop();
+    await tester.pumpAndSettle();
+    await mouse.moveTo(const Offset(700, 500));
+    await tester.tap(find.byIcon(Icons.warning_amber_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bank account settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Connection 42'), findsOneWidget);
+    expect(find.byType(AppAlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
 
   group('direct account connection destination', () {
     late RootSupabaseFixture fixture;
