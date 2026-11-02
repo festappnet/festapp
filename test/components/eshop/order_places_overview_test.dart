@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -29,7 +30,7 @@ void main() {
         );
         final document = VenueLayoutDocument.empty().copyWith(
           nodes: [
-            for (final n in [1, 2])
+            for (final n in [1, 2, 3, 4, 5])
               LayoutNode.fromJson({
                 'id': '00000000-0000-4000-8000-00000000000$n',
                 'kind': 'seat',
@@ -52,11 +53,13 @@ void main() {
             },
         ];
         final calls = <String>[];
+        final mapReady = Completer<void>();
         final controller = OrderDetailController(
           orderId: 42,
           occasionId: 71,
           read: (name, args) async {
             calls.add(name);
+            if (name == 'get_order_blueprint_view') await mapReady.future;
             return {
               'code': 200,
               'data': name == 'get_order_admin_detail'
@@ -74,7 +77,25 @@ void main() {
                       'placementFingerprint': 'current',
                     }
                   : {
-                      'title': 'Hall',
+                      'id': 5,
+                      'occasion': 71,
+                      'title': null,
+                      'seatStates': [
+                        for (var n = 1; n <= 5; n++)
+                          {
+                            'nodeId': '00000000-0000-4000-8000-00000000000$n',
+                            'title': 'Seat $n',
+                            'blocked': n == 5,
+                            'hasProduct': true,
+                            'state': {
+                              1: 'ordered',
+                              2: 'used',
+                              3: 'selected',
+                              4: 'available',
+                              5: 'available',
+                            }[n],
+                          },
+                      ],
                       'layout': document.toJson(),
                       'resources': {},
                       'layout_revision': 2,
@@ -116,6 +137,16 @@ void main() {
             ),
           ),
         );
+        await tester.pump();
+        // Repeated selection during the same in-flight map load reuses that request.
+        final secondPlace = tester
+            .widgetList<ListTile>(find.byType(ListTile))
+            .last;
+        secondPlace.onTap!();
+        secondPlace.onTap!();
+        await tester.pump();
+        expect(calls, ['get_order_admin_detail', 'get_order_blueprint_view']);
+        mapReady.complete();
         await tester.pumpAndSettle();
         VenueLayoutViewer viewer() =>
             tester.widget(find.byType(VenueLayoutViewer));
@@ -124,6 +155,28 @@ void main() {
           dense ? places.map((p) => p['nodeId']).toSet() : isEmpty,
         );
         expect(viewer().focusMaxZoomFactor, inInclusiveRange(1, 1.6));
+        expect(find.textContaining('null'), findsNothing);
+        final states = viewer().seatPresentation;
+        expect(
+          (states['00000000-0000-4000-8000-000000000001'] as Map?)?['state'],
+          'ordered',
+        );
+        expect(
+          (states['00000000-0000-4000-8000-000000000002'] as Map?)?['state'],
+          'used',
+        );
+        expect(
+          (states['00000000-0000-4000-8000-000000000003'] as Map?)?['state'],
+          'selected',
+        );
+        expect(
+          (states['00000000-0000-4000-8000-000000000004'] as Map?)?['state'],
+          'available',
+        );
+        expect(
+          (states['00000000-0000-4000-8000-000000000005'] as Map?)?['state'],
+          'blocked',
+        );
         final revision = viewer().focusRevision;
         await tester.tap(find.text('Seat 2'));
         await tester.pumpAndSettle();

@@ -7,11 +7,13 @@ class OrderSymbolCell extends StatelessWidget {
   final String symbol;
   final TextStyle? style;
   final VoidCallback? onOpen;
+  final bool showCopy;
   const OrderSymbolCell({
     super.key,
     required this.symbol,
     this.style,
     this.onOpen,
+    this.showCopy = true,
   });
 
   @override
@@ -51,8 +53,7 @@ class OrderSymbolCell extends StatelessWidget {
                   ),
           ),
         ),
-        const SizedBox(width: 2),
-        CopyButton(value: symbol),
+        if (showCopy) ...[const SizedBox(width: 2), CopyButton(value: symbol)],
       ],
     );
   }
