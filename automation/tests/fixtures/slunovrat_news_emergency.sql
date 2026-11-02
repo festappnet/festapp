@@ -37,6 +37,9 @@ END $$;
 RESET ROLE;
 SELECT statement_timestamp()+interval '3 seconds' AS expires_at \gset
 -- EMERGENCY_POLICY
+SELECT :'expires_at' AS previous_expires_at \gset
+SELECT statement_timestamp()+interval '5 seconds' AS expires_at \gset
+-- EXTEND_EMERGENCY_POLICY
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE saved public.news; BEGIN
   INSERT INTO public.news(occasion,message,created_by)
@@ -143,6 +146,21 @@ END $$;
 RESET ROLE;
 SELECT pg_sleep(3.1);
 SELECT set_config('request.jwt.claim.sub',get_user_id('slunovrat-emergency-editor')::text,true);
+SET LOCAL ROLE authenticated;
+-- Original deadline has passed, but both the policy and news trigger use the extension.
+INSERT INTO public.news(occasion,message,created_by) VALUES(1072594,'Extended deadline',auth.uid());
+RESET ROLE;
+-- The push trigger also reaches normal admission instead of the old expiry.
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+  BEGIN
+    INSERT INTO public.log_notifications(occasion,organization,heading,content)
+    VALUES(1072594,19,'Extended push deadline','No external delivery.');
+    RAISE EXCEPTION 'Notification budget bypassed';
+  EXCEPTION WHEN SQLSTATE 'PT429' THEN NULL; END;
+END $$;
+RESET ROLE;
+SELECT pg_sleep(2.1);
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
   BEGIN

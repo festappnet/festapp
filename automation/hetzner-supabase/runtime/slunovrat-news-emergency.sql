@@ -4,11 +4,11 @@
 -- must schedule slunovrat-news-emergency-remove.sql and verify their removal.
 \set ON_ERROR_STOP on
 SELECT :'expires_at'::timestamptz > statement_timestamp()
-   AND :'expires_at'::timestamptz <= statement_timestamp() + interval '48 hours'
+   AND :'expires_at'::timestamptz <= statement_timestamp() + interval '14 days'
    AS valid_emergency_deadline \gset
 \if :valid_emergency_deadline
 \else
-DO $$ BEGIN RAISE EXCEPTION 'Emergency deadline must be within 48 hours'; END $$;
+DO $$ BEGIN RAISE EXCEPTION 'Emergency deadline must be within 14 days'; END $$;
 \endif
 DO $$
 BEGIN
