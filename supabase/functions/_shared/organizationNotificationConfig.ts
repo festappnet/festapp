@@ -9,6 +9,7 @@ export type OrganizationNotificationConfig = {
   appId: string;
   restApiKey: string;
   defaultUrl: string | null;
+  broadcastAudience: "generation" | "app";
 };
 
 export async function loadOrganizationNotificationConfig(
@@ -39,5 +40,14 @@ export async function loadOrganizationNotificationConfig(
     throw new Error("notification_configuration");
   }
 
-  return { appId, restApiKey, defaultUrl };
+  // Explicitly scoped recovery for Slunovrat's dedicated OneSignal app. Never
+  // extend an app-wide audience to a different or reconfigured app identity.
+  const slunovratApp = organizationId === 19 &&
+    appId === "4c5b7280-510f-4628-8fb8-b4bdd4fed1b2";
+  return {
+    appId,
+    restApiKey,
+    defaultUrl,
+    broadcastAudience: slunovratApp ? "app" : "generation",
+  };
 }

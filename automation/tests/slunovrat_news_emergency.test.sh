@@ -13,4 +13,4 @@ fixture = fixture.replace('-- EMERGENCY_POLICY', (root/'automation/hetzner-supab
 fixture = fixture.replace('-- REMOVE_EMERGENCY_POLICY', (root/'automation/hetzner-supabase/runtime/slunovrat-news-emergency-remove.sql').read_text())
 print(fixture)
 PY
-printf '%s\n' 'Slunovrat legacy news: old denial, scoped insert/readback, author/editor boundaries, expiry and no notification access passed.'
+printf '%s\n' 'Slunovrat legacy news/push: publication gate, admission, scoped access, expiry and removal passed; no external delivery.'

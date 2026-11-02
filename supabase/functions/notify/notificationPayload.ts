@@ -5,6 +5,7 @@ export interface NotificationPayloadInput {
   defaultUrl: string;
   occasionLink: string;
   targetPath: string;
+  broadcastAudience?: "generation" | "app";
   recipient?: string | string[] | null;
   heading: string;
   content: string;
@@ -25,8 +26,24 @@ export function buildNotificationPayload(input: NotificationPayloadInput) {
       app_id: input.appId,
       web_url:
         `${input.defaultUrl}/#/${input.occasionLink}/${input.targetPath}`,
-      include_aliases: { external_id: Array.isArray(input.recipient) ? input.recipient : [input.recipient] },
+      include_aliases: {
+        external_id: Array.isArray(input.recipient)
+          ? input.recipient
+          : [input.recipient],
+      },
       target_channel: "push",
+      headings: { en: input.heading },
+      contents: { en: input.content },
+      ...webIcons,
+    };
+  }
+
+  // A dedicated tenant app can address all of its subscribers. Generation
+  // filtering remains the default for shared/reused application identities.
+  if (input.broadcastAudience === "app") {
+    return {
+      app_id: input.appId,
+      included_segments: ["All"],
       headings: { en: input.heading },
       contents: { en: input.content },
       ...webIcons,
