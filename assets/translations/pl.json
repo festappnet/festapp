@@ -401,7 +401,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Wygląd formularza",
-    "formAppearanceHint": "Wybierz wygląd formularza dla odwiedzających. Opcja System używa ustawień ich urządzenia.",
+    "formAppearanceHint": "Wybierz wygląd formularza dla odwiedzających. Opcja System używa ich ustawienia wyglądu aplikacji, a następnie ustawienia urządzenia.",
     "appearanceSystem": "System",
     "appearanceLight": "Jasny",
     "appearanceDark": "Ciemny",

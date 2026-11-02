@@ -419,7 +419,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Vzhľad formulára",
-    "formAppearanceHint": "Zvoľte vzhľad formulára pre návštevníkov. Voľba Systém sa riadi nastavením ich zariadenia.",
+    "formAppearanceHint": "Zvoľte vzhľad formulára pre návštevníkov. Voľba Podľa systému preberá vzhľad aplikácie, a ak nie je zvolený, nastavenie zariadenia.",
     "appearanceSystem": "Systém",
     "appearanceLight": "Svetlý",
     "appearanceDark": "Tmavý",

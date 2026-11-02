@@ -430,7 +430,7 @@
   },
   "FeatureFormSettings": {
     "formAppearance": "Vzhled formuláře",
-    "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Automatický vzhled se řídí nastavením jejich zařízení.",
+    "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Volba Podle systému přebírá vzhled aplikace, a pokud není zvolený, nastavení zařízení.",
     "appearanceSystem": "Podle systému",
     "appearanceLight": "Světlý",
     "appearanceDark": "Tmavý",
