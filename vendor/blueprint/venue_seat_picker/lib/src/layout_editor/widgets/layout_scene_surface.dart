@@ -32,6 +32,7 @@ class LayoutSceneSurface extends StatefulWidget {
     this.focusNodeIds = const {},
     this.focusRevision,
     this.focusMaxZoomFactor = 5,
+    this.focusSeatPixelSize,
     this.wheelZoomRequiresModifier = false,
     this.presentation = const {},
     this.retainPendingTextPreview = false,
@@ -84,6 +85,7 @@ class LayoutSceneSurface extends StatefulWidget {
   final bool wheelZoomRequiresModifier;
   final int? focusRevision;
   final double focusMaxZoomFactor;
+  final double? focusSeatPixelSize;
   final VenueLayoutDocument document;
   final Map<String, dynamic> resources, presentation;
   final Set<String> selected, highlightedIds;
@@ -526,6 +528,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
           _appliedFocusRevision != widget.focusRevision) {
         _appliedFocusRevision = widget.focusRevision;
         Rect? target;
+        final seatSizes = <double>[];
         for (final node in widget.document.nodes) {
           if (!widget.focusNodeIds.contains(node.id)) continue;
           final b = nodeBounds(widget.document, node);
@@ -536,25 +539,43 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
             b['height']!,
           );
           target = target == null ? rect : target.expandToInclude(rect);
+          if (node.kind == 'seat' && rect.shortestSide > 0) {
+            seatSizes.add(rect.shortestSide);
+          }
         }
         if (target == null) {
           _camera.value = Matrix4.identity();
         } else {
           final center = (target.center - Offset(x, y)) * scale + offset;
           final fit = _fitCameraZoom;
-          final zoom = math
-              .min(
-                (size.width - 64) / math.max(96, target.width * scale),
-                (size.height - 64) / math.max(96, target.height * scale),
-              )
-              .clamp(fit, fit * math.max(1, widget.focusMaxZoomFactor));
-          _camera.value = _boundCamera(
-            Matrix4.diagonal3Values(zoom, zoom, 1)..setTranslationRaw(
-              size.width / 2 - center.dx * zoom,
-              size.height / 2 - center.dy * zoom,
-              0,
-            ),
+          final requestedSeatSize = widget.focusSeatPixelSize;
+          final seatFocus = requestedSeatSize != null && requestedSeatSize > 0;
+          // Seat readability is expressed in screen pixels. The median of the
+          // requested seats ignores unrelated tiny seats elsewhere in the plan.
+          seatSizes.sort();
+          final readableZoom = seatFocus
+              ? seatSizes.isEmpty
+                    ? fit
+                    : requestedSeatSize /
+                          (seatSizes[seatSizes.length ~/ 2] * scale)
+              : double.infinity;
+          final minimumExtent = seatFocus ? 1.0 : 96.0;
+          final contextZoom = math.min(
+            (size.width - 64) / math.max(minimumExtent, target.width * scale),
+            (size.height - 64) / math.max(minimumExtent, target.height * scale),
           );
+          final zoom = math
+              .min(readableZoom, contextZoom)
+              .clamp(fit, fit * math.max(1, widget.focusMaxZoomFactor));
+          _camera.value = seatFocus && zoom <= fit
+              ? Matrix4.identity()
+              : _boundCamera(
+                  Matrix4.diagonal3Values(zoom, zoom, 1)..setTranslationRaw(
+                    size.width / 2 - center.dx * zoom,
+                    size.height / 2 - center.dy * zoom,
+                    0,
+                  ),
+                );
         }
         previousCenter = null;
       }

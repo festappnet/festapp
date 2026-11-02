@@ -90,7 +90,8 @@ void main() {
                                 highlightPulse: pulse,
                                 focusNodeIds: own,
                                 focusRevision: 1,
-                                focusMaxZoomFactor: 1.9,
+                                focusMaxZoomFactor: 2.6,
+                                focusSeatPixelSize: 12,
                                 seatPresentation: {
                                   for (var n = 0; n < nodes.length; n++)
                                     nodes[n].id: {
@@ -155,6 +156,93 @@ void main() {
       },
     );
   }
+  for (final (canvasSize, seatSize) in [
+    (800.0, 20.0),
+    (1000.0, 20.0),
+    (800.0, 80.0),
+    (800.0, 0.0),
+    (12000.0, 20.0),
+  ]) {
+    testWidgets(
+      'seat readability uses selected chair pixels canvas=$canvasSize seat=$seatSize',
+      (tester) async {
+        const own = '00000000-0000-4000-8000-000000000001';
+        final document = VenueLayoutDocument.empty().copyWith(
+          canvas: {
+            'x': 0,
+            'y': 0,
+            'width': canvasSize,
+            'height': canvasSize,
+            'fill': '#ffffffff',
+          },
+          nodes: [
+            LayoutNode(
+              id: own,
+              kind: seatSize == 0 ? 'table' : 'seat',
+              width: seatSize == 0 ? 80 : seatSize,
+              height: seatSize == 0 ? 80 : seatSize,
+              x: canvasSize / 2,
+              y: canvasSize / 2,
+            ),
+            LayoutNode(
+              id: '00000000-0000-4000-8000-000000000002',
+              kind: 'seat',
+              width: 1,
+              height: 1,
+              x: 100,
+              y: 100,
+            ),
+          ],
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 600,
+                height: 300,
+                child: VenueLayoutViewer(
+                  document: document,
+                  focusNodeIds: {own},
+                  focusRevision: 1,
+                  focusMaxZoomFactor: 2.6,
+                  focusSeatPixelSize: 12,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final painter = tester
+            .widgetList<CustomPaint>(find.byType(CustomPaint))
+            .map((w) => w.painter)
+            .whereType<LayoutScenePainter>()
+            .single;
+        final zoom = painter.camera!.value.entry(0, 0);
+        final pixels = seatSize * painter.scale * zoom;
+        if (seatSize == 80 || seatSize == 0) {
+          expect(
+            zoom,
+            1,
+            reason: 'Already readable chairs keep the full-plan camera',
+          );
+        } else if (canvasSize == 12000) {
+          expect(
+            zoom,
+            closeTo(2.6, .0001),
+            reason: 'Keep a modest context cap on unusually large plans',
+          );
+        } else {
+          expect(
+            pixels,
+            closeTo(12, .0001),
+            reason: 'Chair readability is independent of canvas size or unrelated tiny seats',
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'embedded focus zoom is capped and whole-plan reset restores scale',
     (tester) async {
