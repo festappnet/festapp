@@ -25,7 +25,7 @@ class OrderDetailSplitPane extends StatefulWidget {
 class _OrderDetailSplitPaneState extends State<OrderDetailSplitPane>
     with WidgetsBindingObserver {
   final _dividerFocus = FocusNode();
-  double _preferredWidth = 600;
+  double _preferredWidth = 720;
   bool _changed = false;
   int? _dragPointer;
   double _dragLastX = 0, _dragWidth = 0;

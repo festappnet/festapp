@@ -1,6 +1,9 @@
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/_shared/async_download_button.dart';
 
+import 'package:fstapp/components/eshop/models/order_model.dart';
+import 'package:fstapp/components/single_data_grid/single_data_grid_header.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -38,6 +41,8 @@ void main() {
     bool canCancel = false,
     String? customerNote,
     String ticketState = 'ordered',
+    String orderState = 'ordered',
+    bool dark = false,
     Size size = const Size(1000, 1400),
     VoidCallback? onClose,
   }) async {
@@ -66,7 +71,7 @@ void main() {
               'occasion': 71,
               'form_id': 88,
               'order_symbol': 'ORD-42',
-              'state': 'ordered',
+              'state': orderState,
               'price': 400,
               'currency_code': 'CZK',
               'allowedActions': [if (writable) 'edit', if (canCancel) 'cancel'],
@@ -132,6 +137,8 @@ void main() {
     await environment.pumpWidget(
       tester,
       MaterialApp(
+        themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+        darkTheme: ThemeData.dark(),
         builder: DependencyMaterialBridge.builder,
         home: Scaffold(
           body: OrderDetailView(
@@ -147,6 +154,32 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  for (final dark in [false, true]) {
+    for (final state in ['ordered', 'sent']) {
+      testWidgets('header state matches the table color: $state dark=$dark', (
+        tester,
+      ) async {
+        await open(tester, language: 'en', orderState: state, dark: dark);
+        final label = find.text(state == 'sent' ? 'Sent' : 'Ordered');
+        final box = tester.widget<Container>(
+          find.ancestor(of: label, matching: find.byType(Container)).first,
+        );
+        final context = tester.element(label);
+        final background = SingleDataGridHeader.defaultTrinaGridConfiguration(
+          context,
+          'en',
+        ).style.gridBackgroundColor;
+        expect(
+          (box.decoration as BoxDecoration).color,
+          Color.alphaBlend(
+            OrderModel.singleDataGridStateToColor(state),
+            background,
+          ),
+        );
+      });
+    }
   }
 
   testWidgets('ordinary note precedes hidden note and header omits copy', (
@@ -568,8 +601,14 @@ void main() {
         tester.widget<TextField>(input).controller,
         same(controller.email),
       );
+      final beforeDraft = tester.getTopLeft(input);
       await tester.enterText(input, 'draft@example.invalid');
       await tester.pump();
+      expect(
+        tester.getTopLeft(input),
+        beforeDraft,
+        reason: 'Global save controls must not shift the form',
+      );
       expect(controller.dirtyDraftCount, 1);
       expect(controller.dirtyInlineDraftCount, 0);
       expect(find.text('Save changes'), findsOneWidget);
@@ -662,7 +701,14 @@ void main() {
         saveRect.top,
         greaterThan(tester.getRect(find.byType(TabBar)).top),
       );
-      expect(saveRect.bottom, lessThan(600));
+      expect(
+        saveRect.bottom,
+        lessThan(tester.getBottomRight(find.byType(OrderDetailView)).dy),
+      );
+      expect(
+        find.text(CommonStrings.saveChanges).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(find.text(DataGridStrings.discardChanges));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsNothing);
