@@ -29,6 +29,9 @@ class LayoutSceneSurface extends StatefulWidget {
     super.key,
     required this.document,
     this.resources = const {},
+    this.focusNodeIds = const {},
+    this.focusRevision,
+    this.wheelZoomRequiresModifier = false,
     this.presentation = const {},
     this.retainPendingTextPreview = false,
     this.selected = const {},
@@ -75,6 +78,9 @@ class LayoutSceneSurface extends StatefulWidget {
     this.onDoubleTapAt,
     this.onContextMenu,
   });
+  final Set<String> focusNodeIds;
+  final bool wheelZoomRequiresModifier;
+  final int? focusRevision;
   final VenueLayoutDocument document;
   final Map<String, dynamic> resources, presentation;
   final Set<String> selected, highlightedIds;
@@ -149,6 +155,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
       node.kind == 'table' && node.surface?['type'] == 'grid';
 
   final _camera = TransformationController();
+  int? _appliedFocusRevision;
   String? _hoverMessage, _hoverNodeId;
   Offset _hoverPosition = Offset.zero;
   GlobalKey<TooltipState> _hoverTooltipKey = GlobalKey<TooltipState>();
@@ -322,6 +329,8 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
 
   void _pointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent && event is! PointerScaleEvent) return;
+    if (event is PointerScrollEvent && widget.wheelZoomRequiresModifier &&
+        !HardwareKeyboard.instance.isControlPressed && !HardwareKeyboard.instance.isMetaPressed) return;
     GestureBinding.instance.pointerSignalResolver.register(event, (signal) {
       if (signal is PointerScaleEvent) {
         _moveCamera(signal.localPosition, Offset.zero, signal.scale);
@@ -506,6 +515,42 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
         (canvas['width'] as num).toDouble() * scale,
         (canvas['height'] as num).toDouble() * scale,
       );
+      if (widget.focusRevision != null &&
+          _appliedFocusRevision != widget.focusRevision) {
+        _appliedFocusRevision = widget.focusRevision;
+        Rect? target;
+        for (final node in widget.document.nodes) {
+          if (!widget.focusNodeIds.contains(node.id)) continue;
+          final b = nodeBounds(widget.document, node);
+          final rect = Rect.fromLTWH(
+            b['x']!,
+            b['y']!,
+            b['width']!,
+            b['height']!,
+          );
+          target = target == null ? rect : target.expandToInclude(rect);
+        }
+        if (target == null) {
+          _camera.value = Matrix4.identity();
+        } else {
+          final center = (target.center - Offset(x, y)) * scale + offset;
+          final fit = _fitCameraZoom;
+          final zoom = math
+              .min(
+                (size.width - 64) / math.max(96, target.width * scale),
+                (size.height - 64) / math.max(96, target.height * scale),
+              )
+              .clamp(fit, fit * 5);
+          _camera.value = _boundCamera(
+            Matrix4.diagonal3Values(zoom, zoom, 1)..setTranslationRaw(
+              size.width / 2 - center.dx * zoom,
+              size.height / 2 - center.dy * zoom,
+              0,
+            ),
+          );
+        }
+        previousCenter = null;
+      }
       if (previousCenter != null) {
         final fit = _fitCameraZoom;
         final zoom = (previousWorldZoom! / scale).clamp(

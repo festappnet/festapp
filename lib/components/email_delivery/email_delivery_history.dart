@@ -13,6 +13,7 @@ import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 import 'package:trina_grid/trina_grid.dart';
+
 import 'email_delivery_model.dart';
 import 'email_delivery_strings.dart';
 
@@ -21,20 +22,23 @@ class EmailDeliveryHistory extends StatefulWidget {
   final int? organizationId;
   final String? userId;
   final bool embedded;
+  final bool compact;
   final bool ordersOnly;
   final int? orderId;
   final String? messageId;
   final Future<dynamic> Function(String, Map<String, dynamic>)? read;
-  const EmailDeliveryHistory(
-      {super.key,
-      this.occasionId,
-      this.messageId,
-      this.orderId,
-      this.organizationId,
-      this.userId,
-      this.embedded = false,
-      this.ordersOnly = false,
-      this.read});
+  const EmailDeliveryHistory({
+    super.key,
+    this.occasionId,
+    this.messageId,
+    this.orderId,
+    this.organizationId,
+    this.userId,
+    this.embedded = false,
+    this.compact = false,
+    this.ordersOnly = false,
+    this.read,
+  });
   @override
   State<EmailDeliveryHistory> createState() => _EmailDeliveryHistoryState();
 }
@@ -59,13 +63,15 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
     final generation = _generation;
     try {
       final rows = await EmailDeliveryModel.loadHistory(
-          (name, params) => _read(name, params: params), {
-        'p_occasion': widget.occasionId,
-        'p_organization': widget.organizationId,
-        'p_order': widget.orderId,
-        'p_user': widget.userId,
-        if (widget.ordersOnly) 'p_orders_only': true,
-      });
+        (name, params) => _read(name, params: params),
+        {
+          'p_occasion': widget.occasionId,
+          'p_organization': widget.organizationId,
+          'p_order': widget.orderId,
+          'p_user': widget.userId,
+          if (widget.ordersOnly) 'p_orders_only': true,
+        },
+      );
       if (!mounted || generation != _generation || target != widget.messageId)
         return;
       if (rows.any((row) => row.messageId == target)) {
@@ -78,8 +84,9 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
       /* Use the same unavailable result for revoked and deleted targets. */
     }
     if (mounted && generation == _generation && target == widget.messageId) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(NotificationCenterStrings.text('unavailable'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(NotificationCenterStrings.text('unavailable'))),
+      );
     }
   }
 
@@ -92,8 +99,10 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _controller ??= _createController();
-    _openTarget();
+    if (!widget.compact) {
+      _controller ??= _createController();
+      _openTarget();
+    }
   }
 
   @override
@@ -120,17 +129,20 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
       'p_user': widget.userId,
       if (widget.ordersOnly) 'p_orders_only': true,
     };
-    final read = widget.read ??
+    final read =
+        widget.read ??
         (String name, Map<String, dynamic> args) async =>
             Supabase.instance.client.rpc(name, params: args);
     return SingleDataGridController<EmailDeliveryModel>(
       context: context,
       loadData: () async {
-        final result =
-            await ExceptionHandler.guard(context, futureFunction: () async {
-          final rows = await EmailDeliveryModel.loadHistory(read, params);
-          return rows;
-        });
+        final result = await ExceptionHandler.guard(
+          context,
+          futureFunction: () async {
+            final rows = await EmailDeliveryModel.loadHistory(read, params);
+            return rows;
+          },
+        );
         return result ?? <EmailDeliveryModel>[];
       },
       fromPlutoJson: EmailDeliveryModel.fromPlutoJson,
@@ -142,155 +154,299 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
       ),
       headerChildren: [
         DataGridAction(
-            name: CommonStrings.update,
-            action: (controller, [originalAction]) => controller.reloadData())
+          name: CommonStrings.update,
+          action: (controller, [originalAction]) => controller.reloadData(),
+        ),
       ],
       columns: [
         TrinaColumn(
-            title: OrdersStrings.gridId,
-            field: 'id',
-            hide: true,
-            readOnly: true,
-            type: TrinaColumnType.number()),
+          title: OrdersStrings.gridId,
+          field: 'id',
+          hide: true,
+          readOnly: true,
+          type: TrinaColumnType.number(),
+        ),
         EshopColumns.orderSymbolColumn(),
         TrinaColumn(
-            title: CommonStrings.date,
-            field: 'created_at',
-            formatter: (value) => LocaleDateTime.dateTimeCell(
-                value, Localizations.localeOf(context).toString()),
-            readOnly: true,
-            width: 160,
-            type: TrinaColumnType.text()),
+          title: CommonStrings.date,
+          field: 'created_at',
+          formatter: (value) => LocaleDateTime.dateTimeCell(
+            value,
+            Localizations.localeOf(context).toString(),
+          ),
+          readOnly: true,
+          width: 160,
+          type: TrinaColumnType.text(),
+        ),
         TrinaColumn(
-            title: CommonStrings.type,
-            field: 'kind',
-            readOnly: true,
-            width: 240,
-            type: TrinaColumnType.text()),
+          title: CommonStrings.type,
+          field: 'kind',
+          readOnly: true,
+          width: 240,
+          type: TrinaColumnType.text(),
+        ),
         TrinaColumn(
-            title: OrdersStrings.gridState,
-            field: 'state',
-            renderer: (cell) {
-              final model = cell.row.cells[EmailDeliveryModel.reference]!.value
-                  as EmailDeliveryModel;
-              return OrderStateDisplay(
-                formattedState: '${model.state};${cell.cell.value}',
-                getBackground: (state) {
-                  final colors = Theme.of(context).colorScheme;
-                  if ([
-                    'bounce',
-                    'complaint',
-                    'reject',
-                    'rendering_failure',
-                    'dead',
-                    'unknown',
-                    'post_action_failed'
-                  ].contains(state)) return colors.errorContainer;
-                  if (['delivery', 'open', 'click'].contains(state))
-                    return colors.tertiaryContainer;
-                  if ([
-                    'pending',
-                    'preparing',
-                    'sending',
-                    'blocked',
-                    'retry_wait',
-                    'delay'
-                  ].contains(state)) return colors.secondaryContainer;
-                  return colors.surfaceContainerHighest;
-                },
-              );
-            },
-            readOnly: true,
-            width: 280,
-            type: TrinaColumnType.text()),
+          title: OrdersStrings.gridState,
+          field: 'state',
+          renderer: (cell) {
+            final model =
+                cell.row.cells[EmailDeliveryModel.reference]!.value
+                    as EmailDeliveryModel;
+            return OrderStateDisplay(
+              formattedState: '${model.state};${cell.cell.value}',
+              getBackground: (state) {
+                final colors = Theme.of(context).colorScheme;
+                if ([
+                  'bounce',
+                  'complaint',
+                  'reject',
+                  'rendering_failure',
+                  'dead',
+                  'unknown',
+                  'post_action_failed',
+                ].contains(state))
+                  return colors.errorContainer;
+                if (['delivery', 'open', 'click'].contains(state))
+                  return colors.tertiaryContainer;
+                if ([
+                  'pending',
+                  'preparing',
+                  'sending',
+                  'blocked',
+                  'retry_wait',
+                  'delay',
+                ].contains(state))
+                  return colors.secondaryContainer;
+                return colors.surfaceContainerHighest;
+              },
+            );
+          },
+          readOnly: true,
+          width: 280,
+          type: TrinaColumnType.text(),
+        ),
         TrinaColumn(
-            title: CommonStrings.detailsLabel,
-            field: 'detail',
-            readOnly: true,
-            width: 100,
-            enableFilterMenuItem: false,
-            type: TrinaColumnType.text(),
-            renderer: (cell) => IconButton(
-                tooltip: CommonStrings.detailsLabel,
-                icon: const Icon(Icons.info_outline),
-                onPressed: () => _detail((cell
-                        .row
-                        .cells[EmailDeliveryModel.reference]!
-                        .value as EmailDeliveryModel)
-                    .messageId))),
+          title: CommonStrings.detailsLabel,
+          field: 'detail',
+          readOnly: true,
+          width: 100,
+          enableFilterMenuItem: false,
+          type: TrinaColumnType.text(),
+          renderer: (cell) => IconButton(
+            tooltip: CommonStrings.detailsLabel,
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _detail(
+              (cell.row.cells[EmailDeliveryModel.reference]!.value
+                      as EmailDeliveryModel)
+                  .messageId,
+            ),
+          ),
+        ),
       ],
     );
   }
 
   Future<void> _detail(String messageId) async {
-    final result = await ExceptionHandler.guard(context,
-        futureFunction: () => _read('get_email_delivery_detail',
-            params: {'p_message': messageId}));
+    final result = await ExceptionHandler.guard(
+      context,
+      futureFunction: () =>
+          _read('get_email_delivery_detail', params: {'p_message': messageId}),
+    );
     if (!mounted || result is! Map) return;
     await showDialog<void>(
-        context: context,
-        builder: (_) => AppAlertDialog(
-              title: Text(EmailDeliveryStrings.history),
-              content: SizedBox(
-                  width: 400,
-                  child: SingleChildScrollView(
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(EmailDeliveryStrings.state(
-                            result['message']?['tracking_policy'] == 'disabled'
-                                ? 'tracking_disabled'
-                                : result['message']?['clicked_at'] != null
-                                    ? 'click'
-                                    : result['message']?['opened_at'] != null
-                                        ? 'open'
-                                        : 'not_observed')),
-                        if (result['message']?['last_error'] ==
-                            'post_action_failed')
-                          Text(
-                              EmailDeliveryStrings.state('post_action_failed')),
-                        for (final entry in (result['attempts'] as List? ?? []))
-                          Text(
-                              '${EmailDeliveryStrings.state(entry['state'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}${entry['error'] == null ? '' : ' - ${entry['error']}'}'),
-                        for (final entry in (result['events'] as List? ?? []))
-                          Text(
-                              '${EmailDeliveryStrings.state(entry['type'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}'),
-                      ]))),
-            ));
+      context: context,
+      builder: (_) => AppAlertDialog(
+        title: Text(EmailDeliveryStrings.history),
+        content: SizedBox(
+          width: 400,
+          child: SingleChildScrollView(
+            child: emailDeliveryMessageContent(context, result),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.compact)
+      return EmailDeliveryTimeline(
+        key: ValueKey('${widget.occasionId}/${widget.orderId}'),
+        occasionId: widget.occasionId!,
+        orderId: widget.orderId!,
+        messageId: widget.messageId,
+        read: (name, params) => _read(name, params: params),
+      );
     final content = SizedBox(
       width: widget.embedded ? double.infinity : 900,
       height: widget.embedded ? double.infinity : 480,
-      child: Column(children: [
-        if (!widget.embedded)
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: AppDialogHeader(
-              title: Text(EmailDeliveryStrings.history,
-                  style: Theme.of(context).textTheme.titleLarge),
+      child: Column(
+        children: [
+          if (!widget.embedded)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: AppDialogHeader(
+                title: Text(
+                  EmailDeliveryStrings.history,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
             ),
-          ),
-        if (!widget.ordersOnly &&
-            widget.organizationId != null &&
-            widget.occasionId != null &&
-            widget.orderId == null &&
-            widget.userId == null)
-          SwitchListTile(
+          if (!widget.ordersOnly &&
+              widget.organizationId != null &&
+              widget.occasionId != null &&
+              widget.orderId == null &&
+              widget.userId == null)
+            SwitchListTile(
               title: Text(EmailDeliveryStrings.organizationScope),
               value: _organizationScope,
               onChanged: (value) => setState(() {
-                    _organizationScope = value;
-                    _controller = _createController();
-                  })),
-        Expanded(
-            child: SingleTableDataGrid<EmailDeliveryModel>(_controller!,
-                key: ObjectKey(_controller))),
-      ]),
+                _organizationScope = value;
+                _controller = _createController();
+              }),
+            ),
+          Expanded(
+            child: SingleTableDataGrid<EmailDeliveryModel>(
+              _controller!,
+              key: ObjectKey(_controller),
+            ),
+          ),
+        ],
+      ),
     );
     return widget.embedded ? content : AppDialog(child: content);
   }
+}
+
+Widget emailDeliveryMessageContent(BuildContext context, Map result) => Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      EmailDeliveryStrings.state(
+        result['message']?['tracking_policy'] == 'disabled'
+            ? 'tracking_disabled'
+            : result['message']?['clicked_at'] != null
+            ? 'click'
+            : result['message']?['opened_at'] != null
+            ? 'open'
+            : 'not_observed',
+      ),
+    ),
+    if (result['message']?['last_error'] == 'post_action_failed')
+      Text(EmailDeliveryStrings.state('post_action_failed')),
+    for (final entry in (result['attempts'] as List? ?? []))
+      Text(
+        '${EmailDeliveryStrings.state(entry['state'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}${entry['error'] == null ? '' : ' - ${entry['error']}'}',
+      ),
+    for (final entry in (result['events'] as List? ?? []))
+      Text(
+        '${EmailDeliveryStrings.state(entry['type'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}',
+      ),
+  ],
+);
+
+/// Narrow order timeline. Pagination and state semantics use the reporting owner.
+class EmailDeliveryTimeline extends StatefulWidget {
+  const EmailDeliveryTimeline({
+    super.key,
+    required this.occasionId,
+    required this.orderId,
+    required this.read,
+    this.messageId,
+  });
+  final int occasionId, orderId;
+  final String? messageId;
+  final Future<dynamic> Function(String, Map<String, dynamic>) read;
+  @override
+  State<EmailDeliveryTimeline> createState() => _EmailDeliveryTimelineState();
+}
+
+class _EmailDeliveryTimelineState extends State<EmailDeliveryTimeline> {
+  late final _rows = EmailDeliveryModel.loadHistory(widget.read, {
+    'p_occasion': widget.occasionId,
+    'p_order': widget.orderId,
+  });
+  final _details = <String, Future<dynamic>>{};
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<EmailDeliveryModel>>(
+    future: _rows,
+    builder: (context, snapshot) {
+      if (snapshot.hasError) return Text(EmailDeliveryStrings.unavailable);
+      if (!snapshot.hasData)
+        return const Center(child: CircularProgressIndicator());
+      if (widget.messageId != null &&
+          !snapshot.data!.any((m) => m.messageId == widget.messageId))
+        return Text(EmailDeliveryStrings.unavailable);
+      if (snapshot.data!.isEmpty)
+        return Text(EmailDeliveryStrings.recovery('noMessages'));
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final message in snapshot.data!)
+            ExpansionTile(
+              key: PageStorageKey((
+                'order-email-message',
+                widget.orderId,
+                message.messageId,
+              )),
+              initiallyExpanded: message.messageId == widget.messageId,
+              tilePadding: EdgeInsets.zero,
+              title: Text(EmailDeliveryStrings.kind(message.kind)),
+              subtitle: Text(
+                [
+                  message.recipient ?? '',
+                  EmailDeliveryStrings.state(message.state),
+                  if (message.createdAt != null)
+                    LocaleDateTime.instant(
+                      message.createdAt!.toIso8601String(),
+                      Localizations.localeOf(context).toString(),
+                    ),
+                ].where((v) => v.isNotEmpty).join(' · '),
+              ),
+              onExpansionChanged: (open) {
+                if (open)
+                  setState(
+                    () => _details.putIfAbsent(
+                      message.messageId,
+                      () => widget.read('get_email_delivery_detail', {
+                        'p_message': message.messageId,
+                      }),
+                    ),
+                  );
+              },
+              children: [
+                FutureBuilder<dynamic>(
+                  key: PageStorageKey((
+                    'email-message-content',
+                    message.messageId,
+                  )),
+                  future:
+                      _details[message.messageId] ??
+                      (message.messageId == widget.messageId
+                          ? _details.putIfAbsent(
+                              message.messageId,
+                              () => widget.read('get_email_delivery_detail', {
+                                'p_message': message.messageId,
+                              }),
+                            )
+                          : null),
+                  builder: (context, detail) => Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: detail.hasError
+                        ? Text(EmailDeliveryStrings.unavailable)
+                        : detail.hasData
+                        ? emailDeliveryMessageContent(
+                            context,
+                            detail.data as Map,
+                          )
+                        : const CircularProgressIndicator(),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      );
+    },
+  );
 }

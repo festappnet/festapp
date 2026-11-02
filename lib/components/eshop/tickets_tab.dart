@@ -1,4 +1,5 @@
 import 'ticket_cancellation_updates.dart';
+
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
@@ -92,8 +93,11 @@ class _TicketsTabState extends State<TicketsTab> {
       additionalFilterEnabled: true,
       additionalRowPredicate: OrderGridFilters.ticketIsNonCancelled,
       headerFilterBuilder: (context, controller) =>
-          OrderGridFilters.filterButton(context, controller,
-              label: OrderItemStrings.validTickets),
+          OrderGridFilters.filterButton(
+            context,
+            controller,
+            label: OrderItemStrings.validTickets,
+          ),
       loadData: () => DbTickets.getAllTickets(occasionLink!),
       fromPlutoJson: TicketModel.fromPlutoJson,
       firstColumnType: DataGridFirstColumn.check,
@@ -104,14 +108,15 @@ class _TicketsTabState extends State<TicketsTab> {
       ),
       headerChildren: [
         DataGridAction(
-          name: CommonStrings.cancel,
+          name: OrderItemStrings.cancelAction,
           requiresSelection: true,
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
           isEnabled: () =>
               RightsService.canUpdateOrders() &&
-              (_controller?.visibleCheckedRows
-                      .every(OrderGridFilters.ticketIsNonCancelled) ??
+              (_controller?.visibleCheckedRows.every(
+                    OrderGridFilters.ticketIsNonCancelled,
+                  ) ??
                   false),
         ),
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
@@ -182,17 +187,18 @@ class _TicketsTabState extends State<TicketsTab> {
 
     var confirm = await DataGridActionConfirmation.show<TicketModel>(
       context: context,
-      title: CommonStrings.cancel,
+      title: OrderItemStrings.cancelAction,
       message: OrderItemStrings.cancelItemsConfirmationText,
       items: selectedTickets,
       itemsLabel: OrderItemStrings.itemsPlural,
-      confirmButtonText: CommonStrings.cancel,
+      confirmButtonText: OrderItemStrings.cancelAction,
       groupBy: (ticket) => ticket.relatedOrder,
     );
 
     if (confirm && mounted) {
-      final checkedIds =
-          _getCheckedTickets(singleDataGrid).map((ticket) => ticket.id).toSet();
+      final checkedIds = _getCheckedTickets(singleDataGrid)
+          .map((ticket) => ticket.id)
+          .toSet();
       final confirmedIds = selectedTickets
           .where((ticket) => checkedIds.contains(ticket.id))
           .map((ticket) => ticket.id!)
@@ -205,9 +211,7 @@ class _TicketsTabState extends State<TicketsTab> {
         1,
         futures: [
           () async {
-            outcome = await DbTickets.stornoTickets(
-              confirmedIds,
-            );
+            outcome = await DbTickets.stornoTickets(confirmedIds);
           },
         ],
       );

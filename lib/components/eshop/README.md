@@ -135,3 +135,28 @@ Orders / Pregenerated and the Blueprint batch action require an enabled `ticket`
 feature with `pregenerated_tickets: true` (default false). Configure it in the
 ticket feature settings. The UI flag does not replace server permission checks.
 A single eligible form is selected automatically in the batch creation dialog.
+
+## Authenticated order detail
+
+`get_order_admin_detail(order, occasion)` is the exact-order read boundary. It
+checks `can_read_orders` against the stored occasion and returns ordered
+snapshots separately from live ticket/item/place identities. Cancelled tickets
+retain their last ordered snapshot from this order's history, while their
+released seats never become current highlights. Detailed transactions, email
+reporting and history retain their existing authorized readers.
+
+`get_order_blueprint_view` checks the same order permission and the core's read
+placement fingerprint in one statement snapshot. That fingerprint is neither a
+permission nor a mutation fence. The reader returns saved schema-2 geometry and
+canonical public resources; it never reserves inventory or prepares authoring
+resources. `OrderPlacesView` resolves verified assets with the shared resolver
+and uses only the viewer's public generic focus/highlight/hit interface.
+
+`OrderDetailController` owns one contact draft across the responsive host and
+all five tabs. Contact edits use `OrderCommands.repairEmail`; save-only never
+enqueues a message. A retained uncertain command can be verified explicitly
+through `RecoverableOrderContactCommands` using its original request and UUID.
+A confirmed command remains confirmed if cache activation or readback fails.
+
+Local review setup and actual evidence are recorded in
+[`order-detail-local-review.md`](../../../docs/plans/evidence/order-detail-local-review.md).

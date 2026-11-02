@@ -739,7 +739,8 @@
       "email_missing": "Odbiór wiadomości e-mail z banku nie jest skonfigurowany."
     },
     "noOrders": "Nie ma jeszcze żadnych zamówień.",
-    "copyLink": "Kopiuj link"
+    "copyLink": "Kopiuj link",
+    "generatingPdf": "Generowanie PDF…"
   },
   "FeatureMap": {
     "changeLocation": "Zmień lokalizację",
@@ -2744,5 +2745,12 @@
     "MODE_CHANGED": "Tryb sprzedaży uległ zmianie. Proszę odświeżyć dane przed kontynuowaniem.",
     "FORBIDDEN": "Nie mają już Państwo uprawnień do tej operacji.",
     "UNKNOWN": "Nie udało się zakończyć operacji. Proszę odświeżyć aktualne dane."
+  },
+  "OrderDetail": {
+    "form_field": "Pole formularza",
+    "selected_entry": "Wybrana pozycja",
+    "email_status_help": "Status zamówienia, płatności i e-maila to oddzielne informacje. Przyjęto oznacza przyjęcie przez usługę wysyłki; dostarczono oznacza przyjęcie przez serwer pocztowy. Otwarcia i kliknięcia nie potwierdzają przeczytania. Ponowienie oznacza kolejną próbę; status nieznany nie potwierdza wysyłki. Wiadomość zawiera przyczynę i dostępną naprawę.",
+    "udaj_nebyl_uveden": "Nie wypełniono",
+    "udaj_byl_vymazan": "Nie wypełniono"
   }
 }
