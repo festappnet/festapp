@@ -17,16 +17,20 @@ export class SettingsWidget {
     render() {
         this.element.innerHTML = '';
         
+        // An explicit form design is locked; an automatic design inherits
+        // the shared portal preference and lets the visitor change it.
+        const formMode = ThemeService._lastFormModel?.themeMode;
+        const forcedAppearance = formMode === 'light' || formMode === 'dark';
         // Theme Section
         this.renderSection({
-            disabled: !!ThemeService._lastFormModel,
+            disabled: forcedAppearance,
             title: LocalizationService.tr('Common.appearance') || 'Vzhled', // Fallback trans
             options: [
                 { id: 'dark', label: CommonStrings.dark },
                 { id: 'auto', label: CommonStrings.auto },
                 { id: 'light', label: CommonStrings.light }
             ],
-            currentValue: ThemeService._lastFormModel ? ({system:'auto'}[ThemeService._lastFormModel.themeMode] || ThemeService._lastFormModel.themeMode || 'auto') : ThemeService.currentMode,
+            currentValue: forcedAppearance ? formMode : ThemeService.currentMode,
             onSelect: (val) => {
                 ThemeService.setMode(val);
                 this.render(); // Re-render to update active state
