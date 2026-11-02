@@ -6,6 +6,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 import '../../blueprint/blueprint_layout_resources.dart';
+import '../../blueprint/blueprint_layout_adapter.dart';
+import '../../_shared/common_strings.dart';
 import '../models/order_admin_detail.dart';
 import '../order_detail_controller.dart';
 
@@ -33,6 +35,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
   int? _plan;
   int _request = 0, _focusRevision = 0;
   Map<String, dynamic>? _map, _resources;
+  Map<String, dynamic> _seatPresentation = const {};
   VenueLayoutDocument? _document;
   String? _error;
   bool _loading = false;
@@ -93,7 +96,10 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
   }
 
   Future<void> _load(int id) async {
-    if (widget.controller.busy || (_plan == id && _document != null)) return;
+    if (widget.controller.busy ||
+        (_plan == id && (_document != null || _loading))) {
+      return;
+    }
     final expectedFingerprint = widget.controller.detail?.placementFingerprint;
     final request = ++_request;
     setState(() {
@@ -107,12 +113,21 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
     try {
       final map = await widget.controller.blueprint(id);
       final document = VenueLayoutDocument.fromJson(detailMap(map['layout']));
+      if (map['seatStates'] is! List) {
+        throw const FormatException('Plan occupancy unavailable');
+      }
+      final seatPresentation = <String, dynamic>{
+        for (final facts in detailRows(map['seatStates']))
+          facts['nodeId'] as String:
+              BlueprintLayoutAdapter.readonlySeatPresentation(facts),
+      };
       final resources = await _resolver.resolve(detailMap(map['resources']));
       if (!mounted || request != _request || !widget.controller.validContext)
         return;
       setState(() {
         _map = map;
         _resources = resources;
+        _seatPresentation = seatPresentation;
         _document = document;
         _loading = false;
         _focusRevision++;
@@ -166,7 +181,12 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                 OutlinedButton.icon(
                   onPressed: () => _load(plan['id'] as int),
                   icon: Icon(Icons.map_outlined),
-                  label: Text('${plan['title']}'),
+                  label: Text(
+                    plan['title'] is String &&
+                            (plan['title'] as String).trim().isNotEmpty
+                        ? plan['title'] as String
+                        : '${CommonStrings.blueprint} #${plan['id']}',
+                  ),
                 ),
             ],
           ),
@@ -189,7 +209,12 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
               children: [
                 Expanded(
                   child: Text(
-                    '${_map!['title']} · ${OrderDetailStrings.text('current_plan')}',
+                    [
+                      if (_map!['title'] is String &&
+                          (_map!['title'] as String).trim().isNotEmpty)
+                        (_map!['title'] as String).trim(),
+                      OrderDetailStrings.text('current_plan'),
+                    ].join(' · '),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
@@ -229,6 +254,7 @@ class _OrderPlacesViewState extends State<OrderPlacesView> {
                   document: _document!,
                   wheelZoomRequiresModifier: true,
                   resources: _resources ?? {},
+                  seatPresentation: _seatPresentation,
                   highlightedNodeIds: own,
                   activeNodeIds: active,
                   // A dense plan gets a modest initial focus, never a close-up.

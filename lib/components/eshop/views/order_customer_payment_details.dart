@@ -39,50 +39,68 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
         due.isFinite &&
         due >= 0 &&
         !const {'unknown', 'cancelled'}.contains(payment['status']);
-    Widget fact(String label, String value, {bool copy = false}) => Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final content = Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: SelectableText(value, style: theme.textTheme.bodyLarge),
+    // Match the existing transaction detail rows: compact body text and a
+    // consistent label/value split, with natural wrapping at narrow widths.
+    final bodyStyle = theme.textTheme.bodyMedium?.copyWith(fontSize: 14);
+    Widget fact(
+      String label,
+      String value, {
+      bool copy = false,
+    }) => LayoutBuilder(
+      builder: (context, constraints) {
+        // Reserve the stacked fallback for narrow panes with enlarged text.
+        // Ordinary mobile and desktop keep the canonical compact columns.
+        final stacked =
+            constraints.maxWidth < 340 &&
+            MediaQuery.textScalerOf(context).scale(14) > 20;
+        final content = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Padding(
+                padding: EdgeInsets.only(top: copy ? 5 : 0),
+                child: SelectableText(value, style: bodyStyle),
               ),
-              if (copy) CopyButton(value: value),
-            ],
-          );
-          final heading = Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
-          );
-          return constraints.maxWidth < 480
+            if (copy) ...[const SizedBox(width: 4), CopyButton(value: value)],
+          ],
+        );
+        return Padding(
+          padding: EdgeInsets.only(bottom: stacked ? 10 : 5),
+          child: stacked
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [heading, const SizedBox(height: 3), content],
+                  children: [
+                    Text('$label:', style: bodyStyle),
+                    content,
+                  ],
                 )
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 170, child: heading),
-                    const SizedBox(width: 16),
-                    Expanded(child: content),
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: copy ? 5 : 0, right: 8),
+                        child: Text('$label:', style: bodyStyle),
+                      ),
+                    ),
+                    Expanded(flex: 5, child: content),
                   ],
-                );
-        },
-      ),
+                ),
+        );
+      },
     );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             FormStrings.paymentDetailsTitle,
-            style: theme.textTheme.titleMedium,
+            style: bodyStyle?.copyWith(fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 8),
           if (creditor != null)
             fact(BankAccountStrings.creditorNameLabel, creditor),
           if (account != null)
@@ -115,7 +133,7 @@ class OrderCustomerPaymentDetails extends StatelessWidget {
                 Localizations.localeOf(context).toString(),
               ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(height: 1),
         ],
       ),
