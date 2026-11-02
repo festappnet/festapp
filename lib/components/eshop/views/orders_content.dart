@@ -307,10 +307,8 @@ class _OrdersContentState extends State<OrdersContent> {
   }) async {
     if (id != _openedOrder && !await _allowDetailLeave()) return;
     if (!mounted) return;
-    if (id != null && tab != null) _lastTab = tab;
     final root = context.router.root;
     final uri = root.urlState.uri;
-    final selectedTab = tab ?? (_detail != null ? _lastTab : 'overview');
     final query = Map<String, String>.from(uri.queryParameters)
       ..remove('orderId')
       ..remove('orderTab')
@@ -318,7 +316,7 @@ class _OrdersContentState extends State<OrdersContent> {
       ..remove('orderMessageId');
     if (id != null) {
       query['orderId'] = '$id';
-      if (selectedTab != 'overview') query['orderTab'] = selectedTab;
+      if (tab != null && tab != 'overview') query['orderTab'] = tab;
       if (ticket != null) query['orderTicketId'] = '$ticket';
       if (message != null) query['orderMessageId'] = message;
     }
@@ -733,7 +731,7 @@ class _OrdersContentState extends State<OrdersContent> {
           EshopColumnIds.PAYMENT_INFO_PAID: refreshData,
           "unitId": unitId,
           "occasionId": occasion.id,
-          "openOrderDetail": (int id, String? tab) =>
+          "openOrderDetail": (int id, String tab) =>
               _navigateDetail(id, tab: tab),
         },
       ),

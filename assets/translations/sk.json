@@ -757,8 +757,7 @@
       "email_missing": "Príjem bankových e-mailov nie je nastavený."
     },
     "noOrders": "Zatiaľ nie sú žiadne objednávky.",
-    "copyLink": "Kopírovať odkaz",
-    "generatingPdf": "Generuje sa PDF…"
+    "copyLink": "Kopírovať odkaz"
   },
   "FeatureMap": {
     "changeLocation": "Zmeniť polohu",
@@ -2774,8 +2773,6 @@
   "OrderDetail": {
     "form_field": "Údaj z formulára",
     "selected_entry": "Zobrazená položka",
-    "email_status_help": "Stav objednávky, platba a e-mail sú oddelené údaje. Prijaté znamená prevzatie odosielacou službou; doručené znamená prijatie poštovým serverom. Otvorenia a kliknutia nepotvrdzujú prečítanie. Opakovanie znamená ďalší pokus; neznámy stav nepotvrdzuje odoslanie. Podrobnosti správy uvádzajú dôvod a dostupnú opravu.",
-    "udaj_nebyl_uveden": "Nevyplnené",
-    "udaj_byl_vymazan": "Nevyplnené"
+    "email_status_help": "Stav objednávky, platba a e-mail sú oddelené údaje. Prijaté znamená prevzatie odosielacou službou; doručené znamená prijatie poštovým serverom. Otvorenia a kliknutia nepotvrdzujú prečítanie. Opakovanie znamená ďalší pokus; neznámy stav nepotvrdzuje odoslanie. Podrobnosti správy uvádzajú dôvod a dostupnú opravu."
   }
 }

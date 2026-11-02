@@ -93,7 +93,7 @@ BEGIN
   END LOOP;
   UPDATE eshop.orders SET price=price,currency_code='CZK',state=state,payment_info=pi,
    note_hidden=CASE WHEN i=3 THEN 'Záloha přijata. Doplatek do 10. ledna.' END,
-   data=jsonb_build_object('name',name,'surname',surname,'email',contact,'phone','+420 777 000 00'||i,'form',(SELECT key FROM public.forms WHERE id=form_id),'tickets',tickets,'note',CASE WHEN i=2 THEN 'Přijdeme po 18. hodině.' END,
+   data=jsonb_build_object('name',name,'surname',surname,'email',contact,'phone','+420 777 000 00'||i,'form',(SELECT key FROM public.forms WHERE id=form_id),'tickets',tickets,
     'fields',jsonb_build_array(jsonb_build_object(field_email::text,contact),jsonb_build_object(field_phone::text,'+420 777 000 00'||i))) WHERE id=oid;
   INSERT INTO eshop.orders_history("order",created_by,state,price,currency_code,data) SELECT id,actor,state,price,currency_code,data FROM eshop.orders WHERE id=oid;
   IF received>0 THEN

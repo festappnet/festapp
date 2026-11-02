@@ -26,7 +26,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
-import 'package:fstapp/components/eshop/views/order_detail_view.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
@@ -129,7 +128,6 @@ void main() {
   var repairReads = 0;
   var groupSelection = false;
   var bellEntry = false;
-  var detailNavigation = false;
   Map<String, dynamic>? groupRequest;
   setUp(() {
     final previous = RightsService.occasionLinkModelNotifier.value;
@@ -212,37 +210,6 @@ void main() {
           return http.Response(
             jsonEncode({'message': 'Unavailable', 'code': 'XX000'}),
             500,
-            request: request,
-            headers: {'content-type': 'application/json'},
-          );
-        }
-        if (detailNavigation &&
-            request.url.path.endsWith('/get_order_admin_detail')) {
-          final id = jsonDecode(request.body)['p_order'];
-          return http.Response(
-            jsonEncode({
-              'code': 200,
-              'data': {
-                'order': {
-                  'id': id,
-                  'occasion': 1,
-                  'order_symbol': 'ORDER$id',
-                  'state': 'ordered',
-                  'currency_code': 'CZK',
-                  'price': 0,
-                  'data': {'email': 'customer@example.invalid'},
-                },
-                'capabilities': {'write': false},
-                'payment': {'status': 'free', 'received': 0, 'returned': 0},
-                'tickets': [],
-                'answers': [],
-                'fields': [],
-                'places': [],
-                'plans': [],
-                'placementFingerprint': 'fixture',
-              },
-            }),
-            200,
             request: request,
             headers: {'content-type': 'application/json'},
           );
@@ -384,40 +351,6 @@ void main() {
     expect(find.text('Zatím nejsou žádné objednávky.'), findsOneWidget);
     expect(find.text('Došlo k neočekávané chybě.'), findsNothing);
   });
-  testWidgets('symbol navigation retains selected tab and clears old targets', (
-    tester,
-  ) async {
-    fail = false;
-    includeOrder = true;
-    groupSelection = true;
-    detailNavigation = true;
-    addTearDown(() {
-      detailNavigation = false;
-      includeOrder = false;
-      groupSelection = false;
-    });
-    final router = _Router();
-    await showOrders(
-      tester,
-      externalRouter: router,
-      path: '/empty?orderId=4&orderTab=tickets&orderTicketId=123&orderMessageId=old',
-    );
-    await tester.tap(find.text('ORDER5'));
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 20));
-    }
-    final query = router.urlState.uri.queryParameters;
-    expect(query['orderId'], '5');
-    expect(query['orderTab'], 'tickets');
-    expect(query.containsKey('orderTicketId'), isFalse);
-    expect(query.containsKey('orderMessageId'), isFalse);
-    expect(
-      tester.widget<OrderDetailView>(find.byType(OrderDetailView)).tab,
-      'tickets',
-    );
-    expect(tester.takeException(), isNull);
-  });
-
   for (final source in ['', '&orderMessageId=old-resolved-message']) {
     testWidgets(
       'notification selects a healthy order without email repair: $source',

@@ -14,7 +14,6 @@ import 'models/ticket_model.dart';
 import '../forms/waitlist_strings.dart';
 import 'views/waitlist_order_detail.dart';
 import 'order_symbol_cell.dart';
-import '../_shared/async_download_button.dart';
 import 'order_grid_filters.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_indicator.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -463,12 +462,11 @@ class EshopColumns {
                       .row
                       .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
                       ?.value as TicketModel?;
-                  return AsyncDownloadButton(
-                    key: ValueKey(('ticket-pdf', ticket?.id)),
-                    iconOnly: true,
-                    label: OrdersStrings.downloadTicket,
-                    loadingLabel: OrdersStrings.generatingPdf,
-                    onDownload: ticket?.ticketSymbol?.trim().isNotEmpty !=
+                  return IconButton(
+                    icon: const Icon(Icons.download),
+                    tooltip: OrdersStrings
+                        .downloadTicket, // Localize tooltip if preferred
+                    onPressed: ticket?.ticketSymbol?.trim().isNotEmpty !=
                                 true ||
                             !canDownloadTicket(rendererContext
                                 .row
@@ -622,7 +620,7 @@ class EshopColumns {
         ],
         EshopColumnIds.ORDER_SEQUENCE: [orderSequenceColumn()],
         EshopColumnIds.ORDER_SYMBOL: (Map<String,dynamic> data) => [orderSymbolColumn(context:context,
-          onOpen:data['openOrderDetail']==null?null:(id)=>(data['openOrderDetail'] as void Function(int,String?))(id,null))],
+          onOpen:data['openOrderDetail']==null?null:(id)=>(data['openOrderDetail'] as void Function(int,String))(id,'overview'))],
         EshopColumnIds.ORDER_PRICE: [
           TrinaColumn(
             readOnly: true,
