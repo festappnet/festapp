@@ -455,6 +455,11 @@ void main() {
     String path = '/empty',
     RootStackRouter? externalRouter,
   }) async {
+    // Keep MediaQuery and layout constraints on the same desktop viewport.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1500, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.binding.setSurfaceSize(const Size(1500, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final router = externalRouter ?? _Router();
@@ -731,86 +736,96 @@ void main() {
     );
   });
 
-  testWidgets(
-    'switching orders reuses the plan revision while fetching fresh occupancy',
-    (tester) async {
-      fail = false;
-      includeOrder = true;
-      groupSelection = true;
-      detailNavigation = true;
-      planPreview = true;
-      planRevision = 3;
-      planRequests.clear();
-      fullPlanDownloads = 0;
-      addTearDown(() {
-        includeOrder = false;
-        groupSelection = false;
-        detailNavigation = false;
-        planPreview = false;
-      });
-      final router = _Router();
-      await showOrders(
-        tester,
-        externalRouter: router,
-        path: '/empty?orderId=4&orderTab=tickets',
-      );
-      await tester.pumpAndSettle();
-      VenueLayoutViewer viewer() =>
-          tester.widget(find.byType(VenueLayoutViewer));
-      final firstDocument = viewer().document;
-      expect(
-        find.byKey(const ValueKey(('contact-email', 4)), skipOffstage: false),
-        findsNothing,
-        reason: 'An order opened on Tickets must not construct the hidden Overview form',
-      );
-      expect(fullPlanDownloads, 1);
-      await tester.tap(find.text('ORDER5').first);
-      for (var i = 0; i < 30; i++) {
-        await tester.pump(const Duration(milliseconds: 20));
-      }
-      await tester.pumpAndSettle();
-      expect(planRequests, hasLength(2));
-      expect(
-        planRequests.last['p_known_layout_revision'],
-        3,
-        reason: 'Switching on one plan must not download unchanged geometry and rendering resources again',
-      );
-      expect(fullPlanDownloads, 1);
-      expect(viewer().document, same(firstDocument));
-      expect(
-        (viewer().seatPresentation[planDocument.nodes.single.id]
-            as Map)['state'],
-        'used',
-        reason: 'Occupancy must remain freshly authorized for the new order',
-      );
-      planRevision = 4;
-      await tester.tap(find.text('ORDER4').first);
-      for (var i = 0; i < 30; i++) {
-        await tester.pump(const Duration(milliseconds: 20));
-      }
-      await tester.pumpAndSettle();
-      expect(planRequests, hasLength(3));
-      expect(
-        fullPlanDownloads,
-        2,
-        reason: 'A changed saved revision must invalidate cached geometry',
-      );
-      expect(viewer().document, isNot(same(firstDocument)));
-      tester
-          .widget<OrderDetailView>(find.byType(OrderDetailView))
-          .onTab('overview');
-      for (var i = 0; i < 20; i++) {
-        await tester.pump(const Duration(milliseconds: 20));
-      }
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey(('contact-email', 4))),
-        findsOneWidget,
-        reason: 'Opening Overview later must still create its editing fields',
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
+  for (final productionShape in [false, true]) {
+    testWidgets(
+      'symbol click reuses plan and retains the Orders screen production=$productionShape',
+      (tester) async {
+        fail = false;
+        includeOrder = true;
+        groupSelection = true;
+        detailNavigation = true;
+        planPreview = true;
+        planRevision = 3;
+        planRequests.clear();
+        fullPlanDownloads = 0;
+        addTearDown(() {
+          includeOrder = false;
+          groupSelection = false;
+          detailNavigation = false;
+          planPreview = false;
+        });
+        final router = productionShape ? _ProductionShapeRouter() : _Router();
+        await showOrders(
+          tester,
+          externalRouter: router,
+          path: productionShape
+              ? '/empty/reservations/orders/current?orderId=4&orderTab=tickets'
+              : '/empty?orderId=4&orderTab=tickets',
+        );
+        await tester.pumpAndSettle();
+        VenueLayoutViewer viewer() =>
+            tester.widget(find.byType(VenueLayoutViewer));
+        final firstDocument = viewer().document;
+        final ordersOwner = tester.state(find.byType(OrdersContent));
+        expect(
+          find.byKey(const ValueKey(('contact-email', 4)), skipOffstage: false),
+          findsNothing,
+          reason: 'An order opened on Tickets must not construct the hidden Overview form',
+        );
+        expect(fullPlanDownloads, 1);
+        await tester.tap(find.text('ORDER5').first);
+        for (var i = 0; i < 30; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+        }
+        await tester.pumpAndSettle();
+        expect(
+          tester.state(find.byType(OrdersContent)),
+          same(ordersOwner),
+          reason: 'Symbol navigation must retain the owner of the plan cache',
+        );
+        expect(planRequests, hasLength(2));
+        expect(
+          planRequests.last['p_known_layout_revision'],
+          3,
+          reason: 'Switching on one plan must not download unchanged geometry and rendering resources again',
+        );
+        expect(fullPlanDownloads, 1);
+        expect(viewer().document, same(firstDocument));
+        expect(
+          (viewer().seatPresentation[planDocument.nodes.single.id]
+              as Map)['state'],
+          'used',
+          reason: 'Occupancy must remain freshly authorized for the new order',
+        );
+        planRevision = 4;
+        await tester.tap(find.text('ORDER4').first);
+        for (var i = 0; i < 30; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+        }
+        await tester.pumpAndSettle();
+        expect(planRequests, hasLength(3));
+        expect(
+          fullPlanDownloads,
+          2,
+          reason: 'A changed saved revision must invalidate cached geometry',
+        );
+        expect(viewer().document, isNot(same(firstDocument)));
+        tester
+            .widget<OrderDetailView>(find.byType(OrderDetailView))
+            .onTab('overview');
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+        }
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey(('contact-email', 4))),
+          findsOneWidget,
+          reason: 'Opening Overview later must still create its editing fields',
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets(
     'a slow previous order cannot hold or replace the next plan preview',
