@@ -59,6 +59,14 @@ void main() {
         id: 1,
         link: 'selected',
         title: 'Selected',
+        waitlistEnabled: true,
+        capacity: FormCapacityModel.fromJson({
+          'enabled': true,
+          'limit': 46,
+          'occupiedPeople': 5,
+          'waitingPeople': 0,
+          'remainingPublic': 41,
+        }),
       ).toBundle();
       final other = FormEditorDraft(id: 2, link: 'other').toBundle();
       final orders = [
@@ -135,6 +143,14 @@ void main() {
             find.byType(SingleTableDataGrid<FormResponseModel>),
           )
           .controller;
+      // Responses start directly with the grid, even for capacity-limited forms.
+      expect(
+        tester
+            .getTopLeft(find.byType(SingleTableDataGrid<FormResponseModel>))
+            .dy,
+        0,
+      );
+      expect(find.textContaining('Obsazenost:'), findsNothing);
       expect(fieldsReads, 1);
       expect(ordersReads, 1);
       expect(grid.rows, hasLength(1));

@@ -2,21 +2,7 @@ import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 import { ColorUtils } from '../utils/color_utils.js';
 
-// Read the previous admin preference only while migrating a browser with no
-// shared choice yet. New selections always use the canonical `theme` key.
-function savedThemeMode() {
-    const saved = browserStorage.getItem(AppConfig.Keys.theme);
-    if (['light', 'dark', 'auto'].includes(saved)) return saved;
-    for (const key of ['adaptive_theme_preferences', 'flutter.adaptive_theme_preferences']) {
-        try {
-            let legacy = JSON.parse(browserStorage.getItem(key));
-            if (typeof legacy === 'string') legacy = JSON.parse(legacy);
-            const mode = {0:'light', 1:'dark', 2:'auto'}[legacy?.theme_mode];
-            if (mode) { browserStorage.setItem(AppConfig.Keys.theme, mode); return mode; }
-        } catch { /* Malformed legacy data must not prevent opening a page. */ }
-    }
-    return null;
-}
+import './theme_preference.js';
 
 export class ThemeService {
     static isDark = false;
@@ -25,15 +11,10 @@ export class ThemeService {
 
     static init() {
         // Load saved preference
-        const saved = savedThemeMode();
+        const saved = globalThis.FestappThemePreference.readMode(browserStorage);
         
-        if (saved && (saved === 'light' || saved === 'dark')) {
-            ThemeService.currentMode = saved;
-            ThemeService.isDark = (saved === 'dark');
-        } else {
-            ThemeService.currentMode = 'auto';
-            ThemeService.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
+        ThemeService.currentMode = saved;
+        ThemeService.isDark = globalThis.FestappThemePreference.isDark(saved, window.matchMedia?.('(prefers-color-scheme: dark)').matches);
 
         // Setup Listener for System Changes (only active if auto, but we can always listen and ignore if manual)
         // Best practice: Always listen, but only apply if mode is auto.
@@ -105,14 +86,9 @@ export class ThemeService {
     static setMode(mode) {
         ThemeService.currentMode = mode;
         
-        if (mode === 'auto') {
-            browserStorage.setItem(AppConfig.Keys.theme, 'auto');
-            ThemeService.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        } else {
-            ThemeService.isDark = (mode === 'dark');
-            browserStorage.setItem(AppConfig.Keys.theme, mode); // 'light' or 'dark'
-        }
-        
+        browserStorage.setItem(AppConfig.Keys.theme, mode);
+        ThemeService.isDark = globalThis.FestappThemePreference.isDark(mode, window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+
         ThemeService.apply();
 
         // Critical: If we have a cached form model, we MUST re-apply it because the inline styles
@@ -138,18 +114,12 @@ export class ThemeService {
             // automatic portal choice delegates to the device preference.
             const mode = ['light', 'dark'].includes(formMode)
                 ? formMode : ThemeService.currentMode;
-            ThemeService.isDark = mode === 'dark' ||
-                (mode !== 'light' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+            ThemeService.isDark = globalThis.FestappThemePreference.isDark(mode, window.matchMedia?.('(prefers-color-scheme: dark)').matches);
         }
         // Native inputs, checkboxes and select popups must follow the selected
         // application theme, including a manual override of the OS preference.
-        document.documentElement.style.colorScheme = ThemeService.isDark ? 'dark' : 'light';
-        document.body.style.colorScheme = document.documentElement.style.colorScheme;
-        if (ThemeService.isDark) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
+        globalThis.FestappThemePreference.paintTheme(ThemeService.isDark);
+
     }
 
 
@@ -161,12 +131,15 @@ export class ThemeService {
         if (ThemeService._lastFormModel !== formModel) document.getElementById('shared-font-error')?.remove();
         const root = document.body;
         if (!ThemeService._formStyleSnapshot) {
-            const properties = ['--background-color', '--btn-secondary-text-color', '--btn-text-color', '--card-bg', '--card-bg-derived', '--countdown-bg', '--countdown-border', '--fab-color', '--fab-text-color', '--font-family-base', '--font-scale', '--form-background', '--input-bg', '--input-border', '--input-font-family', '--input-text', '--label-text-color', '--link-color', '--primary-color', '--secondary-color', '--text-color', '--unselected-widget-border', '--unselected-widget-fill', 'background', 'background-color'];
+            const properties = ['display', '--background-color', '--btn-secondary-text-color', '--btn-text-color', '--card-bg', '--card-bg-derived', '--countdown-bg', '--countdown-border', '--fab-color', '--fab-text-color', '--font-family-base', '--font-scale', '--form-background', '--input-bg', '--input-border', '--input-font-family', '--input-text', '--label-text-color', '--link-color', '--primary-color', '--secondary-color', '--text-color', '--unselected-widget-border', '--unselected-widget-fill', 'background', 'background-color'];
             ThemeService._formStyleSnapshot = properties.map(name =>
                 [name, root.style.getPropertyValue(name), root.style.getPropertyPriority(name)]);
             ThemeService._sharedAppearance = root.dataset.sharedAppearance;
         }
         ThemeService._lastFormModel = formModel;
+        // Contain the form's top margin so it cannot expose the startup canvas
+        // above the body. Restored with the other form-only styles on exit.
+        root.style.display = 'flow-root';
         ThemeService.apply();
 
         // Fonts

@@ -225,6 +225,7 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
                     Text(
                       widget.label,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
