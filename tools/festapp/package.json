@@ -22,7 +22,7 @@
     "pdfjs-dist": "6.4.299",
     "zod": "4.6.7",
     "@modelcontextprotocol/server": "2.3.1",
-    "@modelcontextprotocol/node": "2.1.1"
+    "@modelcontextprotocol/node": "2.1.2"
   },
   "packageManager": "pnpm@11.24.0",
   "devDependencies": {
