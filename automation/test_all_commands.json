@@ -219,5 +219,9 @@
     "automation/tests",
     "-p",
     "test_functions_restart.py"
+  ],
+  [
+    "bash",
+    "automation/tests/slunovrat_news_emergency.test.sh"
   ]
 ]
