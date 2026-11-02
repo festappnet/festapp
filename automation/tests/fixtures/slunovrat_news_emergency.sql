@@ -8,7 +8,7 @@ END $$;
 -- ASSERTION_HELPERS
 -- Block all external delivery even if a future regression adds a sender.
 UPDATE public.notification_runtime SET endpoint=NULL;
-UPDATE public.abuse_policy_rules SET base_limit=2 WHERE rule_key='push.calls.unit.day';
+UPDATE public.abuse_policy_rules SET base_limit=3 WHERE rule_key='push.calls.unit.day';
 SELECT create_user_for_test('slunovrat-emergency-editor','slunovrat-emergency-editor@example.invalid');
 SELECT create_user_for_test('slunovrat-emergency-stranger','slunovrat-emergency-stranger@example.invalid');
 UPDATE public.user_info SET organization=19 WHERE id IN
@@ -16,6 +16,7 @@ UPDATE public.user_info SET organization=19 WHERE id IN
 INSERT INTO public.units(id,title,organization) VALUES(999,'Emergency fixture',19);
 INSERT INTO public.occasions(id,title,organization,unit,link,start_time,end_time,is_hidden)
 VALUES(1072594,'Winter fixture',19,999,'2025we-copy-5e6268f4',now(),now()+interval '1 day',false);
+UPDATE public.occasions SET data='{"client_sync_v1":true}' WHERE id=1072594;
 INSERT INTO public.occasions(id,title,organization,unit,link,start_time,end_time,is_hidden)
 VALUES(1072595,'Other fixture',19,999,'emergency-other-fixture',now(),now()+interval '1 day',false);
 INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view)
@@ -83,7 +84,18 @@ DO $$ BEGIN
       AND scope_type='occasion' AND scope_id=1072594);
   ASSERT (SELECT abuse_admitted_at IS NOT NULL FROM public.news_notification_outbox WHERE occasion=1072594);
 END $$;
--- Existing publication adapter can dispatch directly once its content is ready.
+-- The actual Slunovrat occasion uses direct readers, without an R2 publisher.
+UPDATE public.occasions SET data='{"client_sync_v1":false}' WHERE id=1072594;
+SET LOCAL ROLE authenticated;
+INSERT INTO public.log_notifications(occasion,organization,"to",heading,content)
+VALUES(1072594,19,jsonb_build_array(auth.uid()),'Legacy direct reader','No external delivery.');
+RESET ROLE;
+DO $$ BEGIN
+  ASSERT (SELECT count(*) FROM public.log_notifications WHERE occasion=1072594)=1;
+  ASSERT (SELECT count(*) FROM public.news_notification_outbox WHERE occasion=1072594)=1;
+END $$;
+-- Sync-enabled readers still wait until their content is published.
+UPDATE public.occasions SET data='{"client_sync_v1":true}' WHERE id=1072594;
 INSERT INTO public.client_sync_publications(component,scope_type,scope_id,published_revision,
   media_type,artifact_url,sha256,byte_size)
 SELECT component,scope_type,scope_id,source_revision,'application/json',
@@ -101,10 +113,10 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 DO $$ BEGIN
-  ASSERT (SELECT count(*) FROM public.log_notifications WHERE occasion=1072594)=1;
+  ASSERT (SELECT count(*) FROM public.log_notifications WHERE occasion=1072594)=2;
   ASSERT NOT EXISTS (SELECT 1 FROM net.http_request_queue);
   ASSERT (SELECT sum(amount) FROM public.abuse_budget_usage
-    WHERE rule_key='push.calls.unit.day' AND scope_id='999')=2;
+    WHERE rule_key='push.calls.unit.day' AND scope_id='999')=3;
 END $$;
 -- A modern command still owns exactly one aggregate version and publication.
 SET LOCAL ROLE authenticated;

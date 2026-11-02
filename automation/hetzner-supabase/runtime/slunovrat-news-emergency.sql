@@ -66,7 +66,7 @@ EXECUTE FUNCTION public.slunovrat_legacy_news_emergency_20261102(:'expires_at');
 -- adapter through the trigger's invoker-role condition.
 CREATE FUNCTION public.slunovrat_legacy_push_emergency_20261102() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE revision bigint; published bigint;
+DECLARE revision bigint; published bigint; sync_enabled boolean;
 BEGIN
   IF statement_timestamp()>=TG_ARGV[0]::timestamptz OR NEW.occasion IS DISTINCT FROM 1072594
     OR NEW.organization IS DISTINCT FROM 19 OR NEW.user_id IS DISTINCT FROM auth.uid()
@@ -75,6 +75,8 @@ BEGIN
       AND organization=19 AND unit=999 AND is_hidden=false) THEN
     RAISE insufficient_privilege USING MESSAGE='legacy notification bridge unavailable';
   END IF;
+  SELECT coalesce((data->>'client_sync_v1')::boolean,false) INTO sync_enabled
+    FROM public.occasions WHERE id=NEW.occasion;
   IF NEW.content IS NULL OR octet_length(NEW.content) NOT BETWEEN 1 AND 65536
     OR octet_length(coalesce(NEW.heading,''))>2048
     OR NEW.data IS NOT NULL AND NEW.data<>'{"path":"news"}'::jsonb THEN
@@ -84,10 +86,12 @@ BEGIN
     WHERE component='content_catalog' AND scope_type='occasion' AND scope_id=NEW.occasion;
   SELECT max(published_revision) INTO published FROM public.client_sync_publications
     WHERE component='content_catalog' AND scope_type='occasion' AND scope_id=NEW.occasion;
-  IF revision IS NULL THEN
+  IF sync_enabled AND revision IS NULL THEN
     RAISE configuration_limit_exceeded USING MESSAGE='news content scope unavailable';
   END IF;
-  IF coalesce(published,0)>=revision THEN
+  -- Non-sync clients read the already-committed news row directly. Waiting for
+  -- a catalog this occasion does not publish would strand every legacy push.
+  IF NOT sync_enabled OR coalesce(published,0)>=revision THEN
     PERFORM public.enqueue_notification_v1(NEW.occasion,NEW.heading,NEW.content,NEW."to",NEW.data);
   ELSE
     PERFORM public.charge_notification_intent_v1(NEW.occasion,auth.uid(),NEW."to",NEW.heading,NEW.content);
