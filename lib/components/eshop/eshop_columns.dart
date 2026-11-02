@@ -134,12 +134,13 @@ class EshopColumns {
     return width;
   }
 
-  static TrinaColumn orderSymbolColumn({BuildContext? context, void Function(int)? onOpen}) => TrinaColumn(
+  static TrinaColumn orderSymbolColumn({BuildContext? context, void Function(int)? onOpen, bool showCopy = true}) => TrinaColumn(
         readOnly: true,
         enableEditingMode: true,
         title: OrdersStrings.gridOrderSymbol,
         field: EshopColumnIds.ORDER_SYMBOL,
         renderer: (r) => OrderSymbolCell(
+            showCopy: showCopy,
             symbol: r.cell.value?.toString() ?? '',
             onOpen: onOpen==null ? null : ()=>onOpen(r.row.cells[EshopColumnIds.ORDER_ID]!.value as int),
             style: r.stateManager.style.cellTextStyle),
@@ -622,6 +623,7 @@ class EshopColumns {
         ],
         EshopColumnIds.ORDER_SEQUENCE: [orderSequenceColumn()],
         EshopColumnIds.ORDER_SYMBOL: (Map<String,dynamic> data) => [orderSymbolColumn(context:context,
+          showCopy: data['showOrderSymbolCopy'] != false,
           onOpen:data['openOrderDetail']==null?null:(id)=>(data['openOrderDetail'] as void Function(int,String?))(id,null))],
         EshopColumnIds.ORDER_PRICE: [
           TrinaColumn(

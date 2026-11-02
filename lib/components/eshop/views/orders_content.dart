@@ -763,6 +763,7 @@ class _OrdersContentState extends State<OrdersContent> {
           EshopColumnIds.PAYMENT_INFO_PAID: refreshData,
           "unitId": unitId,
           "occasionId": occasion.id,
+          "showOrderSymbolCopy": false,
           "openOrderDetail": (int id, String? tab) =>
               _navigateDetail(id, tab: tab),
         },

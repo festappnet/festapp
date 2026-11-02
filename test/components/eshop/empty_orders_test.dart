@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_symbol_cell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -656,6 +657,25 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Orders symbol cells omit copy while keeping their open action', (
+    tester,
+  ) async {
+    fail = false;
+    includeOrder = true;
+    addTearDown(() => includeOrder = false);
+    await showOrders(tester);
+    final cells = find.byType(OrderSymbolCell);
+    expect(cells, findsWidgets);
+    for (final cell in tester.widgetList<OrderSymbolCell>(cells)) {
+      expect(cell.showCopy, isFalse);
+      expect(cell.onOpen, isNotNull);
+    }
+    expect(
+      find.descendant(of: cells, matching: find.byIcon(Icons.copy)),
+      findsNothing,
+    );
+  });
 
   testWidgets('symbol navigation retains selected tab and clears old targets', (
     tester,
