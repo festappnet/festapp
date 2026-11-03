@@ -3,6 +3,7 @@ import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';
 
 import '../orders_strings.dart';
@@ -36,7 +37,7 @@ class ProductInfoPanel extends StatelessWidget {
 
     return Column(
       children: [
-        _buildInfoRow(context, OrdersStrings.infoTicketSymbol,
+        _buildInfoRow(context, OrderItemStrings.itemSymbol,
             ticket.ticketSymbol ?? "N/A"),
         _buildInfoRow(
             context, OrdersStrings.infoEmail, order.data?["email"] ?? "N/A"),
