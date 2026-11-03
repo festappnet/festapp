@@ -180,7 +180,9 @@ class RouterService {
     if (kIsWeb) {
       await LaunchUrlService.openExternalUrl('/', inCurrentWindow: true);
     } else {
-      await rootRouter.replaceAll([OrganizationRoute()]);
+      await rootRouter.replaceAll([
+        if (AppConfig.isAppSupported) OrganizationRoute() else LoginRoute(),
+      ]);
     }
   }
 
@@ -233,6 +235,10 @@ class RouterService {
   static Future<void> goToUnit(BuildContext context, int? unitId) async {
     if (unitId == null) {
       goToInitial(context);
+      return;
+    }
+    if (!AppConfig.isAppSupported) {
+      await replaceWithUnitAdmin(context, unitId);
       return;
     }
     await context.router.replace(UnitRoute(id: unitId));
@@ -630,6 +636,7 @@ class RouterService {
 
     await RightsService.updateAppData(
         unitId: unitId, link: linkToUse, force: true);
+    if (!context.mounted) return;
 
     // 2. Check for Units (Admin flow priority). A managed unit must win over
     // the fallback even when a unit context is already loaded.
@@ -645,6 +652,12 @@ class RouterService {
       } else {
         await navigateToUnitAdmin(context, adminUnit);
       }
+      return;
+    }
+
+    if (!AppConfig.isAppSupported &&
+        {null, '', '/', 'login', '/login'}.contains(fallbackPath?.toLowerCase())) {
+      await goToApplicationHome(context.router.root);
       return;
     }
 

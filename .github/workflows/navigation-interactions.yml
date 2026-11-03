@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'lib/app_router.dart'
+      - 'lib/router_service.dart'
+      - 'lib/app_config.dart'
       - 'lib/components/_shared/app_panel_helper.dart'
       - 'lib/components/navigation/**'
       - 'lib/components/occasion/db_occasions.dart'
@@ -23,6 +26,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'lib/app_router.dart'
+      - 'lib/router_service.dart'
+      - 'lib/app_config.dart'
       - 'lib/components/_shared/app_panel_helper.dart'
       - 'lib/components/navigation/**'
       - 'lib/components/occasion/db_occasions.dart'
