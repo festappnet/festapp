@@ -37,16 +37,20 @@ void main() {
         final document = VenueLayoutDocument(nodes: [node]);
         final index = spatialIndexFor(document);
         // Shared outline, including non-rectangular seat/text rendering.
-        final outline = nodeOutlineContours(node.copyWith(
-          properties: effectiveNodeProperties(document, node),
-        ))
-            .expand((ring) => ring)
-            .toList();
+        final outline = nodeOutlineContours(
+          node.copyWith(properties: effectiveNodeProperties(document, node)),
+        ).expand((ring) => ring).toList();
         final edge = outline.reduce((a, b) => a[0] > b[0] ? a : b);
         for (final pixels in [7.0, 8.0, 9.0]) {
           expect(
             index.resolveTap(
-              100 + edge[0] + pixels / zoom,
+              100 +
+                  edge[0] +
+                  (effectiveNodeProperties(document, node)['strokeWidth']
+                              as num? ??
+                          0) /
+                      2 +
+                  pixels / zoom,
               100 + edge[1],
               tolerance: 8 / zoom,
             ),
@@ -60,7 +64,7 @@ void main() {
     final table = box('table', properties: {'cornerRadius': 0});
     final index = spatialIndexFor(VenueLayoutDocument(nodes: [table]));
     expect(index.resolveTap(125, 125, tolerance: 8), table.id);
-    expect(index.resolveTap(126, 126, tolerance: 8), isNull);
+    expect(index.resolveTap(126.1, 126.1, tolerance: 8), isNull);
     final near = box('near', x: 150, kind: 'seat');
     final both = spatialIndexFor(VenueLayoutDocument(nodes: [table, near]));
     expect(both.resolveTap(132, 100, tolerance: 20), near.id);
@@ -115,8 +119,9 @@ void main() {
         properties: {'role': 'decoration'},
       ).copyWith(parentId: group.id);
       expect(
-        spatialIndexFor(VenueLayoutDocument(nodes: [group, decoration]))
-            .resolveTap(125, 100, tolerance: 8),
+        spatialIndexFor(
+          VenueLayoutDocument(nodes: [group, decoration]),
+        ).resolveTap(125, 100, tolerance: 8),
         group.id,
       );
       expect(() => index.resolveTap(0, 0, tolerance: -1), throwsArgumentError);

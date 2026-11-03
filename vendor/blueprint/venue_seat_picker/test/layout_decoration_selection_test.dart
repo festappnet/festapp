@@ -151,8 +151,8 @@ void main() {
         room.id,
       }, reason: 'Wall accepts an 8 screen pixel near-hit');
       c.select({});
-      surface().onSelectDown!(const Offset(180, 690));
-      surface().onDragStart!(const Offset(180, 690));
+      surface().onSelectDown!(const Offset(140, 690));
+      surface().onDragStart!(const Offset(140, 690));
       surface().onDragUpdate!(const Offset(510, 810));
       surface().onDragEnd!();
       await tester.pump();

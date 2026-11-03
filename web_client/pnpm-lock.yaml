@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@festapp/venue-layout':
-        specifier: file:vendor/festapp-venue-layout-0.3.9-f0ead2ec6880.tgz
-        version: file:vendor/festapp-venue-layout-0.3.9-f0ead2ec6880.tgz
+        specifier: file:vendor/festapp-venue-layout-0.3.9-3c40ab4e73c4.tgz
+        version: file:vendor/festapp-venue-layout-0.3.9-3c40ab4e73c4.tgz
       '@supabase/supabase-js':
         specifier: ^2.118.0
         version: 2.118.0
@@ -273,8 +273,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.9-f0ead2ec6880.tgz':
-    resolution: {integrity: sha512-lp3+ejYdL0dXNGHUmOLD2zNJL8qkxh2Ko197UpzPrTO4bggYbSDGEihfnylKlAVAY9sZ64pDKuj3vTS3droSTA==, tarball: file:vendor/festapp-venue-layout-0.3.9-f0ead2ec6880.tgz}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.9-3c40ab4e73c4.tgz':
+    resolution: {integrity: sha512-Q1UljBGLJX7kHLwcHmZ7+HGr8D0y5ktwHmnDXVkE4LkpBOPaUqa9H8Pd8+a4oWdeD/XjfbmjegvMwl2sCnK/PQ==, tarball: file:vendor/festapp-venue-layout-0.3.9-3c40ab4e73c4.tgz}
     version: 0.3.9
 
   '@isaacs/nonrecursive-glob-match@1.0.3':
@@ -1041,7 +1041,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.9-f0ead2ec6880.tgz': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.9-3c40ab4e73c4.tgz': {}
 
   '@isaacs/nonrecursive-glob-match@1.0.3': {}
 
