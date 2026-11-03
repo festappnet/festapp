@@ -43,7 +43,7 @@ while IFS= read -r email_migration;do
  if [[ "$email_version" > "$email_original_version" && "$email_version" != 20261003200000 ]];then
   psql "$email_database" -v ON_ERROR_STOP=1 -q -f "$email_kit/$email_migration" >/dev/null
  fi
-done < <(git ls-tree -r --name-only "$email_main_snapshot" supabase/migrations | sort)
+done < <(python3 automation/historical_inputs.py list "$email_main_snapshot" supabase/migrations/ | sort)
 psql "$email_database" -v ON_ERROR_STOP=1 -q -c 'SELECT cron.unschedule(jobid) FROM cron.job' -f "$email_kit/database/tests/emails/legacy_cutover_fixture.sql" >/dev/null
 psql "$email_database" -v ON_ERROR_STOP=1 -q -f "$email_kit/supabase/migrations/20261003200000_canonical_email_delivery.sql" -f "$email_kit/database/tests/emails/legacy_cutover_assertions.sql" >/dev/null
 psql "$email_database" -v ON_ERROR_STOP=1 -q -f "$email_kit/supabase/migrations/20261006090000_email_permissions_and_templates.sql" >/dev/null

@@ -1,10 +1,11 @@
 """Prepare genuine text layouts for the exact palette factory output."""
-import argparse,io,json,os,shutil,subprocess,tarfile
+import argparse,json,os,shutil,subprocess,sys
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+from historical_inputs import materialize
 p=argparse.ArgumentParser();p.add_argument('package',type=Path);p.add_argument('festapp',type=Path);p.add_argument('output',type=Path);p.add_argument('--locale',choices=['cs','en'],default='cs');p.add_argument('--brand-font',action='store_true');p.add_argument('--document',type=Path,action='append',default=[]);p.add_argument('--canonical-revision',default='8816cddc1bd9274deb794b5d795034c3aeec1650');a=p.parse_args()
 work=a.output/'resource-preparation';work.mkdir(parents=True,exist_ok=True)
-archive=subprocess.check_output(['git','-C',str(a.festapp),'archive',a.canonical_revision,'supabase/functions/_shared'])
-with tarfile.open(fileobj=io.BytesIO(archive)) as tar:tar.extractall(work,filter='data')
+materialize(a.canonical_revision,'supabase/functions/_shared/',work)
 shutil.copytree(a.package/'assets/layout_fonts',work/'assets/layout_fonts',dirs_exist_ok=True)
 (work/'tool').mkdir(exist_ok=True);shutil.copy2(a.package/'tool/prepare_fixture_resources.ts',work/'tool/prepare_fixture_resources.ts')
 target=a.output/'app/assets/packages/venue_seat_picker/assets/layout_fonts/fixtures.json'

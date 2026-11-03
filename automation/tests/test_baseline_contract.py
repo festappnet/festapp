@@ -10,13 +10,14 @@ spec.loader.exec_module(baseline)
 
 
 class BaselineContractTest(unittest.TestCase):
-    def test_recovered_inputs_match_frozen_git_objects_after_active_source_removal(self):
+    def test_recovered_inputs_match_frozen_checksums_without_git_history(self):
         import hashlib
         import json
         config = baseline.load_manifest()
         history = json.loads((baseline.ROOT / config['historicalSources']['path']).read_text())
         with tempfile.TemporaryDirectory() as temporary:
-            kit = baseline.materialize_history(Path(temporary), include_email=True)
+            with patch.object(baseline.subprocess, 'check_output', side_effect=AssertionError('Git history must not be consulted')):
+                kit = baseline.materialize_history(Path(temporary), include_email=True)
             for entry in history['files'] + history['emailUpgradeFiles']:
                 self.assertEqual(hashlib.sha256((kit / entry['path']).read_bytes()).hexdigest(), entry['sha256'])
 

@@ -1,0 +1,3 @@
+-- Whole-text resources are owned by text_resources.sql,
+-- canonical_text_dependencies.sql and canonical_resource_projection.sql.
+-- Historical character-outline cache has no active reader or writer.

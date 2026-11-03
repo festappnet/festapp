@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
+import { readSource } from './historical_inputs.mjs';
 import { createHash } from 'node:crypto';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -15,7 +15,7 @@ export function readHistoricalSql(relative) {
   if (!entry) throw new Error(`Not a covered historical input: ${relative}`);
   const commit = entry.sourceCommit ?? history.sourceCommit;
   if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error('Historical SQL requires a full Git commit');
-  const contents = execFileSync('git', ['show', `${commit}:${entry.path}`], { cwd: root, maxBuffer: 16 * 1024 * 1024 });
+  const contents = readSource(commit, entry.path);
   if (digest(contents) !== entry.sha256) throw new Error(`Historical SQL checksum mismatch: ${relative}`);
   return contents.toString('utf8');
 }

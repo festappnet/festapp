@@ -1,0 +1,2 @@
+ALTER TABLE eshop.bank_accounts
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();

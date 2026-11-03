@@ -7,6 +7,8 @@ required. Old videos without receipts cannot silently become matched captures.
 import argparse,hashlib,json,re,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/'automation'))
+from historical_inputs import read_source
 SPEC=Path(__file__).with_name('scenarios')/'storyboard.json'
 def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
 def read(path):return json.loads(Path(path).read_text())
@@ -99,11 +101,11 @@ def main():
  elif a.command=='audit':write(a.output,audit(read(a.manifest)))
  elif a.command=='verify-pairs':write(a.output,{'readyForOneToOnePublication':True,'pairs':verify_pairs(a.directory,read(a.manifest))})
  else:
-  s=read(SPEC);ref=s['reference'];data=subprocess.check_output(['git','show',ref['gitRevision']+':'+ref['manifestPath']],cwd=ROOT)
+  s=read(SPEC);ref=s['reference'];data=read_source(ref['gitRevision'],ref['manifestPath'])
   if hashlib.sha256(data).hexdigest()!=ref['manifestSha256']:raise ValueError('Original reference manifest changed')
   for c in s['clips'].values():
    for asset in c['reference']['assets'].values():
-    data=subprocess.check_output(['git','show',ref['gitRevision']+':web'+asset['path']],cwd=ROOT)
+    data=read_source(ref['gitRevision'],'web'+asset['path'])
     if hashlib.sha256(data).hexdigest()!=asset['sha256']:raise ValueError('Original reference asset changed')
   print('Pinned Czech manifest and 32 original video/poster assets verified')
 if __name__=='__main__':

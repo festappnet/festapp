@@ -2,14 +2,15 @@
 """Assemble the forward ticketing profile contract without rewriting old migrations."""
 from pathlib import Path
 import argparse
-import subprocess
+import sys
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'automation'))
+from historical_inputs import read_source
 # Already deployed: preserve the exact original source contract. Later changes
 # belong in forward migrations, never a rewritten 2300 ledger entry.
 SOURCE_REVISION = '044796108b9de89c7820f65d7fa24ec4780b5046'
 def source_text(source):
-    return subprocess.check_output(['git', '-C', str(ROOT), 'show',
-        SOURCE_REVISION + ':database/functions/' + source], text=True)
+    return read_source(SOURCE_REVISION, 'database/functions/' + source).decode()
 
 SOURCES = ['catalog/source_policy.sql', 'others/get_available_occasions.sql',
            'others/get_public_occasions.sql', 'others/get_occasion_seo_data.sql',

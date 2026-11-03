@@ -2,13 +2,13 @@
 // pre-cutover UI RPC source. No HTTP/provider call or production fixture.
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
-import {execFileSync} from 'node:child_process';
+import {readSource} from '../lib/historical_inputs.mjs';
 import {createHash} from 'node:crypto';
 import {fixture} from '../authorization/benchmark.mjs';
 import {openDisposableDatabase} from '../../tools/festapp/test/postgres.mjs';
 import {Operations} from '../../tools/festapp/src/operations/catalog.mjs';
 const base='c6dea8392c6f56be2993447b970a28e46b9467b5';
-const original=execFileSync('git',['show',base+':database/functions/inventory/get_inventory_pools_by_occasion_link.sql'],{cwd:new URL('../../',import.meta.url),encoding:'utf8'});
+const original=readSource(base,'database/functions/inventory/get_inventory_pools_by_occasion_link.sql').toString('utf8');
 const migration=await readFile(new URL('../../supabase/migrations/20261023190000_inventory_summary_reads.sql',import.meta.url),'utf8');
 const url=process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 assert(url&&url===process.env.FESTAPP_AUTHORIZATION_DATABASE_URL,'Set both explicit marked disposable URLs to the same database');

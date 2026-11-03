@@ -3,7 +3,7 @@ import {readHistoricalSql} from '../../../automation/lib/historical_sql.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
-import {execFileSync} from 'node:child_process';
+import {readSource} from '../../../automation/lib/historical_inputs.mjs';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
 const connectionString=process.env.DATABASE_URL;
@@ -52,7 +52,7 @@ try{
  const assign=changes=>q('SELECT public.update_spot_assignments($1::jsonb)',[JSON.stringify(changes)]);
  await test('pre-fix batch reproduces cross-tenant write, then rolls back',async()=>{
   await q('SAVEPOINT old_body');
-  const old=execFileSync('git',['show','a95067e26d7b1d17009fa6100145708750833133:database/functions/inventory/update_spots_assignments.sql'],{cwd:new URL('../../../',import.meta.url),encoding:'utf8'});
+  const old=readSource('a95067e26d7b1d17009fa6100145708750833133','database/functions/inventory/update_spots_assignments.sql').toString('utf8');
   await q(old);
   await role('authenticated',ids.actor,()=>assign([change(),change(1)]));
   assert.equal((await one('SELECT count(*)::int n FROM eshop.spots WHERE id=ANY($1) AND resource IS NOT NULL',[ids.spot])).n,2);

@@ -38,6 +38,7 @@ test('seating public commands: actual two-connection serial outcomes and permiss
 from pathlib import Path
 sys.path.insert(0,'automation')
 from generate_canonical_source_contract import definitions
+from historical_inputs import read_source, source_paths
 assembly=runpy.run_path('automation/assemble-seating-transition-migration.py')
 sources=assembly['SOURCES']
 predecessor=assembly['PREDECESSOR']
@@ -45,11 +46,12 @@ commands=['BEGIN; SET LOCAL ROLE postgres;']
 old_sources=[]
 for source in sources:
  current=dict(definitions(Path('database/functions',source).read_text()))
- old=subprocess.run(['git','show',predecessor+':database/functions/'+source],capture_output=True,text=True)
- previous=dict(definitions(old.stdout)) if old.returncode==0 else {}
+ path='database/functions/'+source
+ old=read_source(predecessor,path).decode() if path in source_paths(predecessor) else None
+ previous=dict(definitions(old)) if old is not None else {}
  for signature,body in current.items():
   if body is not None and signature not in previous:commands.append('DROP FUNCTION IF EXISTS '+signature+' CASCADE;')
- if old.returncode==0:old_sources.append(old.stdout)
+ if old is not None:old_sources.append(old)
 commands.append('DROP TABLE public.form_seating_transitions CASCADE;')
 # The clone contains unrelated retained old fixtures. This upgrade proof uses
 # an empty layout store; production data conversion has its own guarded proof.

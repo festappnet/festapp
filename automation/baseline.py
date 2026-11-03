@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from historical_inputs import read_source
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = 'supabase/baseline/manifest.json'
@@ -74,7 +77,7 @@ def materialize_history(destination, root=ROOT, include_email=False):
     commit = history['sourceCommit']
     if not re.fullmatch(r'[0-9a-f]{40}', commit):
         raise ValueError('Historical source must pin a full Git commit')
-    # Git is the sole recovery authority. Never substitute current source bytes.
+    # Checked immutable fixtures are the recovery authority, independent of Git ancestry.
     # Verify every blob before creating files; recovery works without a network.
     blobs = []
     for entry in history['files'] + (history['emailUpgradeFiles'] if include_email else []):
@@ -82,7 +85,7 @@ def materialize_history(destination, root=ROOT, include_email=False):
         source_commit = entry.get('sourceCommit', commit)
         if not re.fullmatch(r'[0-9a-f]{40}', source_commit):
             raise ValueError('Historical input must pin a full Git commit')
-        content = subprocess.check_output(['git', '-C', str(root), 'show', source_commit + ':' + entry['path']], stderr=subprocess.PIPE)
+        content = read_source(source_commit, entry['path'], root=root)
         if hashlib.sha256(content).hexdigest() != entry['sha256']:
             raise ValueError(f'Historical Git checksum mismatch: {entry["path"]}')
         path = repository_path(destination, entry['path'])
