@@ -461,7 +461,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     _selectionBeforeDown = {...c.selection};
     if (_canvasSelected) setState(() => _canvasSelected = false);
     _focus.requestFocus();
-    final hit = _hitAt(point);
+    final hit = _tapHitAt(point);
     if (hit == null && _hitsBackground(point)) {
       _selectBackground();
       return;
@@ -575,7 +575,6 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     if (_canvasSelected) setState(() => _canvasSelected = false);
     _focus.requestFocus();
     if (_tool == 'Select' || _tool == 'Pan') {
-      final exact = _hitAt(point);
       var id = activated;
       final selectionHandled = _selectionBeforeDown != null;
       final previouslySelected = _selectionBeforeDown ?? c.selection;
@@ -583,7 +582,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           ? _selectionShiftDown
           : HardwareKeyboard.instance.isShiftPressed;
       _selectionBeforeDown = null;
-      if (selectionHandled && shift && exact != null) return;
+      if (selectionHandled && shift && activated != null) return;
       if (id != null) id = _selectionTarget(id);
       if (id != null &&
           _tool == 'Select' &&
@@ -710,7 +709,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       _finishPath();
       return;
     }
-    final id = _hitAt(point);
+    final id = _tapHitAt(point);
     if (id == null) {
       final canvas = c.document.canvas;
       final bounds = Rect.fromLTWH(
@@ -1051,7 +1050,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     if (!_canEdit) return;
     if (_tool == 'Select' &&
         !HardwareKeyboard.instance.isShiftPressed &&
-        _hitAt(point) == null &&
+        _tapHitAt(point) == null &&
         _hitsBackground(point)) {
       _selectBackground();
       _gestureTool = 'Move background';
@@ -1075,7 +1074,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       c.beginGesture();
       return;
     }
-    final id = _hitAt(point);
+    final id = _tapHitAt(point);
     if (id == null && _tool == 'Select') {
       _marqueeSelectionBase = HardwareKeyboard.instance.isShiftPressed
           ? {...?_selectionBeforeDown, ...c.selection}
@@ -2801,7 +2800,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
 
   Future<void> _contextMenu(Offset world, Offset global) async {
     if (!_canEdit || _inlineId != null) return;
-    final hit = _hitAt(world);
+    final hit = _tapHitAt(world);
     if (hit != null) {
       final target = _selectionTarget(hit);
       if (!c.selection.contains(target)) c.select({target});
@@ -3588,7 +3587,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                           pan: _tool == 'Pan' || !_canEdit,
                                           touchPanOnEmpty: _tool == 'Select',
                                           panOnTouchDown: (point) =>
-                                              _hitAt(point) == null &&
+                                              _tapHitAt(point) == null &&
                                               !_hitsBackground(point),
                                           onSelectDown: _selectDown,
                                           onContextMenu:

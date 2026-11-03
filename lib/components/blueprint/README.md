@@ -16,10 +16,11 @@ prepared portable paths.
 Completed taps have an 8 logical pixel radial margin outside rendered outlines,
 independent of camera zoom. Exact targets take priority; unavailable or pending
 seats never fall through to a farther free seat. Existing handlers retain
-availability feedback, optimistic selection and rollback. Pointer down and drag
-ownership stay exact, including row footprints and handles. Empty Select-mode
-touch drags pan while mouse drags keep marquee selection; pinch and cancellation
-never create reservation taps.
+availability feedback, optimistic selection and rollback. The editor uses the
+same margin for pointer down, object dragging, double-clicks and context menus;
+handles and drawing tools keep their own geometry. Empty Select-mode touch drags
+beyond the object margin pan while mouse drags keep marquee selection. Pinch and
+cancellation never create reservation taps.
 
 The host consumes verified archives built directly from canonical package source.
 `pub publish --dry-run` selects archive files without publishing to a registry;

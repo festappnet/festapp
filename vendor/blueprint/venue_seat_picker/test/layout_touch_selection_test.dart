@@ -52,7 +52,7 @@ VenueLayoutDocument document() => VenueLayoutDocument.empty().copyWith(
 );
 void main() {
   testWidgets(
-    'Select touch pans blank margin and near miss; mouse keeps marquee',
+    'Select touch pans empty space and drags near targets; mouse keeps marquee',
     (tester) async {
       final doc = document();
       final c = VenueLayoutController(doc);
@@ -79,7 +79,7 @@ void main() {
       expect(c.selection, {tableId});
       expect(c.document.toJson(), doc.toJson());
       expect(c.canUndo, false);
-      // The same near-miss point taps the table, but dragging pans.
+      // The same margin selects the object for taps and drags.
       c.select({});
       await tester.pump();
       final zoom = painter(tester).scale * p.camera!.value.getMaxScaleOnAxis();
@@ -87,8 +87,11 @@ void main() {
       final panBefore = p.camera!.value.clone();
       await tester.dragFrom(near, const Offset(-50, 0));
       await tester.pumpAndSettle();
-      expect(p.camera!.value, isNot(panBefore));
-      expect(c.selection, isEmpty);
+      expect(p.camera!.value, panBefore);
+      expect(c.selection, {tableId});
+      expect(c.document.toJson(), isNot(doc.toJson()));
+      c.undo();
+      await tester.pump();
       expect(c.document.toJson(), doc.toJson());
       final mouse = await tester.startGesture(
         screen(tester, const Offset(330, 40)),
@@ -119,7 +122,9 @@ void main() {
         final scale = p.scale * zoom;
         final at = screen(tester, Offset(440 + 7 / scale, 100));
         final finger = await tester.startGesture(at);
-        expect(c.selection, isEmpty, reason: 'Slop must not select on down');
+        expect(c.selection, {
+          tableId,
+        }, reason: 'The margin owns selection from pointer down');
         await finger.up();
         await tester.pump(const Duration(milliseconds: 350));
         await tester.pumpAndSettle();
@@ -179,7 +184,7 @@ void main() {
       ]) {
         c.select({});
         surface.onSelectDown!(at);
-        expect(c.selection, isEmpty);
+        expect(c.selection, {id});
         surface.onTap!(at);
         expect(c.selection, {id});
       }
