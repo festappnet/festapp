@@ -28,6 +28,23 @@ Deno.serve(async (req) => {
       return new Response("ok", { headers: corsHeaders });
     }
 
+    let payload;
+    try {
+      payload = await req.json();
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      return Response.json({
+        code: 400,
+        errorCode: "INVALID_TICKET_ORDER_INTENT",
+      }, { status: 400, headers: corsHeaders });
+    }
+    if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+      return Response.json({
+        code: 400,
+        errorCode: "INVALID_TICKET_ORDER_INTENT",
+      }, { status: 400, headers: corsHeaders });
+    }
+
     const {
       orderDetails: directOrderDetails,
       replacement,
@@ -35,7 +52,7 @@ Deno.serve(async (req) => {
       waitlistAcceptance,
       commandId: requestedCommandId,
       clientId: requestedClientId,
-    } = await req.json();
+    } = payload;
     if (
       !hasSingleTicketOrderPayload({
         orderDetails: directOrderDetails,
