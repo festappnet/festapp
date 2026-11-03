@@ -165,6 +165,14 @@ for (const [mode, systemDark, expected] of [
         const dom = new JSDOM(source, { url: 'https://app.test/', runScripts: 'outside-only' });
         t.after(() => dom.window.close());
         const { window } = dom;
+        const configuredBackground = window.document.querySelector('meta[name="theme-color"]').content;
+        const configuredLogo = window.document.querySelector('#loader-content img').getAttribute('src');
+        const colorProbe = window.document.createElement('div');
+        colorProbe.style.backgroundColor = expected === 'light' ? '#ffffff' : configuredBackground;
+        window.document.body.appendChild(colorProbe);
+        const expectedBackground = window.getComputedStyle(colorProbe).backgroundColor;
+        const expectedLogo = expected === 'light' && /(?:loading-animation|loading-logo)\.svg$/.test(configuredLogo)
+            ? configuredLogo.replace(/\.svg$/, '-light.svg') : configuredLogo;
         if (mode) window.localStorage.setItem('theme', mode);
         let onSystemChange;
         const media = { matches: systemDark, addEventListener: (_, listener) => { onSystemChange = listener; } };
@@ -175,8 +183,8 @@ for (const [mode, systemDark, expected] of [
         assert.equal(root.dataset.startupTheme, expected);
         assert.equal(root.style.colorScheme, expected);
         assert.equal(window.document.querySelector('meta[name="color-scheme"]').content, expected);
-        assert.equal(window.getComputedStyle(loader).backgroundColor, expected === 'light' ? 'rgb(255, 255, 255)' : 'rgb(25, 36, 59)');
-        assert.equal(loader.querySelector('img').getAttribute('src'), expected === 'light' ? 'loading-animation-light.svg' : 'loading-animation.svg');
+        assert.equal(window.getComputedStyle(loader).backgroundColor, expectedBackground);
+        assert.equal(loader.querySelector('img').getAttribute('src'), expectedLogo);
         media.matches = !systemDark;
         onSystemChange();
         assert.equal(root.dataset.startupTheme, ['light', 'dark'].includes(mode) ? mode : (media.matches ? 'dark' : 'light'));
