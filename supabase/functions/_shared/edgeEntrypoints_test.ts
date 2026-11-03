@@ -82,6 +82,32 @@ const optionEntrypoints = [
   "prepare-ticket-batch-document",
 ];
 
+Deno.test("send-ticket-order rejects invalid JSON bodies before order or provider work", async () => {
+  const handler = await loadHandler("send-ticket-order");
+  const originalFetch = globalThis.fetch;
+  let externalCalls = 0;
+  globalThis.fetch = (() => {
+    externalCalls++;
+    throw new Error("Invalid input must not reach external services");
+  }) as typeof fetch;
+  try {
+    for (const body of ["", "   ", '{"orderDetails":', "not-json", "null", "[]", '"text"', "42", "true"]) {
+      const response = await handler(new Request("https://edge-test.invalid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      }));
+      assertEquals(response.status, 400, `body: ${JSON.stringify(body)}`);
+      assertEquals(await response.json(), { code: 400, errorCode: "INVALID_TICKET_ORDER_INTENT" });
+      assertEquals(response.headers.get("Access-Control-Allow-Origin"), "*");
+      assertEquals(response.headers.get("Cache-Control"), "no-store");
+    }
+    assertEquals(externalCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 for (const name of optionEntrypoints) {
   Deno.test(`${name} registers a reachable CORS preflight`, async () => {
     const handler = await loadHandler(name);
