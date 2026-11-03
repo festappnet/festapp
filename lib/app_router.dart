@@ -66,11 +66,14 @@ class AppRouter extends RootStackRouter {
 
   @override
   List<AutoRoute> get routes => [
-        CustomRoute(
-            page: OrganizationRoute.page,
-            path: "/",
-            guards: [InitialRedirectGuard()],
-            transitionsBuilder: TransitionsBuilders.noTransition),
+        if (AppConfig.isAppSupported)
+          CustomRoute(
+              page: OrganizationRoute.page,
+              path: "/",
+              guards: [InitialRedirectGuard()],
+              transitionsBuilder: TransitionsBuilders.noTransition)
+        else
+          RedirectRoute(path: '/', redirectTo: '/login'),
 
         AutoRoute(
             page: ResetPasswordRoute.page, path: sl(ResetPasswordPage.ROUTE)),
@@ -195,7 +198,12 @@ class AppRouter extends RootStackRouter {
             transitionsBuilder: TransitionsBuilders.noTransition),
 
         // Use UnitPage for the /unit/:id path (this was commented out)
-        AutoRoute(page: UnitRoute.page, path: "/${UnitPage.ROUTE}/:id"),
+        if (AppConfig.isAppSupported)
+          AutoRoute(page: UnitRoute.page, path: "/${UnitPage.ROUTE}/:id")
+        else
+          RedirectRoute(
+              path: "/${UnitPage.ROUTE}/:id",
+              redirectTo: "/${UnitPage.ROUTE}/:id/edit"),
 
         AutoRoute(page: ScanRoute.page, path: "/${ScanPage.ROUTE}", children: [
           AutoRoute(
@@ -633,7 +641,7 @@ class AppRouter extends RootStackRouter {
 
   static String getDefaultLink() {
     if (!AppConfig.isAppSupported) {
-      return "/";
+      return "/login";
     }
 
     if (RightsService.useOfflineVersion && RightsService.currentLink != null) {
