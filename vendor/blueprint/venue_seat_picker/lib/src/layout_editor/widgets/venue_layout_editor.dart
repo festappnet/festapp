@@ -356,8 +356,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                   .clamp(0.0, 1.0);
         if (math.pow(local[0] - a[0] - t * dx, 2) +
                 math.pow(local[1] - a[1] - t * dy, 2) <=
-            radius * radius)
+            radius * radius) {
           return true;
+        }
       }
     }
     return false;

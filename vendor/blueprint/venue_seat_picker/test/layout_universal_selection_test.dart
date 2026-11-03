@@ -148,7 +148,7 @@ void main() {
         final stroke = (props['strokeWidth'] as num? ?? 0).toDouble() / 2;
         for (final point in points) {
           final world = transformPoint(matrix, point[0], point[1]);
-          if (edge == null || world[0] + stroke > edge!.dx + edgeStroke) {
+          if (edge == null || world[0] + stroke > edge.dx + edgeStroke) {
             edge = Offset(world[0], world[1]);
             edgeStroke = stroke;
           }
@@ -160,11 +160,11 @@ void main() {
         surface().onViewportScaleChanged!(scale);
         c.select({});
         surface().onSelectDown!(edge!);
-        surface().onTap!(edge!);
+        surface().onTap!(edge);
         final direct = {...c.selection};
         expect(direct, isNotEmpty);
         c.select({});
-        final near = edge! + Offset(edgeStroke + 6 / scale, 0);
+        final near = edge + Offset(edgeStroke + 6 / scale, 0);
         surface().onSelectDown!(near);
         expect(
           c.selection,
@@ -174,7 +174,7 @@ void main() {
         surface().onTap!(near);
         expect(c.selection, direct);
         c.select({});
-        final far = edge! + Offset(edgeStroke + 9 / scale, 0);
+        final far = edge + Offset(edgeStroke + 9 / scale, 0);
         surface().onSelectDown!(far);
         expect(
           c.selection,

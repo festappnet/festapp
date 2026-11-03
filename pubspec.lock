@@ -2340,14 +2340,14 @@ packages:
       path: "vendor/blueprint/venue_layout_core"
       relative: true
     source: path
-    version: "0.2.4"
+    version: "0.2.5"
   venue_seat_picker:
     dependency: "direct main"
     description:
       path: "vendor/blueprint/venue_seat_picker"
       relative: true
     source: path
-    version: "0.4.5"
+    version: "0.4.6"
   video_player:
     dependency: transitive
     description:
