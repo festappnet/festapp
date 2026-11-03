@@ -1,7 +1,15 @@
+## 0.4.6
+
+- Use the same 8-pixel margin for selecting and starting interactions with every editor object, including arrows, images and saved presets.
+- Keep architectural decoration selectable by its outline without capturing empty-space navigation or marquee selection.
+- Require core 0.2.5 for rendered arrowhead and thick-stroke hit geometry; preserve existing SDK and dependency compatibility.
+
+## JavaScript 0.3.10
+
+- Include the corrected shared arrowhead and stroke hit geometry from core 0.2.5.
+
 ## 0.4.5
 
-- Apply the same 8-pixel margin to object selection, drag starts, double-clicks and context menus across every editor insertion type.
-- Match arrowheads and thick outlines to rendered hit geometry at every zoom.
 - Store demo drafts in IndexedDB to support embedded fonts beyond the localStorage quota, and preserve existing local drafts.
 - Include the customer preview in GitHub Pages and preserve project paths when opening it and returning to the editor.
 - Keep measured custom-table label ink inside the tabletop in native previews and exported scenes.
