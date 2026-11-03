@@ -128,7 +128,7 @@ class _ExamplePageState extends State<ExamplePage> {
       VenueLayoutDocument? recoveredBaseline;
       Map<String, dynamic>? recoveredPrices;
       try {
-        final saved = await readPreviewDraft() ?? readDraft();
+        final saved = await readPreviewDraft() ?? await readDraft();
         if (saved != null) {
           final bundle = DemoBundle.decode(
             Uint8List.fromList(utf8.encode(saved)),
@@ -156,7 +156,7 @@ class _ExamplePageState extends State<ExamplePage> {
         }
       } catch (_) {
         status =
-            'Local storage unavailable or draft invalid. File export remains available.';
+            'Uložený plánek se nepodařilo obnovit. Můžete otevřít plánek ze souboru.';
       }
       resources = await _decodeImages(resources);
       doc = localizeLayoutDefaultLabels(doc, demoText);
@@ -371,18 +371,19 @@ class _ExamplePageState extends State<ExamplePage> {
     quantities.removeWhere((id, _) => !nodeIds.contains(id));
     setState(() {});
     debounce?.cancel();
-    debounce = Timer(const Duration(milliseconds: 500), () {
+    debounce = Timer(const Duration(milliseconds: 500), () async {
       if (controller.gestureActive || controller.saving) return;
       try {
         if (storageFailure) throw StateError('Simulated storage full');
-        writeDraft(bundle.encode());
+        await writeDraft(bundle.encode());
         if (mounted && controller.placementWarningIds.isEmpty) {
           setState(() => status = 'Draft saved on this device');
         }
       } catch (_) {
         if (mounted) {
           setState(
-            () => status = 'Storage unavailable. Export your draft to a file.',
+            () => status =
+                'Automatické ukládání se nezdařilo. Exportujte plánek do souboru, abyste zachovali změny.',
           );
         }
       }
@@ -512,7 +513,8 @@ class _ExamplePageState extends State<ExamplePage> {
         return;
       }
       if (storageFailure) throw StateError('Simulated storage full');
-      writeDraft(portable);
+      await writeDraft(portable);
+      if (!mounted) return;
       baseline = snapshot;
       baselinePrices = priceSnapshot;
       revision = nextRevision;
@@ -521,8 +523,8 @@ class _ExamplePageState extends State<ExamplePage> {
     } catch (_) {
       if (mounted) {
         setState(
-          () =>
-              status = 'Save failed. Draft is preserved; export is available.',
+          () => status =
+              'Plánek se nepodařilo uložit. Změny máte stále otevřené; exportujte je do souboru.',
         );
       }
     } finally {
@@ -683,7 +685,7 @@ class _ExamplePageState extends State<ExamplePage> {
       },
   };
   bool get _statusProblem => RegExp(
-    r'failed|unavailable|rejected|cannot|blocked|invalid|timed out|conflict|nelze|nepodařilo',
+    r'failed|unavailable|rejected|cannot|blocked|invalid|timed out|conflict|nelze|nepodařilo|nezdařilo',
     caseSensitive: false,
   ).hasMatch(status);
 

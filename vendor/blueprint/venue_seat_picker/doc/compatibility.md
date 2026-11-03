@@ -1,6 +1,6 @@
 # SDK and dependency compatibility
 
-This contract applies to Flutter wrapper 0.4.4 and core 0.2.3. Wrapper 0.4.3
+This contract applies to Flutter wrapper 0.4.4-0.4.5 and core 0.2.3-0.2.4. Wrapper 0.4.3
 requires Dart 3.13 / Flutter 3.47.
 
 The Flutter wrapper supports Dart **3.12+** and Flutter **3.44+**. The standalone

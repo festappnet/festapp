@@ -1,3 +1,8 @@
+## 0.2.4
+
+- Place custom-table labels and their measured ink within the filled tabletop, including shapes with cutouts and holes.
+- Keep native text previews and compiled scenes aligned with the shared placement geometry.
+
 ## 0.2.3
 
 - Remove surplus fixed chairs on the explicitly requested side, preserving other sides and protected identities.

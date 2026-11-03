@@ -1,3 +1,16 @@
+## 0.4.5
+
+- Store demo drafts in IndexedDB to support embedded fonts beyond the localStorage quota, and preserve existing local drafts.
+- Include the customer preview in GitHub Pages and preserve project paths when opening it and returning to the editor.
+- Keep measured custom-table label ink inside the tabletop in native previews and exported scenes.
+- Preserve host control of gallery initialization.
+- Require core 0.2.4 for the updated text placement helpers; keep the supported SDK and dependency ranges.
+
+## JavaScript 0.3.9
+
+- Preserve a panned viewport at minimum zoom instead of automatically recentering it.
+- Include the current shared text-placement kernel from core 0.2.4.
+
 ## 0.4.4
 
 - Keep custom tabletop labels inside the filled shape, including cutouts and holes, across editor previews and exported scenes.

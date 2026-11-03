@@ -102,7 +102,7 @@ Add the package to your Flutter application's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  venue_seat_picker: ^0.4.4
+  venue_seat_picker: ^0.4.5
 ```
 
 Version 0.4.4 supports Dart 3.12+ and Flutter 3.44+. See [SDK and dependency compatibility](doc/compatibility.md) for the source compatibility contract, host theming and localization.
