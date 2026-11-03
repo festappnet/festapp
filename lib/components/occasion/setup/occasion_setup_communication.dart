@@ -1,13 +1,21 @@
+import 'occasion_setup_review_row.dart';
+
 import 'package:fstapp/components/forms/email_validation.dart';
+
 import 'dart:convert';
+
 import '../../email_templates/email_preview_examples.dart';
 import '../../features/ticket_feature.dart';
 import '../../ticket_layout/views/ticket_delivery_selector.dart';
 import '../../ticket_layout/views/ticket_delivery_preview.dart';
+
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
+
 import '../occasion_sale_strings.dart';
+
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -29,8 +37,8 @@ void initializeCommunicationDraft(
   final values = <String, dynamic>{
     'communicationTone':
         ['formal', 'informal'].contains(form['communication_tone'])
-            ? form['communication_tone']
-            : 'inherit',
+        ? form['communication_tone']
+        : 'inherit',
     'replyToMode': 'inherit',
     'replyToEmail': '',
     'remindersMode': form['is_reminder_enabled'] is bool
@@ -179,10 +187,13 @@ class _OccasionSetupCommunicationState
     try {
       final unitId = widget.unitId;
       if (unitId == null) return;
-      final scope =
-          await DbEmailTemplates.getEntityEmailTemplates(unitId: unitId);
+      final scope = await DbEmailTemplates.getEntityEmailTemplates(
+        unitId: unitId,
+      );
       final authoring = await DbEmailTemplates.getAuthoringContext(
-          scope, 'TICKET_ORDER_CONFIRMATION');
+        scope,
+        'TICKET_ORDER_CONFIRMATION',
+      );
       if (!mounted) return;
       final effective = {...defaults, 'senderAddress': authoring.senderAddress};
       setState(() => _response!['defaults'] = effective);
@@ -215,99 +226,118 @@ class _OccasionSetupCommunicationState
   Widget build(BuildContext context) {
     final paid = OccasionSetupStory.hasPaidProducts(widget.data);
     final inheritedReply = defaults['replyTo'] ?? defaults['senderAddress'];
-    final tone = widget.data['communicationTone'] == 'inherit'
-        ? defaults['tone'] ?? 'formal'
-        : widget.data['communicationTone'];
-    final reminders = widget.data['remindersMode'] == 'enabled' ||
+
+    final reminders =
+        widget.data['remindersMode'] == 'enabled' ||
         (widget.data['remindersMode'] == 'inherit' &&
             defaults['remindersEnabled'] != false);
     final deadline = effectiveSetupDeadlineSeconds(widget.data);
-    final lead = num.tryParse(
-            '${widget.data['reminderLeadDays'] ?? ''}'.replaceAll(',', '.')) ??
+    final lead =
+        num.tryParse(
+          '${widget.data['reminderLeadDays'] ?? ''}'.replaceAll(',', '.'),
+        ) ??
         (defaults['leadSeconds'] as num? ?? 86400) / 86400;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (_loading) const LinearProgressIndicator(),
-      if (_error != null) ...[
-        Text(_error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        TextButton(onPressed: _load, child: Text(t('reloadCommunication'))),
-      ],
-      if (!widget.paymentTiming) ...[
-        TextFormField(
-          key: const ValueKey('communication-reply'),
-          initialValue: widget.data['replyToMode'] == 'custom'
-              ? widget.data['replyToEmail'] as String? ?? ''
-              : '',
-          keyboardType: TextInputType.emailAddress,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          decoration: InputDecoration(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_loading) const LinearProgressIndicator(),
+        if (_error != null) ...[
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          TextButton(onPressed: _load, child: Text(t('reloadCommunication'))),
+        ],
+        if (!widget.paymentTiming) ...[
+          TextFormField(
+            key: const ValueKey('communication-reply'),
+            initialValue: widget.data['replyToMode'] == 'custom'
+                ? widget.data['replyToEmail'] as String? ?? ''
+                : '',
+            keyboardType: TextInputType.emailAddress,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            decoration: InputDecoration(
               labelText: t('replyToEmail'),
               hintText: inheritedReply as String?,
               helperText: story('replyToHelp'),
-              helperMaxLines: 3),
-          validator: (value) => (value ?? '').trim().isEmpty
-              ? null
-              : (value!.trim().length > 254
-                  ? t('invalidReplyEmail')
-                  : EmailValidation.validator(
-                      errorText: t('invalidReplyEmail'))(value.trim())),
-          onChanged: (value) => widget.onChanged({
-            'replyToMode': value.trim().isEmpty ? 'inherit' : 'custom',
-            'replyToEmail': value,
-          }),
-        ),
-        if (widget.data['replyToMode'] != 'custom')
-          Text(
-              '${t('inheritOrganization')}: ${inheritedReply ?? OccasionSaleStrings.text('senderUnavailable')}'),
-        if (inheritedReply == null && widget.data['replyToMode'] != 'custom')
-          TextButton.icon(
+              helperMaxLines: 3,
+            ),
+            validator: (value) => (value ?? '').trim().isEmpty
+                ? null
+                : (value!.trim().length > 254
+                      ? t('invalidReplyEmail')
+                      : EmailValidation.validator(
+                          errorText: t('invalidReplyEmail'),
+                        )(value.trim())),
+            onChanged: (value) => widget.onChanged({
+              'replyToMode': value.trim().isEmpty ? 'inherit' : 'custom',
+              'replyToEmail': value,
+            }),
+          ),
+          if (widget.data['replyToMode'] != 'custom')
+            Text(
+              '${t('inheritOrganization')}: ${inheritedReply ?? OccasionSaleStrings.text('senderUnavailable')}',
+            ),
+          if (inheritedReply == null && widget.data['replyToMode'] != 'custom')
+            TextButton.icon(
               onPressed: _senderLoading ? null : _resolveSender,
               icon: const Icon(Icons.refresh),
-              label: Text(OccasionSaleStrings.text('retrySender'))),
-        const SizedBox(height: 24),
-        Text(FormStrings.labelCommunicationTone,
-            style: Theme.of(context).textTheme.titleSmall),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final value in ['formal', 'informal'])
-            ChoiceChip(
-                label: Text(value == 'formal'
-                    ? FormStrings.toneFormal
-                    : FormStrings.toneInformal),
-                selected: tone == value,
-                onSelected: (_) =>
-                    widget.onChanged({'communicationTone': value})),
-        ]),
-        if (widget.data['communicationTone'] == 'inherit')
-          Text(story('inheritedSetting'))
-        else
-          TextButton(
-              onPressed: () =>
-                  widget.onChanged({'communicationTone': 'inherit'}),
-              child: Text(story('restoreDefault'))),
-        if (OccasionSetupStory.hasTickets(widget.data)) ...[
+              label: Text(OccasionSaleStrings.text('retrySender')),
+            ),
           const SizedBox(height: 24),
-          TicketDeliverySelector(
+          Text(
+            FormStrings.labelCommunicationTone,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final value in ['inherit', 'formal', 'informal'])
+                ChoiceChip(
+                  label: Text(
+                    value == 'inherit'
+                        ? '${t('inheritOrganization')} (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})'
+                        : value == 'formal'
+                        ? FormStrings.toneFormal
+                        : FormStrings.toneInformal,
+                  ),
+                  selected:
+                      (widget.data['communicationTone'] ?? 'inherit') == value,
+                  onSelected: (_) =>
+                      widget.onChanged({'communicationTone': value}),
+                ),
+            ],
+          ),
+          if (OccasionSetupStory.hasTickets(widget.data)) ...[
+            const SizedBox(height: 24),
+            TicketDeliverySelector(
               value: TicketDeliveryMode.parse(
-                  (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
-                  present: (widget.data['ticketDraft'] as Map?)
-                          ?.containsKey('delivery_mode') ??
-                      false),
+                (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
+                present:
+                    (widget.data['ticketDraft'] as Map?)?.containsKey(
+                      'delivery_mode',
+                    ) ??
+                    false,
+              ),
               enabled:
                   (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false,
               onChanged: (mode) => widget.onChanged({
-                    'ticketDraft': {
-                      ...?widget.data['ticketDraft'] as Map?,
-                      'code': 'ticket',
-                      'is_enabled':
-                          (widget.data['ticketDraft'] as Map?)?['is_enabled'] ??
-                              true,
-                      'delivery_mode': mode.value
-                    }
-                  })),
-          if (widget.loadPreview != null &&
-              (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false) ...[
-            const SizedBox(height: 4),
-            TicketDeliveryPreview(
+                'ticketDraft': {
+                  ...?widget.data['ticketDraft'] as Map?,
+                  'code': 'ticket',
+                  'is_enabled':
+                      (widget.data['ticketDraft'] as Map?)?['is_enabled'] ??
+                      true,
+                  'delivery_mode': mode.value,
+                },
+              }),
+            ),
+            if (widget.loadPreview != null &&
+                (widget.data['ticketDraft'] as Map?)?['is_enabled'] !=
+                    false) ...[
+              const SizedBox(height: 4),
+              TicketDeliveryPreview(
                 examples: widget.previewExamples,
                 revision: jsonEncode({
                   'draftId': widget.draftId,
@@ -319,78 +349,94 @@ class _OccasionSetupCommunicationState
                 }),
                 title: widget.data['title'] as String?,
                 mode: TicketDeliveryMode.parse(
-                    (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
-                    present: (widget.data['ticketDraft'] as Map?)
-                            ?.containsKey('delivery_mode') ??
-                        false),
+                  (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
+                  present:
+                      (widget.data['ticketDraft'] as Map?)?.containsKey(
+                        'delivery_mode',
+                      ) ??
+                      false,
+                ),
                 load: () => widget.loadPreview!({
-                      ...jsonDecode(jsonEncode(widget.data))
-                          as Map<String, dynamic>,
-                      'previewMessageType': 'order_tickets',
-                    })),
+                  ...jsonDecode(jsonEncode(widget.data))
+                      as Map<String, dynamic>,
+                  'previewMessageType': 'order_tickets',
+                }),
+              ),
+            ],
           ],
-        ],
-        if (widget.loadPreview != null) ...[
-          const SizedBox(height: 24),
-          OccasionSetupEmailTemplates(
+          if (widget.loadPreview != null) ...[
+            const SizedBox(height: 24),
+            OccasionSetupEmailTemplates(
               unitId: widget.unitId,
               onBusyChanged: widget.onBusyChanged,
               draft: widget.data,
               loadPreview: widget.loadPreview!,
-              onChanged: widget.onChanged),
+              onChanged: widget.onChanged,
+            ),
+          ],
         ],
-      ],
-      if (paid && widget.paymentTiming) ...[
-        TextFormField(
-          key: ValueKey('deadline-$_fieldRevision'),
-          initialValue: (widget.data['deadline'] as String? ?? '').isEmpty
-              ? days(deadline)
-              : widget.data['deadline'] as String,
-          keyboardType: TextInputType.number,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          decoration: InputDecoration(labelText: FormStrings.labelDeadlineDays),
-          validator: (value) => validDays(value, whole: true),
-          onChanged: (value) => widget.onChanged({'deadline': value}),
-        ),
-        if ((widget.data['deadline'] as String? ?? '').isNotEmpty)
-          TextButton(
+        if (paid && widget.paymentTiming) ...[
+          TextFormField(
+            key: ValueKey('deadline-$_fieldRevision'),
+            initialValue: (widget.data['deadline'] as String? ?? '').isEmpty
+                ? days(deadline)
+                : widget.data['deadline'] as String,
+            keyboardType: TextInputType.number,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            decoration: InputDecoration(
+              labelText: FormStrings.labelDeadlineDays,
+            ),
+            validator: (value) => validDays(value, whole: true),
+            onChanged: (value) => widget.onChanged({'deadline': value}),
+          ),
+          if ((widget.data['deadline'] as String? ?? '').isNotEmpty)
+            TextButton(
               onPressed: () {
                 widget.onChanged({'deadline': ''});
                 setState(() => _fieldRevision++);
               },
-              child: Text(story('restoreDefault')))
-        else
-          Text(story('inheritedSetting')),
-        const SizedBox(height: 8),
-        Text(story('cancelUnpaidManually')),
-        const SizedBox(height: 16),
-        SwitchListTile(
+              child: Text(story('restoreDefault')),
+            )
+          else
+            Text(story('inheritedSetting')),
+          const SizedBox(height: 8),
+          Text(story('cancelUnpaidManually')),
+          const SizedBox(height: 16),
+          SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(t('paymentReminders')),
             value: reminders,
-            onChanged: (value) => widget
-                .onChanged({'remindersMode': value ? 'enabled' : 'disabled'})),
-        if (widget.data['remindersMode'] != 'inherit')
-          TextButton(
+            onChanged: (value) => widget.onChanged({
+              'remindersMode': value ? 'enabled' : 'disabled',
+            }),
+          ),
+          if (widget.data['remindersMode'] != 'inherit')
+            TextButton(
               onPressed: () => widget.onChanged({'remindersMode': 'inherit'}),
-              child: Text(story('restoreDefault'))),
-        if (reminders) ...[
-          TextFormField(
-            key: ValueKey('communication-lead-$_fieldRevision'),
-            initialValue: widget.data['reminderLeadDays'] as String? ?? '',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: InputDecoration(
+              child: Text(story('restoreDefault')),
+            ),
+          if (reminders) ...[
+            TextFormField(
+              key: ValueKey('communication-lead-$_fieldRevision'),
+              initialValue: widget.data['reminderLeadDays'] as String? ?? '',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              decoration: InputDecoration(
                 labelText: t('reminderLeadDays'),
                 hintText: days(defaults['leadSeconds'] as num? ?? 86400),
-                helperText: t('blankInherits')),
-            validator: validDays,
-            onChanged: (value) => widget.onChanged({'reminderLeadDays': value}),
-          ),
-          if (deadline / 86400 <= lead) Text(story('shortDeadlineReminder')),
+                helperText: t('blankInherits'),
+              ),
+              validator: validDays,
+              onChanged: (value) =>
+                  widget.onChanged({'reminderLeadDays': value}),
+            ),
+            if (deadline / 86400 <= lead) Text(story('shortDeadlineReminder')),
+          ],
         ],
       ],
-    ]);
+    );
   }
 }
 
@@ -403,25 +449,38 @@ class OccasionSetupCommunicationSummary extends StatelessWidget {
     final defaults = data['communicationDefaults'] as Map? ?? {};
     final inherited = t('inheritOrganization');
     final lead = (data['reminderLeadDays'] as String? ?? '').trim();
-    final remindersEnabled = data['remindersMode'] == 'enabled' ||
+    final remindersEnabled =
+        data['remindersMode'] == 'enabled' ||
         (data['remindersMode'] == 'inherit' &&
             defaults['remindersEnabled'] != false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${t('replyToEmail')}: ${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? defaults['senderAddress'] ?? OccasionSaleStrings.text('senderUnavailable')})'}',
+        OccasionSetupReviewRow(
+          t('replyToEmail'),
+          '${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? defaults['senderAddress'] ?? OccasionSaleStrings.text('senderUnavailable')})'}',
         ),
-        Text(
-          '${FormStrings.labelCommunicationTone}: ${data['communicationTone'] == 'inherit' ? '$inherited (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})' : data['communicationTone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal}',
+        OccasionSetupReviewRow(
+          FormStrings.labelCommunicationTone,
+          '${data['communicationTone'] == 'inherit'
+              ? '$inherited (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})'
+              : data['communicationTone'] == 'informal'
+              ? FormStrings.toneInformal
+              : FormStrings.toneFormal}',
         ),
         if (OccasionSetupStory.hasPaidProducts(data))
-          Text(
-            '${t('paymentReminders')}: ${data['remindersMode'] == 'inherit' ? '$inherited (${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn})' : data['remindersMode'] == 'enabled' ? FormStrings.remindersOn : FormStrings.remindersOff}',
+          OccasionSetupReviewRow(
+            t('paymentReminders'),
+            '${data['remindersMode'] == 'inherit'
+                ? '$inherited (${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn})'
+                : data['remindersMode'] == 'enabled'
+                ? FormStrings.remindersOn
+                : FormStrings.remindersOff}',
           ),
         if (OccasionSetupStory.hasPaidProducts(data) && remindersEnabled)
-          Text(
-            '${t('reminderLeadDays')}: ${lead.isEmpty ? '$inherited (${(defaults['leadSeconds'] as num? ?? 86400) / 86400})' : lead}',
+          OccasionSetupReviewRow(
+            t('reminderLeadDays'),
+            '${lead.isEmpty ? '$inherited (${((defaults['leadSeconds'] as num? ?? 86400) / 86400).toString().replaceFirst(RegExp(r'\.0$'), '')})' : lead}',
           ),
       ],
     );

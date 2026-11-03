@@ -148,12 +148,6 @@ export async function renderDraftPreview(context: any) {
     payment_info: { ...order.payment_info, paid: order.payment_info.amount },
     form_data: { communication_tone: context.tone },
   });
-  if (context.emailBanner) {
-    const banner = escapeTicketText(context.emailBanner);
-    const title = escapeTicketText(context.title);
-    context = {...context, resolved: {...context.resolved, wrapper: {html:
-      `<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;"><div style="text-align: center;"><img src="${banner}" alt="${title}" style="width: 100%; height: auto; display: block;"></div><div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">{{content}}</div></div>`}}};
-  }
   const prepared = await renderEmail({
     to: "preview@example.invalid",
     context: { organization: 0 }, // Resolver below owns the already-authorized hierarchy.

@@ -1,3 +1,5 @@
+import 'package:fstapp/services/utilities_all.dart';
+
 import 'dart:convert';
 
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -235,6 +237,21 @@ class SetupBlueprintConfiguration {
   Iterable<Map> get areas => (_layout?['areaBindings'] as List? ?? [])
       .whereType<Map>()
       .where((s) => nodes('capacityArea').contains(s['nodeId']));
+
+  /// Only groups owning actual seats belong in the commercial summary.
+  List<String> get groupTitles {
+    final groupIds = {for (final seat in seats) seat['groupNodeId']};
+    return <String>{
+      for (final node
+          in ((_layout?['layout'] as Map?)?['nodes'] as List? ?? [])
+              .whereType<Map>())
+        if (groupIds.contains(node['id']) &&
+            const {'group', 'table', 'furniture'}.contains(node['kind']) &&
+            (node['label'] as String? ?? '').trim().isNotEmpty)
+          node['label'] as String,
+    }.toList()..sort(Utilities.naturalCompare);
+  }
+
   int get seatCount =>
       seats.where((s) => s['blocked'] != true && s['productId'] is num).length;
   int get areaCount => areas

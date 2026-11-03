@@ -1,3 +1,16 @@
+-- null inherits the existing wrapper; empty text explicitly suppresses its image.
+CREATE OR REPLACE FUNCTION public.email_banner_wrapper_internal(p_banner_url text,p_title text)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT CASE WHEN p_banner_url IS NULL THEN NULL ELSE
+  '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">'
+  ||CASE WHEN p_banner_url='' THEN '' ELSE '<div style="text-align: center;"><img src="'
+    ||replace(replace(replace(replace(p_banner_url,'&','&amp;'),'<','&lt;'),'>','&gt;'),'"','&quot;')
+    ||'" alt="'||replace(replace(replace(replace(coalesce(p_title,'Banner'),'&','&amp;'),'<','&lt;'),'>','&gt;'),'"','&quot;')
+    ||'" style="width: 100%; height: auto; display: block;"></div>' END
+  ||'<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">{{content}}</div></div>' END;
+$$;
+REVOKE ALL ON FUNCTION public.email_banner_wrapper_internal(text,text) FROM PUBLIC,anon,authenticated,service_role;
+
 create or replace function public.update_entity_email_banner(p_entity_type text, p_entity_id bigint, p_banner_url text)
     returns void
     language plpgsql
@@ -57,14 +70,7 @@ begin
 
     -- 2. Handle HTML Wrapper Logic
     if p_banner_url is not null then
-        -- Construct Custom HTML
-        v_new_html := '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">';
-        v_new_html := v_new_html || '<div style="text-align: center;">';
-        v_new_html := v_new_html || '<img src="' || p_banner_url || '" alt="' || coalesce(v_entity_title, 'Banner') || '" style="width: 100%; height: auto; display: block;">';
-        v_new_html := v_new_html || '</div>';
-        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">';
-        v_new_html := v_new_html || '{{content}}';
-        v_new_html := v_new_html || '</div></div>';
+        v_new_html := public.email_banner_wrapper_internal(p_banner_url, v_entity_title);
 
         -- Upsert Wrapper
         if p_entity_type = 'occasion' then

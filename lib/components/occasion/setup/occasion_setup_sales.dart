@@ -29,8 +29,7 @@ class OccasionSetupSales {
     final occasionEnd = DateTime.tryParse(data['end'] as String? ?? '');
     if (!const ['preparation', 'scheduled', 'immediate'].contains(kind) ||
         finish == null ||
-        occasionEnd == null ||
-        finish.isAfter(occasionEnd))
+        occasionEnd == null)
       return false;
     if (kind == 'scheduled') {
       final begin = start(data);
@@ -38,6 +37,11 @@ class OccasionSetupSales {
     }
     return kind != 'immediate' || finish.isAfter(now);
   }
+
+  static bool publishesToCatalog(Map<String, dynamic> data) =>
+      data['formEnabled'] != false &&
+      mode(data) != 'preparation' &&
+      data['listPubliclyOnPublish'] != false;
 
   static String createLabel(Map<String, dynamic> data) => text(
     data,

@@ -212,12 +212,24 @@ Deno.test("existing-occasion preview forwards resource scope, and validates tick
   assert(calls===1);
 });
 
-Deno.test("draft banner appears in the preview and authoring wrapper without changing inheritance", async () => {
+Deno.test("preview renders the canonical SQL-projected banner wrapper unchanged", async () => {
   const banner = "https://img.festapp.net/images/draft-banner.webp";
+  const wrapper = `<section><img src="${banner}">{{content}}</section>`;
   const preview = await renderDraftPreview({...context, emailBanner: banner,
-    inheritedEmailBanner: "https://img.festapp.net/images/inherited.webp"});
+    inheritedEmailBanner: "https://img.festapp.net/images/inherited.webp",
+    resolved: {...context.resolved, wrapper: {html: wrapper}}});
   assert(preview.html.includes(banner));
-  assert(preview.authoringContext.wrapperHtml.includes(banner));
+  assert(preview.authoringContext.wrapperHtml === wrapper);
   assert(preview.inheritedEmailBanner.endsWith("inherited.webp"));
   assert(context.resolved.wrapper.html === "<main>{{content}}</main>");
+});
+
+Deno.test("preview respects the canonical wrapper without an inherited image", async () => {
+  const wrapper = '<section class="canonical-wrapper">{{content}}</section>';
+  const preview = await renderDraftPreview({...context, emailBanner: "",
+    inheritedEmailBanner: "https://img.festapp.net/images/inherited.webp",
+    resolved: {...context.resolved, wrapper: {html: wrapper}}});
+  assert(preview.authoringContext.wrapperHtml === wrapper);
+  assert(!preview.html.includes("inherited.webp"));
+  assert(preview.inheritedEmailBanner.endsWith("inherited.webp"));
 });

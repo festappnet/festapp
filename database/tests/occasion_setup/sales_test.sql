@@ -16,7 +16,7 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE authenticated';
   d:=public.create_occasion_setup_draft(draft,unit_id);
   payload:=d->'data'||jsonb_build_object('title','Sale choice '||mode,'start',now()+interval '10 days',
-   'end',now()+interval '11 days','reviewConfirmed',true,'formEnabled',true,'saleMode',mode,
+   'end',now()+interval '11 days','reviewConfirmed',true,'formEnabled',true,'listPubliclyOnPublish',false,'saleMode',mode,
    'saleStart',now()+interval '1 day','saleCountdown',false,'blueprintMode','Bez plánku');
   payload:=jsonb_set(payload,'{formDraft,fields,2,product_type_data,products,0,price}','0');
   -- Source schedule cannot silently replace the new event's window.

@@ -1,12 +1,16 @@
 import 'dart:async';
+
 import 'occasion_setup_strings.dart';
 import '../../images/image_area.dart';
 import '../../images/db_images.dart';
+
 import 'dart:convert';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:festapp_core/email_templates.dart';
+
 import '../../email_templates/db_email_templates.dart';
 import '../../email_templates/email_preview_examples.dart';
 import '../../email_templates/email_template_model.dart';
@@ -17,13 +21,14 @@ import 'occasion_setup_email_preview.dart';
 
 /// Reuses the standard authoring UI; writes remain in the private setup draft.
 class OccasionSetupEmailTemplates extends StatefulWidget {
-  const OccasionSetupEmailTemplates(
-      {super.key,
-      required this.draft,
-      this.unitId,
-      this.onBusyChanged,
-      required this.loadPreview,
-      required this.onChanged});
+  const OccasionSetupEmailTemplates({
+    super.key,
+    required this.draft,
+    this.unitId,
+    this.onBusyChanged,
+    required this.loadPreview,
+    required this.onChanged,
+  });
   final Map<String, dynamic> draft;
   final int? unitId;
   final ValueChanged<bool>? onBusyChanged;
@@ -103,18 +108,21 @@ class _OccasionSetupEmailTemplatesState
 
   Future<void> _edit(Map entry) async {
     final catalog = _catalog!;
-    final scope = EmailTemplatesResponse.fromJson(
-        {...Map<String, dynamic>.from(catalog['emailScope']), 'templates': []});
+    final scope = EmailTemplatesResponse.fromJson({
+      ...Map<String, dynamic>.from(catalog['emailScope']),
+      'templates': [],
+    });
     final template = EmailTemplateModel.fromJson({
       ...Map<String, dynamic>.from(entry['template']),
-      'code': entry['code']
+      'code': entry['code'],
     });
     final code = entry['code'] as String;
     final preview = Map<String, dynamic>.from(catalog['previewContext'] ?? {});
     final deadline = DateTime.tryParse(preview['deadline'] ?? '');
     Future<void> persist(Map<String, dynamic>? value) async {
       final overrides = Map<String, dynamic>.from(
-          widget.draft['emailTemplateOverrides'] as Map? ?? {});
+        widget.draft['emailTemplateOverrides'] as Map? ?? {},
+      );
       if (value == null) {
         overrides.remove(code);
       } else {
@@ -122,43 +130,52 @@ class _OccasionSetupEmailTemplatesState
       }
       widget.onChanged({'emailTemplateOverrides': overrides});
       // The owner flushes its revision-checked draft before reading the catalog.
-      await widget
-          .loadPreview({...widget.draft, 'emailTemplateOverrides': overrides});
+      await widget.loadPreview({
+        ...widget.draft,
+        'emailTemplateOverrides': overrides,
+      });
     }
 
     await showDialog<void>(
-        context: context,
-        builder: (_) => EmailTemplateSettingsPage(
-              template: template,
-              emailTemplatesResponse: scope,
-              saveTemplate: (edited) => persist(
-                  {'subject': edited.subject ?? '', 'html': edited.html ?? ''}),
-              resetTemplate:
-                  entry['customized'] == true ? () => persist(null) : null,
-              authoringContextLoader: () async =>
-                  EmailAuthoringContext.fromJson(
-                      Map<String, dynamic>.from(catalog['authoringContext'])),
-              previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
-                  jsonDecode(await rootBundle.loadString(
-                      'assets/email_templates/preview_examples.json')),
-                  context: EmailPreviewContext(
-                    occasionTitle: preview['title'],
-                    ticketsEnabled: preview['ticketsEnabled'],
-                    deadline: deadline != null
-                        ? DateFormat.yMd().format(deadline.toLocal())
-                        : null,
-                    products: [
-                      for (final p in (preview['products'] as List? ?? [])
-                          .whereType<Map>())
-                        if (p['price'] is num)
-                          EmailPreviewProduct(
-                              title: '${p['title'] ?? ''}',
-                              typeTitle: '${p['type_title'] ?? ''}',
-                              price: (p['price'] as num).toDouble(),
-                              currency: '${p['currency_code'] ?? 'CZK'}')
-                    ],
-                  )),
-            ));
+      context: context,
+      builder: (_) => EmailTemplateSettingsPage(
+        template: template,
+        emailTemplatesResponse: scope,
+        saveTemplate: (edited) => persist({
+          'subject': edited.subject ?? '',
+          'html': edited.html ?? '',
+        }),
+        resetTemplate: entry['customized'] == true ? () => persist(null) : null,
+        authoringContextLoader: () async => EmailAuthoringContext.fromJson(
+          Map<String, dynamic>.from(catalog['authoringContext']),
+        ),
+        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
+          jsonDecode(
+            await rootBundle.loadString(
+              'assets/email_templates/preview_examples.json',
+            ),
+          ),
+          context: EmailPreviewContext(
+            occasionTitle: preview['title'],
+            ticketsEnabled: preview['ticketsEnabled'],
+            deadline: deadline != null
+                ? DateFormat.yMd().format(deadline.toLocal())
+                : null,
+            products: [
+              for (final p
+                  in (preview['products'] as List? ?? []).whereType<Map>())
+                if (p['price'] is num)
+                  EmailPreviewProduct(
+                    title: '${p['title'] ?? ''}',
+                    typeTitle: '${p['type_title'] ?? ''}',
+                    price: (p['price'] as num).toDouble(),
+                    currency: '${p['currency_code'] ?? 'CZK'}',
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
     if (mounted) await _load();
   }
 
@@ -176,77 +193,109 @@ class _OccasionSetupEmailTemplatesState
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(EmailTemplatesStrings.title,
-            style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text(OccasionSetupStrings.ui(
-            'edit_emails_here_changes_are_saved_in_this_draft_and_ap')),
-        const SizedBox(height: 16),
-        if (_loading) const LinearProgressIndicator(),
-        if (_failed) ...[
-          Text(OccasionSetupStrings.ui('email_templates_could_not_be_loaded')),
-          TextButton(onPressed: _load, child: const Text('Zkusit znovu')),
-        ],
-        if (_catalog != null)
-          LayoutBuilder(builder: (context, constraints) {
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        EmailTemplatesStrings.title,
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      const SizedBox(height: 8),
+      Text(
+        OccasionSetupStrings.ui(
+          'edit_emails_here_changes_are_saved_in_this_draft_and_ap',
+        ),
+      ),
+      const SizedBox(height: 16),
+      if (_loading) const LinearProgressIndicator(),
+      if (_failed) ...[
+        Text(OccasionSetupStrings.ui('email_templates_could_not_be_loaded')),
+        TextButton(onPressed: _load, child: const Text('Zkusit znovu')),
+      ],
+      if (_catalog != null)
+        LayoutBuilder(
+          builder: (context, constraints) {
             final columns = (constraints.maxWidth / 240).floor().clamp(1, 6);
             final width = (constraints.maxWidth - 16 * (columns - 1)) / columns;
             final height =
                 168 * MediaQuery.textScalerOf(context).scale(14) / 14;
-            return Wrap(spacing: 16, runSpacing: 16, children: [
-              for (final entry
-                  in (_catalog!['emailTemplates'] as List).whereType<Map>())
-                SizedBox(
+            return Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                for (final entry
+                    in (_catalog!['emailTemplates'] as List).whereType<Map>())
+                  SizedBox(
                     width: width,
                     height: height,
                     child: EmailTemplateCard(
                       template: EmailTemplateModel.fromJson({
                         ...Map<String, dynamic>.from(entry['template']),
-                        'code': entry['code']
+                        'code': entry['code'],
                       }),
                       contextTitle: _contextTitle(entry),
                       onEdit: _loading ? () {} : () => _edit(entry),
-                    )),
-            ]);
-          }),
-        const SizedBox(height: 24),
-        Text(EmailTemplatesStrings.settingsBanner,
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Text(EmailTemplatesStrings.settingsBannerDescriptionOccasion),
-        const SizedBox(height: 12),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: ImageArea(
-            key: const ValueKey('setup-email-banner'),
-            dropHeight: 250 * MediaQuery.textScalerOf(context).scale(14) / 14,
-            imageUrl: widget.draft['emailBanner'] as String? ??
-                _catalog?['inheritedEmailBanner'] as String?,
-            hint: EmailTemplatesStrings.settingsBannerHint,
-            enabled: widget.unitId != null,
-            onFileSelected: (file) async {
-              if (widget.unitId == null) return null;
-              widget.onBusyChanged?.call(true);
-              try {
-                final url = await DbImages.uploadImage(
-                    await file.readAsBytes(), null, widget.unitId!,
-                    profile: ImageUploadProfile.banner);
-                if (mounted) {
-                  widget.onChanged({'emailBanner': url});
-                  await _load();
-                }
-                return url;
-              } finally {
-                if (mounted) widget.onBusyChanged?.call(false);
-              }
-            },
-            onRemove: () {
-              widget.onChanged({'emailBanner': null});
-              _load();
-            },
-          ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
-      ]);
+      const SizedBox(height: 24),
+      Text(
+        EmailTemplatesStrings.settingsBanner,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      const SizedBox(height: 8),
+      Text(EmailTemplatesStrings.settingsBannerDescriptionOccasion),
+      if (widget.draft['emailBanner'] == null &&
+          (_catalog?['inheritedEmailBanner'] as String? ?? '').isNotEmpty)
+        Text(OccasionSetupStrings.ui('banner_inherited')),
+      if (widget.draft['emailBanner'] != null)
+        TextButton(
+          onPressed: () {
+            widget.onChanged({'emailBanner': null});
+            _load();
+          },
+          child: Text(OccasionSetupStrings.story('restoreDefault')),
+        ),
+      const SizedBox(height: 12),
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: ImageArea(
+          key: const ValueKey('setup-email-banner'),
+          dropHeight: 250 * MediaQuery.textScalerOf(context).scale(14) / 14,
+          imageUrl: widget.draft['emailBanner'] == ''
+              ? null
+              : widget.draft['emailBanner'] as String? ??
+                    _catalog?['inheritedEmailBanner'] as String?,
+          hint: EmailTemplatesStrings.settingsBannerHint,
+          enabled: widget.unitId != null,
+          onFileSelected: (file) async {
+            if (widget.unitId == null) return null;
+            widget.onBusyChanged?.call(true);
+            try {
+              final url = await DbImages.uploadImage(
+                await file.readAsBytes(),
+                null,
+                widget.unitId!,
+                profile: ImageUploadProfile.banner,
+              );
+              if (mounted) {
+                widget.onChanged({'emailBanner': url});
+                await _load();
+              }
+              return url;
+            } finally {
+              if (mounted) widget.onBusyChanged?.call(false);
+            }
+          },
+          onRemove: () {
+            widget.onChanged({'emailBanner': ''});
+            _load();
+          },
+        ),
+      ),
+    ],
+  );
 }

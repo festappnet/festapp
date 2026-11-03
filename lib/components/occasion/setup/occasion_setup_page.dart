@@ -1,3 +1,5 @@
+import 'occasion_setup_review_row.dart';
+
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'setup_draft_conflict.dart';
@@ -81,6 +83,7 @@ import 'occasion_setup_pricing.dart';
 import 'occasion_setup_bank_account.dart';
 import 'occasion_setup_communication.dart';
 import 'occasion_setup_invitations.dart';
+import 'occasion_setup_blueprint_preview.dart';
 
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
@@ -152,6 +155,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   late OccasionSetupDraft _stored;
   late Map<String, dynamic> _data;
   late TextEditingController _linkController;
+  final _invitationsKey = GlobalKey<OccasionSetupInvitationsState>();
   int _editEpoch = 0;
   int _formEpoch = 0;
   int _configurationEpoch = 0;
@@ -1663,31 +1667,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return '${localizations.formatMediumDate(value)} ${value.year} · ${TimeOfDay.fromDateTime(value).format(context)}';
   }
 
-  Widget _reviewRow(String label, String value) => Padding(
-    padding: const EdgeInsets.only(bottom: 9),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final labelWidget = Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        );
-        if (constraints.maxWidth < 540) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [labelWidget, SelectableText(value)],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: 205, child: labelWidget),
-            Expanded(child: SelectableText(value)),
-          ],
-        );
-      },
-    ),
-  );
-
   Widget _reviewSection(
     Map<String, dynamic> d,
     int step,
@@ -1728,7 +1707,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              if (step != 5 &&
+              if ((step != 5 || questionKey != null) &&
                   OccasionSetupStory.applicableSteps(
                     d,
                     AppConfig.isAppSupported,
@@ -1758,16 +1737,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         : null;
     final layout = (d['blueprintLayoutDraft'] as Map?)?['layout'] as Map?;
     final canvas = layout?['canvas'] as Map?;
-    final groups = [
-      for (final node in layout?['nodes'] as List? ?? const [])
-        if (const [
-          'table',
-          'group',
-          'row',
-          'section',
-        ].contains((node as Map)['kind']))
-          {'title': node['label']},
-    ];
+    final groups = SetupBlueprintConfiguration(d).groupTitles;
     final seatCount = _layoutSeatCount(d);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1805,23 +1775,32 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ),
           ),
         _reviewSection(d, 0, OccasionSetupStrings.ui('source_and_copying'), [
-          _reviewRow(
+          OccasionSetupReviewRow(
             OccasionSetupStrings.ui('source_event'),
             d['source'] as String,
           ),
         ], issues),
         _reviewSection(d, 1, OccasionSetupStrings.ui('event'), [
-          _reviewRow(AdministrationStrings.titleLabel, d['title'] as String),
+          OccasionSetupReviewRow(
+            AdministrationStrings.titleLabel,
+            d['title'] as String,
+          ),
           if (AppConfig.isAppSupported)
-            _reviewRow(
+            OccasionSetupReviewRow(
               AdministrationStrings.linkLabel,
               (d['link'] as String).isEmpty
                   ? FormStrings.automaticPublicLink
                   : publicLinkUrl(d['link'] as String, isForm: false),
             ),
-          _reviewRow(CommonStrings.start, _dateForReview(d['start'] as String)),
-          _reviewRow(CommonStrings.end, _dateForReview(d['end'] as String)),
-          _reviewRow(
+          OccasionSetupReviewRow(
+            CommonStrings.start,
+            _dateForReview(d['start'] as String),
+          ),
+          OccasionSetupReviewRow(
+            CommonStrings.end,
+            _dateForReview(d['end'] as String),
+          ),
+          OccasionSetupReviewRow(
             OccasionSetupStrings.story('introImage'),
             OccasionSetupStrings.story(
               (d['introImage'] as String? ?? '').isEmpty
@@ -1829,7 +1808,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   : 'provided',
             ),
           ),
-          _reviewRow(
+          OccasionSetupReviewRow(
             OccasionSetupStrings.story(
               AppConfig.isAppSupported ? 'promotion' : 'listingTitle',
             ),
@@ -1842,34 +1821,37 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ),
           ),
           if ((d['placeName'] as String? ?? '').isNotEmpty)
-            _reviewRow(CommonStrings.place, d['placeName'] as String),
+            OccasionSetupReviewRow(
+              CommonStrings.place,
+              d['placeName'] as String,
+            ),
           if ((d['description'] as String? ?? '').isNotEmpty)
-            _reviewRow(
+            OccasionSetupReviewRow(
               CommonStrings.description,
               OccasionSetupStrings.story('provided'),
             ),
         ], issues),
         if (AppConfig.isAppSupported)
           _reviewSection(d, 2, CommonStrings.content, [
-            _reviewRow(
+            OccasionSetupReviewRow(
               'FeatureForm.title'.tr(),
               d['formEnabled'] == true
                   ? OccasionSetupStrings.ui('enabled')
                   : OccasionSetupStrings.ui('disabled'),
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               CommonStrings.schedule,
               d['copyProgram'] == true
                   ? OccasionSetupStrings.ui('copy')
                   : OccasionSetupStrings.ui('do_not_copy'),
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               'FeatureInformation.information'.tr(),
               d['copyInformation'] == true
                   ? OccasionSetupStrings.ui('copy')
                   : OccasionSetupStrings.ui('do_not_copy'),
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               OccasionSetupStrings.ui('email_templates'),
               d['copyEmails'] == true
                   ? OccasionSetupStrings.ui('copy')
@@ -1882,7 +1864,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           else if (form == null)
             Text(OccasionSetupStrings.ui('the_form_has_not_been_created_yet'))
           else ...[
-            _reviewRow(
+            OccasionSetupReviewRow(
               OccasionSetupStrings.ui('source'),
               d['formOrigin'] == null
                   ? OccasionSetupStrings.ui('new_form')
@@ -1890,24 +1872,24 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                       'title': '${d['formOrigin']}',
                     }),
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               'FeatureFormSettings.labelFormTitle'.tr(),
               form.form.definition.title ?? '',
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               'FeatureFormSettings.labelFormLink'.tr(),
               form.form.definition.link ?? '',
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               OccasionSetupSales.text(d, 'saleStart'),
               OccasionSetupSales.text(d, 'mode.${OccasionSetupSales.mode(d)}'),
             ),
             if (OccasionSetupSales.mode(d) == 'scheduled')
-              _reviewRow(
+              OccasionSetupReviewRow(
                 OccasionSetupSales.text(d, 'saleStart'),
                 _dateForReview(d['saleStart'] as String?),
               ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               OccasionSetupSales.text(d, 'saleEnd'),
               _dateForReview((d['saleEnd'] ?? d['end']) as String?),
             ),
@@ -1921,7 +1903,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             for (final field in form.form.relatedFields.where(
               (field) => field.definition.isTicketField != true,
             ))
-              _reviewRow(
+              OccasionSetupReviewRow(
                 field.definition.title ??
                     FormHelper.fieldTypeToLocale(field.definition.type ?? ''),
                 '${FormHelper.fieldTypeToLocale(field.definition.type ?? '')} · ${field.definition.isRequired == true ? 'povinné' : 'nepovinné'}${field.definition.isHidden == true ? ' · skryté' : ''}${field.options.isEmpty ? '' : ' · možnosti: ${field.options.map((option) => option.title).join(', ')}'}',
@@ -1939,15 +1921,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               for (final product in type.products ?? <ProductModel>[])
-                _reviewRow(
+                OccasionSetupReviewRow(
                   product.title ?? '',
-                  '${product.price?.toStringAsFixed(d['paymentMethod'] == 'stripe' || d['paymentMethod'] == 'both' ? 2 : 0) ?? '0'} ${product.currencyCode ?? 'CZK'} · limit ${product.maximum?.toString() ?? 'Waitlist.unlimited'.tr()}',
+                  '${product.price?.toStringAsFixed(d['paymentMethod'] == 'stripe' || d['paymentMethod'] == 'both' ? 2 : 0) ?? '0'} ${product.currencyCode ?? 'CZK'}',
                 ),
             ],
             const SizedBox(height: 6),
             if (AppConfig.isAppSupported &&
                 OccasionSetupStory.hasPaidProducts(d)) ...[
-              _reviewRow(
+              OccasionSetupReviewRow(
                 d['paymentMethod'] == 'stripe'
                     ? PaymentMethodStrings.text('onlyStripe')
                     : 'BankAccount.bankAccount'.tr(),
@@ -1957,7 +1939,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     ? (d['bankAccountLabel'] as String? ?? '')
                     : OccasionSetupStrings.story('bankAccountNotConfirmed'),
               ),
-              _reviewRow(
+              OccasionSetupReviewRow(
                 'FeatureFormSettings.labelDeadlineDays'.tr(),
                 '${effectiveSetupDeadlineSeconds(d) / 86400}'.replaceFirst(
                   RegExp(r'\.0$'),
@@ -1998,13 +1980,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             2,
             OccasionSetupStrings.ui('ticket'),
             [
-              _reviewRow(
+              OccasionSetupReviewRow(
                 TicketDeliveryStrings.text('title'),
                 TicketDeliveryStrings.label(
                   _ticketDraftFeature(d).deliveryMode,
                 ),
               ),
-              _reviewRow(
+              OccasionSetupReviewRow(
                 OccasionSetupStrings.ui('appearance'),
                 (d['ticketDraft'] as Map?)?['layout'] == null
                     ? OccasionSetupStrings.ui('default_template')
@@ -2016,7 +1998,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           ),
         if (!AppConfig.isAppSupported && OccasionSetupStory.hasPaidProducts(d))
           _reviewSection(d, 4, OccasionSetupStrings.ui('payment_settings'), [
-            _reviewRow(
+            OccasionSetupReviewRow(
               d['paymentMethod'] == 'stripe'
                   ? PaymentMethodStrings.text('onlyStripe')
                   : 'BankAccount.bankAccount'.tr(),
@@ -2026,7 +2008,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   ? (d['bankAccountLabel'] as String? ?? '')
                   : OccasionSetupStrings.story('bankAccountNotConfirmed'),
             ),
-            _reviewRow(
+            OccasionSetupReviewRow(
               'FeatureFormSettings.labelDeadlineDays'.tr(),
               '${effectiveSetupDeadlineSeconds(d) / 86400}'.replaceFirst(
                 RegExp(r'\.0$'),
@@ -2040,23 +2022,22 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             AppConfig.isAppSupported ? 4 : 6,
             CommonStrings.blueprint,
             [
-              _reviewRow(
+              OccasionSetupReviewRow(
                 OccasionSetupStrings.ui('method'),
                 SetupBlueprintConfiguration(d).label,
               ),
               if (SetupBlueprintConfiguration(d).active) ...[
-                _reviewRow(
+                OccasionSetupReviewRow(
                   OccasionSetupStrings.ui('dimensions'),
                   '${canvas?['width'] ?? '-'} × ${canvas?['height'] ?? '-'}',
                 ),
-                _reviewRow(
-                  'Skupiny',
-                  groups
-                      .map((group) => (group as Map)['title']?.toString() ?? '')
-                      .join(', '),
+                if (groups.isNotEmpty)
+                  OccasionSetupReviewRow('Skupiny', groups.join(', ')),
+                OccasionSetupReviewRow(
+                  OccasionSetupStrings.ui('seats'),
+                  '$seatCount',
                 ),
-                _reviewRow(OccasionSetupStrings.ui('seats'), '$seatCount'),
-                _reviewRow(
+                OccasionSetupReviewRow(
                   OccasionSetupStrings.ui('form_link'),
                   form?.form.definition.title ??
                       OccasionSetupStrings.ui('missing_form'),
@@ -2079,7 +2060,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           5,
           OccasionSetupStrings.ui('privacy_and_completion'),
           [
-            Text(OccasionSetupSales.text(d, 'privacy')),
+            Text(
+              OccasionSetupSales.text(
+                d,
+                OccasionSetupSales.publishesToCatalog(d)
+                    ? 'privacyPublished'
+                    : 'privacy',
+              ),
+            ),
             if (d['formEnabled'] == true)
               Text(
                 OccasionSetupSales.text(
@@ -2162,6 +2150,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (_questions[_questionIndex(d)].key == 'team') {
       return OccasionSetupInvitations(
+        key: _invitationsKey,
         draftId: _stored.id,
         data: d,
         onChanged: (patch) =>
@@ -2528,15 +2517,20 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             jsonEncode(next))
           return;
         _change((x) {
+          final previous = x['ticketDraft'] as Map? ?? {};
           x['ticketDraft'] = next;
-          x['appearance'] = {
-            ...OccasionSetupAppearance.read(x),
-            'id': 'custom',
-            'preserveSource': true,
-          };
-          x.remove('ticketTemplateId');
-          x.remove('ticketTemplateSource');
-          _editEpoch++;
+          if (jsonEncode(previous['layout']) != jsonEncode(next['layout']) ||
+              previous['background'] != next['background'] ||
+              previous['ticket_type'] != next['ticket_type']) {
+            x['appearance'] = {
+              ...OccasionSetupAppearance.read(x),
+              'id': 'custom',
+              'preserveSource': true,
+            };
+            x.remove('ticketTemplateId');
+            x.remove('ticketTemplateSource');
+            _editEpoch++;
+          }
         }, changesConfiguration: true);
       },
       child: Column(
@@ -2710,6 +2704,19 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
           if (_layoutAreaCount(d) > 0)
             Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
+          if (d['blueprintLayoutDraft'] is Map) ...[
+            const SizedBox(height: 12),
+            OccasionSetupBlueprintPreview(
+              key: ValueKey(jsonEncode(d['blueprintLayoutDraft'])),
+              document: BlueprintSetupLayoutDraft.fromJson(
+                Map<String, dynamic>.from(d['blueprintLayoutDraft'] as Map),
+              ).document,
+              loadResources: () async {
+                if (!await _flush()) throw StateError('Draft save failed');
+                return _store.blueprintResources(_stored);
+              },
+            ),
+          ],
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: _openingBlueprint || _loadingBlueprintCandidate
@@ -2731,6 +2738,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<void> _jump(String key) async {
     if (_presentationUploading || _finalizeCommand != null) return;
+    if (_invitationsKey.currentState?.commitPending() == false) return;
     final target = _questions.indexWhere((q) => q.key == key);
     if (target < 0) return;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -2764,9 +2772,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       key;
   Future<FormFontCatalog> _loadAppearanceFonts() async {
     final catalog = await FormFontCatalog.load();
-    for (final family in OccasionSetupAppearance.fonts.keys) {
-      await catalog.ensureFamily(family);
-    }
+    await catalog.ensureFamily(
+      OccasionSetupAppearance.read(_data)['fontFamily'] as String,
+    );
     return catalog;
   }
 
@@ -2828,6 +2836,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return OccasionSetupAppearancePanel(
       onPresetSelected: (id) =>
           apply(OccasionSetupAppearance.selectPreset(d, id)),
+      previewFontStyle: catalog.previewStyle,
       fontStyle: (family, base) => catalog.families.contains(family)
           ? catalog
                 .getTextTheme(family, TextTheme(bodyMedium: base))
@@ -2835,7 +2844,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           : base.copyWith(fontFamily: family),
       fontFamily: a['fontFamily'] as String,
       fontFamilies: {
-        ...OccasionSetupAppearance.fonts.keys,
+        ...OccasionSetupAppearance.fonts.keys.where(catalog.families.contains),
         a['fontFamily'] as String,
       }.toList(),
       onFontChanged: (v) => custom('fontFamily', v),

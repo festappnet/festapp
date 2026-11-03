@@ -96,7 +96,8 @@ def local(names):
                 with log.open('w') as output:
                     result = subprocess.run(['pnpm', f'--package=node@{version}', 'dlx', 'node',
                         'automation/ci/node-runtime.mjs', 'python3', 'automation/ci/run.py', 'lane', name],
-                        cwd=ROOT, stdout=output, stderr=subprocess.STDOUT)
+                        cwd=ROOT, stdout=output, stderr=subprocess.STDOUT,
+                        env={**os.environ, 'CI': 'true'})
                 receipt['jobs'].append({'name': name, 'seconds': round(time.monotonic()-before, 2), 'exitCode': result.returncode, 'log': str(log)})
                 if result.returncode:
                     print('\n'.join(log.read_text().splitlines()[-60:]), file=sys.stderr)

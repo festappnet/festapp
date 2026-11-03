@@ -10,6 +10,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  payment_method text;
+ publish_to_catalog boolean;
  sale_mode text; sale_start timestamptz; sale_end timestamptz;
  blueprint_mode text; blueprint_id bigint; blueprint_source bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
@@ -38,8 +39,8 @@ BEGIN
   IF sale_mode NOT IN ('preparation','scheduled','immediate') THEN
    RAISE invalid_parameter_value USING MESSAGE='Invalid sale mode'; END IF;
   sale_end:=coalesce(nullif(payload->>'saleEnd','')::timestamptz,(payload->>'end')::timestamptz);
-  IF sale_end IS NULL OR sale_end>(payload->>'end')::timestamptz THEN
-   RAISE invalid_parameter_value USING MESSAGE='Sale must end no later than the event'; END IF;
+  IF sale_end IS NULL THEN
+   RAISE invalid_parameter_value USING MESSAGE='Sale end is required'; END IF;
   IF sale_mode='scheduled' THEN
    sale_start:=nullif(payload->>'saleStart','')::timestamptz;
    IF sale_start IS NULL OR sale_start<=clock_timestamp() OR sale_start>=sale_end THEN
@@ -65,7 +66,7 @@ BEGIN
  END IF;
  source_id := (payload->>'sourceId')::bigint;
  intro_image:=nullif(payload->>'introImage','');
- email_banner:=nullif(payload->>'emailBanner','');
+ email_banner:=payload->>'emailBanner';
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN
   RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
  FOREACH configuration_source IN ARRAY ARRAY[nullif(payload->>'formSourceOccasionId','')::bigint,nullif(payload->>'blueprintSourceOccasionId','')::bigint] LOOP
@@ -94,7 +95,7 @@ BEGIN
  -- arbitrary URL supplied by a client, or adopt another unit's image.
  IF intro_image IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=intro_image AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft image access denied'; END IF;
- IF email_banner IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
+ IF nullif(email_banner,'') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
  IF coalesce((payload->>'isPromoted')::boolean,false) AND intro_image IS NULL THEN
   RAISE invalid_parameter_value USING MESSAGE='Promotion requires an intro image'; END IF;
@@ -149,9 +150,12 @@ BEGIN
  END IF;
  IF coalesce((payload->>'copyProgram')::boolean,false) THEN features := features || '[{"code":"schedule","is_enabled":true}]'; END IF;
  IF coalesce((payload->>'copyInformation')::boolean,false) THEN features := features || '[{"code":"information","is_enabled":true}]'; END IF;
+ publish_to_catalog:=coalesce((payload->>'formEnabled')::boolean,true) AND sale_mode<>'preparation' AND coalesce((payload->>'listPubliclyOnPublish')::boolean,true);
  config := jsonb_build_object('unit',d.unit,'organization',d.organization,
   'title',payload->>'title','link',payload->>'link','description',coalesce(payload->>'description',''),
-  'start_time',payload->>'start','end_time',payload->>'end','is_hidden',true,'is_open',false,
+  'start_time',payload->>'start','end_time',payload->>'end',
+  'is_hidden',NOT publish_to_catalog,
+  'is_open',publish_to_catalog,
   'is_promoted',coalesce((payload->>'isPromoted')::boolean,false),
   'features',features,'data',jsonb_strip_nulls(jsonb_build_object('client_sync_v1',false,
    'setup_listing_intent',coalesce((payload->>'listPubliclyOnPublish')::boolean,true),
@@ -349,7 +353,7 @@ BEGIN
  PERFORM public.fanout_unit_catalog_v1(v_commit.commit_id,d.unit);
  receipt := jsonb_build_object('status','applied','code',200,'data',
   jsonb_build_object('occasionId',new_id,'link',(SELECT link FROM public.occasions WHERE id=new_id),
-   'formLink',(SELECT link FROM public.forms WHERE id=form_id),'saleMode',sale_mode));
+   'formLink',(SELECT link FROM public.forms WHERE id=form_id),'saleMode',sale_mode,'isOpen',(SELECT is_open FROM public.occasions WHERE id=new_id),'isHidden',(SELECT is_hidden FROM public.occasions WHERE id=new_id),'isPromoted',(SELECT is_promoted FROM public.occasions WHERE id=new_id)));
  receipt := public.finish_client_mutation_v1(p_command_id,receipt,v_commit.commit_id);
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;

@@ -4,6 +4,7 @@ import 'package:fstapp/widgets/appearance_color_controls.dart';
 import 'package:fstapp/components/_shared/appearance_color_strings.dart';
 
 import 'occasion_setup_strings.dart';
+import '../../fonts/font_family_picker.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -24,6 +25,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     required this.onGradientChanged,
     required this.formPreview,
     this.fontStyle,
+    this.previewFontStyle,
   });
 
   final ValueChanged<String> onPresetSelected;
@@ -40,6 +42,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
 
   /// Resolves the loaded font alias; the owner handles loading and failures.
   final TextStyle Function(String family, TextStyle base)? fontStyle;
+  final Future<TextStyle> Function(String family)? previewFontStyle;
 
   void _pickColor(
     BuildContext context,
@@ -80,42 +83,18 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DropdownButtonFormField<String>(
-          key: ValueKey('appearance-font-$fontFamily'),
-          initialValue: fontFamilies.contains(fontFamily) ? fontFamily : null,
-          isExpanded: true,
-          itemHeight: null,
-          selectedItemBuilder: (context) => [
-            for (final family in fontFamilies)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  family,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _fontStyle(family, theme.textTheme.bodyLarge),
-                ),
-              ),
-          ],
-          decoration: InputDecoration(
-            labelText: OccasionSetupStrings.ui('font'),
-            border: OutlineInputBorder(),
-          ),
-          items: [
-            for (final family in fontFamilies)
-              DropdownMenuItem(
-                value: family,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    family,
-                    style: _fontStyle(family, theme.textTheme.bodyLarge),
-                  ),
-                ),
-              ),
-          ],
-          onChanged: (value) {
-            if (value != null) onFontChanged(value);
+        FontFamilyPicker(
+          value: fontFamily,
+          families: fontFamilies,
+          extraFamilies: const ['Roboto Slab', 'Russo One'],
+          label: OccasionSetupStrings.ui('font'),
+          canReset: false,
+          selectedStyle: _fontStyle(fontFamily, theme.textTheme.bodyLarge),
+          previewStyle: previewFontStyle,
+          onSelected: (value) async {
+            final family = value ?? 'Roboto';
+            await previewFontStyle?.call(family);
+            onFontChanged(family);
           },
         ),
         const SizedBox(height: 24),

@@ -1,3 +1,4 @@
+import '../../forms/form_appearance_theme.dart';
 import 'occasion_setup_strings.dart';
 
 import 'package:festapp_core/forms.dart';
@@ -64,9 +65,11 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
       final holder = FormHolder.fromDefinition(definition);
       holder.controller = FormHolderController(globalKey: _key);
       final appearance = OccasionSetupAppearance.read(widget.draft);
-      Color color(String key) =>
-          Color(int.parse('ff${appearance[key]}', radix: 16));
-      final theme = Theme.of(context);
+      final theme = formAppearanceTheme(
+        formAppearanceBaseTheme(context, definition),
+        definition,
+      );
+      final background = formAppearanceBackground(theme, definition);
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(
@@ -82,15 +85,7 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
             child: Builder(
               builder: (context) => Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color('primary'),
-                  gradient: appearance['gradient'] == true
-                      ? LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [color('primary'), color('secondary')],
-                        )
-                      : null,
+                decoration: background?.copyWith(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Card(

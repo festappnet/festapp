@@ -30,8 +30,8 @@ BEGIN
  END IF;
  SELECT data INTO unit_data FROM public.units WHERE id=d.unit AND organization=d.organization;
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='Draft hierarchy denied'; END IF;
- email_banner:=CASE WHEN p_occasion IS NULL THEN nullif(d.data->>'emailBanner','') END;
- IF email_banner IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
+ email_banner:=CASE WHEN p_occasion IS NULL THEN d.data->>'emailBanner' END;
+ IF nullif(email_banner,'') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
  SELECT coalesce(unit_data->>'email_banner',data->>'email_banner') INTO inherited_banner FROM public.organizations WHERE id=d.organization;
  tone:=coalesce(nullif(nullif(d.data->>'communicationTone',''),'inherit'),CASE WHEN unit_data->>'communication_tone'='informal' THEN 'informal' ELSE 'formal' END);
@@ -66,6 +66,10 @@ BEGIN
    'template',effective->'template','customized',overrides ? template_code));
   IF template_code=selected_code THEN resolved:=effective; END IF;
  END LOOP;
+ IF email_banner IS NOT NULL THEN
+  resolved:=jsonb_set(resolved,'{wrapper}',jsonb_build_object('html',
+    public.email_banner_wrapper_internal(email_banner,d.data->>'title')));
+ END IF;
  feature:=coalesce(feature,d.data->'ticketDraft');
  IF p_delivery_mode IS NOT NULL THEN PERFORM public.ticket_delivery_mode(jsonb_build_object('delivery_mode',p_delivery_mode)); END IF;
  IF ticket_catalog IS NULL THEN

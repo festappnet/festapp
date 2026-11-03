@@ -98,8 +98,10 @@ Krok Obsah patří jen aplikacím s programem a informacemi; ve vstupenky.online
 se nezobrazuje ani nepřebírá a registrace/prodej je vždy zapnutá. Starší
 koncepty se při otevření přizpůsobí tomuto toku. Skutečné editory formuláře a plánku pracují s modelem konceptu a jejich
 uložení pokračuje přes verzovaný databázový autosave. Dokončený koncept může
-ukázat 100 %. Závěrečné vytvoření převádí potvrzený koncept na skutečnou,
-skrytou a uzavřenou akci přes idempotentní serverový příkaz. Aktivní viditelné
+ukázat 100 %. Závěrečné vytvoření převádí potvrzený koncept na skutečnou akci přes
+idempotentní serverový příkaz. Otevření nebo naplánování prodeje zveřejní
+akci v katalogu, pokud je zapnutá volba veřejného přehledu. Příprava a vypnutá
+viditelnost ponechávají akci skrytou. Stav formuláře se řídí vlastními termíny. Aktivní viditelné
 pole vstupenky zapne funkci ticket i bez otevření jejího editoru; odstraněné nebo
 skryté pole nepřenáší neaktivní konfiguraci. Volba „Bez plánku“ nepřenáší dříve
 uložené objekty. Vybraný prázdný plánek server odmítne před vytvořením akce.

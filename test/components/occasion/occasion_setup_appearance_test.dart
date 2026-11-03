@@ -34,13 +34,13 @@ void main() {
           ]
         },
       };
-  test('ten shared font choices preserve the event palette and reach the PDF',
+  test('catalogue font choices preserve the event palette and reach the PDF',
       () {
     final catalog = jsonDecode(
         File('supabase/functions/_shared/ticket-assets/font-catalog.json')
             .readAsStringSync());
     final ids = {for (final face in catalog['fonts']) face['id']};
-    expect(OccasionSetupAppearance.fonts.length, 10);
+    expect(OccasionSetupAppearance.fonts.length, greaterThan(1800));
     for (final entry in OccasionSetupAppearance.fonts.entries) {
       expect(ids, contains(entry.value));
       final appearance = {

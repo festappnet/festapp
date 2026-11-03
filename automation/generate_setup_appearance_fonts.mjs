@@ -5,6 +5,11 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const selection = JSON.parse(fs.readFileSync(root + 'automation/tickets/setup-appearance-fonts.json'));
 const catalog = JSON.parse(fs.readFileSync(root + 'supabase/functions/_shared/ticket-assets/font-catalog.json'));
+// Include the same immutable default faces offered by the canonical picker.
+const defaults = new Set(catalog.defaultFaceIds);
+for (const face of catalog.fonts) {
+  if (face.source === 'google' && defaults.has(face.id)) selection[face.family] ??= face.id;
+}
 const entries = Object.entries(selection);
 for (const [family, id] of entries) {
   if (!catalog.fonts.some(face => face.id === id && (face.family === family || face.family === `${family} (legacy)`))) {

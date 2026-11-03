@@ -149,7 +149,7 @@ void main() {
             tester.getBottomLeft(find.byType(EmailTemplateCard).last).dy));
     tester.widget<ImageArea>(banner).onRemove();
     await tester.pumpAndSettle();
-    expect(patches.single, {'emailBanner': null});
+    expect(patches.single, {'emailBanner': ''});
     expect(
         backend.requests
             .where((r) => r.url.path.contains('update_entity_email_banner')),

@@ -82,6 +82,7 @@ void main() {
                                 }),
                                 fontFamily: font,
                                 fontFamilies: const ['Roboto', 'Roboto Slab'],
+                                previewFontStyle: (family) async => const TextStyle(fontFamily: 'PalettePreview'),
                                 onFontChanged: (value) =>
                                     setState(() => font = value),
                                 primaryColor: Color(primary),

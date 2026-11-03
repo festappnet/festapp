@@ -68,6 +68,15 @@ class RunnerSafetyTest(unittest.TestCase):
                     runner.lane('fixture')
             self.assertFalse(marker.exists())
 
+    def test_local_lanes_install_without_an_interactive_terminal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(runner, 'CACHE', Path(directory)), \
+                 patch.object(runner, 'require_version'), \
+                 patch.object(runner.subprocess, 'check_output', side_effect=['test-head\n', b'']), \
+                 patch.object(runner.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as execute:
+                runner.local(['wix-checkout-compatibility'])
+            self.assertEqual(execute.call_args.kwargs['env']['CI'], 'true')
+
     def test_another_owner_blocks_before_tools_or_database_setup(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory)

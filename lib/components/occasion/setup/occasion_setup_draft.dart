@@ -151,6 +151,9 @@ class OccasionSetupDrafts {
       title: draft.title,
       formLink: data['formLink'] as String?,
       saleMode: data['saleMode'] as String? ?? 'preparation',
+      isOpen: data['isOpen'] == true,
+      isHidden: data['isHidden'] != false,
+      isPromoted: data['isPromoted'] == true,
       hasTickets: OccasionSetupStory.hasTickets(draft.data),
     );
   }

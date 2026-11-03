@@ -1,3 +1,4 @@
+import '../form_appearance_theme.dart';
 import 'package:fstapp/theme_config.dart';
 import '../payment_quote_refresh.dart';
 import 'package:intl/intl.dart';
@@ -638,97 +639,7 @@ class _FormPageState extends State<FormPage> {
         }
       }
 
-      int? primaryInt = form.definition.primaryColor;
-      int? secondaryInt = form.definition.secondaryColor;
-
-      Color? primary = primaryInt != null ? Color(primaryInt) : null;
-      Color? secondary = secondaryInt != null ? Color(secondaryInt) : null;
-
-      // Check brightness to respect system theme (dark/light) unless we want to force something.
-      bool isDark = theme.brightness == Brightness.dark;
-
-      if (primary != null) {
-        // SMART COLOR LOGIC FOR DARK MODE
-        // Ensure the primary color is bright enough to be visible against dark background.
-        final hsl = HSLColor.fromColor(primary);
-        // Boost lightness more aggressively for dark mode to ensure visibility
-        if (isDark && hsl.lightness < 0.75) {
-          primary = hsl.withLightness(0.75).toColor();
-          // Also optionally boost saturation if it's very low, to make it pop
-          if (hsl.saturation < 0.3) {
-            primary = HSLColor.fromColor(primary).withSaturation(0.4).toColor();
-          }
-        }
-
-        // Auto-calculate secondary if not provided
-        secondary ??= HSLColor.fromColor(primary)
-            .withLightness((isDark ? 0.85 : 0.9).clamp(0.0, 1.0))
-            .toColor();
-
-        theme = theme.copyWith(
-            primaryColor: primary,
-            // Use a very subtle tint of the primary color for background in light mode
-            // User requested "very slightly colored" and "solid opaque" background
-            // Round 12: Increased opacity to 0.12 ("even darker") for light mode.
-            scaffoldBackgroundColor: Color.alphaBlend(
-                primary.withOpacity(isDark ? 0.05 : 0.07),
-                isDark ? Colors.grey.shade900 : Colors.white),
-            colorScheme: ThemeConfig.colorSchemeForBrand(
-              primary: primary,
-              secondary: secondary,
-              brightness: theme.brightness,
-            ).copyWith(
-              // Only force white surface if strictly desired, otherwise let theme decide or use a light tint
-              surface: isDark ? null : Colors.white,
-            ),
-            checkboxTheme: CheckboxThemeData(
-              fillColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return primary!;
-                }
-                return isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-              }),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4)),
-              side: BorderSide(
-                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                  width: 2),
-            ),
-            radioTheme: RadioThemeData(
-              fillColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return primary!;
-                }
-                return isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-              }),
-            ),
-            switchTheme: SwitchThemeData(
-              thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return primary!;
-                }
-                return isDark ? Colors.grey.shade400 : Colors.grey.shade200;
-              }),
-              trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return primary!.withOpacity(0.5);
-                }
-                return isDark ? Colors.grey.shade700 : Colors.grey.shade400;
-              }),
-            ),
-            inputDecorationTheme: theme.inputDecorationTheme.copyWith(
-              filled: true,
-              // In dark mode, white fill is bad. Use a dark surface color or transparent.
-              fillColor: isDark ? Colors.grey.shade800 : Colors.white,
-              labelStyle: TextStyle(
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-              backgroundColor: primary,
-              foregroundColor: ThemeConfig.textColorForBackground(primary),
-            )));
-      }
+      theme = formAppearanceTheme(theme, form.definition);
     }
     return theme;
   }
@@ -742,12 +653,7 @@ class _FormPageState extends State<FormPage> {
 
   ThemeData _baseFormTheme(BuildContext context) {
     if (form == null) return Theme.of(context);
-    final brightness = switch (form!.definition.themeMode) {
-      'light' => Brightness.light,
-      'dark' => Brightness.dark,
-      _ => Theme.of(context).brightness,
-    };
-    return ThemeConfig.theme(brightness: brightness);
+    return formAppearanceBaseTheme(context, form!.definition);
   }
 
   @override
@@ -1066,31 +972,11 @@ class _FormPageState extends State<FormPage> {
       );
     }
 
-    final sharedDesign = form?.definition.data?['design'] as Map?;
-    if (['solid', 'gradient'].contains(sharedDesign?['background_mode']) &&
-        form?.definition.primaryColor != null) {
-      // Match the original form's subtle scaffold tint instead of painting
-      // saved accent colors at full strength around the content.
-      final primary = theme.scaffoldBackgroundColor;
-      final isDark = theme.brightness == Brightness.dark;
-      final secondary = form!.definition.secondaryColor == null
-          ? primary
-          : Color.alphaBlend(
-              Color(form!.definition.secondaryColor!)
-                  .withOpacity(isDark ? 0.05 : 0.07),
-              isDark ? Colors.grey.shade900 : Colors.white);
-      bodyContent = DecoratedBox(
-          decoration: BoxDecoration(
-              color: primary,
-              gradient: sharedDesign?['background_mode'] == 'gradient' &&
-                      form!.definition.secondaryColor != null
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [primary, secondary],
-                    )
-                  : null),
-          child: bodyContent);
+    final background = form == null
+        ? null
+        : formAppearanceBackground(theme, form!.definition);
+    if (background != null) {
+      bodyContent = DecoratedBox(decoration: background, child: bodyContent);
     }
 
     return Theme(
