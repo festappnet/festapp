@@ -56,6 +56,15 @@ test('ticketing account navigation does not require administration privileges', 
         assert.ok(header.querySelector('.header-public-navigation'), 'help stays available after sign-out');
         header.remove();
     }
+    document.documentElement.lang = 'en';
+    dom.window.history.replaceState({}, '', '/en/whats-new');
+    const englishHeader = new UserHeader();
+    document.body.appendChild(englishHeader);
+    const englishNavigation = englishHeader.querySelector('.header-public-navigation');
+    assert.equal(englishNavigation.getAttribute('aria-label'), 'Main navigation');
+    assert.deepEqual([...englishNavigation.querySelectorAll('a')].map(a => a.textContent), ['For organizers', 'Help']);
+    englishHeader.remove();
+    document.documentElement.lang = 'cs';
     AppConfig.webLink = 'https://hvezdamorska.festapp.net';
     RightsService._context = { user_info: { id: 'ordinary-attendee' }, capabilities: {} };
     const header = new UserHeader();
