@@ -337,7 +337,7 @@ BEGIN
                     WHERE id = payment_info_id;
 
                     -- One queue boundary resolves form and occasion reminder settings.
-                    PERFORM public.queue_payment_reminders(occasion_id,0);
+                    PERFORM public.queue_payment_reminders_internal(occasion_id,payment_info_id);
                 END IF;
                 -- Note: if deposit_deadline = 'on_site', deposit_deadline stays NULL → means "Na místě"
             END;
