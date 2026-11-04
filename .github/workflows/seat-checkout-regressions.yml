@@ -29,6 +29,8 @@ on:
       - 'database/tests/eshop_orders/manual_paid_state_only_test.sql'
       - 'database/functions/emails/**'
       - 'database/tests/emails/**'
+      - 'database/tests/eshop/reminders/**'
+      - 'database/tests/eshop/deposit/**'
       - 'automation/email-delivery/**'
       - 'supabase/functions/send-tickets/**'
       - 'supabase/functions/preview-ticket-layout/**'
