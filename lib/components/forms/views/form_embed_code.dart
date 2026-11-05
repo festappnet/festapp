@@ -22,7 +22,9 @@ String formEmbedCode({
   final fallback =
       '<a href="${escape.convert(publicUrl)}" target="_blank" '
       'rel="noopener noreferrer">${const HtmlEscape().convert(fallbackLabel)}</a>';
+  // Pin the helper feature so an old four-hour browser cache cannot ignore
+  // the explicit per-iframe appearance choice.
   final script =
-      '\n<script src="${escape.convert('$base/embed.js')}" defer></script>';
+      '\n<script src="${escape.convert('$base/embed.js?v=appearance-1')}" defer></script>';
   return '<div data-festapp-embed-host>\n$frame\n$fallback\n</div>$script';
 }

@@ -70,7 +70,7 @@
     const marker = ' data-festapp-embed data-festapp-style="' + (form.querySelector('[name="inherit-style"]').checked ? 'inherit' : 'default') + '"' + (automatic ? '' : ' data-festapp-height="fixed"');
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" width="100%" height="800" style="border:0;max-width:100%" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;
-    code.value = `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js" defer></script>`;
+    code.value = `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js?v=appearance-1" defer></script>`;
     output.hidden = false; output.querySelector('[data-form-link]').href = url.href;
     status.textContent = text.ready;
   });

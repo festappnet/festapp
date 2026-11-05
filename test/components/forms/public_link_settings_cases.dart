@@ -60,6 +60,7 @@ void main() {
         expect(code, contains('Open &lt;order&gt;'));
         expect(code.contains('data-festapp-embed'), isTrue);
         expect(code.contains('<script'), isTrue);
+        expect(code, contains('/embed.js?v=appearance-1'));
         expect(code, contains('data-festapp-style="inherit"'));
         expect(
           formEmbedCode(
@@ -114,14 +115,14 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('embed-inherit-style')));
       await tester.pumpAndSettle();
       expect(copiedCode(), contains('data-festapp-style="default"'));
-      expect(copiedCode(), contains('/embed.js'));
+      expect(copiedCode(), contains('/embed.js?v=appearance-1'));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedFixed).last);
       await tester.pumpAndSettle();
       expect(find.byType(CheckboxListTile), findsOneWidget);
       expect(copiedCode(), contains('data-festapp-style="default"'));
-      expect(copiedCode(), contains('/embed.js'));
+      expect(copiedCode(), contains('/embed.js?v=appearance-1'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
       await tester.tap(find.byKey(const ValueKey('embed-inherit-style')));
       await tester.pumpAndSettle();

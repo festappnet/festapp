@@ -24,7 +24,7 @@ test('public generator produces isolated service code without loading checkout',
   assert.equal(frame.getAttribute('data-festapp-style'),'inherit');
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
-  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
+  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js?v=appearance-1');
   assert.equal(code.window.document.querySelector('a').rel,'noopener noreferrer');
 });
 test('English generator uses its configured service origin and localized results',t=>{
@@ -59,7 +59,7 @@ test('generator puts appearance in copied code and keeps helper for fixed height
   assert.equal(frame.getAttribute('data-festapp-height'),'fixed');
   assert.equal(frame.getAttribute('data-festapp-style'),'default');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
+  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js?v=appearance-1');
 });
 test('copy action copies the current prepared code',async t=>{
   const {dom,form,submit}=fixture(t);let copied;Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async value=>{copied=value;}}});
