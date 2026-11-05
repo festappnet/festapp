@@ -1,3 +1,4 @@
+import {publicBrandFiles} from '../organizers/public_runtime.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -16,6 +17,7 @@ const outputs=context.updates.pages.map(page=>{
     const destination=pathToFileURL(path.join(output,filename(other))).href;
     html=html.replaceAll(`href="${other.canonical}"`,`href="${destination}"`).replaceAll(`href="${other.path}"`,`href="${destination}"`);
   }
+  for(const name of publicBrandFiles)html=html.replaceAll(`src="/${name}"`,`src="data:image/svg+xml;base64,${fs.readFileSync(path.join(root,'web_client/public',name)).toString('base64')}"`);
   for (const asset of context.updates.assets) {
     const extension=path.extname(asset).slice(1).replace('jpg','jpeg');
     html=html.replaceAll(`src="${asset}"`,`src="data:image/${extension};base64,${fs.readFileSync(path.join(root,'web',asset)).toString('base64')}"`);

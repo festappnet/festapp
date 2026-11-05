@@ -186,7 +186,7 @@
     "description": "Find orders, verify payment and email delivery, fix contact details and resend the appropriate current message.",
     "label": "Orders and delivery",
     "workflow": "administration",
-    "preview": "en/orders/report"
+    "preview": "en/orders/list"
   },
   {
     "id": "unmatched-payment",

@@ -1,0 +1,361 @@
+{
+  "date": "2026-11-05",
+  "baseMainSha": "a167d74bbf8578a2a7dcdab2d3ed7bda85b97a0e",
+  "scope": "All authored Czech/English help pages reviewed for current order-detail entry points, related cross-links, prompt clarity and shared public header asset ownership. Not a full re-execution of CMS installation, purchases or scanner admission.",
+  "reviewedGuides": [
+    {
+      "guide": "automation/release/help/ai-agenti.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/bankovni-ucet.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/ceny-a-kapacity.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/embed-generator.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/ai-agents.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/bank-account.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/check-in.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/embed-generator.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/embed.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/event-settings.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/fio-api-token.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/getting-started.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/index.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/joomla.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/mcp-supported-operations.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/order-form.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/orders.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/payments.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/scanner-settings.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/seating-plan.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/ticket-design.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": false
+    },
+    {
+      "guide": "automation/release/help/en/ticket-prices-capacity.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/troubleshooting.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/unmatched-payment.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/webnode.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/wix.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/en/wordpress.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/fio-api-token.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/index.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/joomla.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/mcp-podporovane-operace.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/nastaveni-akce.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/nastaveni-skeneru.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/nesparovana-platba.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/objednavky.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/odbaveni.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/planek-salu.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/platby.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/prodejni-formular.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/reseni-potizi.html",
+      "updated": true,
+      "review": "Updated current order-detail instructions or MCP examples",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/vlozeni-na-web.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/vzhled-vstupenky.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": false
+    },
+    {
+      "guide": "automation/release/help/webnode.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": false
+    },
+    {
+      "guide": "automation/release/help/wix.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/wordpress.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    },
+    {
+      "guide": "automation/release/help/zaciname.html",
+      "updated": false,
+      "review": "Existing task-specific workflow retained; no obsolete order-detail entry point found",
+      "mentionsOrders": true
+    }
+  ],
+  "reviewedGuideCount": 46,
+  "updatedGuideCount": 18,
+  "orderDetailAuthority": [
+    "lib/components/eshop/eshop_columns.dart: orderSymbolColumn onOpen",
+    "lib/components/eshop/views/order_detail_view.dart: overview/tickets/payments/emails/history, embedded contact editor showSaveOnlyAction=false",
+    "lib/components/eshop/views/transactions_dialog.dart: add cash or find/link transaction",
+    "lib/components/eshop/views/order_email_repair_dialog.dart",
+    "assets/translations/{cs,en}.json"
+  ],
+  "currentFlow": {
+    "open": "Order Symbol button; single cell selection and bulk checkbox remain distinct",
+    "delivery": "Order detail -> Emails; Save changes stores draft contact edits, explicit save-and-send requests a message",
+    "payments": "Order detail -> Payments -> Add Payment; bank transfers use Find and link a transaction",
+    "items": "Order detail -> Tickets and places; geometry edits remain in the blueprint editor"
+  },
+  "captures": {
+    "count": 8,
+    "locales": [
+      "cs",
+      "en"
+    ],
+    "actualCurrentUi": true,
+    "fullyLocalizedExampleData": true,
+    "sourceMainSha": "2b80ebb92f8ae37515e65fdebadb8751a8109089",
+    "environment": "Owned isolated local full Supabase and Flutter web, cron off, email paused, external worker URL null",
+    "paymentsSubmitted": false,
+    "emailSendsRequested": false,
+    "draftContactsSaved": false,
+    "servicesClosed": true
+  },
+  "headerAuthority": {
+    "component": "web_client/src/components/users/user_header.js",
+    "publicStaticShell": "automation/release/organizers/site_shell.mjs and shared site-header.html/site-footer.html",
+    "publicRuntimeAndBrandAssetOwner": "automation/release/organizers/public_runtime.mjs",
+    "brandProducer": "automation/configure_brand_assets.py",
+    "surfaces": {
+      "homeAndOrganizerTopics": "Same shared account header, root assets; existing worker binds these document navigations to a shell version",
+      "help": "Same header with byte-identical branding and runtime at /napoveda/assets/",
+      "updatesBothLocales": "Same header/runtime at /co-je-nove/_assets/, including article images",
+      "application": "Same header default root assets; responsive brand files included in install-critical offline assets"
+    },
+    "liveFailureReproduced": "Isolated fresh help visit loads logos; visiting /events installs worker; returning to help produces complete images with naturalWidth 0. Installed worker waits for an app version report that public help never sends. Public document namespaces already bypass that wait.",
+    "workerVersionIsolationWeakened": false,
+    "headerMarkupDuplicated": false
+  },
+  "verification": {
+    "targetedTests": 45,
+    "passed": 45,
+    "failed": 0,
+    "skipped": 0,
+    "staticPreviewAndVisual": {
+      "result": "passed",
+      "combinations": 12,
+      "pages": "CS/EN orders, AI agents and updates, widths 1280 and 390",
+      "brokenImages": 0,
+      "horizontalOverflow": false,
+      "canonicalHydratedHeaderAndWorker": "pending production readback; static preview does not prove this boundary"
+    },
+    "deployment": "pending",
+    "independentCritic": "No blocking finding; source/guide correspondence and shared-runtime ownership reviewed, no source changes",
+    "mechanicalDetector": [],
+    "rebasedTargetedTests": {
+      "tests": 58,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0
+    },
+    "latestIncomingFormRegression": "passed; see /tmp/festapp-help-latest-upstream-check.log"
+  },
+  "limits": [
+    "No production order changes, emails, payments or customer captures.",
+    "Existing unrelated guide procedures retained; eight order-detail screenshots recaptured rather than translating images."
+  ],
+  "prePublicationIntegration": {
+    "upstreamCommits": "PR727 form notification feedback and PR728 ChatGPT branding preserved through clean rebase",
+    "capturedOrderDetailOwnerChanged": false,
+    "additionalUpstream": "a167d74bb empty rich-text placeholder fix in Flutter/web forms and its regression tests preserved; order-detail and header owners unchanged"
+  }
+}

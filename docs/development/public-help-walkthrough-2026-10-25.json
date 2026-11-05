@@ -143,14 +143,6 @@
       "alt": "Platební instrukce a QR po přijetí testovací objednávky za 350 CZK."
     },
     {
-      "mediaId": "cs/payments/manual",
-      "file": "cs/walkthrough/49-add-payment-dialog.png",
-      "sha256": "2f52feeb083f476234efe7d6d48dc656bfa4ca534eb7470ecc7f85a7b5dc7018",
-      "capturedAt": "2026-10-24T23:41:00.830444+00:00",
-      "captureStep": "457-payment-dialog-shot",
-      "alt": "Dialog Přidat platbu s částkou a možností propojit bankovní transakci."
-    },
-    {
       "mediaId": "cs/seating/editor",
       "file": "cs/walkthrough/59-seating-editor-after-creation.png",
       "sha256": "16542218b6c0dbae8c5fb01e822cf3d407f5f17ec31a99a9cbaa97f343deee53",
@@ -221,22 +213,6 @@
       "capturedAt": "2026-10-24T23:41:21.485817+00:00",
       "captureStep": "464-report-final-shot",
       "alt": "Report se skutečnou testovací objednávkou, jednou vstupenkou a příjmem 350 Kč."
-    },
-    {
-      "mediaId": "cs/orders/list",
-      "file": "cs/walkthrough/42-order-administration.png",
-      "sha256": "8685238fa91871b6fe5aefab208b4d22a4f5b189f7cc5c8a37f54fdf4559cf14",
-      "capturedAt": "2026-10-24T23:39:39.279934+00:00",
-      "captureStep": "425-orders-ready-shot",
-      "alt": "Objednávka v administraci s cenou a stavem doručení čekajícím na odeslání."
-    },
-    {
-      "mediaId": "cs/orders/delivery",
-      "file": "cs/walkthrough/44-order-contact-edit.png",
-      "sha256": "9cc7e3cc8772b7062135900c3e23a666c9a0d158a5ea83b59bb9f07dcba8234d",
-      "capturedAt": "2026-10-24T23:39:53.102719+00:00",
-      "captureStep": "431-delivery-edit-shot",
-      "alt": "Oprava kontaktního e-mailu s volbami Pouze uložit a Odeslat potvrzení."
     },
     {
       "mediaId": "cs/check-in/access",
@@ -698,6 +674,70 @@
       "capturedAt": "2026-10-29T17:19:07.933697+00:00",
       "captureStep": "joomla-06-seats-selected",
       "alt": "Plánek v Joomle na mobilu s vybraným místem označeným fajfkou, souhrnem jedné vstupenky za 120 Kč a tlačítkem Pokračovat."
+    },
+    {
+      "mediaId": "cs/orders/list",
+      "file": "cs/orders/list.png",
+      "sha256": "fcdc951725b6abf85539dc7e88f22ef87cbb30600d197652c8ebfdd32fd14a07",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-overview-cs",
+      "alt": "Detail objednávky otevřený vedle seznamu, s kontaktem a platebním souhrnem."
+    },
+    {
+      "mediaId": "cs/orders/payments",
+      "file": "cs/orders/payments.png",
+      "sha256": "bd7f8dae1294fbe9516b27e57d59fdd6decf69b243b04dcc1f7d7fb0a1371bff",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-payments-cs",
+      "alt": "Záložka Platby v detailu objednávky s uloženými platebními údaji."
+    },
+    {
+      "mediaId": "cs/orders/delivery",
+      "file": "cs/orders/delivery.png",
+      "sha256": "bf4bd2cad97c5b5659deb6ce1413b1fc14f9be8f4fe4b9ab80e418273a2f44bb",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-email-edit-cs",
+      "alt": "Oprava e-mailu v detailu objednávky s neuloženou změnou kontaktu."
+    },
+    {
+      "mediaId": "cs/payments/manual",
+      "file": "cs/orders/manual.png",
+      "sha256": "3d3908d17cebea61b306739fccf681613f38e3b2d6a8ff1acdde4ddd9c178ddc",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-add-payment-cs",
+      "alt": "Přidání platby z detailu objednávky s odkazem Najít a propojit transakci."
+    },
+    {
+      "mediaId": "en/orders/list",
+      "file": "en/orders/list.png",
+      "sha256": "e6fafd2851aede7eeebcd6f569e6bd21c6fe238001bdaea6e893574f5597ae9a",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-overview-en",
+      "alt": "Order detail beside the list, showing contact and payment summary."
+    },
+    {
+      "mediaId": "en/orders/payments",
+      "file": "en/orders/payments.png",
+      "sha256": "1bb77af59f73c112c9f7722ae5805ddba5c1c40a1a9de0ecf76a73310d7bfe4c",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-payments-en",
+      "alt": "Payments tab in the order detail with saved payment instructions."
+    },
+    {
+      "mediaId": "en/orders/delivery",
+      "file": "en/orders/delivery.png",
+      "sha256": "29c327244bbf46ffb2e189c5f431fea2989160294d99e7ba25e5cc8b3baee5fc",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-email-edit-en",
+      "alt": "Email repair within order detail with an unsaved contact edit."
+    },
+    {
+      "mediaId": "en/payments/manual",
+      "file": "en/orders/manual.png",
+      "sha256": "93e9bf2162308a324a05fbb0cb2b4b698268edb2b09acf7cdae82fa6142c6468",
+      "capturedAt": "2026-11-05",
+      "captureStep": "order-detail-add-payment-en",
+      "alt": "Cash payment dialog from order detail, including Find and link a transaction."
     }
   ],
   "chapters": [
@@ -840,29 +880,61 @@
       "guide": "orders",
       "steps": [
         {
-          "action": "Objednávky → stav čekajícího doručení",
-          "outcome": "Otevřen dialog s Kontaktní e-mail, Podrobnosti doručení, Pouze uložit a Odeslat potvrzení."
+          "action": "Objednávky → symbol objednávky → detail",
+          "outcome": "Skutečně otevřen Přehled vedle tabulky."
         },
         {
-          "action": "Změnit kontakt → Pouze uložit",
-          "outcome": "Ověřeno skutečné uložení e-mailu; žádné nové odeslání."
+          "action": "Detail → Platby → Přidat platbu",
+          "outcome": "Ověřen dialog hotovosti a odkaz Najít a propojit transakci; žádná platba nebyla zapsána."
         },
         {
-          "action": "Zaplaceno → Přidat platbu → 350",
-          "outcome": "Skutečný lokální záznam testovací hotovosti; žádný bankovní převod."
-        },
-        {
-          "action": "Report",
-          "outcome": "1 objednávka, 1 vstupenka, obsazenost 1/97, příjem 350 Kč."
+          "action": "Detail → E-maily → rozpracovaná oprava adresy",
+          "outcome": "Ověřena tlačítka Uložit změny, Zahodit změny a Uložit a odeslat potvrzení; změna nebyla uložena a žádný e-mail nebyl vyžádán."
         }
       ],
       "stills": [
         "cs/orders/list",
+        "cs/orders/payments",
         "cs/orders/delivery",
         "cs/payments/manual",
-        "cs/orders/report"
+        "en/orders/list",
+        "en/orders/payments",
+        "en/orders/delivery",
+        "en/payments/manual"
       ],
-      "videoNote": "Nezobrazujte testovací účet jako pokyn divákovi k platbě."
+      "videoNote": "Nezobrazujte testovací účet jako pokyn divákovi k platbě.",
+      "previousAcceptance20261025": {
+        "steps": [
+          {
+            "action": "Objednávky → stav čekajícího doručení",
+            "outcome": "Otevřen dialog s Kontaktní e-mail, Podrobnosti doručení, Pouze uložit a Odeslat potvrzení."
+          },
+          {
+            "action": "Změnit kontakt → Pouze uložit",
+            "outcome": "Ověřeno skutečné uložení e-mailu; žádné nové odeslání."
+          },
+          {
+            "action": "Zaplaceno → Přidat platbu → 350",
+            "outcome": "Skutečný lokální záznam testovací hotovosti; žádný bankovní převod."
+          },
+          {
+            "action": "Report",
+            "outcome": "1 objednávka, 1 vstupenka, obsazenost 1/97, příjem 350 Kč."
+          }
+        ],
+        "stills": [
+          "cs/orders/list",
+          "cs/orders/delivery",
+          "cs/payments/manual",
+          "cs/orders/report"
+        ]
+      },
+      "revisedAt": "2026-11-05",
+      "sourceBase": "2b80ebb92f8ae37515e65fdebadb8751a8109089",
+      "captureLocales": [
+        "cs",
+        "en"
+      ]
     },
     {
       "id": "check-in",
@@ -1191,5 +1263,18 @@
     "authorization": "Explicit organizer disable and session capability remain authoritative",
     "largerEvents": "Initial manual preparation; existing snapshots keep refreshing",
     "verification": "Threshold and disable behavior covered by scanner tests; summary count compared with actual snapshot in a rolled-back local database test. Canonical production migration 20261026020000 applied atomically on 2026-10-26; migration ledger and count field verified; function owner, ACL and security configuration preserved."
+  },
+  "orderDetailGuideRevision": {
+    "date": "2026-11-05",
+    "environment": "Disposable isolated full local Supabase and Flutter web; cron off, email paused, external worker URL null",
+    "locales": [
+      "cs",
+      "en"
+    ],
+    "capturedCurrentUi": true,
+    "paymentsSubmitted": false,
+    "emailsRequested": false,
+    "draftContactsSaved": false,
+    "servicesClosed": true
   }
 }
