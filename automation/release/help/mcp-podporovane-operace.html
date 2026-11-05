@@ -1,0 +1,16 @@
+<p class="lead">Co lze přes MCP zjistit nebo změnit a jak o to požádat. Úplný katalog nástrojů, vstupy a závislosti oprávnění vznikají přímo z implementace.</p>
+<p>Začínáte? Použijte <a href="/napoveda/ai-agenti/">návod k připojení AI asistenta</a>. Tato reference je pokračování pro již nastavené připojení.</p>
+<h2 id="jak-pouzit">Jak poznat, co Vaše připojení umožňuje</h2>
+<p>Nejdříve nechte agenta načíst dostupné akce a seznam nástrojů. U každého úkolu se musí shodovat podporovaná operace, oprávnění registrovaného klienta, udělený souhlas a aktuální práva Vašeho účtu. Samotný prompt přístup nerozšiřuje. Po rozšíření oprávnění je nutné nové přihlášení a souhlas.</p>
+<p>Veřejné připojení ChatGPT používá profil souhrnů objednávek: neposkytuje kontakty, poznámky a odpovědi z přihlášek a nepovoluje změny. Operátorské připojení s příslušnými oprávněními nabízí další nástroje. Některé oblasti, například program a řečníci, mají smysl jen u akcí, které tyto funkce používají.</p>
+<p>Ukázkové názvy nahraďte svými údaji. Při shodných názvech nechte agenta nejprve vyžádat výběr konkrétní akce. U seznamů sledujte stránkování. Změny, platby, storna a odeslání zpráv schvalujte podle konkrétního návrhu; po změně nechte přečíst uložený výsledek.</p>
+<h2 id="prompty">Příklady promptů podle úkolu</h2>
+<p>Texty jsou připravené pro běžné úkoly. Seznam potřebných nástrojů, jejich oprávnění a dostupnost ve veřejném připojení ChatGPT se pod každou ukázkou odvozují automaticky z katalogu. Příklady nejsou záznamy provedených operací.</p>
+{{MCP_PROMPTS}}
+<h2 id="katalog">Úplný katalog podporovaných nástrojů</h2>
+<p>Rozbalte oblast a konkrétní nástroj. Uvidíte technický název, popis, potřebná oprávnění, povinné vstupy a úplné JSON Schema. Základní oprávnění se připočítává automaticky. Označení „čtení / kontrola“ přebírá příznak MCP nástroje; některé náhledy mohou čerpat kvótu. Podrobnosti vždy uvádí popis konkrétního nástroje.</p>
+{{MCP_REFERENCE}}
+<h2 id="zdroj">Jak se dokumentace aktualizuje</h2>
+<p>Katalog vychází ze stejného registru jako server MCP, ze schémat vstupů, společného kontraktu oprávnění a pravidel veřejného klienta ChatGPT. Názvy oprávnění používají stejné překlady jako obrazovka souhlasu. Při změně těchto zdrojů sestavení nápovědy odmítne zastaralý katalog, dokud není znovu vygenerován.</p>
+<p>Texty ukázkových promptů jsou redakční příklady. Odkazují na existující operace a jejich vazby se kontrolují při sestavení. Katalog tedy není další ručně vedený seznam schopností.</p>
+<p>Pro automatické zpracování je k dispozici <a href="{{HELP_ASSETS}}mcp-reference.json">katalog MCP v JSON se schématy vstupů</a>. Je to dokumentace implementace, nikoli důkaz dostupnosti všech nástrojů v nasazené službě. Aktuální rozsah konkrétního připojení ověřte po přihlášení.</p>

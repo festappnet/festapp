@@ -635,11 +635,12 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const ownerTables=before.tableGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.grantee==='postgres');
     const ownerColumns=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id'&&g.grantee==='postgres');
     assert.equal(ownerTables.length,7);assert.equal(ownerColumns.length,4);
-    // Forward additions through 20261102180000: these exact relations are
+    // Forward additions through 20261104130000: these exact relations are
     // private. Email seating inspection has one reviewed service SELECT.
     const forwardPrivateTables=[
       ['eshop','checkout_origin_signing_key'],['eshop','order_checkout_origins'],
       ...['form_seating_transitions','notification_center_read_batches','occasion_media_jobs',
+      'sale_opening_campaigns','sale_opening_subscriptions','sale_opening_capabilities',
       'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',
       'wix_billing_activation','wix_billing_attempts','wix_billing_deliveries'].map(name=>['public',name])];
     const expectedTables=approvedPrivateTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_name})));

@@ -1,0 +1,202 @@
+{
+  "date": "2026-11-05",
+  "status": "verified integration on current origin/main; awaiting protected main review and deployment",
+  "plan": "../plans/mcp-clean-acceptance-plan-2026-11-05.md",
+  "verification": "standard",
+  "fixes": [
+    "Repeatable guarded canonical SQL preparation replaces partial historical fixture overlays, including the REST order-summary owner.",
+    "Setup finalization delegates revision and replay to the canonical owner; stale drafts require reload instead of transient retry.",
+    "Nine deployed hidden-member protections reconciled into canonical sources; omitted hidden memberships survive group saves.",
+    "Sale-opening notification settings exposed by the existing SQL owner now have matching MCP input schema.",
+    "Exact private-table ACL expectations and actual addressed-seat fixtures match the canonical contract.",
+    "Pilot receipt is emitted only after task-owned synthetic data and services are cleaned."
+  ],
+  "functionalSuite": {
+    "command": "pnpm --dir tools/festapp test, then targeted full ACL comparison after adding exact sale-opening owner ACL expectations",
+    "tests": 349,
+    "passed": 349,
+    "failed": 0,
+    "skipped": 0,
+    "evidence": "348/349 on complete current-main suite, remaining exact ACL test then passed 1/1; no other tested code changed",
+    "database": "Fresh canonical bootstrap and real migration engine through 20261105033000 on marker-verified loopback PostgreSQL; cron off, external email disabled"
+  },
+  "realLocalAcceptance": {
+    "fixture": "festapp-mcp-hardening-20261029",
+    "actualAuth": true,
+    "actualEdgeHandler": true,
+    "actualCanonicalSql": true,
+    "independentSession": true,
+    "allowedActor": true,
+    "deniedActor": true,
+    "selectedOccasionOnly": true,
+    "readTools": 6,
+    "emptyReportAndPage": true,
+    "populatedOrders": 57,
+    "distinctValidTickets": 110,
+    "waitingTickets": 2,
+    "completePagination": true,
+    "exactSymbolPastContactMatches": true,
+    "publicDetailPrivacy": true,
+    "invalidInputRejected": true,
+    "receivedMoneySeparatedFromOrderValue": true,
+    "parallelReads": 2,
+    "burstRequests": 6,
+    "throttlingRecovery": true,
+    "liveRightsRemoval": true,
+    "issuerRevocation": true,
+    "nativeFormOAuth": true,
+    "nativeFormRead": true,
+    "nativeFormSave": true,
+    "savedPublicFormLink": true,
+    "independentClientRevocation": true,
+    "frozenFormReplay": true,
+    "persistedFormReadback": true,
+    "nonDefaultEventTimezoneRead": true,
+    "formScopeIsolation": true,
+    "realChatgptAcceptance": false,
+    "transportBoundary": "loopback HTTP; Edge HTTPS issuer config maps to the same loopback broker only in the local runner",
+    "syntheticDataCleaned": true,
+    "ownedServicesClosed": true
+  },
+  "migrations": {
+    "localCanonicalBootstrapAndMigration": "passed",
+    "productionApplied": false,
+    "files": [
+      "supabase/migrations/20261105033000_mcp_setup_finalization_conflict.sql"
+    ],
+    "supersededDuplicate": "The earlier local 20261105034000 hidden-member migration is intentionally not published. Current main already owns these protections through 20261101180000_hidden_member_personal_surfaces.sql and users/member_visibility.sql."
+  },
+  "productionSourceReconciliation": {
+    "method": "Compare current source bodies to metadata from the earlier identity-verified read-only production audit; no production writes.",
+    "canonicalDefinitions": 831,
+    "matched": 830,
+    "missing": 0,
+    "different": 1,
+    "originalNineDifferencesResolved": true,
+    "remainingDifference": {
+      "signature": "public.manage_occasion_setup_authoring(bigint,bigint,uuid,bigint,uuid,jsonb)",
+      "disposition": "Prepared setup conflict fix; production application requires a separate release."
+    }
+  },
+  "documentation": {
+    "tools": 193,
+    "functionalPermissions": 83,
+    "editorialPromptExamples": 29,
+    "sourceFreshness": "passed",
+    "helpAndDocumentationTests": {
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "staticPreviews": [
+      ".private/help-preview/cs/napoveda/ai-agenti/index.html",
+      ".private/help-preview/en/napoveda/ai-agents/index.html"
+    ],
+    "screenshots": "Existing real localized captures preserved; no interface changes in this execution."
+  },
+  "boundaries": [
+    "No production business writes, migration application, deployment, push or merge.",
+    "Real pilot uses disposable Auth/REST/Edge/OAuth/SDK/SQL over loopback; it does not prove production acceptance of every tool or ChatGPT directory/client availability.",
+    "Prompt wording is editorial; operation identifiers, input schemas, dependencies and client eligibility are generated and validated."
+  ],
+  "sha256": {
+    "tools/festapp/test/local/pilot.e2e.mjs": "af95a9e247225f93f57d56be152e70a587c1ac72b694ee6f6e218a7099348e68",
+    "tools/festapp/test/local/exchange.ts": "3c99ef47c5bf20793a97a2d3a5662b89550610ea7311ab9b174f8f98a243dc3f",
+    "tools/festapp/src/operations/forms.mjs": "215c3ec779183b48ecda9e6f91376344a106ae8cfe925be2d2d78c8621375ebe",
+    "tools/festapp/src/operations/lifecycle.mjs": "402502020828438b71f3febb760721a3ba454ed73d45bac5687f1b332c4e01b7",
+    "tools/festapp/test/canonical-authorization-postgres.test.mjs": "490513333087a1274a7e643b7dee504f44c65a3922a3f32345dc33cca64b3ede",
+    "automation/release/help/mcp-reference.json": "ac39eb5255905915fcc3313de53d1a866d2c913967675c23285be09bc0fb6bae",
+    "supabase/migrations/20261105033000_mcp_setup_finalization_conflict.sql": "ef58e53436133c9d747c122472b81c4c05e0c9eaf30380bf77622f5ac22e3ccb"
+  },
+  "independentCritic": {
+    "status": "No serious finding",
+    "focus": "Canonical owner preparation, actual OAuth/form save/replay/readback, scopes, revocation and bounded fixture cleanup",
+    "timezoneBoundary": "The pilot reads the event timezone and stores explicit-offset instants; forms.save itself does not interpret natural-language times."
+  },
+  "originalLocalAcceptance": {
+    "functionalSuite": {
+      "command": "pnpm --dir tools/festapp test",
+      "runtime": "Node 24; pnpm 11.24.0",
+      "database": "marker-verified loopback; cron off; email paused and external worker URL null",
+      "tests": 349,
+      "passed": 349,
+      "failed": 0,
+      "skipped": 0
+    },
+    "realLocalAcceptance": {
+      "fixture": "festapp-authz-20261020",
+      "actualAuth": true,
+      "actualEdgeHandler": true,
+      "actualCanonicalSql": true,
+      "independentSession": true,
+      "allowedActor": true,
+      "deniedActor": true,
+      "selectedOccasionOnly": true,
+      "readTools": 6,
+      "emptyReportAndPage": true,
+      "populatedOrders": 57,
+      "distinctValidTickets": 110,
+      "waitingTickets": 2,
+      "completePagination": true,
+      "exactSymbolPastContactMatches": true,
+      "publicDetailPrivacy": true,
+      "invalidInputRejected": true,
+      "receivedMoneySeparatedFromOrderValue": true,
+      "parallelReads": 2,
+      "burstRequests": 6,
+      "throttlingRecovery": true,
+      "liveRightsRemoval": true,
+      "issuerRevocation": true,
+      "nativeFormOAuth": true,
+      "nativeFormRead": true,
+      "nativeFormSave": true,
+      "savedPublicFormLink": true,
+      "independentClientRevocation": true,
+      "frozenFormReplay": true,
+      "persistedFormReadback": true,
+      "nonDefaultEventTimezoneRead": true,
+      "formScopeIsolation": true,
+      "realChatgptAcceptance": false,
+      "transportBoundary": "loopback HTTP; Edge HTTPS issuer config maps to the same loopback broker only in the local runner",
+      "syntheticDataCleaned": true,
+      "ownedServicesClosed": true
+    },
+    "migrations": {
+      "localTransactionalApplyAndRollback": "passed",
+      "productionApplied": false,
+      "files": [
+        "supabase/migrations/20261105033000_mcp_setup_finalization_conflict.sql",
+        "supabase/migrations/20261105034000_canonical_hidden_member_visibility.sql"
+      ]
+    },
+    "productionSourceReconciliation": {
+      "method": "Compare current source bodies to metadata from the earlier identity-verified read-only production audit; no production writes.",
+      "canonicalDefinitions": 831,
+      "matched": 830,
+      "missing": 0,
+      "different": 1,
+      "originalNineDifferencesResolved": true,
+      "remainingDifference": {
+        "signature": "public.manage_occasion_setup_authoring(bigint,bigint,uuid,bigint,uuid,jsonb)",
+        "disposition": "Prepared setup conflict fix; production application requires a separate release."
+      }
+    },
+    "sha256": {
+      "tools/festapp/test/local/pilot.e2e.mjs": "2a3f79143416e91f7ce7201aa1755e0a0fcc7390cbb05a99aa0cdf914cdab968",
+      "tools/festapp/test/prepare-current-sql.mjs": "2464fd87de3f4439eed79d2daa4c48edd0364815abf8aeee5c428547f617f2f6",
+      "tools/festapp/test/current-sql.mjs": "6bcdacefc56eac98e5d7fcfd77902d405007d24752032c434656cdfb3fdab8c5",
+      "tools/festapp/src/operations/forms.mjs": "215c3ec779183b48ecda9e6f91376344a106ae8cfe925be2d2d78c8621375ebe",
+      "tools/festapp/src/operations/lifecycle.mjs": "402502020828438b71f3febb760721a3ba454ed73d45bac5687f1b332c4e01b7",
+      "automation/release/help/mcp-reference.json": "638a356c3ed2e17920ff1a16cbdac4ae4b40003414ca70cd893f1503b8caf18a",
+      "supabase/migrations/20261105033000_mcp_setup_finalization_conflict.sql": "ef58e53436133c9d747c122472b81c4c05e0c9eaf30380bf77622f5ac22e3ccb",
+      "supabase/migrations/20261105034000_canonical_hidden_member_visibility.sql": "11033883b2d2b6114fa5194a1b5ebd804cdba50fbf453c867224b699142eb533"
+    }
+  },
+  "integration": {
+    "baseMainSha": "2ed9752cfbfb745efb8cc2026f6d63ff44dfd011",
+    "preserved": "Current dependencies/lockfile, migrated-schema assertSchema, canonical hidden-member protection, new Wix guide and tenant release CI gates",
+    "removedFromProposal": "Obsolete historical fixture SQL overlay/installers and duplicate visibility SQL migration",
+    "independentReadyPullRequests": 0
+  }
+}

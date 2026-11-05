@@ -158,6 +158,26 @@
     "preview": "cs/webnode/01-add-html"
   },
   {
+    "id": "ai-agents",
+    "category": "integrations",
+    "slug": "ai-agenti",
+    "title": "Jak připojit AI agenta přes MCP",
+    "seoTitle": "Jak připojit AI agenta přes MCP",
+    "description": "Připojení AI asistenta k vstupenky.online: krátký prompt, postup pro Codex a ChatGPT, oprávnění a příklady práce s formuláři.",
+    "label": "AI agenti a MCP",
+    "preview": "cs/ai-agenti/login"
+  },
+  {
+    "id": "mcp-reference",
+    "category": "integrations",
+    "slug": "mcp-podporovane-operace",
+    "title": "Co podporuje MCP: nástroje a příklady promptů",
+    "seoTitle": "Co podporuje MCP: nástroje a příklady promptů",
+    "description": "Automaticky generovaný katalog MCP: nástroje, vstupy a oprávnění. Příklady pro formuláře, objednávky, platby, plánek, odbavení a správu akcí.",
+    "label": "MCP: možnosti a prompty",
+    "preview": "cs/ai-agenti/login"
+  },
+  {
     "id": "orders",
     "category": "orders",
     "slug": "objednavky",

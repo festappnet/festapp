@@ -158,6 +158,26 @@
     "preview": "en/embed/01-generated-code"
   },
   {
+    "id": "ai-agents",
+    "category": "integrations",
+    "slug": "ai-agents",
+    "title": "Connect an AI agent through MCP",
+    "seoTitle": "Connect an AI agent through MCP",
+    "description": "Connect an AI assistant to vstupenky.online: quick prompt, Codex and ChatGPT setup, permissions and form examples.",
+    "label": "AI agents and MCP",
+    "preview": "en/forms/editor"
+  },
+  {
+    "id": "mcp-reference",
+    "category": "integrations",
+    "slug": "mcp-supported-operations",
+    "title": "MCP capabilities: tools and example prompts",
+    "seoTitle": "MCP capabilities: tools and example prompts",
+    "description": "Generated MCP tools, input schemas and permissions, with prompts for forms, orders, payments, seating, admission and event administration.",
+    "label": "MCP capabilities and prompts",
+    "preview": "en/forms/editor"
+  },
+  {
     "id": "orders",
     "category": "orders",
     "slug": "orders",

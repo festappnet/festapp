@@ -1394,5 +1394,31 @@
     "caption": "Vybrané místo se označí fajfkou. Nahoře zkontrolujte počet vstupenek a cenu a pokračujte zpět do formuláře.",
     "openLabel": "Zvětšit snímek výběru místa (nová karta)",
     "sha256": "df4727b25ba9b0d810ad969a1108b92dfc85235344cd1ffc68b2adbe9ba226ea"
+  },
+  {
+    "id": "cs/ai-agenti/connection",
+    "file": "cs/ai-agenti/pripojeni.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-05T01:39:36.748395+00:00",
+    "source": "Actual production vstupenky.online OAuth start with registered native client, isolated headless agent-browser; real light-theme preference via site settings; body.dark-mode=false; no credentials, consent approval or business operations.",
+    "width": 1280,
+    "height": 577,
+    "sha256": "3980c7c913bca6d460aa80164cd33427855f501e61c4b2fa3bef3e4a6b77f5c1",
+    "alt": "Stránka vstupenky.online pro připojení AI asistenta před přihlášením.",
+    "caption": "Po zahájení OAuth připojení přejdete na vstupenky.online. Nejprve se přihlaste.",
+    "openLabel": "Zvětšit snímek připojení AI asistenta (nová karta)"
+  },
+  {
+    "id": "cs/ai-agenti/login",
+    "file": "cs/ai-agenti/prihlaseni.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-05T01:37:00.307533+00:00",
+    "source": "Actual production vstupenky.online OAuth start with registered native client, isolated headless agent-browser; real light-theme preference via site settings; body.dark-mode=false; no credentials, consent approval or business operations.",
+    "width": 1280,
+    "height": 577,
+    "sha256": "209207ce4bb2281d2bd858fcef97b3d4a232d983a73e75553bfc687402075aa0",
+    "alt": "Přihlášení k vstupenky.online během připojování AI asistenta.",
+    "caption": "Přihlašovací údaje zadáváte na vstupenky.online. Výběr akcí a potvrzení přístupu následují po přihlášení.",
+    "openLabel": "Zvětšit snímek připojení AI asistenta (nová karta)"
   }
 ]

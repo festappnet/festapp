@@ -1,0 +1,547 @@
+{
+  "date": "2026-11-05",
+  "scope": "All published MCP prompt examples and generated source capability claims; no production business writes, login consent or customer data reads.",
+  "sourceReview": {
+    "independentCritic": true,
+    "promptExamples": 29,
+    "fullToolCatalog": 193,
+    "functionalPermissions": 83,
+    "findingsResolved": [
+      "Order-symbol lookup dependencies added before inspect/cancel/payment/resend.",
+      "Waitlist form/order discovery added; proposal expiry refresh explained outside prompt.",
+      "Program venue lookup added; activity-count tool removed from change-history example.",
+      "Counseling described as scheduled sessions, without a free-capacity claim.",
+      "Scanner resolves ticket from selected order instead of requesting internal identifiers.",
+      "Exports explicitly cover pagination/multiple files.",
+      "Business prompts simplified; hardcoded Europe/Prague removed.",
+      "Schedule reads occasion settings and uses natural event-time instruction, clarifying missing timezone rather than guessing.",
+      "Seating prompt describes inspecting data, without promising a plan image renderer."
+    ]
+  },
+  "timezoneEvidence": {
+    "application": "RightsService selects the occasion timezone; OccasionTimeContext owns its default and instant conversion.",
+    "mcp": "forms.save accepts ISO instants with offsets; forms.inspect does not return a resolved timezone. occasions.settings.inspect provides the saved override, not a resolved inheritance chain.",
+    "policy": "Use the event time settings. If the connection cannot determine them, clarify before saving. No locale/device-based guess.",
+    "sources": [
+      "lib/data_services/rights_service.dart",
+      "packages/festapp_core/lib/src/time/occasion_time_context.dart",
+      "tools/festapp/src/operations/configuration.mjs",
+      "database/functions/others/configuration_authoring.sql",
+      "database/functions/eshop_forms/form_settings.sql"
+    ]
+  },
+  "localVerification": {
+    "runtime": "Node24; pnpm11.24.0; marked loopback PostgreSQL, cron off and external email paused/null worker URL",
+    "command": "pnpm --dir tools/festapp test with explicit guarded local database variables",
+    "runs": [
+      {
+        "log": "/tmp/festapp-mcp-capability-audit.log",
+        "summary": {
+          "tests": 346,
+          "pass": 281,
+          "fail": 65,
+          "skipped": 0
+        },
+        "failedScenarios": [
+          "blueprint exact draft save, geometry/naming, original revision and frozen replay use the existing owner",
+          "advisory validation and discarded draft perform no save, and protected seat deletion rolls back",
+          "stored scope and ordinary role revoke reads and replay; private resource functions have no public grant",
+          "actual SDK executes scoped blueprint draft and current runtime artwork contract remains ready",
+          "delegated immutable text resources fence real actor permission and stored organization in SQL",
+          "full draft save waits for a real checkout hold then rejects protected binding changes and geometry together",
+          "scanner adapter reuses real eligibility, session and operation owners without leaking credentials or duplicating admission",
+          "SDK lists all eight configuration tools and executes real versioned save snapshots",
+          "every new/changed SQL owner matches the forward source contract and private helpers are inaccessible",
+          "copy retries keep one form and recheck source permissions; deletion retains the slug tombstone and replay",
+          "all changed SQL owners match the forward contract; scope, private grants and unknown inputs fail closed",
+          "existing form regression: eshop_forms/form_capacity_test.sql",
+          "existing form regression: eshop_forms/choice_validation_copy_locale_test.sql",
+          "MCP preview/save/replay/conflict uses the real canonical PostgreSQL owner as authenticated",
+          "the scoped finalizer preserves the real current source/draft/materialization/rollback contract",
+          "canonical audit is narrowed before paging despite broader ordinary unit/tenant roles; ties do not omit entries",
+          "CSV selects only requested columns, escapes hostile text, pages without repeats and reauthorizes the artifact",
+          "report export is the exact canonical SQL report; a fresh hosted-style Operations instance can read the shared artifact",
+          "bounded order history withholds raw historical QR/secret snapshots and binds the stored order",
+          "activity uses the existing 31-day report and feedback uses the exact current UI projection",
+          "an oversized audit entry is rejected before an unbounded detail payload crosses RPC",
+          "cancellation expands atomic seats; real quote rolls back; commit and exact replay use one receipt",
+          "changed money invalidates the complete cancellation without releasing a seat",
+          "free member rejects whole selection; role revocation denies receipt replay",
+          "MCP real scoped cancellation retries same UUID after lost acknowledgement",
+          "partial cancellation retains unselected tickets and paid money; other-map seats of selected tickets are disclosed",
+          "printed batch cancellation follows canonical void policy without changing printed contents",
+          "concurrent cancellations serialize; stale second approval changes nothing and original receipt replays",
+          "a changed actor cannot claim the approved seat-order UUID; the original actor can still execute it",
+          "changed bank recipient invalidates approval and rolls back allocation, cancellation and delivery together",
+          "seat-order requirements and final quote expand a full unit; real creation and email intent roll back until one confirmed receipt",
+          "seat-order quote shows actual partial cancellation and preserves unselected tickets and original received money",
+          "replacing one seat shows and locks every other seat released by the same old ticket without duplicating its conflict",
+          "missing required second-ticket answers identify the field and leave old tickets, money, history and delivery intact",
+          "real SQL and the actual fulfillment gateway preserve a committed replacement across unknown invoice POST, negative lookup and eventual recovery",
+          "two real connections fence invoice dispatch and expired leases; API roles cannot forge the private preparation job",
+          "MCP requirements, approval and uncertain retry execute the actual Edge coordinator and one SQL intent without private customer payloads",
+          "two connections: seat order waits for checkout and authorization revocation without partial financial effects",
+          "released replacement adapter keeps its original input fingerprint and replays without another allocation or notice",
+          "an actual pre-cutover receipt survives the forward migration and uncertain historical invoice dispatch stays lookup-only",
+          "current main notification producers roll back with the seat-order quote and publish once with the same committed intent",
+          "current printed-batch guards reject approved replacement and swap atomically, including released adapters",
+          "seat inspection and explicit expanded blocking share the canonical aggregate, preserve layout and replay one receipt",
+          "protected companions and changed confirmation reject the entire block; full UI save cannot block half an atomic unit",
+          "two connections: checkout hold and operational block serialize; neither can steal the other outcome",
+          "used tickets retain their orders; scoped seats expose the same UI lifecycle and require actual blueprint editor rights",
+          "seat scope, complete selection validation, canonical source and helper ACL fail closed",
+          "blueprint regression: layout_integration_test.sql",
+          "blueprint regression: authorization_test.sql",
+          "blueprint regression: finance_integration_test.sql",
+          "hold release binds the confirmed reservation identity; old receipt replay cannot release a later buyer",
+          "MCP hold preview/release uses the same receipt, separate order-editor role and safe uncertain replay",
+          "pre-extraction hold receipts replay unchanged and preserve later buyer holds",
+          "hold release fails closed for incomplete confirmation, foreign scope, used seats and direct helper access",
+          "two connections: confirmed hold release waits for checkout and rejects a replacement buyer without clearing it",
+          "confirmed swap previews actual money without writes, commits once and replays the original effect",
+          "confirmed swap rejects changed price, incomplete groups and used tickets without partial money/history changes",
+          "legacy swap receipts retain their original fingerprint and do not execute again after extraction",
+          "MCP swap uses confirmed SQL money, scoped order rights and one uncertain receipt; private/retired routes stay closed",
+          "two connections: swap waits for checkout and role revocation, preserving holds and all financial facts",
+          "atomic four-seat swap aggregates each order once and rolls back an earlier member when the later member fails",
+          "two connections: swap preview takes form/order parents before blueprint rows",
+          "two connections: a ticket used while waiting cannot move an atomic group through the legacy adapter",
+          "foreign product, ticket or order parents cannot escape a narrowed swap scope",
+          "unknown order money cannot become a zero quote or commit before a typed response fails"
+        ]
+      },
+      {
+        "log": "/tmp/festapp-mcp-capability-audit-prereqs.log",
+        "summary": {
+          "tests": 346,
+          "pass": 316,
+          "fail": 30,
+          "skipped": 0
+        },
+        "failedScenarios": [
+          "full ACL comparison preserves tables and all unrelated function grants",
+          "SDK lists all eight configuration tools and executes real versioned save snapshots",
+          "every new/changed SQL owner matches the forward source contract and private helpers are inaccessible",
+          "general administrator order previews actual checkout in rollback, creates once, freezes quote and denies revoked/foreign retries",
+          "waitlist proposal/send/cancel/withdraw traverse the shared UI Edge coordinator and one SQL receipt without changing ticket identities",
+          "confirmed form invoice recovery reuses the existing durable dispatch owner and one order after an uncertain provider reply",
+          "changed receiving account invalidates the order quote and expired commands never create a replacement order",
+          "released checkout signature and historical request hashes remain compatible on the single extracted command owner",
+          "all changed SQL owners match the forward contract; scope, private grants and unknown inputs fail closed",
+          "existing form regression: eshop_forms/form_capacity_test.sql",
+          "existing settings consumer: eshop/reminders/form_reminder_inheritance_test.sql",
+          "MCP preview/save/replay/conflict uses the real canonical PostgreSQL owner as authenticated",
+          "the scoped finalizer preserves the real current source/draft/materialization/rollback contract",
+          "canonical SQL regression: eshop/integration/product_price_scheduling_flow_test.sql",
+          "a changed actor cannot claim the approved seat-order UUID; the original actor can still execute it",
+          "changed bank recipient invalidates approval and rolls back allocation, cancellation and delivery together",
+          "seat-order requirements and final quote expand a full unit; real creation and email intent roll back until one confirmed receipt",
+          "seat-order quote shows actual partial cancellation and preserves unselected tickets and original received money",
+          "replacing one seat shows and locks every other seat released by the same old ticket without duplicating its conflict",
+          "missing required second-ticket answers identify the field and leave old tickets, money, history and delivery intact",
+          "real SQL and the actual fulfillment gateway preserve a committed replacement across unknown invoice POST, negative lookup and eventual recovery",
+          "two real connections fence invoice dispatch and expired leases; API roles cannot forge the private preparation job",
+          "MCP requirements, approval and uncertain retry execute the actual Edge coordinator and one SQL intent without private customer payloads",
+          "two connections: seat order waits for checkout and authorization revocation without partial financial effects",
+          "released replacement adapter keeps its original input fingerprint and replays without another allocation or notice",
+          "an actual pre-cutover receipt survives the forward migration and uncertain historical invoice dispatch stays lookup-only",
+          "current main notification producers roll back with the seat-order quote and publish once with the same committed intent",
+          "current printed-batch guards reject approved replacement and swap atomically, including released adapters",
+          "seat scope, complete selection validation, canonical source and helper ACL fail closed",
+          "inventory regression: eshop/standing_existing_product_inventory_test.sql"
+        ]
+      },
+      {
+        "log": "/tmp/festapp-mcp-capability-audit-final.log",
+        "summary": {
+          "tests": 346,
+          "pass": 316,
+          "fail": 30,
+          "skipped": 0
+        },
+        "failedScenarios": [
+          "full ACL comparison preserves tables and all unrelated function grants",
+          "SDK lists all eight configuration tools and executes real versioned save snapshots",
+          "every new/changed SQL owner matches the forward source contract and private helpers are inaccessible",
+          "general administrator order previews actual checkout in rollback, creates once, freezes quote and denies revoked/foreign retries",
+          "waitlist proposal/send/cancel/withdraw traverse the shared UI Edge coordinator and one SQL receipt without changing ticket identities",
+          "confirmed form invoice recovery reuses the existing durable dispatch owner and one order after an uncertain provider reply",
+          "changed receiving account invalidates the order quote and expired commands never create a replacement order",
+          "released checkout signature and historical request hashes remain compatible on the single extracted command owner",
+          "all changed SQL owners match the forward contract; scope, private grants and unknown inputs fail closed",
+          "existing form regression: eshop_forms/form_capacity_test.sql",
+          "existing settings consumer: eshop/reminders/form_reminder_inheritance_test.sql",
+          "MCP preview/save/replay/conflict uses the real canonical PostgreSQL owner as authenticated",
+          "the scoped finalizer preserves the real current source/draft/materialization/rollback contract",
+          "canonical SQL regression: eshop/integration/product_price_scheduling_flow_test.sql",
+          "a changed actor cannot claim the approved seat-order UUID; the original actor can still execute it",
+          "changed bank recipient invalidates approval and rolls back allocation, cancellation and delivery together",
+          "seat-order requirements and final quote expand a full unit; real creation and email intent roll back until one confirmed receipt",
+          "seat-order quote shows actual partial cancellation and preserves unselected tickets and original received money",
+          "replacing one seat shows and locks every other seat released by the same old ticket without duplicating its conflict",
+          "missing required second-ticket answers identify the field and leave old tickets, money, history and delivery intact",
+          "real SQL and the actual fulfillment gateway preserve a committed replacement across unknown invoice POST, negative lookup and eventual recovery",
+          "two real connections fence invoice dispatch and expired leases; API roles cannot forge the private preparation job",
+          "MCP requirements, approval and uncertain retry execute the actual Edge coordinator and one SQL intent without private customer payloads",
+          "two connections: seat order waits for checkout and authorization revocation without partial financial effects",
+          "released replacement adapter keeps its original input fingerprint and replays without another allocation or notice",
+          "an actual pre-cutover receipt survives the forward migration and uncertain historical invoice dispatch stays lookup-only",
+          "current main notification producers roll back with the seat-order quote and publish once with the same committed intent",
+          "current printed-batch guards reject approved replacement and swap atomically, including released adapters",
+          "seat scope, complete selection validation, canonical source and helper ACL fail closed",
+          "inventory regression: eshop/standing_existing_product_inventory_test.sql"
+        ]
+      }
+    ],
+    "localPrerequisitesApplied": [
+      "blueprint/seating_transition_schema.sql",
+      "Canonical assert_form_seating_source_internal and assert_published_admission_seating_internal definitions from blueprint/seating_publication.sql",
+      "emails/order_checkout_email_kind.sql"
+    ],
+    "residual": "Current source fixture/bootstrap drift and remaining integration assertions prevent a fully passing functional suite. No test assertion or authorization requirement was weakened.",
+    "productionInference": "These failures do not prove production failure; they prevent claiming complete practical verification."
+  },
+  "liveVerification": {
+    "method": "Verified public activation, protected SSH identity and runtime database; explicit read-only SQL transaction collecting function signature/body hashes and execution-grant metadata only.",
+    "activation": {
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "canonicalSourceFunctions": 828,
+    "matched": 819,
+    "missing": 0,
+    "different": [
+      {
+        "signature": "public.get_private_profile_payload_v1(bigint,uuid)",
+        "source": "groups/group_profile_read.sql"
+      },
+      {
+        "signature": "public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)",
+        "source": "groups/save_user_group_client_sync_v1.sql"
+      },
+      {
+        "signature": "public.get_user_group_info_with_users(bigint)",
+        "source": "groups/group_member_read.sql"
+      },
+      {
+        "signature": "public.get_occasion_users_editor_bundle_v1(bigint)",
+        "source": "users/get_occasion_users_editor_bundle_v1.sql"
+      },
+      {
+        "signature": "public.get_occasion_membership_for_edit_v1(bigint,uuid)",
+        "source": "users/get_occasion_membership_for_edit_v1.sql"
+      },
+      {
+        "signature": "public.get_user_group_command_data_v1(bigint)",
+        "source": "groups/group_editor_read.sql"
+      },
+      {
+        "signature": "public.get_occasion_users_for_edit_invitation_base_v1(bigint)",
+        "source": "users/occasion_directory_reads.sql"
+      },
+      {
+        "signature": "public.get_occasion_users_for_editor(bigint)",
+        "source": "users/occasion_directory_reads.sql"
+      },
+      {
+        "signature": "public.notification_center_in_center_internal(public.notification_center_events,timestamp with time zone)",
+        "source": "notification_center/center_policy.sql"
+      }
+    ],
+    "boundary": "Function presence/body parity is not an authenticated MCP workflow or proof of the account-specific client scope. No production mutation or customer record read was performed."
+  },
+  "promptReview": {
+    "sales": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.report"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "unpaid": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "order": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list",
+        "orders.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "forms": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.settings.inspect",
+        "forms.list",
+        "forms.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "form-edit": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "forms.list",
+        "forms.inspect",
+        "forms.save"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "schedule": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.settings.inspect",
+        "forms.list",
+        "forms.inspect",
+        "forms.save"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "prices": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "products.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "price-edit": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "products.list",
+        "products.save"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "seats": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "blueprints.list",
+        "blueprints.inspect",
+        "seats.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "seat-block": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "seats.list",
+        "seats.preview_block",
+        "seats.block"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "artwork": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "ticket_layouts.inspect",
+        "ticket_layouts.preview"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "cancel": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list",
+        "orders.inspect",
+        "orders.cancel"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "payment": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list",
+        "orders.inspect",
+        "payments.record"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "ticket-mail": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list",
+        "orders.inspect",
+        "orders.send_tickets"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "waitlist": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "forms.list",
+        "orders.list",
+        "waitlist.detail",
+        "waitlist.proposal"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "scanner": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "orders.list",
+        "orders.inspect",
+        "scanner.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "settings": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.settings.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "create": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.create"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "emails": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "email_templates.list",
+        "email_templates.inspect",
+        "email_templates.preview"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "banks": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "banks.list",
+        "banks.status"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "cards": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "cards.status"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "history": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.settings.inspect",
+        "history.commits"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "export": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "exports.orders"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "program": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "events.list",
+        "events.inspect",
+        "places.list",
+        "occasions.settings.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "map": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "places.list",
+        "paths.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "people": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "profiles.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "groups": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "groups.list",
+        "groups.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "speakers": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "occasions.settings.inspect",
+        "speakers.list",
+        "topics.list",
+        "counseling.list"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    },
+    "activities": {
+      "status": "reviewed against tool input/output contracts and identifier-discovery dependencies",
+      "operations": [
+        "access.inspect",
+        "activities.inspect"
+      ],
+      "authenticatedLiveAcceptance": "not claimed"
+    }
+  },
+  "documentationValidation": {
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "sourceSnapshot": "pnpm --dir tools/festapp run docs:check passed",
+    "previews": "CS and EN self-contained previews regenerated",
+    "productionWrites": false,
+    "testAssertionsWeakened": false
+  },
+  "historicalRemainingWorkForFullAcceptance": [
+    "Refresh the disposable local test baseline/fixtures with the complete current canonical schema and rerun failing integration/ACL/readiness cases.",
+    "Reconcile live source differences before claiming complete source parity.",
+    "For any specific deployment/client, discover authenticated tools and execute approved acceptance scenarios on disposable data."
+  ],
+  "resolution": {
+    "status": "Original local failures and nine source discrepancies resolved",
+    "receipt": "mcp-clean-acceptance-2026-11-05.json",
+    "productionReleasePending": true
+  },
+  "remainingWorkForFullAcceptance": [
+    "Production release and authenticated acceptance of a chosen live client remain separate deployment work; local implementation acceptance is complete."
+  ]
+}

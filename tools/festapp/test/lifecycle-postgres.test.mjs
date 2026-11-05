@@ -51,5 +51,21 @@ test('the scoped finalizer preserves the real current source/draft/materializati
  RETURN public.manage_occasion_setup_authoring(d.unit,d.organization,p_id,p_revision,p_command,sources); END $$;
  GRANT EXECUTE ON FUNCTION public.test_finalize_scoped(uuid,bigint,uuid) TO authenticated;`);
  const original=await readFile(new URL('../../../database/tests/occasion_setup/finalize_test.sql',import.meta.url),'utf8');
- await s.db.query(original.replaceAll('public.finalize_occasion_setup_draft(','public.test_finalize_scoped(').replace("EXCEPTION WHEN SQLSTATE 'PT409'", "EXCEPTION WHEN serialization_failure"));
+ await s.db.query(original.replaceAll('public.finalize_occasion_setup_draft(','public.test_finalize_scoped('));
+});
+
+
+test('stale setup revision is a reload conflict, not an uncertain command retry',async t=>{
+ const s=await setup(t);const id=randomUUID();
+ const draft=(await s.db.query('select create_occasion_setup_draft($1,$2) value',[id,s.f.unit])).rows[0].value;
+ const client={rpc:async(name,args)=>{
+  const keys=Object.keys(args);await s.db.query('SAVEPOINT setup_command');
+  try{const data=(await s.db.query('select '+name+'('+keys.map((k,i)=>k+'=> $'+(i+1)).join(',')+') value',Object.entries(args).map(([key,value])=>key==='p_source_scopes'?JSON.stringify(value):value))).rows[0].value;await s.db.query('RELEASE SAVEPOINT setup_command');return{data,error:null};}
+  catch(error){await s.db.query('ROLLBACK TO SAVEPOINT setup_command');await s.db.query('RELEASE SAVEPOINT setup_command');return{data:null,error};}
+ }};
+ const own={delegatedUnitContext:async()=>({organizationId:s.f.org,unitId:s.f.unit})};
+ const commandId=randomUUID();
+ await assert.rejects(invokeLifecycleOperation(own,client,'occasions.setup.finalize',{unitId:s.f.unit,draftId:id,expectedRevision:Number(draft.revision)-1,commandId}),error=>error.code==='SETUP_CHANGED_RELOAD_REQUIRED'&&error.retryable===false);
+ await s.db.query('RESET ROLE');
+ assert.equal(Number((await s.db.query('select count(*) n from client_mutation_receipts where command_id=$1',[commandId])).rows[0].n),0);
 });

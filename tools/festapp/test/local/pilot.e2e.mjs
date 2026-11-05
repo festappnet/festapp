@@ -6,7 +6,7 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
-import { createHmac, randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, createHash, generateKeyPairSync } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { openDisposableDatabase } from '../postgres.mjs';
@@ -22,7 +22,8 @@ assert(process.env.FESTAPP_MCP_TEST_DATABASE_URL, 'marked disposable DB must be 
 const templateProject = process.env.FESTAPP_MCP_LOCAL_TEMPLATE_PROJECT;
 assert(/^festapp-[a-z0-9-]+$/.test(templateProject ?? ''), 'an explicit local service-template project is required');
 const db = await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);
-assert.equal(new URL(process.env.FESTAPP_MCP_TEST_DATABASE_URL).port, '61022');
+assert(['55432','61022','61032'].includes(new URL(process.env.FESTAPP_MCP_TEST_DATABASE_URL).port));
+const databaseProject=(await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project;
 const root = await mkdtemp(join(tmpdir(), 'festapp-pilot-real-auth-'));
 const api = 'http://127.0.0.1:61421', issuer = 'http://127.0.0.1:61432';
 const tenant = 'https://tenant.pilot.invalid', callback = 'http://127.0.0.1:61434/callback';
@@ -34,10 +35,10 @@ const authTemplate = inspect('supabase_auth_' + templateProject), restTemplate =
 const env = asEnv(authTemplate), restEnv = asEnv(restTemplate);
 assert.equal(new URL(env.API_EXTERNAL_URL).hostname, '127.0.0.1', 'only local service templates may be used');
 const targetDb = new URL(process.env.FESTAPP_MCP_TEST_DATABASE_URL);
-const dbConfig = inspect('supabase_db_festapp-authz-20261020');
+const dbConfig = inspect('supabase_db_'+databaseProject);
 const network = Object.keys(dbConfig.NetworkSettings.Networks)[0];
 const backendDb = new URL(env.GOTRUE_DB_DATABASE_URL);
-backendDb.hostname = 'supabase_db_festapp-authz-20261020'; backendDb.port = '5432';
+backendDb.hostname = 'supabase_db_'+databaseProject; backendDb.port = '5432';
 backendDb.username = 'supabase_auth_admin'; backendDb.password = targetDb.password; backendDb.pathname = targetDb.pathname;
 env.GOTRUE_DB_DATABASE_URL = backendDb.href;
 env.API_EXTERNAL_URL = api; env.GOTRUE_SITE_URL = api; env.GOTRUE_JWT_ISSUER = api + '/auth/v1';
@@ -52,7 +53,7 @@ const services = [
     { kind: 'auth', image: authTemplate.Config.Image, env, port: '61425:9999' },
     { kind: 'rest', image: restTemplate.Config.Image, env: restEnv, port: '61426:3000' },
 ];
-assert(env.GOTRUE_DB_DATABASE_URL.includes('@supabase_db_festapp-authz-20261020:5432/'));
+assert(env.GOTRUE_DB_DATABASE_URL.includes('@supabase_db_'+databaseProject+':5432/'));
 assert.equal(env.API_EXTERNAL_URL, api);
 assert(!Object.keys(env).some(k => k.startsWith('GOTRUE_HOOK_')), 'fixture must not dispatch external hooks');
 const jwt = role => {
@@ -83,8 +84,9 @@ const proxy = createServer(async (req, res) => {
 });
 const authOptions = { auth: { persistSession: false, autoRefreshToken: false } };
 const admin = createClient(api, service, authOptions), appUser = createClient(api, anon, authOptions);
-let org, unit, actor, otherActor, occasions = [], storage, edge, broker, client;
+let org, unit, actor, otherActor, occasions = [], storage, edge, broker, client, operatorClient;
 const paymentIds = [];
+let acceptanceReceipt;
 let stage = 'start task-owned Auth/REST';
 const close = server => server && new Promise(resolve => server.close(resolve));
 try {
@@ -132,7 +134,8 @@ try {
         profile: { schemaVersion: 1, name: 'real-auth-pilot', kind: 'disposable-local', tenantId: 'pilot-fixture', backendOrigin: api, publicApiKey: anon,
             organizationId: org, activationUrl: api + '/backend-activation.json', activationSha256: digest(activation), generation: 1,
             canonicalProfileSha256: canonicalBackendProfileSha256({ tenantId: 'pilot-fixture', canonicalOrigin: api, canonicalAnonKey: anon, canonicalOrganizationId: org }) },
-        clients: [{ id: 'real-auth-fixture', name: 'Real Auth fixture', applicationType: 'native', dataProfile: 'order-summary', redirectUris: ['http://127.0.0.1/callback'], allowedScopes: [READ_SCOPE, 'festapp:orders:read'] }] });
+        clients: [{ id: 'real-auth-fixture', name: 'Real Auth fixture', applicationType: 'native', dataProfile: 'order-summary', redirectUris: ['http://127.0.0.1/callback'], allowedScopes: [READ_SCOPE, 'festapp:orders:read'] },
+            { id:'real-operator-fixture',name:'Native form editor fixture',applicationType:'native',dataProfile:'operator',redirectUris:['http://127.0.0.1/callback'],allowedScopes:[READ_SCOPE,'festapp:forms:read','festapp:forms:write','festapp:occasion-settings:read'] }] });
     stage = 'ordinary-user backend proof';
     const proofOwner = new SessionOwner(config.profile, { root: join(root, 'proof') });
     await proofOwner.withAccessToken(appSession.access_token, backend => operatorAccess(backend, config.profile));
@@ -143,7 +146,7 @@ try {
         jwks: { keys: [{ ...privateKey.export({ format: 'jwk' }), kid: 'local', use: 'sig', alg: 'RS256' }] } }).app);
     await new Promise(resolve => broker.listen(61432, '127.0.0.1', resolve));
     const edgeConfig = join(root, 'edge.json');
-    await writeFile(edgeConfig, JSON.stringify({ api, anon, service, port: 61431, instanceId: actor, disposableProject: 'festapp-authz-20261020',
+    await writeFile(edgeConfig, JSON.stringify({ api, anon, service, port: 61431, instanceId: actor, disposableProject: databaseProject,
         tenant: { tenantId: config.profile.tenantId, tenantOrigin: tenant, organizationId: org, issuer: issuer.replace('http:', 'https:'), brokerSecret } }), { mode: 0o600 });
     edge = spawn('deno', ['run', '--allow-read', '--allow-env', '--allow-net', new URL('./exchange.ts', import.meta.url).pathname, edgeConfig], { stdio: 'ignore' });
     let ready = false;
@@ -165,7 +168,7 @@ try {
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }));
     assert.equal(response.status, 303);
     response = await browser(response.headers.get('location')); assert.equal(response.status, 303);
-    const request = new URL(response.headers.get('location')).searchParams.get('request');
+    let request = new URL(response.headers.get('location')).searchParams.get('request');
     const exchange = (operation, extra = {}, accessToken = appSession.access_token) => fetch('http://127.0.0.1:61431/functions/v1/mcp-session-exchange', {
         method: 'POST', headers: { origin: tenant, authorization: 'Bearer ' + accessToken, 'content-type': 'application/json' },
         body: JSON.stringify({ operation, ...(operation.startsWith('connections.') ? {} : { request }), ...extra }),
@@ -199,6 +202,7 @@ try {
     assert.equal(page.structuredContent.ok, true); assert.deepEqual(page.structuredContent.data.orders, []);
     stage = 'populated real-world order journey';
     const form = Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'MCP scenario',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id", [occasions[0]])).rows[0].id);
+    await db.query('insert into form_link_reservations(slug,form) select link,id from forms where id=$1',[form]);
     const type = Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Admission','entry') returning id", [occasions[0]])).rows[0].id);
     const products = (await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code,maximum) values($1,$2,'Admission',100,'CZK',1000),($1,$2,'Dinner',0,'CZK',1000) returning id", [occasions[0], type])).rows.map(r => Number(r.id));
     const orderIds = [], symbol = '1A1A1A1A1A', privateMarker = 'PRIVATE_CUSTOMER_CANARY';
@@ -256,34 +260,72 @@ try {
     }
     assert.equal((await client.callTool({name:'festapp_orders_inspect', arguments:{occasionId:occasions[1], orderId:orderIds[0]}})).structuredContent.error.code, 'FORBIDDEN');
     const foreign = await client.callTool({ name: 'festapp_orders_report', arguments: { occasionId: occasions[1] } }); assert.equal(foreign.structuredContent.error.code, 'FORBIDDEN');
+    stage = 'native operator OAuth and actual form editing';
+    const operatorVerifier=randomBytes(32).toString('base64url');
+    response=await browser('/auth?'+new URLSearchParams({client_id:'real-operator-fixture',response_type:'code',redirect_uri:callback,resource:config.resource,scope:['openid','offline_access',READ_SCOPE,'festapp:forms:read','festapp:forms:write','festapp:occasion-settings:read'].join(' '),code_challenge:createHash('sha256').update(operatorVerifier).digest('base64url'),code_challenge_method:'S256'}));
+    assert.equal(response.status,303);response=await browser(response.headers.get('location'));assert.equal(response.status,303);
+    request=new URL(response.headers.get('location')).searchParams.get('request');assert(request);
+    response=await exchange('details');assert.equal(response.status,200);
+    response=await exchange('approve',{access:{consentVersion:2,selection:{type:'occasions',occasionIds:[occasions[0]]},permissions:['festapp:forms:read','festapp:forms:write','festapp:occasion-settings:read']}});assert.equal(response.status,200);
+    const operatorContinuation=await response.json();response=await browser(operatorContinuation.resumeUrl);assert.equal(response.status,303);
+    target=response.headers.get('location');
+    for(let i=0;i<8&&!new URL(target,issuer).pathname.startsWith('/callback');i++){response=await browser(target);target=response.headers.get('location');}
+    const operatorCode=new URL(target,issuer);assert.equal(operatorCode.searchParams.get('iss'),issuer);
+    response=await fetch(issuer+'/token',{method:'POST',body:new URLSearchParams({client_id:'real-operator-fixture',grant_type:'authorization_code',code:operatorCode.searchParams.get('code'),redirect_uri:callback,code_verifier:operatorVerifier,resource:config.resource})});assert.equal(response.status,200);
+    const operatorTokens=await response.json();operatorClient=new Client({name:'real-native-operator',version:'1'});
+    await operatorClient.connect(new StreamableHTTPClientTransport(new URL(config.resource),{requestInit:{headers:{authorization:'Bearer '+operatorTokens.access_token}}}));
+    const operatorTools=(await operatorClient.listTools()).tools.map(t=>t.name);
+    for(const name of ['festapp_forms_list','festapp_forms_inspect','festapp_forms_save','festapp_occasions_settings_inspect'])assert(operatorTools.includes(name));
+    assert(!operatorTools.includes('festapp_orders_list'),'Form consent must not acquire order-read tools');
+    const operatorCall=async(name,args)=>{const r=await operatorClient.callTool({name,arguments:args});assert.equal(r.structuredContent?.ok,true,JSON.stringify(r));return r.structuredContent.data;};
+    await db.query("update occasions set data=jsonb_set(data,'{timezone}','\"America/New_York\"') where id=$1",[occasions[0]]);
+    const timezone=(await operatorCall('festapp_occasions_settings_inspect',{occasionId:occasions[0]})).settings.timezone;assert.equal(timezone,'America/New_York');
+    const list=await operatorCall('festapp_forms_list',{occasionId:occasions[0]});assert(list.forms.some(f=>f.id===form));
+    const inspected=await operatorCall('festapp_forms_inspect',{occasionId:occasions[0],formId:form});
+    const formCommand={occasionId:occasions[0],commandId:randomUUID(),form:{id:form,title:'Verified native form edit',expected_aggregate_version:inspected.authoring.form.aggregate_version,expected_product_versions:inspected.authoring.productVersions,expected_product_type_versions:inspected.authoring.productTypeVersions,settings:{schedule:{start_time:'2027-01-15T18:00:00-05:00',end_time:'2027-02-20T12:00:00-05:00'}}}};
+    const saved=await operatorCall('festapp_forms_save',formCommand);assert.equal(saved.status,'applied');
+    assert.deepEqual(await operatorCall('festapp_forms_save',formCommand),saved,'Same command replays its exact saved form result');
+    const readback=await operatorCall('festapp_forms_inspect',{occasionId:occasions[0],formId:form});assert.equal(readback.authoring.form.title,'Verified native form edit');
+    assert.equal(Date.parse(readback.authoring.form.data.schedule.start_time),Date.parse('2027-01-15T23:00:00Z'));
+    const publicLink=await operatorCall('festapp_forms_public_link',{occasionId:occasions[0],formId:form});assert.equal(publicLink.formId,form);assert(publicLink.publicPath.startsWith('/form/'));
+    const foreignForm=await operatorClient.callTool({name:'festapp_forms_list',arguments:{occasionId:occasions[1]}});assert.equal(foreignForm.structuredContent.error.code,'FORBIDDEN');
     await db.query('update occasion_users set is_editor_order=false,is_editor_order_view=false where occasion=$1 and "user"=$2', [occasions[0], actor]);
     // Also remove organizer membership so no independent role can preserve reads.
     await db.query('delete from unit_users where unit=$1 and "user"=$2', [unit, actor]);
     const removed = await client.callTool({ name: 'festapp_orders_report', arguments: { occasionId: occasions[0] } }); assert.equal(removed.structuredContent.error.code, 'FORBIDDEN');
     stage = 'issuer disconnection';
-    const grant = storage.values('Delegation')[0];
+    const grant = storage.values('Delegation').find(g=>g.clientId==='real-auth-fixture');assert(grant);
     response = await exchange('connections.revoke', { connectionId: grant.id }); assert.equal(response.status, 200);
     assert.equal(storage.get('Delegation', grant.id).revoked, true);
     response = await fetch(config.resource, { method: 'POST', headers: { authorization: 'Bearer ' + tokens.access_token, 'content-type': 'application/json' }, body: '{}' }); assert.equal(response.status, 401);
-    const receipt = { fixture: 'festapp-authz-20261020', actualAuth: true, actualEdgeHandler: true, actualCanonicalSql: true,
+    await operatorCall('festapp_forms_inspect',{occasionId:occasions[0],formId:form});
+    const operatorGrant=storage.values('Delegation').find(g=>g.clientId==='real-operator-fixture');assert(operatorGrant);
+    response=await exchange('connections.revoke',{connectionId:operatorGrant.id});assert.equal(response.status,200);
+    response=await fetch(config.resource,{method:'POST',headers:{authorization:'Bearer '+operatorTokens.access_token,'content-type':'application/json'},body:'{}'});assert.equal(response.status,401);
+    acceptanceReceipt = { fixture: databaseProject, actualAuth: true, actualEdgeHandler: true, actualCanonicalSql: true,
         independentSession: true, allowedActor: true, deniedActor: true, selectedOccasionOnly: true, readTools: 6,
         emptyReportAndPage: true, populatedOrders:57, distinctValidTickets:110, waitingTickets:2,
         completePagination:true, exactSymbolPastContactMatches:true, publicDetailPrivacy:true, invalidInputRejected:true,
         receivedMoneySeparatedFromOrderValue:true, parallelReads:2, burstRequests:6, throttlingRecovery:true,
-        liveRightsRemoval: true, issuerRevocation: true, realChatgptAcceptance: false,
+        liveRightsRemoval: true, issuerRevocation: true, nativeFormOAuth:true, nativeFormRead:true, nativeFormSave:true, savedPublicFormLink:true, independentClientRevocation:true, frozenFormReplay:true, persistedFormReadback:true, nonDefaultEventTimezoneRead:true, formScopeIsolation:true, realChatgptAcceptance: false,
         transportBoundary: 'loopback HTTP; Edge HTTPS issuer config maps to the same loopback broker only in the local runner' };
-    if (process.env.FESTAPP_MCP_LOCAL_RECEIPT) await writeFile(process.env.FESTAPP_MCP_LOCAL_RECEIPT, JSON.stringify(receipt, null, 2)+'\n');
-    console.log('REAL_AUTH_EDGE_BROKER_SQL_PASS');
 } catch (error) {
     console.error(JSON.stringify({ stage, failedTransport, code: error.code ?? error.name, httpStatus: typeof error.status === 'number' ? error.status : undefined, location: error.stack?.match(/pilot\.e2e\.mjs:\d+:\d+/)?.[0], actual: typeof error.actual === 'number' ? error.actual : undefined, expected: typeof error.expected === 'number' ? error.expected : undefined }));
     process.exitCode = 1;
 } finally {
+    await operatorClient?.close().catch(()=>{});
     await client?.close().catch(()=>{});
     if (edge) { const exited = new Promise(resolve => edge.once('exit', resolve)); edge.kill('SIGTERM'); await exited; }
     await close(broker); await storage?.close(); await close(proxy);
     if (org) {
         await db.query('BEGIN');
         try {
+            await db.query('delete from client_mutation_receipts where occasion=ANY($1::bigint[]) or unit=$2',[occasions,unit]);
+            await db.query("delete from client_commit_items where commit_id in (select commit_id from client_commits where occasion=ANY($1::bigint[]))",[occasions]);
+            await db.query("delete from client_commit_components where commit_id in (select commit_id from client_commits where occasion=ANY($1::bigint[]))",[occasions]);
+            await db.query('delete from client_commits where occasion=ANY($1::bigint[])',[occasions]);
+            await db.query("delete from client_aggregate_versions where scope_type='occasion' and scope_id=ANY($1::bigint[])",[occasions]);
+            await db.query('delete from form_link_reservations where form in (select id from forms where occasion=ANY($1::bigint[]))',[occasions]);
             await db.query('delete from eshop.order_product_ticket where "order" in (select id from eshop.orders where occasion=ANY($1::bigint[]))', [occasions]);
             await db.query('delete from eshop.orders where occasion=ANY($1::bigint[])', [occasions]);
             await db.query('delete from eshop.tickets where occasion=ANY($1::bigint[])', [occasions]);
@@ -299,11 +341,18 @@ try {
             await db.query('delete from user_info where organization=$1', [org]);
             await db.query('delete from organizations where id=$1', [org]);
             await db.query('COMMIT');
-        } catch { await db.query('ROLLBACK'); console.error('Synthetic fixture cleanup needs inspection'); process.exitCode = 1; }
+        } catch(error) { await db.query('ROLLBACK'); console.error(JSON.stringify({stage:'synthetic fixture cleanup',code:error.code,constraint:error.constraint,table:error.table})); process.exitCode = 1; }
     }
     // The proxy is closed; delete only these task-owned Auth actors directly.
-    if (actor || otherActor) await db.query('delete from auth.users where id=ANY($1::uuid[])', [[actor, otherActor].filter(Boolean)]);
+    if ((actor || otherActor) && !process.exitCode) await db.query('delete from auth.users where id=ANY($1::uuid[])', [[actor, otherActor].filter(Boolean)]);
     await db.end();
     for (const id of ownedServices) execFileSync('docker', ['rm', '-f', id], { stdio: 'ignore' });
     await rm(root, { recursive: true, force: true });
+}
+
+if (!process.exitCode && acceptanceReceipt) {
+    acceptanceReceipt.syntheticDataCleaned = true;
+    acceptanceReceipt.ownedServicesClosed = true;
+    if (process.env.FESTAPP_MCP_LOCAL_RECEIPT) await writeFile(process.env.FESTAPP_MCP_LOCAL_RECEIPT, JSON.stringify(acceptanceReceipt, null, 2)+'\n');
+    console.log('REAL_AUTH_EDGE_BROKER_SQL_PASS');
 }

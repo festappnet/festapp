@@ -7,7 +7,7 @@ in the normal Node suite. Use Node 24, pnpm 11.24.0, Deno and local Docker.
 Prepare the guarded authorization database with
 `bash automation/authorization/prepare-local.sh`. Privately configure its
 `FESTAPP_AUTHORIZATION_DATABASE_URL`; the runner requires the same explicit
-61022 URL in `FESTAPP_MCP_TEST_DATABASE_URL`, verifies its marker and retains
+61022 or 61032 URL in `FESTAPP_MCP_TEST_DATABASE_URL`, verifies its marker and retains
 cron-off and paused/null-worker email guards. No remote URL is accepted.
 
 Explicitly select a running **local** Supabase service-template project. On this
@@ -49,3 +49,14 @@ The runner removes its synthetic orders, tickets, products and payment records.
 
 The historical `consent.e2e.mjs` is not this runner and retains its historical
 absolute-path setup requirements. Do not run it unchanged for the current pilot.
+
+
+The runner requires the current migrated schema through the same marker and
+`assertSchema` guards as the complete operator suite. It also creates a second registered native operator client with explicit form-read,
+form-write and occasion-settings-read consent. That real OAuth connection must
+inspect the form, read a non-default event time zone, save the approved versioned
+metadata/schedule, replay the same command unchanged and read the saved result
+and public link. It must reject the other event and must not acquire order tools.
+Revoking the summary client leaves the operator client usable until its own
+revocation; both tokens then fail. Cleanup removes only the runner's records,
+receipts, commit components, link reservations and services.

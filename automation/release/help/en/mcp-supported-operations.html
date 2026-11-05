@@ -1,0 +1,16 @@
+<p class="lead">What MCP can read or change, with example requests. The complete tool catalog, inputs and permission dependencies come directly from the implementation.</p>
+<p>Start with <a href="/napoveda/ai-agents/">AI agent connection setup</a> if your connection is not configured yet. This reference continues from that guide.</p>
+<h2 id="usage">Check what your connection permits</h2>
+<p>First ask the agent to discover accessible events and available tools. Each task depends on the implemented operation, registered client permissions, approved consent and your current account rights. A prompt cannot expand access. Additional permissions require a fresh sign-in and consent.</p>
+<p>The public ChatGPT connection uses an order summary profile: it withholds contacts, notes and registration answers and does not permit changes. An operator connection with the required permissions offers additional tools. Some areas, such as the program and speakers, apply only to events using those features.</p>
+<p>Replace the example names with your own data. Resolve duplicate event names before proceeding and follow pagination for lists. Review concrete proposals for edits, payments, cancellations and messages; read back saved results after changes.</p>
+<h2 id="prompts">Example prompts by task</h2>
+<p>These are editorial examples for common tasks, not records of executed operations. Required tools, permission dependencies and public ChatGPT availability below each prompt are derived automatically from the catalog.</p>
+{{MCP_PROMPTS}}
+<h2 id="catalog">Complete supported tool catalog</h2>
+<p>Expand a permission area and a tool to see its technical name, description, required permissions, mandatory inputs and complete JSON Schema. Base permission is included automatically. The read / inspect label follows the MCP annotation; some previews consume quota. Check the individual tool description.</p>
+{{MCP_REFERENCE}}
+<h2 id="source">How this documentation stays current</h2>
+<p>The catalog uses the same registry as the MCP server, input schemas, shared permission contract and public ChatGPT client policy. Permission labels reuse consent-screen translations. Help builds reject a stale snapshot after those sources change until it is regenerated.</p>
+<p>Prompt wording is editorial. Examples reference existing operations and their references are checked during the build. This avoids maintaining a separate manual capability list.</p>
+<p>For automated processing, use the <a href="{{HELP_ASSETS}}mcp-reference.json">MCP JSON catalog with input schemas</a>. This describes the implementation rather than proving deployment or access to every tool. Verify the available tools after signing in.</p>

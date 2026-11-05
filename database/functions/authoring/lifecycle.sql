@@ -163,7 +163,6 @@ BEGIN
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='setup draft unavailable'; END IF;
  IF p_command_id IS NULL THEN RETURN public.get_occasion_setup_draft(p_draft); END IF;
  IF draft.data ? 'finalizeResponse' THEN RETURN public.finalize_occasion_setup_draft(p_draft,p_expected_revision,p_command_id); END IF;
- IF draft.revision<>p_expected_revision AND NOT EXISTS(SELECT 1 FROM public.client_mutation_receipts WHERE command_id=p_command_id AND actor_id=auth.uid() AND unit=p_unit AND command_name='occasion.setup.finalize') THEN RAISE serialization_failure USING MESSAGE='setup draft changed'; END IF;
  source_ids:=ARRAY(SELECT DISTINCT x::bigint FROM unnest(ARRAY[draft.data->>'sourceId',draft.data->>'formSourceOccasionId',draft.data->>'blueprintSourceOccasionId']) x WHERE nullif(x,'') IS NOT NULL);
  IF jsonb_typeof(p_source_scopes) IS DISTINCT FROM 'array' OR jsonb_array_length(p_source_scopes)<>cardinality(source_ids) THEN RAISE insufficient_privilege USING MESSAGE='source consent required'; END IF;
  FOREACH source IN ARRAY source_ids LOOP
